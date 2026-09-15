@@ -744,3 +744,71 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
 - **Inline Backtick Code Typography & Font Synchronization (`inlineMarks.css` & `Editor.css`)**:
   - Overrode hardcoded `font-size: 0.88em` from third-party editor packages on `.cm-atomic-inline-code` and `.cm-inline-code` with `font-size: inherit !important;`.
   - Set `font-family: var(--font-editor, inherit) !important` across all inline code selectors so single backtick expressions (`inline code`) inherit and match the user's configured editor font family and size seamlessly.
+
+### HH. Spatial Infinite Canvas Engine & Visual Knowledge Architecture
+- **Overview & Directory Structure (`src/renderer/src/features/canvas/`)**:
+  - A production-grade 2D spatial canvas enabling non-linear thought, architecture mapping, and visual research alongside linear Markdown notes.
+  - Saved as clean, transparent JSON document structures (`.canvas`) ensuring complete data portability without proprietary lock-ins.
+  - Supports dual modes: full primary workspace document tab and drawer modal overlay (`CanvasDrawerModal.tsx`).
+- **Coordinate Transformations & Pan/Zoom Matrix**:
+  - Dynamic virtual space managed through transform coordinates `{ pan: { x, y }, zoom }`.
+  - Bi-directional projection:
+    - Screen-to-Canvas: `canvasX = (clientX - containerRect.left - pan.x) / zoom`
+    - Canvas-to-Screen: `screenX = canvasX * zoom + pan.x + containerRect.left`
+  - Clamped zoom scaling from `0.10` (10% birds-eye overview) to `5.00` (500% high-precision detail) with smooth momentum pan and spacebar dragging.
+- **12+ Scalable Vector Geometric Shapes (`ConvasShapes.tsx` & `types.ts`)**:
+  - Native SVG shape engine rendering:
+    1. `rectangle` — Standard box container
+    2. `roundedRectangle` — Soft card container
+    3. `diamond` — Decision branch
+    4. `circle` (ellipse) — State / Start / End
+    5. `cylinder` — Database / Storage
+    6. `document` — Specification / Report
+    7. `actor` — System User / Stakeholder stickman
+    8. `cloud` — External Network / Cloud Service
+    9. `triangle` — Warning / Inversion / Milestone
+    10. `hexagon` — Microservice / Adapter / Hexagonal Architecture
+    11. `star` — Key Highlight / Favorite Feature
+    12. `callout` — Speech bubble / Note annotation
+  - Real-time double-click Markdown text editing directly centered inside each shape with auto-growing textarea and `Ctrl + Enter` completion.
+- **Intelligent Dynamic Ports & Magnetic Socket Snapping (`canvasPorts.ts`)**:
+  - Dynamic shape port calculations (`getShapePortRatio`) ensure connector attachment knobs align with the physical contour of non-rectangular shapes:
+    - Actor stickman crown and hand ports dynamically adjust based on container aspect ratio (`width / height`).
+    - Cylinder ports anchor to the true 3D elliptical top and bottom rims.
+    - Callout ports adjust for the protruding speech bubble pointer.
+  - Magnetic socket physics: dragging a connector within 24px of a target port snaps the terminal seamlessly into the socket with an active glowing highlight ring (`.is-magnetic-snap`).
+- **Orthogonal 90° Connector Routing & Obstacle Avoidance (`canvasRouting.ts`)**:
+  - Generates clean 90-degree orthogonal dogleg paths between source and destination ports.
+  - Automatic obstacle clearance: incorporates bounding offset boxes around source and target nodes so connection lines cleanly navigate around elements without clipping card bodies.
+  - Multi-geometry connector types: Orthogonal (default), Smooth Bezier curves, and direct Straight lines.
+  - End-terminal marker styling: `arrow` (solid triangle), `openArrow`, `triangle`, `circle`, `diamond`, `bar`, and `doubleArrow`.
+  - Stroke customization: `solid`, `dashed`, `dotted`, with theme-aware accent colors.
+- **Smart Alignment Guides & Snapping (`canvasAlignmentGuides.ts` & `CanvasAlignmentGuidesLayer.tsx`)**:
+  - Real-time proximity evaluator monitors active node boundaries against all stationary nodes during drag and resize.
+  - Detects horizontal and vertical alignments across left, center, right, top, middle, and bottom axes within an 8px magnetic threshold.
+  - Renders high-visibility alignment guide crosshairs across the canvas canvas plane.
+- **Marquee Selection, Multi-Node Manipulation & Alignment Toolbar**:
+  - Dragging across empty canvas space initiates a rubber-band marquee selection box.
+  - Automatically selects all intersecting nodes and connectors.
+  - Enables collective multi-node translation, bulk deletion (`Delete`/`Backspace`), and bulk color cycling.
+  - Displays a dedicated floating Alignment Toolbar offering 1-click layout actions:
+    - Align Left, Center, Right, Top, Middle, Bottom
+    - Distribute Evenly Horizontally and Vertically
+  - Suppresses individual node hover actions and line tooltips during multi-selection to keep the interface focused and clutter-free.
+- **Minimalist Sticky Notes**:
+  - Headerless, distraction-free cards with soft ambient drop shadows and subtle hover controls.
+  - Auto-growing text area with `MemoizedMarkdownPreview` for instantaneous preview toggle.
+  - Ergonomic keyboard shortcuts: `Ctrl + Enter` (or `Cmd + Enter`) commits text and exits edit mode; `Escape` dismisses edit mode.
+- **Vault Asset Ingestion Pipeline (`useCanvasDrop.ts`)**:
+  - Native HTML5 and `@dnd-kit` drag-and-drop listener supporting external OS files and internal FileExplorer snippets.
+  - Ingestion enrichment: resolves note content from `snippet.code`, hydrates metadata from `useWorkspaceStore.getState().snippets`, and sets explicit `type: 'note'` and `file: snippet.id`.
+  - Vault notes render as rich cards with note title, Markdown preview, and "Open in Tab" button.
+  - Local images and PDF documents are automatically mapped to local asset URLs and render embedded interactive previews.
+- **Direct Modular CSS Architecture**:
+  - Eliminated Vite PostCSS HMR parser crash (`[postcss] postcss-import: canvas-studio.css: Unexpected }`) by bypassing PostCSS `@import` rules in `canvas.css`.
+  - Directly imported 10 domain stylesheets as native ES modules in React components (`canvas-base.css`, `canvas-studio.css`, `canvas-minimap.css`, `canvas-toolbar.css`, `canvas-nodes.css`, `canvas-connectors.css`, `canvas-drawing.css`, `canvas-modals.css`, `canvas-controls.css`, `canvas-animations.css`).
+- **Interactive Radar MiniMap HUD (`MiniMap.tsx` & `canvas-minimap.css`)**:
+  - Scaled spatial radar rendering an accurate mini-representation of all canvas elements in real time.
+  - Interactive viewport bounding rectangle reflecting current pan and zoom coordinates.
+  - Click-and-drag navigation across the minimap to instantly reposition the main canvas viewport.
+  - Quick zoom controls (+, -, 100% reset) and fit-to-view calculation.

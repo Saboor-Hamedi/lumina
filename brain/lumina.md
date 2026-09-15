@@ -62,6 +62,16 @@ No more flipping between five different programs when you are studying or doing 
 
 ---
 
+### 🗺️ Infinite Spatial Canvas (`.canvas`)
+Step outside linear pages into an open whiteboard for systems, brainstorms, and architecture:
+- **12+ Geometric Shapes:** Rectangles, cylinders for databases, stickmen for actors, clouds for networks, callout bubbles, and decision diamonds with live Markdown typing.
+- **Smart Magnetic Connectors:** Lines that dock automatically to shape contours and route around cards with 90° orthogonal doglegs, Bezier curves, or straight paths.
+- **Headerless Sticky Notes:** Quick, colorful notes with subtle hover controls and fast `Ctrl + Enter` text completion.
+- **Drag-and-Drop Notes & Assets:** Pull notes, PDFs, or images straight from your file list onto the board to build visual topic maps.
+- **Radar MiniMap & Marquee Selection:** Zoom from 10% to 500% with a floating overview radar, or drag a selection box to align and distribute cards in bulk.
+
+---
+
 ### ☁️ One-Click Google Drive Safety
 Never worry about losing your work:
 - Click the discreet **Push** button at the top of your note to safely upload a copy to your personal Google Drive.

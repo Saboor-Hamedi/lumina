@@ -27,11 +27,14 @@
 
 ## 2. Knowledge Graph & Spatial Thinking
 
-### A. Infinite Canvas / Spatial Whiteboard
-- **Visual Node Arrangement**: A boundless 2D canvas where markdown notes can be placed, arranged, linked with arrows, and visually organized.
-- **Card Cards & Live Markdown Previews**: Render note cards with live editable previews on the canvas.
-- **Sticky Thoughts & Media Embeds**: Drop images, colors, sticky notes, and freeform text blocks alongside files.
-- **Format**: Saved as a transparent, human-readable JSON canvas file (e.g. `.canvas` or `.lumina-canvas`), maintaining portability.
+### A. Infinite Canvas / Spatial Whiteboard — Production Delivered (v1.0.62)
+- **Visual Node Arrangement**: A boundless 2D canvas (`.canvas`) where markdown notes, geometric shapes, sticky notes, PDFs, and images are placed, organized, and interconnected.
+- **12+ Scalable Vector Shapes**: Built-in SVG shapes (rectangles, diamonds, cylinders, actor stickmen, clouds, stars, callout bubbles) with real-time centered Markdown editing.
+- **Smart Connection Engine**: Magnetic port snapping with dynamic aspect-ratio-aware sockets, obstacle-avoiding 90° orthogonal dogleg paths, Bezier curves, and customizable terminal markers.
+- **Card Nodes & Markdown Previews**: Render full markdown cards with `MemoizedMarkdownPreview` and "Open in Tab" integration.
+- **Sticky Thoughts & Minimalist Ergonomics**: Headerless sticky notes with soft ambient drop shadows, subtle hover action pills, and `Ctrl + Enter` / `Escape` keyboard shortcuts.
+- **Radar MiniMap & Alignment Toolbar**: Interactive overview radar with draggable viewport box, paired with marquee multi-selection alignment tools.
+- **Format**: Saved as clean, portable, human-readable `.canvas` JSON.
 
 ### B. Graph Clustering & Evolution Timeline
 - **Community Detection**: In-memory Louvain or label propagation algorithms run in `physics.worker.js` to automatically color-code topic clusters without heavy overhead.

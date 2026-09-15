@@ -14,6 +14,7 @@
 import React, { useCallback, useEffect } from 'react'
 import { CanvasNode, CanvasShapeType } from '../types'
 import { normalizeNode } from '../utils/canvasUtils'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import type { ToastType } from '../../../core/notification'
 
 export interface UseCanvasDropOptions {
@@ -42,22 +43,39 @@ export function useCanvasDrop({
    */
   const buildNodeFromSnippet = useCallback(
     (snippet: any, pt: { x: number; y: number }, offset: number = 0): Partial<CanvasNode> => {
-      const title = snippet.title || snippet.name || 'Untitled Note'
-      const content = snippet.content || snippet.text || ''
+      let resolved = snippet
+      const storeSnippets = (useWorkspaceStore as any)?.getState?.()?.snippets || []
+      const foundInStore = storeSnippets.find(
+        (s: any) =>
+          (snippet.id && String(s.id) === String(snippet.id)) ||
+          (snippet.path && s.path === snippet.path) ||
+          (snippet.fileName && s.fileName === snippet.fileName)
+      )
+      if (foundInStore) {
+        resolved = { ...foundInStore, ...snippet }
+      }
+
+      const title = resolved.title || resolved.name || resolved.fileName || 'Untitled Note'
+      const content =
+        resolved.code ||
+        resolved.content ||
+        resolved.body ||
+        resolved.text ||
+        ''
       // Ensure file identifier is never empty for a vault note
-      const file = snippet.id || snippet.path || snippet.file || snippet.fileName || ''
-      const fileName = snippet.fileName || snippet.name || title || ''
-      const isPdf = snippet.type === 'pdf' || /\.pdf$/i.test(fileName)
-      const isImg = snippet.type === 'image' || /\.(png|jpe?g|svg|webp|gif|bmp|ico)$/i.test(fileName)
+      const file = resolved.id || resolved.path || resolved.file || resolved.fileName || ''
+      const fileName = resolved.fileName || resolved.name || title || ''
+      const isPdf = resolved.type === 'pdf' || /\.pdf$/i.test(fileName)
+      const isImg = resolved.type === 'image' || /\.(png|jpe?g|svg|webp|gif|bmp|ico)$/i.test(fileName)
 
       let type: any = 'note'
-      let imageUrl = snippet.imageUrl || snippet.src
+      let imageUrl = resolved.imageUrl || resolved.src
       if (isPdf) {
         type = 'pdf'
       } else if (isImg) {
         type = 'image'
         if (!imageUrl) {
-          imageUrl = snippet.path ? `asset://local/${snippet.path}` : `asset://local/${fileName}`
+          imageUrl = resolved.path ? `asset://local/${resolved.path}` : `asset://local/${fileName}`
         }
       } else {
         // Vault notes dragged from FileExplorer are note cards, not sticky notes
@@ -73,7 +91,7 @@ export function useCanvasDrop({
         x: Math.round(pt.x + offset - 130),
         y: Math.round(pt.y + offset - 70),
         width: isImg ? 280 : 260,
-        height: isImg ? 200 : 140,
+        height: isImg ? 200 : 160,
         color: isPdf ? 'blue' : 'default'
       })
     },

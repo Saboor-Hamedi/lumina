@@ -189,3 +189,35 @@ export const wikilinkCaretFix = EditorView.domEventHandlers({
 2. **Do not use negative `letter-spacing`** on hidden text elements (creates overlapping ghost characters).
 3. **Always prevent default & stop propagation** when custom caret handlers resolve positions for point widgets so CodeMirror's `basicMouseSelection` is bypassed.
 4. **Include the parent `.cm-line` in target matching** to prevent unhandled boundary clicks.
+
+---
+
+# Vite PostCSS HMR Crash (`[postcss] postcss-import: Unexpected }`)
+
+## 1. Symptom & Error Signature
+During Vite hot module replacement (HMR), the dev server suddenly crashes or prints a red overlay in the browser:
+```text
+client:892 [vite] Internal Server Error
+[postcss] postcss-import: B:\electron\lumina\src\renderer\src\features\canvas\css\canvas-studio.css:546:1: Unexpected }
+    at Input.error (
+```
+Refreshing the window makes the error disappear temporarily, but it reoccurs during subsequent edits.
+
+## 2. Root Cause Analysis
+- Monolithic stylesheets that bundle sub-stylesheets via `@import` rules (e.g. `@import './css/canvas-studio.css';`) rely on Vite's `postcss-import` plugin to inline dependencies.
+- When file watchers detect rapid file changes, `postcss-import` can read the target CSS file during a partial flush or race with Vite's cache eviction.
+- The parser encounters an apparent trailing token or mismatched brace at the end of the file, throwing `Unexpected }`.
+
+## 3. Resolution
+- **Bypass `@import` cascades in CSS files.**
+- Instead of using a single `canvas.css` with 10 `@import` rules, import each modular CSS file directly in the React container as standard ES modules:
+  ```typescript
+  import './css/canvas-base.css'
+  import './css/canvas-studio.css'
+  import './css/canvas-minimap.css'
+  import './css/canvas-toolbar.css'
+  import './css/canvas-nodes.css'
+  import './css/canvas-connectors.css'
+  import './css/canvas-drawing.css'
+  ```
+- Vite's native CSS pipeline handles direct `.css` ES imports independently without invoking `postcss-import`, providing rock-solid HMR without caching collisions or false syntax errors.

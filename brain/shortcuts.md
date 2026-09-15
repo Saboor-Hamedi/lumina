@@ -71,5 +71,20 @@ Lumina is designed so you can navigate and write smoothly without your hands eve
 
 ---
 
+## 🗺️ Spatial Canvas Shortcuts
+
+| Shortcut | What It Does |
+| :--- | :--- |
+| `Ctrl + Enter` | **Exit Text Edit Mode** — Commit changes and exit text editing inside shapes or sticky notes |
+| `Escape` | **Cancel / Deselect** — Exit edit mode or deselect active cards and connectors |
+| `Alt + D` | **Duplicate Element** — Duplicate the currently selected card or geometric shape |
+| `Delete` / `Backspace` | **Delete Selection** — Delete selected shapes, cards, or connector lines |
+| `Ctrl + A` | **Select All** — Select all nodes and connectors on the canvas |
+| `Space + Drag` | **Pan Canvas** — Hold Space and drag with the mouse to pan the viewport |
+| `Ctrl + Mouse Wheel` | **Zoom In / Out** — Smoothly zoom canvas view between 10% and 500% |
+| `Shift + Mouse Wheel`| **Pan Horizontally** — Scroll left and right across the canvas plane |
+
+---
+
 > [!TIP]
 > **Helpful Tip for Beginners:** You don't need to memorize all of these! Start with `Ctrl + N` (New Note) and `Ctrl + Space` (Search), and you'll already be flying through Lumina in no time.

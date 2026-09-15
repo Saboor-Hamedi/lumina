@@ -29,8 +29,17 @@ This document outlines the strategic vision and feature scope for the evolution 
 ## 2. Spatial Canvas & Advanced Knowledge Graph
 
 ### 2.1 Infinite 2D Spatial Whiteboard (Canvas Mode)
-* **Concept:** A visual spatial canvas (`.canvas` JSON format) allowing users to escape linear documents and arrange thoughts in 2D space.
-* **Mechanics:** Users can toggle between an infinite 2D zoomable canvas and a rich 3D spatial WebGL environment (`react-force-graph-3d` / Three.js). Nodes use physical materials, dynamic collision physics, and directional particle flow to represent knowledge architecture. Notes can be visually grouped, connected with directional arrows, and edited live.
+* **Status:** Implemented & Production-Ready (v1.0.62 / `src/renderer/src/features/canvas/`).
+* **Delivered Capabilities:**
+  - Full infinite zoomable 2D canvas with pan/zoom (10% to 500%), dot-grid background, smooth momentum, and spacebar panning.
+  - 12+ Vector Geometric Shapes (rectangle, rounded rectangle, diamond, circle, cylinder, document, actor, cloud, triangle, hexagon, star, callout) with double-click Markdown text editing.
+  - Smart Dynamic Ports & Magnetic Snapping: shape-aware connection ports (actor head/hands, cylinder rim, callout tail) with magnetic terminal docking.
+  - Orthogonal 90° Routing with collision avoidance, Bezier curves, and straight paths with custom arrow markers (arrows, diamonds, circles, bars).
+  - Alignment Snapping & Smart Guides: live crosshairs for edge and center alignment during drag and resize.
+  - Box Marquee Selection & Bulk Operations: lasso selection, multi-node translation, bulk delete, color cycling, and floating alignment toolbar.
+  - Radar MiniMap HUD: real-time viewport tracker, click-to-pan, and instant zoom controls.
+  - Minimalist Sticky Notes: headerless cards with soft drop shadows and Ctrl+Enter / Escape shortcuts.
+  - Vault Ingestion: drag-and-drop notes, images, and PDFs from FileExplorer onto the canvas with Markdown AST rendering and "Open in Tab" integration.
 
 ### 2.2 Time-Travel Graph Evolution
 * **Concept:** Watch your intellectual network grow and cluster over time.

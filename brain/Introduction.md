@@ -48,7 +48,12 @@ Your workspace should match how you feel. Choose from over 20 handcrafted dark a
 Check your inbox and reply without context switching. Open your emails directly inside a floating, draggable window via the ActivityBar, compose new messages with file attachments, and attach your current active note as Markdown with a single click.
 
 ### 🎨 Infinite Canvas & Visual Ideation
-Step beyond linear text documents. Click the Canvas icon in the ActivityBar to instantly create and open an infinite visual workspace (`.canvas`) to map ideas, cards, and diagrams.
+Step beyond linear text documents into an infinite spatial whiteboard (`.canvas`):
+- **12+ Geometric Vector Shapes:** Add rectangles, flow diamonds, database cylinders, actor stickmen, cloud networks, stars, and speech callout bubbles with live double-click Markdown text editing.
+- **Smart Magnetic Connectors:** Draw arrows that magnetically dock to shape ports and route neatly around cards with clean 90-degree orthogonal doglegs, smooth curves, or straight lines.
+- **Headerless Sticky Notes:** Capture fleeting thoughts on minimal, soft-shadow sticky notes with rapid `Ctrl + Enter` text completion.
+- **Drag & Drop from File List:** Drag any note, PDF document, or image from your sidebar directly onto the canvas to create interactive preview cards linked to your vault.
+- **Radar MiniMap & Marquee Alignment:** Navigate massive diagrams with an interactive radar minimap, or lasso-select multiple cards to align and distribute them in one click.
 
 ### 💡 Ambient Caps Lock Indicator & Distraction-Free Status Bar
 Never accidentally shout in your notes. Lumina features a subtle, glowing organic blob light centered right in your status bar that illuminates in your accent color when Caps Lock is on—detected immediately from hardware at startup—and disappears the instant it is turned off.

@@ -56,13 +56,16 @@ Lumina already boasts a rich suite of foundational capabilities:
 ## 🚀 Phase 2: Next-Generation Pillar Features
 *Distinctive features that position Lumina as an elite, next-level knowledge workspace.*
 
-### 1. Infinite Visual Canvas (Whiteboard Mode)
-- **What it is:** An infinite 2D canvas workspace (like Obsidian Canvas, Apple Freeform, or Miro).
-- **Capabilities:**
-  - Drag and drop notes, images, PDFs, web links, and sticky notes onto the canvas.
-  - Draw directional connecting arrows with labels to map out complex architectures, storyboards, and research clusters.
-  - Embedded live markdown cards editable directly inside the canvas.
-- **Value:** Unlocks visual thinking and spatial knowledge organization.
+### 1. Infinite Visual Canvas (Whiteboard Mode) — ✅ Implemented (v1.0.62)
+- **What it is:** An infinite 2D spatial canvas workspace integrated directly into Lumina (`.canvas`).
+- **Delivered Capabilities:**
+  - 12+ Vector Geometric Shapes (rectangle, diamond, cylinder/database, actor stickman, cloud, star, callout bubble, etc.) with live Markdown editing.
+  - Smart Dynamic Ports & Magnetic Arrow Snapping with shape-aware port ratios.
+  - Orthogonal 90° Routing with collision avoidance, Bezier curves, and straight paths with customizable arrow caps and stroke patterns.
+  - Drag and drop notes, images, and PDFs from FileExplorer onto the canvas with Markdown AST rendering.
+  - Minimalist sticky notes with subtle hover controls and fast `Ctrl + Enter` text completion.
+  - Floating radar MiniMap HUD and marquee multi-selection alignment toolbar.
+- **Value:** Unlocks visual thinking, architecture mapping, and spatial knowledge organization.
 
 ### 2. Audio Transcription & Voice Memos (Local AI / Whisper)
 - **What it is:** Built-in microphone recording tool in the sidebar or bottom bar.
@@ -92,9 +95,9 @@ Lumina already boasts a rich suite of foundational capabilities:
 
 | Feature | Category | Effort | Impact | Recommended Priority |
 | :--- | :--- | :--- | :--- | :--- |
+| **Infinite Canvas Mode** | Pillar Feature | High | 🚀 Massive | ✅ Shipped (v1.0.62) |
 | **Backlinks & Mentions Panel** | Polish | Medium | 🔥 High | ⭐⭐⭐ Immediate |
 | **`/` Slash Command Menu** | Polish | Medium | 🔥 High | ⭐⭐⭐ Immediate |
 | **Note Version History** | Data Safety | Low-Med | 🔥 High | ⭐⭐ Next |
 | **Image Lightbox** | Polish | Low | Medium | ⭐⭐ Next |
-| **Infinite Canvas Mode** | Pillar Feature | High | 🚀 Massive | ⭐ Future Major Release |
 | **Voice Memos & Transcribe**| AI & Productivity | Medium | 🚀 Massive | ⭐ Future Major Release |
