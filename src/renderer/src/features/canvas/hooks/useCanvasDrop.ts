@@ -12,8 +12,9 @@
  */
 
 import React, { useCallback, useEffect } from 'react'
-import { CanvasNode, CanvasShapeType } from './types'
-import { normalizeNode } from './canvasUtils'
+import { CanvasNode, CanvasShapeType } from '../types'
+import { normalizeNode } from '../utils/canvasUtils'
+import type { ToastType } from '../../../core/notification'
 
 export interface UseCanvasDropOptions {
   containerRef: React.RefObject<HTMLDivElement | null>
@@ -23,7 +24,7 @@ export interface UseCanvasDropOptions {
   snapToGrid: boolean
   setEditingNodeId: (id: string | null) => void
   setEditingField: (field: 'title' | 'text' | null) => void
-  onToast?: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => void
+  onToast?: (message: string, type?: ToastType) => void
 }
 
 export function useCanvasDrop({

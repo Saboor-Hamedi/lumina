@@ -12,8 +12,8 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { CanvasViewport, CanvasNode, CanvasEdge, CanvasData, CanvasNodeColor, CanvasEdgeLineStyle, CanvasEdgeEnd } from './types'
-import { normalizeNode, safeNumber } from './canvasUtils'
+import { CanvasViewport, CanvasNode, CanvasEdge, CanvasData, CanvasNodeColor, CanvasEdgeLineStyle, CanvasEdgeEnd } from '../types'
+import { normalizeNode, safeNumber } from '../utils/canvasUtils'
 
 export interface UseCanvasOptions {
   initialData?: CanvasData
@@ -48,6 +48,60 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   selectedNodeIdsRef.current = selectedNodeIds
   const [isPanning, setIsPanning] = useState(false)
 
+  const nodesRef = useRef<CanvasNode[]>(nodes)
+  nodesRef.current = nodes
+  const edgesRef = useRef<CanvasEdge[]>(edges)
+  edgesRef.current = edges
+
+  // Undo / Redo History Stacks
+  const undoStackRef = useRef<{ nodes: CanvasNode[]; edges: CanvasEdge[] }[]>([])
+  const redoStackRef = useRef<{ nodes: CanvasNode[]; edges: CanvasEdge[] }[]>([])
+  const [, setHistoryCount] = useState(0)
+
+  const pushHistory = useCallback(() => {
+    const snapshot = {
+      nodes: nodesRef.current.map((n) => ({ ...n })),
+      edges: edgesRef.current.map((e) => ({ ...e }))
+    }
+    undoStackRef.current.push(snapshot)
+    if (undoStackRef.current.length > 50) {
+      undoStackRef.current.shift()
+    }
+    redoStackRef.current = []
+    setHistoryCount((c) => c + 1)
+  }, [])
+
+  const undo = useCallback(() => {
+    if (undoStackRef.current.length === 0) return
+    const prevSnapshot = undoStackRef.current.pop()!
+    const currentSnapshot = {
+      nodes: nodesRef.current.map((n) => ({ ...n })),
+      edges: edgesRef.current.map((e) => ({ ...e }))
+    }
+    redoStackRef.current.push(currentSnapshot)
+    setNodes(prevSnapshot.nodes)
+    setEdges(prevSnapshot.edges)
+    setSelectedNodeIds([])
+    setHistoryCount((c) => c + 1)
+  }, [])
+
+  const redo = useCallback(() => {
+    if (redoStackRef.current.length === 0) return
+    const nextSnapshot = redoStackRef.current.pop()!
+    const currentSnapshot = {
+      nodes: nodesRef.current.map((n) => ({ ...n })),
+      edges: edgesRef.current.map((e) => ({ ...e }))
+    }
+    undoStackRef.current.push(currentSnapshot)
+    setNodes(nextSnapshot.nodes)
+    setEdges(nextSnapshot.edges)
+    setSelectedNodeIds([])
+    setHistoryCount((c) => c + 1)
+  }, [])
+
+  const canUndo = undoStackRef.current.length > 0
+  const canRedo = redoStackRef.current.length > 0
+
   const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
   const initialViewportRef = useRef<CanvasViewport>({ x: 0, y: 0, zoom: 1 })
   const isFirstRenderRef = useRef(true)
@@ -67,10 +121,12 @@ export function useCanvas(options: UseCanvasOptions = {}) {
    * Projects screen client coordinates (e.g. mouse event) into canvas coordinate space.
    */
   const screenToCanvas = useCallback(
-    (screenX: number, screenY: number, containerRect: DOMRect) => {
+    (screenX: number, screenY: number, containerRect?: DOMRect | null) => {
       const zoom = viewport.zoom || 1
-      const relX = screenX - containerRect.left
-      const relY = screenY - containerRect.top
+      const left = containerRect ? containerRect.left : 0
+      const top = containerRect ? containerRect.top : 0
+      const relX = screenX - left
+      const relY = screenY - top
       return {
         x: (relX - viewport.x) / zoom,
         y: (relY - viewport.y) / zoom
@@ -144,11 +200,12 @@ export function useCanvas(options: UseCanvasOptions = {}) {
    * Adds a single node to the canvas and selects it.
    */
   const addNode = useCallback((node: Partial<CanvasNode> & { id?: string }) => {
+    pushHistory()
     const newNode = normalizeNode(node)
     setNodes((prev) => [...prev, newNode])
     setSelectedNodeIds([newNode.id])
     return newNode
-  }, [])
+  }, [pushHistory])
 
   /**
    * Batch adds multiple nodes in a single state mutation.
@@ -156,11 +213,12 @@ export function useCanvas(options: UseCanvasOptions = {}) {
    */
   const addNodes = useCallback((nodesList: (Partial<CanvasNode> & { id?: string })[]) => {
     if (!nodesList || nodesList.length === 0) return []
+    pushHistory()
     const normalized = nodesList.map(normalizeNode)
     setNodes((prev) => [...prev, ...normalized])
     setSelectedNodeIds(normalized.map((n) => n.id))
     return normalized
-  }, [])
+  }, [pushHistory])
 
   /**
    * Updates position of a single node (with reference stability check).
@@ -257,10 +315,11 @@ export function useCanvas(options: UseCanvasOptions = {}) {
    * Deletes a node and cleans up any connected edges automatically.
    */
   const deleteNode = useCallback((id: string) => {
+    pushHistory()
     setNodes((prev) => prev.filter((n) => n.id !== id))
     setEdges((prev) => prev.filter((e) => e.fromNode !== id && e.toNode !== id))
     setSelectedNodeIds((prev) => prev.filter((nid) => nid !== id))
-  }, [])
+  }, [pushHistory])
 
   /**
    * Deletes all currently selected nodes (or provided ids) and cleans up connected edges.
@@ -268,11 +327,12 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   const deleteSelected = useCallback((targetIds?: string[]) => {
     const toDelete = targetIds && targetIds.length > 0 ? targetIds : selectedNodeIdsRef.current
     if (!toDelete || toDelete.length === 0) return
+    pushHistory()
     const selectedSet = new Set(toDelete)
     setNodes((prev) => prev.filter((n) => !selectedSet.has(n.id)))
     setEdges((prev) => prev.filter((e) => !selectedSet.has(e.fromNode) && !selectedSet.has(e.toNode)))
     setSelectedNodeIds((prev) => prev.filter((id) => !selectedSet.has(id)))
-  }, [])
+  }, [pushHistory])
 
   /**
    * Duplicates specific nodes with an offset (+32, +32) and clones internal connecting edges.
@@ -281,52 +341,53 @@ export function useCanvas(options: UseCanvasOptions = {}) {
     const toDup = targetIds && targetIds.length > 0 ? targetIds : selectedNodeIdsRef.current
     if (!toDup || toDup.length === 0) return []
 
+    pushHistory()
+
     const dupSet = new Set(toDup)
     const idMap = new Map<string, string>()
-    const duplicatedNodes: CanvasNode[] = []
+    const currentNodes = nodesRef.current
+    const nodesToDuplicate = currentNodes.filter((n) => dupSet.has(n.id))
+    if (nodesToDuplicate.length === 0) return []
 
-    setNodes((prev) => {
-      const existingToDup = prev.filter((n) => dupSet.has(n.id))
-      if (existingToDup.length === 0) return prev
+    const duplicatedNodes: CanvasNode[] = nodesToDuplicate.map((n) => {
+      const newId = `node-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+      idMap.set(n.id, newId)
+      return {
+        ...n,
+        id: newId,
+        x: n.x + 32,
+        y: n.y + 32
+      }
+    })
 
-      existingToDup.forEach((n) => {
-        const newId = `node-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-        idMap.set(n.id, newId)
-        duplicatedNodes.push({
-          ...n,
-          id: newId,
-          x: n.x + 32,
-          y: n.y + 32
+    const currentEdges = edgesRef.current
+    const clonedEdges: CanvasEdge[] = []
+    currentEdges.forEach((e) => {
+      if (idMap.has(e.fromNode) && idMap.has(e.toNode)) {
+        clonedEdges.push({
+          ...e,
+          id: `edge-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          fromNode: idMap.get(e.fromNode)!,
+          toNode: idMap.get(e.toNode)!
         })
-      })
-
-      return [...prev, ...duplicatedNodes]
+      }
     })
 
-    setEdges((prev) => {
-      const clonedEdges: CanvasEdge[] = []
-      prev.forEach((e) => {
-        if (idMap.has(e.fromNode) && idMap.has(e.toNode)) {
-          clonedEdges.push({
-            ...e,
-            id: `edge-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            fromNode: idMap.get(e.fromNode)!,
-            toNode: idMap.get(e.toNode)!
-          })
-        }
-      })
-      return clonedEdges.length > 0 ? [...prev, ...clonedEdges] : prev
-    })
+    setNodes((prev) => [...prev, ...duplicatedNodes])
+    if (clonedEdges.length > 0) {
+      setEdges((prev) => [...prev, ...clonedEdges])
+    }
 
     const newIds = duplicatedNodes.map((n) => n.id)
     setSelectedNodeIds(newIds)
     return newIds
-  }, [])
+  }, [pushHistory])
 
   /**
    * Snaps selected nodes (or all nodes) to the nearest 20px grid.
    */
   const snapNodesToGrid = useCallback((targetIds?: string[]) => {
+    pushHistory()
     setNodes((prev) => {
       const targetSet = targetIds && targetIds.length > 0 ? new Set(targetIds) : null
       return prev.map((n) => {
@@ -345,7 +406,7 @@ export function useCanvas(options: UseCanvasOptions = {}) {
         }
       })
     })
-  }, [])
+  }, [pushHistory])
 
   /**
    * Updates connector line style (curved, step, straight).
@@ -369,8 +430,9 @@ export function useCanvas(options: UseCanvasOptions = {}) {
    * Deletes a single edge by ID.
    */
   const deleteEdge = useCallback((edgeId: string) => {
+    pushHistory()
     setEdges((prev) => prev.filter((e) => e.id !== edgeId))
-  }, [])
+  }, [pushHistory])
 
   /**
    * Updates connector edge text label (for research annotations).
@@ -471,6 +533,11 @@ export function useCanvas(options: UseCanvasOptions = {}) {
     updateEdgeColor,
     deleteEdge,
     updateEdgeLabel,
-    updateEdgeEndpoints
+    updateEdgeEndpoints,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    pushHistory
   }
 }

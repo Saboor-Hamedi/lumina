@@ -1,16 +1,20 @@
 /**
  * ============================================================================
- * Lumina Canvas Edge Routing Engine (canvasRouting.ts)
+ * Lumina Canvas Edge Routing Engine (`utils/canvasRouting.ts`)
  * ============================================================================
  * Generates geometric paths and midpoints for canvas connection wires:
  * - Curved: Smooth cubic Bézier spline with directional port exit/entry vectors.
  * - Step (Orthogonal): Right-angle architectural wiring with chamfered elbow turns.
  * - Straight: Direct line connector.
+ *
+ * Super Smart Dynamic Direction:
+ * Automatically re-routes facing ports in real-time as nodes are translated across
+ * 2D space, eliminating backwards loops and awkward overlaps.
  * ============================================================================
  */
 
-import { CanvasEdgeLineStyle, CanvasEdgeSide, CanvasNode, CanvasShapeType } from './types'
-import { getNodePortCoord, getOptimalEdgePorts, safeNumber } from './canvasUtils'
+import { CanvasEdgeLineStyle, CanvasEdgeSide, CanvasShapeType } from '../types'
+import { getNodePortCoord, getOptimalEdgePorts } from './canvasUtils'
 
 export interface EdgePathResult {
   pathD: string

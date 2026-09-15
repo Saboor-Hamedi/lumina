@@ -17,26 +17,29 @@
  */
 
 import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react'
-import { useCanvas } from './useCanvas'
-import { CanvasData, CanvasNode, CanvasEdgeSide, CanvasShapeType, CanvasNodeColor } from './types'
-import { COLOR_CYCLE, getNodePortCoord } from './canvasUtils'
-import { CanvasEdgesLayer } from './CanvasEdgesLayer'
-import { CanvasNodesLayer } from './CanvasNodesLayer'
-import { ConvasToolBarCenter } from './ConvasToolBarCenter'
-import { ConvasToolBarRight } from './ConvasToolBarRight'
-import { CanvasMiniMap } from './CanvasMiniMap'
+import { useCanvas, useCanvasGestures, useCanvasDrop } from './hooks'
+import { CanvasData, CanvasNode, CanvasEdgeSide, CanvasShapeType, CanvasNodeColor, CanvasEdgeLineStyle } from './types'
 import {
+  COLOR_CYCLE,
+  getNodePortCoord,
   computeAlignedNodePositions,
   computeDistributedNodePositions,
   getSelectionBoundingBox,
   CanvasAlignmentType,
-  CanvasDistributionType
-} from './canvasAlignment'
-import { copyCanvasAsImage, downloadCanvasPng, downloadCanvasSvg } from './canvasExport'
-import { useCanvasGestures } from './useCanvasGestures'
-import { useCanvasDrop } from './useCanvasDrop'
+  CanvasDistributionType,
+  copyCanvasAsImage,
+  downloadCanvasPng,
+  downloadCanvasSvg
+} from './utils'
+import {
+  CanvasEdgesLayer,
+  CanvasNodesLayer,
+  ConvasToolBarCenter,
+  CanvasMiniMap
+} from './components'
+import { ConvasToolBarRight } from './toolbar'
 import { Notification, useToast } from '../../core/notification'
-import './canvas.css'
+import './css/canvas.css'
 
 export interface ConvasContainerProps {
   initialData?: CanvasData
@@ -92,7 +95,12 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     updateEdgeColor,
     deleteEdge,
     updateEdgeLabel,
-    updateEdgeEndpoints
+    updateEdgeEndpoints,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    pushHistory
   } = useCanvas({ initialData, onChange })
 
   // Fast O(1) node lookup map for dynamic edge routing & port queries
@@ -117,6 +125,8 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
       const fromNode = nodeMap.get(fromNodeId)
       const toNode = nodeMap.get(toNodeId)
       if (!fromNode || !toNode || fromNodeId === toNodeId) return
+
+      pushHistory()
 
       let resolvedToSide = toSide
       if (!resolvedToSide) {
@@ -181,6 +191,14 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     [nodeMap, setEdges, defaultLineStyle, defaultEndpoints]
   )
 
+  const handleDeleteEdge = useCallback(
+    (e: React.MouseEvent, edgeId: string) => {
+      e.stopPropagation()
+      deleteEdge(edgeId)
+    },
+    [deleteEdge]
+  )
+
   /**
    * Gesture & Pointer Interactions Engine
    */
@@ -215,7 +233,8 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     completeConnection,
     addNode,
     setEditingNodeId,
-    setEditingField
+    setEditingField,
+    pushHistory
   })
 
   /**
@@ -316,6 +335,25 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         setToolMode('select')
       } else if (e.key === 'h' && !isInputActive && !e.ctrlKey && !e.metaKey) {
         setToolMode('hand')
+      } else if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === 'z' || e.key === 'Z') &&
+        !e.shiftKey &&
+        !isInputActive
+      ) {
+        e.preventDefault()
+        e.stopPropagation()
+        undo()
+        showToast('Undo', 'info')
+      } else if (
+        (((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) ||
+          ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'z' || e.key === 'Z'))) &&
+        !isInputActive
+      ) {
+        e.preventDefault()
+        e.stopPropagation()
+        redo()
+        showToast('Redo', 'info')
       }
     }
 
@@ -343,7 +381,10 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     setConnecting,
     connectingRef,
     setSnappedTarget,
-    snappedTargetRef
+    snappedTargetRef,
+    undo,
+    redo,
+    showToast
   ])
 
   /**
@@ -484,31 +525,42 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     (alignment: CanvasAlignmentType) => {
       const updates = computeAlignedNodePositions(selectedNodes, alignment)
       if (updates.length > 0) {
+        pushHistory()
         updateNodesPositions(updates)
         showToast(`Aligned ${selectedNodes.length} nodes to ${alignment}`, 'info')
       }
     },
-    [selectedNodes, updateNodesPositions, showToast]
+    [selectedNodes, updateNodesPositions, showToast, pushHistory]
   )
 
   const handleDistributeSelection = useCallback(
     (direction: CanvasDistributionType) => {
       const updates = computeDistributedNodePositions(selectedNodes, direction)
       if (updates.length > 0) {
+        pushHistory()
         updateNodesPositions(updates)
         showToast(`Distributed nodes ${direction}ly`, 'info')
       }
     },
-    [selectedNodes, updateNodesPositions, showToast]
+    [selectedNodes, updateNodesPositions, showToast, pushHistory]
   )
 
   const handleCycleSelectionColor = useCallback(() => {
     if (selectedNodes.length === 0) return
+    pushHistory()
     const firstColor = selectedNodes[0].color || 'default'
     const currIdx = COLOR_CYCLE.indexOf(firstColor as any)
     const nextColor = COLOR_CYCLE[(currIdx + 1) % COLOR_CYCLE.length]
+    const selectedSet = new Set(selectedNodes.map((n) => n.id))
     selectedNodes.forEach((n) => updateNodeColor(n.id, nextColor))
-  }, [selectedNodes, updateNodeColor])
+    setEdges((prev) =>
+      prev.map((e) =>
+        selectedSet.has(e.fromNode) || selectedSet.has(e.toNode)
+          ? { ...e, color: nextColor }
+          : e
+      )
+    )
+  }, [selectedNodes, updateNodeColor, setEdges, pushHistory])
 
   const selectedColor = useMemo(() => {
     if (selectedNodes.length > 0) {
@@ -520,21 +572,38 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   const handleUpdateSelectionColor = useCallback(
     (color: CanvasNodeColor) => {
       if (selectedNodes.length > 0) {
+        pushHistory()
+        const selectedSet = new Set(selectedNodes.map((n) => n.id))
         selectedNodes.forEach((n) => updateNodeColor(n.id, color))
+        setEdges((prev) =>
+          prev.map((e) =>
+            selectedSet.has(e.fromNode) || selectedSet.has(e.toNode)
+              ? { ...e, color }
+              : e
+          )
+        )
       }
     },
-    [selectedNodes, updateNodeColor]
+    [selectedNodes, updateNodeColor, setEdges, pushHistory]
   )
 
   const handleCycleColor = useCallback(
     (id: string) => {
       const node = nodeMap.get(id)
       if (!node) return
+      pushHistory()
       const currIdx = COLOR_CYCLE.indexOf((node.color || 'default') as any)
       const nextColor = COLOR_CYCLE[(currIdx + 1) % COLOR_CYCLE.length]
       updateNodeColor(id, nextColor)
+      setEdges((prev) =>
+        prev.map((e) =>
+          e.fromNode === id || e.toNode === id
+            ? { ...e, color: nextColor }
+            : e
+        )
+      )
     },
-    [nodeMap, updateNodeColor]
+    [nodeMap, updateNodeColor, setEdges, pushHistory]
   )
 
   /**
@@ -638,7 +707,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           connecting={connecting}
           snappedTarget={snappedTarget}
           mouseCanvasPos={mouseCanvasPos}
-          onDeleteEdge={deleteEdge}
+          onDeleteEdge={handleDeleteEdge}
           onUpdateEdgeLineStyle={updateEdgeLineStyle}
           onUpdateEdgeLabel={updateEdgeLabel}
           onUpdateEdgeEndpoints={updateEdgeEndpoints}
@@ -729,6 +798,10 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         onChangeDefaultEndpoints={setDefaultEndpoints}
         onAlignSelection={handleAlignSelection}
         onDistributeSelection={handleDistributeSelection}
+        onUndo={undo}
+        canUndo={canUndo}
+        onRedo={redo}
+        canRedo={canRedo}
       />
 
       {/* Layer 5: Mini-Map Navigator */}

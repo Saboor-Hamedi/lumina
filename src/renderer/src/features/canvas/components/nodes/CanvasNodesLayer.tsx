@@ -8,10 +8,10 @@
  */
 
 import React from 'react'
-import { CanvasNode, CanvasNodeColor } from './types'
+import { CanvasNode, CanvasNodeColor } from '../../types'
 import { CanvasNodeCard } from './CanvasNodeCard'
-import { CanvasSelectionToolbar } from './CanvasSelectionToolbar'
-import { CanvasAlignmentType, CanvasDistributionType } from './canvasAlignment'
+import { CanvasSelectionToolbar } from '../controls/CanvasSelectionToolbar'
+import { CanvasAlignmentType, CanvasDistributionType } from '../../utils/canvasAlignment'
 
 export interface CanvasNodesLayerProps {
   nodes: CanvasNode[]

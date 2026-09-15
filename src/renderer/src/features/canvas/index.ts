@@ -7,19 +7,16 @@
  * ============================================================================
  */
 
+// Modular submodules
 export * from './types'
-export * from './useCanvas'
+export * from './hooks'
+export * from './utils'
+export * from './components'
+export * from './toolbar'
+
+// Root-level containers & views
 export * from './ConvasContainer'
 export * from './CanvasView'
 export * from './CanvasTabPane'
-export * from './CanvasNodeCard'
-export * from './CanvasEdgeItem'
-export * from './CanvasImagePreview'
-export * from './ConvasToolBarCenter'
-export * from './ConvasToolBarRight'
-export * from './ConvasShapes'
-export * from './canvasUtils'
 export * from './CanvasDrawerModal'
-export * from './canvasAlignment'
-export * from './CanvasSelectionToolbar'
-export * from './toolbar'
+

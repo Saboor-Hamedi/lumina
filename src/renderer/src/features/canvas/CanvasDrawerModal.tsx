@@ -21,7 +21,7 @@ import {
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { CanvasTabPane } from './CanvasTabPane'
 import ToolTip from '../../components/atoms/ToolTip'
-import './canvas.css'
+import './css/canvas.css'
 
 export interface CanvasDrawerModalProps {
   isOpen?: boolean
@@ -41,7 +41,7 @@ export const CanvasDrawerModal: React.FC<CanvasDrawerModalProps> = () => {
   // Filter all canvas snippets in the workspace vault
   const canvasSnippets = useMemo(() => {
     return snippets.filter(
-      (s) =>
+      (s: any) =>
         s.type === 'canvas' ||
         s.language === 'canvas' ||
         s.fileName?.endsWith('.canvas')
@@ -51,7 +51,7 @@ export const CanvasDrawerModal: React.FC<CanvasDrawerModalProps> = () => {
   // Determine current active canvas snippet
   const currentSnippet = useMemo(() => {
     if (activeSnippetId) {
-      const found = canvasSnippets.find((s) => s.id === activeSnippetId)
+      const found = canvasSnippets.find((s: any) => s.id === activeSnippetId)
       if (found) return found
     }
     // Fall back to selected snippet if it is a canvas
@@ -220,7 +220,7 @@ export const CanvasDrawerModal: React.FC<CanvasDrawerModalProps> = () => {
                 </div>
 
                 <div className="canvas-drawer-picker-list">
-                  {canvasSnippets.map((cs) => (
+                  {canvasSnippets.map((cs: any) => (
                     <button
                       key={cs.id}
                       type="button"

@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * Lumina Canvas Studio & Right Toolbar Container (ConvasToolBarRight.tsx)
+ * Lumina Canvas Studio & Right Toolbar Container (toolbar/ConvasToolBarRight.tsx)
  * ============================================================================
  * Dual-mode right-side canvas control center container:
  *
@@ -9,7 +9,7 @@
  *    - Slender vertical dock anchored on the right edge with fast-action tools.
  *
  * 2. EXPANDED CANVAS STUDIO MODE (Expanded):
- *    - 290px control studio container orchestrating modular subcomponents:
+ *    - 300px full-height control studio container orchestrating modular subcomponents:
  *        📐 StudioHeader: title, count badge, drawer & collapse actions
  *        🗂️ StudioTabsBar: segmented navigation (Shapes, Wires, Layout, Export)
  *        🎨 StudioShapesTab: 22 geometric shapes, color swatches & search
@@ -22,17 +22,17 @@
 import React, { useState, useMemo, useCallback } from 'react'
 import {
   StudioTab,
-  ConvasToolBarRightProps,
-  StudioHeader,
-  StudioTabsBar,
-  StudioShapesTab,
-  StudioWiresTab,
-  StudioLayoutTab,
-  StudioExportTab,
-  SlimCanvasDock
-} from './toolbar'
+  ConvasToolBarRightProps
+} from './types'
+import { StudioHeader } from './StudioHeader'
+import { StudioTabsBar } from './StudioTabsBar'
+import { StudioShapesTab } from './StudioShapesTab'
+import { StudioWiresTab } from './StudioWiresTab'
+import { StudioLayoutTab } from './StudioLayoutTab'
+import { StudioExportTab } from './StudioExportTab'
+import { SlimCanvasDock } from './SlimCanvasDock'
 
-export * from './toolbar/types'
+export * from './types'
 
 export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
   ({
@@ -65,7 +65,11 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     defaultEndpoints = 'directed',
     onChangeDefaultEndpoints,
     onAlignSelection,
-    onDistributeSelection
+    onDistributeSelection,
+    onUndo,
+    canUndo,
+    onRedo,
+    canRedo
   }) => {
     // Persistent expansion state
     const [isExpanded, setIsExpanded] = useState(() => {
@@ -130,6 +134,10 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
             cardCount={nodes.length}
             onOpenDrawer={onOpenDrawer}
             onCollapse={toggleExpanded}
+            onUndo={onUndo}
+            canUndo={canUndo}
+            onRedo={onRedo}
+            canRedo={canRedo}
           />
 
           {/* Segmented Navigation Bar */}
@@ -202,6 +210,10 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
         onDeleteSelected={onDeleteSelected}
         canDelete={canDelete}
         onToggleExpand={toggleExpanded}
+        onUndo={onUndo}
+        canUndo={canUndo}
+        onRedo={onRedo}
+        canRedo={canRedo}
         onAddShape={onAddShape}
         onCopyImage={onCopyImage}
         onExportPNG={onExportPNG}

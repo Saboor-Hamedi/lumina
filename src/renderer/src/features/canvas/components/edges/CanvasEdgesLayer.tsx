@@ -11,10 +11,10 @@
  */
 
 import React, { useMemo } from 'react'
-import { CanvasEdge, CanvasEdgeEnd, CanvasEdgeLineStyle, CanvasNode, CanvasNodeColor } from './types'
-import { CANVAS_NODE_COLOR_HEX, COLOR_CYCLE, getDragBezierCurve, SnappedPortTarget } from './canvasUtils'
+import { CanvasEdge, CanvasEdgeEnd, CanvasEdgeLineStyle, CanvasNode, CanvasNodeColor } from '../../types'
+import { CANVAS_NODE_COLOR_HEX, COLOR_CYCLE, getDragBezierCurve, SnappedPortTarget } from '../../utils/canvasUtils'
 import { CanvasEdgeItem } from './CanvasEdgeItem'
-import { ConnectingState } from './useCanvasGestures'
+import { ConnectingState } from '../../hooks/useCanvasGestures'
 
 export interface CanvasEdgesLayerProps {
   edges: CanvasEdge[]

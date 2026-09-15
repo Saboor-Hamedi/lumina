@@ -6,7 +6,7 @@ import {
   getDragBezierCurve,
   COLOR_CYCLE,
   CANVAS_NODE_COLOR_HEX
-} from '../../../../../src/renderer/src/features/canvas/canvasUtils'
+} from '../../../../../src/renderer/src/features/canvas/utils'
 import { CanvasNode } from '../../../../../src/renderer/src/features/canvas/types'
 
 describe('canvasUtils - Magnetic Proximity & Colors', () => {

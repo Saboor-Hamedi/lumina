@@ -5,7 +5,7 @@ import {
   CanvasNode,
   CanvasEdge
 } from '../types'
-import { CanvasAlignmentType, CanvasDistributionType } from '../canvasAlignment'
+import { CanvasAlignmentType, CanvasDistributionType } from '../utils/canvasAlignment'
 
 export type StudioTab = 'shapes' | 'connectors' | 'grid' | 'export'
 
@@ -54,4 +54,8 @@ export interface ConvasToolBarRightProps {
   onChangeDefaultEndpoints?: (mode: 'directed' | 'bidirectional' | 'none') => void
   onAlignSelection?: (alignment: CanvasAlignmentType) => void
   onDistributeSelection?: (direction: CanvasDistributionType) => void
+  onUndo?: () => void
+  canUndo?: boolean
+  onRedo?: () => void
+  canRedo?: boolean
 }

@@ -1,15 +1,19 @@
 import React from 'react'
-import { SlidersHorizontal, PanelBottomOpen, PanelRightClose } from 'lucide-react'
+import { SlidersHorizontal, PanelBottomOpen, PanelRightClose, Undo2, Redo2 } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 
 export interface StudioHeaderProps {
   cardCount: number
   onOpenDrawer?: () => void
   onCollapse: () => void
+  onUndo?: () => void
+  canUndo?: boolean
+  onRedo?: () => void
+  canRedo?: boolean
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = React.memo(
-  ({ cardCount, onOpenDrawer, onCollapse }) => {
+  ({ cardCount, onOpenDrawer, onCollapse, onUndo, canUndo, onRedo, canRedo }) => {
     return (
       <div className="lumina-canvas-studio-header">
         <div className="lumina-canvas-studio-title-group">
@@ -19,6 +23,34 @@ export const StudioHeader: React.FC<StudioHeaderProps> = React.memo(
         </div>
 
         <div className="lumina-canvas-studio-actions">
+          {onUndo && (
+            <ToolTip text="Undo (Ctrl+Z)" position="bottom">
+              <button
+                type="button"
+                className="lumina-canvas-studio-header-btn"
+                onClick={onUndo}
+                disabled={!canUndo}
+                aria-label="Undo"
+              >
+                <Undo2 size={13} />
+              </button>
+            </ToolTip>
+          )}
+
+          {onRedo && (
+            <ToolTip text="Redo (Ctrl+Y)" position="bottom">
+              <button
+                type="button"
+                className="lumina-canvas-studio-header-btn"
+                onClick={onRedo}
+                disabled={!canRedo}
+                aria-label="Redo"
+              >
+                <Redo2 size={13} />
+              </button>
+            </ToolTip>
+          )}
+
           {onOpenDrawer && (
             <ToolTip text="Open in Drawer" position="bottom">
               <button

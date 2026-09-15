@@ -12,8 +12,8 @@
 
 import React, { useState } from 'react'
 import { MousePointer, Hand, StickyNote, Shapes } from 'lucide-react'
-import ToolTip from '../../components/atoms/ToolTip'
-import { CanvasShapeType, CanvasNodeColor } from './types'
+import ToolTip from '../../../../components/atoms/ToolTip'
+import { CanvasShapeType, CanvasNodeColor } from '../../types'
 import ConvasShapes from './ConvasShapes'
 
 export interface ConvasToolBarCenterProps {

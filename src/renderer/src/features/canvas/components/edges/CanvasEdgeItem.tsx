@@ -22,9 +22,9 @@
  */
 
 import React, { useMemo, useState, useEffect, useRef } from 'react'
-import { CanvasEdge, CanvasEdgeEnd, CanvasEdgeLineStyle, CanvasNode, CanvasNodeColor } from './types'
-import { calculateEdgePath } from './canvasRouting'
-import { COLOR_CYCLE } from './canvasUtils'
+import { CanvasEdge, CanvasEdgeEnd, CanvasEdgeLineStyle, CanvasNode, CanvasNodeColor } from '../../types'
+import { calculateEdgePath } from '../../utils/canvasRouting'
+import { COLOR_CYCLE } from '../../utils/canvasUtils'
 import {
   Spline,
   CornerDownRight,
@@ -64,10 +64,12 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
     const [isHovered, setIsHovered] = useState(false)
     const hoverTimerRef = useRef<number | null>(null)
     const labelInputRef = useRef<HTMLInputElement | null>(null)
+    const isEscapedRef = useRef(false)
 
     // Ensure focus and handle Escape or outside clicks cleanly
     useEffect(() => {
       if (!isEditingLabel) return
+      isEscapedRef.current = false
 
       // Explicitly focus and select input inside SVG foreignObject
       requestAnimationFrame(() => {
@@ -79,6 +81,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
         if (e.key === 'Escape') {
           e.stopPropagation()
           e.preventDefault()
+          isEscapedRef.current = true
           setIsEditingLabel(false)
         }
       }
@@ -260,7 +263,9 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
               defaultValue={edge.label || ''}
               placeholder="Label relationship..."
               onBlur={(e) => {
-                onUpdateLabel?.(edge.id, e.target.value.trim())
+                if (!isEscapedRef.current) {
+                  onUpdateLabel?.(edge.id, e.target.value.trim())
+                }
                 setIsEditingLabel(false)
               }}
               onKeyDown={(e) => {
@@ -272,6 +277,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
                 } else if (e.key === 'Escape') {
                   e.stopPropagation()
                   e.preventDefault()
+                  isEscapedRef.current = true
                   setIsEditingLabel(false)
                 }
               }}

@@ -17,7 +17,7 @@
 
 import React, { useRef, useEffect, useState } from 'react'
 import { Palette } from 'lucide-react'
-import { CanvasShapeType, CanvasNodeColor } from './types'
+import { CanvasShapeType, CanvasNodeColor } from '../../types'
 
 export interface ShapeDefinition {
   id: CanvasShapeType
@@ -53,14 +53,15 @@ export const CANVAS_SHAPES: ShapeDefinition[] = [
 ]
 
 export const SHAPE_COLOR_OPTIONS: { id: CanvasNodeColor; label: string; hex: string }[] = [
-  { id: 'default', label: 'Default Accent', hex: 'var(--text-accent, #38bdf8)' },
-  { id: 'yellow', label: 'Yellow', hex: '#facc15' },
-  { id: 'blue', label: 'Blue', hex: '#60a5fa' },
-  { id: 'green', label: 'Green', hex: '#4ade80' },
-  { id: 'purple', label: 'Purple', hex: '#c084fc' },
-  { id: 'red', label: 'Red', hex: '#f87171' },
-  { id: 'orange', label: 'Orange', hex: '#fb923c' },
-  { id: 'cyan', label: 'Cyan', hex: '#22d3ee' }
+  { id: 'default', label: 'Default Accent', hex: '#38bdf8' },
+  { id: 'yellow', label: 'Yellow', hex: '#eab308' },
+  { id: 'blue', label: 'Blue', hex: '#3b82f6' },
+  { id: 'green', label: 'Green', hex: '#22c55e' },
+  { id: 'purple', label: 'Purple', hex: '#a855f7' },
+  { id: 'pink', label: 'Pink', hex: '#ec4899' },
+  { id: 'cyan', label: 'Cyan', hex: '#06b6d4' },
+  { id: 'orange', label: 'Orange', hex: '#f97316' },
+  { id: 'red', label: 'Red', hex: '#ef4444' }
 ]
 
 /**

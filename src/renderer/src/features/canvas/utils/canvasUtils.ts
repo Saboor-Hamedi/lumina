@@ -7,7 +7,7 @@
  * ============================================================================
  */
 
-import { CanvasEdgeSide, CanvasNode, CanvasNodeColor, CanvasShapeType } from './types'
+import { CanvasEdgeSide, CanvasNode, CanvasNodeColor, CanvasShapeType } from '../types'
 
 /**
  * Standard palette color cycle for sticky notes and canvas cards.
@@ -15,9 +15,11 @@ import { CanvasEdgeSide, CanvasNode, CanvasNodeColor, CanvasShapeType } from './
 export const COLOR_CYCLE: CanvasNodeColor[] = [
   'default',
   'yellow',
-  'purple',
-  'cyan',
+  'blue',
   'green',
+  'purple',
+  'pink',
+  'cyan',
   'orange',
   'red'
 ]
@@ -28,9 +30,11 @@ export const COLOR_CYCLE: CanvasNodeColor[] = [
 export const CANVAS_NODE_COLOR_HEX: Record<CanvasNodeColor, string> = {
   default: '#38bdf8',
   yellow: '#eab308',
-  purple: '#a855f7',
-  cyan: '#06b6d4',
+  blue: '#3b82f6',
   green: '#22c55e',
+  purple: '#a855f7',
+  pink: '#ec4899',
+  cyan: '#06b6d4',
   orange: '#f97316',
   red: '#ef4444'
 }
@@ -283,8 +287,9 @@ export function getNodePortCoord(
   const w = Math.max(safeNumber(node.width, 140), 30)
   const h = Math.max(safeNumber(node.height, 100), 30)
 
-  if (node.type === 'shape' && node.shape) {
-    const ratio = getShapePortRatio(node.shape, side)
+  const resolvedShape = node.shape || (node as any).shapeType || (node.type === 'shape' ? 'rectangle' : undefined)
+  if (resolvedShape) {
+    const ratio = getShapePortRatio(resolvedShape, side)
     return {
       x: x + w * ratio.rx,
       y: y + h * ratio.ry

@@ -13,7 +13,9 @@ import {
   Camera,
   Copy,
   Download,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Undo2,
+  Redo2
 } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { CanvasShapeType, CanvasNodeColor } from '../types'
@@ -27,6 +29,10 @@ export interface SlimCanvasDockProps {
   onDeleteSelected: () => void
   canDelete: boolean
   onToggleExpand: () => void
+  onUndo?: () => void
+  canUndo?: boolean
+  onRedo?: () => void
+  canRedo?: boolean
   onAddShape?: (
     shapeType: CanvasShapeType,
     width: number,
@@ -54,6 +60,10 @@ export const SlimCanvasDock: React.FC<SlimCanvasDockProps> = React.memo(
     onDeleteSelected,
     canDelete,
     onToggleExpand,
+    onUndo,
+    canUndo,
+    onRedo,
+    canRedo,
     onAddShape,
     onCopyImage,
     onExportPNG,
@@ -183,6 +193,38 @@ export const SlimCanvasDock: React.FC<SlimCanvasDockProps> = React.memo(
             <div className="lumina-canvas-divider horizontal" />
           </>
         )}
+
+        {/* Undo Tool */}
+        {onUndo && (
+          <ToolTip text="Undo (Ctrl+Z)" position="left">
+            <button
+              type="button"
+              className="lumina-canvas-tool-btn"
+              onClick={onUndo}
+              disabled={!canUndo}
+              aria-label="Undo"
+            >
+              <Undo2 size={13} />
+            </button>
+          </ToolTip>
+        )}
+
+        {/* Redo Tool */}
+        {onRedo && (
+          <ToolTip text="Redo (Ctrl+Y)" position="left">
+            <button
+              type="button"
+              className="lumina-canvas-tool-btn"
+              onClick={onRedo}
+              disabled={!canRedo}
+              aria-label="Redo"
+            >
+              <Redo2 size={13} />
+            </button>
+          </ToolTip>
+        )}
+
+        {(onUndo || onRedo) && <div className="lumina-canvas-divider horizontal" />}
 
         {/* Delete Selected Tool */}
         <ToolTip text="Delete Selected (Del)" position="left">

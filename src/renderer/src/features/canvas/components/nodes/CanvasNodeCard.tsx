@@ -17,12 +17,12 @@ import React, { useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ExternalLink, Palette, X, FileText, Copy } from 'lucide-react'
-import { CanvasNode, CanvasEdgeSide } from './types'
-import { stripFrontmatter, getShapePortRatio } from './canvasUtils'
+import { CanvasNode, CanvasEdgeSide } from '../../types'
+import { stripFrontmatter, getShapePortRatio } from '../../utils/canvasUtils'
 import { CanvasImagePreview } from './CanvasImagePreview'
-import { renderShapeSVG } from './ConvasShapes'
-import { useVaultStore } from '../../core/store/workspaceStore'
-import ToolTip from '../../components/atoms/ToolTip'
+import { renderShapeSVG } from '../controls/ConvasShapes'
+import { useVaultStore } from '../../../../core/store/workspaceStore'
+import ToolTip from '../../../../components/atoms/ToolTip'
 
 /**
  * Isolated memoized preview for markdown notes.
@@ -80,11 +80,13 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
     onDeleteNode
   }) => {
     const nodeColorClass = node.color ? `color-${node.color}` : 'color-default'
+    const resolvedShape = node.shape || (node as any).shapeType || (node.type === 'shape' ? 'rectangle' : undefined)
+    const isShapeNode = node.type === 'shape' || !!resolvedShape
 
     return (
       <div
         data-node-id={node.id}
-        className={`lumina-canvas-node ${nodeColorClass} ${node.type === 'shape' ? `is-shape shape-${node.shape || 'rectangle'}` : ''} ${isSelected ? 'selected' : ''}`}
+        className={`lumina-canvas-node ${nodeColorClass} ${isShapeNode ? `is-shape shape-${resolvedShape || 'rectangle'}` : ''} ${isSelected ? 'selected' : ''}`}
         style={{
           left: `${node.x}px`,
           top: `${node.y}px`,
@@ -95,11 +97,10 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
       >
         {/* Connection Ports (Knobs appearing on hover for drag/click linking & magnetic socket docking) */}
         {(() => {
-          const isShape = node.type === 'shape' && node.shape
-          const topRatio = isShape ? getShapePortRatio(node.shape, 'top') : null
-          const rightRatio = isShape ? getShapePortRatio(node.shape, 'right') : null
-          const bottomRatio = isShape ? getShapePortRatio(node.shape, 'bottom') : null
-          const leftRatio = isShape ? getShapePortRatio(node.shape, 'left') : null
+          const topRatio = isShapeNode && resolvedShape ? getShapePortRatio(resolvedShape, 'top') : null
+          const rightRatio = isShapeNode && resolvedShape ? getShapePortRatio(resolvedShape, 'right') : null
+          const bottomRatio = isShapeNode && resolvedShape ? getShapePortRatio(resolvedShape, 'bottom') : null
+          const leftRatio = isShapeNode && resolvedShape ? getShapePortRatio(resolvedShape, 'left') : null
 
           return (
             <>
@@ -144,7 +145,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
         })()}
 
         {/* Shape Mode: Vector Graphic Background & Centered Content */}
-        {node.type === 'shape' ? (
+        {isShapeNode ? (
           <>
             <svg
               className="lumina-canvas-shape-svg"
@@ -152,13 +153,13 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
               width="100%"
               height="100%"
               preserveAspectRatio={
-                node.shape === 'actor' || node.shape === 'circle'
+                resolvedShape === 'actor' || resolvedShape === 'circle'
                   ? 'xMidYMid meet'
                   : 'none'
               }
             >
               {renderShapeSVG(
-                node.shape || 'rectangle',
+                resolvedShape || 'rectangle',
                 'var(--node-accent, var(--text-accent, #38bdf8))',
                 'var(--node-accent, var(--text-accent, #38bdf8))',
                 0.04,

@@ -1,18 +1,19 @@
 /**
  * ============================================================================
- * Lumina Canvas Alignment & Distribution Engine (canvasAlignment.ts)
+ * Lumina Canvas Alignment & Distribution Engine (`utils/canvasAlignment.ts`)
  * ============================================================================
- * Pure mathematical functions for aligning and distributing canvas nodes.
+ * Pure mathematical algorithms for aligning and distributing canvas cards:
  *
  * Capabilities:
  * - Align Left, Center (Horizontal), Right
  * - Align Top, Middle (Vertical), Bottom
- * - Distribute Horizontally (equal gap between nodes)
- * - Distribute Vertically (equal gap between nodes)
+ * - Distribute Horizontally (equal spatial gap between nodes)
+ * - Distribute Vertically (equal spatial gap between nodes)
+ * - Collective multi-node selection bounding box calculation
  * ============================================================================
  */
 
-import { CanvasNode } from './types'
+import { CanvasNode } from '../types'
 
 export type CanvasAlignmentType =
   | 'left'
@@ -33,9 +34,6 @@ export interface NodePositionUpdate {
 /**
  * Aligns selected nodes along a specified edge or center line based on their collective bounding box.
  * Returns updated positions for selected nodes, preserving unselected nodes.
- * Supports both signatures:
- * - computeAlignedNodePositions(selectedNodes, alignment)
- * - computeAlignedNodePositions(nodes, selectedIds, alignment)
  */
 export function computeAlignedNodePositions(
   nodes: CanvasNode[],
@@ -135,9 +133,6 @@ export function computeAlignedNodePositions(
 /**
  * Distributes nodes evenly along horizontal or vertical axes.
  * Requires at least 3 nodes to distribute spacing between outer-most anchors.
- * Supports both signatures:
- * - computeDistributedNodePositions(selectedNodes, direction)
- * - computeDistributedNodePositions(nodes, selectedIds, direction)
  */
 export function computeDistributedNodePositions(
   nodes: CanvasNode[],

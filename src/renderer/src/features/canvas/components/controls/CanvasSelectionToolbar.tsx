@@ -25,8 +25,8 @@ import {
   Trash2,
   Grid
 } from 'lucide-react'
-import ToolTip from '../../components/atoms/ToolTip'
-import { CanvasAlignmentType, CanvasDistributionType } from './canvasAlignment'
+import ToolTip from '../../../../components/atoms/ToolTip'
+import { CanvasAlignmentType, CanvasDistributionType } from '../../utils/canvasAlignment'
 
 export interface CanvasSelectionToolbarProps {
   selectionBox: { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number }

@@ -11,8 +11,8 @@
  */
 
 import React, { useMemo, useRef, useState, useCallback } from 'react'
-import { CanvasNode, CanvasViewport } from './types'
-import { CANVAS_NODE_COLOR_HEX } from './canvasUtils'
+import { CanvasNode, CanvasViewport } from '../../types'
+import { CANVAS_NODE_COLOR_HEX } from '../../utils/canvasUtils'
 import { ChevronDown, ChevronUp, MapPin } from 'lucide-react'
 
 export interface CanvasMiniMapProps {

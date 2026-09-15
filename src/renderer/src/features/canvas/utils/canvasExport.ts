@@ -12,7 +12,7 @@
  * ============================================================================
  */
 
-import { CanvasNode, CanvasEdge, CanvasNodeColor } from './types'
+import { CanvasNode, CanvasEdge, CanvasNodeColor } from '../types'
 import {
   CANVAS_NODE_COLOR_HEX,
   safeNumber
@@ -120,7 +120,7 @@ function getShapeSvgMarkup(
       break
   }
 
-  const aspect = shapeType === 'actor' || shapeType === 'circle' ? 'xMidYMid meet' : 'none'
+  const aspect = shape === 'actor' || shape === 'circle' ? 'xMidYMid meet' : 'none'
   return `
     <svg x="0" y="0" width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="${aspect}">
       ${shapeContent}

@@ -17,12 +17,12 @@ import {
   CanvasNode,
   CanvasEdgeSide,
   CanvasViewport
-} from './types'
+} from '../types'
 import {
   findClosestPort,
   SnappedPortTarget,
   getNodePortCoord
-} from './canvasUtils'
+} from '../utils/canvasUtils'
 
 export interface ConnectingState {
   fromNodeId: string
@@ -67,6 +67,7 @@ export interface UseCanvasGesturesOptions {
   addNode: (node: Partial<CanvasNode> & { id?: string }) => CanvasNode
   setEditingNodeId: (id: string | null) => void
   setEditingField: (field: 'title' | 'text' | null) => void
+  pushHistory?: () => void
 }
 
 export function useCanvasGestures({
@@ -87,7 +88,8 @@ export function useCanvasGestures({
   completeConnection,
   addNode,
   setEditingNodeId,
-  setEditingField
+  setEditingField,
+  pushHistory
 }: UseCanvasGesturesOptions) {
   // Wire connecting states
   const [connecting, setConnecting] = useState<ConnectingState | null>(null)
@@ -103,6 +105,8 @@ export function useCanvasGestures({
   const panPrevRef = useRef({ x: 0, y: 0 })
   const draggingNodeRef = useRef<DraggingNodeInfo | null>(null)
   const resizingNodeRef = useRef<ResizingNodeInfo | null>(null)
+  const hasPushedDragHistoryRef = useRef(false)
+  const hasPushedResizeHistoryRef = useRef(false)
   const rafIdRef = useRef<number | null>(null)
 
   // Synchronous state ref for window event listeners
@@ -329,6 +333,10 @@ export function useCanvasGestures({
 
         // 2. Card / Shape resizing
         if (resizingNodeRef.current) {
+          if (!hasPushedResizeHistoryRef.current) {
+            pushHistory?.()
+            hasPushedResizeHistoryRef.current = true
+          }
           const dx = (e.clientX - resizingNodeRef.current.startX) / currentZoom
           const dy = (e.clientY - resizingNodeRef.current.startY) / currentZoom
           const initialW = resizingNodeRef.current.initialW
@@ -363,6 +371,10 @@ export function useCanvasGestures({
           panBy(dx, dy)
         } else if (draggingNodeRef.current) {
           // 4. Node dragging
+          if (!hasPushedDragHistoryRef.current) {
+            pushHistory?.()
+            hasPushedDragHistoryRef.current = true
+          }
           const dx = (e.clientX - draggingNodeRef.current.startX) / currentZoom
           const dy = (e.clientY - draggingNodeRef.current.startY) / currentZoom
           const shouldSnap = stateRef.current.snapToGrid
@@ -512,6 +524,8 @@ export function useCanvasGestures({
       if (resizingNodeRef.current) {
         resizingNodeRef.current = null
       }
+      hasPushedDragHistoryRef.current = false
+      hasPushedResizeHistoryRef.current = false
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {

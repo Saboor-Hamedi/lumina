@@ -1,6 +1,7 @@
-import React from 'react'
-import { Copy, Image as ImageIcon, Download } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import { Copy, Image as ImageIcon, Download, Share2, Sparkles } from 'lucide-react'
 import { StudioStats } from './types'
+import { StudioDropdown, StudioDropdownOption } from './StudioDropdown'
 
 export interface StudioExportTabProps {
   onCopyImage?: () => void
@@ -11,6 +12,31 @@ export interface StudioExportTabProps {
   stats: StudioStats
 }
 
+type ExportActionId = 'copy' | 'png' | 'svg'
+
+const EXPORT_OPTIONS: StudioDropdownOption<ExportActionId>[] = [
+  {
+    id: 'copy',
+    label: 'Copy Image to Clipboard',
+    icon: <Copy size={13} />,
+    description: 'Instant bitmap copy ready to paste'
+  },
+  {
+    id: 'png',
+    label: 'Export as High-Res PNG',
+    icon: <ImageIcon size={13} />,
+    badge: 'Raster',
+    description: 'High-DPI transparent bitmap'
+  },
+  {
+    id: 'svg',
+    label: 'Export as Vector SVG',
+    icon: <Download size={13} />,
+    badge: 'Vector',
+    description: 'Infinitely scalable graphics'
+  }
+]
+
 export const StudioExportTab: React.FC<StudioExportTabProps> = React.memo(
   ({
     onCopyImage,
@@ -20,6 +46,18 @@ export const StudioExportTab: React.FC<StudioExportTabProps> = React.memo(
     selectedCount = 0,
     stats
   }) => {
+    const [selectedAction, setSelectedAction] = useState<ExportActionId>('png')
+
+    const handleExecuteExport = () => {
+      if (selectedAction === 'copy') {
+        onCopyImage?.()
+      } else if (selectedAction === 'png') {
+        onExportPNG?.()
+      } else if (selectedAction === 'svg') {
+        onExportSVG?.()
+      }
+    }
+
     return (
       <div className="lumina-canvas-studio-tab-pane">
         <div className="studio-section-banner">
@@ -27,8 +65,42 @@ export const StudioExportTab: React.FC<StudioExportTabProps> = React.memo(
           <span className="banner-sub">Capture, export and inspect diagram statistics</span>
         </div>
 
+        {/* Feature: Export Format Dropdown & Trigger */}
         <div className="lumina-canvas-studio-card-box">
-          <span className="card-box-label">Export Actions</span>
+          <StudioDropdown<ExportActionId>
+            label="Export Format"
+            description={hasSelectedNodes ? 'Exports selected items' : 'Exports whole canvas'}
+            value={selectedAction}
+            options={EXPORT_OPTIONS}
+            onChange={(action) => {
+              setSelectedAction(action)
+            }}
+          />
+
+          <button
+            type="button"
+            className="lumina-canvas-studio-action-btn"
+            style={{ marginTop: 6, justifyContent: 'center', fontWeight: 600 }}
+            onClick={handleExecuteExport}
+          >
+            {selectedAction === 'copy' && <Copy size={12} />}
+            {selectedAction === 'png' && <ImageIcon size={12} />}
+            {selectedAction === 'svg' && <Download size={12} />}
+            <span>
+              {selectedAction === 'copy'
+                ? hasSelectedNodes
+                  ? 'Copy Selection to Clipboard'
+                  : 'Copy Snapshot to Clipboard'
+                : selectedAction === 'png'
+                ? 'Download High-Res PNG'
+                : 'Download Vector SVG'}
+            </span>
+          </button>
+        </div>
+
+        {/* Quick Action Buttons */}
+        <div className="lumina-canvas-studio-card-box">
+          <span className="card-box-label">Quick Actions</span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
             {onCopyImage && (
               <button
@@ -37,9 +109,7 @@ export const StudioExportTab: React.FC<StudioExportTabProps> = React.memo(
                 onClick={onCopyImage}
               >
                 <Copy size={12} />
-                <span>
-                  {hasSelectedNodes ? 'Copy Selection to Clipboard' : 'Copy Snapshot as Image'}
-                </span>
+                <span>{hasSelectedNodes ? 'Copy Selection' : 'Copy All'}</span>
               </button>
             )}
 
@@ -50,7 +120,7 @@ export const StudioExportTab: React.FC<StudioExportTabProps> = React.memo(
                 onClick={onExportPNG}
               >
                 <ImageIcon size={12} />
-                <span>Export as High-Res PNG</span>
+                <span>Save PNG Image</span>
               </button>
             )}
 
@@ -61,7 +131,7 @@ export const StudioExportTab: React.FC<StudioExportTabProps> = React.memo(
                 onClick={onExportSVG}
               >
                 <Download size={12} />
-                <span>Export as Vector SVG</span>
+                <span>Save Vector SVG</span>
               </button>
             )}
           </div>

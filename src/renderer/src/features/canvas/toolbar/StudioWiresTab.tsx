@@ -8,6 +8,7 @@ import {
   ArrowLeftRight
 } from 'lucide-react'
 import { CanvasEdgeLineStyle } from '../types'
+import { StudioDropdown, StudioDropdownOption } from './StudioDropdown'
 
 export interface StudioWiresTabProps {
   defaultLineStyle?: CanvasEdgeLineStyle
@@ -15,6 +16,48 @@ export interface StudioWiresTabProps {
   defaultEndpoints?: 'directed' | 'bidirectional' | 'none'
   onChangeDefaultEndpoints?: (mode: 'directed' | 'bidirectional' | 'none') => void
 }
+
+const LINE_STYLE_OPTIONS: StudioDropdownOption<CanvasEdgeLineStyle>[] = [
+  {
+    id: 'curved',
+    label: 'Curved (Spline)',
+    icon: <Spline size={13} />,
+    description: 'Smooth organic Bezier paths'
+  },
+  {
+    id: 'step',
+    label: 'Step (Orthogonal)',
+    icon: <CornerDownRight size={13} />,
+    description: '90° right-angle architecture lines'
+  },
+  {
+    id: 'straight',
+    label: 'Straight Line',
+    icon: <Minus size={13} />,
+    description: 'Direct point-to-point connection'
+  }
+]
+
+const ENDPOINT_OPTIONS: StudioDropdownOption<'directed' | 'bidirectional' | 'none'>[] = [
+  {
+    id: 'directed',
+    label: 'Directed (Single Arrow)',
+    icon: <ArrowRight size={13} />,
+    description: 'Points from source to target'
+  },
+  {
+    id: 'bidirectional',
+    label: 'Mutual (Two Arrows)',
+    icon: <ArrowLeftRight size={13} />,
+    description: 'Arrows on both ends'
+  },
+  {
+    id: 'none',
+    label: 'Plain (No Arrowheads)',
+    icon: <Minus size={13} />,
+    description: 'Undirected connection wire'
+  }
+]
 
 export const StudioWiresTab: React.FC<StudioWiresTabProps> = React.memo(
   ({
@@ -41,66 +84,26 @@ export const StudioWiresTab: React.FC<StudioWiresTabProps> = React.memo(
           </div>
         </div>
 
-        {/* Default Line Style Selector */}
+        {/* Feature 1: Default Wire Path Dropdown */}
         <div className="lumina-canvas-studio-card-box">
-          <span className="card-box-label">Default Wire Path</span>
-          <div className="lumina-canvas-studio-btn-toggle-group">
-            <button
-              type="button"
-              className={`toggle-btn ${defaultLineStyle === 'curved' ? 'active' : ''}`}
-              onClick={() => onChangeDefaultLineStyle && onChangeDefaultLineStyle('curved')}
-            >
-              <Spline size={12} />
-              <span>Curved</span>
-            </button>
-            <button
-              type="button"
-              className={`toggle-btn ${defaultLineStyle === 'step' ? 'active' : ''}`}
-              onClick={() => onChangeDefaultLineStyle && onChangeDefaultLineStyle('step')}
-            >
-              <CornerDownRight size={12} />
-              <span>Step</span>
-            </button>
-            <button
-              type="button"
-              className={`toggle-btn ${defaultLineStyle === 'straight' ? 'active' : ''}`}
-              onClick={() => onChangeDefaultLineStyle && onChangeDefaultLineStyle('straight')}
-            >
-              <Minus size={12} />
-              <span>Straight</span>
-            </button>
-          </div>
+          <StudioDropdown<CanvasEdgeLineStyle>
+            label="Wire Path Style"
+            description="Geometry for new connections"
+            value={defaultLineStyle}
+            options={LINE_STYLE_OPTIONS}
+            onChange={(style) => onChangeDefaultLineStyle?.(style)}
+          />
         </div>
 
-        {/* Default Arrowhead Selector */}
+        {/* Feature 2: Default Arrowhead Dropdown */}
         <div className="lumina-canvas-studio-card-box">
-          <span className="card-box-label">Default Arrowheads</span>
-          <div className="lumina-canvas-studio-btn-toggle-group">
-            <button
-              type="button"
-              className={`toggle-btn ${defaultEndpoints === 'directed' ? 'active' : ''}`}
-              onClick={() => onChangeDefaultEndpoints && onChangeDefaultEndpoints('directed')}
-            >
-              <ArrowRight size={12} />
-              <span>Single</span>
-            </button>
-            <button
-              type="button"
-              className={`toggle-btn ${defaultEndpoints === 'bidirectional' ? 'active' : ''}`}
-              onClick={() => onChangeDefaultEndpoints && onChangeDefaultEndpoints('bidirectional')}
-            >
-              <ArrowLeftRight size={12} />
-              <span>Mutual</span>
-            </button>
-            <button
-              type="button"
-              className={`toggle-btn ${defaultEndpoints === 'none' ? 'active' : ''}`}
-              onClick={() => onChangeDefaultEndpoints && onChangeDefaultEndpoints('none')}
-            >
-              <Minus size={12} />
-              <span>Plain</span>
-            </button>
-          </div>
+          <StudioDropdown<'directed' | 'bidirectional' | 'none'>
+            label="Default Arrowheads"
+            description="Terminator style"
+            value={defaultEndpoints}
+            options={ENDPOINT_OPTIONS}
+            onChange={(endpoints) => onChangeDefaultEndpoints?.(endpoints)}
+          />
         </div>
 
         {/* Wire linking tips */}
