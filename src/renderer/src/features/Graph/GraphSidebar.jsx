@@ -1,16 +1,32 @@
 import React, { useState, useEffect } from 'react'
-import { Network, RefreshCw, Layers, SlidersHorizontal, X } from 'lucide-react'
+import {
+  Network,
+  RefreshCw,
+  Layers,
+  SlidersHorizontal,
+  PanelRight,
+  PanelRightClose
+} from 'lucide-react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
+import ToolTip from '../../components/atoms/ToolTip'
+import '../canvas/css/canvas-toolbar.css'
+import '../canvas/css/canvas-studio.css'
 import './GraphSidebar.css'
 import '../../assets/toggle-theme.css'
 import Toggle from '../../components/toggle'
 
 const GraphSidebar = ({
   isOpen = true,
+  onToggleExpand,
+  onClose,
   searchQuery,
   setSearchQuery,
-  onClose
+  nodeCount,
+  onRecenter,
+  is3DMode,
+  onToggle3D
 }) => {
+  const toggleHandler = onToggleExpand || onClose
   const { settings, updateSetting } = useSettingsStore()
   
   // Fast optimistic update for instant slider preview without heavy I/O
@@ -37,27 +53,90 @@ const GraphSidebar = ({
     }
   }, [searchQuery])
 
-  return (
-    <aside className={`nexus-sidebar ${isOpen ? '' : 'closed'}`} aria-label="Graph Controls">
-      <div className="nexus-sidebar-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <SlidersHorizontal size={14} style={{ color: 'var(--text-accent, #38bdf8)' }} />
-          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-main, #ffffff)' }}>Graph Controls</span>
-        </div>
-        {onClose && (
+  if (!isOpen) {
+    return (
+      <div
+        className="nexus-sidebar closed lumina-canvas-toolbar lumina-canvas-toolbar-right"
+        data-testid="graph-sidebar"
+        aria-label="Graph Dock"
+        onWheel={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <ToolTip text="Expand Controls" position="left">
           <button
             type="button"
-            className="canvas-drawer-action-btn close-btn"
-            onClick={onClose}
-            title="Collapse Controls"
-            style={{ width: '22px', height: '22px', padding: 0, justifyContent: 'center' }}
+            className="lumina-canvas-tool-btn active-hover"
+            onClick={toggleHandler}
+            aria-label="Expand Controls"
           >
-            <X size={13} />
+            <PanelRight size={14} />
           </button>
+        </ToolTip>
+
+        <div className="lumina-canvas-divider horizontal" />
+
+        {onRecenter && (
+          <ToolTip text="Recenter View" position="left">
+            <button
+              type="button"
+              className="lumina-canvas-tool-btn"
+              onClick={onRecenter}
+              aria-label="Recenter View"
+            >
+              <RefreshCw size={14} />
+            </button>
+          </ToolTip>
+        )}
+
+        {onToggle3D && (
+          <ToolTip text={is3DMode ? "Switch to 2D" : "Switch to 3D"} position="left">
+            <button
+              type="button"
+              className="lumina-canvas-tool-btn"
+              onClick={onToggle3D}
+              aria-label="Toggle 2D/3D"
+            >
+              <Layers size={14} />
+            </button>
+          </ToolTip>
         )}
       </div>
+    )
+  }
 
-      <div className="nexus-sidebar-content">
+  return (
+    <aside
+      className="nexus-sidebar lumina-canvas-toolbar lumina-canvas-toolbar-right is-expanded"
+      data-testid="graph-sidebar"
+      aria-label="Graph Controls"
+      onWheel={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      tabIndex={-1}
+    >
+      <div className="lumina-canvas-studio-header">
+        <div className="lumina-canvas-studio-title-group">
+          <SlidersHorizontal size={14} className="lumina-canvas-studio-title-icon" />
+          <span className="lumina-canvas-studio-title">Graph Controls</span>
+          {nodeCount !== undefined && (
+            <span className="lumina-canvas-studio-badge">{nodeCount} nodes</span>
+          )}
+        </div>
+
+        <div className="lumina-canvas-studio-actions">
+          <ToolTip text="Collapse Controls" position="bottom">
+            <button
+              type="button"
+              className="lumina-canvas-studio-header-btn"
+              onClick={toggleHandler}
+              aria-label="Collapse Controls"
+            >
+              <PanelRightClose size={13} />
+            </button>
+          </ToolTip>
+        </div>
+      </div>
+
+      <div className="lumina-canvas-studio-body nexus-sidebar-content" style={{ flex: 1, overflowY: 'auto' }}>
         <div className="nexus-search-wrap">
           <input
             type="text"
