@@ -31,6 +31,7 @@ import { StudioWiresTab } from './StudioWiresTab'
 import { StudioLayoutTab } from './StudioLayoutTab'
 import { StudioExportTab } from './StudioExportTab'
 import { SlimCanvasDock } from './SlimCanvasDock'
+import CanvasMiniMap from '../components/controls/CanvasMiniMap'
 
 export * from './types'
 
@@ -69,7 +70,10 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     onUndo,
     canUndo,
     onRedo,
-    canRedo
+    canRedo,
+    viewport,
+    containerRect,
+    onPanTo
   }) => {
     // Persistent expansion state
     const [isExpanded, setIsExpanded] = useState(() => {
@@ -89,6 +93,20 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
         return next
       })
     }, [])
+
+    const handleToggleMiniMap = useCallback(() => {
+      if (!isExpanded) {
+        setIsExpanded(true)
+        try {
+          localStorage.setItem('lumina-canvas-studio-expanded', 'true')
+        } catch {}
+        if (!isMiniMapOpen) {
+          onToggleMiniMap?.()
+        }
+      } else {
+        onToggleMiniMap?.()
+      }
+    }, [isExpanded, isMiniMapOpen, onToggleMiniMap])
 
     // Top Navigation Tabs
     const [activeTab, setActiveTab] = useState<StudioTab>('shapes')
@@ -193,6 +211,19 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
               />
             )}
           </div>
+
+          {/* Studio Footer: Embedded Spatial Navigator Card Dropdown */}
+          <div className="lumina-canvas-studio-footer">
+            <CanvasMiniMap
+              nodes={nodes}
+              viewport={viewport || { x: 0, y: 0, zoom: 1 }}
+              containerRect={containerRect || null}
+              onPanTo={onPanTo || (() => {})}
+              isOpen={isMiniMapOpen}
+              onToggleOpen={onToggleMiniMap || (() => {})}
+              variant="footer-card"
+            />
+          </div>
         </aside>
       )
     }
@@ -223,7 +254,7 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
         snapToGrid={snapToGrid}
         onToggleSnapToGrid={onToggleSnapToGrid}
         isMiniMapOpen={isMiniMapOpen}
-        onToggleMiniMap={onToggleMiniMap}
+        onToggleMiniMap={handleToggleMiniMap}
       />
     )
   }

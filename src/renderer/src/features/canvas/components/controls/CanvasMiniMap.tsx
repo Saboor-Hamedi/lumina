@@ -2,18 +2,19 @@
  * ============================================================================
  * Lumina Canvas Mini-Map Navigator (CanvasMiniMap.tsx)
  * ============================================================================
- * Floating interactive bird's-eye navigator for the infinite canvas:
+ * Interactive bird's-eye spatial navigator for the infinite canvas:
  * - Real-time spatial preview of all canvas nodes, sticky notes, and shapes.
  * - Dynamic viewport rectangle showing current camera position and zoom area.
  * - Click-to-pan & interactive drag navigation across extensive diagrams.
- * - Collapsible / minimizable panel with persistence.
+ * - Supports embedded 'footer-card' variant for studio sidebar footer
+ *   and collapsible card dropdown without disturbing the canvas workspace.
  * ============================================================================
  */
 
-import React, { useMemo, useRef, useState, useCallback } from 'react'
+import React, { useMemo, useRef, useCallback } from 'react'
 import { CanvasNode, CanvasViewport } from '../../types'
 import { CANVAS_NODE_COLOR_HEX } from '../../utils/canvasUtils'
-import { ChevronDown, ChevronUp, MapPin } from 'lucide-react'
+import { ChevronDown, ChevronUp, MapPin, Compass } from 'lucide-react'
 
 export interface CanvasMiniMapProps {
   nodes: CanvasNode[]
@@ -22,16 +23,28 @@ export interface CanvasMiniMapProps {
   onPanTo: (canvasCenterX: number, canvasCenterY: number) => void
   isOpen: boolean
   onToggleOpen: () => void
+  variant?: 'footer-card' | 'floating'
+  className?: string
 }
 
-const MAP_WIDTH = 180
-const MAP_HEIGHT = 120
-const MAP_PADDING = 300 // Virtual margin around nodes in canvas space
-
 export const CanvasMiniMap: React.FC<CanvasMiniMapProps> = React.memo(
-  ({ nodes, viewport, containerRect, onPanTo, isOpen, onToggleOpen }) => {
+  ({
+    nodes,
+    viewport,
+    containerRect,
+    onPanTo,
+    isOpen,
+    onToggleOpen,
+    variant = 'footer-card',
+    className = ''
+  }) => {
     const mapRef = useRef<SVGSVGElement>(null)
     const isDraggingRef = useRef(false)
+
+    // Dynamic resolution based on variant
+    const MAP_WIDTH = variant === 'footer-card' ? 260 : 180
+    const MAP_HEIGHT = variant === 'footer-card' ? 125 : 120
+    const MAP_PADDING = 300 // Virtual margin around nodes in canvas space
 
     // Compute bounding box encompassing all nodes + current viewport
     const bounds = useMemo(() => {
@@ -79,7 +92,7 @@ export const CanvasMiniMap: React.FC<CanvasMiniMapProps> = React.memo(
         vpWidth: containerW / viewport.zoom,
         vpHeight: containerH / viewport.zoom
       }
-    }, [nodes, viewport, containerRect])
+    }, [nodes, viewport, containerRect, MAP_WIDTH, MAP_HEIGHT])
 
     /**
      * Converts mini-map click coordinates to canvas center and triggers pan.
@@ -129,24 +142,30 @@ export const CanvasMiniMap: React.FC<CanvasMiniMapProps> = React.memo(
     const vpBoxW = bounds.vpWidth * bounds.scaleX
     const vpBoxH = bounds.vpHeight * bounds.scaleY
 
+    const isFooter = variant === 'footer-card'
+
     return (
       <div
-        className={`lumina-canvas-minimap ${isOpen ? 'is-open' : 'is-collapsed'}`}
+        className={`lumina-canvas-minimap ${isFooter ? 'card-footer-variant' : 'floating-variant'} ${
+          isOpen ? 'is-open' : 'is-collapsed'
+        } ${className}`}
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="lumina-canvas-minimap-header" onClick={onToggleOpen}>
           <div className="lumina-canvas-minimap-title">
-            <MapPin size={11} />
-            <span>Navigator</span>
-            <span className="lumina-canvas-minimap-badge">{nodes.length}</span>
+            <MapPin size={12} className="lumina-canvas-minimap-icon" />
+            <span>Spatial Navigator</span>
+            <span className="lumina-canvas-minimap-badge">
+              {nodes.length} {nodes.length === 1 ? 'node' : 'nodes'}
+            </span>
           </div>
           <button
             type="button"
             className="lumina-canvas-minimap-toggle"
             aria-label={isOpen ? 'Collapse Mini-Map' : 'Expand Mini-Map'}
           >
-            {isOpen ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
+            {isOpen ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
           </button>
         </div>
 
@@ -180,7 +199,7 @@ export const CanvasMiniMap: React.FC<CanvasMiniMapProps> = React.memo(
                     rx={1.5}
                     ry={1.5}
                     fill={colorHex}
-                    opacity={0.65}
+                    opacity={0.75}
                   />
                 )
               })}
@@ -191,15 +210,33 @@ export const CanvasMiniMap: React.FC<CanvasMiniMapProps> = React.memo(
                 y={vpBoxY}
                 width={vpBoxW}
                 height={vpBoxH}
-                fill="rgba(56, 189, 248, 0.08)"
+                fill="rgba(56, 189, 248, 0.12)"
                 stroke="var(--text-accent, #38bdf8)"
-                strokeWidth="1.2"
+                strokeWidth="1.3"
                 strokeDasharray="3 2"
                 rx={2}
                 ry={2}
                 className="lumina-canvas-minimap-viewport"
               />
             </svg>
+
+            {/* Helper footer bar for quick navigation */}
+            {isFooter && (
+              <div className="lumina-canvas-minimap-subbar">
+                <button
+                  type="button"
+                  className="lumina-canvas-minimap-quick-btn"
+                  onClick={() => onPanTo(0, 0)}
+                  title="Pan camera to origin (0, 0)"
+                >
+                  <Compass size={11} />
+                  <span>Center (0,0)</span>
+                </button>
+                <span className="lumina-canvas-minimap-zoom-tag">
+                  {Math.round(viewport.zoom * 100)}%
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -3,7 +3,8 @@ import {
   CanvasNodeColor,
   CanvasEdgeLineStyle,
   CanvasNode,
-  CanvasEdge
+  CanvasEdge,
+  CanvasViewport
 } from '../types'
 import { CanvasAlignmentType, CanvasDistributionType } from '../utils/canvasAlignment'
 
@@ -58,4 +59,7 @@ export interface ConvasToolBarRightProps {
   canUndo?: boolean
   onRedo?: () => void
   canRedo?: boolean
+  viewport?: CanvasViewport
+  containerRect?: { width: number; height: number } | null
+  onPanTo?: (canvasCenterX: number, canvasCenterY: number) => void
 }

@@ -71,7 +71,7 @@ export const CanvasImagePreview: React.FC<CanvasImagePreviewProps> = ({
     return (
       <div className="lumina-canvas-image-error">
         <ImageIcon size={32} color="var(--text-muted, #94a3b8)" />
-        <span className="lumina-canvas-image-error-title">{title || 'Image'}</span>
+        <span className="lumina-canvas-image-error-title">Image</span>
         <span className="lumina-canvas-image-error-hint">Could not load preview</span>
       </div>
     )

@@ -23,6 +23,10 @@ import {
   SnappedPortTarget,
   getNodePortCoord
 } from '../utils/canvasUtils'
+import {
+  computeAlignmentGuides,
+  AlignmentGuide
+} from '../utils/canvasAlignmentGuides'
 
 export interface ConnectingState {
   fromNodeId: string
@@ -101,6 +105,7 @@ export function useCanvasGestures({
 
   // Drag & pan tracking
   const [isPanningState, setIsPanningState] = useState(false)
+  const [alignmentGuides, setAlignmentGuides] = useState<AlignmentGuide[]>([])
   const isPanningRef = useRef(false)
   const panPrevRef = useRef({ x: 0, y: 0 })
   const draggingNodeRef = useRef<DraggingNodeInfo | null>(null)
@@ -380,6 +385,7 @@ export function useCanvasGestures({
           const shouldSnap = stateRef.current.snapToGrid
 
           if (draggingNodeRef.current.initialPositions.size > 1) {
+            setAlignmentGuides([])
             const updates: { id: string; x: number; y: number }[] = []
             draggingNodeRef.current.initialPositions.forEach((pos, id) => {
               let targetX = pos.x + dx
@@ -398,7 +404,25 @@ export function useCanvasGestures({
             if (initialPos) {
               let targetX = initialPos.x + dx
               let targetY = initialPos.y + dy
-              if (shouldSnap) {
+
+              const activeNode = nodeMap.get(draggingNodeRef.current.id)
+              const w = activeNode?.width || 240
+              const h = activeNode?.height || 150
+
+              const alignment = computeAlignmentGuides(
+                draggingNodeRef.current.id,
+                targetX,
+                targetY,
+                w,
+                h,
+                stateRef.current.nodes
+              )
+
+              targetX = alignment.snappedX
+              targetY = alignment.snappedY
+              setAlignmentGuides(alignment.guides)
+
+              if (shouldSnap && alignment.guides.length === 0) {
                 targetX = Math.round(targetX / 20) * 20
                 targetY = Math.round(targetY / 20) * 20
               }
@@ -519,6 +543,7 @@ export function useCanvasGestures({
         setIsPanningState(false)
       }
       if (draggingNodeRef.current) {
+        setAlignmentGuides([])
         draggingNodeRef.current = null
       }
       if (resizingNodeRef.current) {
@@ -578,6 +603,7 @@ export function useCanvasGestures({
     isPanningState,
     isPanningRef,
     panPrevRef,
+    alignmentGuides,
     handleCanvasMouseDown,
     handleResizeMouseDown,
     handleNodeMouseDown,

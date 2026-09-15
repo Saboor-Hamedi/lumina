@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { ConvasShapes, CANVAS_SHAPES, renderShapeSVG } from '../../../../../src/renderer/src/features/canvas/shapes'
+import { ConvasShapes, CANVAS_SHAPES, renderShapeSVG } from '../../../../../src/renderer/src/features/canvas/components/controls/ConvasShapes'
 import { CanvasView } from '../../../../../src/renderer/src/features/canvas/CanvasView'
 import { CanvasData } from '../../../../../src/renderer/src/features/canvas/types'
 

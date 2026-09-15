@@ -45,6 +45,9 @@ export interface CanvasEdgeItemProps {
   onCycleColor?: (edgeId: string) => void
   onUpdateLabel?: (edgeId: string, label: string) => void
   onUpdateEndpoints?: (edgeId: string, fromEnd?: CanvasEdgeEnd, toEnd?: CanvasEdgeEnd) => void
+  snapToGrid?: boolean
+  parallelIndex?: number
+  totalParallel?: number
 }
 
 export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
@@ -56,7 +59,10 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
     onUpdateLineStyle,
     onCycleColor,
     onUpdateLabel,
-    onUpdateEndpoints
+    onUpdateEndpoints,
+    snapToGrid = false,
+    parallelIndex = 0,
+    totalParallel = 1
   }) => {
     if (!fromNode || !toNode) return null
 
@@ -126,7 +132,10 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
         toNode,
         edge.toSide,
         lineStyle,
-        edge.routing !== 'manual'
+        !edge.fromSide || !edge.toSide,
+        snapToGrid,
+        parallelIndex,
+        totalParallel
       )
     }, [
       fromNode.x,
@@ -135,16 +144,21 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
       fromNode.height,
       fromNode.type,
       fromNode.shape,
+      (fromNode as any).shapeType,
       toNode.x,
       toNode.y,
       toNode.width,
       toNode.height,
       toNode.type,
       toNode.shape,
+      (toNode as any).shapeType,
       edge.fromSide,
       edge.toSide,
       lineStyle,
-      edge.routing
+      edge.routing,
+      snapToGrid,
+      parallelIndex,
+      totalParallel
     ])
 
     const targetColor = edge.color || toNode.color || 'default'
@@ -195,10 +209,16 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Invisible wider hit area for easy hover / click */}
+        {/* Invisible wider hit area (12px stroke) for easy hover / click / selection */}
         <path
           d={pathD}
           className="lumina-canvas-edge-hitbox"
+          fill="none"
+          stroke="transparent"
+          strokeWidth={12}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ pointerEvents: 'stroke' }}
           onClick={(e) => onDeleteEdge(e, edge.id)}
           onDoubleClick={(e) => {
             e.stopPropagation()
@@ -215,15 +235,19 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
           style={{ pointerEvents: isHovered ? 'all' : 'none' }}
         />
 
-        {/* Rendered SVG connector path with arrows matching target node color */}
+        {/* Rendered SVG connector path with consistent 1.6px stroke and round caps/joins */}
         <path
           d={pathD}
           className={`lumina-canvas-edge-line edge-${targetColor}`}
+          fill="none"
+          strokeWidth={1.6}
+          strokeLinecap="round"
+          strokeLinejoin="round"
           markerStart={edge.fromEnd === 'arrow' ? `url(#arrow-start-${targetColor})` : undefined}
           markerEnd={edge.toEnd === 'none' ? undefined : `url(#arrow-${targetColor})`}
         />
 
-        {/* Edge Text Label Badge (Click/Double-click to edit) */}
+        {/* Opaque Edge Text Label Badge (Never crossed by lines) */}
         {edge.label && !isEditingLabel && (
           <g
             className="lumina-canvas-edge-label-badge"
@@ -233,27 +257,41 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
               setIsEditingLabel(true)
             }}
           >
-            <rect
-              x={-Math.max(24, edge.label.length * 4.2 + 10)}
-              y={-10}
-              width={Math.max(48, edge.label.length * 8.4 + 20)}
-              height={20}
-              rx={10}
-              className={`lumina-canvas-edge-label-bg edge-${targetColor}`}
-            />
-            <text x={0} y={3.5} textAnchor="middle" className="lumina-canvas-edge-label-text">
-              {edge.label}
-            </text>
+            {(() => {
+              const halfW = Math.max(18, edge.label.length * 3.4 + 9)
+              return (
+                <>
+                  <rect
+                    x={-halfW}
+                    y={-9}
+                    width={halfW * 2}
+                    height={18}
+                    rx={9}
+                    className={`lumina-canvas-edge-label-bg edge-${targetColor}`}
+                  />
+                  <text
+                    x={0}
+                    y={0}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    alignmentBaseline="central"
+                    className="lumina-canvas-edge-label-text"
+                  >
+                    {edge.label}
+                  </text>
+                </>
+              )
+            })()}
           </g>
         )}
 
         {/* Inline Label Editor */}
         {isEditingLabel && (
           <foreignObject
-            x={midX - 70}
-            y={midY - 14}
-            width={140}
-            height={28}
+            x={midX - 55}
+            y={midY - 11}
+            width={110}
+            height={22}
             className="lumina-canvas-edge-label-editor-container"
           >
             <input
@@ -261,7 +299,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
               autoFocus
               className="lumina-canvas-edge-label-input"
               defaultValue={edge.label || ''}
-              placeholder="Label relationship..."
+              placeholder="Label..."
               onBlur={(e) => {
                 if (!isEscapedRef.current) {
                   onUpdateLabel?.(edge.id, e.target.value.trim())
@@ -290,10 +328,10 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
         {/* Interactive hover controls badge at wire midpoint */}
         {!isEditingLabel && (
           <foreignObject
-            x={midX - 60}
-            y={edge.label ? midY - 36 : midY - 14}
-            width={120}
-            height={28}
+            x={midX - 48}
+            y={edge.label ? midY - 28 : midY - 11}
+            width={96}
+            height={22}
             className="lumina-canvas-edge-controls-container"
           >
             <div
@@ -311,11 +349,11 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
                   onClick={handleCycleLineStyle}
                 >
                   {lineStyle === 'curved' ? (
-                    <Spline size={11} />
+                    <Spline size={10} />
                   ) : lineStyle === 'step' ? (
-                    <CornerDownRight size={11} />
+                    <CornerDownRight size={10} />
                   ) : (
-                    <Minus size={11} />
+                    <Minus size={10} />
                   )}
                 </button>
               )}
@@ -330,11 +368,11 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
                   onClick={handleCycleEndpoints}
                 >
                   {endpointMode === 'directed' ? (
-                    <ArrowRight size={11} />
+                    <ArrowRight size={10} />
                   ) : endpointMode === 'bidirectional' ? (
-                    <ArrowLeftRight size={11} />
+                    <ArrowLeftRight size={10} />
                   ) : (
-                    <Minus size={11} />
+                    <Minus size={10} />
                   )}
                 </button>
               )}
@@ -351,7 +389,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
                     setIsEditingLabel(true)
                   }}
                 >
-                  <Tag size={11} />
+                  <Tag size={10} />
                 </button>
               )}
 
@@ -364,7 +402,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
                   aria-label="Change Edge Color"
                   onClick={handleCycleColor}
                 >
-                  <Palette size={11} />
+                  <Palette size={10} />
                 </button>
               )}
 
@@ -376,7 +414,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
                 aria-label="Delete Wire"
                 onClick={(e) => onDeleteEdge(e, edge.id)}
               >
-                <X size={11} />
+                <X size={10} />
               </button>
             </div>
           </foreignObject>

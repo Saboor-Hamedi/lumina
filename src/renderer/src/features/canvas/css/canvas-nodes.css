@@ -1,0 +1,611 @@
+/* Image Node Styling */
+.lumina-canvas-node-image-wrap {
+  width: 100%;
+  height: calc(100% - 34px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  border-radius: 0 0 7px 7px;
+}
+
+.lumina-canvas-node-image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.lumina-canvas-image-error {
+  width: 100%;
+  height: calc(100% - 34px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px;
+  background-color: rgba(0, 0, 0, 0.25);
+  border-radius: 0 0 7px 7px;
+  text-align: center;
+  user-select: none;
+}
+
+.lumina-canvas-image-error-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main, #e2e8f0);
+  max-width: 85%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lumina-canvas-image-error-hint {
+  font-size: 10.5px;
+  color: var(--text-muted, #94a3b8);
+}
+
+/* Canvas Node Card */
+.lumina-canvas-node {
+  position: absolute;
+  border-radius: 8px;
+  background-color: var(--bg-panel, #18181b);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  cursor: move;
+  z-index: 5;
+  contain: layout style paint;
+  will-change: left, top;
+}
+
+.lumina-canvas-node.selected {
+  border-color: var(--text-accent, #38bdf8) !important;
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--text-accent, #38bdf8) 40%, transparent),
+    0 12px 32px -4px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+}
+
+/* Node Color Themes */
+.lumina-canvas-node.color-yellow {
+  border-top: 2px solid #eab308;
+  --node-accent: #eab308;
+}
+.lumina-canvas-node.color-blue {
+  border-top: 2px solid #3b82f6;
+  --node-accent: #3b82f6;
+}
+.lumina-canvas-node.color-purple {
+  border-top: 2px solid #a855f7;
+  --node-accent: #a855f7;
+}
+.lumina-canvas-node.color-pink {
+  border-top: 2px solid #ec4899;
+  --node-accent: #ec4899;
+}
+.lumina-canvas-node.color-cyan {
+  border-top: 2px solid #06b6d4;
+  --node-accent: #06b6d4;
+}
+.lumina-canvas-node.color-green {
+  border-top: 2px solid #22c55e;
+  --node-accent: #22c55e;
+}
+.lumina-canvas-node.color-orange {
+  border-top: 2px solid #f97316;
+  --node-accent: #f97316;
+}
+.lumina-canvas-node.color-red {
+  border-top: 2px solid #ef4444;
+  --node-accent: #ef4444;
+}
+.lumina-canvas-node.color-default {
+  border-top: 2px solid var(--border-subtle, rgba(255, 255, 255, 0.2));
+  --node-accent: var(--text-accent, #38bdf8);
+}
+
+.lumina-canvas-node-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background-color: color-mix(in srgb, var(--bg-card, #20232b) 80%, transparent);
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-main, #f8fafc);
+  gap: 8px;
+}
+
+.lumina-canvas-node-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: text;
+}
+
+.lumina-canvas-title-input {
+  flex: 1;
+  background: var(--bg-app, #0c0d10);
+  border: 1px solid var(--text-accent, #38bdf8);
+  border-radius: 4px;
+  color: var(--text-main, #f8fafc);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 6px;
+  outline: none;
+}
+
+.lumina-canvas-node-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.lumina-canvas-node:hover .lumina-canvas-node-actions,
+.lumina-canvas-node.selected .lumina-canvas-node-actions {
+  opacity: 1;
+}
+
+.lumina-canvas-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.lumina-canvas-action-btn:hover {
+  color: var(--text-main, #ffffff);
+  background-color: var(--bg-active, rgba(255, 255, 255, 0.1));
+}
+
+.lumina-canvas-action-btn.delete:hover {
+  color: #ef4444;
+  background-color: rgba(239, 68, 68, 0.15);
+}
+
+.lumina-canvas-node-body {
+  padding: 10px 12px;
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted, #94a3b8);
+  overflow-y: auto;
+  cursor: text;
+}
+
+.lumina-canvas-node-text {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lumina-canvas-node-text .placeholder {
+  opacity: 0.4;
+  font-style: italic;
+}
+
+.lumina-canvas-text-area {
+  width: 100%;
+  height: 100%;
+  min-height: 80px;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--text-main, #f8fafc);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 0;
+}
+
+/* Node Connection Ports (Knobs & Magnetic Docking Sockets) */
+.lumina-canvas-port {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background-color: var(--bg-panel, #18181b);
+  border: 1.5px solid var(--node-accent, var(--text-accent, #38bdf8));
+  border-radius: 50%;
+  cursor: crosshair;
+  z-index: 25;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s ease, box-shadow 0.18s ease;
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+.lumina-canvas-node:hover .lumina-canvas-port,
+.lumina-canvas-container.is-connecting .lumina-canvas-port {
+  opacity: 1;
+}
+
+.lumina-canvas-port:hover {
+  transform: scale(1.25);
+  background-color: var(--node-accent, var(--text-accent, #38bdf8));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 70%, transparent);
+}
+
+/* When magnetically pulled / snapped (Key enters hole / Precision Docking Socket) */
+.lumina-canvas-port.is-magnetic-snap {
+  opacity: 1 !important;
+  transform: scale(1.35) !important;
+  background-color: var(--bg-panel, #18181b) !important;
+  border-color: #ffffff !important;
+  border-width: 1.5px !important;
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 75%, transparent),
+              0 0 8px var(--node-accent, var(--text-accent, #38bdf8)) !important;
+  animation: socketDockPulse 1.1s ease-in-out infinite alternate !important;
+  z-index: 50;
+}
+
+/* Precision keyhole center receptor notch */
+.lumina-canvas-port.is-magnetic-snap::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2.5px;
+  height: 2.5px;
+  border-radius: 50%;
+  background-color: var(--node-accent, var(--text-accent, #38bdf8));
+  box-shadow: 0 0 3px #ffffff;
+}
+
+@keyframes socketDockPulse {
+  0% {
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 70%, transparent),
+                0 0 6px var(--node-accent, var(--text-accent, #38bdf8));
+  }
+  100% {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 85%, transparent),
+                0 0 12px var(--node-accent, var(--text-accent, #38bdf8));
+  }
+}
+
+.lumina-canvas-port.port-top {
+  top: -6px;
+  left: 50%;
+  margin-left: -6px;
+}
+.lumina-canvas-port.port-bottom {
+  bottom: -6px;
+  left: 50%;
+  margin-left: -6px;
+}
+.lumina-canvas-port.port-left {
+  left: -6px;
+  top: 50%;
+  margin-top: -6px;
+}
+.lumina-canvas-port.port-right {
+  right: -6px;
+  top: 50%;
+  margin-top: -6px;
+}
+
+/* Connecting temporary line */
+.lumina-canvas-connecting-line {
+  fill: none;
+  stroke: var(--text-accent, #38bdf8);
+  stroke-width: 1.6px;
+  stroke-dasharray: 6 4;
+  stroke-linecap: round;
+  animation: canvasDash 0.8s linear infinite;
+  pointer-events: none;
+  transition: stroke 0.15s ease;
+}
+
+.lumina-canvas-connecting-line.snapped {
+  stroke-width: 1.8px;
+  stroke-dasharray: 5 3;
+  filter: drop-shadow(0 0 6px var(--snap-color, #38bdf8));
+}
+
+@keyframes canvasDash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+/* PDF Card Styling */
+.lumina-canvas-pdf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.lumina-canvas-pdf-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 120px;
+  gap: 12px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--bg-card, #20232b) 40%, transparent);
+}
+
+.lumina-canvas-pdf-open-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: color-mix(in srgb, var(--bg-card, #20232b) 90%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
+  border-radius: 6px;
+  color: var(--text-main, #ffffff);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lumina-canvas-pdf-open-btn:hover {
+  background: var(--bg-active, rgba(255, 255, 255, 0.1));
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* Edge Hitbox and Delete Controls */
+.lumina-canvas-edge-hitbox {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 14px;
+  cursor: pointer;
+  pointer-events: stroke;
+}
+
+.lumina-canvas-edge-delete {
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.lumina-canvas-edge-group:hover .lumina-canvas-edge-delete {
+  opacity: 1;
+}
+
+/* Edge Hover Action Controls */
+.lumina-canvas-edge-controls-container {
+  overflow: visible;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 50;
+}
+
+.lumina-canvas-edge-group:hover .lumina-canvas-edge-controls-container,
+.lumina-canvas-edge-group.is-hovered .lumina-canvas-edge-controls-container {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lumina-canvas-edge-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 3px;
+  background: color-mix(in srgb, var(--bg-panel, #18181b) 95%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 9999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.18);
+  height: 22px;
+  box-sizing: border-box;
+}
+
+.lumina-canvas-edge-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.lumina-canvas-edge-btn:hover {
+  background: color-mix(in srgb, var(--text-main, #ffffff) 12%, transparent);
+  color: var(--text-main, #ffffff);
+}
+
+.lumina-canvas-edge-btn.delete:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+/* Edge Label Badge */
+.lumina-canvas-edge-label-badge {
+  cursor: pointer;
+}
+
+.lumina-canvas-edge-label-bg {
+  fill: color-mix(in srgb, var(--bg-panel, #18181b) 96%, transparent);
+  stroke: var(--border-subtle, rgba(255, 255, 255, 0.15));
+  stroke-width: 1px;
+  transition: stroke 0.15s ease, filter 0.15s ease;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.25));
+}
+
+.lumina-canvas-edge-label-badge:hover .lumina-canvas-edge-label-bg {
+  stroke: var(--text-accent, #38bdf8);
+}
+
+.lumina-canvas-edge-label-text {
+  font-size: 9.5px;
+  font-weight: 500;
+  font-family: inherit;
+  fill: var(--text-main, #e2e8f0);
+  text-anchor: middle;
+  dominant-baseline: central;
+  alignment-baseline: central;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Edge Label Inline Editor */
+.lumina-canvas-edge-label-editor-container {
+  overflow: visible;
+  z-index: 55;
+}
+
+.lumina-canvas-edge-label-input {
+  width: 100%;
+  height: 22px;
+  background: var(--bg-panel, #18181b);
+  border: 1px solid var(--text-accent, #38bdf8);
+  border-radius: 6px;
+  font-size: 10px;
+  color: var(--text-main, #ffffff);
+  padding: 0 6px;
+  outline: none;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+/* Markdown Rendering Inside Cards */
+.lumina-canvas-markdown {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-main, #e2e8f0);
+}
+
+.lumina-canvas-markdown h1 { font-size: 15px; margin: 4px 0 6px 0; font-weight: 600; }
+.lumina-canvas-markdown h2 { font-size: 14px; margin: 4px 0 6px 0; font-weight: 600; }
+.lumina-canvas-markdown h3 { font-size: 13px; margin: 4px 0 6px 0; font-weight: 600; }
+
+.lumina-canvas-markdown p {
+  margin: 0 0 6px 0;
+}
+.lumina-canvas-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.lumina-canvas-markdown ul,
+.lumina-canvas-markdown ol {
+  margin: 0 0 6px 0;
+  padding-left: 18px;
+}
+
+.lumina-canvas-markdown li {
+  margin-bottom: 2px;
+}
+
+.lumina-canvas-markdown code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.lumina-canvas-markdown pre {
+  background: rgba(0, 0, 0, 0.35);
+  padding: 6px 8px;
+  border-radius: 5px;
+  overflow-x: auto;
+  margin: 4px 0 6px 0;
+}
+
+.lumina-canvas-markdown blockquote {
+  border-left: 3px solid var(--text-accent, #38bdf8);
+  margin: 4px 0 6px 0;
+  padding-left: 8px;
+  color: var(--text-muted, #94a3b8);
+}
+
+.lumina-canvas-markdown a {
+  color: var(--text-accent, #38bdf8);
+  text-decoration: underline;
+}
+
+/* Card Resize Handle */
+.lumina-canvas-resize-handle {
+  position: absolute;
+  background: transparent;
+  z-index: 30;
+}
+
+.lumina-canvas-resize-handle.handle-br {
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+}
+
+.lumina-canvas-resize-handle.handle-br::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--text-muted, #94a3b8);
+  border-bottom: 2px solid var(--text-muted, #94a3b8);
+  opacity: 0.3;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+
+.lumina-canvas-node:hover .lumina-canvas-resize-handle.handle-br::after,
+.lumina-canvas-node.selected .lumina-canvas-resize-handle.handle-br::after {
+  opacity: 1;
+  border-color: var(--text-accent, #38bdf8);
+}
+
+/* ============================================================================
+ * Live Alignment Guides Layer
+ * ============================================================================ */
+.lumina-canvas-alignment-guides-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 45;
+}
+
+.lumina-canvas-alignment-guide {
+  stroke: var(--text-accent, #38bdf8);
+  stroke-width: 1.5px;
+  stroke-dasharray: 4 3;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.4));
+}

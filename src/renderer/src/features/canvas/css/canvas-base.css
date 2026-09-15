@@ -1,0 +1,87 @@
+/* ==========================================================================
+   Lumina Canvas Styles
+   ========================================================================== */
+
+.lumina-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  user-select: none;
+  background-color: var(--bg-app, #0c0d10);
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--border-subtle, rgba(255, 255, 255, 0.15)) 50%, transparent) 1.2px,
+    transparent 1.2px
+  );
+  background-size: 24px 24px;
+}
+
+.lumina-canvas-container.is-grid-snapping {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--border-subtle, rgba(255, 255, 255, 0.15)) 55%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--border-subtle, rgba(255, 255, 255, 0.15)) 55%, transparent) 1px, transparent 1px);
+}
+
+.lumina-canvas-viewport {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+/* SVG Edges Layer */
+.lumina-canvas-edges-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 1;
+}
+
+.lumina-canvas-edge-line {
+  fill: none;
+  stroke: color-mix(in srgb, var(--text-accent, #38bdf8) 70%, rgba(255, 255, 255, 0.25));
+  stroke-width: 1.6px;
+  stroke-linecap: round;
+  transition: stroke 0.2s ease, stroke-width 0.15s ease;
+  marker-end: url(#arrow);
+}
+
+.lumina-canvas-edge-line.edge-yellow {
+  stroke: #eab308;
+}
+.lumina-canvas-edge-line.edge-blue {
+  stroke: #3b82f6;
+}
+.lumina-canvas-edge-line.edge-purple {
+  stroke: #a855f7;
+}
+.lumina-canvas-edge-line.edge-pink {
+  stroke: #ec4899;
+}
+.lumina-canvas-edge-line.edge-cyan {
+  stroke: #06b6d4;
+}
+.lumina-canvas-edge-line.edge-green {
+  stroke: #22c55e;
+}
+.lumina-canvas-edge-line.edge-orange {
+  stroke: #f97316;
+}
+.lumina-canvas-edge-line.edge-red {
+  stroke: #ef4444;
+}
+.lumina-canvas-edge-line.edge-default {
+  stroke: color-mix(in srgb, var(--text-accent, #38bdf8) 70%, rgba(255, 255, 255, 0.25));
+}
+
+.lumina-canvas-edge-group:hover .lumina-canvas-edge-line {
+  stroke-width: 2.2px;
+  filter: drop-shadow(0 0 4px currentColor);
+}

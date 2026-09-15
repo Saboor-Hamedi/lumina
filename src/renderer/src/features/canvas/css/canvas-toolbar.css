@@ -1,0 +1,176 @@
+/* Canvas Toolbar */
+.lumina-canvas-toolbar {
+  position: absolute;
+  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #18181b)) 92%, transparent);
+  border: 1px solid var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.1)));
+  border-radius: 10px;
+  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+}
+
+[data-theme='light'] .lumina-canvas-toolbar,
+.theme-light .lumina-canvas-toolbar {
+  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #ffffff)) 95%, transparent);
+  border: 1px solid var(--border-subtle, var(--border-dim, rgba(0, 0, 0, 0.12)));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.lumina-canvas-toolbar-center {
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  height: 36px;
+  border-radius: 12px;
+  box-sizing: border-box;
+}
+
+.lumina-canvas-toolbar-center .lumina-canvas-tool-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+}
+
+.lumina-canvas-toolbar-center .lumina-canvas-divider {
+  width: 1px;
+  height: 14px;
+  margin: 0 2px;
+}
+
+.lumina-canvas-toolbar-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  height: 100%;
+  max-height: 100%;
+  width: 44px;
+  transform: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 4px;
+  border-radius: 0;
+  border: none;
+  border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #121316)) 96%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  z-index: 60;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.2s ease;
+}
+
+.lumina-canvas-toolbar-right::-webkit-scrollbar {
+  width: 3px;
+}
+
+.lumina-canvas-toolbar-right::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+}
+
+[data-theme='light'] .lumina-canvas-toolbar-right,
+.theme-light .lumina-canvas-toolbar-right {
+  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #ffffff)) 96%, transparent);
+  border-left: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.12));
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.06);
+}
+
+.lumina-canvas-toolbar-right .lumina-canvas-tool-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.lumina-canvas-toolbar-right .lumina-canvas-divider.horizontal {
+  width: 16px;
+  height: 1px;
+  margin: 2px 0;
+  flex-shrink: 0;
+}
+
+.lumina-canvas-toolbar-right .lumina-canvas-zoom-label {
+  font-size: 10px;
+  min-width: 28px;
+  padding: 1px 0;
+  flex-shrink: 0;
+}
+
+
+/* Canvas Export Menu & Actions */
+.lumina-canvas-export-menu {
+  position: absolute;
+  right: 50px;
+  bottom: 12px;
+  width: 210px;
+  background-color: var(--bg-panel, #18181b) !important;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.65);
+  padding: 6px;
+  z-index: 110;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  animation: exportSlideLeft 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+@keyframes exportSlideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.lumina-canvas-export-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 9px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-main, #e2e8f0);
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.lumina-canvas-export-item:hover {
+  background-color: var(--bg-active, rgba(128, 128, 128, 0.1));
+  color: var(--text-main);
+}
+
+.lumina-canvas-export-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lumina-canvas-export-shortcut {
+  font-size: 9.5px;
+  color: var(--text-muted, #94a3b8);
+  background: var(--bg-active, rgba(128, 128, 128, 0.1));
+  padding: 1px 4px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.15));
+}

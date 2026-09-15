@@ -76,7 +76,9 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
         description: s.description,
         icon: (
           <span style={{ display: 'inline-flex', width: 15, height: 15, color: activeHex }}>
-            {renderShapeSVG(s.id, activeHex, activeHex, 0.08, 1.3)}
+            <svg viewBox="0 0 100 100" width="100%" height="100%">
+              {renderShapeSVG(s.id, activeHex, activeHex, 0.08, 1.3)}
+            </svg>
           </span>
         )
       }))
@@ -205,22 +207,22 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
                 }}
                 draggable
                 onDragStart={(e) => {
-                  e.dataTransfer.setData('application/lumina-shape', shape.id)
-                  e.dataTransfer.setData(
-                    'application/lumina-shape-meta',
-                    JSON.stringify({
-                      id: shape.id,
-                      width: shape.defaultWidth,
-                      height: shape.defaultHeight,
-                      color: activeColor
-                    })
-                  )
+                  const shapePayload = JSON.stringify({
+                    shapeType: shape.id,
+                    width: shape.defaultWidth,
+                    height: shape.defaultHeight,
+                    color: activeColor
+                  })
+                  e.dataTransfer.setData('application/lumina-shape', shapePayload)
+                  e.dataTransfer.setData('application/lumina-shape-meta', shapePayload)
                   e.dataTransfer.effectAllowed = 'copy'
                 }}
                 title={`Click to add ${shape.label} or drag directly to canvas`}
               >
                 <div className="shape-preview-svg" style={{ color: colorHex }}>
-                  {renderShapeSVG(shape.id, colorHex, colorHex, 0.08, 1.35)}
+                  <svg viewBox="0 0 100 100" width="100%" height="100%">
+                    {renderShapeSVG(shape.id, colorHex, colorHex, 0.08, 1.35)}
+                  </svg>
                 </div>
                 <span className="shape-label">{shape.label}</span>
               </button>

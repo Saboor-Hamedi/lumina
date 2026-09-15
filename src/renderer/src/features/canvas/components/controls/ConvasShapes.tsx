@@ -74,7 +74,9 @@ export function renderShapeSVG(
   stroke: string = 'currentColor',
   fill: string = 'currentColor',
   fillOpacity: number = 0.04,
-  strokeWidth: number = 1.25
+  strokeWidth: number = 1.25,
+  nodeWidth?: number,
+  nodeHeight?: number
 ): React.ReactNode {
   switch (shape) {
     case 'rectangle':
@@ -364,21 +366,49 @@ export function renderShapeSVG(
         />
       )
 
-    case 'actor':
+    case 'actor': {
+      // Compensate for non-uniform container aspect ratio so head and hands are 100% full round circles
+      const aspect = (nodeWidth && nodeHeight) ? (nodeWidth / nodeHeight) : 1
+      const headRx = 13
+      const headRy = headRx * Math.min(2.5, Math.max(0.4, aspect))
+      const handRx = 2.5
+      const handRy = handRx * Math.min(2.5, Math.max(0.4, aspect))
+      const chinY = 18 + headRy
+
       return (
-        <g stroke={stroke} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke">
-          {/* Head */}
-          <circle cx="50" cy="20" r="14" fill={fill} fillOpacity={fillOpacity} />
-          {/* Spine */}
-          <line x1="50" y1="34" x2="50" y2="68" />
-          {/* Arms */}
-          <line x1="16" y1="46" x2="84" y2="46" />
-          {/* Left Leg */}
-          <line x1="50" y1="68" x2="24" y2="95" />
-          {/* Right Leg */}
-          <line x1="50" y1="68" x2="76" y2="95" />
+        <g
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        >
+          {/* Head: True full round circle on screen */}
+          <ellipse
+            cx="50"
+            cy="18"
+            rx={headRx}
+            ry={headRy}
+            fill={fill}
+            fillOpacity={Math.max(0.12, fillOpacity)}
+          />
+          {/* Neck & Spine: Connects directly from chin */}
+          <line x1="50" y1={chinY} x2="50" y2="65" />
+          {/* Arms with natural shoulder angle */}
+          <line x1="15" y1="48" x2="50" y2="44" />
+          <line x1="50" y1="44" x2="85" y2="48" />
+          {/* Hands: Round circular anchor terminals */}
+          <ellipse cx="14" cy="48" rx={handRx} ry={handRy} fill={stroke} />
+          <ellipse cx="86" cy="48" rx={handRx} ry={handRy} fill={stroke} />
+          {/* Legs */}
+          <line x1="50" y1="65" x2="26" y2="94" />
+          <line x1="50" y1="65" x2="74" y2="94" />
+          {/* Feet */}
+          <line x1="26" y1="94" x2="19" y2="94" />
+          <line x1="74" y1="94" x2="81" y2="94" />
         </g>
       )
+    }
 
     case 'envelope':
       return (

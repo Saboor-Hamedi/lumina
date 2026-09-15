@@ -108,9 +108,16 @@ function getShapeSvgMarkup(
     case 'pentagon':
       shapeContent = `<polygon points="50,4 96,38 78,94 22,94 4,38" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
       break
-    case 'actor':
-      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="20" r="14" fill="${fill}" fill-opacity="${fillOpacity}" /><line x1="50" y1="34" x2="50" y2="68" /><line x1="16" y1="46" x2="84" y2="46" /><line x1="50" y1="68" x2="24" y2="95" /><line x1="50" y1="68" x2="76" y2="95" /></g>`
+    case 'actor': {
+      const actorAspect = (width && height) ? (width / height) : 1
+      const headRx = 13
+      const headRy = headRx * Math.min(2.5, Math.max(0.4, actorAspect))
+      const handRx = 2.5
+      const handRy = handRx * Math.min(2.5, Math.max(0.4, actorAspect))
+      const chinY = 18 + headRy
+      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="50" cy="18" rx="${headRx}" ry="${headRy}" fill="${fill}" fill-opacity="${Math.max(0.12, fillOpacity)}" /><line x1="50" y1="${chinY}" x2="50" y2="65" /><line x1="15" y1="48" x2="50" y2="44" /><line x1="50" y1="44" x2="85" y2="48" /><ellipse cx="14" cy="48" rx="${handRx}" ry="${handRy}" fill="${stroke}" /><ellipse cx="86" cy="48" rx="${handRx}" ry="${handRy}" fill="${stroke}" /><line x1="50" y1="65" x2="26" y2="94" /><line x1="50" y1="65" x2="74" y2="94" /><line x1="26" y1="94" x2="19" y2="94" /><line x1="74" y1="94" x2="81" y2="94" /></g>`
       break
+    }
     case 'envelope':
       shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="92" height="72" rx="6" ry="6" fill="${fill}" fill-opacity="${fillOpacity}" /><path d="M 6 18 L 50 56 L 94 18" fill="none" /><path d="M 6 82 L 38 48" fill="none" opacity="0.6" /><path d="M 94 82 L 62 48" fill="none" opacity="0.6" /></g>`
       break
@@ -120,7 +127,7 @@ function getShapeSvgMarkup(
       break
   }
 
-  const aspect = shape === 'actor' || shape === 'circle' ? 'xMidYMid meet' : 'none'
+  const aspect = shape === 'circle' ? 'xMidYMid meet' : 'none'
   return `
     <svg x="0" y="0" width="${width}" height="${height}" viewBox="0 0 100 100" preserveAspectRatio="${aspect}">
       ${shapeContent}
@@ -333,8 +340,10 @@ export function buildCanvasSvg(options: ExportCanvasOptions): { svgString: strin
           />
           <text
             x="0"
-            y="3.5"
+            y="0"
             text-anchor="middle"
+            dominant-baseline="central"
+            alignment-baseline="central"
             fill="#f8fafc"
             font-size="10"
             font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"

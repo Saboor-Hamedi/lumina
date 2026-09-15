@@ -1,0 +1,180 @@
+/* ==========================================================================
+   Lumina Canvas Mini-Map Navigator
+   ========================================================================== */
+.lumina-canvas-minimap {
+  background-color: color-mix(in srgb, var(--bg-panel, #18181b) 94%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(16px);
+  z-index: 95;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+/* Floating variant (legacy fallback if ever used floating) */
+.lumina-canvas-minimap.floating-variant {
+  position: absolute;
+  bottom: 24px;
+  right: 68px;
+}
+
+.lumina-canvas-minimap.floating-variant.is-collapsed {
+  width: auto;
+}
+
+/* Embedded Studio Footer Card Dropdown Variant */
+.lumina-canvas-minimap.card-footer-variant {
+  position: relative;
+  bottom: auto;
+  right: auto;
+  width: 100%;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-card, #1c1d22) 85%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.09));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.lumina-canvas-minimap.card-footer-variant.is-collapsed {
+  width: 100%;
+}
+
+.lumina-canvas-minimap.card-footer-variant .lumina-canvas-minimap-header {
+  padding: 7px 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.lumina-canvas-minimap.card-footer-variant .lumina-canvas-minimap-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.lumina-canvas-minimap.card-footer-variant .lumina-canvas-minimap-body {
+  padding: 8px 10px 10px 10px;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lumina-canvas-minimap.card-footer-variant .lumina-canvas-minimap-svg {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 260 / 125;
+}
+
+.lumina-canvas-minimap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 10px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid transparent;
+  transition: background-color 0.15s ease;
+}
+
+.lumina-canvas-minimap.is-open .lumina-canvas-minimap-header {
+  border-bottom-color: var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.lumina-canvas-minimap-header:hover {
+  background-color: var(--bg-active, rgba(255, 255, 255, 0.05));
+}
+
+.lumina-canvas-minimap-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  letter-spacing: 0.2px;
+}
+
+.lumina-canvas-minimap-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--text-accent, #38bdf8);
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 12%, transparent);
+  padding: 1px 5px;
+  border-radius: 8px;
+}
+
+.lumina-canvas-minimap-toggle {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.lumina-canvas-minimap-body {
+  padding: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.lumina-canvas-minimap-svg {
+  display: block;
+  background-color: color-mix(in srgb, var(--bg-app, #0c0d10) 80%, black);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 6px;
+  cursor: grab;
+}
+
+.lumina-canvas-minimap-svg:active {
+  cursor: grabbing;
+}
+
+.lumina-canvas-minimap-viewport {
+  cursor: move;
+  transition: stroke-width 0.1s ease;
+}
+
+.lumina-canvas-minimap-viewport:hover {
+  stroke-width: 1.6;
+}
+
+.lumina-canvas-minimap-subbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-top: 2px;
+}
+
+.lumina-canvas-minimap-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-muted, #94a3b8);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lumina-canvas-minimap-quick-btn:hover {
+  color: var(--text-accent, #38bdf8);
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 12%, transparent);
+  border-color: color-mix(in srgb, var(--text-accent, #38bdf8) 30%, transparent);
+}
+
+.lumina-canvas-minimap-zoom-tag {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+}

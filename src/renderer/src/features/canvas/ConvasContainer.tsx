@@ -34,8 +34,8 @@ import {
 import {
   CanvasEdgesLayer,
   CanvasNodesLayer,
-  ConvasToolBarCenter,
-  CanvasMiniMap
+  CanvasAlignmentGuidesLayer,
+  ConvasToolBarCenter
 } from './components'
 import { ConvasToolBarRight } from './toolbar'
 import { Notification, useToast } from '../../core/notification'
@@ -214,7 +214,8 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     handleCanvasMouseDown,
     handleResizeMouseDown,
     handleNodeMouseDown,
-    handlePortMouseDown
+    handlePortMouseDown,
+    alignmentGuides
   } = useCanvasGestures({
     containerRef,
     nodes,
@@ -466,7 +467,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     const centerPt = screenToCanvas(rect.left + rect.width / 2, rect.top + rect.height / 2, rect)
     const newNode = addNode({
       type: 'text',
-      title: 'Note',
+      title: 'Quick Idea',
       text: '',
       x: Math.round(centerPt.x - 130),
       y: Math.round(centerPt.y - 70),
@@ -712,6 +713,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           onUpdateEdgeLabel={updateEdgeLabel}
           onUpdateEdgeEndpoints={updateEdgeEndpoints}
           onUpdateEdgeColor={updateEdgeColor}
+          snapToGrid={snapToGrid}
         />
 
         {/* Layer 2: Interactive Cards, Shapes, and Multi-Selection Toolbar */}
@@ -746,6 +748,9 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           onDeleteSelection={() => deleteSelected()}
           onSnapSelectionToGrid={handleSnapAllToGrid}
         />
+
+        {/* Layer 2.5: Real-time Alignment Guides & Snapping Visualizer */}
+        <CanvasAlignmentGuidesLayer guides={alignmentGuides} />
       </div>
 
       {/* Layer 3: Center Toolbar (Select, Hand, Sticky Note, Shapes) */}
@@ -802,11 +807,6 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         canUndo={canUndo}
         onRedo={redo}
         canRedo={canRedo}
-      />
-
-      {/* Layer 5: Mini-Map Navigator */}
-      <CanvasMiniMap
-        nodes={nodes}
         viewport={viewport}
         containerRect={
           containerRef.current
@@ -814,11 +814,9 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
             : null
         }
         onPanTo={handlePanTo}
-        isOpen={isMiniMapOpen}
-        onToggleOpen={() => setIsMiniMapOpen((prev) => !prev)}
       />
 
-      {/* Layer 6: Toast Notification */}
+      {/* Layer 5: Toast Notification */}
       <Notification toast={toast} onClose={clearToast} />
     </div>
   )

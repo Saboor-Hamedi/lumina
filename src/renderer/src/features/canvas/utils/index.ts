@@ -11,6 +11,7 @@
  */
 
 export * from './canvasUtils'
+export * from './canvasPorts'
 export * from './canvasRouting'
 export * from './canvasAlignment'
 export * from './canvasExport'

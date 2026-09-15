@@ -27,6 +27,7 @@ export interface CanvasEdgesLayerProps {
   onUpdateEdgeLabel: (edgeId: string, label: string) => void
   onUpdateEdgeEndpoints: (edgeId: string, fromEnd?: CanvasEdgeEnd, toEnd?: CanvasEdgeEnd) => void
   onUpdateEdgeColor: (edgeId: string, color: CanvasNodeColor) => void
+  snapToGrid?: boolean
 }
 
 export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
@@ -40,7 +41,8 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
     onUpdateEdgeLineStyle,
     onUpdateEdgeLabel,
     onUpdateEdgeEndpoints,
-    onUpdateEdgeColor
+    onUpdateEdgeColor,
+    snapToGrid = false
   }) => {
     // Dynamic live wire preview while dragging
     const liveConnectingLine = useMemo(() => {
@@ -81,6 +83,28 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
       )
     }, [connecting, mouseCanvasPos, snappedTarget])
 
+    // Map parallel edges between the same node pair to calculate fanning offsets
+    const parallelEdgeMap = useMemo(() => {
+      const map = new Map<string, { index: number; total: number }>()
+      const pairGroups = new Map<string, string[]>()
+
+      for (const edge of edges) {
+        const pairKey = [edge.fromNode, edge.toNode].sort().join('::')
+        const list = pairGroups.get(pairKey) || []
+        list.push(edge.id)
+        pairGroups.set(pairKey, list)
+      }
+
+      pairGroups.forEach((edgeIds) => {
+        const total = edgeIds.length
+        edgeIds.forEach((id, index) => {
+          map.set(id, { index, total })
+        })
+      })
+
+      return map
+    }, [edges])
+
     return (
       <svg className="lumina-canvas-edges-layer">
         <defs>
@@ -88,7 +112,7 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
           <marker
             id="arrow"
             viewBox="0 0 10 10"
-            refX="6"
+            refX="7"
             refY="5"
             markerWidth="5.5"
             markerHeight="5.5"
@@ -101,7 +125,7 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
           <marker
             id="arrow-start"
             viewBox="0 0 10 10"
-            refX="3"
+            refX="0"
             refY="5"
             markerWidth="5.5"
             markerHeight="5.5"
@@ -110,13 +134,13 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
             <path d="M 7 2 L 0 5 L 7 8 z" fill="var(--text-accent, #38bdf8)" />
           </marker>
 
-          {/* Palette-specific Forward and Backward Arrow Markers */}
-          {(Object.keys(CANVAS_NODE_COLOR_HEX) as (keyof typeof CANVAS_NODE_COLOR_HEX)[]).map((cKey) => (
+          {/* Per-Color Styled Arrow Markers */}
+          {COLOR_CYCLE.map((cKey) => (
             <React.Fragment key={cKey}>
               <marker
                 id={`arrow-${cKey}`}
                 viewBox="0 0 10 10"
-                refX="6"
+                refX="7"
                 refY="5"
                 markerWidth="5.5"
                 markerHeight="5.5"
@@ -124,10 +148,11 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
               >
                 <path d="M 0 2 L 7 5 L 0 8 z" fill={CANVAS_NODE_COLOR_HEX[cKey]} />
               </marker>
+
               <marker
                 id={`arrow-start-${cKey}`}
                 viewBox="0 0 10 10"
-                refX="3"
+                refX="0"
                 refY="5"
                 markerWidth="5.5"
                 markerHeight="5.5"
@@ -146,6 +171,9 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
             edge={edge}
             fromNode={nodeMap.get(edge.fromNode)}
             toNode={nodeMap.get(edge.toNode)}
+            snapToGrid={snapToGrid}
+            parallelIndex={parallelEdgeMap.get(edge.id)?.index ?? 0}
+            totalParallel={parallelEdgeMap.get(edge.id)?.total ?? 1}
             onDeleteEdge={onDeleteEdge}
             onUpdateLineStyle={onUpdateEdgeLineStyle}
             onUpdateLabel={onUpdateEdgeLabel}

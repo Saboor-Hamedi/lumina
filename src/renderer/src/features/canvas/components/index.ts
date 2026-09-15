@@ -24,6 +24,7 @@
 export * from './nodes/CanvasNodeCard'
 export * from './nodes/CanvasNodesLayer'
 export * from './nodes/CanvasImagePreview'
+export * from './nodes/CanvasAlignmentGuidesLayer'
 
 export * from './edges/CanvasEdgeItem'
 export * from './edges/CanvasEdgesLayer'

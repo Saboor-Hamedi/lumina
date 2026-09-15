@@ -243,12 +243,12 @@ export function getShapePortRatio(
       break
 
     case 'actor':
-      // UML Actor: head at 6%, feet at 95%, hands at 16% and 84%
+      // UML Actor / User: head crown at 7.6% (for standard 120x150), feet at 94%, hands at (14%, 48%) and (86%, 48%)
       switch (side) {
-        case 'top': return { rx: 0.5, ry: 0.06 }
-        case 'bottom': return { rx: 0.5, ry: 0.95 }
-        case 'left': return { rx: 0.16, ry: 0.46 }
-        case 'right': return { rx: 0.84, ry: 0.46 }
+        case 'top': return { rx: 0.5, ry: 0.076 }
+        case 'bottom': return { rx: 0.5, ry: 0.94 }
+        case 'left': return { rx: 0.14, ry: 0.48 }
+        case 'right': return { rx: 0.86, ry: 0.48 }
       }
       break
 
@@ -435,7 +435,7 @@ export function normalizeNode(raw: Partial<CanvasNode> & { id?: string }): Canva
     width: Math.max(Math.round(safeNumber(raw.width, defW)), minW),
     height: Math.max(Math.round(safeNumber(raw.height, defH)), minH),
     color: raw.color || 'default',
-    url: raw.url,
+    url: raw.url || (raw as any)?.imageUrl,
     file: raw.file
   }
 }

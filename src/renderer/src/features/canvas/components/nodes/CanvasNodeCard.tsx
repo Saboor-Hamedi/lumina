@@ -97,10 +97,17 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
       >
         {/* Connection Ports (Knobs appearing on hover for drag/click linking & magnetic socket docking) */}
         {(() => {
-          const topRatio = isShapeNode && resolvedShape ? getShapePortRatio(resolvedShape, 'top') : null
+          let topRatio = isShapeNode && resolvedShape ? getShapePortRatio(resolvedShape, 'top') : null
           const rightRatio = isShapeNode && resolvedShape ? getShapePortRatio(resolvedShape, 'right') : null
           const bottomRatio = isShapeNode && resolvedShape ? getShapePortRatio(resolvedShape, 'bottom') : null
           const leftRatio = isShapeNode && resolvedShape ? getShapePortRatio(resolvedShape, 'left') : null
+
+          // For actor, crown of round head dynamically shifts with container aspect ratio
+          if (isShapeNode && resolvedShape === 'actor') {
+            const aspect = node.width / (node.height || 1)
+            const headRy = (13 * Math.min(2.5, Math.max(0.4, aspect))) / 100
+            topRatio = { rx: 0.5, ry: Math.max(0.01, 0.18 - headRy) }
+          }
 
           return (
             <>
@@ -153,7 +160,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
               width="100%"
               height="100%"
               preserveAspectRatio={
-                resolvedShape === 'actor' || resolvedShape === 'circle'
+                resolvedShape === 'circle'
                   ? 'xMidYMid meet'
                   : 'none'
               }
@@ -163,7 +170,9 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                 'var(--node-accent, var(--text-accent, #38bdf8))',
                 'var(--node-accent, var(--text-accent, #38bdf8))',
                 0.04,
-                isSelected ? 1.35 : 1.2
+                isSelected ? 1.35 : 1.2,
+                node.width,
+                node.height
               )}
             </svg>
 
@@ -394,7 +403,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
               </div>
             ) : node.type === 'image' ? (
               <CanvasImagePreview
-                url={node.url}
+                url={node.url || node.imageUrl}
                 relativePath={node.text || node.file}
                 title={node.title}
               />

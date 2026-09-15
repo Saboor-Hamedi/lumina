@@ -44,18 +44,35 @@ export function useCanvasDrop({
     (snippet: any, pt: { x: number; y: number }, offset: number = 0): Partial<CanvasNode> => {
       const title = snippet.title || snippet.name || 'Untitled Note'
       const content = snippet.content || snippet.text || ''
-      const file = snippet.path || snippet.file || ''
+      const file = snippet.path || snippet.file || snippet.fileName || ''
+      const fileName = snippet.fileName || snippet.name || title || ''
+      const isPdf = snippet.type === 'pdf' || /\.pdf$/i.test(fileName)
+      const isImg = snippet.type === 'image' || /\.(png|jpe?g|svg|webp|gif|bmp|ico)$/i.test(fileName)
+
+      let type: any = 'note'
+      let imageUrl = snippet.imageUrl || snippet.src
+      if (isPdf) {
+        type = 'pdf'
+      } else if (isImg) {
+        type = 'image'
+        if (!imageUrl) {
+          imageUrl = snippet.path ? `asset://local/${snippet.path}` : `asset://local/${fileName}`
+        }
+      } else if (snippet.type) {
+        type = snippet.type
+      }
 
       return normalizeNode({
-        type: 'note',
+        type,
         title,
         text: content,
         file: file || undefined,
+        imageUrl,
         x: Math.round(pt.x + offset - 130),
         y: Math.round(pt.y + offset - 70),
-        width: 260,
-        height: 140,
-        color: 'yellow'
+        width: isImg ? 280 : 260,
+        height: isImg ? 200 : 140,
+        color: isPdf ? 'blue' : 'yellow'
       })
     },
     []
@@ -113,11 +130,31 @@ export function useCanvasDrop({
         pt = { x: Math.round(pt.x / 20) * 20, y: Math.round(pt.y / 20) * 20 }
       }
 
-      // 1. Check if dropped from ConvasShapes palette
+      // 1. Check if dropped from ConvasShapes palette or Studio Shapes tab
       const luminaShapeData = e.dataTransfer.getData('application/lumina-shape')
-      if (luminaShapeData) {
+      const luminaShapeMeta = e.dataTransfer.getData('application/lumina-shape-meta')
+
+      if (luminaShapeData || luminaShapeMeta) {
         try {
-          const { shapeType, width = 140, height = 100, color = 'default' } = JSON.parse(luminaShapeData)
+          let shapeType: any = luminaShapeData
+          let width = 140
+          let height = 100
+          let color = 'default'
+
+          if (luminaShapeData && luminaShapeData.trim().startsWith('{')) {
+            const parsed = JSON.parse(luminaShapeData)
+            shapeType = parsed.shapeType || parsed.id || 'rectangle'
+            width = parsed.width || 140
+            height = parsed.height || 100
+            color = parsed.color || 'default'
+          } else if (luminaShapeMeta) {
+            const parsedMeta = JSON.parse(luminaShapeMeta)
+            shapeType = parsedMeta.id || parsedMeta.shapeType || luminaShapeData || 'rectangle'
+            width = parsedMeta.width || 140
+            height = parsedMeta.height || 100
+            color = parsedMeta.color || 'default'
+          }
+
           let newX = pt.x - width / 2
           let newY = pt.y - height / 2
           if (snapToGrid) {
@@ -136,12 +173,14 @@ export function useCanvasDrop({
             y: newY,
             width,
             height,
-            color: color || 'default'
+            color: (color as any) || 'default'
           })
           setEditingNodeId(newNode.id)
           setEditingField('text')
           return
-        } catch (err) {}
+        } catch (err) {
+          console.warn('[useCanvasDrop] Error handling shape drop:', err)
+        }
       }
 
       // 2. Check if dropped from Lumina FileExplorer (HTML5 dataTransfer)

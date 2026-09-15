@@ -3,7 +3,7 @@ import {
   buildCanvasSvg,
   getExportThemeColors,
   getCanvasBoundingBox
-} from '../../../../../src/renderer/src/features/canvas/export'
+} from '../../../../../src/renderer/src/features/canvas/utils/canvasExport'
 import { CanvasNode, CanvasEdge } from '../../../../../src/renderer/src/features/canvas/types'
 
 describe('canvasExport - Dynamic Theme-Aware SVG Generation', () => {

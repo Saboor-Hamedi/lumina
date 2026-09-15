@@ -1,0 +1,32 @@
+/* Canvas Floating Notification Toast */
+.lumina-canvas-toast {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-panel, #18181b);
+  border: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.2));
+  box-shadow: 0 12px 32px var(--shadow-soft, rgba(0, 0, 0, 0.35));
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main, #f8fafc);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 1000;
+  pointer-events: none;
+  animation: toastPop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes toastPop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

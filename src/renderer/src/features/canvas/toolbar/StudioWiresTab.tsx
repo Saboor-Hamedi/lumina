@@ -22,13 +22,13 @@ const LINE_STYLE_OPTIONS: StudioDropdownOption<CanvasEdgeLineStyle>[] = [
     id: 'curved',
     label: 'Curved (Spline)',
     icon: <Spline size={13} />,
-    description: 'Smooth organic Bezier paths'
+    description: 'Direction-aware smooth Bezier paths'
   },
   {
     id: 'step',
-    label: 'Step (Orthogonal)',
+    label: 'Orthogonal (Manhattan)',
     icon: <CornerDownRight size={13} />,
-    description: '90° right-angle architecture lines'
+    description: 'Right-angle architecture lines with 8px rounded corners'
   },
   {
     id: 'straight',
