@@ -130,10 +130,11 @@ export function openImageLightbox(imgSource: HTMLImageElement | string): void {
   const clone = document.createElement('img')
   clone.src = imgSrc
   clone.draggable = false
-  clone.style.maxWidth = '100%'
-  clone.style.maxHeight = '100%'
+  clone.style.maxWidth = '85vw'
+  clone.style.maxHeight = '80vh'
   clone.style.objectFit = 'contain'
   clone.style.display = 'block'
+  clone.style.margin = 'auto'
   clone.style.userSelect = 'none'
 
   canvas.appendChild(clone)

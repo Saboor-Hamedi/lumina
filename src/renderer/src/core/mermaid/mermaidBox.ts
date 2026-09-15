@@ -94,10 +94,13 @@ export function openMermaidLightbox(svgEl: SVGSVGElement | HTMLElement | null): 
   const clone = svgEl.cloneNode(true) as SVGSVGElement | HTMLElement
   clone.removeAttribute('width')
   clone.removeAttribute('height')
-  clone.style.width = '100%'
+  clone.style.transform = 'none'
+  clone.style.maxWidth = '85vw'
+  clone.style.maxHeight = '80vh'
+  clone.style.width = 'auto'
   clone.style.height = 'auto'
-  clone.style.maxWidth = '100%'
   clone.style.display = 'block'
+  clone.style.margin = 'auto'
 
   const svgId = svgEl.id || svgEl.getAttribute('id')
   if (svgId) {

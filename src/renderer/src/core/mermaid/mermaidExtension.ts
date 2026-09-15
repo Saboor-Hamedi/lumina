@@ -57,6 +57,30 @@ if (typeof window !== 'undefined') {
   window.addEventListener('theme-changed', clearMermaidCache)
 }
 
+function classifyMermaidDiagram(container: HTMLElement, code: string): void {
+  const isLR = /^\s*(flowchart|graph)\s+LR\b/i.test(code)
+  const isTD = /^\s*(flowchart|graph)\s+(TD|TB)\b/i.test(code)
+  const svgEl = container.querySelector('svg')
+  let aspectRatio = 1
+  if (svgEl) {
+    const vb = svgEl.getAttribute('viewBox')
+    if (vb) {
+      const parts = vb.split(/[\s,]+/).map(Number)
+      if (parts.length === 4 && parts[3] > 0) {
+        aspectRatio = parts[2] / parts[3]
+      }
+    }
+  }
+
+  if (isLR || aspectRatio > 2.0) {
+    container.classList.add('mermaid-flowchart-lr')
+    container.classList.remove('mermaid-flowchart-td')
+  } else if (isTD || aspectRatio < 1.0) {
+    container.classList.add('mermaid-flowchart-td')
+    container.classList.remove('mermaid-flowchart-lr')
+  }
+}
+
 class MermaidWidget extends WidgetType {
   code: string
 
@@ -325,6 +349,7 @@ class MermaidWidget extends WidgetType {
     const cachedSvg = mermaidSvgCache.get(this.code)
     if (cachedSvg) {
       contentDiv.innerHTML = cachedSvg
+      classifyMermaidDiagram(contentDiv, this.code)
     } else {
       contentDiv.innerHTML = `
         <div class="mermaid-loading">
@@ -514,6 +539,7 @@ export function renderMermaidToElement(container: HTMLElement, code: string, uni
       const { svg } = await mermaid.render(uniqueId, code)
       mermaidSvgCache.set(code, svg)
       container.innerHTML = svg
+      classifyMermaidDiagram(container, code)
     } catch (err: any) {
       container.innerHTML = `<div class="mermaid-error"><strong>Mermaid Syntax Error</strong>\n${err?.message || err}</div>`
     }
