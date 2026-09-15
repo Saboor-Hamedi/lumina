@@ -84,11 +84,12 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
     const nodeColorClass = node.color ? `color-${node.color}` : 'color-default'
     const resolvedShape = node.shape || (node as any).shapeType || (node.type === 'shape' ? 'rectangle' : undefined)
     const isShapeNode = node.type === 'shape' || !!resolvedShape
+    const isSticky = !isShapeNode && (node.type === 'text' || node.type === 'sticky') && !node.file
 
     return (
       <div
         data-node-id={node.id}
-        className={`lumina-canvas-node ${nodeColorClass} ${isShapeNode ? `is-shape shape-${resolvedShape || 'rectangle'}` : ''} ${isSelected ? (isMultiSelection ? 'selected is-multi-selected' : 'selected') : ''}`}
+        className={`lumina-canvas-node ${nodeColorClass} ${isShapeNode ? `is-shape shape-${resolvedShape || 'rectangle'}` : ''} ${isSticky ? 'is-sticky' : ''} ${isSelected ? (isMultiSelection ? 'selected is-multi-selected' : 'selected') : ''}`}
         style={{
           left: `${node.x}px`,
           top: `${node.y}px`,
@@ -288,6 +289,105 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                     <span className="placeholder">Double-click to type</span>
                   )}
                 </span>
+              )}
+            </div>
+          </>
+        ) : isSticky ? (
+          <>
+            {/* Sticky Actions Toolbar (Appears on hover in top-right corner, subtle) */}
+            {!isMultiSelection && (
+              <div className="lumina-canvas-sticky-actions">
+                <ToolTip text="Change Color" position="top">
+                  <button
+                    className="lumina-canvas-action-btn"
+                    aria-label="Change Color"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCycleColor(node.id)
+                    }}
+                  >
+                    <Palette size={12} />
+                  </button>
+                </ToolTip>
+
+                {onDuplicateNode && (
+                  <ToolTip text="Duplicate Note (Alt+D)" position="top">
+                    <button
+                      className="lumina-canvas-action-btn"
+                      aria-label="Duplicate Note"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onDuplicateNode(node.id)
+                      }}
+                    >
+                      <Copy size={12} />
+                    </button>
+                  </ToolTip>
+                )}
+
+                <ToolTip text="Delete Note" position="top">
+                  <button
+                    className="lumina-canvas-action-btn delete"
+                    aria-label="Delete Note"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onDeleteNode(node.id)
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                </ToolTip>
+              </div>
+            )}
+
+            {/* Sticky Note Body: no bulky header */}
+            <div
+              className="lumina-canvas-node-body lumina-canvas-sticky-body"
+              onWheel={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => {
+                e.stopPropagation()
+                onStartEditing(node.id, 'text')
+              }}
+            >
+              {/* Accessible title anchor for tests / assistive tools */}
+              <span className="sr-only">{node.title || 'Quick Idea'}</span>
+              {isEditing && editingField === 'text' ? (
+                <textarea
+                  autoFocus
+                  dir="auto"
+                  className="lumina-canvas-text-area lumina-canvas-sticky-textarea"
+                  defaultValue={node.text || ''}
+                  ref={(el) => {
+                    if (el) {
+                      const len = el.value.length
+                      el.setSelectionRange(len, len)
+                    }
+                  }}
+                  onInput={(e) => {
+                    onUpdateText(node.id, e.currentTarget.value)
+                  }}
+                  onBlur={(e) => {
+                    onUpdateText(node.id, e.target.value)
+                    onStopEditing()
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      onUpdateText(node.id, e.currentTarget.value)
+                      e.currentTarget.blur()
+                      onStopEditing()
+                    }
+                    if (e.key === 'Escape') {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      e.currentTarget.blur()
+                      onStopEditing()
+                    }
+                  }}
+                />
+              ) : (
+                <MemoizedMarkdownPreview text={node.text || ''} />
               )}
             </div>
           </>

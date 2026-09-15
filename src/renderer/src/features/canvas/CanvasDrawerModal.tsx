@@ -21,7 +21,16 @@ import {
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { CanvasTabPane } from './CanvasTabPane'
 import ToolTip from '../../components/atoms/ToolTip'
-import './css/canvas.css'
+import './css/canvas-base.css'
+import './css/canvas-toolbar.css'
+import './css/canvas-studio.css'
+import './css/canvas-dropdown.css'
+import './css/canvas-nodes.css'
+import './css/canvas-shapes.css'
+import './css/canvas-drawer.css'
+import './css/canvas-selection.css'
+import './css/canvas-minimap.css'
+import './css/canvas-toast.css'
 
 export interface CanvasDrawerModalProps {
   isOpen?: boolean

@@ -57,11 +57,11 @@
   box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   cursor: move;
   z-index: 5;
-  contain: layout style paint;
+  contain: layout style;
   will-change: left, top;
 }
 
@@ -110,6 +110,80 @@
   --node-accent: var(--text-accent, #38bdf8);
 }
 
+/* Sticky Notes (Uses Lumina's active theme: var(--bg-panel), var(--border-subtle), var(--text-main)) */
+.lumina-canvas-node.is-sticky {
+  border-radius: 8px;
+  background-color: var(--bg-panel, #18181b);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-top: 2.5px solid var(--node-accent, var(--text-accent, #38bdf8));
+  box-shadow: 0 6px 20px -2px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lumina-canvas-node.is-sticky.selected {
+  border-color: var(--node-accent, var(--text-accent, #38bdf8)) !important;
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 45%, transparent),
+    0 12px 32px -4px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Sticky Action Bar (Palette, Copy, Delete) - appears on hover / selected */
+.lumina-canvas-sticky-actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 5px;
+  background: color-mix(in srgb, var(--bg-card, var(--bg-panel, #18181b)) 85%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  transform: translateY(-3px);
+  z-index: 20;
+}
+
+.lumina-canvas-node.is-sticky:hover .lumina-canvas-sticky-actions,
+.lumina-canvas-node.is-sticky.selected .lumina-canvas-sticky-actions {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* Multi-selection suppresses sticky actions so selection toolbar is prominent */
+.lumina-canvas-container.is-multi-selecting .lumina-canvas-sticky-actions,
+.lumina-canvas-node.is-multi-selected .lumina-canvas-sticky-actions {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Sticky Body & Textarea */
+.lumina-canvas-sticky-body {
+  width: 100%;
+  height: 100%;
+  padding: 14px 16px;
+  box-sizing: border-box;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-main, #f1f5f9);
+  overflow-y: auto;
+}
+
+.lumina-canvas-sticky-textarea {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-main, #f1f5f9);
+  padding: 0;
+}
+
 .lumina-canvas-node-header {
   display: flex;
   align-items: center;
@@ -117,6 +191,7 @@
   padding: 6px 10px;
   background-color: color-mix(in srgb, var(--bg-card, #20232b) 80%, transparent);
   border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 7px 7px 0 0;
   font-size: 11.5px;
   font-weight: 600;
   color: var(--text-main, #f8fafc);

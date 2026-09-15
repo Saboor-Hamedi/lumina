@@ -39,7 +39,16 @@ import {
 } from './components'
 import { ConvasToolBarRight } from './toolbar'
 import { Notification, useToast } from '../../core/notification'
-import './css/canvas.css'
+import './css/canvas-base.css'
+import './css/canvas-toolbar.css'
+import './css/canvas-studio.css'
+import './css/canvas-dropdown.css'
+import './css/canvas-nodes.css'
+import './css/canvas-shapes.css'
+import './css/canvas-drawer.css'
+import './css/canvas-selection.css'
+import './css/canvas-minimap.css'
+import './css/canvas-toast.css'
 
 export interface ConvasContainerProps {
   initialData?: CanvasData
@@ -492,7 +501,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     const rect = containerRef.current.getBoundingClientRect()
     const centerPt = screenToCanvas(rect.left + rect.width / 2, rect.top + rect.height / 2, rect)
     const newNode = addNode({
-      type: 'text',
+      type: 'sticky',
       title: 'Quick Idea',
       text: '',
       x: Math.round(centerPt.x - 130),

@@ -134,11 +134,36 @@ export function useExplorerDnd({
         }
       }
 
+      // Secondary check: test element under pointer
+      if (!targetCanvas && dropX > 0 && dropY > 0) {
+        const el = document.elementFromPoint(dropX, dropY)
+        targetCanvas = el?.closest('.lumina-canvas-container')
+      }
+
+      // Fallback: If dropped outside the explorer while a visible canvas container is active
+      if (!targetCanvas && !over) {
+        for (const canvas of canvasContainers) {
+          const r = canvas.getBoundingClientRect()
+          if (r.width > 50 && r.height > 50 && dropX >= r.left - 50) {
+            targetCanvas = canvas
+            break
+          }
+        }
+      }
+
       if (targetCanvas) {
         const idsToDrop = dragItem?.draggedSnippetIds?.length
           ? dragItem.draggedSnippetIds
           : [active.id]
-        const snippetsToDrop = allSnippets.filter((s) => idsToDrop.includes(s.id))
+        let snippetsToDrop = (allSnippets || []).filter((s) => idsToDrop.includes(s.id))
+
+        // Fallback: if snippet not found in allSnippets array, use dragItem.snippet or active.data
+        if (snippetsToDrop.length === 0) {
+          const directSnippet = dragItem?.snippet || active.data?.current?.snippet
+          if (directSnippet) {
+            snippetsToDrop = [directSnippet]
+          }
+        }
 
         if (snippetsToDrop.length > 0) {
           window.dispatchEvent(

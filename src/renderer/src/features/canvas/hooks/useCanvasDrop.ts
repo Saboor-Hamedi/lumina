@@ -44,7 +44,8 @@ export function useCanvasDrop({
     (snippet: any, pt: { x: number; y: number }, offset: number = 0): Partial<CanvasNode> => {
       const title = snippet.title || snippet.name || 'Untitled Note'
       const content = snippet.content || snippet.text || ''
-      const file = snippet.path || snippet.file || snippet.fileName || ''
+      // Ensure file identifier is never empty for a vault note
+      const file = snippet.id || snippet.path || snippet.file || snippet.fileName || ''
       const fileName = snippet.fileName || snippet.name || title || ''
       const isPdf = snippet.type === 'pdf' || /\.pdf$/i.test(fileName)
       const isImg = snippet.type === 'image' || /\.(png|jpe?g|svg|webp|gif|bmp|ico)$/i.test(fileName)
@@ -58,8 +59,9 @@ export function useCanvasDrop({
         if (!imageUrl) {
           imageUrl = snippet.path ? `asset://local/${snippet.path}` : `asset://local/${fileName}`
         }
-      } else if (snippet.type) {
-        type = snippet.type
+      } else {
+        // Vault notes dragged from FileExplorer are note cards, not sticky notes
+        type = 'note'
       }
 
       return normalizeNode({
@@ -72,7 +74,7 @@ export function useCanvasDrop({
         y: Math.round(pt.y + offset - 70),
         width: isImg ? 280 : 260,
         height: isImg ? 200 : 140,
-        color: isPdf ? 'blue' : 'yellow'
+        color: isPdf ? 'blue' : 'default'
       })
     },
     []
@@ -105,7 +107,13 @@ export function useCanvasDrop({
         const batchNodes = snippets.map((s: any, idx: number) =>
           buildNodeFromSnippet(s, pt, idx * 24)
         )
-        addNodes(batchNodes)
+        const created = addNodes(batchNodes)
+        if (created?.length > 0) {
+          onToast?.(
+            `Added ${created.length} note${created.length > 1 ? 's' : ''} to canvas`,
+            'success'
+          )
+        }
       }
     }
 
