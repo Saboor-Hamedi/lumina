@@ -383,7 +383,11 @@ export function buildCanvasSvg(options: ExportCanvasOptions): { svgString: strin
       if (node.type === 'shape') {
         const shapeType = node.shape || 'rectangle'
         const shapeMarkup = getShapeSvgMarkup(shapeType, w, h, colorHex)
-        const text = escapeXml(node.text || '')
+        const cleanText = (node.text || '')
+          .replace(/\*\*(.*?)\*\*/g, '$1')
+          .replace(/\*(.*?)\*/g, '$1')
+          .replace(/`(.*?)`/g, '$1')
+        const text = escapeXml(cleanText)
 
         return `
         <g transform="translate(${x}, ${y})">

@@ -226,6 +226,11 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
             {/* Shape Centered Text */}
             <div
               className="lumina-canvas-shape-content"
+              onMouseDown={(e) => {
+                if (isEditing && editingField === 'text') {
+                  e.stopPropagation()
+                }
+              }}
               onDoubleClick={(e) => {
                 e.stopPropagation()
                 onStartEditing(node.id, 'text')
@@ -241,12 +246,15 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                     if (el) {
                       el.style.height = 'auto'
                       el.style.height = `${el.scrollHeight}px`
+                      const len = el.value.length
+                      el.setSelectionRange(len, len)
                     }
                   }}
                   onInput={(e) => {
                     const el = e.currentTarget
                     el.style.height = 'auto'
                     el.style.height = `${el.scrollHeight}px`
+                    onUpdateText(node.id, el.value)
                   }}
                   onBlur={(e) => {
                     onUpdateText(node.id, e.target.value)
@@ -254,19 +262,27 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault()
+                      e.stopPropagation()
                       onUpdateText(node.id, e.currentTarget.value)
+                      e.currentTarget.blur()
                       onStopEditing()
                     }
                     if (e.key === 'Escape') {
                       e.stopPropagation()
                       e.preventDefault()
+                      e.currentTarget.blur()
                       onStopEditing()
                     }
                   }}
                 />
               ) : (
                 <span className="lumina-canvas-shape-text" dir="auto">
-                  {node.text || <span className="placeholder">Double-click to type</span>}
+                  {node.text ? (
+                    <MemoizedMarkdownPreview text={node.text} />
+                  ) : (
+                    <span className="placeholder">Double-click to type</span>
+                  )}
                 </span>
               )}
             </div>
@@ -281,18 +297,31 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                   dir="auto"
                   className="lumina-canvas-title-input"
                   defaultValue={node.title || ''}
+                  ref={(el) => {
+                    if (el) {
+                      const len = el.value.length
+                      el.setSelectionRange(len, len)
+                    }
+                  }}
+                  onInput={(e) => {
+                    onUpdateTitle(node.id, e.currentTarget.value)
+                  }}
                   onBlur={(e) => {
                     onUpdateTitle(node.id, e.target.value.trim() || 'Untitled')
                     onStopEditing()
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
+                      e.preventDefault()
+                      e.stopPropagation()
                       onUpdateTitle(node.id, e.currentTarget.value.trim() || 'Untitled')
+                      e.currentTarget.blur()
                       onStopEditing()
                     }
                     if (e.key === 'Escape') {
                       e.stopPropagation()
                       e.preventDefault()
+                      e.currentTarget.blur()
                       onStopEditing()
                     }
                   }}
@@ -422,18 +451,31 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                     dir="auto"
                     className="lumina-canvas-text-area"
                     defaultValue={node.text || ''}
+                    ref={(el) => {
+                      if (el) {
+                        const len = el.value.length
+                        el.setSelectionRange(len, len)
+                      }
+                    }}
+                    onInput={(e) => {
+                      onUpdateText(node.id, e.currentTarget.value)
+                    }}
                     onBlur={(e) => {
                       onUpdateText(node.id, e.target.value)
                       onStopEditing()
                     }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                        e.preventDefault()
+                        e.stopPropagation()
                         onUpdateText(node.id, e.currentTarget.value)
+                        e.currentTarget.blur()
                         onStopEditing()
                       }
                       if (e.key === 'Escape') {
                         e.stopPropagation()
                         e.preventDefault()
+                        e.currentTarget.blur()
                         onStopEditing()
                       }
                     }}

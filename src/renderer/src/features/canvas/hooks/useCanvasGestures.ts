@@ -176,6 +176,9 @@ export function useCanvasGestures({
         panPrevRef.current = { x: e.clientX, y: e.clientY }
 
         if (e.button === 0 && toolMode !== 'hand' && !isSpacePressed) {
+          if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur()
+          }
           setSelectedNodeIds([])
           setEditingNodeId(null)
           setEditingField(null)

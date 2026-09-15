@@ -323,6 +323,26 @@
   font-size: 11px;
 }
 
+.lumina-canvas-shape-text .lumina-canvas-markdown {
+  font-size: inherit;
+  color: inherit;
+  line-height: inherit;
+  text-align: center;
+  word-break: break-word;
+}
+
+.lumina-canvas-shape-text .lumina-canvas-markdown p {
+  margin: 0;
+  display: inline;
+}
+
+.lumina-canvas-shape-text .lumina-canvas-markdown code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
 .lumina-canvas-shape-input {
   background: transparent;
   border: none;
@@ -341,6 +361,8 @@
   field-sizing: content;
   overflow: hidden;
   display: block;
+  cursor: text;
+  user-select: text;
 }
 
 /* Shape Geometry-Aware Text Centering Boundaries */

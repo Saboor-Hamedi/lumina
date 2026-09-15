@@ -89,16 +89,16 @@ export function getNodePorts(node: {
   if (resolvedShape === 'circle') {
     const cx = x + w / 2
     const cy = y + h / 2
-    const rx = w * 0.46
-    const ry = h * 0.46
+    const rx = w / 2
+    const ry = h / 2
     return [
       makePort('n', 'top', cx, cy - ry, 0, -1),
-      makePort('ne', 'top', cx + rx * INV_SQRT2, cy - ry * INV_SQRT2, INV_SQRT2, -INV_SQRT2),
       makePort('e', 'right', cx + rx, cy, 1, 0),
-      makePort('se', 'bottom', cx + rx * INV_SQRT2, cy + ry * INV_SQRT2, INV_SQRT2, INV_SQRT2),
       makePort('s', 'bottom', cx, cy + ry, 0, 1),
-      makePort('sw', 'bottom', cx - rx * INV_SQRT2, cy + ry * INV_SQRT2, -INV_SQRT2, INV_SQRT2),
       makePort('w', 'left', cx - rx, cy, -1, 0),
+      makePort('ne', 'top', cx + rx * INV_SQRT2, cy - ry * INV_SQRT2, INV_SQRT2, -INV_SQRT2),
+      makePort('se', 'bottom', cx + rx * INV_SQRT2, cy + ry * INV_SQRT2, INV_SQRT2, INV_SQRT2),
+      makePort('sw', 'bottom', cx - rx * INV_SQRT2, cy + ry * INV_SQRT2, -INV_SQRT2, INV_SQRT2),
       makePort('nw', 'top', cx - rx * INV_SQRT2, cy - ry * INV_SQRT2, -INV_SQRT2, -INV_SQRT2)
     ]
   }
@@ -185,12 +185,12 @@ export function getNodePorts(node: {
   // 7. Standard rectangular card & box layout (notes, cards, rectangles, rounded rects)
   return [
     makePort('n', 'top', x + w / 2, y, 0, -1),
-    makePort('ne', 'top', x + w, y, INV_SQRT2, -INV_SQRT2),
     makePort('e', 'right', x + w, y + h / 2, 1, 0),
-    makePort('se', 'bottom', x + w, y + h, INV_SQRT2, INV_SQRT2),
     makePort('s', 'bottom', x + w / 2, y + h, 0, 1),
-    makePort('sw', 'bottom', x, y + h, -INV_SQRT2, INV_SQRT2),
     makePort('w', 'left', x, y + h / 2, -1, 0),
+    makePort('ne', 'top', x + w, y, INV_SQRT2, -INV_SQRT2),
+    makePort('se', 'bottom', x + w, y + h, INV_SQRT2, INV_SQRT2),
+    makePort('sw', 'bottom', x, y + h, -INV_SQRT2, INV_SQRT2),
     makePort('nw', 'top', x, y, -INV_SQRT2, -INV_SQRT2)
   ]
 }

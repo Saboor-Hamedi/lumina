@@ -36,6 +36,15 @@ export interface RouteEdgeOptions {
 const CORNER_RADIUS = 8
 
 /**
+ * Helper to safely extract normal vector regardless of anchor format.
+ */
+function getPortNormal(port: CanvasPortAnchor): { nx: number; ny: number } {
+  const nx = port.nx !== undefined ? port.nx : (port.normal?.nx ?? 0)
+  const ny = port.ny !== undefined ? port.ny : (port.normal?.ny ?? 0)
+  return { nx, ny }
+}
+
+/**
  * Calculates insets outside/along a port's normal vector.
  */
 export function applyEndpointInset(
@@ -43,14 +52,16 @@ export function applyEndpointInset(
   toPort: CanvasPortAnchor,
   inset: number = 0
 ): { start: { x: number; y: number }; end: { x: number; y: number } } {
+  const fn = getPortNormal(fromPort)
+  const tn = getPortNormal(toPort)
   return {
     start: {
-      x: fromPort.x + fromPort.nx * inset,
-      y: fromPort.y + fromPort.ny * inset
+      x: fromPort.x + fn.nx * inset,
+      y: fromPort.y + fn.ny * inset
     },
     end: {
-      x: toPort.x + toPort.nx * inset,
-      y: toPort.y + toPort.ny * inset
+      x: toPort.x + tn.nx * inset,
+      y: toPort.y + tn.ny * inset
     }
   }
 }
@@ -98,10 +109,13 @@ export function getCurvedPath(
   const rawDist = Math.hypot(dx, dy)
   const cpOffset = Math.max(40, Math.min(rawDist * 0.4, 150))
 
-  let cp1x = p1.x + fromPort.nx * cpOffset
-  let cp1y = p1.y + fromPort.ny * cpOffset
-  let cp2x = p2.x + toPort.nx * cpOffset
-  let cp2y = p2.y + toPort.ny * cpOffset
+  const fn = getPortNormal(fromPort)
+  const tn = getPortNormal(toPort)
+
+  let cp1x = p1.x + fn.nx * cpOffset
+  let cp1y = p1.y + fn.ny * cpOffset
+  let cp2x = p2.x + tn.nx * cpOffset
+  let cp2y = p2.y + tn.ny * cpOffset
 
   // If parallel edge fanning is requested, apply perpendicular offset
   if (parallelOffset !== 0 && rawDist > 0) {
@@ -135,60 +149,160 @@ export function getOrthogonalPath(
   const p1 = { x: fromPort.x, y: fromPort.y }
   const p2 = { x: toPort.x, y: toPort.y }
 
+  const fn = getPortNormal(fromPort)
+  const tn = getPortNormal(toPort)
+
   // Exit & entry buffers along port normals
   const exitBuffer = 24
   const exitPt = {
-    x: p1.x + fromPort.nx * exitBuffer,
-    y: p1.y + fromPort.ny * exitBuffer
+    x: p1.x + fn.nx * exitBuffer,
+    y: p1.y + fn.ny * exitBuffer
   }
   const entryPt = {
-    x: p2.x + toPort.nx * exitBuffer,
-    y: p2.y + toPort.ny * exitBuffer
+    x: p2.x + tn.nx * exitBuffer,
+    y: p2.y + tn.ny * exitBuffer
   }
 
   const rawWaypoints: { x: number; y: number }[] = [p1, exitPt]
 
-  const isFromHorizontal = Math.abs(fromPort.nx) > Math.abs(fromPort.ny)
-  const isToHorizontal = Math.abs(toPort.nx) > Math.abs(toPort.ny)
+  const isFromHorizontal = Math.abs(fn.nx) > Math.abs(fn.ny)
+  const isToHorizontal = Math.abs(tn.nx) > Math.abs(tn.ny)
 
   if (isFromHorizontal && isToHorizontal) {
-    let midX = (exitPt.x + entryPt.x) / 2
-    if (parallelOffset !== 0) midX += parallelOffset
-    if (snapToGrid) midX = Math.round(midX / 20) * 20
+    // Both ports are horizontal (left or right)
+    const facingEachOther =
+      (fn.nx > 0 && tn.nx < 0 && exitPt.x <= entryPt.x) ||
+      (fn.nx < 0 && tn.nx > 0 && exitPt.x >= entryPt.x)
 
-    rawWaypoints.push({ x: midX, y: exitPt.y })
-    rawWaypoints.push({ x: midX, y: entryPt.y })
+    if (facingEachOther) {
+      // Clean S/Z shape between them
+      let midX = (exitPt.x + entryPt.x) / 2
+      if (parallelOffset !== 0) midX += parallelOffset
+      if (snapToGrid) midX = Math.round(midX / 20) * 20
+
+      rawWaypoints.push({ x: midX, y: exitPt.y })
+      rawWaypoints.push({ x: midX, y: entryPt.y })
+    } else if (fn.nx * tn.nx > 0) {
+      // Both face the same direction (e.g. both right or both left) -> U-shaped bypass bracket
+      let busX =
+        fn.nx > 0
+          ? Math.max(exitPt.x, entryPt.x) + 20
+          : Math.min(exitPt.x, entryPt.x) - 20
+      if (parallelOffset !== 0) busX += parallelOffset
+      if (snapToGrid) busX = Math.round(busX / 20) * 20
+
+      rawWaypoints.push({ x: busX, y: exitPt.y })
+      rawWaypoints.push({ x: busX, y: entryPt.y })
+    } else {
+      // Inverted overlap (e.g. fromPort is right, toPort is left, but toNode is left of fromNode)
+      // Route around the intermediate corridor to avoid slicing backward through nodes
+      const vertGap = Math.abs(exitPt.y - entryPt.y)
+      if (vertGap > 70) {
+        let midY = (exitPt.y + entryPt.y) / 2
+        if (parallelOffset !== 0) midY += parallelOffset
+        if (snapToGrid) midY = Math.round(midY / 20) * 20
+        rawWaypoints.push({ x: exitPt.x, y: midY })
+        rawWaypoints.push({ x: entryPt.x, y: midY })
+      } else {
+        let bypassY = Math.min(exitPt.y, entryPt.y) - 36
+        if (parallelOffset !== 0) bypassY += parallelOffset
+        if (snapToGrid) bypassY = Math.round(bypassY / 20) * 20
+        rawWaypoints.push({ x: exitPt.x, y: bypassY })
+        rawWaypoints.push({ x: entryPt.x, y: bypassY })
+      }
+    }
   } else if (!isFromHorizontal && !isToHorizontal) {
-    let midY = (exitPt.y + entryPt.y) / 2
-    if (parallelOffset !== 0) midY += parallelOffset
-    if (snapToGrid) midY = Math.round(midY / 20) * 20
+    // Both ports are vertical (top or bottom)
+    const facingEachOther =
+      (fn.ny > 0 && tn.ny < 0 && exitPt.y <= entryPt.y) ||
+      (fn.ny < 0 && tn.ny > 0 && exitPt.y >= entryPt.y)
 
-    rawWaypoints.push({ x: exitPt.x, y: midY })
-    rawWaypoints.push({ x: entryPt.x, y: midY })
+    if (facingEachOther) {
+      // Clean S/Z shape between them
+      let midY = (exitPt.y + entryPt.y) / 2
+      if (parallelOffset !== 0) midY += parallelOffset
+      if (snapToGrid) midY = Math.round(midY / 20) * 20
+
+      rawWaypoints.push({ x: exitPt.x, y: midY })
+      rawWaypoints.push({ x: entryPt.x, y: midY })
+    } else if (fn.ny * tn.ny > 0) {
+      // Both face the same direction (e.g. both top or both bottom) -> U-shaped bypass bracket
+      let busY =
+        fn.ny > 0
+          ? Math.max(exitPt.y, entryPt.y) + 20
+          : Math.min(exitPt.y, entryPt.y) - 20
+      if (parallelOffset !== 0) busY += parallelOffset
+      if (snapToGrid) busY = Math.round(busY / 20) * 20
+
+      rawWaypoints.push({ x: exitPt.x, y: busY })
+      rawWaypoints.push({ x: entryPt.x, y: busY })
+    } else {
+      // Inverted overlap
+      const horizGap = Math.abs(exitPt.x - entryPt.x)
+      if (horizGap > 70) {
+        let midX = (exitPt.x + entryPt.x) / 2
+        if (parallelOffset !== 0) midX += parallelOffset
+        if (snapToGrid) midX = Math.round(midX / 20) * 20
+        rawWaypoints.push({ x: midX, y: exitPt.y })
+        rawWaypoints.push({ x: midX, y: entryPt.y })
+      } else {
+        let bypassX = Math.max(exitPt.x, entryPt.x) + 36
+        if (parallelOffset !== 0) bypassX += parallelOffset
+        if (snapToGrid) bypassX = Math.round(bypassX / 20) * 20
+        rawWaypoints.push({ x: bypassX, y: exitPt.y })
+        rawWaypoints.push({ x: bypassX, y: entryPt.y })
+      }
+    }
   } else if (isFromHorizontal && !isToHorizontal) {
-    let cornerX = entryPt.x
-    let cornerY = exitPt.y
-    if (parallelOffset !== 0) {
-      cornerX += parallelOffset
-      cornerY += parallelOffset
+    // From Horizontal, To Vertical (e.g. Right to Top, or Left to Bottom)
+    const dx = entryPt.x - exitPt.x
+    const dy = exitPt.y - entryPt.y
+    const isNaturalL = dx * fn.nx >= 0 && dy * tn.ny >= 0
+
+    if (isNaturalL) {
+      let cornerX = entryPt.x
+      let cornerY = exitPt.y
+      if (parallelOffset !== 0) {
+        cornerX += parallelOffset
+        cornerY += parallelOffset
+      }
+      if (snapToGrid) {
+        cornerX = Math.round(cornerX / 20) * 20
+        cornerY = Math.round(cornerY / 20) * 20
+      }
+      rawWaypoints.push({ x: cornerX, y: cornerY })
+    } else {
+      let turnX = exitPt.x + fn.nx * 20
+      if (parallelOffset !== 0) turnX += parallelOffset
+      if (snapToGrid) turnX = Math.round(turnX / 20) * 20
+      rawWaypoints.push({ x: turnX, y: exitPt.y })
+      rawWaypoints.push({ x: turnX, y: entryPt.y })
     }
-    if (snapToGrid) {
-      cornerX = Math.round(cornerX / 20) * 20
-      cornerY = Math.round(cornerY / 20) * 20
-    }
-    rawWaypoints.push({ x: cornerX, y: cornerY })
   } else {
-    let cornerX = exitPt.x
-    let cornerY = entryPt.y
-    if (parallelOffset !== 0) {
-      cornerX += parallelOffset
-      cornerY += parallelOffset
+    // From Vertical, To Horizontal (e.g. Bottom to Left, or Top to Right)
+    const dy = entryPt.y - exitPt.y
+    const dx = exitPt.x - entryPt.x
+    const isNaturalL = dy * fn.ny >= 0 && dx * tn.nx >= 0
+
+    if (isNaturalL) {
+      let cornerX = exitPt.x
+      let cornerY = entryPt.y
+      if (parallelOffset !== 0) {
+        cornerX += parallelOffset
+        cornerY += parallelOffset
+      }
+      if (snapToGrid) {
+        cornerX = Math.round(cornerX / 20) * 20
+        cornerY = Math.round(cornerY / 20) * 20
+      }
+      rawWaypoints.push({ x: cornerX, y: cornerY })
+    } else {
+      let turnY = exitPt.y + fn.ny * 20
+      if (parallelOffset !== 0) turnY += parallelOffset
+      if (snapToGrid) turnY = Math.round(turnY / 20) * 20
+      rawWaypoints.push({ x: exitPt.x, y: turnY })
+      rawWaypoints.push({ x: entryPt.x, y: turnY })
     }
-    if (snapToGrid) {
-      cornerX = Math.round(cornerX / 20) * 20
-      cornerY = Math.round(cornerY / 20) * 20
-    }
-    rawWaypoints.push({ x: cornerX, y: cornerY })
   }
 
   rawWaypoints.push(entryPt)
