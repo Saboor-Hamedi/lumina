@@ -136,14 +136,30 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
       }
 
       setEdges((prev) => {
-        const exists = prev.some(
+        // Check if an edge already connects these two nodes (in either direction)
+        const existingIndex = prev.findIndex(
           (e) =>
-            e.fromNode === fromNodeId &&
-            e.toNode === toNodeId &&
-            e.fromSide === fromSide &&
-            e.toSide === resolvedToSide
+            (e.fromNode === fromNodeId && e.toNode === toNodeId) ||
+            (e.fromNode === toNodeId && e.toNode === fromNodeId)
         )
-        if (exists) return prev
+
+        if (existingIndex !== -1) {
+          // Re-routing existing connection: update its ports, direction, and style without duplicating
+          const updated = [...prev]
+          const existing = updated[existingIndex]
+          updated[existingIndex] = {
+            ...existing,
+            fromNode: fromNodeId,
+            toNode: toNodeId,
+            fromSide,
+            toSide: resolvedToSide,
+            lineStyle: defaultLineStyle,
+            fromEnd: defaultEndpoints === 'bidirectional' ? 'arrow' : 'none',
+            toEnd: defaultEndpoints === 'none' ? 'none' : 'arrow',
+            routing: 'smart'
+          }
+          return updated
+        }
 
         return [
           ...prev,
@@ -376,6 +392,16 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
    */
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
+      const target = e.target as HTMLElement | null
+      // Do not hijack scroll or pan if the user's cursor is over toolbars, sidebars, studio drawer, or menus!
+      if (
+        target?.closest?.(
+          '.lumina-canvas-toolbar, .lumina-canvas-toolbar-right, .lumina-canvas-export-menu, .lumina-canvas-shapes-menu, .lumina-canvas-minimap, .lumina-sidebar, .right-sidebar'
+        )
+      ) {
+        return
+      }
+
       e.preventDefault()
       if (!containerRef.current) return
       const rect = containerRef.current.getBoundingClientRect()

@@ -144,6 +144,16 @@ export function useCanvasGestures({
    */
   const handleCanvasMouseDown = useCallback(
     (e: React.MouseEvent) => {
+      // If in connecting mode, clicking the background cancels the wire cleanly
+      if (connectingRef.current) {
+        setConnecting(null)
+        connectingRef.current = null
+        setSnappedTarget(null)
+        snappedTargetRef.current = null
+        connectingScreenStartRef.current = null
+        return
+      }
+
       const target = e.target as HTMLElement | null
       const isInteractive = target?.closest?.(
         '.lumina-canvas-node, .lumina-canvas-toolbar, .lumina-canvas-port, .lumina-canvas-resize-handle, .lumina-canvas-minimap, .lumina-canvas-edge-group'
@@ -171,6 +181,16 @@ export function useCanvasGestures({
    */
   const handleNodeMouseDown = useCallback(
     (e: React.MouseEvent, node: CanvasNode) => {
+      // If in connecting mode, clicking node body cancels wire cleanly
+      if (connectingRef.current) {
+        setConnecting(null)
+        connectingRef.current = null
+        setSnappedTarget(null)
+        snappedTargetRef.current = null
+        connectingScreenStartRef.current = null
+        return
+      }
+
       if (e.button !== 0) return
       if (toolMode === 'hand' || isSpacePressed) return
 
@@ -232,6 +252,24 @@ export function useCanvasGestures({
       e.preventDefault()
       if (toolMode === 'hand' || isSpacePressed) return
 
+      // If already in connecting mode, clicking this port completes the connection or cancels
+      if (connectingRef.current) {
+        if (connectingRef.current.fromNodeId !== nodeId) {
+          completeConnection(
+            connectingRef.current.fromNodeId,
+            connectingRef.current.fromSide,
+            nodeId,
+            side
+          )
+        }
+        setConnecting(null)
+        connectingRef.current = null
+        setSnappedTarget(null)
+        snappedTargetRef.current = null
+        connectingScreenStartRef.current = null
+        return
+      }
+
       const sourceNode = nodeMap.get(nodeId)
       if (!sourceNode) return
 
@@ -250,7 +288,7 @@ export function useCanvasGestures({
       connectingRef.current = newConn
       setMouseCanvasPos(portPt)
     },
-    [toolMode, isSpacePressed, nodeMap]
+    [toolMode, isSpacePressed, nodeMap, completeConnection]
   )
 
   /**
@@ -377,6 +415,10 @@ export function useCanvasGestures({
             snappedTargetRef.current.nodeId,
             snappedTargetRef.current.side
           )
+          setConnecting(null)
+          connectingRef.current = null
+          setSnappedTarget(null)
+          snappedTargetRef.current = null
           connectingScreenStartRef.current = null
           return
         }
@@ -394,6 +436,10 @@ export function useCanvasGestures({
               targetNodeId,
               targetSide
             )
+            setConnecting(null)
+            connectingRef.current = null
+            setSnappedTarget(null)
+            snappedTargetRef.current = null
             connectingScreenStartRef.current = null
             return
           }
@@ -468,10 +514,21 @@ export function useCanvasGestures({
       }
     }
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && connectingRef.current) {
+        setConnecting(null)
+        connectingRef.current = null
+        setSnappedTarget(null)
+        snappedTargetRef.current = null
+        connectingScreenStartRef.current = null
+      }
+    }
+
     window.addEventListener('pointermove', handleGlobalPointerMove, { passive: true })
     window.addEventListener('pointerup', handleGlobalPointerUp)
     window.addEventListener('mousemove', handleGlobalPointerMove as any, { passive: true })
     window.addEventListener('mouseup', handleGlobalPointerUp as any)
+    window.addEventListener('keydown', handleKeyDown)
     return () => {
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current)
@@ -480,6 +537,7 @@ export function useCanvasGestures({
       window.removeEventListener('pointerup', handleGlobalPointerUp)
       window.removeEventListener('mousemove', handleGlobalPointerMove as any)
       window.removeEventListener('mouseup', handleGlobalPointerUp as any)
+      window.removeEventListener('keydown', handleKeyDown)
     }
   }, [
     containerRef,

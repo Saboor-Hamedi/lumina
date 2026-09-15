@@ -254,6 +254,46 @@
   background: color-mix(in srgb, #ef4444 15%, transparent);
 }
 
+/* Studio Tabs Navigation Bar */
+.lumina-canvas-studio-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 10px;
+  background: color-mix(in srgb, var(--bg-app, #000000) 30%, transparent);
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.07));
+  user-select: none;
+}
+
+.studio-tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 4px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.studio-tab-item:hover {
+  color: var(--text-main, #ffffff);
+  background: color-mix(in srgb, var(--text-muted, #ffffff) 8%, transparent);
+}
+
+.studio-tab-item.active {
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 18%, transparent);
+  border-color: color-mix(in srgb, var(--text-accent, #38bdf8) 35%, transparent);
+  color: var(--text-accent, #38bdf8);
+  font-weight: 600;
+}
+
 /* Studio Body */
 .lumina-canvas-studio-body {
   flex: 1;
@@ -263,6 +303,87 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Studio Tab Panes & Section Banners */
+.lumina-canvas-studio-tab-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.studio-section-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 2px 4px;
+}
+
+.studio-section-banner .banner-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main, #ffffff);
+  letter-spacing: -0.01em;
+}
+
+.studio-section-banner .banner-sub {
+  font-size: 10px;
+  color: var(--text-dim, #64748b);
+  line-height: 1.3;
+}
+
+/* Studio Card Boxes */
+.lumina-canvas-studio-card-box {
+  background: color-mix(in srgb, var(--bg-app, #000000) 24%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.07));
+  border-radius: 8px;
+  padding: 9px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.lumina-canvas-studio-card-box .card-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lumina-canvas-studio-card-box .card-box-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.lumina-canvas-studio-card-box .card-box-sub {
+  font-size: 9.5px;
+  color: var(--text-dim, #64748b);
+}
+
+/* Info Callout */
+.studio-info-callout {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--border-subtle, rgba(255, 255, 255, 0.05)) 40%, transparent);
+  border: 1px dashed var(--border-subtle, rgba(255, 255, 255, 0.12));
+}
+
+.studio-info-callout .info-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-accent, #38bdf8);
+}
+
+.studio-info-callout .info-text {
+  font-size: 9.5px;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.35;
 }
 
 .lumina-canvas-studio-body::-webkit-scrollbar {
@@ -383,6 +504,11 @@
   max-height: 190px;
   overflow-y: auto;
   padding-right: 2px;
+}
+
+.lumina-canvas-studio-shapes-grid.full-pane {
+  max-height: calc(100vh - 250px);
+  min-height: 260px;
 }
 
 .lumina-canvas-studio-shapes-grid::-webkit-scrollbar {
