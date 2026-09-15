@@ -114,7 +114,12 @@ export function matchesShortcut(e: KeyboardEvent, shortcutStr: string): boolean 
   // If targetKey is '/', it should only match without shift unless reqShift is explicitly true.
   const isTargetSlashOrQuestion = targetKey === '/' || targetKey === '?'
   if (isTargetSlashOrQuestion) {
-    const isEventSlashOrQuestion = eventKey === '/' || eventKey === '?' || e.code === 'Slash'
+    const isEventSlashOrQuestion =
+      eventKey === '/' ||
+      eventKey === '?' ||
+      e.code === 'Slash' ||
+      e.code === 'NumpadDivide' ||
+      eventKey === 'divide'
     if (!isEventSlashOrQuestion) return false
 
     const expectsShift = reqShift || targetKey === '?'
@@ -314,6 +319,12 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
       if (matchesShortcut(e, getKey('canvasDrawer'))) {
         e.preventDefault()
         e.stopPropagation()
+        e.stopImmediatePropagation()
+        const now = Date.now()
+        if ((window as any).__lastCanvasDrawerDispatch && now - (window as any).__lastCanvasDrawerDispatch < 300) {
+          return
+        }
+        ;(window as any).__lastCanvasDrawerDispatch = now
         if (shortcutsRef.current.onToggleCanvasDrawer) {
           shortcutsRef.current.onToggleCanvasDrawer()
         } else {

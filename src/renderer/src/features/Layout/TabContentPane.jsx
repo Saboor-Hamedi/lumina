@@ -38,6 +38,7 @@ export const TabContentPane = React.memo(
 
     return (
       <div
+        className="tab-content-pane"
         style={{
           position: 'absolute',
           top: 0,

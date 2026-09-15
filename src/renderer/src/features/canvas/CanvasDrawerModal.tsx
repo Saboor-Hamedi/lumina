@@ -78,10 +78,14 @@ export const CanvasDrawerModal: React.FC<CanvasDrawerModalProps> = () => {
     return null
   }, [activeSnippetId, selectedSnippet, canvasSnippets])
 
-  // Listen for toggle-canvas-drawer or open-canvas-drawer event
   useEffect(() => {
+    let lastToggleTime = 0
     const handleToggle = (e: Event) => {
       const customEvt = e as CustomEvent<{ snippetId?: string }>
+      const now = Date.now()
+      if (now - lastToggleTime < 250) return
+      lastToggleTime = now
+
       if (customEvt.detail?.snippetId) {
         setActiveSnippetId(customEvt.detail.snippetId)
         setIsOpen(true)

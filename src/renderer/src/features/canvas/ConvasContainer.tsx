@@ -320,6 +320,12 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
       if (isCtrl && e.shiftKey && isSlash) {
         e.preventDefault()
         e.stopPropagation()
+        e.stopImmediatePropagation()
+        const now = Date.now()
+        if ((window as any).__lastCanvasDrawerDispatch && now - (window as any).__lastCanvasDrawerDispatch < 300) {
+          return
+        }
+        ;(window as any).__lastCanvasDrawerDispatch = now
         if (onOpenDrawer) {
           onOpenDrawer()
         } else {

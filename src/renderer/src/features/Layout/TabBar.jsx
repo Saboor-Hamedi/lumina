@@ -244,11 +244,9 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
     [openTabs, reorderTabs]
   )
 
-  // Handle mouse wheel scrolling for the tab bar
   const handleWheel = useCallback((e) => {
     if (!tabbarRef.current) return
-    // Only intercept vertical scrolls (deltaY) and convert to horizontal scroll
-    if (e.deltaY !== 0 && e.deltaX === 0) {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
       tabbarRef.current.scrollLeft += e.deltaY
     }
   }, [])

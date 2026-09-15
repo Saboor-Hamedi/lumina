@@ -422,6 +422,12 @@ export const MainLayout = () => {
       if (isCtrl && e.shiftKey && isSlash) {
         e.preventDefault()
         e.stopPropagation()
+        e.stopImmediatePropagation()
+        const now = Date.now()
+        if (window.__lastCanvasDrawerDispatch && now - window.__lastCanvasDrawerDispatch < 300) {
+          return
+        }
+        window.__lastCanvasDrawerDispatch = now
         window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))
       }
     }

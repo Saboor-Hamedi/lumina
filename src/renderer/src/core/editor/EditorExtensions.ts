@@ -420,6 +420,18 @@ export function useEditorExtensions({
           { key: 'Mod-Shift-f', run: () => isActiveRef.current && showFindWidgetRef.current },
           { key: 'Mod-Alt-f', run: () => isActiveRef.current && showFindWidgetRef.current },
           {
+            key: 'Mod-Shift-/',
+            run: () => {
+              const now = Date.now()
+              if ((window as any).__lastCanvasDrawerDispatch && now - (window as any).__lastCanvasDrawerDispatch < 300) {
+                return true
+              }
+              ;(window as any).__lastCanvasDrawerDispatch = now
+              window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))
+              return true
+            }
+          },
+          {
             key: 'Escape',
             run: (view: EditorView) => {
               if (isComposing(view)) return false

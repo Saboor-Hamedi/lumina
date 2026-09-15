@@ -322,7 +322,16 @@
   height: 32px !important;
   border-top-left-radius: 5px !important;
   border-top-right-radius: 5px !important;
-  overflow: hidden;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+[data-modern-ui='true'] .workspace-tabbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 [data-modern-ui='true'] .workspace-tab {

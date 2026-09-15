@@ -105,7 +105,6 @@
 .update-details-body::-webkit-scrollbar,
 .chat-messages-container::-webkit-scrollbar,
 .lumina-session-scrollable::-webkit-scrollbar,
-.editor-scroller::-webkit-scrollbar,
 .editor-breadcrumbs-bar::-webkit-scrollbar,
 .bc-outline-items-list::-webkit-scrollbar {
   width: 10px;
@@ -126,7 +125,6 @@
 .update-details-body::-webkit-scrollbar-track,
 .chat-messages-container::-webkit-scrollbar-track,
 .lumina-session-scrollable::-webkit-scrollbar-track,
-.editor-scroller::-webkit-scrollbar-track,
 .editor-breadcrumbs-bar::-webkit-scrollbar-track,
 .bc-outline-items-list::-webkit-scrollbar-track {
   background: transparent;
@@ -146,7 +144,6 @@
 .update-details-body::-webkit-scrollbar-thumb,
 .chat-messages-container::-webkit-scrollbar-thumb,
 .lumina-session-scrollable::-webkit-scrollbar-thumb,
-.editor-scroller::-webkit-scrollbar-thumb,
 .editor-breadcrumbs-bar::-webkit-scrollbar-thumb,
 .bc-outline-items-list::-webkit-scrollbar-thumb {
   background: var(--border-subtle, rgba(255, 255, 255, 0.12));
@@ -168,8 +165,23 @@
 .update-details-body::-webkit-scrollbar-thumb:hover,
 .chat-messages-container::-webkit-scrollbar-thumb:hover,
 .lumina-session-scrollable::-webkit-scrollbar-thumb:hover,
-.editor-scroller::-webkit-scrollbar-thumb:hover,
 .editor-breadcrumbs-bar::-webkit-scrollbar-thumb:hover,
 .bc-outline-items-list::-webkit-scrollbar-thumb:hover {
   background: var(--text-faint, rgba(255, 255, 255, 0.28));
+}
+
+.editor-scroller,
+.workspace-tabbar,
+.tab-content-pane {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.editor-scroller::-webkit-scrollbar,
+.workspace-tabbar::-webkit-scrollbar,
+.tab-content-pane::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
