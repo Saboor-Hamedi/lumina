@@ -62,13 +62,13 @@ import {
   ExplorerFavorites,
   ExternalDropOverlay
 } from './components'
-import { useFileSearch } from './hooks/useFileSearch'
-import { useFileTree } from './hooks/useFileTree'
-import { useExplorerSelection } from './hooks/useExplorerSelection'
-import { useExplorerDnd } from './hooks/useExplorerDnd'
-import { useExplorerOperations } from './hooks/useExplorerOperations'
-import { useFolderContextMenu } from './hooks/useFolderContextMenu'
-import { useExternalFileDrop } from './hooks/useExternalFileDrop'
+import { useFileSearch } from './hooks/FileSearch'
+import { useFileTree } from './hooks/FileTree'
+import { useExplorerSelection } from './hooks/ExplorerSelection'
+import { useExplorerDnd } from './hooks/ExplorerDnd'
+import { useExplorerOperations } from './hooks/ExplorerOperations'
+import { useFolderContextMenu } from './hooks/FolderMenu'
+import { useExternalFileDrop } from './hooks/ExternalFileDrop'
 import { useKeyboardShortcuts } from '../../core/hooks/useKeyboardShortcuts'
 import { summarizeNotes } from '../AI/services/summarizeNotes'
 import { isSnippetActive } from './utils/explorerSelectionHelper'
@@ -94,7 +94,6 @@ const VirtuosoFooter = ({ context }) => (
 const DroppableVirtuosoWrapper = ({
   children,
   isDragging,
-  isRootFocused,
   onClick,
   onPointerDown,
   onDragEnter,
@@ -113,8 +112,8 @@ const DroppableVirtuosoWrapper = ({
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
-      className={`recommended-list ${showDropHighlight ? 'root-drop-over' : ''} ${isRootFocused ? 'root-body-focused' : ''}`}
-      style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}
+      className={`recommended-list ${showDropHighlight ? 'root-drop-over' : ''}`}
+      style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', width: '100%', boxSizing: 'border-box' }}
     >
       {children}
     </div>
@@ -909,17 +908,33 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
         {/* Scrollable Body */}
         <div
-          className="start-menu-body"
+          className={`start-menu-body ${sidebarFocus === 'root' ? 'root-body-focused' : ''}`}
           tabIndex={-1}
           onClick={(e) => {
-            if (e.target.closest('.virtuoso-row') || e.target.closest('.tree-item')) return
+            if (
+              e.target.closest('.tree-item') ||
+              e.target.closest('.folder-tree-main') ||
+              e.target.closest('.folder-tree-item') ||
+              e.target.closest('[data-item-index]') ||
+              e.target.closest('[data-index]') ||
+              e.target.closest('.header-actions') ||
+              e.target.closest('.sort-toggle-btn') ||
+              e.target.closest('.inline-create-input') ||
+              e.target.closest('.inline-rename-input')
+            ) return
             clearSelection()
             setSelectedIndex(-1)
             setLastClickedFolder('')
             setSidebarFocus('root')
           }}
           onContextMenu={(e) => {
-            if (e.target.closest('.virtuoso-row') || e.target.closest('.tree-item')) return
+            if (
+              e.target.closest('.tree-item') ||
+              e.target.closest('.folder-tree-main') ||
+              e.target.closest('.folder-tree-item') ||
+              e.target.closest('[data-item-index]') ||
+              e.target.closest('[data-index]')
+            ) return
             e.preventDefault()
             e.stopPropagation()
             setFolderContext({ folderId: '', x: e.clientX, y: e.clientY })
@@ -953,7 +968,6 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               >
                 <DroppableVirtuosoWrapper
                   isDragging={!!activeListDragItem}
-                  isRootFocused={sidebarFocus === 'root'}
                   onClick={handleBackgroundClick}
                   onDragEnter={(e) => handleExternalDragEnter(e, '')}
                   onDragOver={(e) => handleExternalDragOver(e, '')}

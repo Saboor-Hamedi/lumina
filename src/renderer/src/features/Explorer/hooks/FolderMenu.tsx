@@ -2,6 +2,51 @@ import React, { useState, useCallback, useMemo } from 'react'
 import { Trash2, X, Sparkles } from 'lucide-react'
 import { useContextMenu } from '../../Navigation/hooks/useContextMenu'
 
+interface Snippet {
+  id: string
+  title?: string
+  [key: string]: unknown
+}
+
+interface FolderContext {
+  x: number
+  y: number
+  folderId: string
+}
+
+interface ContextMenuOption {
+  label?: string
+  icon?: React.ReactNode
+  danger?: boolean
+  onClick?: () => void
+  type?: 'divider'
+}
+
+interface UseFolderContextMenuParams {
+  pinnedFolders?: string[]
+  setExpandedFolders: (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => void
+  setCreating: (val: { type: string; parentId: string | null } | null) => void
+  setCreatingValue: (val: string) => void
+  setRenamingFolder: (val: string | null) => void
+  setRenamingValue: (val: string) => void
+  loadVault: () => Promise<void>
+  selectedCount?: number
+  selectedNotes?: Snippet[]
+  onSummarizeSelected?: (notes: Snippet[]) => void
+  onRequestBulkDelete?: () => void
+  clearSelection?: () => void
+}
+
+interface FolderContextMenuResult {
+  folderContext: FolderContext | null
+  setFolderContext: React.Dispatch<React.SetStateAction<FolderContext | null>>
+  deleteConfirmFolder: string | null
+  setDeleteConfirmFolder: React.Dispatch<React.SetStateAction<string | null>>
+  handleFolderContextMenu: (id: string, e: React.MouseEvent | null) => void
+  contextMenuOptions: ContextMenuOption[]
+  handleConfirmDeleteFolder: () => Promise<void>
+}
+
 export function useFolderContextMenu({
   pinnedFolders = [],
   setExpandedFolders,
@@ -15,11 +60,11 @@ export function useFolderContextMenu({
   onSummarizeSelected,
   onRequestBulkDelete,
   clearSelection
-}) {
-  const [folderContext, setFolderContext] = useState(null)
-  const [deleteConfirmFolder, setDeleteConfirmFolder] = useState(null)
+}: UseFolderContextMenuParams): FolderContextMenuResult {
+  const [folderContext, setFolderContext] = useState<FolderContext | null>(null)
+  const [deleteConfirmFolder, setDeleteConfirmFolder] = useState<string | null>(null)
 
-  const handleFolderContextMenu = useCallback((id, e) => {
+  const handleFolderContextMenu = useCallback((id: string, e: React.MouseEvent | null) => {
     if (e) {
       e.preventDefault()
       e.stopPropagation()
@@ -75,9 +120,9 @@ export function useFolderContextMenu({
     }
   })
 
-  const contextMenuOptions = useMemo(() => {
+  const contextMenuOptions = useMemo((): ContextMenuOption[] => {
     if (selectedCount > 1) {
-      const options = []
+      const options: ContextMenuOption[] = []
       if (selectedNotes && selectedNotes.length > 0) {
         options.push({
           label: selectedNotes.length > 1 ? `Summarize ${selectedNotes.length} Notes` : 'Summarize Note',
@@ -111,13 +156,13 @@ export function useFolderContextMenu({
       )
       return options
     }
-    return defaultMenuOptions
+    return defaultMenuOptions as ContextMenuOption[]
   }, [selectedCount, selectedNotes, onSummarizeSelected, defaultMenuOptions, onRequestBulkDelete, clearSelection])
 
   const handleConfirmDeleteFolder = useCallback(async () => {
     if (!deleteConfirmFolder) return
     try {
-      await window.api?.deleteFolder?.(deleteConfirmFolder)
+      await (window as any).api?.deleteFolder?.(deleteConfirmFolder)
       await loadVault()
     } catch (e) {
       console.error('Failed to delete folder:', e)

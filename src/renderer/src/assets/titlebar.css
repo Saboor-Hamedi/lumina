@@ -189,17 +189,22 @@
 }
 
 .control-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-main, #ffffff);
+  background: var(--bg-active, rgba(128, 128, 128, 0.14));
+  color: var(--text-main, currentColor);
 }
 
 .control-btn:active {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--bg-active, rgba(128, 128, 128, 0.22));
+}
+
+.control-btn.close:hover {
+  background: #e81123 !important;
+  color: #ffffff !important;
 }
 
 .control-btn.close:active {
-  background: #bf0f1d;
-  color: white;
+  background: #bf0f1d !important;
+  color: #ffffff !important;
 }
 
 /* Mail Container & Badge on Titlebar */
@@ -278,7 +283,7 @@
 }
 
 .accent-titlebar-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-active, rgba(128, 128, 128, 0.14));
 }
 
 .accent-titlebar-avatar-wrap {

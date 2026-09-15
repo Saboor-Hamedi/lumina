@@ -26,7 +26,7 @@ import PromptModal from '../modals/PromptModal'
 import IconPicker from '../Icons/IconPicker'
 import { getSnippetIcon } from '../Icons/FileIcon'
 import ToolTip from '../../components/atoms/ToolTip'
-import { useExternalFileDrop } from '../Explorer/hooks/useExternalFileDrop'
+import { useExternalFileDrop } from '../Explorer/hooks/ExternalFileDrop'
 import { summarizeNotes } from '../AI/services/summarizeNotes'
 import { UnsavedIndicator } from '../../core/hooks/unsave'
 

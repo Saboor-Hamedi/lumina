@@ -2,7 +2,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import { app, safeStorage } from 'electron'
 
-const GLOBAL_API_KEYS = ['deepSeekKey', 'openaiKey', 'anthropicKey', 'huggingFaceKey', 'groqKey', 'groqApiKey']
+const GLOBAL_API_KEYS = ['deepSeekKey', 'openaiKey', 'anthropicKey', 'huggingFaceKey', 'groqKey', 'groqApiKey', 'googleUser']
 
 function isSafeStorageReady() {
   try {
@@ -58,7 +58,7 @@ class SettingsManager {
       cursorStyle: 'smooth',
       smoothScrolling: true,
       lastSnippetId: null,
-      vaultPath: null,
+      workspacePath: null,
       translucency: false,
       inlineMetadata: true,
       sidebar: {
@@ -69,6 +69,9 @@ class SettingsManager {
         width: 300,
         isRightOpen: false
       },
+      pinnedFolders: [],
+      folderOrder: [],
+      expandedFolders: [],
       enableDevTools: true,
       launchOnStartup: false,
       globalShortcut: 'Ctrl+Space',
@@ -171,17 +174,7 @@ class SettingsManager {
     }
   }
 
-  async init(vaultPath) {
-    if (!vaultPath && this.vaultPath) {
-      vaultPath = this.vaultPath
-    }
-    if (!vaultPath) {
-      vaultPath = path.join(process.env.USERPROFILE || process.env.HOME || '.', 'Documents', 'lumina')
-    }
-    this.vaultPath = vaultPath
-    const luminaDir = path.join(vaultPath, '.lumina')
-    this.settingsPath = path.join(luminaDir, 'settings.json')
-
+  async init(workspacePath) {
     try {
       this.appConfigPath = path.join(app.getPath('userData'), 'app_config.json')
     } catch (_) {
@@ -190,30 +183,49 @@ class SettingsManager {
 
     await this.loadAppConfig()
 
+    if (!workspacePath && this.workspacePath) {
+      workspacePath = this.workspacePath
+    }
+    if (!workspacePath && this.appConfigPath) {
+      try {
+        const raw = await fs.readFile(this.appConfigPath, 'utf8')
+        const parsed = JSON.parse(raw)
+        if (parsed?.lastWorkspaceOpened || parsed?.lastVaultOpened) {
+          workspacePath = parsed.lastWorkspaceOpened || parsed.lastVaultOpened
+        }
+      } catch (_) {}
+    }
+    if (!workspacePath) {
+      workspacePath = path.join(process.env.USERPROFILE || process.env.HOME || '.', 'Documents', 'lumina')
+    }
+    this.workspacePath = workspacePath
+    const luminaDir = path.join(workspacePath, '.lumina')
+    this.settingsPath = path.join(luminaDir, 'settings.json')
+
     try {
       await fs.mkdir(luminaDir, { recursive: true })
     } catch (err) {}
 
-    let vaultSettings = {}
+    let workspaceSettings = {}
     try {
       await fs.access(this.settingsPath)
       const data = await fs.readFile(this.settingsPath, 'utf8')
-      vaultSettings = JSON.parse(data)
+      workspaceSettings = JSON.parse(data)
     } catch (err) {
-      vaultSettings = {}
+      workspaceSettings = {}
     }
 
-    let needsVaultCleanup = false
+    let needsWorkspaceCleanup = false
     let needsAppConfigSave = false
 
     for (const key of GLOBAL_API_KEYS) {
-      if (vaultSettings[key] && !this.globalApiKeys[key]) {
-        this.globalApiKeys[key] = vaultSettings[key]
+      if (workspaceSettings[key] && !this.globalApiKeys[key]) {
+        this.globalApiKeys[key] = workspaceSettings[key]
         needsAppConfigSave = true
       }
-      if (key in vaultSettings) {
-        delete vaultSettings[key]
-        needsVaultCleanup = true
+      if (key in workspaceSettings) {
+        delete workspaceSettings[key]
+        needsWorkspaceCleanup = true
       }
     }
 
@@ -221,15 +233,15 @@ class SettingsManager {
       await this.saveAppConfig()
     }
 
-    this.cache = { ...this.defaultSettings, ...vaultSettings, ...this.globalApiKeys, shortcuts: this.shortcuts }
-    this.lastWrittenData = JSON.stringify(this.getVaultSettingsToSave(), null, 2)
+    this.cache = { ...this.defaultSettings, ...workspaceSettings, ...this.globalApiKeys, shortcuts: this.shortcuts }
+    this.lastWrittenData = JSON.stringify(this.getworkspaceSettingsToSave(), null, 2)
 
-    if (needsVaultCleanup) {
+    if (needsWorkspaceCleanup) {
       await this.save()
     }
   }
 
-  getVaultSettingsToSave() {
+  getworkspaceSettingsToSave() {
     const current = { ...this.defaultSettings, ...(this.cache || {}) }
     for (const key of GLOBAL_API_KEYS) {
       delete current[key]
@@ -248,7 +260,7 @@ class SettingsManager {
   async get(key) {
     if (!this.cache) {
       try {
-        await this.init(this.vaultPath)
+        await this.init(this.workspacePath)
       } catch (_) {
         this.cache = { ...this.defaultSettings, ...this.globalApiKeys, shortcuts: this.shortcuts }
       }
@@ -260,7 +272,7 @@ class SettingsManager {
   async set(key, value) {
     if (!this.cache) {
       try {
-        await this.init(this.vaultPath)
+        await this.init(this.workspacePath)
       } catch (_) {
         this.cache = { ...this.defaultSettings, ...this.globalApiKeys, shortcuts: this.shortcuts }
       }
@@ -308,7 +320,7 @@ class SettingsManager {
   async setMultiple(settings) {
     if (!this.cache) {
       try {
-        await this.init(this.vaultPath)
+        await this.init(this.workspacePath)
       } catch (_) {
         this.cache = { ...this.defaultSettings, ...this.globalApiKeys, shortcuts: this.shortcuts }
       }
@@ -339,11 +351,11 @@ class SettingsManager {
       await this.saveAppConfig()
     }
 
-    const hasVaultSettingsChanged = Object.keys(settings).some(
+    const hasworkspaceSettingsChanged = Object.keys(settings).some(
       (k) => !GLOBAL_API_KEYS.includes(k) && k !== 'shortcuts'
     )
 
-    if (hasVaultSettingsChanged) {
+    if (hasworkspaceSettingsChanged) {
       return this.queueSave()
     }
 
@@ -381,11 +393,26 @@ class SettingsManager {
     })
   }
 
+  async flush() {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout)
+      this.saveTimeout = null
+    }
+    const resolvers = this.pendingResolvers || []
+    this.pendingResolvers = []
+    try {
+      await this.save()
+      resolvers.forEach(({ resolve: res }) => res(true))
+    } catch (err) {
+      resolvers.forEach(({ reject: rej }) => rej(err))
+    }
+  }
+
   async save() {
     if (!this.settingsPath) return
     try {
       this.isWriting = true
-      const settingsToSave = this.getVaultSettingsToSave()
+      const settingsToSave = this.getworkspaceSettingsToSave()
       const data = JSON.stringify(settingsToSave, null, 2)
 
       if (data === this.lastWrittenData) {

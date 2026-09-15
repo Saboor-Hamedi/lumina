@@ -879,7 +879,16 @@ app.whenReady().then(async () => {
   })
 })
 
-app.on('window-all-closed', () => {
+app.on('before-quit', async () => {
+  try {
+    await SettingsManager.flush()
+  } catch (_) {}
+})
+
+app.on('window-all-closed', async () => {
+  try {
+    await SettingsManager.flush()
+  } catch (_) {}
   const settings = SettingsManager.getAll()
   const launchOnStartup = settings?.launchOnStartup === true
   if (process.platform !== 'darwin' && (!launchOnStartup || isAppQuitting())) {

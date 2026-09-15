@@ -142,17 +142,15 @@ export const MainLayout = () => {
       localStorage.setItem('lumina_left_sidebar_open', String(next))
     }
     window.dispatchEvent(new CustomEvent('left-sidebar-toggle', { detail: { open: next } }))
-    setTimeout(() => {
-      const currentSidebar = useSettingsStore.getState().settings?.sidebar || {}
-      if (currentSidebar.isLeftOpen !== next) {
-        useSettingsStore.getState().updateSettings({
-          sidebar: {
-            ...currentSidebar,
-            isLeftOpen: next
-          }
-        })
-      }
-    }, 0)
+    const currentSidebar = useSettingsStore.getState().settings?.sidebar || {}
+    if (currentSidebar.isLeftOpen !== next) {
+      useSettingsStore.getState().updateSettings({
+        sidebar: {
+          ...currentSidebar,
+          isLeftOpen: next
+        }
+      })
+    }
   }, [])
 
   const updateRightSidebarOpen = useCallback((valOrFn) => {
@@ -162,17 +160,15 @@ export const MainLayout = () => {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem('lumina_right_sidebar_open', String(next))
     }
-    setTimeout(() => {
-      const currentRSidebar = useSettingsStore.getState().settings?.rightSidebar || {}
-      if (currentRSidebar.isRightOpen !== next) {
-        useSettingsStore.getState().updateSettings({
-          rightSidebar: {
-            ...currentRSidebar,
-            isRightOpen: next
-          }
-        })
-      }
-    }, 0)
+    const currentRSidebar = useSettingsStore.getState().settings?.rightSidebar || {}
+    if (currentRSidebar.isRightOpen !== next) {
+      useSettingsStore.getState().updateSettings({
+        rightSidebar: {
+          ...currentRSidebar,
+          isRightOpen: next
+        }
+      })
+    }
   }, [])
 
   const handleToggleLeftSidebar = useCallback(() => {
@@ -250,19 +246,24 @@ export const MainLayout = () => {
         }
 
         const legacySidebar = actualSettings.sidebar || {}
+        let finalLeftOpen = true
         if (savedLeft !== null) {
-          setIsLeftSidebarOpen(savedLeft === 'true')
+          finalLeftOpen = savedLeft === 'true'
         } else if (typeof legacySidebar.isLeftOpen === 'boolean') {
-          setIsLeftSidebarOpen(legacySidebar.isLeftOpen)
+          finalLeftOpen = legacySidebar.isLeftOpen
           if (typeof localStorage !== 'undefined') {
             localStorage.setItem('lumina_left_sidebar_open', String(legacySidebar.isLeftOpen))
           }
         } else if (typeof actualSettings.isLeftSidebarOpen === 'boolean') {
-          setIsLeftSidebarOpen(actualSettings.isLeftSidebarOpen)
+          finalLeftOpen = actualSettings.isLeftSidebarOpen
           if (typeof localStorage !== 'undefined') {
             localStorage.setItem('lumina_left_sidebar_open', String(actualSettings.isLeftSidebarOpen))
           }
         }
+
+        setIsLeftSidebarOpen(finalLeftOpen)
+        isLeftSidebarOpenRef.current = finalLeftOpen
+        window.dispatchEvent(new CustomEvent('left-sidebar-toggle', { detail: { open: finalLeftOpen } }))
 
         let savedLeftWidth = null
         let savedRightWidth = null
@@ -291,19 +292,23 @@ export const MainLayout = () => {
         }
 
         const legacyRSidebar = actualSettings.rightSidebar || {}
+        let finalRightOpen = false
         if (savedRight !== null) {
-          setIsRightSidebarOpen(savedRight === 'true')
+          finalRightOpen = savedRight === 'true'
         } else if (typeof legacyRSidebar.isRightOpen === 'boolean') {
-          setIsRightSidebarOpen(legacyRSidebar.isRightOpen)
+          finalRightOpen = legacyRSidebar.isRightOpen
           if (typeof localStorage !== 'undefined') {
             localStorage.setItem('lumina_right_sidebar_open', String(legacyRSidebar.isRightOpen))
           }
         } else if (typeof actualSettings.isRightSidebarOpen === 'boolean') {
-          setIsRightSidebarOpen(actualSettings.isRightSidebarOpen)
+          finalRightOpen = actualSettings.isRightSidebarOpen
           if (typeof localStorage !== 'undefined') {
             localStorage.setItem('lumina_right_sidebar_open', String(actualSettings.isRightSidebarOpen))
           }
         }
+
+        setIsRightSidebarOpen(finalRightOpen)
+        isRightSidebarOpenRef.current = finalRightOpen
 
         const rawRightWidth =
           savedRightWidth || legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth

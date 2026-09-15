@@ -3,28 +3,65 @@ import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { revealSnippetFolders } from '../utils/explorerSelectionHelper'
 
-/**
- * @typedef {Object} CreatingItemState
- * @property {'file' | 'folder'} type - The kind of item being created
- * @property {string} parentId - The parent folder ID, or empty string for root
- */
+interface Snippet {
+  id: string
+  folderId?: string
+  title?: string
+  fileName?: string
+  code?: string
+  language?: string
+  type?: string
+  tags?: string
+  timestamp?: number
+  isPinned?: boolean
+  isLearned?: boolean
+  [key: string]: unknown
+}
 
-/**
- * Custom hook managing folder & note creation, folder renaming, folder tree expansion/collapsing,
- * and folder hierarchy persistence for the File Explorer.
- *
- * @param {Object} params
- * @param {Array<Object>} params.snippets - All workspace note snippets
- * @param {Array<string>} params.visibleFolders - Visible folder paths
- * @param {string} params.selectedSnippetId - ID of currently selected snippet
- * @param {string} params.query - Current search query string
- * @param {Array<Object>} params.flatTree - Flattened tree items
- * @param {React.RefObject} params.virtuosoRef - Reference to Virtuoso virtual list
- * @param {Function} params.setSidebarFocus - Setter for explorer sidebar focus
- * @param {Function} params.handleSelect - Note selection handler
- * @param {string|null} params.lastClickedFolder - Last clicked folder path
- * @returns {Object} Explorer operations state and action handlers
- */
+interface FlatTreeItem {
+  type: 'file' | 'folder' | 'input' | 'root-drop'
+  snippet?: Snippet
+  depth?: number
+  [key: string]: unknown
+}
+
+interface CreatingState {
+  type: string
+  parentId: string | null
+}
+
+interface UseExplorerOperationsParams {
+  snippets: Snippet[]
+  visibleFolders: string[]
+  selectedSnippetId: string | null
+  query: string
+  flatTree: FlatTreeItem[] | null
+  virtuosoRef: React.RefObject<any>
+  setSidebarFocus: (focus: string | null) => void
+  handleSelect: (snippet: Snippet) => void
+  lastClickedFolder: string | null
+}
+
+interface ExplorerOperationsResult {
+  expandedFolders: Set<string>
+  setExpandedFolders: (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => void
+  collapsedDuringSearch: Set<string>
+  setCollapsedDuringSearch: React.Dispatch<React.SetStateAction<Set<string>>>
+  creating: CreatingState | null
+  setCreating: React.Dispatch<React.SetStateAction<CreatingState | null>>
+  creatingValue: string
+  setCreatingValue: React.Dispatch<React.SetStateAction<string>>
+  renamingFolder: string | null
+  setRenamingFolder: React.Dispatch<React.SetStateAction<string | null>>
+  renamingValue: string
+  setRenamingValue: React.Dispatch<React.SetStateAction<string>>
+  toggleFolder: (folderId: string, e?: React.MouseEvent | null) => void
+  collapseAllFolders: (e?: React.MouseEvent | null) => void
+  cancelRename: () => void
+  submitCreation: (value?: string) => Promise<void>
+  submitRename: (value?: string) => Promise<void>
+}
+
 export function useExplorerOperations({
   snippets,
   visibleFolders,
@@ -35,78 +72,116 @@ export function useExplorerOperations({
   setSidebarFocus,
   handleSelect,
   lastClickedFolder
-}) {
-  const expandedFoldersSetting = useSettingsStore((state) => state.settings?.expandedFolders)
-  const folderOrder = useSettingsStore((state) => state.settings?.folderOrder)
+}: UseExplorerOperationsParams): ExplorerOperationsResult {
+  const expandedFoldersSetting = useSettingsStore((state) => (state.settings as any)?.expandedFolders)
+  const folderOrder = useSettingsStore((state) => (state.settings as any)?.folderOrder)
   const updateSetting = useSettingsStore((state) => state.updateSetting)
   const saveSnippet = useVaultStore((state) => state.saveSnippet)
   const loadVault = useVaultStore((state) => state.loadVault)
 
-  const [expandedFolders, setExpandedFoldersRaw] = useState(() => {
+  const [expandedFolders, setExpandedFoldersRaw] = useState<Set<string>>(() => {
     try {
       const cached = localStorage.getItem('lumina-expanded-folders')
       if (cached) {
         const parsed = JSON.parse(cached)
         if (Array.isArray(parsed)) return new Set(parsed)
       }
-    } catch (e) {}
-    return new Set(expandedFoldersSetting || [])
+    } catch (_) {}
+    return new Set(Array.isArray(expandedFoldersSetting) ? expandedFoldersSetting : [])
   })
-  const [collapsedDuringSearch, setCollapsedDuringSearch] = useState(() => new Set())
-  const expandedFoldersRef = useRef(expandedFolders)
+  const [collapsedDuringSearch, setCollapsedDuringSearch] = useState<Set<string>>(() => new Set())
+  const expandedFoldersRef = useRef<Set<string>>(expandedFolders)
 
-  const persistTimerRef = useRef(null)
-  const lastRevealedSnippetRef = useRef(null)
+  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const setExpandedFolders = useCallback((updater) => {
-    let nextArr = null
-    setExpandedFoldersRaw((prev) => {
+  const setExpandedFolders = useCallback((updater: Set<string> | ((prev: Set<string>) => Set<string>)) => {
+    let nextArr: string[] | null = null
+    setExpandedFoldersRaw((prev: Set<string>): Set<string> => {
       const next = typeof updater === 'function' ? updater(prev) : updater
-      const nextSet = next instanceof Set ? next : new Set(next || [])
+      const nextSet: Set<string> = next instanceof Set ? (next as Set<string>) : new Set<string>(next || [])
       expandedFoldersRef.current = nextSet
       nextArr = Array.from(nextSet)
       return nextSet
     })
     if (nextArr) {
-      // Debounce localStorage and SQLite setting updates to prevent sync I/O churn and frame drops
+      try {
+        localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextArr))
+      } catch (_) {}
+
       if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
       persistTimerRef.current = setTimeout(() => {
-        try {
-          localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextArr))
-        } catch (e) {}
+        persistTimerRef.current = null
         useSettingsStore.getState().updateSetting('expandedFolders', nextArr)
       }, 350)
     }
   }, [])
 
   useEffect(() => {
+    const handleFlush = () => {
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current)
+        persistTimerRef.current = null
+      }
+      const current = Array.from(expandedFoldersRef.current || [])
+      try {
+        localStorage.setItem('lumina-expanded-folders', JSON.stringify(current))
+      } catch (_) {}
+      useSettingsStore.getState().updateSetting('expandedFolders', current)
+    }
+
+    window.addEventListener('beforeunload', handleFlush)
     return () => {
-      if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
+      window.removeEventListener('beforeunload', handleFlush)
+      handleFlush()
     }
   }, [])
 
+  const isInitialSettingsSyncRef = useRef(true)
+
   useEffect(() => {
-    if (Array.isArray(expandedFoldersSetting)) {
-      const incomingSet = new Set(expandedFoldersSetting)
-      setExpandedFoldersRaw((prev) => {
-        if (prev.size === incomingSet.size && [...prev].every((x) => incomingSet.has(x))) {
-          return prev
-        }
-        expandedFoldersRef.current = incomingSet
-        return incomingSet
-      })
+    if (!Array.isArray(expandedFoldersSetting)) return
+
+    if (isInitialSettingsSyncRef.current) {
+      isInitialSettingsSyncRef.current = false
+      if (expandedFoldersSetting.length === 0 && expandedFoldersRef.current.size > 0) {
+        return
+      }
     }
+
+    const incomingSet = new Set<string>(expandedFoldersSetting)
+    setExpandedFoldersRaw((prev) => {
+      if (prev.size === incomingSet.size) {
+        let same = true
+        for (const x of prev) {
+          if (!incomingSet.has(x)) {
+            same = false
+            break
+          }
+        }
+        if (same) return prev
+      }
+      expandedFoldersRef.current = incomingSet
+      try {
+        localStorage.setItem('lumina-expanded-folders', JSON.stringify(expandedFoldersSetting))
+      } catch (_) {}
+      return incomingSet
+    })
   }, [expandedFoldersSetting])
 
-  const lastRevealedSnippetIdRef = useRef(null)
+  const isInitialMountRef = useRef(true)
+  const lastRevealedSnippetIdRef = useRef<string | null>(null)
 
-  // Smart reveal: ensure active snippet's parent folders are open when switching notes
-  // without repeatedly forcing them open when the user collapses them or when snippets update.
   useEffect(() => {
     if (!selectedSnippetId) {
-      lastRevealedSnippetIdRef.current = null
       return
     }
+
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false
+      lastRevealedSnippetIdRef.current = selectedSnippetId
+      return
+    }
+
     if (lastRevealedSnippetIdRef.current === selectedSnippetId) return
     lastRevealedSnippetIdRef.current = selectedSnippetId
 
@@ -116,14 +191,12 @@ export function useExplorerOperations({
     revealSnippetFolders(activeSnippet, setExpandedFolders)
   }, [selectedSnippetId, snippets, setExpandedFolders])
 
-  const [creating, setCreating] = useState(null) // { type: 'file' | 'folder', parentId: string } | null
+  const [creating, setCreating] = useState<CreatingState | null>(null)
   const [creatingValue, setCreatingValue] = useState('')
 
-  // Inline Rename State
-  const [renamingFolder, setRenamingFolder] = useState(null) // folderId | null
+  const [renamingFolder, setRenamingFolder] = useState<string | null>(null)
   const [renamingValue, setRenamingValue] = useState('')
 
-  // Auto-scroll to creation input when created
   useEffect(() => {
     if (creating && flatTree && flatTree.length > 0) {
       const idx = flatTree.findIndex((item) => item.type === 'input')
@@ -132,7 +205,6 @@ export function useExplorerOperations({
       }
     }
   }, [creating, flatTree, virtuosoRef])
-
 
   useEffect(() => {
     const handleTriggerNewNote = () => {
@@ -143,9 +215,9 @@ export function useExplorerOperations({
       }
 
       if (targetFolderId) {
-        setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
+        setExpandedFolders((prev) => new Set(prev).add(targetFolderId!))
       }
-      setCreating({ type: 'file', parentId: targetFolderId })
+      setCreating({ type: 'file', parentId: targetFolderId || null })
       setCreatingValue('')
     }
 
@@ -157,19 +229,20 @@ export function useExplorerOperations({
       }
 
       if (targetFolderId) {
-        setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
+        setExpandedFolders((prev) => new Set(prev).add(targetFolderId!))
       }
-      setCreating({ type: 'canvas', parentId: targetFolderId })
+      setCreating({ type: 'canvas', parentId: targetFolderId || null })
       setCreatingValue('')
     }
 
-    const handleRevealFolder = (e) => {
-      const raw = e.detail?.folderId || e.detail
+    const handleRevealFolder = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      const raw = detail?.folderId || detail
       if (!raw) return
       const folderId = String(raw).replace(/^[/\\]+|[/\\]+$/g, '')
       if (!folderId) return
 
-      const foldersToExpand = []
+      const foldersToExpand: string[] = []
       const parts = folderId.split('/').filter(Boolean)
       let acc = ''
       for (const p of parts) {
@@ -213,7 +286,7 @@ export function useExplorerOperations({
   }, [lastClickedFolder, selectedSnippetId, snippets, visibleFolders, virtuosoRef, setExpandedFolders])
 
   const toggleFolder = useCallback(
-    (folderId, e) => {
+    (folderId: string, e?: React.MouseEvent | null) => {
       if (e) e.stopPropagation()
       useVaultStore.getState().setSelectedFolder(folderId)
       if (query.trim()) {
@@ -236,7 +309,7 @@ export function useExplorerOperations({
   )
 
   const collapseAllFolders = useCallback(
-    (e) => {
+    (e?: React.MouseEvent | null) => {
       if (e) e.stopPropagation()
       setExpandedFolders(new Set())
     },
@@ -246,7 +319,7 @@ export function useExplorerOperations({
   const cancelRename = useCallback(() => setRenamingFolder(null), [])
 
   const submitCreation = useCallback(
-    async (value) => {
+    async (value?: string) => {
       const valToUse = typeof value === 'string' ? value : creatingValue
       if (!creating || !valToUse.trim()) {
         setCreating(null)
@@ -264,7 +337,7 @@ export function useExplorerOperations({
           const folderPath = creating.parentId
             ? `${creating.parentId}/${sanitizedName}`
             : sanitizedName
-          await window.api.createFolder(folderPath)
+          await (window as any).api.createFolder(folderPath)
           setExpandedFolders((prev) => new Set(prev).add(folderPath))
           await loadVault()
         } else if (creating.type === 'canvas') {
@@ -289,7 +362,7 @@ export function useExplorerOperations({
             edges: [],
             viewport: { x: 0, y: 0, zoom: 1 }
           }
-          const newSnippet = {
+          const newSnippet: Snippet = {
             id: newId,
             title: sanitizedName,
             fileName: `${sanitizedName}.canvas`,
@@ -310,7 +383,7 @@ export function useExplorerOperations({
             ? crypto.randomUUID()
             : Math.random().toString(36).substring(2, 15)
           const folderId = creating.parentId || ''
-          const newSnippet = {
+          const newSnippet: Snippet = {
             id: newId,
             title: sanitizedName,
             code: '',
@@ -335,11 +408,8 @@ export function useExplorerOperations({
     [creating, creatingValue, folderOrder, updateSetting, loadVault, saveSnippet, handleSelect, setSidebarFocus, setExpandedFolders]
   )
 
-  /**
-   * Submits inline folder renaming.
-   */
   const submitRename = useCallback(
-    async (value) => {
+    async (value?: string) => {
       const valToUse = typeof value === 'string' ? value : renamingValue
       if (!renamingFolder || !valToUse.trim()) {
         setRenamingFolder(null)
@@ -358,7 +428,7 @@ export function useExplorerOperations({
         const newPath = parts.join('/')
 
         if (newPath !== renamingFolder) {
-          await window.api.renameFolder(renamingFolder, newPath)
+          await (window as any).api.renameFolder(renamingFolder, newPath)
           await loadVault()
         }
       } catch (err) {

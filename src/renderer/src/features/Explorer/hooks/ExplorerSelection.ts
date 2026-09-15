@@ -1,6 +1,56 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useVaultStore } from '../../../core/store/workspaceStore'
 
+interface Snippet {
+  id: string
+  folderId?: string
+  title?: string
+  [key: string]: unknown
+}
+
+interface FlatTreeItem {
+  type: 'file' | 'folder' | 'input' | 'root-drop'
+  id?: string
+  snippet?: Snippet
+  depth?: number
+  [key: string]: unknown
+}
+
+interface UseExplorerSelectionParams {
+  isOpen: boolean
+  modalRef: React.RefObject<HTMLElement | null>
+  virtuosoRef: React.RefObject<any>
+  flatTree: FlatTreeItem[]
+  query: string
+  selectedSnippetId: string | null
+  onClose?: () => void
+  onRequestBulkDelete?: () => void
+}
+
+type SidebarFocus = 'note' | 'folder' | 'multi' | 'root' | null
+
+interface ExplorerSelectionResult {
+  selectedNoteIds: Set<string>
+  setSelectedNoteIds: React.Dispatch<React.SetStateAction<Set<string>>>
+  selectedFolderIds: Set<string>
+  setSelectedFolderIds: React.Dispatch<React.SetStateAction<Set<string>>>
+  lastClickedNoteId: string | null
+  setLastClickedNoteId: React.Dispatch<React.SetStateAction<string | null>>
+  lastClickedFolder: string | null
+  setLastClickedFolder: React.Dispatch<React.SetStateAction<string | null>>
+  selectedIndex: number
+  setSelectedIndex: React.Dispatch<React.SetStateAction<number>>
+  sidebarFocus: SidebarFocus
+  setSidebarFocus: React.Dispatch<React.SetStateAction<SidebarFocus>>
+  selectAll: () => void
+  clearSelection: () => void
+  selectItemAtIndex: (index: number) => void
+  handleSelect: (snippet: Snippet) => void
+  handleNoteClick: (snippet: Snippet, index: number | React.SyntheticEvent, e?: React.MouseEvent) => void
+  handleFolderClick: (folderId: string, index: number | React.SyntheticEvent, e?: React.MouseEvent) => void
+  handleBackgroundClick: (e: React.MouseEvent) => void
+}
+
 export function useExplorerSelection({
   isOpen,
   modalRef,
@@ -10,31 +60,29 @@ export function useExplorerSelection({
   selectedSnippetId,
   onClose,
   onRequestBulkDelete
-}) {
+}: UseExplorerSelectionParams): ExplorerSelectionResult {
   const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
   const setSelectedFolder = useVaultStore((state) => state.setSelectedFolder)
 
-  const [selectedNoteIds, setSelectedNoteIds] = useState(new Set())
-  const [selectedFolderIds, setSelectedFolderIds] = useState(new Set())
-  const [lastClickedNoteId, setLastClickedNoteId] = useState(null)
-  const [lastClickedFolder, setLastClickedFolder] = useState(null)
+  const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(new Set())
+  const [selectedFolderIds, setSelectedFolderIds] = useState<Set<string>>(new Set())
+  const [lastClickedNoteId, setLastClickedNoteId] = useState<string | null>(null)
+  const [lastClickedFolder, setLastClickedFolder] = useState<string | null>(null)
   const [selectedIndex, setSelectedIndex] = useState(-1)
-  const [sidebarFocus, setSidebarFocus] = useState(null) // 'note' | 'folder' | 'multi' | 'root' | null
+  const [sidebarFocus, setSidebarFocus] = useState<SidebarFocus>(null)
 
   const clickedInExplorerRef = useRef(0)
-  const lastScrolledSnippetRef = useRef(null)
+  const lastScrolledSnippetRef = useRef<string | null>(null)
 
-  // Reset focus when explorer open state changes
   useEffect(() => {
     setSidebarFocus(null)
   }, [isOpen])
 
-  // Select all items (both files and folders)
   const selectAll = useCallback(() => {
     if (!flatTree || flatTree.length === 0) return
 
-    const noteIds = new Set()
-    const folderIds = new Set()
+    const noteIds = new Set<string>()
+    const folderIds = new Set<string>()
 
     flatTree.forEach((item) => {
       if (item.type === 'file' && item.snippet) {
@@ -49,7 +97,6 @@ export function useExplorerSelection({
     setSidebarFocus('multi')
   }, [flatTree])
 
-  // Clear all selections
   const clearSelection = useCallback(() => {
     setSelectedNoteIds(new Set())
     setSelectedFolderIds(new Set())
@@ -60,38 +107,33 @@ export function useExplorerSelection({
     setSidebarFocus(null)
   }, [setSelectedFolder])
 
-  // Handle Ctrl+A, Escape, Delete, Backspace keyboard shortcuts
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      const activeTag = document.activeElement?.tagName?.toLowerCase()
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement as HTMLElement)?.tagName?.toLowerCase()
       const isInput =
         activeTag === 'input' ||
         activeTag === 'textarea' ||
-        document.activeElement?.isContentEditable
+        (document.activeElement as HTMLElement)?.isContentEditable
 
       if (isInput) return
 
-      // Escape -> Clear Selection
       if (e.key === 'Escape') {
         clearSelection()
         return
       }
 
-      // Ctrl+A / Cmd+A -> Select All in Explorer
       if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
-        // Only intercept if explorer is open or focused
-        if (isOpen || document.querySelector('.unified-sidebar:hover') || modalRef?.current?.contains(document.activeElement)) {
+        if (isOpen || modalRef.current?.matches(':hover') || modalRef?.current?.contains(document.activeElement)) {
           e.preventDefault()
           selectAll()
         }
         return
       }
 
-      // Delete / Backspace -> Delete Selected Items
       if (e.key === 'Delete' || e.key === 'Backspace') {
         const isExplorerActive =
           modalRef?.current?.contains(document.activeElement) ||
-          Boolean(document.querySelector('.unified-sidebar:hover'))
+          Boolean(modalRef.current?.matches(':hover'))
         if (isExplorerActive && (selectedNoteIds.size > 0 || selectedFolderIds.size > 0 || sidebarFocus === 'folder')) {
           e.preventDefault()
           onRequestBulkDelete?.()
@@ -103,10 +145,9 @@ export function useExplorerSelection({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, modalRef, selectAll, clearSelection, selectedNoteIds, selectedFolderIds, sidebarFocus, onRequestBulkDelete])
 
-  // Deselect when clicking outside the explorer
   useEffect(() => {
-    const handleDocumentPointerDown = (e) => {
-      if (modalRef.current && !modalRef.current.contains(e.target)) {
+    const handleDocumentPointerDown = (e: PointerEvent) => {
+      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
         setSidebarFocus(null)
       }
     }
@@ -114,20 +155,20 @@ export function useExplorerSelection({
     return () => document.removeEventListener('pointerdown', handleDocumentPointerDown)
   }, [modalRef])
 
-  // Deselect on clicking empty background space inside explorer
   const handleBackgroundClick = useCallback(
-    (e) => {
+    (e: React.MouseEvent) => {
+      const target = e.target as HTMLElement
       if (
-        !e.target.closest('.tree-item') &&
-        !e.target.closest('.folder-tree-main') &&
-        !e.target.closest('.header-actions') &&
-        !e.target.closest('.sort-toggle-btn') &&
-        !e.target.closest('.inline-create-input') &&
-        !e.target.closest('.inline-rename-input') &&
-        !e.target.closest('.start-menu-search') &&
-        !e.target.closest('.explorer-segmented-tabs') &&
-        !e.target.closest('.start-section-header') &&
-        !e.target.closest('.explorer-header-container')
+        !target.closest('.tree-item') &&
+        !target.closest('.folder-tree-main') &&
+        !target.closest('.header-actions') &&
+        !target.closest('.sort-toggle-btn') &&
+        !target.closest('.inline-create-input') &&
+        !target.closest('.inline-rename-input') &&
+        !target.closest('.start-menu-search') &&
+        !target.closest('.explorer-segmented-tabs') &&
+        !target.closest('.start-section-header') &&
+        !target.closest('.explorer-header-container')
       ) {
         clearSelection()
         setSidebarFocus('root')
@@ -136,7 +177,6 @@ export function useExplorerSelection({
     [clearSelection]
   )
 
-  // Sync selection when active note changes (e.g. switching tabs in TabBar)
   useEffect(() => {
     if (!selectedSnippetId) {
       if (!query.trim()) {
@@ -146,7 +186,6 @@ export function useExplorerSelection({
       return
     }
 
-    // Keep selectedNoteIds in sync with active note unless a multi-note selection is active
     setSelectedNoteIds((prev) => {
       if (prev.size <= 1) {
         return new Set([selectedSnippetId])
@@ -158,12 +197,11 @@ export function useExplorerSelection({
     setSidebarFocus('note')
   }, [selectedSnippetId, query])
 
-  // Intelligent selection on query changes
   useEffect(() => {
     if (query.trim() && flatTree.length > 0) {
       const q = query.toLowerCase().trim()
       let bestIndex = flatTree.findIndex(
-        (item) => item.type === 'file' && (item.snippet.title || '').toLowerCase() === q
+        (item) => item.type === 'file' && (item.snippet?.title || '').toLowerCase() === q
       )
       if (bestIndex === -1) {
         bestIndex = flatTree.findIndex((item) => item.type === 'file')
@@ -177,7 +215,7 @@ export function useExplorerSelection({
       if (targetItem?.type === 'file' && targetItem.snippet) {
         setSelectedNoteIds(new Set([targetItem.snippet.id]))
         setLastClickedNoteId(targetItem.snippet.id)
-      } else if (targetItem?.type === 'folder') {
+      } else if (targetItem?.type === 'folder' && targetItem.id) {
         setSelectedFolderIds(new Set([targetItem.id]))
         setLastClickedFolder(targetItem.id)
         setSidebarFocus('folder')
@@ -197,7 +235,6 @@ export function useExplorerSelection({
     }
   }, [query, flatTree, selectedSnippetId])
 
-  // Auto-scroll to active snippet
   useEffect(() => {
     if (!selectedSnippetId || !flatTree || flatTree.length === 0) return
 
@@ -216,10 +253,10 @@ export function useExplorerSelection({
     }
   }, [selectedSnippetId, flatTree, virtuosoRef])
 
-  const [anchorIndex, setAnchorIndex] = useState(null)
+  const [anchorIndex, setAnchorIndex] = useState<number | null>(null)
 
   const selectItemAtIndex = useCallback(
-    (index) => {
+    (index: number) => {
       if (index < 0 || !flatTree || index >= flatTree.length) return
       setSelectedIndex(index)
       const item = flatTree[index]
@@ -228,7 +265,7 @@ export function useExplorerSelection({
         setSelectedFolderIds(new Set())
         setLastClickedNoteId(item.snippet.id)
         setSidebarFocus('note')
-      } else if (item?.type === 'folder') {
+      } else if (item?.type === 'folder' && item.id) {
         setSelectedFolderIds(new Set([item.id]))
         setSelectedNoteIds(new Set())
         setLastClickedFolder(item.id)
@@ -239,7 +276,7 @@ export function useExplorerSelection({
   )
 
   const handleSelect = useCallback(
-    (snippet) => {
+    (snippet: Snippet) => {
       if (!snippet) return
       clickedInExplorerRef.current = Date.now()
       setLastClickedFolder(snippet.folderId || '')
@@ -255,14 +292,13 @@ export function useExplorerSelection({
   )
 
   const handleNoteClick = useCallback(
-    (snippet, index, e) => {
+    (snippet: Snippet, index: number | React.SyntheticEvent, e?: React.MouseEvent) => {
       if (!snippet) return
       setSelectedFolder(null)
 
-      // Support (snippet, e) or (snippet, index, e)
-      const event = e || (index?.target ? index : null)
-      const isCtrl = event?.ctrlKey || event?.metaKey
-      const isShift = event?.shiftKey
+      const event = e || (typeof index === 'object' && (index as any)?.target ? (index as React.MouseEvent) : null)
+      const isCtrl = (event as React.MouseEvent)?.ctrlKey || (event as React.MouseEvent)?.metaKey
+      const isShift = (event as React.MouseEvent)?.shiftKey
 
       let itemIndex = typeof index === 'number' ? index : -1
       if (itemIndex === -1 && flatTree) {
@@ -273,16 +309,17 @@ export function useExplorerSelection({
         const minIdx = Math.min(anchorIndex, itemIndex)
         const maxIdx = Math.max(anchorIndex, itemIndex)
 
-        const rangeNotes = new Set()
-        const rangeFolders = new Set()
+        const rangeNotes = new Set<string>()
+        const rangeFolders = new Set<string>()
 
-        flatTree.slice(minIdx, maxIdx + 1).forEach((item) => {
+        for (let i = minIdx; i <= maxIdx; i++) {
+          const item = flatTree[i]
           if (item.type === 'file' && item.snippet) {
             rangeNotes.add(item.snippet.id)
           } else if (item.type === 'folder' && item.id) {
             rangeFolders.add(item.id)
           }
-        })
+        }
 
         setSelectedNoteIds(rangeNotes)
         setSelectedFolderIds(rangeFolders)
@@ -315,13 +352,12 @@ export function useExplorerSelection({
   )
 
   const handleFolderClick = useCallback(
-    (folderId, index, e) => {
+    (folderId: string, index: number | React.SyntheticEvent, e?: React.MouseEvent) => {
       if (!folderId) return
 
-      // Support (folderId, e) or (folderId, index, e)
-      const event = e || (index?.target ? index : null)
-      const isCtrl = event?.ctrlKey || event?.metaKey
-      const isShift = event?.shiftKey
+      const event = e || (typeof index === 'object' && (index as any)?.target ? (index as React.MouseEvent) : null)
+      const isCtrl = (event as React.MouseEvent)?.ctrlKey || (event as React.MouseEvent)?.metaKey
+      const isShift = (event as React.MouseEvent)?.shiftKey
 
       let itemIndex = typeof index === 'number' ? index : -1
       if (itemIndex === -1 && flatTree) {
@@ -332,8 +368,8 @@ export function useExplorerSelection({
         const minIdx = Math.min(anchorIndex, itemIndex)
         const maxIdx = Math.max(anchorIndex, itemIndex)
 
-        const rangeNotes = new Set()
-        const rangeFolders = new Set()
+        const rangeNotes = new Set<string>()
+        const rangeFolders = new Set<string>()
 
         flatTree.slice(minIdx, maxIdx + 1).forEach((item) => {
           if (item.type === 'file' && item.snippet) {

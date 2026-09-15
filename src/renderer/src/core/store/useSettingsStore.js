@@ -54,7 +54,40 @@ export const useSettingsStore = create((set, get) => ({
     // Favorites & Ordering
     pinnedFolders: [],
     folderOrder: [],
-    expandedFolders: [],
+    expandedFolders:
+      (typeof localStorage !== 'undefined' &&
+        (() => {
+          try {
+            const cached = localStorage.getItem('lumina-expanded-folders')
+            return cached ? JSON.parse(cached) : []
+          } catch (e) {
+            return []
+          }
+        })()) || [],
+
+    // Sidebars geometry & state
+    sidebar: {
+      width:
+        (typeof localStorage !== 'undefined' &&
+          parseInt(localStorage.getItem('lumina_left_sidebar_width'), 10)) ||
+        260,
+      isLeftOpen:
+        typeof localStorage !== 'undefined' &&
+        localStorage.getItem('lumina_left_sidebar_open') !== null
+          ? localStorage.getItem('lumina_left_sidebar_open') === 'true'
+          : true
+    },
+    rightSidebar: {
+      width:
+        (typeof localStorage !== 'undefined' &&
+          parseInt(localStorage.getItem('lumina_right_sidebar_width'), 10)) ||
+        300,
+      isRightOpen:
+        typeof localStorage !== 'undefined' &&
+        localStorage.getItem('lumina_right_sidebar_open') !== null
+          ? localStorage.getItem('lumina_right_sidebar_open') === 'true'
+          : false
+    },
 
     // Modal Window Persistence (remembers maximized state across opens)
     previewModalMaximized: (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_modal_maximized_preview') === 'true') || false,

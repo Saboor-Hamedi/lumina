@@ -3,36 +3,80 @@ import {
   useSensor,
   useSensors,
   PointerSensor,
-  TouchSensor
+  TouchSensor,
+  type SensorDescriptor,
+  type SensorOptions,
+  type DragStartEvent,
+  type DragEndEvent
 } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { useVaultStore } from '../../../core/store/workspaceStore'
 
-/**
- * @typedef {Object} DragItemData
- * @property {'folder' | 'file'} type - Item type being dragged
- * @property {string} id - Active drag identifier
- * @property {Object} [item] - Folder data payload if dragging a folder
- * @property {Object} [snippet] - Note snippet data if dragging a file
- * @property {string[]} [draggedSnippetIds] - Array of all note IDs included in drag (supports multi-selection)
- * @property {number} [count] - Number of items dragged concurrently
- * @property {number} [depth] - Indentation depth level in the file tree
- */
+function patchStoreForMigratedImages(migratedImages: Map<string, string>): void {
+  if (migratedImages.size === 0) return
+  const freshSnippets: any[] = useVaultStore.getState().snippets || []
+  useVaultStore.setState((state: any) => {
+    let nextTabs = [...state.openTabs]
+    let nextActiveId = state.activeTabId
+    let nextPinned = [...state.pinnedTabIds]
+    let nextSelected = state.selectedSnippet
+    for (const [oldId, newRel] of migratedImages.entries()) {
+      const found = freshSnippets.find((sn: any) => sn.relativePath === newRel)
+      if (found) {
+        nextTabs = nextTabs.map((tid: string) => (tid === oldId ? found.id : tid))
+        nextPinned = nextPinned.map((pid: string) => (pid === oldId ? found.id : pid))
+        if (nextActiveId === oldId) nextActiveId = found.id
+        if (nextSelected?.id === oldId) nextSelected = found
+      }
+    }
+    return { openTabs: nextTabs, activeTabId: nextActiveId, pinnedTabIds: nextPinned, selectedSnippet: nextSelected }
+  })
+}
 
-/**
- * Custom hook encapsulating Drag-and-Drop (DnD) sensors, state management,
- * multi-file bundling, folder nesting, and custom sorting for the File Explorer.
- *
- * @param {Object} params
- * @param {Array<Object>} params.allSnippets - All available note snippets in the workspace
- * @param {Array<Object>} params.flatTree - Flattened hierarchical tree items rendered in virtuoso
- * @param {Set<string>} params.selectedNoteIds - Active multi-selected note ID set
- * @param {Function} params.saveSnippet - Vault store function to persist snippet changes
- * @param {Function} params.loadVault - Vault store function to reload folder structures from disk
- * @param {Function} params.setExpandedFolders - State setter for expanded folder IDs
- * @returns {Object} DnD sensors, active item state, and drag event handlers
- */
+interface Snippet {
+  id: string
+  folderId?: string
+  type?: string
+  fileName?: string
+  relativePath?: string
+  [key: string]: unknown
+}
+
+interface FlatTreeItem {
+  type: 'file' | 'folder' | 'input' | 'root-drop'
+  snippet?: Snippet
+  depth?: number
+  [key: string]: unknown
+}
+
+interface DragItemData {
+  type: 'folder' | 'file'
+  id: string | number
+  item?: unknown
+  snippet?: Snippet
+  draggedSnippetIds?: string[]
+  count?: number
+  depth?: number
+}
+
+interface UseExplorerDndParams {
+  allSnippets: Snippet[]
+  flatTree: FlatTreeItem[]
+  selectedNoteIds: Set<string>
+  saveSnippet: (snippet: Snippet) => Promise<void>
+  loadVault: () => Promise<void>
+  setExpandedFolders: (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => void
+}
+
+interface ExplorerDndResult {
+  sensors: SensorDescriptor<SensorOptions>[]
+  activeListDragItem: DragItemData | null
+  setActiveListDragItem: React.Dispatch<React.SetStateAction<DragItemData | null>>
+  handleListDragStart: (event: DragStartEvent) => void
+  handleListDragEnd: (event: DragEndEvent) => Promise<void>
+}
+
 export function useExplorerDnd({
   allSnippets,
   flatTree,
@@ -40,21 +84,19 @@ export function useExplorerDnd({
   saveSnippet,
   loadVault,
   setExpandedFolders
-}) {
-  const [activeListDragItem, setActiveListDragItem] = useState(null)
+}: UseExplorerDndParams): ExplorerDndResult {
+  const [activeListDragItem, setActiveListDragItem] = useState<DragItemData | null>(null)
   const pointerPosRef = useRef({ x: 0, y: 0 })
 
-  // Track cursor position during drag to detect cross-pane drops (e.g. dropping onto Canvas)
   useEffect(() => {
     if (!activeListDragItem) return
-    const onPointerMove = (e) => {
+    const onPointerMove = (e: PointerEvent) => {
       pointerPosRef.current = { x: e.clientX, y: e.clientY }
     }
     window.addEventListener('pointermove', onPointerMove, { passive: true })
     return () => window.removeEventListener('pointermove', onPointerMove)
   }, [activeListDragItem])
 
-  // Configure sensors with activation constraints to prevent unintentional dragging during clicks
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -69,24 +111,21 @@ export function useExplorerDnd({
     })
   )
 
-  /**
-   * Captures drag initiation for single notes, multi-selected notes, and folders.
-   */
   const handleListDragStart = useCallback(
-    (event) => {
+    (event: DragStartEvent) => {
       const { active } = event
       if (String(active.id).startsWith('drag-folder-')) {
         setActiveListDragItem({
           type: 'folder',
           id: active.id,
-          item: active.data?.current?.item
+          item: (active.data?.current as any)?.item
         })
       } else {
         const activeSnippet = allSnippets.find((s) => s.id === active.id)
         if (activeSnippet) {
           const flatItem = flatTree.find((f) => f.type === 'file' && f.snippet?.id === active.id)
-          const isMulti = selectedNoteIds.has(active.id) && selectedNoteIds.size > 1
-          const draggedSnippetIds = isMulti ? Array.from(selectedNoteIds) : [active.id]
+          const isMulti = selectedNoteIds.has(String(active.id)) && selectedNoteIds.size > 1
+          const draggedSnippetIds = isMulti ? Array.from(selectedNoteIds) : [String(active.id)]
 
           setActiveListDragItem({
             type: 'file',
@@ -94,7 +133,7 @@ export function useExplorerDnd({
             snippet: activeSnippet,
             draggedSnippetIds,
             count: draggedSnippetIds.length,
-            depth: flatItem ? flatItem.depth : 0
+            depth: flatItem ? (flatItem.depth ?? 0) : 0
           })
         }
       }
@@ -102,29 +141,23 @@ export function useExplorerDnd({
     [allSnippets, flatTree, selectedNoteIds]
   )
 
-  /**
-   * Resolves drop destinations:
-   * 1. Dropping onto root-drop-zone (moves folder/notes to workspace root)
-   * 2. Dropping a folder onto another folder (nests folder inside target)
-   * 3. Dropping note(s) onto a folder (moves notes into target folder)
-   * 4. Dropping note onto another note (reorders notes and updates custom sort order)
-   * 5. Dropping note(s) or images onto an active Canvas tab
-   */
   const handleListDragEnd = useCallback(
-    async (event) => {
+    async (event: DragEndEvent) => {
       const dragItem = activeListDragItem
       setActiveListDragItem(null)
       const { active, over } = event
 
-      // Detect if user dropped onto an active Canvas tab in the workspace
+      const activatorEvent = (event as any).activatorEvent
+      const delta = (event as any).delta
+
       const dropX =
         pointerPosRef.current.x ||
-        (event.activatorEvent?.clientX ? event.activatorEvent.clientX + (event.delta?.x || 0) : 0)
+        (activatorEvent?.clientX ? activatorEvent.clientX + (delta?.x || 0) : 0)
       const dropY =
         pointerPosRef.current.y ||
-        (event.activatorEvent?.clientY ? event.activatorEvent.clientY + (event.delta?.y || 0) : 0)
+        (activatorEvent?.clientY ? activatorEvent.clientY + (delta?.y || 0) : 0)
 
-      let targetCanvas = null
+      let targetCanvas: Element | null = null
       const canvasContainers = document.querySelectorAll('.lumina-canvas-container')
       for (const canvas of canvasContainers) {
         const r = canvas.getBoundingClientRect()
@@ -134,13 +167,11 @@ export function useExplorerDnd({
         }
       }
 
-      // Secondary check: test element under pointer
       if (!targetCanvas && dropX > 0 && dropY > 0) {
         const el = document.elementFromPoint(dropX, dropY)
-        targetCanvas = el?.closest('.lumina-canvas-container')
+        targetCanvas = el?.closest('.lumina-canvas-container') ?? null
       }
 
-      // Fallback: If dropped outside the explorer while a visible canvas container is active
       if (!targetCanvas && !over) {
         for (const canvas of canvasContainers) {
           const r = canvas.getBoundingClientRect()
@@ -154,12 +185,11 @@ export function useExplorerDnd({
       if (targetCanvas) {
         const idsToDrop = dragItem?.draggedSnippetIds?.length
           ? dragItem.draggedSnippetIds
-          : [active.id]
+          : [String(active.id)]
         let snippetsToDrop = (allSnippets || []).filter((s) => idsToDrop.includes(s.id))
 
-        // Fallback: if snippet not found in allSnippets array, use dragItem.snippet or active.data
         if (snippetsToDrop.length === 0) {
-          const directSnippet = dragItem?.snippet || active.data?.current?.snippet
+          const directSnippet = dragItem?.snippet || (active.data?.current as any)?.snippet
           if (directSnippet) {
             snippetsToDrop = [directSnippet]
           }
@@ -181,14 +211,13 @@ export function useExplorerDnd({
 
       if (!over || active.id === over.id) return
 
-      // Destination 1: Root Drop Zone (Move to workspace root)
       if (over.id === 'root-drop-zone') {
         if (String(active.id).startsWith('drag-folder-')) {
           const sourceFolderId = String(active.id).replace('drag-folder-', '')
-          const folderName = sourceFolderId.split('/').pop()
+          const folderName = sourceFolderId.split('/').pop()!
           if (sourceFolderId !== folderName) {
             try {
-              await window.api.renameFolder(sourceFolderId, folderName)
+              await (window as any).api.renameFolder(sourceFolderId, folderName)
               await loadVault()
             } catch (e) {
               console.error('Failed to move folder to root:', e)
@@ -197,18 +226,18 @@ export function useExplorerDnd({
         } else {
           const idsToMove = dragItem?.draggedSnippetIds?.length
             ? dragItem.draggedSnippetIds
-            : [active.id]
+            : [String(active.id)]
 
-          const migratedImages = new Map()
+          const migratedImages = new Map<string, string>()
           const snippetsToMove = allSnippets.filter((s) => idsToMove.includes(s.id))
           for (const s of snippetsToMove) {
             if (s.folderId !== '') {
               try {
                 if (s.type === 'image' || s.type === 'pdf') {
-                  const oldRel = s.folderId ? `${s.folderId}/${s.fileName}` : s.fileName
-                  const newRel = s.fileName
+                  const oldRel = s.folderId ? `${s.folderId}/${s.fileName}` : s.fileName!
+                  const newRel = s.fileName!
                   if (oldRel !== newRel) {
-                    await window.api?.moveFile?.(oldRel, newRel)
+                    await (window as any).api?.moveFile?.(oldRel, newRel)
                     migratedImages.set(s.id, newRel)
                   }
                 } else {
@@ -222,35 +251,12 @@ export function useExplorerDnd({
           await loadVault()
 
           if (migratedImages.size > 0) {
-            const freshSnippets = useVaultStore.getState().snippets || []
-            useVaultStore.setState((state) => {
-              let nextTabs = [...state.openTabs]
-              let nextActiveId = state.activeTabId
-              let nextPinned = [...state.pinnedTabIds]
-              let nextSelected = state.selectedSnippet
-
-              for (const [oldId, newRel] of migratedImages.entries()) {
-                const found = freshSnippets.find((sn) => sn.relativePath === newRel)
-                if (found) {
-                  nextTabs = nextTabs.map((tid) => (tid === oldId ? found.id : tid))
-                  nextPinned = nextPinned.map((pid) => (pid === oldId ? found.id : pid))
-                  if (nextActiveId === oldId) nextActiveId = found.id
-                  if (nextSelected?.id === oldId) nextSelected = found
-                }
-              }
-              return {
-                openTabs: nextTabs,
-                activeTabId: nextActiveId,
-                pinnedTabIds: nextPinned,
-                selectedSnippet: nextSelected
-              }
-            })
+            patchStoreForMigratedImages(migratedImages)
           }
         }
         return
       }
 
-      // Destination 2: Folder Dragged onto another Folder (Nesting)
       if (String(active.id).startsWith('drag-folder-')) {
         const sourceFolderId = String(active.id).replace('drag-folder-', '')
 
@@ -258,12 +264,12 @@ export function useExplorerDnd({
           const targetFolderId = String(over.id).replace('folder-', '').replace('drag-folder-', '')
 
           if (sourceFolderId !== targetFolderId && !targetFolderId.startsWith(sourceFolderId + '/')) {
-            const folderName = sourceFolderId.split('/').pop()
+            const folderName = sourceFolderId.split('/').pop()!
             const newPath = targetFolderId ? `${targetFolderId}/${folderName}` : folderName
             if (newPath !== sourceFolderId) {
               try {
-                await window.api.renameFolder(sourceFolderId, newPath)
-                setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
+                await (window as any).api.renameFolder(sourceFolderId, newPath)
+                setExpandedFolders((prev: Set<string>) => new Set(prev).add(targetFolderId))
                 await loadVault()
               } catch (e) {
                 console.error('Failed to move folder into target folder:', e)
@@ -274,25 +280,23 @@ export function useExplorerDnd({
         return
       }
 
-      // Destination 3 & 4: Note(s) Dragged
       if (active.id !== over?.id && over) {
-        // Dropped directly into a folder
         if (String(over.id).startsWith('folder-')) {
           const targetFolderId = String(over.id).replace('folder-', '')
           const idsToMove = dragItem?.draggedSnippetIds?.length
             ? dragItem.draggedSnippetIds
-            : [active.id]
+            : [String(active.id)]
 
-          const migratedImages = new Map()
+          const migratedImages = new Map<string, string>()
           const snippetsToMove = allSnippets.filter((s) => idsToMove.includes(s.id))
           for (const s of snippetsToMove) {
             if (s.folderId !== targetFolderId) {
               try {
                 if (s.type === 'image' || s.type === 'pdf') {
-                  const oldRel = s.folderId ? `${s.folderId}/${s.fileName}` : s.fileName
-                  const newRel = targetFolderId ? `${targetFolderId}/${s.fileName}` : s.fileName
+                  const oldRel = s.folderId ? `${s.folderId}/${s.fileName}` : s.fileName!
+                  const newRel = targetFolderId ? `${targetFolderId}/${s.fileName}` : s.fileName!
                   if (oldRel !== newRel) {
-                    await window.api?.moveFile?.(oldRel, newRel)
+                    await (window as any).api?.moveFile?.(oldRel, newRel)
                     migratedImages.set(s.id, newRel)
                   }
                 } else {
@@ -303,41 +307,19 @@ export function useExplorerDnd({
               }
             }
           }
-          setExpandedFolders((prev) => new Set(prev).add(targetFolderId))
+          setExpandedFolders((prev: Set<string>) => new Set(prev).add(targetFolderId))
           await loadVault()
 
           if (migratedImages.size > 0) {
-            const freshSnippets = useVaultStore.getState().snippets || []
-            useVaultStore.setState((state) => {
-              let nextTabs = [...state.openTabs]
-              let nextActiveId = state.activeTabId
-              let nextPinned = [...state.pinnedTabIds]
-              let nextSelected = state.selectedSnippet
-
-              for (const [oldId, newRel] of migratedImages.entries()) {
-                const found = freshSnippets.find((sn) => sn.relativePath === newRel)
-                if (found) {
-                  nextTabs = nextTabs.map((tid) => (tid === oldId ? found.id : tid))
-                  nextPinned = nextPinned.map((pid) => (pid === oldId ? found.id : pid))
-                  if (nextActiveId === oldId) nextActiveId = found.id
-                  if (nextSelected?.id === oldId) nextSelected = found
-                }
-              }
-              return {
-                openTabs: nextTabs,
-                activeTabId: nextActiveId,
-                pinnedTabIds: nextPinned,
-                selectedSnippet: nextSelected
-              }
-            })
+            patchStoreForMigratedImages(migratedImages)
           }
           return
         }
 
-        // Reordering notes within the list
         const currentListIds = allSnippets.map((s) => s.id)
-        const oldIndex = currentListIds.indexOf(active.id)
-        const newIndex = currentListIds.indexOf(over.id)
+        const idxMap = new Map<string, number>(allSnippets.map((s, i) => [s.id, i]))
+        const oldIndex = idxMap.get(String(active.id)) ?? -1
+        const newIndex = idxMap.get(String(over.id)) ?? -1
         if (oldIndex !== -1 && newIndex !== -1) {
           const newOrder = arrayMove(currentListIds, oldIndex, newIndex)
           useSettingsStore.getState().updateSettings({

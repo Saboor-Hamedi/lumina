@@ -2,12 +2,53 @@ import { useMemo } from 'react'
 import Fuse from 'fuse.js'
 import { rankSnippets } from '../../../core/utils/searchRanker'
 
-export function useFileSearch(snippets, query, settings, folders = []) {
+const NAME_COLLATOR = new Intl.Collator(undefined, { sensitivity: 'base' })
+
+interface Snippet {
+  id: string
+  title?: string
+  folderId?: string
+  isPinned?: boolean
+  timestamp?: number
+  [key: string]: unknown
+}
+
+interface Settings {
+  sortBy?: string
+  sortDirection?: string
+  noteOrder?: string[] | null
+  pinnedFolders?: string[]
+  startMenuPinnedOrder?: string[]
+  [key: string]: unknown
+}
+
+interface MatchMeta {
+  matchSnippet?: string
+  [key: string]: unknown
+}
+
+interface PinnedItem extends Snippet {
+  itemType: 'snippet' | 'folder'
+}
+
+interface FileSearchResult {
+  filteredSnippets: Snippet[]
+  isQueryActive: boolean
+  matchMetaMap: Map<string, MatchMeta>
+  pinnedItems: PinnedItem[]
+  allSnippets: Snippet[]
+}
+
+export function useFileSearch(
+  snippets: Snippet[],
+  query: string,
+  settings: Settings,
+  folders: string[] = []
+): FileSearchResult {
   const sortBy = settings.sortBy || 'name'
   const sortDirection = settings.sortDirection || 'asc'
   const noteOrder = settings.noteOrder || null
 
-  // 0. Fuse Index (title + folderId, with score info)
   const fuseIndex = useMemo(() => {
     return new Fuse(snippets, {
       keys: [
@@ -20,35 +61,31 @@ export function useFileSearch(snippets, query, settings, folders = []) {
     })
   }, [snippets])
 
-  // 1. Filtered + ranked snippets — uses shared searchRanker utility
   const { filteredSnippets, isQueryActive, matchMetaMap } = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!q) return { filteredSnippets: snippets, isQueryActive: false, matchMetaMap: new Map() }
+    if (!q) return { filteredSnippets: snippets, isQueryActive: false, matchMetaMap: new Map<string, MatchMeta>() }
     const { results, matchMetaMap } = rankSnippets(snippets, q, fuseIndex)
-    return { filteredSnippets: results, isQueryActive: true, matchMetaMap }
+    return { filteredSnippets: results as Snippet[], isQueryActive: true, matchMetaMap: matchMetaMap as Map<string, MatchMeta> }
   }, [query, fuseIndex, snippets])
 
   const existingFolderIds = useMemo(() => {
     return new Set(
       (folders || [])
-        .map((f) => (typeof f === 'string' ? f : f?.id || f?.name || ''))
+        .map((f) => (typeof f === 'string' ? f : (f as any)?.id || (f as any)?.name || ''))
         .filter(Boolean)
     )
   }, [folders])
 
-  // 2. Pinned items (snippets + folders)
-  const pinnedItems = useMemo(() => {
-    const dbPinned = snippets.filter((s) => s.isPinned).map((s) => ({ ...s, itemType: 'snippet' }))
-    const folderPinned = (settings.pinnedFolders || [])
+  const pinnedItems = useMemo((): PinnedItem[] => {
+    const dbPinned: PinnedItem[] = snippets.filter((s) => s.isPinned).map((s) => ({ ...s, itemType: 'snippet' as const }))
+    const folderPinned: PinnedItem[] = (settings.pinnedFolders || [])
       .filter((folderId) => existingFolderIds.has(folderId))
-      .map((folderId) => {
-        return {
-          id: folderId,
-          title: folderId.split('/').pop(),
-          itemType: 'folder',
-          isPinned: true
-        }
-      })
+      .map((folderId) => ({
+        id: folderId,
+        title: folderId.split('/').pop(),
+        itemType: 'folder' as const,
+        isPinned: true
+      }))
 
     const combined = [...dbPinned, ...folderPinned]
     const pinnedOrderMap = new Map((settings.startMenuPinnedOrder || []).map((id, i) => [id, i]))
@@ -63,9 +100,8 @@ export function useFileSearch(snippets, query, settings, folders = []) {
     return combined
   }, [snippets, settings.startMenuPinnedOrder, settings.pinnedFolders, existingFolderIds])
 
-  // 3. All snippets sorted
-  const allSnippets = useMemo(() => {
-    if (isQueryActive) return [...filteredSnippets]
+  const allSnippets = useMemo((): Snippet[] => {
+    if (isQueryActive) return filteredSnippets
 
     let all = [...filteredSnippets]
 
@@ -77,13 +113,13 @@ export function useFileSearch(snippets, query, settings, folders = []) {
         if (ai !== undefined && bi !== undefined) return ai - bi
         if (ai !== undefined) return -1
         if (bi !== undefined) return 1
-        return (a.title || '').localeCompare(b.title || '')
+        return NAME_COLLATOR.compare(a.title || '', b.title || '')
       })
     } else {
       all.sort((a, b) => {
         let cmp = 0
         if (sortBy === 'name') {
-          cmp = (a.title || '').localeCompare(b.title || '')
+          cmp = NAME_COLLATOR.compare(a.title || '', b.title || '')
         } else if (sortBy === 'modified') {
           cmp = (a.timestamp || 0) - (b.timestamp || 0)
         }

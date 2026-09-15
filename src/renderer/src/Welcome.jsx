@@ -1,6 +1,6 @@
 import React from 'react'
 import { FileText, Search, Sparkles, FolderTree, Command, Book, Compass } from 'lucide-react'
-import { useExternalFileDrop } from './features/Explorer/hooks/useExternalFileDrop'
+import { useExternalFileDrop } from './features/Explorer/hooks/ExternalFileDrop'
 import ExternalDropOverlay from './features/Explorer/components/ExternalDropOverlay'
 import ToolTip from './components/atoms/ToolTip'
 import './assets/welcome.css'

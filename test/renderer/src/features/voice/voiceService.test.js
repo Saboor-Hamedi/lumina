@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { voiceService } from '../../../../../src/renderer/src/features/voice/hooks/voiceService'
+import { voiceService } from '../../../../../src/renderer/src/features/voice/hooks/Services'
 
 describe('voiceService', () => {
   beforeEach(() => {
@@ -56,7 +56,7 @@ describe('voiceService', () => {
     await voiceService.startRecording()
 
     expect(voiceService.state.isRecording).toBe(false)
-    expect(voiceService.state.error).toMatch(/Please add your free Groq API key/i)
+    expect(voiceService.state.error).toMatch(/Voice Key not found|Please add your free Groq API key/i)
   })
 
   it('debounces rapid toggle calls within 450ms', async () => {

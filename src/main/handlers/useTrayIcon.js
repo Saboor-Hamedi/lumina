@@ -44,10 +44,12 @@ export function useTrayIcon(mainWindow, app, appIcon) {
   // Handle app before-quit to ensure quitting is not blocked
   app.on('before-quit', () => {
     isQuitting = true
+    SettingsManager.flush().catch(() => {})
   })
 
   // Prevent app from quitting when window is closed via "X" button ONLY IF launchOnStartup is true
   mainWindow.on('close', (event) => {
+    SettingsManager.flush().catch(() => {})
     if (isQuitting) return
 
     const settings = SettingsManager.getAll()

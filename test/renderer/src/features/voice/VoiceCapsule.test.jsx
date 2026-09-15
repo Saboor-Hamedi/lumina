@@ -2,7 +2,7 @@ import React from 'react'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { VoiceCapsule } from '../../../../../src/renderer/src/features/voice/VoiceCapsule'
-import { voiceService } from '../../../../../src/renderer/src/features/voice/hooks/voiceService'
+import { voiceService } from '../../../../../src/renderer/src/features/voice/hooks/Services'
 
 describe('VoiceCapsule component', () => {
   beforeEach(() => {

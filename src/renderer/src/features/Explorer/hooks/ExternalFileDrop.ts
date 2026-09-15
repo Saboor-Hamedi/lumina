@@ -2,17 +2,26 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useVaultStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 
-export function useExternalFileDrop() {
+interface ExternalFileDropResult {
+  isDraggingExternal: boolean
+  hoveredFolderId: string | null
+  handleDragEnter: (e: DragEvent | React.DragEvent, folderId?: string | null) => void
+  handleDragOver: (e: DragEvent | React.DragEvent, folderId?: string | null) => void
+  handleDragLeave: (e: DragEvent | React.DragEvent) => void
+  handleDrop: (e: DragEvent | React.DragEvent, targetFolderId?: string) => Promise<void>
+}
+
+export function useExternalFileDrop(): ExternalFileDropResult {
   const [isDraggingExternal, setIsDraggingExternal] = useState(false)
-  const [hoveredFolderId, setHoveredFolderId] = useState(null)
+  const [hoveredFolderId, setHoveredFolderId] = useState<string | null>(null)
   const dragCounterRef = useRef(0)
   const loadVault = useVaultStore((state) => state.loadVault)
   const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
 
-  const isExternalFileDrag = useCallback((e) => {
+  const isExternalFileDrag = useCallback((e: DragEvent | React.DragEvent): boolean => {
     if (!e?.dataTransfer) return false
-    const types = Array.from(e.dataTransfer.types || [])
-    return types.includes('Files') && !types.includes('application/x-lumina-node')
+    const types = e.dataTransfer.types
+    return types.contains('Files') && !types.contains('application/x-lumina-node')
   }, [])
 
   const resetDragState = useCallback(() => {
@@ -22,7 +31,7 @@ export function useExternalFileDrop() {
   }, [])
 
   useEffect(() => {
-    const handleWindowDragLeave = (e) => {
+    const handleWindowDragLeave = (e: DragEvent) => {
       if (
         !e.relatedTarget &&
         (e.clientX <= 0 ||
@@ -49,7 +58,7 @@ export function useExternalFileDrop() {
   }, [resetDragState])
 
   const handleDragEnter = useCallback(
-    (e, folderId = null) => {
+    (e: DragEvent | React.DragEvent, folderId: string | null = null) => {
       if (!isExternalFileDrag(e)) return
       e.preventDefault()
       e.stopPropagation()
@@ -63,11 +72,11 @@ export function useExternalFileDrop() {
   )
 
   const handleDragOver = useCallback(
-    (e, folderId = null) => {
+    (e: DragEvent | React.DragEvent, folderId: string | null = null) => {
       if (!isExternalFileDrag(e)) return
       e.preventDefault()
       e.stopPropagation()
-      e.dataTransfer.dropEffect = 'copy'
+      e.dataTransfer!.dropEffect = 'copy'
       if (folderId !== null && hoveredFolderId !== folderId) {
         setHoveredFolderId(folderId)
       }
@@ -76,7 +85,7 @@ export function useExternalFileDrop() {
   )
 
   const handleDragLeave = useCallback(
-    (e) => {
+    (e: DragEvent | React.DragEvent) => {
       if (!isExternalFileDrag(e)) return
       e.preventDefault()
       e.stopPropagation()
@@ -90,7 +99,7 @@ export function useExternalFileDrop() {
   )
 
   const handleDrop = useCallback(
-    async (e, targetFolderId = '') => {
+    async (e: DragEvent | React.DragEvent, targetFolderId = '') => {
       if (!isExternalFileDrag(e)) return
       e.preventDefault()
       e.stopPropagation()
@@ -99,13 +108,13 @@ export function useExternalFileDrop() {
 
       const files = Array.from(e.dataTransfer?.files || [])
       const paths = files
-        .map((f) => (window.api?.getPathForFile ? window.api.getPathForFile(f) : f.path))
+        .map((f) => ((window as any).api?.getPathForFile ? (window as any).api.getPathForFile(f) : (f as any).path))
         .filter(Boolean)
 
       if (paths.length === 0) return
 
       try {
-        const result = await window.api?.importExternalPaths?.(paths, targetFolderId || '')
+        const result = await (window as any).api?.importExternalPaths?.(paths, targetFolderId || '')
         await loadVault()
 
         if (result?.importedFolderIds && result.importedFolderIds.length > 0) {
@@ -113,14 +122,14 @@ export function useExternalFileDrop() {
           const nextExpanded = Array.from(new Set([...currentExpanded, ...result.importedFolderIds]))
           try {
             localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextExpanded))
-          } catch (e) {}
+          } catch (_) {}
           useSettingsStore.getState().updateSetting('expandedFolders', nextExpanded)
         }
 
         if (result?.importedSnippetIds && result.importedSnippetIds.length > 0) {
           const targetId = result.importedSnippetIds[0]
           const snippets = useVaultStore.getState().snippets || []
-          const found = snippets.find((s) => s.id === targetId)
+          const found = snippets.find((s: any) => s.id === targetId)
           if (found) {
             setSelectedSnippet(found)
           }

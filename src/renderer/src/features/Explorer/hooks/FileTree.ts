@@ -1,5 +1,82 @@
 import { useMemo } from 'react'
 
+interface Snippet {
+  id: string
+  title?: string
+  folderId?: string
+  [key: string]: unknown
+}
+
+interface CreatingState {
+  type?: string
+  kind?: string
+  parentId?: string | null
+}
+
+interface TreeNode {
+  id: string
+  name: string
+  children: Record<string, TreeNode>
+  files: Snippet[]
+  count?: number
+}
+
+interface RootNode {
+  children: Record<string, TreeNode>
+  files: Snippet[]
+  count?: number
+}
+
+interface FlatTreeFolder {
+  type: 'folder'
+  id: string
+  name: string
+  depth: number
+  count: number
+}
+
+interface FlatTreeFile {
+  type: 'file'
+  snippet: Snippet
+  depth: number
+}
+
+interface FlatTreeInput {
+  type: 'input'
+  kind: string
+  parentId: string
+  depth: number
+}
+
+interface FlatTreeRootDrop {
+  type: 'root-drop'
+}
+
+export type FlatTreeItem = FlatTreeFolder | FlatTreeFile | FlatTreeInput | FlatTreeRootDrop
+
+interface UseFileTreeParams {
+  allSnippets: Snippet[]
+  folders: string[]
+  activeTab: string
+  query: string
+  expandedFolders: Set<string>
+  creating: CreatingState | null
+  activeListDragItem?: unknown
+  collapsedDuringSearch: Set<string>
+  folderOrder?: string[] | null
+}
+
+const FOLDER_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
+
+const calculateCounts = (node: RootNode | TreeNode): number => {
+  let count = node.files.length
+  for (const child of Object.values(node.children)) {
+    count += calculateCounts(child)
+  }
+  node.count = count
+  return count
+}
+
 export function useFileTree({
   allSnippets,
   folders,
@@ -7,24 +84,22 @@ export function useFileTree({
   query,
   expandedFolders,
   creating,
-  activeListDragItem,
   collapsedDuringSearch,
   folderOrder
-}) {
-  const flatTree = useMemo(() => {
+}: UseFileTreeParams): FlatTreeItem[] {
+  const flatTree = useMemo((): FlatTreeItem[] => {
     if (activeTab !== 'all') return []
 
     const q = query.trim().toLowerCase()
 
-    // Build hierarchical tree
-    const root = { children: {}, files: [] }
+    const root: RootNode = { children: {}, files: [] }
 
     folders.forEach((folderPath) => {
       const cleanPath = (folderPath || '').replace(/\\/g, '/')
       if (cleanPath.startsWith('.lumina') || cleanPath.startsWith('.')) return
       if (!q || cleanPath.toLowerCase().includes(q)) {
         const parts = cleanPath.split('/').filter(Boolean)
-        let current = root
+        let current: RootNode | TreeNode = root
         let currentPath = ''
         parts.forEach((part) => {
           currentPath = currentPath ? `${currentPath}/${part}` : part
@@ -43,7 +118,7 @@ export function useFileTree({
         root.files.push(snippet)
       } else {
         const parts = folderId.split('/').filter(Boolean)
-        let current = root
+        let current: RootNode | TreeNode = root
         let currentPath = ''
         parts.forEach((part) => {
           currentPath = currentPath ? `${currentPath}/${part}` : part
@@ -56,21 +131,11 @@ export function useFileTree({
       }
     })
 
-    const flat = []
+    const flat: FlatTreeItem[] = []
 
-    // Pre-calculate note count for every node in a single O(N) post-order pass
-    const calculateCounts = (node) => {
-      let count = node.files.length
-      for (const child of Object.values(node.children)) {
-        count += calculateCounts(child)
-      }
-      node.count = count
-      return count
-    }
     calculateCounts(root)
 
-    const traverse = (node, depth, parentId = '') => {
-      // 1. Inject folder creation input at top of folder list
+    const traverse = (node: RootNode | TreeNode, depth: number, parentId = '') => {
       if (
         creating &&
         (creating.parentId || '') === parentId &&
@@ -80,7 +145,7 @@ export function useFileTree({
       }
 
       const folderNames = Object.keys(node.children).sort((a, b) => {
-        return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+        return FOLDER_COLLATOR.compare(a, b)
       })
 
       folderNames.forEach((name) => {
@@ -97,7 +162,6 @@ export function useFileTree({
         }
       })
 
-      // 2. Inject note/file/canvas creation input at top of file list
       if (
         creating &&
         (creating.parentId || '') === parentId &&
@@ -116,7 +180,6 @@ export function useFileTree({
         })
       }
 
-      // Files in this level
       node.files.forEach((file) => {
         flat.push({ type: 'file', snippet: file, depth })
       })
