@@ -173,4 +173,8 @@ export const applyTheme = (themeId: string): void => {
   } catch (e) {
     // Ignore storage quota or disabled localStorage
   }
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('theme-changed', { detail: { themeId, colors: computedColors } }))
+  }
 }

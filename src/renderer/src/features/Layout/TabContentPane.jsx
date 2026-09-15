@@ -19,9 +19,11 @@
 
 import React from 'react'
 import Editor from '../Editor/Editor'
-import { ImageViewerTab, PDFViewerTab } from '../media'
-import { CanvasTabPane } from '../canvas'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
+
+const ImageViewerTab = React.lazy(() => import('../media/ImageViewerTab'))
+const PDFViewerTab = React.lazy(() => import('../media/PDFViewerTab'))
+const CanvasTabPane = React.lazy(() => import('../canvas/CanvasTabPane'))
 
 export const TabContentPane = React.memo(
   ({
@@ -55,24 +57,26 @@ export const TabContentPane = React.memo(
         }}
       >
         <GlobalErrorHandler>
-          {snippet.type === 'image' ? (
-            <ImageViewerTab snippet={snippet} />
-          ) : snippet.type === 'pdf' ? (
-            <PDFViewerTab snippet={snippet} />
-          ) : snippet.type === 'canvas' || snippet.language === 'canvas' || snippet.fileName?.endsWith('.canvas') ? (
-            <CanvasTabPane snippet={snippet} onSave={onSave} isSelected={isSelected} />
-          ) : (
-            <Editor
-              snippet={snippet}
-              onSave={onSave}
-              onToggleInspector={onToggleInspector}
-              isActive={isSelected}
-              onToggleExplorerModal={onToggleExplorerModal}
-              onSettingsClick={onSettingsClick}
-              onThemeClick={onThemeClick}
-              onGraphClick={onGraphClick}
-            />
-          )}
+          <React.Suspense fallback={null}>
+            {snippet.type === 'image' ? (
+              <ImageViewerTab snippet={snippet} />
+            ) : snippet.type === 'pdf' ? (
+              <PDFViewerTab snippet={snippet} />
+            ) : snippet.type === 'canvas' || snippet.language === 'canvas' || snippet.fileName?.endsWith('.canvas') ? (
+              <CanvasTabPane snippet={snippet} onSave={onSave} isSelected={isSelected} />
+            ) : (
+              <Editor
+                snippet={snippet}
+                onSave={onSave}
+                onToggleInspector={onToggleInspector}
+                isActive={isSelected}
+                onToggleExplorerModal={onToggleExplorerModal}
+                onSettingsClick={onSettingsClick}
+                onThemeClick={onThemeClick}
+                onGraphClick={onGraphClick}
+              />
+            )}
+          </React.Suspense>
         </GlobalErrorHandler>
       </div>
     )

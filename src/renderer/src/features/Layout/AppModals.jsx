@@ -21,27 +21,27 @@
  */
 
 import React from 'react'
-import Settings from '../Settings/Settings'
-import Theme from '../theme/Theme'
 import CommandPalette from '../commandpalette/CommandPalette'
-import Documentation from '../Docs/Documentation'
-import Graph from '../Graph/Graph'
-import Guide from '../modals/Guide'
 import Confirm from '../modals/Confirm'
 import Rename from '../modals/Rename'
 import IconPicker from '../Icons/IconPicker'
 import ToastNotification from '../../core/notification'
 import Indexing from '../../components/Indexing'
 import { VoiceCapsule } from '../voice'
-import { CanvasDrawerModal } from '../canvas'
 
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useVaultStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
 
-// Lazy-load AI Chat to optimize initial bundle evaluation time
+// Lazy-load heavy modals and panels to optimize initial bundle evaluation time
 const LuminaChat = React.lazy(() => import('../AI/Lumina'))
+const Settings = React.lazy(() => import('../Settings/Settings'))
+const Theme = React.lazy(() => import('../theme/Theme'))
+const Documentation = React.lazy(() => import('../Docs/Documentation'))
+const Graph = React.lazy(() => import('../Graph/Graph'))
+const Guide = React.lazy(() => import('../modals/Guide'))
+const CanvasDrawerModal = React.lazy(() => import('../canvas/CanvasDrawerModal'))
 
 export const AppModals = ({
   showSettings,
@@ -91,22 +91,26 @@ export const AppModals = ({
     <>
       {/* Settings Modal */}
       {showSettings && (
-        <Settings
-          onClose={() => {
-            setShowSettings(false)
-            setSettingsInitialTab('look-and-feel')
-          }}
-          onOpenTheme={() => {
-            setShowSettings(false)
-            setShowThemeModal(true)
-          }}
-          initialTab={settingsInitialTab}
-        />
+        <React.Suspense fallback={null}>
+          <Settings
+            onClose={() => {
+              setShowSettings(false)
+              setSettingsInitialTab('look-and-feel')
+            }}
+            onOpenTheme={() => {
+              setShowSettings(false)
+              setShowThemeModal(true)
+            }}
+            initialTab={settingsInitialTab}
+          />
+        </React.Suspense>
       )}
 
       {/* Theme Customizer Modal */}
       {showThemeModal && (
-        <Theme isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />
+        <React.Suspense fallback={null}>
+          <Theme isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />
+        </React.Suspense>
       )}
 
       {/* Floating AI Chat Assistant (Dockable into right sidebar) */}
@@ -164,30 +168,38 @@ export const AppModals = ({
       {/* Interactive 2D/3D Knowledge Graph */}
       {showGraph && (
         <GlobalErrorHandler>
-          <Graph
-            isOpen={showGraph}
-            onClose={() => setShowGraph(false)}
-            onNavigate={(snippet) => {
-              setSelectedSnippet(snippet)
-              setActiveTab('files')
-              setShowGraph(false)
-            }}
-          />
+          <React.Suspense fallback={null}>
+            <Graph
+              isOpen={showGraph}
+              onClose={() => setShowGraph(false)}
+              onNavigate={(snippet) => {
+                setSelectedSnippet(snippet)
+                setActiveTab('files')
+                setShowGraph(false)
+              }}
+            />
+          </React.Suspense>
         </GlobalErrorHandler>
       )}
 
       {/* Help & Documentation Modal */}
       {showDocsModal && (
-        <Documentation isOpen={showDocsModal} onClose={() => setShowDocsModal(false)} />
+        <React.Suspense fallback={null}>
+          <Documentation isOpen={showDocsModal} onClose={() => setShowDocsModal(false)} />
+        </React.Suspense>
       )}
 
       {/* Onboarding Starter Guide */}
-      <Guide
-        isOpen={showGuideModal}
-        onClose={() => setShowGuideModal(false)}
-        onLoadStarterNotes={handleLoadStarterWorkspace}
-        onOpenDocs={() => setShowDocsModal(true)}
-      />
+      {showGuideModal && (
+        <React.Suspense fallback={null}>
+          <Guide
+            isOpen={showGuideModal}
+            onClose={() => setShowGuideModal(false)}
+            onLoadStarterNotes={handleLoadStarterWorkspace}
+            onOpenDocs={() => setShowDocsModal(true)}
+          />
+        </React.Suspense>
+      )}
 
       {/* Delete Item Confirmation Dialog */}
       {showDeleteConfirm && (
@@ -262,7 +274,9 @@ export const AppModals = ({
       <VoiceCapsule />
 
       {/* Spatial Canvas Slide-up Drawer Modal */}
-      <CanvasDrawerModal />
+      <React.Suspense fallback={null}>
+        <CanvasDrawerModal />
+      </React.Suspense>
     </>
   )
 }

@@ -22,7 +22,7 @@ import Welcome from '../../Welcome'
 import TabBar from './TabBar'
 import TabContentPane from './TabContentPane'
 import AppModals from './AppModals'
-import Graph from '../Graph/Graph'
+const Graph = React.lazy(() => import('../Graph/Graph'))
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
@@ -766,11 +766,13 @@ export const MainLayout = () => {
               overflow: 'hidden'
             }}
           >
-            <Graph
-              embedded={true}
-              isOpen={true}
-              onNavigate={(sn) => setSelectedSnippet(sn)}
-            />
+            <React.Suspense fallback={null}>
+              <Graph
+                embedded={true}
+                isOpen={true}
+                onNavigate={(sn) => setSelectedSnippet(sn)}
+              />
+            </React.Suspense>
           </div>
         )
       }

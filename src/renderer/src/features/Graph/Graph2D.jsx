@@ -88,35 +88,29 @@ const Graph2D = forwardRef(
           
           const settings = useSettingsStore.getState().settings;
           const isGhost = link.source.group === 'ghost' || link.target.group === 'ghost';
-          const accentColor = settings.graphNodeColor || '#40bafa';
           
-          let r = 64, g = 186, b = 250;
-          if (accentColor.startsWith('#')) {
-            const clean = accentColor.replace('#', '');
-            const bigint = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16);
-            if (!isNaN(bigint)) {
-              r = (bigint >> 16) & 255;
-              g = (bigint >> 8) & 255;
-              b = bigint & 255;
-            }
+          let rgb = '167, 139, 250';
+          if (typeof document !== 'undefined') {
+            const rootRgb = getComputedStyle(document.documentElement).getPropertyValue('--text-accent-rgb').trim();
+            if (rootRgb) rgb = rootRgb;
           }
           
           if (isActive) {
-            const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.75;
-            return `rgba(${r}, ${g}, ${b}, ${highlightOpacity})`;
+            const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.85;
+            return `rgba(${rgb}, ${highlightOpacity})`;
           }
           
           if (isGhost) {
             const ghostOpacity = settings.graphGhostLinkOpacity ?? 0.3;
-            return `rgba(${r}, ${g}, ${b}, ${ghostOpacity * 0.35})`;
+            return `rgba(${rgb}, ${ghostOpacity * 0.35})`;
           }
           
           if (hoverNode || selectedSnippet) {
             const dimOpacity = settings.graphLinkDimOpacity ?? 0.04;
-            return `rgba(${r}, ${g}, ${b}, ${dimOpacity})`;
+            return `rgba(${rgb}, ${dimOpacity})`;
           }
 
-          return defaultLineColor || `rgba(${r}, ${g}, ${b}, 0.22)`;
+          return defaultLineColor || `rgba(${rgb}, 0.25)`;
         }}
         linkWidth={(link) => {
           const isHoverConnected = hoverNode && (link.source.id === hoverNode.id || link.target.id === hoverNode.id);

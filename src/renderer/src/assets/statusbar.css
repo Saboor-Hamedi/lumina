@@ -8,8 +8,8 @@
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  height: 26px;
-  min-height: 26px;
+  height: 28px;
+  min-height: 28px;
   padding: 0 10px;
   background: var(--bg-app);
   border-top: 1px solid var(--border-dim);
@@ -17,6 +17,7 @@
   border-left: none !important;
   border-right: none !important;
   font-size: 10px;
+  line-height: 1;
   color: var(--text-faint);
   z-index: 100;
   flex-shrink: 0;
@@ -43,6 +44,7 @@
 .status-bar-right {
   display: flex;
   align-items: center;
+  height: 100%;
   gap: 4px;
   flex-shrink: 0;
   white-space: nowrap;
@@ -58,6 +60,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  height: 100%;
   flex: 1 1 auto;
   min-width: 24px;
 }
@@ -66,13 +69,17 @@
   pointer-events: auto;
 }
 
-/* Compact utility button (a little smaller) */
+/* Compact utility button */
 .status-bar-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 3.5px;
-  padding: 1px 5px;
-  height: 17px;
+  padding: 0 6px;
+  height: 20px;
+  line-height: 1;
+  margin: 0;
+  box-sizing: border-box;
   border-radius: 4px;
   border: none;
   background: transparent;
@@ -87,9 +94,17 @@
 }
 
 .status-bar-btn svg {
+  display: block;
   flex-shrink: 0;
   opacity: 0.75;
   transition: opacity 0.12s ease;
+}
+
+.status-bar-btn span {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  transform: translateY(0.5px);
 }
 
 .status-bar-btn:hover,
@@ -103,11 +118,11 @@
   opacity: 1;
 }
 
-/* Profile button preserved at its original size */
+/* Profile button */
 .status-bar-btn.status-bar-profile-btn {
-  font-size: 11px !important;
-  height: 18px !important;
-  padding: 1px 6px !important;
+  font-size: 10.5px !important;
+  height: 20px !important;
+  padding: 0 6px !important;
   gap: 5px !important;
 }
 
@@ -116,23 +131,30 @@
   height: 13px !important;
   border-radius: 50%;
   border: 1px solid var(--border-dim);
+  display: block;
+  flex-shrink: 0;
 }
 
 .status-bar-divider {
   width: 1px;
-  height: 9px;
+  height: 12px;
   background: var(--border-subtle, var(--border-dim));
-  margin: 0 1px;
+  margin: 0 2px;
   flex-shrink: 0;
+  align-self: center;
 }
 
 /* Compact metrics item */
 .status-bar-item {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 3.5px;
-  padding: 1px 5px;
-  height: 17px;
+  padding: 0 6px;
+  height: 20px;
+  line-height: 1;
+  margin: 0;
+  box-sizing: border-box;
   border-radius: 4px;
   color: var(--text-muted);
   font-family: inherit;
@@ -145,9 +167,17 @@
 }
 
 .status-bar-item svg {
+  display: block;
   flex-shrink: 0;
   opacity: 0.75;
   transition: opacity 0.12s ease;
+}
+
+.status-bar-item span {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  transform: translateY(0.5px);
 }
 
 .status-bar-item.interactive {

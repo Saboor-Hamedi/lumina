@@ -51,7 +51,53 @@ const getMaterial = (color) => {
  *
  * Memoized for performance - expensive graph calculations.
  */
+export const getActiveThemeColors = () => {
+  if (typeof document !== 'undefined') {
+    const root = document.documentElement
+    const rgb = getComputedStyle(root).getPropertyValue('--text-accent-rgb').trim()
+    const hex = getComputedStyle(root).getPropertyValue('--text-accent').trim()
+    if (rgb) return { rgb, hex: hex || `rgb(${rgb})` }
+    if (hex && hex.startsWith('#')) {
+      const clean = hex.replace('#', '')
+      const bigint = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16)
+      if (!isNaN(bigint)) {
+        const r = (bigint >> 16) & 255
+        const g = (bigint >> 8) & 255
+        const b = bigint & 255
+        return { rgb: `${r}, ${g}, ${b}`, hex }
+      }
+    }
+  }
+  return { rgb: '167, 139, 250', hex: '#a78bfa' }
+}
+
 const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false }) => {
+  const [themeColors, setThemeColors] = useState(() => getActiveThemeColors())
+
+  useEffect(() => {
+    const updateTheme = () => {
+      setThemeColors(getActiveThemeColors())
+    }
+    updateTheme()
+
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.attributeName === 'data-theme' || m.attributeName === 'style') {
+          updateTheme()
+          break
+        }
+      }
+    })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'style'] })
+    window.addEventListener('theme-changed', updateTheme)
+    window.addEventListener('storage', updateTheme)
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('theme-changed', updateTheme)
+      window.removeEventListener('storage', updateTheme)
+    }
+  }, [])
   const snippets = useVaultStore((s) => s.snippets)
   const graphSnippets = useMemo(() => {
     return snippets.filter((s) => s.type !== 'image' && s.language !== 'image')
@@ -374,34 +420,12 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
   // Precompute line colors based on Lumina theme accent
   const defaultLineColor = useMemo(() => {
-    let r = 64, g = 186, b = 250
-    const color = graphNodeColor || '#40bafa'
-    if (color.startsWith('#')) {
-      const clean = color.replace('#', '')
-      const bigint = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16)
-      if (!isNaN(bigint)) {
-        r = (bigint >> 16) & 255
-        g = (bigint >> 8) & 255
-        b = bigint & 255
-      }
-    }
-    return `rgba(${r}, ${g}, ${b}, ${is3DMode ? 0.32 : 0.22})`
-  }, [graphNodeColor, is3DMode])
+    return `rgba(${themeColors.rgb}, ${is3DMode ? 0.35 : 0.25})`
+  }, [themeColors.rgb, is3DMode])
 
   const dimmedLineColor = useMemo(() => {
-    let r = 64, g = 186, b = 250
-    const color = graphNodeColor || '#40bafa'
-    if (color.startsWith('#')) {
-      const clean = color.replace('#', '')
-      const bigint = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16)
-      if (!isNaN(bigint)) {
-        r = (bigint >> 16) & 255
-        g = (bigint >> 8) & 255
-        b = bigint & 255
-      }
-    }
-    return `rgba(${r}, ${g}, ${b}, ${is3DMode ? 0.08 : 0.04})`
-  }, [graphNodeColor, is3DMode])
+    return `rgba(${themeColors.rgb}, ${is3DMode ? 0.08 : 0.04})`
+  }, [themeColors.rgb, is3DMode])
 
   // Pre-compute neighbors for hover highlighting to prevent O(N^2) canvas lag
   const hoverNeighbors = useMemo(() => {
@@ -417,8 +441,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   }, [hoverNode, graphData.links])
 
   const nodeColorFn = useCallback((node) => {
-    return getNodeColor(node, selectedSnippet?.id, graphNodeColor)
-  }, [selectedSnippet, graphNodeColor])
+    return getNodeColor(node, selectedSnippet?.id, themeColors.hex)
+  }, [selectedSnippet, themeColors.hex])
 
   const normalizedSearchQuery = useMemo(() => searchQuery.trim().toLowerCase(), [searchQuery])
 
@@ -509,26 +533,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 const isActive = hoverNode ? isHoverConnected : isSelectedConnected;
                 
                 const { settings } = useSettingsStore.getState();
-                const accentColor = settings.graphNodeColor || '#40bafa';
-                let r = 64, g = 186, b = 250;
-                if (accentColor.startsWith('#')) {
-                  const clean = accentColor.replace('#', '');
-                  const bigint = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16);
-                  if (!isNaN(bigint)) {
-                    r = (bigint >> 16) & 255;
-                    g = (bigint >> 8) & 255;
-                    b = bigint & 255;
-                  }
-                }
-                
                 if (isActive) {
-                  const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.75;
-                  return `rgba(${r}, ${g}, ${b}, ${highlightOpacity})`;
+                  const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.85;
+                  return `rgba(${themeColors.rgb}, ${highlightOpacity})`;
                 }
                 
                 if (hoverNode || selectedSnippet) {
                   const dimOpacity = settings.graphLinkDimOpacity ?? 0.04;
-                  return `rgba(${r}, ${g}, ${b}, ${dimOpacity})`;
+                  return `rgba(${themeColors.rgb}, ${dimOpacity})`;
                 }
 
                 return defaultLineColor;
@@ -716,26 +728,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                   const isActive = hoverNode ? isHoverConnected : isSelectedConnected;
                   
                   const { settings } = useSettingsStore.getState();
-                  const accentColor = settings.graphNodeColor || '#40bafa';
-                  let r = 64, g = 186, b = 250;
-                  if (accentColor.startsWith('#')) {
-                    const clean = accentColor.replace('#', '');
-                    const bigint = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16);
-                    if (!isNaN(bigint)) {
-                      r = (bigint >> 16) & 255;
-                      g = (bigint >> 8) & 255;
-                      b = bigint & 255;
-                    }
-                  }
-                  
                   if (isActive) {
-                    const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.75;
-                    return `rgba(${r}, ${g}, ${b}, ${highlightOpacity})`;
+                    const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.85;
+                    return `rgba(${themeColors.rgb}, ${highlightOpacity})`;
                   }
                   
                   if (hoverNode || selectedSnippet) {
                     const dimOpacity = settings.graphLinkDimOpacity ?? 0.04;
-                    return `rgba(${r}, ${g}, ${b}, ${dimOpacity})`;
+                    return `rgba(${themeColors.rgb}, ${dimOpacity})`;
                   }
 
                   return defaultLineColor;
