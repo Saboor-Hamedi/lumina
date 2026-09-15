@@ -1,96 +1,38 @@
 /**
  * ============================================================================
- * Lumina Canvas Studio & Right Toolbar (ConvasToolBarRight.tsx)
+ * Lumina Canvas Studio & Right Toolbar Container (ConvasToolBarRight.tsx)
  * ============================================================================
- * Dual-mode right-side canvas control center:
+ * Dual-mode right-side canvas control center container:
  *
  * 1. SLIM DOCK MODE (Collapsed):
- *    - Slender vertical dock anchored on the right edge.
- *    - Fast access to Open Drawer, Shapes, Snap to Grid, Mini-Map, Zoom, Delete, Export.
- *    - Prominent top toggle button to expand into full Studio Drawer.
+ *    - Rendered via `SlimCanvasDock`
+ *    - Slender vertical dock anchored on the right edge with fast-action tools.
  *
  * 2. EXPANDED CANVAS STUDIO MODE (Expanded):
- *    - Full-featured, lightweight 290px control studio with clear top navigation tabs:
- *        📐 Shapes: 22 geometric shapes with live SVGs, color swatches & search.
- *        🔗 Wires: Super smart dynamic direction, line style & arrowhead presets.
- *        🎨 Layout: 20px snap toggle, 6-way alignment, 2-way distribution, zoom presets & Mini-Map.
- *        💾 Export: High-res PNG, vector SVG, clipboard image copy, and live diagram stats.
- *    - Isolated from canvas scrolling and panning (zero focus hijacking).
+ *    - 290px control studio container orchestrating modular subcomponents:
+ *        📐 StudioHeader: title, count badge, drawer & collapse actions
+ *        🗂️ StudioTabsBar: segmented navigation (Shapes, Wires, Layout, Export)
+ *        🎨 StudioShapesTab: 22 geometric shapes, color swatches & search
+ *        🔗 StudioWiresTab: smart dynamic direction & line style selectors
+ *        📐 StudioLayoutTab: grid snapping, alignment, distribution & zoom
+ *        💾 StudioExportTab: PNG, SVG, image copy, and diagram statistics
  * ============================================================================
  */
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import {
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Trash2,
-  Shapes,
-  Camera,
-  Copy,
-  Download,
-  Image as ImageIcon,
-  PanelBottomOpen,
-  Maximize2,
-  Grid,
-  Map as MapIcon,
-  SlidersHorizontal,
-  PanelRight,
-  PanelRightClose,
-  ArrowRight,
-  ArrowLeftRight,
-  Minus,
-  Spline,
-  CornerDownRight,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignStartVertical,
-  AlignCenterVertical,
-  AlignEndVertical,
-  AlignHorizontalDistributeCenter,
-  AlignVerticalDistributeCenter,
-  Sparkles,
-  Layers,
-  Activity
-} from 'lucide-react'
-import ToolTip from '../../components/atoms/ToolTip'
-import { CanvasShapeType, CanvasNodeColor, CanvasEdgeLineStyle, CanvasNode, CanvasEdge } from './types'
-import { CANVAS_SHAPES, SHAPE_COLOR_OPTIONS, renderShapeSVG } from './ConvasShapes'
-import { CanvasAlignmentType, CanvasDistributionType } from './canvasAlignment'
+  StudioTab,
+  ConvasToolBarRightProps,
+  StudioHeader,
+  StudioTabsBar,
+  StudioShapesTab,
+  StudioWiresTab,
+  StudioLayoutTab,
+  StudioExportTab,
+  SlimCanvasDock
+} from './toolbar'
 
-export type StudioTab = 'shapes' | 'connectors' | 'grid' | 'export'
-
-export interface ConvasToolBarRightProps {
-  zoom: number
-  onZoomIn: () => void
-  onZoomOut: () => void
-  onResetViewport: () => void
-  onZoomToFit?: () => void
-  onSetZoom?: (targetZoom: number) => void
-  onDeleteSelected: () => void
-  canDelete: boolean
-  onAddShape?: (shapeType: CanvasShapeType, width: number, height: number, color?: CanvasNodeColor) => void
-  onCopyImage?: () => void
-  onExportPNG?: () => void
-  onExportSVG?: () => void
-  onOpenDrawer?: () => void
-  hasSelectedNodes?: boolean
-  selectedCount?: number
-  snapToGrid?: boolean
-  onToggleSnapToGrid?: () => void
-  onSnapAllToGrid?: () => void
-  isMiniMapOpen?: boolean
-  onToggleMiniMap?: () => void
-  nodes?: CanvasNode[]
-  edges?: CanvasEdge[]
-  defaultLineStyle?: CanvasEdgeLineStyle
-  onChangeDefaultLineStyle?: (style: CanvasEdgeLineStyle) => void
-  defaultEndpoints?: 'directed' | 'bidirectional' | 'none'
-  onChangeDefaultEndpoints?: (mode: 'directed' | 'bidirectional' | 'none') => void
-  onAlignSelection?: (alignment: CanvasAlignmentType) => void
-  onDistributeSelection?: (direction: CanvasDistributionType) => void
-}
+export * from './toolbar/types'
 
 export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
   ({
@@ -145,32 +87,7 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     // Top Navigation Tabs
     const [activeTab, setActiveTab] = useState<StudioTab>('shapes')
 
-    // Selected color for newly spawned shapes in Studio palette
-    const [activeColor, setActiveColor] = useState<CanvasNodeColor>('default')
-    const [shapeSearch, setShapeSearch] = useState('')
-
-    // Slim mode menu states
-    const [isSlimExportOpen, setIsSlimExportOpen] = useState(false)
-    const slimExportBtnRef = useRef<HTMLButtonElement | null>(null)
-
-    useEffect(() => {
-      if (!isSlimExportOpen) return
-      const handlePointerDown = (e: MouseEvent | PointerEvent) => {
-        const target = e.target as HTMLElement | null
-        if (!target) return
-        if (
-          isSlimExportOpen &&
-          !target.closest('.lumina-canvas-export-menu') &&
-          !slimExportBtnRef.current?.contains(target)
-        ) {
-          setIsSlimExportOpen(false)
-        }
-      }
-      document.addEventListener('pointerdown', handlePointerDown)
-      return () => document.removeEventListener('pointerdown', handlePointerDown)
-    }, [isSlimExportOpen])
-
-    // Insights metrics calculation
+    // Diagram metrics calculations for the Export / Insights tab
     const stats = useMemo(() => {
       let shapeCount = 0
       let noteCount = 0
@@ -194,15 +111,6 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
       }
     }, [nodes, edges])
 
-    // Filtered shapes in Studio palette
-    const filteredShapes = useMemo(() => {
-      if (!shapeSearch.trim()) return CANVAS_SHAPES
-      const q = shapeSearch.toLowerCase()
-      return CANVAS_SHAPES.filter(
-        (s) => s.label.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)
-      )
-    }, [shapeSearch])
-
     // ========================================================================
     // EXPANDED STUDIO DRAWER VIEW
     // ========================================================================
@@ -216,541 +124,56 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
           tabIndex={-1}
         >
           {/* Studio Header */}
-          <div className="lumina-canvas-studio-header">
-            <div className="lumina-canvas-studio-title-group">
-              <SlidersHorizontal size={14} className="lumina-canvas-studio-title-icon" />
-              <span className="lumina-canvas-studio-title">Canvas Studio</span>
-              <span className="lumina-canvas-studio-badge">{nodes.length} cards</span>
-            </div>
+          <StudioHeader
+            cardCount={nodes.length}
+            onOpenDrawer={onOpenDrawer}
+            onCollapse={toggleExpanded}
+          />
 
-            <div className="lumina-canvas-studio-actions">
-              {onOpenDrawer && (
-                <ToolTip text="Open in Drawer" position="bottom">
-                  <button
-                    type="button"
-                    className="lumina-canvas-studio-header-btn"
-                    onClick={onOpenDrawer}
-                    aria-label="Open as Drawer"
-                  >
-                    <PanelBottomOpen size={13} />
-                  </button>
-                </ToolTip>
-              )}
+          {/* Segmented Navigation Bar */}
+          <StudioTabsBar activeTab={activeTab} onSelectTab={setActiveTab} />
 
-              <ToolTip text="Collapse Studio" position="bottom">
-                <button
-                  type="button"
-                  className="lumina-canvas-studio-header-btn close"
-                  onClick={toggleExpanded}
-                  aria-label="Collapse Studio"
-                >
-                  <PanelRightClose size={14} />
-                </button>
-              </ToolTip>
-            </div>
-          </div>
-
-          {/* Clear Segmented Navigation Bar */}
-          <div className="lumina-canvas-studio-tabs-bar">
-            <button
-              type="button"
-              className={`studio-tab-item ${activeTab === 'shapes' ? 'active' : ''}`}
-              onClick={() => setActiveTab('shapes')}
-            >
-              <Shapes size={12} />
-              <span>Shapes</span>
-            </button>
-            <button
-              type="button"
-              className={`studio-tab-item ${activeTab === 'connectors' ? 'active' : ''}`}
-              onClick={() => setActiveTab('connectors')}
-            >
-              <Spline size={12} />
-              <span>Wires</span>
-            </button>
-            <button
-              type="button"
-              className={`studio-tab-item ${activeTab === 'grid' ? 'active' : ''}`}
-              onClick={() => setActiveTab('grid')}
-            >
-              <Grid size={12} />
-              <span>Layout</span>
-            </button>
-            <button
-              type="button"
-              className={`studio-tab-item ${activeTab === 'export' ? 'active' : ''}`}
-              onClick={() => setActiveTab('export')}
-            >
-              <Camera size={12} />
-              <span>Export</span>
-            </button>
-          </div>
-
-          {/* Studio Scrollable Body with Clean Dedicated Views */}
+          {/* Studio Scrollable Body with Clean Dedicated Subcomponents */}
           <div className="lumina-canvas-studio-body" onWheel={(e) => e.stopPropagation()}>
-            {/* TAB 1: SHAPES & DIAGRAMS */}
-            {activeTab === 'shapes' && (
-              <div className="lumina-canvas-studio-tab-pane">
-                <div className="studio-section-banner">
-                  <span className="banner-title">Geometric Shapes</span>
-                  <span className="banner-sub">Click or drag directly into your diagram</span>
-                </div>
+            {activeTab === 'shapes' && <StudioShapesTab onAddShape={onAddShape} />}
 
-                {/* Color Swatches */}
-                <div className="lumina-canvas-studio-colors-row">
-                  {SHAPE_COLOR_OPTIONS.map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      className={`lumina-canvas-studio-color-dot ${activeColor === c.id ? 'active' : ''}`}
-                      style={{ backgroundColor: c.hex }}
-                      onClick={() => setActiveColor(c.id)}
-                      title={c.label}
-                    />
-                  ))}
-                </div>
-
-                {/* Shapes Search */}
-                <div className="lumina-canvas-studio-input-wrap">
-                  <input
-                    type="text"
-                    className="lumina-canvas-studio-search"
-                    placeholder="Search 22 shapes..."
-                    value={shapeSearch}
-                    onChange={(e) => setShapeSearch(e.target.value)}
-                  />
-                </div>
-
-                {/* Shapes Grid */}
-                <div className="lumina-canvas-studio-shapes-grid full-pane">
-                  {filteredShapes.map((shape) => {
-                    const colorHex =
-                      SHAPE_COLOR_OPTIONS.find((c) => c.id === activeColor)?.hex || 'currentColor'
-
-                    return (
-                      <button
-                        key={shape.id}
-                        type="button"
-                        className="lumina-canvas-studio-shape-card"
-                        onClick={() => {
-                          if (onAddShape) {
-                            onAddShape(shape.id, shape.defaultWidth, shape.defaultHeight, activeColor)
-                          }
-                        }}
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData('application/lumina-shape', shape.id)
-                          e.dataTransfer.setData(
-                            'application/lumina-shape-meta',
-                            JSON.stringify({
-                              id: shape.id,
-                              width: shape.defaultWidth,
-                              height: shape.defaultHeight,
-                              color: activeColor
-                            })
-                          )
-                          e.dataTransfer.effectAllowed = 'copy'
-                        }}
-                        title={`Click to add ${shape.label} or drag directly to canvas`}
-                      >
-                        <div className="shape-preview-svg" style={{ color: colorHex }}>
-                          {renderShapeSVG(shape.id, colorHex, colorHex, 0.08, 1.4)}
-                        </div>
-                        <span className="shape-label">{shape.label}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* TAB 2: SMART CONNECTORS & WIRES */}
             {activeTab === 'connectors' && (
-              <div className="lumina-canvas-studio-tab-pane">
-                <div className="studio-section-banner">
-                  <span className="banner-title">Smart Connectors</span>
-                  <span className="banner-sub">Directional wires and relationship arrows</span>
-                </div>
-
-                {/* Super Smart Dynamic Port Routing Feature Card */}
-                <div className="lumina-canvas-studio-chip-active">
-                  <Sparkles size={14} className="chip-icon" />
-                  <div className="chip-content">
-                    <span className="chip-title">Super Smart Direction: Active</span>
-                    <span className="chip-subtitle">
-                      Wires auto-flip to the closest facing ports as shapes move in 2D space. No loops or awkward crossovers!
-                    </span>
-                  </div>
-                </div>
-
-                {/* Default Line Style Selector */}
-                <div className="lumina-canvas-studio-card-box">
-                  <span className="card-box-label">Default Wire Path</span>
-                  <div className="lumina-canvas-studio-btn-toggle-group">
-                    <button
-                      type="button"
-                      className={`toggle-btn ${defaultLineStyle === 'curved' ? 'active' : ''}`}
-                      onClick={() => onChangeDefaultLineStyle && onChangeDefaultLineStyle('curved')}
-                    >
-                      <Spline size={12} />
-                      <span>Curved</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`toggle-btn ${defaultLineStyle === 'step' ? 'active' : ''}`}
-                      onClick={() => onChangeDefaultLineStyle && onChangeDefaultLineStyle('step')}
-                    >
-                      <CornerDownRight size={12} />
-                      <span>Step</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`toggle-btn ${defaultLineStyle === 'straight' ? 'active' : ''}`}
-                      onClick={() => onChangeDefaultLineStyle && onChangeDefaultLineStyle('straight')}
-                    >
-                      <Minus size={12} />
-                      <span>Straight</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Default Arrowhead Selector */}
-                <div className="lumina-canvas-studio-card-box">
-                  <span className="card-box-label">Default Arrowheads</span>
-                  <div className="lumina-canvas-studio-btn-toggle-group">
-                    <button
-                      type="button"
-                      className={`toggle-btn ${defaultEndpoints === 'directed' ? 'active' : ''}`}
-                      onClick={() => onChangeDefaultEndpoints && onChangeDefaultEndpoints('directed')}
-                    >
-                      <ArrowRight size={12} />
-                      <span>Single</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`toggle-btn ${defaultEndpoints === 'bidirectional' ? 'active' : ''}`}
-                      onClick={() => onChangeDefaultEndpoints && onChangeDefaultEndpoints('bidirectional')}
-                    >
-                      <ArrowLeftRight size={12} />
-                      <span>Mutual</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={`toggle-btn ${defaultEndpoints === 'none' ? 'active' : ''}`}
-                      onClick={() => onChangeDefaultEndpoints && onChangeDefaultEndpoints('none')}
-                    >
-                      <Minus size={12} />
-                      <span>Plain</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Wire linking tips */}
-                <div className="studio-info-callout">
-                  <span className="info-title">Quick Tip:</span>
-                  <span className="info-text">
-                    Click any card port knob to start linking, click target port to finish. Click empty space or press Escape to cancel.
-                  </span>
-                </div>
-              </div>
+              <StudioWiresTab
+                defaultLineStyle={defaultLineStyle}
+                onChangeDefaultLineStyle={onChangeDefaultLineStyle}
+                defaultEndpoints={defaultEndpoints}
+                onChangeDefaultEndpoints={onChangeDefaultEndpoints}
+              />
             )}
 
-            {/* TAB 3: LAYOUT & GRID */}
             {activeTab === 'grid' && (
-              <div className="lumina-canvas-studio-tab-pane">
-                <div className="studio-section-banner">
-                  <span className="banner-title">Layout & Grid</span>
-                  <span className="banner-sub">Precision alignment and spatial alignment</span>
-                </div>
-
-                {/* Snap to Grid Toggle */}
-                <div className="lumina-canvas-studio-card-box">
-                  <div className="lumina-canvas-studio-row-switch">
-                    <div className="switch-text">
-                      <span className="switch-title">20px Grid Snapping</span>
-                      <span className="switch-hint">Hold Shift or toggle (Ctrl+')</span>
-                    </div>
-                    <button
-                      type="button"
-                      className={`lumina-canvas-studio-switch-pill ${snapToGrid ? 'active' : ''}`}
-                      onClick={onToggleSnapToGrid}
-                    >
-                      <div className="switch-thumb" />
-                    </button>
-                  </div>
-
-                  {onSnapAllToGrid && (
-                    <button
-                      type="button"
-                      className="lumina-canvas-studio-action-btn"
-                      style={{ marginTop: 6 }}
-                      onClick={onSnapAllToGrid}
-                    >
-                      <Grid size={12} />
-                      <span>Snap All Nodes to 20px Grid</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Align Selected Nodes (when 2+ nodes selected) */}
-                {onAlignSelection && (
-                  <div className="lumina-canvas-studio-card-box">
-                    <div className="card-box-header">
-                      <span className="card-box-label">Multi-Card Alignment</span>
-                      <span className="card-box-sub">
-                        {selectedCount > 1 ? `${selectedCount} selected` : 'Select 2+ cards'}
-                      </span>
-                    </div>
-                    <div className="lumina-canvas-studio-icon-group">
-                      <ToolTip text="Align Left" position="top">
-                        <button
-                          type="button"
-                          className="studio-icon-btn"
-                          disabled={selectedCount < 2}
-                          onClick={() => onAlignSelection('left')}
-                        >
-                          <AlignLeft size={13} />
-                        </button>
-                      </ToolTip>
-                      <ToolTip text="Align Center (H)" position="top">
-                        <button
-                          type="button"
-                          className="studio-icon-btn"
-                          disabled={selectedCount < 2}
-                          onClick={() => onAlignSelection('center')}
-                        >
-                          <AlignCenter size={13} />
-                        </button>
-                      </ToolTip>
-                      <ToolTip text="Align Right" position="top">
-                        <button
-                          type="button"
-                          className="studio-icon-btn"
-                          disabled={selectedCount < 2}
-                          onClick={() => onAlignSelection('right')}
-                        >
-                          <AlignRight size={13} />
-                        </button>
-                      </ToolTip>
-                      <ToolTip text="Align Top" position="top">
-                        <button
-                          type="button"
-                          className="studio-icon-btn"
-                          disabled={selectedCount < 2}
-                          onClick={() => onAlignSelection('top')}
-                        >
-                          <AlignStartVertical size={13} />
-                        </button>
-                      </ToolTip>
-                      <ToolTip text="Align Middle (V)" position="top">
-                        <button
-                          type="button"
-                          className="studio-icon-btn"
-                          disabled={selectedCount < 2}
-                          onClick={() => onAlignSelection('middle')}
-                        >
-                          <AlignCenterVertical size={13} />
-                        </button>
-                      </ToolTip>
-                      <ToolTip text="Align Bottom" position="top">
-                        <button
-                          type="button"
-                          className="studio-icon-btn"
-                          disabled={selectedCount < 2}
-                          onClick={() => onAlignSelection('bottom')}
-                        >
-                          <AlignEndVertical size={13} />
-                        </button>
-                      </ToolTip>
-                    </div>
-                  </div>
-                )}
-
-                {/* Distribute Spacing (when 3+ nodes selected) */}
-                {onDistributeSelection && (
-                  <div className="lumina-canvas-studio-card-box">
-                    <div className="card-box-header">
-                      <span className="card-box-label">Spacing Distribution</span>
-                      <span className="card-box-sub">
-                        {selectedCount > 2 ? `${selectedCount} selected` : 'Select 3+ cards'}
-                      </span>
-                    </div>
-                    <div className="lumina-canvas-studio-icon-group">
-                      <ToolTip text="Distribute Horizontally" position="top">
-                        <button
-                          type="button"
-                          className="studio-icon-btn"
-                          disabled={selectedCount < 3}
-                          onClick={() => onDistributeSelection('horizontal')}
-                        >
-                          <AlignHorizontalDistributeCenter size={13} />
-                        </button>
-                      </ToolTip>
-                      <ToolTip text="Distribute Vertically" position="top">
-                        <button
-                          type="button"
-                          className="studio-icon-btn"
-                          disabled={selectedCount < 3}
-                          onClick={() => onDistributeSelection('vertical')}
-                        >
-                          <AlignVerticalDistributeCenter size={13} />
-                        </button>
-                      </ToolTip>
-                    </div>
-                  </div>
-                )}
-
-                {/* Navigation & Zoom */}
-                <div className="lumina-canvas-studio-card-box">
-                  <span className="card-box-label">Viewport & Zoom</span>
-                  <div className="lumina-canvas-studio-zoom-bar">
-                    <button
-                      type="button"
-                      className="studio-icon-btn"
-                      onClick={onZoomOut}
-                      title="Zoom Out"
-                    >
-                      <ZoomOut size={13} />
-                    </button>
-                    <span className="zoom-value">{Math.round(zoom * 100)}%</span>
-                    <button
-                      type="button"
-                      className="studio-icon-btn"
-                      onClick={onZoomIn}
-                      title="Zoom In"
-                    >
-                      <ZoomIn size={13} />
-                    </button>
-                  </div>
-
-                  <div className="lumina-canvas-studio-presets-row" style={{ marginTop: 6 }}>
-                    {[0.5, 1.0, 1.5, 2.0].map((preset) => (
-                      <button
-                        key={preset}
-                        type="button"
-                        className={`preset-btn ${Math.abs(zoom - preset) < 0.05 ? 'active' : ''}`}
-                        onClick={() => onSetZoom && onSetZoom(preset)}
-                      >
-                        {Math.round(preset * 100)}%
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="lumina-canvas-studio-presets-row" style={{ marginTop: 6 }}>
-                    <button
-                      type="button"
-                      className="preset-btn secondary"
-                      onClick={onResetViewport}
-                      title="Reset Viewport to Origin (Ctrl+0)"
-                    >
-                      <RotateCcw size={11} />
-                      <span>100% Reset</span>
-                    </button>
-
-                    {onZoomToFit && (
-                      <button
-                        type="button"
-                        className="preset-btn secondary"
-                        onClick={onZoomToFit}
-                        title="Zoom to Fit All Cards (Shift+1)"
-                      >
-                        <Maximize2 size={11} />
-                        <span>Fit All</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {onToggleMiniMap && (
-                    <div className="lumina-canvas-studio-row-switch" style={{ marginTop: 8 }}>
-                      <div className="switch-text">
-                        <span className="switch-title">Mini-Map Navigator</span>
-                        <span className="switch-hint">Spatial radar preview</span>
-                      </div>
-                      <button
-                        type="button"
-                        className={`lumina-canvas-studio-switch-pill ${isMiniMapOpen ? 'active' : ''}`}
-                        onClick={onToggleMiniMap}
-                      >
-                        <div className="switch-thumb" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <StudioLayoutTab
+                zoom={zoom}
+                onZoomIn={onZoomIn}
+                onZoomOut={onZoomOut}
+                onResetViewport={onResetViewport}
+                onZoomToFit={onZoomToFit}
+                onSetZoom={onSetZoom}
+                selectedCount={selectedCount}
+                snapToGrid={snapToGrid}
+                onToggleSnapToGrid={onToggleSnapToGrid}
+                onSnapAllToGrid={onSnapAllToGrid}
+                isMiniMapOpen={isMiniMapOpen}
+                onToggleMiniMap={onToggleMiniMap}
+                onAlignSelection={onAlignSelection}
+                onDistributeSelection={onDistributeSelection}
+              />
             )}
 
-            {/* TAB 4: EXPORT & INFO */}
             {activeTab === 'export' && (
-              <div className="lumina-canvas-studio-tab-pane">
-                <div className="studio-section-banner">
-                  <span className="banner-title">Export & Insights</span>
-                  <span className="banner-sub">Capture, export and inspect diagram statistics</span>
-                </div>
-
-                <div className="lumina-canvas-studio-card-box">
-                  <span className="card-box-label">Export Actions</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 4 }}>
-                    {onCopyImage && (
-                      <button
-                        type="button"
-                        className="lumina-canvas-studio-action-btn"
-                        onClick={onCopyImage}
-                      >
-                        <Copy size={12} />
-                        <span>{hasSelectedNodes ? 'Copy Selection to Clipboard' : 'Copy Snapshot as Image'}</span>
-                      </button>
-                    )}
-
-                    {onExportPNG && (
-                      <button
-                        type="button"
-                        className="lumina-canvas-studio-action-btn"
-                        onClick={onExportPNG}
-                      >
-                        <ImageIcon size={12} />
-                        <span>Export as High-Res PNG</span>
-                      </button>
-                    )}
-
-                    {onExportSVG && (
-                      <button
-                        type="button"
-                        className="lumina-canvas-studio-action-btn"
-                        onClick={onExportSVG}
-                      >
-                        <Download size={12} />
-                        <span>Export as Vector SVG</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="lumina-canvas-studio-card-box">
-                  <span className="card-box-label">Diagram Statistics</span>
-                  <div className="lumina-canvas-studio-stats-grid" style={{ marginTop: 6 }}>
-                    <div className="stat-card">
-                      <span className="stat-number">{stats.totalNodes}</span>
-                      <span className="stat-label">Total Cards</span>
-                    </div>
-                    <div className="stat-card">
-                      <span className="stat-number">{stats.shapeCount}</span>
-                      <span className="stat-label">Shapes</span>
-                    </div>
-                    <div className="stat-card">
-                      <span className="stat-number">{stats.noteCount}</span>
-                      <span className="stat-label">Notes</span>
-                    </div>
-                    <div className="stat-card">
-                      <span className="stat-number">{stats.edgeCount}</span>
-                      <span className="stat-label">Wires</span>
-                    </div>
-                    <div className="stat-card full-width">
-                      <span className="stat-number">{selectedCount}</span>
-                      <span className="stat-label">Items Selected</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <StudioExportTab
+                onCopyImage={onCopyImage}
+                onExportPNG={onExportPNG}
+                onExportSVG={onExportSVG}
+                hasSelectedNodes={hasSelectedNodes}
+                selectedCount={selectedCount}
+                stats={stats}
+              />
             )}
           </div>
         </aside>
@@ -761,241 +184,29 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     // SLIM DOCK VIEW (COLLAPSED)
     // ========================================================================
     return (
-      <div
-        className="lumina-canvas-toolbar lumina-canvas-toolbar-right"
-        aria-label="Canvas Dock"
-        onWheel={(e) => e.stopPropagation()}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        {/* Toggle Expand Studio Button */}
-        <ToolTip text="Expand Canvas Studio" position="left">
-          <button
-            type="button"
-            className="lumina-canvas-tool-btn active-hover"
-            onClick={toggleExpanded}
-            aria-label="Expand Canvas Studio"
-          >
-            <PanelRight size={14} />
-          </button>
-        </ToolTip>
-
-        <div className="lumina-canvas-divider horizontal" />
-
-        {/* Open in Inline Canvas Drawer */}
-        {onOpenDrawer && (
-          <>
-            <ToolTip text="Open as Inline Canvas Drawer" position="left">
-              <button
-                type="button"
-                className="lumina-canvas-tool-btn"
-                onClick={onOpenDrawer}
-                aria-label="Open as Inline Canvas Drawer"
-              >
-                <PanelBottomOpen size={14} />
-              </button>
-            </ToolTip>
-
-            <div className="lumina-canvas-divider horizontal" />
-          </>
-        )}
-
-        {/* Shapes Menu Tool */}
-        {onAddShape && (
-          <>
-            <ToolTip text="Shapes & Diagrams (Click Studio to browse)" position="left">
-              <button
-                type="button"
-                className="lumina-canvas-tool-btn"
-                onClick={toggleExpanded}
-                aria-label="Shapes & Diagrams"
-              >
-                <Shapes size={13} />
-              </button>
-            </ToolTip>
-
-            <div className="lumina-canvas-divider horizontal" />
-          </>
-        )}
-
-        {/* Snap to Grid Toggle */}
-        {onToggleSnapToGrid && (
-          <>
-            <ToolTip
-              text={snapToGrid ? "Snap to Grid: ON (Ctrl+')" : "Snap to Grid: OFF (Ctrl+')"}
-              position="left"
-            >
-              <button
-                type="button"
-                className={`lumina-canvas-tool-btn ${snapToGrid ? 'active' : ''}`}
-                onClick={onToggleSnapToGrid}
-                aria-label="Toggle Snap to Grid"
-              >
-                <Grid size={13} />
-              </button>
-            </ToolTip>
-
-            <div className="lumina-canvas-divider horizontal" />
-          </>
-        )}
-
-        {/* Mini-Map Navigator Toggle */}
-        {onToggleMiniMap && (
-          <>
-            <ToolTip
-              text={isMiniMapOpen ? 'Mini-Map Navigator (Open)' : 'Mini-Map Navigator (Closed)'}
-              position="left"
-            >
-              <button
-                type="button"
-                className={`lumina-canvas-tool-btn ${isMiniMapOpen ? 'active' : ''}`}
-                onClick={onToggleMiniMap}
-                aria-label="Toggle Mini-Map Navigator"
-              >
-                <MapIcon size={13} />
-              </button>
-            </ToolTip>
-
-            <div className="lumina-canvas-divider horizontal" />
-          </>
-        )}
-
-        {/* Delete Selected Tool */}
-        <ToolTip text="Delete Selected (Del)" position="left">
-          <button
-            type="button"
-            className="lumina-canvas-tool-btn"
-            onClick={onDeleteSelected}
-            disabled={!canDelete}
-          >
-            <Trash2 size={13} />
-          </button>
-        </ToolTip>
-
-        <div className="lumina-canvas-divider horizontal" />
-
-        {/* Zoom In */}
-        <ToolTip text="Zoom In (Ctrl + Scroll)" position="left">
-          <button type="button" className="lumina-canvas-tool-btn" onClick={onZoomIn}>
-            <ZoomIn size={13} />
-          </button>
-        </ToolTip>
-
-        {/* Zoom Percentage */}
-        <span className="lumina-canvas-zoom-label" style={{ fontSize: '10px' }}>
-          {Math.round(zoom * 100)}%
-        </span>
-
-        {/* Zoom Out */}
-        <ToolTip text="Zoom Out" position="left">
-          <button type="button" className="lumina-canvas-tool-btn" onClick={onZoomOut}>
-            <ZoomOut size={13} />
-          </button>
-        </ToolTip>
-
-        <div className="lumina-canvas-divider horizontal" />
-
-        {/* Reset View */}
-        <ToolTip text="Reset View (Ctrl+0)" position="left">
-          <button type="button" className="lumina-canvas-tool-btn" onClick={onResetViewport}>
-            <RotateCcw size={13} />
-          </button>
-        </ToolTip>
-
-        {/* Zoom to Fit View */}
-        {onZoomToFit && (
-          <ToolTip text="Zoom to Fit All (Shift+1)" position="left">
-            <button type="button" className="lumina-canvas-tool-btn" onClick={onZoomToFit}>
-              <Maximize2 size={13} />
-            </button>
-          </ToolTip>
-        )}
-
-        {/* Export / Copy Menu */}
-        {(onCopyImage || onExportPNG || onExportSVG) && (
-          <>
-            <div className="lumina-canvas-divider horizontal" />
-
-            <div style={{ position: 'relative' }}>
-              <ToolTip text="Export / Copy as Image" position="left">
-                <button
-                  ref={slimExportBtnRef}
-                  type="button"
-                  className={`lumina-canvas-tool-btn ${isSlimExportOpen ? 'active' : ''}`}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setIsSlimExportOpen((prev) => !prev)
-                  }}
-                  aria-label="Export / Copy as Image"
-                >
-                  <Camera size={13} />
-                </button>
-              </ToolTip>
-
-              {isSlimExportOpen && (
-                <div
-                  className="lumina-canvas-export-menu"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {onCopyImage && (
-                    <button
-                      type="button"
-                      className="lumina-canvas-export-item"
-                      onClick={() => {
-                        setIsSlimExportOpen(false)
-                        onCopyImage()
-                      }}
-                    >
-                      <div className="lumina-canvas-export-item-left">
-                        <Copy size={13} />
-                        <span>{hasSelectedNodes ? 'Copy Selection as Image' : 'Copy as Image'}</span>
-                      </div>
-                      <span className="lumina-canvas-export-shortcut">Ctrl+Shift+C</span>
-                    </button>
-                  )}
-
-                  {onExportPNG && (
-                    <button
-                      type="button"
-                      className="lumina-canvas-export-item"
-                      onClick={() => {
-                        setIsSlimExportOpen(false)
-                        onExportPNG()
-                      }}
-                    >
-                      <div className="lumina-canvas-export-item-left">
-                        <ImageIcon size={13} />
-                        <span>Export as PNG</span>
-                      </div>
-                      <span className="lumina-canvas-export-shortcut">PNG</span>
-                    </button>
-                  )}
-
-                  {onExportSVG && (
-                    <button
-                      type="button"
-                      className="lumina-canvas-export-item"
-                      onClick={() => {
-                        setIsSlimExportOpen(false)
-                        onExportSVG()
-                      }}
-                    >
-                      <div className="lumina-canvas-export-item-left">
-                        <Download size={13} />
-                        <span>Export as Vector SVG</span>
-                      </div>
-                      <span className="lumina-canvas-export-shortcut">SVG</span>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+      <SlimCanvasDock
+        zoom={zoom}
+        onZoomIn={onZoomIn}
+        onZoomOut={onZoomOut}
+        onResetViewport={onResetViewport}
+        onZoomToFit={onZoomToFit}
+        onDeleteSelected={onDeleteSelected}
+        canDelete={canDelete}
+        onToggleExpand={toggleExpanded}
+        onAddShape={onAddShape}
+        onCopyImage={onCopyImage}
+        onExportPNG={onExportPNG}
+        onExportSVG={onExportSVG}
+        onOpenDrawer={onOpenDrawer}
+        hasSelectedNodes={hasSelectedNodes}
+        snapToGrid={snapToGrid}
+        onToggleSnapToGrid={onToggleSnapToGrid}
+        isMiniMapOpen={isMiniMapOpen}
+        onToggleMiniMap={onToggleMiniMap}
+      />
     )
   }
 )
 
 ConvasToolBarRight.displayName = 'ConvasToolBarRight'
-
 export default ConvasToolBarRight
