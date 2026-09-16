@@ -205,6 +205,19 @@ body {
   user-select: none;
 }
 
+/* Prevent Mermaid error SVGs or temporary DOM nodes from disrupting layout */
+body > [id^="dmermaid"],
+body > svg[id^="mermaid-"] {
+  position: fixed !important;
+  top: -9999px !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+}
+
 ::selection {
   background: var(--bg-selection);
 }

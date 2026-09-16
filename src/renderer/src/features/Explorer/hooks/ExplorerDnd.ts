@@ -95,12 +95,49 @@ export function useExplorerDnd({
   const pointerPosRef = useRef({ x: 0, y: 0 })
 
   useEffect(() => {
-    if (!activeListDragItem) return
+    if (!activeListDragItem) {
+      window.dispatchEvent(
+        new CustomEvent('lumina:workspace-drag-hover', {
+          detail: { isOver: false }
+        })
+      )
+      return
+    }
+
     const onPointerMove = (e: PointerEvent) => {
       pointerPosRef.current = { x: e.clientX, y: e.clientY }
+
+      if (activeListDragItem.type === 'file') {
+        const workspaceEl = document.querySelector('.shell-center-workspace')
+        if (workspaceEl) {
+          const r = workspaceEl.getBoundingClientRect()
+          const inWorkspace =
+            e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
+          const isOverCanvas = Boolean(
+            document.elementFromPoint(e.clientX, e.clientY)?.closest('.lumina-canvas-container')
+          )
+          window.dispatchEvent(
+            new CustomEvent('lumina:workspace-drag-hover', {
+              detail: {
+                isOver: inWorkspace && !isOverCanvas,
+                title: activeListDragItem.snippet?.title || 'Note',
+                count: activeListDragItem.count || 1
+              }
+            })
+          )
+        }
+      }
     }
+
     window.addEventListener('pointermove', onPointerMove, { passive: true })
-    return () => window.removeEventListener('pointermove', onPointerMove)
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove)
+      window.dispatchEvent(
+        new CustomEvent('lumina:workspace-drag-hover', {
+          detail: { isOver: false }
+        })
+      )
+    }
   }, [activeListDragItem])
 
   const sensors = useSensors(
@@ -212,6 +249,48 @@ export function useExplorerDnd({
             })
           )
           return
+        }
+      }
+
+      // Check if dropped onto workspace (and not a canvas) to open in tab
+      if (!targetCanvas && dragItem?.type === 'file') {
+        const workspaceEl = document.querySelector('.shell-center-workspace')
+        if (workspaceEl) {
+          const r = workspaceEl.getBoundingClientRect()
+          const isOverWorkspace =
+            dropX >= r.left && dropX <= r.right && dropY >= r.top && dropY <= r.bottom
+          if (isOverWorkspace) {
+            window.dispatchEvent(
+              new CustomEvent('lumina:workspace-drag-hover', {
+                detail: { isOver: false }
+              })
+            )
+            const idsToOpen = dragItem?.draggedSnippetIds?.length
+              ? dragItem.draggedSnippetIds
+              : [String(active.id)]
+            let snippetsToOpen = (allSnippets || []).filter((s) => idsToOpen.includes(s.id))
+            if (snippetsToOpen.length === 0 && dragItem?.snippet) {
+              snippetsToOpen = [dragItem.snippet]
+            }
+
+            if (snippetsToOpen.length > 0) {
+              useWorkspaceStore.setState((state) => {
+                const nextTabs = [...state.openTabs]
+                for (const s of snippetsToOpen) {
+                  if (!nextTabs.includes(s.id)) {
+                    nextTabs.push(s.id)
+                  }
+                }
+                const activeSnippet = snippetsToOpen[snippetsToOpen.length - 1]
+                return {
+                  openTabs: nextTabs,
+                  activeTabId: activeSnippet.id,
+                  selectedNote: activeSnippet
+                }
+              })
+              return
+            }
+          }
         }
       }
 

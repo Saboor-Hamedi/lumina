@@ -1,7 +1,5 @@
 import React from 'react'
 import { FileText, Search, Sparkles, FolderTree, Command, Book, Compass } from 'lucide-react'
-import { useExternalFileDrop } from './features/Explorer/hooks/ExternalFileDrop'
-import ExternalDropOverlay from './features/Explorer/components/ExternalDropOverlay'
 import ToolTip from './components/atoms/ToolTip'
 import './assets/welcome.css'
 
@@ -11,14 +9,6 @@ const Welcome = ({
   onOpenGuide,
   onToggleAIChat
 }) => {
-  const {
-    isDraggingExternal,
-    handleDragEnter,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop
-  } = useExternalFileDrop()
-
   const handlePalette = () =>
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
   const handleAIChat = () => {
@@ -30,15 +20,7 @@ const Welcome = ({
   }
 
   return (
-    <div
-      className="welcome-page"
-      onDragEnter={(e) => handleDragEnter(e, '')}
-      onDragOver={(e) => handleDragOver(e, '')}
-      onDragLeave={handleDragLeave}
-      onDrop={(e) => handleDrop(e, '')}
-    >
-      {isDraggingExternal && <ExternalDropOverlay targetName="Lumina" />}
-
+    <div className="welcome-page">
       {/* Top-Right Action Buttons */}
       <div className="welcome-top-actions">
         {onOpenDocs && (

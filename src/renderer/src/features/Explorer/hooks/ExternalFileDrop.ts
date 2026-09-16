@@ -20,8 +20,8 @@ export function useExternalFileDrop(): ExternalFileDropResult {
 
   const isExternalFileDrag = useCallback((e: DragEvent | React.DragEvent): boolean => {
     if (!e?.dataTransfer) return false
-    const types = e.dataTransfer.types
-    return types.contains('Files') && !types.contains('application/x-lumina-node')
+    const types = Array.from(e.dataTransfer.types || [])
+    return types.includes('Files') && !types.includes('application/x-lumina-node')
   }, [])
 
   const resetDragState = useCallback(() => {

@@ -473,10 +473,12 @@ const SidebarItem = ({
       }}
       {...(dndProps?.attributes || {})}
       {...(dndProps?.listeners || {})}
+      draggable={!isRenaming}
       onDragStart={(e) => {
         try {
           e.dataTransfer.setData('application/lumina-snippet', JSON.stringify(snippet))
           e.dataTransfer.setData('text/plain', snippet.title || '')
+          e.dataTransfer.effectAllowed = 'copyMove'
         } catch (err) {}
       }}
     >

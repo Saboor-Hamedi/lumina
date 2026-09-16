@@ -55,6 +55,17 @@ export function clearMermaidCache(): void {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('theme-changed', clearMermaidCache)
+  mermaid.initialize({
+    startOnLoad: false,
+    suppressErrorRendering: true
+  })
+  const cleanupStrayMermaid = () => {
+    document.querySelectorAll('body > [id^="dmermaid"], body > svg[id^="mermaid-"]').forEach((el) => {
+      el.remove()
+    })
+  }
+  cleanupStrayMermaid()
+  window.addEventListener('load', cleanupStrayMermaid)
 }
 
 class MermaidWidget extends WidgetType {
@@ -380,6 +391,7 @@ export function renderMermaidToElement(container: HTMLElement, code: string, uni
     try {
       mermaid.initialize({
         startOnLoad: false,
+        suppressErrorRendering: true,
         theme: 'base',
         useMaxWidth: false,
         htmlLabels: false,
@@ -511,11 +523,19 @@ export function renderMermaidToElement(container: HTMLElement, code: string, uni
           }
         `
       })
+      const isValid = await mermaid.parse(code, { suppressErrors: true })
+      if (isValid === false) {
+        throw new Error('Invalid Mermaid syntax')
+      }
       const { svg } = await mermaid.render(uniqueId, code)
       mermaidSvgCache.set(code, svg)
       container.innerHTML = svg
     } catch (err: any) {
       container.innerHTML = `<div class="mermaid-error"><strong>Mermaid Syntax Error</strong>\n${err?.message || err}</div>`
+    } finally {
+      document.querySelectorAll(`body > [id="d${uniqueId}"], body > [id="${uniqueId}"], body > [id^="dmermaid"], body > svg[id^="mermaid-"]`).forEach((el) => {
+        el.remove()
+      })
     }
   }, 0)
 }

@@ -114,7 +114,7 @@ const DroppableVirtuosoWrapper = ({
       className={`recommended-list ${showDropHighlight ? 'root-drop-over' : ''}`}
       style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', width: '100%', boxSizing: 'border-box' }}
     >
-      {children}
+      {typeof children === 'function' ? children({ showDropHighlight }) : children}
     </div>
   )
 }
@@ -973,33 +973,37 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
                   onDragLeave={handleExternalDragLeave}
                   onDrop={(e) => handleExternalDrop(e, '')}
                 >
-                  {isDraggingExternal && !hoveredFolderId && (
-                    <ExternalDropOverlay targetName="Vault Root" />
-                  )}
-                  {flatTree.length === 0 ? (
-                    <div className="empty-state" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      No notes or folders found
-                    </div>
-                  ) : (
-                    <Virtuoso
-                      ref={virtuosoRef}
-                      className="premimum-scrollbar"
-                      style={{ flex: 1, height: '100%' }}
-                      data={flatTree}
-                      overscan={120}
-                      computeItemKey={(index, item) => {
-                        if (item.type === 'file') return item.snippet.id
-                        if (item.type === 'folder') return item.id
-                        if (item.type === 'input') return `input-${item.parentId}`
-                        if (item.type === 'root-drop') return 'root-drop-zone'
-                        return index
-                      }}
-                      context={virtuosoContext}
-                      components={{
-                        Footer: VirtuosoFooter
-                      }}
-                      itemContent={renderItemContent}
-                    />
+                  {({ showDropHighlight }) => (
+                    <>
+                      {(isDraggingExternal || showDropHighlight) && !hoveredFolderId && (
+                        <ExternalDropOverlay targetName="Vault Root" />
+                      )}
+                      {flatTree.length === 0 ? (
+                        <div className="empty-state" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          No notes or folders found
+                        </div>
+                      ) : (
+                        <Virtuoso
+                          ref={virtuosoRef}
+                          className="premimum-scrollbar"
+                          style={{ flex: 1, height: '100%' }}
+                          data={flatTree}
+                          overscan={120}
+                          computeItemKey={(index, item) => {
+                            if (item.type === 'file') return item.snippet.id
+                            if (item.type === 'folder') return item.id
+                            if (item.type === 'input') return `input-${item.parentId}`
+                            if (item.type === 'root-drop') return 'root-drop-zone'
+                            return index
+                          }}
+                          context={virtuosoContext}
+                          components={{
+                            Footer: VirtuosoFooter
+                          }}
+                          itemContent={renderItemContent}
+                        />
+                      )}
+                    </>
                   )}
                 </DroppableVirtuosoWrapper>
                   {createPortal(

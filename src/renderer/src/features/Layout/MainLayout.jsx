@@ -22,6 +22,9 @@ import Welcome from '../../Welcome'
 import TabBar from './TabBar'
 import TabContentPane from './TabContentPane'
 import AppModals from './AppModals'
+import ExternalDropOverlay from '../Explorer/components/ExternalDropOverlay'
+import { useWorkspaceDrop } from './useWorkspaceDrop'
+import { FileText, FolderDown } from 'lucide-react'
 const Graph = React.lazy(() => import('../Graph/Graph'))
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
@@ -81,6 +84,8 @@ export const MainLayout = () => {
       window.removeEventListener('clear-toast', handleClearToast)
     }
   }, [showToast, clearToast])
+
+  const { workspaceDrop, workspaceDropProps } = useWorkspaceDrop()
 
   useTypingSound()
   const [settingsInitialTab, setSettingsInitialTab] = useState('look-and-feel')
@@ -850,7 +855,10 @@ export const MainLayout = () => {
           </div>
         </div>
         <main className="shell-main">
-          <div className="shell-center-workspace">
+          <div
+            className="shell-center-workspace"
+            {...workspaceDropProps}
+          >
             {(activeTab === 'files' || activeTab === 'search') && (
               <>
                 <TabBar
@@ -912,6 +920,13 @@ export const MainLayout = () => {
                   onToggleAIChat={handleToggleAIChat}
                 />
               </GlobalErrorHandler>
+            )}
+
+            {workspaceDrop.isOver && (
+              <ExternalDropOverlay
+                label={workspaceDrop.label}
+                icon={workspaceDrop.isExternal ? FolderDown : FileText}
+              />
             )}
           </div>
         </main>
