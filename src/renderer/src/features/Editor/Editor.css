@@ -380,14 +380,19 @@
 }
 
 .workspace-tab:hover {
-  background: var(--bg-active);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-main);
 }
 
 .workspace-tab.active {
-  background: var(--bg-panel);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text-main);
+  font-weight: 500;
   border-top: 2px solid var(--text-accent);
+}
+
+.workspace-tab.active:hover {
+  background: rgba(255, 255, 255, 0.09);
 }
 
 .workspace-tab.active::after {

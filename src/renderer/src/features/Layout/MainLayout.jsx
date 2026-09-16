@@ -564,8 +564,13 @@ export const MainLayout = () => {
     },
     onNew: () => handleNew(),
     onDelete: () => {
-      if (selectedSnippet) {
-        setSnippetToDelete(selectedSnippet)
+      const activeItem =
+        selectedSnippet ||
+        (activeTabId && activeTabId !== GRAPH_TAB_ID
+          ? snippets.find((s) => s.id === activeTabId)
+          : null)
+      if (activeItem) {
+        setSnippetToDelete(activeItem)
         setShowDeleteConfirm(true)
       }
     },
@@ -862,7 +867,18 @@ export const MainLayout = () => {
               </>
             )}
 
-            {openTabs.filter((id) => id === GRAPH_TAB_ID || snippets.some((s) => s.id === id)).length >
+            {isLoading ? (
+              <div
+                className="workspace-container"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'row',
+                  flex: 1,
+                  overflow: 'hidden',
+                  position: 'relative'
+                }}
+              />
+            ) : openTabs.filter((id) => id === GRAPH_TAB_ID || snippets.some((s) => s.id === id)).length >
             0 ? (
               <div
                 className="workspace-container"

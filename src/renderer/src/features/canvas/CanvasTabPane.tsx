@@ -12,6 +12,7 @@
 import React, { useMemo, useRef, useCallback, useEffect } from 'react'
 import { CanvasView } from './CanvasView'
 import { CanvasData } from './types'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 
 export interface CanvasTabPaneProps {
   snippet: {
@@ -71,6 +72,9 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = ({
 
       saveTimeoutRef.current = setTimeout(() => {
         if (!onSave || !latestDataRef.current) return
+        const isStillInStore = useWorkspaceStore.getState().notes.some((n) => n.id === snippetRef.current.id)
+        if (!isStillInStore) return
+
         const updated = {
           ...snippetRef.current,
           code: JSON.stringify(latestDataRef.current, null, 2),
@@ -84,12 +88,13 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = ({
     [onSave]
   )
 
-  // Flush any pending save on tab unmount
+  // Flush any pending save on tab unmount ONLY if the note has not been deleted
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current)
-        if (onSave && latestDataRef.current) {
+        const isStillInStore = useWorkspaceStore.getState().notes.some((n) => n.id === snippetRef.current.id)
+        if (onSave && latestDataRef.current && isStillInStore) {
           const updated = {
             ...snippetRef.current,
             code: JSON.stringify(latestDataRef.current, null, 2),

@@ -130,9 +130,9 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, isModal = fals
             contextSnippets.push(snippet)
             addedIds.add(snippet.id)
           })
-        } else if (selectedSnippet && !addedIds.has(selectedSnippet.id)) {
-          contextSnippets.push(selectedSnippet)
-          addedIds.add(selectedSnippet.id)
+        } else if (selectedNote && !addedIds.has(selectedNote.id)) {
+          contextSnippets.push(selectedNote)
+          addedIds.add(selectedNote.id)
         }
 
         await sendChatMessage(text, contextSnippets, mode, attachedMentions)
@@ -140,7 +140,7 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, isModal = fals
         console.error('Error sending message:', err)
       }
     },
-    [selectedSnippet, sendChatMessage, autoScrollRef]
+    [selectedNote, sendChatMessage, autoScrollRef]
   )
 
   const visibleMessages = useMemo(() => {

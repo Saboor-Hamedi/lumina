@@ -114,6 +114,9 @@ class WorkspaceManager {
     await fs.mkdir(targetPath, { recursive: true })
     this.setWorkspacePath(targetPath)
 
+    // Load persisted metadata cache from disk so the scan can skip re-reading unchanged files
+    await this.loadCache()
+
     // Execute initial scan and await completion
     await this.scanWorkspace()
 
@@ -125,6 +128,48 @@ class WorkspaceManager {
     this.notifyWindows('vault:updated')
 
     return targetPath
+  }
+
+  /**
+   * Loads the persistent workspace metadata cache from .lumina/cache.json.
+   * Enables near-instant startup by populating existing snippets before scanning.
+   */
+  async loadCache() {
+    if (!this.workspacePath) return
+    try {
+      const cacheFilePath = path.join(this.workspacePath, '.lumina', 'cache.json')
+      const raw = await fs.readFile(cacheFilePath, 'utf-8')
+      const data = JSON.parse(raw)
+      if (Array.isArray(data?.snippets) && data.snippets.length > 0) {
+        this.snippets = new Map(data.snippets.map((s) => [s.id, s]))
+      }
+      if (Array.isArray(data?.folders)) {
+        this.folders = new Set(data.folders)
+      }
+    } catch (_) {
+      // Cache file doesn't exist yet or is invalid; fallback to full scan
+    }
+  }
+
+  /**
+   * Persists current workspace snippets and folders metadata to .lumina/cache.json.
+   */
+  async saveCache() {
+    if (!this.workspacePath || this.snippets.size === 0) return
+    try {
+      const luminaDir = path.join(this.workspacePath, '.lumina')
+      await fs.mkdir(luminaDir, { recursive: true })
+      const cacheFilePath = path.join(luminaDir, 'cache.json')
+      const payload = {
+        version: 1,
+        timestamp: Date.now(),
+        snippets: Array.from(this.snippets.values()),
+        folders: Array.from(this.folders)
+      }
+      await fs.writeFile(cacheFilePath, JSON.stringify(payload), 'utf-8')
+    } catch (err) {
+      console.warn('[WorkspaceManager] Failed to persist workspace cache:', err)
+    }
   }
 
   /**
@@ -292,6 +337,7 @@ class WorkspaceManager {
         )
         this.snippets = new Map(snippets.map((s) => [s.id, s]))
         this.folders = new Set(folders)
+        this.saveCache().catch(() => {})
         return { snippets, folders }
       } catch (err) {
         console.error('[WorkspaceManager] ✗ Scan failed:', err)

@@ -349,10 +349,21 @@
   border-top-right-radius: 5px;
 }
 
+[data-modern-ui='true'] .workspace-tab:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: var(--text-main);
+}
+
 [data-modern-ui='true'] .workspace-tab.active {
-  border-top: 2px solid var(--text-accent);
+  border-top: 2px solid var(--text-accent) !important;
   border-bottom: none;
-  background: var(--bg-active);
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+[data-modern-ui='true'] .workspace-tab.active:hover {
+  background: rgba(255, 255, 255, 0.09) !important;
 }
 
 [data-modern-ui='true'] .workspace-tab.active::after {

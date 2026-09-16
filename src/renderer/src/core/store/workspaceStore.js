@@ -1,11 +1,11 @@
 import { create } from 'zustand'
 import { useSettingsStore } from './useSettingsStore'
-import { getCachedSnippets, cacheSnippets } from '../db/cache'
 
 export const GRAPH_TAB_ID = '__graph__'
 
 let selectionTimeout = null
 let hasLoadedWorkspaceOnce = false
+const recentlyDeletedIds = new Set()
 
 export const useWorkspaceStore = create((set, get) => ({
   // Core Workspace & Note State
@@ -272,54 +272,10 @@ export const useWorkspaceStore = create((set, get) => ({
    */
   loadWorkspace: async () => {
     const isInitialLoad = !hasLoadedWorkspaceOnce
-
-    // ── Cache-first: paint the UI instantly from IndexedDB ──────────────────
     if (isInitialLoad) {
-      try {
-        const cached = await getCachedSnippets()
-        if (cached && cached.length > 0) {
-          // Read session state synchronously from localStorage — zero IPC calls
-          let persistedOpenTabs = []
-          let persistedPinnedTabs = []
-          let persistedActiveId = null
-          try {
-            const rawTabs = localStorage.getItem('lumina_session_openTabs')
-            if (rawTabs) persistedOpenTabs = JSON.parse(rawTabs)
-            const rawPinned = localStorage.getItem('lumina_session_pinnedTabIds')
-            if (rawPinned) persistedPinnedTabs = JSON.parse(rawPinned)
-            persistedActiveId = localStorage.getItem('lumina_session_lastNoteId') || null
-          } catch {}
-
-          const cachedIdSet = new Set(cached.map((n) => n.id))
-          const validTabs = persistedOpenTabs.filter((id) => id === GRAPH_TAB_ID || cachedIdSet.has(id))
-          const validPinned = persistedPinnedTabs.filter((id) => validTabs.includes(id))
-          const validActiveId =
-            persistedActiveId && validTabs.includes(persistedActiveId)
-              ? persistedActiveId
-              : validTabs[0] || null
-          const activeNote =
-            validActiveId && validActiveId !== GRAPH_TAB_ID
-              ? cached.find((n) => n.id === validActiveId) || null
-              : null
-
-          // Paint immediately — no loading spinner, no IPC wait
-          set({
-            notes: cached,
-            openTabs: validTabs,
-            pinnedTabIds: validPinned,
-            activeTabId: validActiveId,
-            selectedNote: activeNote,
-            isLoading: false
-          })
-        } else {
-          set({ isLoading: true })
-        }
-      } catch {
-        set({ isLoading: true })
-      }
+      set({ isLoading: true })
     }
 
-    // ── Background refresh: fetch fresh data from main process ──────────────
     try {
       const getItems = window.api?.getNotes || window.api?.getSnippets
       if (getItems) {
@@ -385,8 +341,7 @@ export const useWorkspaceStore = create((set, get) => ({
             selectedNote: activeNote
           })
 
-          // Write fresh data to cache + session keys for next cold start
-          cacheSnippets(merged).catch(() => {})
+          // Write fresh session keys for next cold start
           try {
             localStorage.setItem('lumina_session_openTabs', JSON.stringify(validTabs))
             localStorage.setItem('lumina_session_pinnedTabIds', JSON.stringify(validPinned))
@@ -420,6 +375,11 @@ export const useWorkspaceStore = create((set, get) => ({
     if (!note.id) {
       console.error('[WorkspaceStore] Cannot save: note ID is missing')
       throw new Error('Note ID is required')
+    }
+
+    if (recentlyDeletedIds.has(note.id)) {
+      console.warn('[WorkspaceStore] Ignoring save for recently deleted item:', note.id)
+      return null
     }
 
     try {
@@ -519,6 +479,9 @@ export const useWorkspaceStore = create((set, get) => ({
       console.error('[WorkspaceStore] Cannot delete: ID is missing')
       throw new Error('Note ID is required')
     }
+
+    recentlyDeletedIds.add(id)
+    setTimeout(() => recentlyDeletedIds.delete(id), 5000)
 
     const deleteApi = window.api?.deleteNote || window.api?.deleteSnippet
     if (!deleteApi) {
