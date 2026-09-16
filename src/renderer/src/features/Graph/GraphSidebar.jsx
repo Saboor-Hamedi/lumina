@@ -7,7 +7,7 @@ import {
   PanelRight,
   PanelRightClose
 } from 'lucide-react'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import '../canvas/css/canvas-toolbar.css'
 import '../canvas/css/canvas-studio.css'

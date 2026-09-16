@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { usePerformanceStore } from './usePerformanceStore'
 

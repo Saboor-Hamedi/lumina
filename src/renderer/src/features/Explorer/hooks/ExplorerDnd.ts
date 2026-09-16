@@ -10,7 +10,7 @@ import {
   type DragEndEvent
 } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
-import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 
 function patchStoreForMigratedImages(migratedImages: Map<string, string>): void {

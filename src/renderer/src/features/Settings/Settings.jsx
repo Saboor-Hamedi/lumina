@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Square, Copy, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import SettingTab from './SettingTab'
 import SettingLookAndFeel from './SettingLookAndFeel'

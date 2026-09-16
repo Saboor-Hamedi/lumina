@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 
 const STORAGE_KEY = 'lumina_window_opacity'
 const MIN_WINDOW_OPACITY = 0.0

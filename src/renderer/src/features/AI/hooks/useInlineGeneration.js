@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 import { resolveProviderConfig } from '../providers/index.js'
 
 /**

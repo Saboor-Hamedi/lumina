@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useState, useMemo, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Settings, Palette, Cloud, RefreshCw, Check, Loader2, FileArchive, Folder, X, Mail } from 'lucide-react'
-import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 import { useCurrentUser } from '../../../core/hooks/useCurrentUser'
-import { useUpdateStore } from '../../../core/store/useUpdateStore'
+import { useUpdateStore } from '../../../core/store/UpdateSetting'
 import Profile from '../../profile/Profile'
 
 const SettingDropdown = ({ isOpen, onClose, onSettingsClick, onThemeClick, anchorRef }) => {

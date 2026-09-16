@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import {
   Clock,

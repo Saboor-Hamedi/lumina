@@ -1,6 +1,6 @@
 import { EditorView } from '@codemirror/view'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
-import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 import { htmlToMarkdown, applyRichPasteToView } from '../../Editor/utils/htmlToMarkdown'
 
 export const imageDropExtension = () =>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useSettingsStore } from '../store/useSettingsStore'
+import { useSettingsStore } from '../store/SettingStore'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import type { UseEditorStateProps, UseEditorStateReturn, Snippet } from './types'
 

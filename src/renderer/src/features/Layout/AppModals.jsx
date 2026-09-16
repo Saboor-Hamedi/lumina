@@ -31,7 +31,7 @@ import { VoiceCapsule } from '../voice'
 
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
 
 // Lazy-load heavy modals and panels to optimize initial bundle evaluation time

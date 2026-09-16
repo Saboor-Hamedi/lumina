@@ -21,7 +21,7 @@ import {
   Copy
 } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import './css/guide.css'
 
 /**

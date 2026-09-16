@@ -11,7 +11,7 @@ import { EmailComposeModal } from './EmailComposeModal'
 import { EmailFooter } from './EmailFooter'
 import { EmailFolder } from '../types'
 import { DEFAULT_GOOGLE_CLIENT_ID } from '../../../core/hooks/useCurrentUser'
-import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 import '../css/email.css'
 
 /**

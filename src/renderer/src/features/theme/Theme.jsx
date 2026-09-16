@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useTheme } from './hooks/useTheme'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import { X, Check, Palette, Square, Copy } from 'lucide-react'
 import './css/theme.css'
 // Memoized theme card component to avoid re-rendering all 63 cards on keystrokes/focus shifts

@@ -16,7 +16,7 @@ import {
   LayoutDashboard
 } from 'lucide-react'
 import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import {
   DndContext,
   closestCenter,

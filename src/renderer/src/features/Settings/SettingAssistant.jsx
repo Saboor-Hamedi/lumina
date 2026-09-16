@@ -1,5 +1,5 @@
 import React from 'react'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import Toggle from '../../components/toggle'
 
 const SettingAssistant = () => {

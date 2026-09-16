@@ -12,7 +12,7 @@ import {
   MessageSquare
 } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useAIStore } from './tools/lumina'
 import LuminaSession from './components/LuminaSession'

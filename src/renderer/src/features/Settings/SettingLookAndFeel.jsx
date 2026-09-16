@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import AccentColor from '../theme/AccentColor'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 import Toggle from '../../components/toggle'
 

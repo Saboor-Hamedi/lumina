@@ -17,7 +17,7 @@ import {
   X
 } from 'lucide-react'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
-import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 import ContextMenu from '../../modals/ContextMenu'
 import Confirm from '../../modals/Confirm'
 import IconPicker from '../../Icons/IconPicker'

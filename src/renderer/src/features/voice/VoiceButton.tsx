@@ -2,7 +2,7 @@ import React, { useRef } from 'react'
 import { Mic, Loader2 } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useVoice } from './hooks/Voice'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import type { VoiceButtonProps } from './types'
 import './css/voice.css'
 

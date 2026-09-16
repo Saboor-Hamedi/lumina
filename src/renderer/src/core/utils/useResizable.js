@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { useSettingsStore } from '../store/useSettingsStore'
+import { useSettingsStore } from '../store/SettingStore'
 
 export const useResizable = (modalRef, initialWidth = 350, initialHeight = 500) => {
   const { settings } = useSettingsStore()

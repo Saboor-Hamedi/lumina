@@ -594,7 +594,7 @@ export const useAIStore = create((set, get) => {
       // 2. Settings & API Key Resolution
       let settings
       try {
-        const settingsModule = await import('../../../core/store/useSettingsStore')
+        const settingsModule = await import('../../../core/store/SettingStore')
         settings = settingsModule.useSettingsStore.getState()
       } catch (err) {
         console.error('[AIStore] Failed to load settings:', err)

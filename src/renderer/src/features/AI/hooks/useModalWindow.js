@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 
 export const useModalWindow = ({ isOpen, isMaximized, setIsMaximized, modalRef }) => {
   const [isDragging, setIsDragging] = useState(false)

@@ -20,7 +20,7 @@ import {
   LayoutDashboard
 } from 'lucide-react'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
-import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 import { useShallow } from 'zustand/react/shallow'
 import { summarizeNotes } from '../../AI/services/summarizeNotes'
 

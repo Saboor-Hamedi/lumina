@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react'
-import { useUpdateStore } from '../../core/store/useUpdateStore'
+import { useUpdateStore } from '../../core/store/UpdateSetting'
 import { Download, Loader2, CheckCircle2 } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import UpdateHeader from './UpdateHeader'

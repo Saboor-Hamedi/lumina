@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { useSettingsStore } from './useSettingsStore'
+import { useSettingsStore } from './SettingStore'
 
 export const GRAPH_TAB_ID = '__graph__'
 
@@ -7,20 +7,110 @@ let selectionTimeout = null
 let hasLoadedWorkspaceOnce = false
 const recentlyDeletedIds = new Set()
 
+const persistNotesSnapshot = (notes, openTabs = []) => {
+  try {
+    const openSet = new Set(openTabs)
+    const slim = (notes || []).map((n) => {
+      if (openSet.has(n.id)) return n
+      const { code, ...rest } = n
+      return rest
+    })
+    localStorage.setItem('lumina_session_notes', JSON.stringify(slim))
+  } catch (err) {
+    try {
+      const metadataOnly = (notes || []).map(({ code, ...rest }) => rest)
+      localStorage.setItem('lumina_session_notes', JSON.stringify(metadataOnly))
+    } catch (_) {}
+  }
+}
+
+const persistFoldersSnapshot = (folders) => {
+  try {
+    if (Array.isArray(folders)) {
+      localStorage.setItem('lumina_session_folders', JSON.stringify(folders))
+    }
+  } catch (_) {}
+}
+
+const getCachedSession = () => {
+  try {
+    const rawNotes = localStorage.getItem('lumina_session_notes')
+    const rawFolders = localStorage.getItem('lumina_session_folders')
+    const rawTabs = localStorage.getItem('lumina_session_openTabs')
+    const rawPinned = localStorage.getItem('lumina_session_pinnedTabIds')
+    const lastNoteId = localStorage.getItem('lumina_session_lastNoteId')
+
+    const notes = rawNotes ? JSON.parse(rawNotes) : []
+    const parsedFolders = rawFolders ? JSON.parse(rawFolders) : []
+
+    // Always derive all folders from notes AND merge with cached folders
+    const folderSet = new Set(Array.isArray(parsedFolders) ? parsedFolders : [])
+    notes.forEach((n) => {
+      if (n.folderId && typeof n.folderId === 'string') {
+        const clean = n.folderId.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+        let current = ''
+        clean.split('/').filter(Boolean).forEach((part) => {
+          current = current ? `${current}/${part}` : part
+          folderSet.add(current)
+        })
+      }
+    })
+    const folders = Array.from(folderSet)
+
+    const openTabs = rawTabs ? JSON.parse(rawTabs) : []
+    const pinnedTabIds = rawPinned ? JSON.parse(rawPinned) : []
+    const noteIdSet = new Set(notes.map((n) => n.id))
+    const validTabs = openTabs.filter((id) => id === GRAPH_TAB_ID || noteIdSet.has(id))
+    const validPinned = pinnedTabIds.filter((id) => validTabs.includes(id))
+    const activeTabId =
+      lastNoteId && validTabs.includes(lastNoteId) ? lastNoteId : validTabs[0] || null
+    const selectedNote =
+      activeTabId && activeTabId !== GRAPH_TAB_ID
+        ? notes.find((n) => n.id === activeTabId) || null
+        : null
+
+    if (folders.length > 0 && (!parsedFolders || parsedFolders.length < folders.length)) {
+      persistFoldersSnapshot(folders)
+    }
+
+    return {
+      notes,
+      folders,
+      openTabs: validTabs,
+      pinnedTabIds: validPinned,
+      activeTabId,
+      selectedNote,
+      isLoading: notes.length === 0
+    }
+  } catch {
+    return {
+      notes: [],
+      folders: [],
+      openTabs: [],
+      pinnedTabIds: [],
+      activeTabId: null,
+      selectedNote: null,
+      isLoading: true
+    }
+  }
+}
+
+const initialSession = getCachedSession()
+
 export const useWorkspaceStore = create((set, get) => ({
-  // Core Workspace & Note State
-  notes: [],
-  folders: [],
+  // Core Workspace & Note State (Hydrated synchronously from localStorage)
+  notes: initialSession.notes,
+  folders: initialSession.folders,
   folderColors: {},
-  selectedNote: null,
+  selectedNote: initialSession.selectedNote,
   selectedFolder: null,
-  isLoading: true,
+  isLoading: initialSession.isLoading,
   searchQuery: '',
   dirtyNoteIds: [],
   drafts: {},
-  openTabs: [],
-  activeTabId: null,
-  pinnedTabIds: [],
+  openTabs: initialSession.openTabs,
+  activeTabId: initialSession.activeTabId,
+  pinnedTabIds: initialSession.pinnedTabIds,
   clipboard: null,
 
   setNotes: (notes) => set({ notes }),
@@ -240,7 +330,9 @@ export const useWorkspaceStore = create((set, get) => ({
         current = current ? `${current}/${part}` : part
         folderSet.add(current)
       })
-      return { folders: Array.from(folderSet) }
+      const nextFolders = Array.from(folderSet)
+      persistFoldersSnapshot(nextFolders)
+      return { folders: nextFolders }
     })
   },
 
@@ -272,7 +364,7 @@ export const useWorkspaceStore = create((set, get) => ({
    */
   loadWorkspace: async () => {
     const isInitialLoad = !hasLoadedWorkspaceOnce
-    if (isInitialLoad) {
+    if (isInitialLoad && get().notes.length === 0) {
       set({ isLoading: true })
     }
 
@@ -331,9 +423,23 @@ export const useWorkspaceStore = create((set, get) => ({
               ? merged.find((n) => n.id === validActiveId) || null
               : null
 
+          const rawFolderList = freshData.folders || []
+          const folderSet = new Set(rawFolderList)
+          merged.forEach((n) => {
+            if (n.folderId && typeof n.folderId === 'string') {
+              const clean = n.folderId.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+              let current = ''
+              clean.split('/').filter(Boolean).forEach((part) => {
+                current = current ? `${current}/${part}` : part
+                folderSet.add(current)
+              })
+            }
+          })
+          const allFolders = Array.from(folderSet)
+
           set({
             notes: merged,
-            folders: freshData.folders || [],
+            folders: allFolders,
             folderColors,
             openTabs: validTabs,
             pinnedTabIds: validPinned,
@@ -342,6 +448,8 @@ export const useWorkspaceStore = create((set, get) => ({
           })
 
           // Write fresh session keys for next cold start
+          persistNotesSnapshot(merged, validTabs)
+          persistFoldersSnapshot(allFolders)
           try {
             localStorage.setItem('lumina_session_openTabs', JSON.stringify(validTabs))
             localStorage.setItem('lumina_session_pinnedTabIds', JSON.stringify(validPinned))
@@ -467,6 +575,9 @@ export const useWorkspaceStore = create((set, get) => ({
         set({ selectedNote: updatedNote })
       }
 
+      persistNotesSnapshot(get().notes, get().openTabs)
+      persistFoldersSnapshot(get().folders)
+
       return updatedNote
     } catch (err) {
       console.error('[WorkspaceStore] Save failed:', err)
@@ -535,6 +646,12 @@ export const useWorkspaceStore = create((set, get) => ({
         dirtyNoteIds: dirtyNotes
       }
     })
+
+    persistNotesSnapshot(get().notes, get().openTabs)
+    persistFoldersSnapshot(get().folders)
+    try {
+      localStorage.setItem('lumina_session_openTabs', JSON.stringify(get().openTabs))
+    } catch {}
 
     try {
       await deleteApi(id)

@@ -12,7 +12,7 @@ import {
   Activity
 } from 'lucide-react'
 import { useAIStore } from '../tools/lumina'
-import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 import ToolTip from '../../../components/atoms/ToolTip'
 import '../css/luminaWorkbench.css'
 

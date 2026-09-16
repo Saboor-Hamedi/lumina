@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 
 const CLOSE_DRAG_THRESHOLD = 140
 const MIN_LEFT_WIDTH = 180

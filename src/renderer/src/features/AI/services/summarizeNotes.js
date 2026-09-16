@@ -1,5 +1,5 @@
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
-import { useSettingsStore } from '../../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 import { AIProviderFactory, resolveProviderConfig } from '../providers/index.js'
 
 function sanitizeTitle(str) {

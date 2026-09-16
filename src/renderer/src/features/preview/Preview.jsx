@@ -6,7 +6,7 @@ import ToolTip from '../../components/atoms/ToolTip'
 import './preview.css'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 
 const Preview = ({ isOpen, onClose, title, content, snippetId }) => {
   const isMaximized = useSettingsStore((s) => s.settings.previewModalMaximized ?? false)

@@ -11,7 +11,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Search, X, Plus, Check } from 'lucide-react'
 import { buildShortcutGroups, DEFAULT_SHORTCUTS } from '../../core/shortcuts/defaultShortcuts'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 
 const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.userAgent)
 

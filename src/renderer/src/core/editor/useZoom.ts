@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useRef, useState } from 'react'
 import { EditorView } from '@codemirror/view'
-import { useSettingsStore } from '../store/useSettingsStore'
+import { useSettingsStore } from '../store/SettingStore'
 import { useFontSettings } from '../hooks/useFontSettings'
 
 import type { UseZoomOptions, UseZoomReturn } from './types'

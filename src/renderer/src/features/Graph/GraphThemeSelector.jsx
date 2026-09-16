@@ -1,6 +1,6 @@
 import React from 'react'
 import { Layers } from 'lucide-react'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 
 /**
  * GraphThemeSelector Component

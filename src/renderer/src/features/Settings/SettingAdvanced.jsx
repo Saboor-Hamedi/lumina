@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { useSettingsStore } from '../../core/store/useSettingsStore'
-import { useUpdateStore } from '../../core/store/useUpdateStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
+import { useUpdateStore } from '../../core/store/UpdateSetting'
 import { useToast } from '../../core/notification'
 import Toggle from '../../components/toggle'
 

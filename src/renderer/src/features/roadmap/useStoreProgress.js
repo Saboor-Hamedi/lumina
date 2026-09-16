@@ -1,4 +1,4 @@
-import { useSettingsStore } from '../../core/store/useSettingsStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 
 export const STATUS_UNREAD = 0
 export const STATUS_IN_PROGRESS = 1

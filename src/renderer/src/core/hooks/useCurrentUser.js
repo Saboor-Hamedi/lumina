@@ -15,7 +15,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { useSettingsStore } from '../store/useSettingsStore'
+import { useSettingsStore } from '../store/SettingStore'
 
 export const DEFAULT_GOOGLE_CLIENT_ID =
   '736587690312-33s4trbiculu5dvctb92lkl6njgc14ae.apps.googleusercontent.com'

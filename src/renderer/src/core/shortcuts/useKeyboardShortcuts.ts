@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { KeyboardShortcutHandlers, ShortcutMap } from './types'
 import { DEFAULT_SHORTCUTS, buildShortcutGroups, SHORTCUT_DISPLAY_GROUPS } from './defaultShortcuts'
-import { useSettingsStore } from '../store/useSettingsStore'
+import { useSettingsStore } from '../store/SettingStore'
 
 export { buildShortcutGroups, SHORTCUT_DISPLAY_GROUPS }
 

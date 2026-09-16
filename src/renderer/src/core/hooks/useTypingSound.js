@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react'
-import { useSettingsStore } from '../store/useSettingsStore'
+import { useSettingsStore } from '../store/SettingStore'
 
 // Shared AudioContext and pre-generated buffer
 let audioCtx = null
