@@ -1,4 +1,4 @@
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 
 const fuzzyMatch = (str, query) => {
   let i = 0,
@@ -139,7 +139,7 @@ export class TableAutocomplete {
 
     this.currentQuery = match[1]
     const query = this.currentQuery.toLowerCase()
-    const snippets = useVaultStore.getState().snippets || []
+    const snippets = useWorkspaceStore.getState().notes || []
 
     this.autocompleteMatches = snippets
       .filter((s) => s.title && fuzzyMatch(s.title, query))

@@ -12,9 +12,9 @@ export const appendToFileTool = aiSdk.tool({
     required: ['title', 'content']
   }),
   execute: async ({ title, content }) => {
-    const { useVaultStore } = await import('../../../core/store/workspaceStore')
-    const vs = useVaultStore.getState()
-    const snippets = Array.isArray(vs.snippets) ? vs.snippets : Object.values(vs.snippets || {})
+    const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+    const vs = useWorkspaceStore.getState()
+    const snippets = vs.notes || []
 
     const cleanTitle = (title || '').trim().toLowerCase().replace(/\.md$/, '')
     let target = snippets.find(
@@ -23,8 +23,8 @@ export const appendToFileTool = aiSdk.tool({
     if (!target) {
       target = snippets.find((s) => (s.title || '').toLowerCase().includes(cleanTitle))
     }
-    if (!target && vs.selectedSnippet) {
-      target = vs.selectedSnippet
+    if (!target && vs.selectedNote) {
+      target = vs.selectedNote
     }
     if (!target) return { success: false, error: `File "${title}" not found.` }
 
@@ -33,9 +33,9 @@ export const appendToFileTool = aiSdk.tool({
     const separator = currentCode && currentCode.endsWith('\n') ? '\n' : currentCode ? '\n\n' : ''
     const newCode = currentCode + separator + content
 
-    const isCurrentlySelected = vs.selectedSnippet?.id === target.id
-    if (isCurrentlySelected && vs.setSelectedSnippet) {
-      vs.setSelectedSnippet({ ...target, code: newCode })
+    const isCurrentlySelected = vs.selectedNote?.id === target.id
+    if (isCurrentlySelected && vs.setSelectedNote) {
+      vs.setSelectedNote({ ...target, code: newCode })
     }
 
     try {
@@ -60,9 +60,10 @@ export const appendToFileTool = aiSdk.tool({
       )
     }
 
-    const updated = await vs.saveSnippet({ ...target, code: newCode })
-    if (isCurrentlySelected && vs.setSelectedSnippet) {
-      vs.setSelectedSnippet(updated || { ...target, code: newCode })
+    const saveAction = vs.saveNote || vs.saveSnippet
+    const updated = saveAction ? await saveAction({ ...target, code: newCode }) : null
+    if (isCurrentlySelected && vs.setSelectedNote) {
+      vs.setSelectedNote(updated || { ...target, code: newCode })
     }
 
     const addedWords = (content || '').trim() ? (content || '').trim().split(/\s+/).length : 0

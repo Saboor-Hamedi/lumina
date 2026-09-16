@@ -768,9 +768,9 @@ export const runFallbackProviderStream = async ({
   return fullContent
 }
 
-export const applyLegacyMarkdownBlocks = async (fullContent, vaultStore) => {
+export const applyLegacyMarkdownBlocks = async (fullContent, workspaceStore) => {
   const contentOutsideThink = (fullContent || '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*$/gi, '')
-  const allSnippets = vaultStore.snippets || []
+  const allSnippets = workspaceStore.notes || []
   let appliedCreations = 0
   let appliedUpdates = 0
   let appliedDeletions = 0
@@ -834,7 +834,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent, vaultStore) => {
       tags: '',
       timestamp: Date.now()
     }
-    await vaultStore.saveSnippet(newSnippet)
+    await workspaceStore.saveNote(newSnippet)
     appliedCreations++
   }
 
@@ -864,7 +864,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent, vaultStore) => {
         tags: '',
         timestamp: Date.now()
       }
-      await vaultStore.saveSnippet(newSnippet)
+      await workspaceStore.saveNote(newSnippet)
       appliedCreations++
     }
   }
@@ -893,9 +893,9 @@ export const applyLegacyMarkdownBlocks = async (fullContent, vaultStore) => {
 
     if (targetSnippet) {
       const updatedSnippet = { ...targetSnippet, code: content, timestamp: Date.now() }
-      await vaultStore.saveSnippet(updatedSnippet)
-      if (vaultStore.selectedSnippet?.id === targetSnippet.id) {
-        vaultStore.setSelectedSnippet(updatedSnippet)
+      await workspaceStore.saveNote(updatedSnippet)
+      if (workspaceStore.selectedNote?.id === targetSnippet.id) {
+        workspaceStore.setSelectedNote(updatedSnippet)
       }
       appliedUpdates++
     }
@@ -913,7 +913,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent, vaultStore) => {
 
     if (targetSnippet) {
       try {
-        await vaultStore.deleteSnippet(targetSnippet.id, true)
+        await workspaceStore.deleteSnippet(targetSnippet.id, true)
         appliedDeletions++
       } catch (e) {
         console.warn(`[StreamRunner] Failed to delete "${title}":`, e)

@@ -16,7 +16,7 @@ import {
   Check,
   X
 } from 'lucide-react'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import ContextMenu from '../../modals/ContextMenu'
 import Confirm from '../../modals/Confirm'
@@ -48,7 +48,7 @@ const SnippetContextMenu = ({
       onChangeIcon: () => setShowIconPicker(true),
       onTogglePin: handleTogglePin,
       onDelete: () => setShowDeleteConfirm(true),
-      onCloseNote: () => useVaultStore.getState().closeTab(snippet.id),
+      onCloseNote: () => useWorkspaceStore.getState().closeTab(snippet.id),
       onClose
     }
   })
@@ -67,11 +67,11 @@ const SidebarItem = ({
   searchQuery,
   matchSnippet
 }) => {
-  const { deleteSnippet, saveSnippet, selectedSnippet, activeTabId } = useVaultStore(
+  const { deleteSnippet, saveSnippet, selectedSnippet, activeTabId } = useWorkspaceStore(
     useShallow((state) => ({
-      deleteSnippet: state.deleteSnippet,
-      saveSnippet: state.saveSnippet,
-      selectedSnippet: state.selectedSnippet,
+      deleteSnippet: state.deleteNote,
+      saveSnippet: state.saveNote,
+      selectedSnippet: state.selectedNote,
       activeTabId: state.activeTabId
     }))
   )
@@ -121,25 +121,25 @@ const SidebarItem = ({
         if (oldRel !== newRel) {
           try {
             await window.api?.moveFile?.(oldRel, newRel)
-            const loadVault = useVaultStore.getState().loadVault
-            await loadVault?.()
+            const loadWorkspace = useWorkspaceStore.getState().loadWorkspace
+            await loadWorkspace?.()
 
-            const freshSnippets = useVaultStore.getState().snippets || []
+            const freshSnippets = useWorkspaceStore.getState().notes || []
             const newSnippet = freshSnippets.find(
               (s) => s.relativePath === newRel || (s.fileName === targetFileName && (s.folderId || '') === (snippet.folderId || ''))
             )
 
             if (newSnippet) {
-              useVaultStore.setState((state) => {
+              useWorkspaceStore.setState((state) => {
                 const nextTabs = state.openTabs.map((tid) => (tid === snippet.id ? newSnippet.id : tid))
                 const nextActiveId = state.activeTabId === snippet.id ? newSnippet.id : state.activeTabId
                 const nextPinned = state.pinnedTabIds.map((pid) => (pid === snippet.id ? newSnippet.id : pid))
-                const nextSelected = state.selectedSnippet?.id === snippet.id ? newSnippet : state.selectedSnippet
+                const nextSelected = state.selectedNote?.id === snippet.id ? newSnippet : state.selectedNote
                 return {
                   openTabs: nextTabs,
                   activeTabId: nextActiveId,
                   pinnedTabIds: nextPinned,
-                  selectedSnippet: nextSelected
+                  selectedNote: nextSelected
                 }
               })
             }
@@ -157,10 +157,10 @@ const SidebarItem = ({
         if (oldRel !== newRel) {
           try {
             await window.api?.moveFile?.(oldRel, newRel)
-            const loadVault = useVaultStore.getState().loadVault
-            await loadVault?.()
+            const loadWorkspace = useWorkspaceStore.getState().loadWorkspace
+            await loadWorkspace?.()
 
-            const freshSnippets = useVaultStore.getState().snippets || []
+            const freshSnippets = useWorkspaceStore.getState().notes || []
             const newSnippet = freshSnippets.find(
               (s) =>
                 s.relativePath === newRel ||
@@ -168,17 +168,17 @@ const SidebarItem = ({
             )
 
             if (newSnippet) {
-              useVaultStore.setState((state) => {
+              useWorkspaceStore.setState((state) => {
                 const nextTabs = state.openTabs.map((tid) => (tid === snippet.id ? newSnippet.id : tid))
                 const nextActiveId = state.activeTabId === snippet.id ? newSnippet.id : state.activeTabId
                 const nextPinned = state.pinnedTabIds.map((pid) => (pid === snippet.id ? newSnippet.id : pid))
                 const nextSelected =
-                  state.selectedSnippet?.id === snippet.id ? newSnippet : state.selectedSnippet
+                  state.selectedNote?.id === snippet.id ? newSnippet : state.selectedNote
                 return {
                   openTabs: nextTabs,
                   activeTabId: nextActiveId,
                   pinnedTabIds: nextPinned,
-                  selectedSnippet: nextSelected
+                  selectedNote: nextSelected
                 }
               })
             }

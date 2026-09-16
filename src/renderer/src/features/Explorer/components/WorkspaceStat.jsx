@@ -10,26 +10,26 @@ import {
   Layers,
   X
 } from 'lucide-react'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import '../css/workspacestat.css'
 
 export const WorkspaceStat = ({ isOpen, onClose, anchorRef }) => {
   const popoverRef = useRef(null)
-  const snippets = useVaultStore((state) => state.snippets)
-  const folders = useVaultStore((state) => state.folders)
+  const notes = useWorkspaceStore((state) => state.notes) || []
+  const folders = useWorkspaceStore((state) => state.folders) || []
   const [coords, setCoords] = useState(null)
 
   const stats = useMemo(() => {
-    const noteSnippets = snippets.filter((s) => s.type !== 'image' && s.type !== 'pdf')
-    const imageSnippets = snippets.filter((s) => s.type === 'image')
-    const pdfSnippets = snippets.filter((s) => s.type === 'pdf')
+    const noteItems = notes.filter((s) => s.type !== 'image' && s.type !== 'pdf')
+    const imageItems = notes.filter((s) => s.type === 'image')
+    const pdfItems = notes.filter((s) => s.type === 'pdf')
 
-    const totalNotes = noteSnippets.length
-    const totalImages = imageSnippets.length
-    const totalPdfs = pdfSnippets.length
+    const totalNotes = noteItems.length
+    const totalImages = imageItems.length
+    const totalPdfs = pdfItems.length
     const folderSet = new Set(folders || [])
 
-    snippets.forEach((s) => {
+    notes.forEach((s) => {
       if (s.folderId) folderSet.add(s.folderId)
     })
     const totalFolders = folderSet.size
@@ -42,7 +42,7 @@ export const WorkspaceStat = ({ isOpen, onClose, anchorRef }) => {
     let totalTextBytes = 0
     let totalMediaBytes = 0
 
-    noteSnippets.forEach((s) => {
+    noteItems.forEach((s) => {
       if (s.isPinned) pinnedCount++
       if (s.isLearned) learnedCount++
 
@@ -57,12 +57,12 @@ export const WorkspaceStat = ({ isOpen, onClose, anchorRef }) => {
       }
     })
 
-    imageSnippets.forEach((img) => {
+    imageItems.forEach((img) => {
       if (img.isPinned) pinnedCount++
       totalMediaBytes += img.size || 0
     })
 
-    pdfSnippets.forEach((pdf) => {
+    pdfItems.forEach((pdf) => {
       totalMediaBytes += pdf.size || 0
     })
 
@@ -94,7 +94,7 @@ export const WorkspaceStat = ({ isOpen, onClose, anchorRef }) => {
       storageSize: formatBytes(totalTextBytes),
       mediaStorageSize: formatBytes(totalMediaBytes)
     }
-  }, [snippets, folders])
+  }, [notes, folders])
 
   useEffect(() => {
     if (!isOpen || !anchorRef?.current) return

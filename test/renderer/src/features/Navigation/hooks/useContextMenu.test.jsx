@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useContextMenu } from '../../../../../../src/renderer/src/features/Navigation/hooks/useContextMenu'
-import { useVaultStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
 import { useSettingsStore } from '../../../../../../src/renderer/src/core/store/useSettingsStore'
 
 describe('useContextMenu', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    useVaultStore.setState({
+    useWorkspaceStore.setState({
       snippets: [],
       clipboard: null,
       folderColors: {}
@@ -59,7 +59,7 @@ describe('useContextMenu', () => {
     const { result } = setup({ onClose }, item, 'file')
 
     result.current.find((o) => o.label === 'Copy').onClick()
-    expect(useVaultStore.getState().clipboard).toEqual({ action: 'copy', item })
+    expect(useWorkspaceStore.getState().clipboard).toEqual({ action: 'copy', item })
     expect(onClose).toHaveBeenCalled()
   })
 
@@ -69,7 +69,7 @@ describe('useContextMenu', () => {
     const { result } = setup({ onClose }, item, 'file')
 
     result.current.find((o) => o.label === 'Cut').onClick()
-    expect(useVaultStore.getState().clipboard).toEqual({ action: 'cut', item })
+    expect(useWorkspaceStore.getState().clipboard).toEqual({ action: 'cut', item })
   })
 
   it('Paste is disabled when clipboard is empty', () => {
@@ -79,9 +79,9 @@ describe('useContextMenu', () => {
 
   it('Paste copies a snippet into target folder', async () => {
     const item = { id: '1', title: 'Note', fileName: 'n.md', folderId: null }
-    useVaultStore.setState({ clipboard: { action: 'copy', item }, snippets: [] })
+    useWorkspaceStore.setState({ clipboard: { action: 'copy', item }, snippets: [] })
     const saveSnippet = vi.fn().mockResolvedValue(undefined)
-    useVaultStore.setState({ saveSnippet })
+    useWorkspaceStore.setState({ saveSnippet })
     const onClose = vi.fn()
 
     const { result } = setup({ onClose }, '2', 'folder')
@@ -95,16 +95,16 @@ describe('useContextMenu', () => {
 
   it('Paste with cut action moves snippet and clears clipboard', async () => {
     const item = { id: '1', title: 'Note', fileName: 'n.md', folderId: null }
-    useVaultStore.setState({ clipboard: { action: 'cut', item }, snippets: [] })
+    useWorkspaceStore.setState({ clipboard: { action: 'cut', item }, snippets: [] })
     const saveSnippet = vi.fn().mockResolvedValue(undefined)
-    useVaultStore.setState({ saveSnippet })
+    useWorkspaceStore.setState({ saveSnippet })
     const onClose = vi.fn()
 
     const { result } = setup({ onClose }, '2', 'folder')
     await result.current.find((o) => o.label === 'Paste').onClick()
 
     expect(saveSnippet).toHaveBeenCalledWith(expect.objectContaining({ folderId: '2' }))
-    expect(useVaultStore.getState().clipboard).toBeNull()
+    expect(useWorkspaceStore.getState().clipboard).toBeNull()
   })
 
   it('returns folder options with New Note / New Folder', () => {
@@ -142,7 +142,7 @@ describe('useContextMenu', () => {
   it('color picker saves snippet color', async () => {
     const item = { id: '1', title: 'Note', fileName: 'n.md', color: null }
     const saveSnippet = vi.fn().mockResolvedValue(undefined)
-    useVaultStore.setState({ saveSnippet })
+    useWorkspaceStore.setState({ saveSnippet })
     const { result } = setup({}, item, 'file')
 
     const bg = result.current.find((o) => o.label === 'Background')

@@ -19,7 +19,7 @@ import {
   CloudUpload,
   LayoutDashboard
 } from 'lucide-react'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { useShallow } from 'zustand/react/shallow'
 import { summarizeNotes } from '../../AI/services/summarizeNotes'
@@ -28,12 +28,12 @@ import { summarizeNotes } from '../../AI/services/summarizeNotes'
 
 export function useContextMenu({ item, type, callbacks }) {
   const { saveSnippet, clipboard, setClipboard, snippets, folderColors, setFolderColor } =
-    useVaultStore(
+    useWorkspaceStore(
       useShallow((state) => ({
-        saveSnippet: state.saveSnippet,
+        saveSnippet: state.saveNote,
         clipboard: state.clipboard,
         setClipboard: state.setClipboard,
-        snippets: state.snippets,
+        snippets: state.notes || [],
         folderColors: state.folderColors,
         setFolderColor: state.setFolderColor
       }))

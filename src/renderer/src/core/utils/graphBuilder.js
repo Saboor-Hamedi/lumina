@@ -1,13 +1,14 @@
 import { normalizeWikilinkTarget } from '../i18n'
 
 export const buildGraphData = (snippets) => {
+  const safeSnippets = Array.isArray(snippets) ? snippets : []
   const nodes = []
   const links = []
   const nodeMap = new Map()
   const nodeMapLower = new Map() // Optimization for O(1) normalized canonical lookups
 
   // 1. Create Nodes (Existing Notes)
-  snippets.forEach((snippet) => {
+  safeSnippets.forEach((snippet) => {
     const id = snippet.title || 'Untitled'
     if (!nodeMap.has(id)) {
       const node = { id, group: 'note', val: 1, snippetId: snippet.id }
@@ -18,7 +19,7 @@ export const buildGraphData = (snippets) => {
   })
 
   // 2. Parse Links
-  snippets.forEach((snippet) => {
+  safeSnippets.forEach((snippet) => {
     const sourceId = snippet.title || 'Untitled'
     let code = snippet.code || ''
 

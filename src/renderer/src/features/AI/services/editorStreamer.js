@@ -14,8 +14,8 @@ export async function streamCodeToEditor({
   scrollToBottom = false,
   onProgress = null
 }) {
-  const { useVaultStore } = await import('../../../core/store/workspaceStore')
-  const vs = useVaultStore.getState()
+  const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+  const vs = useWorkspaceStore.getState()
 
   const newStr = newCode || ''
 

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useAIStore } from '../tools/lumina'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { Composer } from '../Composer'
 import { ChatMessageRow } from './LuminaChatMessageRow'
 import { LuminaSession } from './LuminaSession'
@@ -50,15 +50,15 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, isModal = fals
     }))
   )
 
-  const { selectedSnippet, snippets } = useVaultStore(
+  const { selectedNote, notes } = useWorkspaceStore(
     useShallow((state) => ({
-      selectedSnippet: state.selectedSnippet,
-      snippets: state.snippets
+      selectedNote: state.selectedNote,
+      notes: state.notes || []
     }))
   )
 
   const userMentionRegex = useMemo(() => {
-    const list = snippets || []
+    const list = notes || []
     if (list.length === 0) return /(@[a-zA-Z0-9_\-./]+)/g
     const titles = list
       .map((s) => s.title)
@@ -71,7 +71,7 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, isModal = fals
       return new RegExp(`(@(?:${titles.join('|')}|[a-zA-Z0-9_\\-./]+))`, 'gi')
     }
     return /(@[a-zA-Z0-9_\-./]+)/g
-  }, [snippets])
+  }, [notes])
 
   const [showSessions, setShowSessions] = useState(false)
   const [isWorkbenchOpen, setIsWorkbenchOpen] = useState(false)
@@ -224,7 +224,7 @@ export const LuminaChatContent = React.memo(({ isSidebar = false, isModal = fals
               <div className="chat-messages" ref={listRef} onScroll={handleMessageScroll}>
                 {visibleMessages.length === 0 ? (
                   <ChatEmptyState
-                    selectedSnippet={selectedSnippet}
+                    selectedNote={selectedNote}
                     onSendSuggestion={(snip) =>
                       sendChatMessage(`Explain the code in "${snip.title}"`, [snip])
                     }

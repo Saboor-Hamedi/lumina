@@ -6,12 +6,12 @@ vi.mock('../../../../../../src/renderer/src/features/Graph/InlineGraph', () => (
 
 import { render, screen, fireEvent } from '@testing-library/react'
 import EditorMetadata from '../../../../../../src/renderer/src/features/Editor/components/EditorMetadata'
-import { useVaultStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
 
 describe('EditorMetadata', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    useVaultStore.setState({
+    useWorkspaceStore.setState({
       snippets: [],
       selectedSnippet: null,
       openTabs: [],

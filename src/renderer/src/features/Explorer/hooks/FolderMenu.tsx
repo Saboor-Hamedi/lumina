@@ -29,7 +29,7 @@ interface UseFolderContextMenuParams {
   setCreatingValue: (val: string) => void
   setRenamingFolder: (val: string | null) => void
   setRenamingValue: (val: string) => void
-  loadVault: () => Promise<void>
+  loadWorkspace: () => Promise<void>
   selectedCount?: number
   selectedNotes?: Snippet[]
   onSummarizeSelected?: (notes: Snippet[]) => void
@@ -54,7 +54,7 @@ export function useFolderContextMenu({
   setCreatingValue,
   setRenamingFolder,
   setRenamingValue,
-  loadVault,
+  loadWorkspace,
   selectedCount = 0,
   selectedNotes = [],
   onSummarizeSelected,
@@ -163,13 +163,13 @@ export function useFolderContextMenu({
     if (!deleteConfirmFolder) return
     try {
       await (window as any).api?.deleteFolder?.(deleteConfirmFolder)
-      await loadVault()
+      await loadWorkspace()
     } catch (e) {
       console.error('Failed to delete folder:', e)
     } finally {
       setDeleteConfirmFolder(null)
     }
-  }, [deleteConfirmFolder, loadVault])
+  }, [deleteConfirmFolder, loadWorkspace])
 
   return {
     folderContext,

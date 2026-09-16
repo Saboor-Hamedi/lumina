@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import DailyNotes from '../../../../../../src/renderer/src/features/Navigation/components/DailyNotes'
-import { useVaultStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
 import { defaultTemplates } from '../../../../../../src/renderer/src/features/template/hooks/defaultTemplates'
 
 vi.mock('../../../../../../src/renderer/src/features/template/Template', () => ({
@@ -29,7 +29,7 @@ const TEMPLATE_COUNT = defaultTemplates.length
 describe('DailyNotes', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    useVaultStore.setState({
+    useWorkspaceStore.setState({
       snippets: [],
       selectedSnippet: null,
       isLoading: false,
@@ -117,7 +117,7 @@ describe('DailyNotes', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Choose Template' }))
     await waitFor(() => {
-      expect(useVaultStore.getState().selectedSnippet?.folderId).toBe('DailyNotes')
+      expect(useWorkspaceStore.getState().selectedSnippet?.folderId).toBe('DailyNotes')
     })
   })
 

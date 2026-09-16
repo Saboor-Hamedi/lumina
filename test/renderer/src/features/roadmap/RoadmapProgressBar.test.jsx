@@ -4,12 +4,12 @@ import ProgressTracker, {
   LearnedButton,
   LearningTrackBadge
 } from '../../../../../src/renderer/src/features/roadmap/ProgressTracker'
-import { useVaultStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
 
 describe('ProgressTracker', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    useVaultStore.setState({
+    useWorkspaceStore.setState({
       snippets: [],
       selectedSnippet: null
     })
@@ -27,14 +27,14 @@ describe('ProgressTracker', () => {
     })
 
     it('renders Learned when snippet isLearned', () => {
-      useVaultStore.setState({ snippets: [{ id: '1', title: 'Note', isLearned: true }] })
+      useWorkspaceStore.setState({ snippets: [{ id: '1', title: 'Note', isLearned: true }] })
       render(<LearnedButton snippet={{ id: '1', title: 'Note' }} />)
       expect(screen.getByText('Learned')).toBeInTheDocument()
     })
 
     it('toggles isLearned via saveSnippet', async () => {
       const saveSnippet = vi.fn().mockResolvedValue(undefined)
-      useVaultStore.setState({
+      useWorkspaceStore.setState({
         snippets: [{ id: '1', title: 'Note', isLearned: false }],
         saveSnippet
       })
@@ -51,7 +51,7 @@ describe('ProgressTracker', () => {
     it('logs error when save fails', async () => {
       const saveSnippet = vi.fn().mockRejectedValue(new Error('boom'))
       const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-      useVaultStore.setState({
+      useWorkspaceStore.setState({
         snippets: [{ id: '1', title: 'Note', isLearned: false }],
         saveSnippet
       })
@@ -74,7 +74,7 @@ describe('ProgressTracker', () => {
     })
 
     it('shows count when nothing learned', () => {
-      useVaultStore.setState({
+      useWorkspaceStore.setState({
         snippets: [{ id: '1' }, { id: '2' }]
       })
       render(<LearningTrackBadge />)
@@ -82,7 +82,7 @@ describe('ProgressTracker', () => {
     })
 
     it('shows correct count or percentage', () => {
-      useVaultStore.setState({
+      useWorkspaceStore.setState({
         snippets: [
           { id: '1', isLearned: true },
           { id: '2', isLearned: true },
@@ -101,7 +101,7 @@ describe('ProgressTracker', () => {
     })
 
     it('renders progress bar with correct height', () => {
-      useVaultStore.setState({
+      useWorkspaceStore.setState({
         snippets: [
           { id: '1', isLearned: true },
           { id: '2' }
@@ -112,7 +112,7 @@ describe('ProgressTracker', () => {
     })
 
     it('shows 100% when all learned', () => {
-      useVaultStore.setState({ snippets: [{ id: '1', isLearned: true }] })
+      useWorkspaceStore.setState({ snippets: [{ id: '1', isLearned: true }] })
       render(<ProgressTracker />)
       expect(screen.getByText('100%')).toBeInTheDocument()
     })

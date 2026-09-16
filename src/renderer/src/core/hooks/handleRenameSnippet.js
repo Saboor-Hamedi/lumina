@@ -1,8 +1,10 @@
-import { useVaultStore } from '../store/workspaceStore'
+import { useWorkspaceStore } from '../store/workspaceStore'
 
 export const handleRenameSnippet = async ({
   renameModal,
+  saveNote,
   saveSnippet,
+  setSelectedNote,
   setSelectedSnippet,
   setRenameModal,
   setIsCreatingSnippet,
@@ -41,10 +43,10 @@ export const handleRenameSnippet = async ({
 
     try {
       await window.api?.moveFile?.(oldRel, newRel)
-      const loadVault = useVaultStore.getState().loadVault
-      await loadVault?.()
+      const loadWorkspace = useWorkspaceStore.getState().loadWorkspace
+      await loadWorkspace?.()
 
-      const freshSnippets = useVaultStore.getState().snippets || []
+      const freshSnippets = useWorkspaceStore.getState().notes || []
       const newSnippet = freshSnippets.find(
         (s) =>
           s.relativePath === newRel ||
@@ -52,7 +54,7 @@ export const handleRenameSnippet = async ({
       )
 
       if (newSnippet) {
-        useVaultStore.setState((state) => {
+        useWorkspaceStore.setState((state) => {
           const nextTabs = state.openTabs.map((tid) => (tid === item.id ? newSnippet.id : tid))
           const nextActiveId = state.activeTabId === item.id ? newSnippet.id : state.activeTabId
           const nextPinned = state.pinnedTabIds.map((pid) => (pid === item.id ? newSnippet.id : pid))
@@ -60,7 +62,7 @@ export const handleRenameSnippet = async ({
             openTabs: nextTabs,
             activeTabId: nextActiveId,
             pinnedTabIds: nextPinned,
-            selectedSnippet: newSnippet
+            selectedNote: newSnippet
           }
         })
       }
@@ -93,10 +95,10 @@ export const handleRenameSnippet = async ({
 
     try {
       await window.api?.moveFile?.(oldRel, newRel)
-      const loadVault = useVaultStore.getState().loadVault
-      await loadVault?.()
+      const loadWorkspace = useWorkspaceStore.getState().loadWorkspace
+      await loadWorkspace?.()
 
-      const freshSnippets = useVaultStore.getState().snippets || []
+      const freshSnippets = useWorkspaceStore.getState().notes || []
       const newSnippet = freshSnippets.find(
         (s) =>
           s.relativePath === newRel ||
@@ -104,7 +106,7 @@ export const handleRenameSnippet = async ({
       )
 
       if (newSnippet) {
-        useVaultStore.setState((state) => {
+        useWorkspaceStore.setState((state) => {
           const nextTabs = state.openTabs.map((tid) => (tid === item.id ? newSnippet.id : tid))
           const nextActiveId = state.activeTabId === item.id ? newSnippet.id : state.activeTabId
           const nextPinned = state.pinnedTabIds.map((pid) => (pid === item.id ? newSnippet.id : pid))
@@ -112,7 +114,7 @@ export const handleRenameSnippet = async ({
             openTabs: nextTabs,
             activeTabId: nextActiveId,
             pinnedTabIds: nextPinned,
-            selectedSnippet: newSnippet
+            selectedNote: newSnippet
           }
         })
       }
@@ -154,17 +156,21 @@ export const handleRenameSnippet = async ({
     language: lang
   }
 
-  if (setSelectedSnippet) {
-    setSelectedSnippet(updatedItem)
+  const setSelectionAction =
+    setSelectedNote || setSelectedSnippet || useWorkspaceStore.getState().setSelectedNote
+  const saveAction = saveNote || saveSnippet || useWorkspaceStore.getState().saveNote
+
+  if (setSelectionAction) {
+    setSelectionAction(updatedItem)
   }
 
   try {
-    await saveSnippet(updatedItem)
+    if (saveAction) await saveAction(updatedItem)
   } catch (error) {
     console.error('Failed to save item after rename:', error)
     if (showToast) showToast('❌ Failed to rename note.', 'error')
-    if (setSelectedSnippet) {
-      setSelectedSnippet(item)
+    if (setSelectionAction) {
+      setSelectionAction(item)
     }
   } finally {
     setRenameModal({ isOpen: false, item: null })

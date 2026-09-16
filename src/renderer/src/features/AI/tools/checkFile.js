@@ -14,11 +14,9 @@ export const checkFileTool = aiSdk.tool({
   }),
   execute: async ({ title } = {}) => {
     try {
-      const { useVaultStore } = await import('../../../core/store/workspaceStore')
-      const vs = useVaultStore.getState()
-      const snippets = Array.isArray(vs.snippets)
-        ? vs.snippets
-        : Array.from(vs.snippets?.values?.() || [])
+      const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const vs = useWorkspaceStore.getState()
+      const snippets = vs.notes || []
 
       let target = null
       if (title && title.trim()) {
@@ -28,7 +26,7 @@ export const checkFileTool = aiSdk.tool({
           target = snippets.find((s) => (s.title || '').toLowerCase().includes(cleanTitle))
         }
       } else {
-        target = vs.selectedSnippet || (vs.activeTabId ? snippets.find((s) => s.id === vs.activeTabId) : null)
+        target = vs.selectedNote || (vs.activeTabId ? snippets.find((s) => s.id === vs.activeTabId) : null)
       }
 
       if (!target) {
@@ -57,7 +55,7 @@ export const checkFileTool = aiSdk.tool({
           totalLines: lines.length,
           wordCount,
           charCount,
-          isActiveFile: vs.selectedSnippet?.id === target.id,
+          isActiveFile: vs.selectedNote?.id === target.id,
           content: currentCode
         },
         instruction_to_ai:

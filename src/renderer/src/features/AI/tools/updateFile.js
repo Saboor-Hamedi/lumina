@@ -46,16 +46,16 @@ export const updateFileTool = aiSdk.tool({
     required: ['title']
   }),
   execute: async ({ title, search, replace, text, insertAfter, insertBefore, position, content, sectionHeader }) => {
-    const { useVaultStore } = await import('../../../core/store/workspaceStore')
-    const vs = useVaultStore.getState()
-    const snippets = Array.isArray(vs.snippets) ? vs.snippets : Object.values(vs.snippets || {})
+    const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+    const vs = useWorkspaceStore.getState()
+    const snippets = vs.notes || []
 
     const cleanTitle = (title || '').trim().toLowerCase().replace(/^@/, '').replace(/\.md$/, '')
     let target = null
 
     // Prefer active open note if it matches or if requested as 'current'
-    if (vs.selectedSnippet) {
-      const activeTitle = (vs.selectedSnippet.title || '').toLowerCase().replace(/\.md$/, '')
+    if (vs.selectedNote) {
+      const activeTitle = (vs.selectedNote.title || '').toLowerCase().replace(/\.md$/, '')
       if (
         cleanTitle === 'current' ||
         !cleanTitle ||
@@ -63,13 +63,13 @@ export const updateFileTool = aiSdk.tool({
         activeTitle.includes(cleanTitle) ||
         cleanTitle.includes(activeTitle)
       ) {
-        target = vs.selectedSnippet
+        target = vs.selectedNote
       }
     }
 
     if (!target) {
       if (cleanTitle === 'current' || !cleanTitle) {
-        target = vs.selectedSnippet || (snippets.length > 0 ? snippets[0] : null)
+        target = vs.selectedNote || (snippets.length > 0 ? snippets[0] : null)
       } else {
         target = snippets.find(
           (s) => (s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle
@@ -77,8 +77,8 @@ export const updateFileTool = aiSdk.tool({
         if (!target) {
           target = snippets.find((s) => (s.title || '').toLowerCase().includes(cleanTitle))
         }
-        if (!target && vs.selectedSnippet) {
-          target = vs.selectedSnippet
+        if (!target && vs.selectedNote) {
+          target = vs.selectedNote
         }
       }
     }
@@ -549,9 +549,9 @@ export const updateFileTool = aiSdk.tool({
     // Auto-heal duplicate consecutive headings if any were created
     newCode = newCode.replace(/^(#{1,6}\s+[^\r\n]+)\r?\n+(?:\1\r?\n*)+/gm, '$1\n\n')
 
-    const isCurrentlySelected = vs.selectedSnippet?.id === target.id
-    if (isCurrentlySelected && vs.setSelectedSnippet) {
-      vs.setSelectedSnippet({ ...target, code: newCode })
+    const isCurrentlySelected = vs.selectedNote?.id === target.id
+    if (isCurrentlySelected && vs.setSelectedNote) {
+      vs.setSelectedNote({ ...target, code: newCode })
     }
 
     try {
@@ -580,9 +580,10 @@ export const updateFileTool = aiSdk.tool({
       )
     }
 
-    const updated = await vs.saveSnippet({ ...target, code: newCode })
-    if (isCurrentlySelected && vs.setSelectedSnippet) {
-      vs.setSelectedSnippet(updated || { ...target, code: newCode })
+    const saveAction = vs.saveNote || vs.saveSnippet
+    const updated = saveAction ? await saveAction({ ...target, code: newCode }) : null
+    if (isCurrentlySelected && vs.setSelectedNote) {
+      vs.setSelectedNote(updated || { ...target, code: newCode })
     }
 
     const oldWords = currentCode.trim() ? currentCode.trim().split(/\s+/).length : 0

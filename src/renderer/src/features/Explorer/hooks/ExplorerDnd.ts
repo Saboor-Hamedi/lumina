@@ -11,16 +11,16 @@ import {
 } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 
 function patchStoreForMigratedImages(migratedImages: Map<string, string>): void {
   if (migratedImages.size === 0) return
-  const freshSnippets: any[] = useVaultStore.getState().snippets || []
-  useVaultStore.setState((state: any) => {
+  const freshSnippets: any[] = useWorkspaceStore.getState().notes || []
+  useWorkspaceStore.setState((state: any) => {
     let nextTabs = [...state.openTabs]
     let nextActiveId = state.activeTabId
     let nextPinned = [...state.pinnedTabIds]
-    let nextSelected = state.selectedSnippet
+    let nextSelected = state.selectedNote || state.selectedSnippet
     for (const [oldId, newRel] of migratedImages.entries()) {
       const found = freshSnippets.find((sn: any) => sn.relativePath === newRel)
       if (found) {
@@ -30,7 +30,13 @@ function patchStoreForMigratedImages(migratedImages: Map<string, string>): void 
         if (nextSelected?.id === oldId) nextSelected = found
       }
     }
-    return { openTabs: nextTabs, activeTabId: nextActiveId, pinnedTabIds: nextPinned, selectedSnippet: nextSelected }
+    return {
+      openTabs: nextTabs,
+      activeTabId: nextActiveId,
+      pinnedTabIds: nextPinned,
+      selectedNote: nextSelected,
+      selectedSnippet: nextSelected
+    }
   })
 }
 
@@ -65,7 +71,7 @@ interface UseExplorerDndParams {
   flatTree: FlatTreeItem[]
   selectedNoteIds: Set<string>
   saveSnippet: (snippet: Snippet) => Promise<void>
-  loadVault: () => Promise<void>
+  loadWorkspace: () => Promise<void>
   setExpandedFolders: (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => void
 }
 
@@ -82,7 +88,7 @@ export function useExplorerDnd({
   flatTree,
   selectedNoteIds,
   saveSnippet,
-  loadVault,
+  loadWorkspace,
   setExpandedFolders
 }: UseExplorerDndParams): ExplorerDndResult {
   const [activeListDragItem, setActiveListDragItem] = useState<DragItemData | null>(null)
@@ -218,7 +224,7 @@ export function useExplorerDnd({
           if (sourceFolderId !== folderName) {
             try {
               await (window as any).api.renameFolder(sourceFolderId, folderName)
-              await loadVault()
+              await loadWorkspace()
             } catch (e) {
               console.error('Failed to move folder to root:', e)
             }
@@ -248,7 +254,7 @@ export function useExplorerDnd({
               }
             }
           }
-          await loadVault()
+          await loadWorkspace()
 
           if (migratedImages.size > 0) {
             patchStoreForMigratedImages(migratedImages)
@@ -270,7 +276,7 @@ export function useExplorerDnd({
               try {
                 await (window as any).api.renameFolder(sourceFolderId, newPath)
                 setExpandedFolders((prev: Set<string>) => new Set(prev).add(targetFolderId))
-                await loadVault()
+                await loadWorkspace()
               } catch (e) {
                 console.error('Failed to move folder into target folder:', e)
               }
@@ -308,7 +314,7 @@ export function useExplorerDnd({
             }
           }
           setExpandedFolders((prev: Set<string>) => new Set(prev).add(targetFolderId))
-          await loadVault()
+          await loadWorkspace()
 
           if (migratedImages.size > 0) {
             patchStoreForMigratedImages(migratedImages)
@@ -329,7 +335,7 @@ export function useExplorerDnd({
         }
       }
     },
-    [activeListDragItem, allSnippets, saveSnippet, loadVault, setExpandedFolders]
+    [activeListDragItem, allSnippets, saveSnippet, loadWorkspace, setExpandedFolders]
   )
 
   return {

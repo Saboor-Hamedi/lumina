@@ -3,7 +3,8 @@ import React from 'react'
 /**
  * Empty state screen when a chat session has no messages yet.
  */
-export const ChatEmptyState = React.memo(({ selectedSnippet, onSendSuggestion }) => {
+export const ChatEmptyState = React.memo(({ selectedNote, selectedSnippet, onSendSuggestion }) => {
+  const note = selectedNote || selectedSnippet
   return (
     <div className="chat-empty">
       <h2
@@ -16,12 +17,12 @@ export const ChatEmptyState = React.memo(({ selectedSnippet, onSendSuggestion })
       >
         How can I help you today?
       </h2>
-      {selectedSnippet && onSendSuggestion && (
+      {note && onSendSuggestion && (
         <button
           className="chat-suggestion-btn"
-          onClick={() => onSendSuggestion(selectedSnippet)}
+          onClick={() => onSendSuggestion(note)}
         >
-          Explain "{selectedSnippet.title}"
+          Explain "{note.title}"
         </button>
       )}
     </div>

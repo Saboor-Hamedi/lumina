@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { useSettingsStore } from './useSettingsStore'
+import { getCachedSnippets, cacheSnippets } from '../db/cache'
 
 export const GRAPH_TAB_ID = '__graph__'
 
@@ -7,94 +8,95 @@ let selectionTimeout = null
 let hasLoadedWorkspaceOnce = false
 
 export const useWorkspaceStore = create((set, get) => ({
-  snippets: [],
+  // Core Workspace & Note State
+  notes: [],
   folders: [],
   folderColors: {},
-  selectedSnippet: null,
+  selectedNote: null,
   selectedFolder: null,
   isLoading: true,
   searchQuery: '',
-  dirtySnippetIds: [],
+  dirtyNoteIds: [],
   drafts: {},
   openTabs: [],
   activeTabId: null,
   pinnedTabIds: [],
   clipboard: null,
 
-  setSnippets: (snippets) => set({ snippets }),
+  setNotes: (notes) => set({ notes }),
   setSelectedFolder: (selectedFolder) => set({ selectedFolder }),
   setClipboard: (clipboard) => set({ clipboard }),
 
   restoreSession: (tabs, activeId, pinnedIds = []) => {
     set((state) => {
+      const allNotes = state.notes || []
       const validTabs = tabs.filter(
-        (id) => id === GRAPH_TAB_ID || state.snippets.some((s) => s.id === id)
+        (id) => id === GRAPH_TAB_ID || allNotes.some((idMatch) => idMatch.id === id)
       )
       const validPinned = pinnedIds.filter((id) => validTabs.includes(id))
 
       const validActiveId = activeId && validTabs.includes(activeId) ? activeId : null
       const finalActiveId = validActiveId || (validTabs.length ? validTabs[0] : null)
 
-      const activeSnippet =
+      const activeNote =
         finalActiveId === GRAPH_TAB_ID
           ? null
           : finalActiveId
-            ? state.snippets.find((s) => s.id === finalActiveId)
+            ? allNotes.find((n) => n.id === finalActiveId) || null
             : null
 
       return {
         openTabs: validTabs,
         pinnedTabIds: validPinned,
         activeTabId: finalActiveId,
-        selectedSnippet: activeSnippet
+        selectedNote: activeNote
       }
     })
   },
 
-  setSelectedSnippet: (snippet) => {
-    if (!snippet) {
-      set({ selectedSnippet: null, activeTabId: null })
+  setSelectedNote: (note) => {
+    if (!note) {
+      set({ selectedNote: null, activeTabId: null })
       return
     }
 
     set((state) => {
-      const isAlreadyOpen = state.openTabs.includes(snippet.id)
-      const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, snippet.id]
+      const isAlreadyOpen = state.openTabs.includes(note.id)
+      const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, note.id]
       return {
-        selectedSnippet: snippet,
+        selectedNote: note,
         openTabs: nextTabs,
-        activeTabId: snippet.id
+        activeTabId: note.id
       }
     })
-
   },
 
   setActiveTabId: (id) => {
-    let selectedSnippet = null
+    let selectedItem = null
     set((state) => {
       if (id === GRAPH_TAB_ID) {
         const isAlreadyOpen = state.openTabs.includes(GRAPH_TAB_ID)
         const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, GRAPH_TAB_ID]
         return {
           activeTabId: GRAPH_TAB_ID,
-          selectedSnippet: null,
+          selectedNote: null,
           openTabs: nextTabs
         }
       }
       if (!id) {
-        return { activeTabId: null, selectedSnippet: null }
+        return { activeTabId: null, selectedNote: null }
       }
-      const snippet = state.snippets.find((s) => s.id === id) || null
+      const allNotes = state.notes || []
+      const note = allNotes.find((n) => n.id === id) || null
       const isAlreadyOpen = state.openTabs.includes(id)
       const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, id]
-      selectedSnippet = snippet
+      selectedItem = note
       return {
         activeTabId: id,
-        selectedSnippet,
+        selectedNote: selectedItem,
         openTabs: nextTabs
       }
     })
-
   },
 
   closeTab: (id) =>
@@ -104,7 +106,7 @@ export const useWorkspaceStore = create((set, get) => ({
       let nextActiveId = state.activeTabId
       if (
         state.activeTabId === id ||
-        state.selectedSnippet?.id === id ||
+        state.selectedNote?.id === id ||
         !nextTabs.includes(nextActiveId)
       ) {
         const idx = state.openTabs.indexOf(id)
@@ -119,15 +121,16 @@ export const useWorkspaceStore = create((set, get) => ({
         nextActiveId = nextTabs[0]
       }
 
+      const allNotes = state.notes || []
       const nextSelected =
         nextActiveId && nextActiveId !== GRAPH_TAB_ID
-          ? state.snippets.find((s) => s.id === nextActiveId) || null
+          ? allNotes.find((n) => n.id === nextActiveId) || null
           : null
 
       return {
         openTabs: nextTabs,
         activeTabId: nextActiveId,
-        selectedSnippet: nextSelected
+        selectedNote: nextSelected
       }
     }),
 
@@ -144,11 +147,12 @@ export const useWorkspaceStore = create((set, get) => ({
   closeOtherTabs: (keepId) => {
     set((state) => {
       const nextActiveId = keepId
-      const nextSelected = state.snippets.find((s) => s.id === keepId)
+      const allNotes = state.notes || []
+      const nextSelected = allNotes.find((n) => n.id === keepId) || null
       return {
         openTabs: [keepId],
         activeTabId: nextActiveId,
-        selectedSnippet: nextSelected
+        selectedNote: nextSelected
       }
     })
   },
@@ -161,24 +165,28 @@ export const useWorkspaceStore = create((set, get) => ({
       if (!nextTabs.includes(state.activeTabId)) {
         nextActiveId = id
       }
-      const nextSelected = state.snippets.find((s) => s.id === nextActiveId)
+      const allNotes = state.notes || []
+      const nextSelected = allNotes.find((n) => n.id === nextActiveId) || null
       return {
         openTabs: nextTabs,
         activeTabId: nextActiveId,
-        selectedSnippet: nextSelected
+        selectedNote: nextSelected
       }
     })
   },
 
   closeAllTabs: () => {
-    set((state) => ({
-      openTabs: state.openTabs.filter((id) => state.pinnedTabIds.includes(id)),
-      activeTabId: state.pinnedTabIds.length > 0 ? state.pinnedTabIds[0] : null,
-      selectedSnippet:
-        state.pinnedTabIds.length > 0
-          ? state.snippets.find((s) => s.id === state.pinnedTabIds[0])
-          : null
-    }))
+    set((state) => {
+      const allNotes = state.notes || []
+      const activeId = state.pinnedTabIds.length > 0 ? state.pinnedTabIds[0] : null
+      const activeNote =
+        activeId ? allNotes.find((n) => n.id === activeId) || null : null
+      return {
+        openTabs: state.openTabs.filter((id) => state.pinnedTabIds.includes(id)),
+        activeTabId: activeId,
+        selectedNote: activeNote
+      }
+    })
   },
 
   togglePinTab: (id) => {
@@ -206,7 +214,7 @@ export const useWorkspaceStore = create((set, get) => ({
       return {
         openTabs: nextTabs,
         activeTabId: GRAPH_TAB_ID,
-        selectedSnippet: null
+        selectedNote: null
       }
     }),
 
@@ -238,21 +246,22 @@ export const useWorkspaceStore = create((set, get) => ({
 
   setDirty: (id, isDirty) =>
     set((state) => {
-      const hasId = state.dirtySnippetIds.includes(id)
+      const currentDirty = state.dirtyNoteIds || []
+      const hasId = currentDirty.includes(id)
 
       if ((isDirty && hasId) || (!isDirty && !hasId)) {
         return state
       }
 
       const next = isDirty
-        ? [...state.dirtySnippetIds, id]
-        : state.dirtySnippetIds.filter((dId) => dId !== id)
+        ? [...currentDirty, id]
+        : currentDirty.filter((dId) => dId !== id)
 
-      return { dirtySnippetIds: next }
+      return { dirtyNoteIds: next }
     }),
 
   /**
-   * Synchronizes workspace data (snippets, folders, tab state) from the main process.
+   * Synchronizes workspace data (notes, folders, tab state) from the main process.
    *
    * Optimizations:
    * - Retrieves current settings from in-memory `useSettingsStore` before issuing IPC calls.
@@ -263,33 +272,78 @@ export const useWorkspaceStore = create((set, get) => ({
    */
   loadWorkspace: async () => {
     const isInitialLoad = !hasLoadedWorkspaceOnce
+
+    // ── Cache-first: paint the UI instantly from IndexedDB ──────────────────
     if (isInitialLoad) {
-      set({ isLoading: true })
+      try {
+        const cached = await getCachedSnippets()
+        if (cached && cached.length > 0) {
+          // Read session state synchronously from localStorage — zero IPC calls
+          let persistedOpenTabs = []
+          let persistedPinnedTabs = []
+          let persistedActiveId = null
+          try {
+            const rawTabs = localStorage.getItem('lumina_session_openTabs')
+            if (rawTabs) persistedOpenTabs = JSON.parse(rawTabs)
+            const rawPinned = localStorage.getItem('lumina_session_pinnedTabIds')
+            if (rawPinned) persistedPinnedTabs = JSON.parse(rawPinned)
+            persistedActiveId = localStorage.getItem('lumina_session_lastNoteId') || null
+          } catch {}
+
+          const cachedIdSet = new Set(cached.map((n) => n.id))
+          const validTabs = persistedOpenTabs.filter((id) => id === GRAPH_TAB_ID || cachedIdSet.has(id))
+          const validPinned = persistedPinnedTabs.filter((id) => validTabs.includes(id))
+          const validActiveId =
+            persistedActiveId && validTabs.includes(persistedActiveId)
+              ? persistedActiveId
+              : validTabs[0] || null
+          const activeNote =
+            validActiveId && validActiveId !== GRAPH_TAB_ID
+              ? cached.find((n) => n.id === validActiveId) || null
+              : null
+
+          // Paint immediately — no loading spinner, no IPC wait
+          set({
+            notes: cached,
+            openTabs: validTabs,
+            pinnedTabIds: validPinned,
+            activeTabId: validActiveId,
+            selectedNote: activeNote,
+            isLoading: false
+          })
+        } else {
+          set({ isLoading: true })
+        }
+      } catch {
+        set({ isLoading: true })
+      }
     }
 
+    // ── Background refresh: fetch fresh data from main process ──────────────
     try {
-      if (window.api?.getSnippets) {
-        const freshData = await window.api.getSnippets()
+      const getItems = window.api?.getNotes || window.api?.getSnippets
+      if (getItems) {
+        const freshData = await getItems()
+        const rawNotes = freshData?.notes || freshData?.snippets
 
-        if (freshData && freshData.snippets) {
+        if (freshData && rawNotes) {
           hasLoadedWorkspaceOnce = true
-          let merged = freshData.snippets
+          let merged = rawNotes
           let folderColors = {}
           let persistedOpenTabs = get().openTabs
           let persistedPinnedTabs = get().pinnedTabIds
           let persistedActiveId = get().activeTabId
 
           try {
-            // Prefer existing in-memory settings to avoid redundant IPC call
             let allSettings = useSettingsStore.getState().settings
             if (!allSettings || Object.keys(allSettings).length === 0) {
               allSettings = (await window.api.getSetting()) || {}
             }
             const noteColors = allSettings.noteColors || {}
             folderColors = allSettings.folderColors || {}
-            merged = freshData.snippets.map((s) => ({
-              ...s,
-              color: s.color || noteColors[s.id] || null
+            merged = rawNotes.map((n) => ({
+              ...n,
+              color: n.color || noteColors[n.id] || null
             }))
 
             if (isInitialLoad) {
@@ -299,37 +353,45 @@ export const useWorkspaceStore = create((set, get) => ({
               if (Array.isArray(allSettings.pinnedTabIds)) {
                 persistedPinnedTabs = allSettings.pinnedTabIds
               }
-              if (allSettings.lastSnippetId) {
-                persistedActiveId = allSettings.lastSnippetId
+              if (allSettings.lastNoteId) {
+                persistedActiveId = allSettings.lastNoteId
               }
             }
           } catch {
             folderColors = {}
           }
 
-          const snippetIdSet = new Set(merged.map((s) => s.id))
+          const noteIdSet = new Set(merged.map((n) => n.id))
           const validTabs = persistedOpenTabs.filter(
-            (id) => id === GRAPH_TAB_ID || snippetIdSet.has(id)
+            (id) => id === GRAPH_TAB_ID || noteIdSet.has(id)
           )
           const validPinned = persistedPinnedTabs.filter((id) => validTabs.includes(id))
           const validActiveId =
             persistedActiveId && validTabs.includes(persistedActiveId)
               ? persistedActiveId
               : validTabs[0] || null
-          const activeSnippet =
+          const activeNote =
             validActiveId && validActiveId !== GRAPH_TAB_ID
-              ? merged.find((s) => s.id === validActiveId) || null
+              ? merged.find((n) => n.id === validActiveId) || null
               : null
 
           set({
-            snippets: merged,
+            notes: merged,
             folders: freshData.folders || [],
             folderColors,
             openTabs: validTabs,
             pinnedTabIds: validPinned,
             activeTabId: validActiveId,
-            selectedSnippet: activeSnippet
+            selectedNote: activeNote
           })
+
+          // Write fresh data to cache + session keys for next cold start
+          cacheSnippets(merged).catch(() => {})
+          try {
+            localStorage.setItem('lumina_session_openTabs', JSON.stringify(validTabs))
+            localStorage.setItem('lumina_session_pinnedTabIds', JSON.stringify(validPinned))
+            localStorage.setItem('lumina_session_lastNoteId', validActiveId ?? '')
+          } catch {}
         } else {
           console.warn('[WorkspaceStore] ✗ Received invalid data from sync.')
         }
@@ -349,69 +411,74 @@ export const useWorkspaceStore = create((set, get) => ({
     return get().loadWorkspace()
   },
 
-  saveSnippet: async (snippet) => {
-    if (!snippet) {
-      console.error('[WorkspaceStore] Cannot save: snippet is null or undefined')
-      throw new Error('Snippet is required')
+  saveNote: async (note) => {
+    if (!note) {
+      console.error('[WorkspaceStore] Cannot save: note is null or undefined')
+      throw new Error('Note is required')
     }
 
-    if (!snippet.id) {
-      console.error('[WorkspaceStore] Cannot save: snippet ID is missing')
-      throw new Error('Snippet ID is required')
+    if (!note.id) {
+      console.error('[WorkspaceStore] Cannot save: note ID is missing')
+      throw new Error('Note ID is required')
     }
 
     try {
-      if (!window.api?.saveSnippet) {
+      const saveApi = window.api?.saveNote || window.api?.saveSnippet
+      if (!saveApi) {
         throw new Error('Save API is not available. Please restart the application.')
       }
 
-      const current = get().snippets
-      const existing = current.find((s) => s.id === snippet.id)
+      const current = get().notes || []
+      const existing = current.find((n) => n.id === note.id)
 
-      const updatedSnippet = await window.api.saveSnippet(snippet)
+      const updatedNote = await saveApi(note)
 
-      if (snippet.color && (!existing || existing.color !== snippet.color)) {
+      if (note.color && (!existing || existing.color !== note.color)) {
         const currentColors = (await window.api.getSetting('noteColors')) || {}
         await window.api.saveSetting('noteColors', {
           ...currentColors,
-          [snippet.id]: snippet.color
+          [note.id]: note.color
         })
       }
 
       set((state) => {
-        let nextSnippets = state.snippets.map((s) =>
-          s.id === snippet.id ? { ...updatedSnippet, color: snippet.color } : s
+        const currentNotes = state.notes || []
+        let nextNotes = currentNotes.map((n) =>
+          n.id === note.id ? { ...updatedNote, color: note.color } : n
         )
-        const isNew = !state.snippets.some((s) => s.id === snippet.id)
+        const isNew = !currentNotes.some((n) => n.id === note.id)
         if (isNew) {
-          nextSnippets.push({ ...updatedSnippet, color: snippet.color })
+          nextNotes.push({ ...updatedNote, color: note.color })
         }
 
         const nextDrafts = { ...state.drafts }
-        delete nextDrafts[snippet.id]
+        delete nextDrafts[note.id]
 
-        if (existing && existing.title && existing.title !== updatedSnippet.title) {
+        if (existing && existing.title && existing.title !== updatedNote.title) {
           const oldTitle = existing.title
-          const newTitle = updatedSnippet.title
+          const newTitle = updatedNote.title
           const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
           const linkRegex = new RegExp('\\[\\[' + escapeRegExp(oldTitle) + '([\\|#\\]])', 'gi')
 
           const updates = []
-          nextSnippets = nextSnippets.map((s) => {
-            if (s.id !== snippet.id && s.code && linkRegex.test(s.code)) {
-              const newCode = s.code.replace(linkRegex, '[[' + newTitle + '$1')
-              const updatedLinkSnippet = { ...s, code: newCode }
-              updates.push(updatedLinkSnippet)
-              return updatedLinkSnippet
+          nextNotes = nextNotes.map((n) => {
+            if (n.id !== note.id && n.code && linkRegex.test(n.code)) {
+              const newCode = n.code.replace(linkRegex, '[[' + newTitle + '$1')
+              const updatedLinkNote = { ...n, code: newCode }
+              updates.push(updatedLinkNote)
+              return updatedLinkNote
             }
-            return s
+            return n
           })
 
-          updates.forEach((u) => window.api.saveSnippet(u).catch(console.error))
+          updates.forEach((u) => {
+            const apiSave = window.api?.saveNote || window.api?.saveSnippet
+            if (apiSave) apiSave(u).catch(console.error)
+          })
         }
 
         let nextFolders = state.folders || []
-        const rawFolderId = updatedSnippet.folderId || snippet.folderId
+        const rawFolderId = updatedNote.folderId || note.folderId
         if (rawFolderId && typeof rawFolderId === 'string') {
           const normalizedFolder = rawFolderId.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
           if (normalizedFolder) {
@@ -426,32 +493,35 @@ export const useWorkspaceStore = create((set, get) => ({
           }
         }
 
+        const dirtyNotes = (state.dirtyNoteIds || []).filter((dId) => dId !== note.id)
+
         return {
-          snippets: nextSnippets,
+          notes: nextNotes,
           folders: nextFolders,
           drafts: nextDrafts,
-          dirtySnippetIds: state.dirtySnippetIds.filter((dId) => dId !== snippet.id)
+          dirtyNoteIds: dirtyNotes
         }
       })
 
-      if (get().selectedSnippet?.id === snippet.id) {
-        set({ selectedSnippet: updatedSnippet })
+      if (get().selectedNote?.id === note.id) {
+        set({ selectedNote: updatedNote })
       }
 
-      return updatedSnippet
+      return updatedNote
     } catch (err) {
       console.error('[WorkspaceStore] Save failed:', err)
       throw err
     }
   },
 
-  deleteSnippet: async (id, skipConfirm = false) => {
+  deleteNote: async (id, skipConfirm = false) => {
     if (!id) {
       console.error('[WorkspaceStore] Cannot delete: ID is missing')
-      throw new Error('Snippet ID is required')
+      throw new Error('Note ID is required')
     }
 
-    if (!window.api?.deleteSnippet) {
+    const deleteApi = window.api?.deleteNote || window.api?.deleteSnippet
+    if (!deleteApi) {
       throw new Error('Delete API is not available. Please restart the application.')
     }
 
@@ -461,13 +531,14 @@ export const useWorkspaceStore = create((set, get) => ({
     }
 
     set((state) => {
-      const next = state.snippets.filter((s) => s.id !== id)
+      const allNotes = state.notes || []
+      const next = allNotes.filter((s) => s.id !== id)
       const nextTabs = state.openTabs.filter((tid) => tid !== id)
 
       let nextActiveId = state.activeTabId
       if (
         state.activeTabId === id ||
-        state.selectedSnippet?.id === id ||
+        state.selectedNote?.id === id ||
         !nextTabs.includes(nextActiveId)
       ) {
         const idx = state.openTabs.indexOf(id)
@@ -482,29 +553,31 @@ export const useWorkspaceStore = create((set, get) => ({
         nextActiveId = nextTabs[0]
       }
 
-      const nextSelectedSnippet =
+      const nextSelectedNote =
         nextActiveId && nextActiveId !== GRAPH_TAB_ID
-          ? next.find((s) => s.id === nextActiveId) || null
+          ? next.find((n) => n.id === nextActiveId) || null
           : null
 
       const nextDrafts = { ...state.drafts }
       delete nextDrafts[id]
 
+      const dirtyNotes = (state.dirtyNoteIds || []).filter((dId) => dId !== id)
+
       return {
-        snippets: next,
+        notes: next,
         openTabs: nextTabs,
         activeTabId: nextActiveId,
-        selectedSnippet: nextSelectedSnippet,
+        selectedNote: nextSelectedNote,
         drafts: nextDrafts,
-        dirtySnippetIds: state.dirtySnippetIds.filter((dId) => dId !== id)
+        dirtyNoteIds: dirtyNotes
       }
     })
 
     try {
-      await window.api.deleteSnippet(id)
+      await deleteApi(id)
     } catch (err) {
       console.error('[WorkspaceStore] ✗ Delete failed:', err)
-      useWorkspaceStore.getState().loadVault()
+      useWorkspaceStore.getState().loadWorkspace()
       throw err
     }
   },
@@ -525,17 +598,23 @@ export const useWorkspaceStore = create((set, get) => ({
     }
   },
 
-  updateSnippetSelection: (id, selection) => {
-    set((state) => ({
-      snippets: state.snippets.map((s) => (s.id === id ? { ...s, selection } : s)),
-      selectedSnippet:
-        state.selectedSnippet?.id === id
-          ? { ...state.selectedSnippet, selection }
-          : state.selectedSnippet
-    }))
+  updateNoteSelection: (id, selection) => {
+    set((state) => {
+      const allNotes = state.notes || []
+      const nextNotes = allNotes.map((n) => (n.id === id ? { ...n, selection } : n))
+      const isSelected = state.selectedNote?.id === id
+      const nextSelected = isSelected
+        ? { ...state.selectedNote, selection }
+        : state.selectedNote
+
+      return {
+        notes: nextNotes,
+        selectedNote: nextSelected
+      }
+    })
   },
 
-  reorderSnippets: (orderedIds) => {
+  reorderNotes: (orderedIds) => {
     useSettingsStore.getState().updateSetting('noteOrder', orderedIds)
   }
 }))
@@ -546,7 +625,10 @@ let lastWorkspaceState = useWorkspaceStore.getState()
 useWorkspaceStore.subscribe((state) => {
   if (state.isLoading) return
   if (!isStoreInitialized) {
-    if (state.snippets.length > 0 || hasLoadedWorkspaceOnce) {
+    if (
+      (state.notes && state.notes.length > 0) ||
+      hasLoadedWorkspaceOnce
+    ) {
       isStoreInitialized = true
       lastWorkspaceState = state
     }
@@ -555,14 +637,17 @@ useWorkspaceStore.subscribe((state) => {
   if (state.openTabs !== lastWorkspaceState.openTabs) {
     useSettingsStore.getState().updateSetting?.('openTabs', state.openTabs)
     window.api?.saveSetting('openTabs', state.openTabs)?.catch?.(() => {})
+    try { localStorage.setItem('lumina_session_openTabs', JSON.stringify(state.openTabs)) } catch {}
   }
   if (state.pinnedTabIds !== lastWorkspaceState.pinnedTabIds) {
     useSettingsStore.getState().updateSetting?.('pinnedTabIds', state.pinnedTabIds)
     window.api?.saveSetting('pinnedTabIds', state.pinnedTabIds)?.catch?.(() => {})
+    try { localStorage.setItem('lumina_session_pinnedTabIds', JSON.stringify(state.pinnedTabIds)) } catch {}
   }
   if (state.activeTabId !== lastWorkspaceState.activeTabId) {
-    useSettingsStore.getState().updateSetting?.('lastSnippetId', state.activeTabId)
-    window.api?.saveSetting('lastSnippetId', state.activeTabId)?.catch?.(() => {})
+    useSettingsStore.getState().updateSetting?.('lastNoteId', state.activeTabId)
+    window.api?.saveSetting('lastNoteId', state.activeTabId)?.catch?.(() => {})
+    try { localStorage.setItem('lumina_session_lastNoteId', state.activeTabId ?? '') } catch {}
   }
   lastWorkspaceState = state
 })

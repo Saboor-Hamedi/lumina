@@ -1,5 +1,5 @@
 import { EditorView } from '@codemirror/view'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { htmlToMarkdown, applyRichPasteToView } from '../../Editor/utils/htmlToMarkdown'
 
@@ -57,7 +57,7 @@ export const imageDropExtension = () =>
         window.api
           ?.importExternalPaths?.(paths, '')
           .then(async (result) => {
-            await useVaultStore.getState().loadVault()
+            await useWorkspaceStore.getState().loadWorkspace()
             if (result?.importedFolderIds && result.importedFolderIds.length > 0) {
               const currentExpanded = useSettingsStore.getState().settings.expandedFolders || []
               const nextExpanded = Array.from(new Set([...currentExpanded, ...result.importedFolderIds]))
@@ -66,12 +66,14 @@ export const imageDropExtension = () =>
               } catch (e) {}
               useSettingsStore.getState().updateSetting('expandedFolders', nextExpanded)
             }
-            if (result?.importedSnippetIds && result.importedSnippetIds.length > 0) {
-              const targetId = result.importedSnippetIds[0]
-              const snippets = useVaultStore.getState().snippets || []
-              const found = snippets.find((s) => s.id === targetId)
+            const importedIds = result?.importedNoteIds || result?.importedSnippetIds || []
+            if (importedIds.length > 0) {
+              const targetId = importedIds[0]
+              const notes = useWorkspaceStore.getState().notes || []
+              const found = notes.find((s) => s.id === targetId)
               if (found) {
-                useVaultStore.getState().setSelectedSnippet(found)
+                const setSel = useWorkspaceStore.getState().setSelectedNote || useWorkspaceStore.getState().setSelectedSnippet
+                if (setSel) setSel(found)
               }
             }
           })

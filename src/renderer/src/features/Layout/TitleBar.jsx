@@ -31,7 +31,7 @@ const TitleBar = () => {
     }
     return true
   })
-  const selectedSnippet = useWorkspaceStore((s) => s.selectedSnippet)
+  const selectedSnippet = useWorkspaceStore((s) => s.selectedNote)
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
 
   React.useEffect(() => {

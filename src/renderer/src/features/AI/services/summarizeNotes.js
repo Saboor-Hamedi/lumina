@@ -1,4 +1,4 @@
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { AIProviderFactory, resolveProviderConfig } from '../providers/index.js'
 
@@ -52,9 +52,9 @@ export async function summarizeNotes(inputNotes, options = {}) {
 
   let finalTitle = baseTitle
   let counter = 1
-  const existingSnippets = useVaultStore.getState().snippets || []
+  const existingNotes = useWorkspaceStore.getState().notes || []
   while (
-    existingSnippets.some(
+    existingNotes.some(
       (s) =>
         s.title.toLowerCase() === finalTitle.toLowerCase() &&
         (s.folderId || '') === (targetFolderId || '')
@@ -68,7 +68,7 @@ export async function summarizeNotes(inputNotes, options = {}) {
   const initialCode = `${headerSection}> ⏳ *Summarizing with Lumina AI...*\n`
 
   const newId = generateId()
-  const newSnippet = {
+  const newNote = {
     id: newId,
     title: finalTitle,
     code: initialCode,
@@ -78,8 +78,9 @@ export async function summarizeNotes(inputNotes, options = {}) {
     updatedAt: new Date().toISOString()
   }
 
-  await useVaultStore.getState().saveSnippet(newSnippet)
-  useVaultStore.getState().setSelectedSnippet(newSnippet)
+  const storeState = useWorkspaceStore.getState()
+  if (storeState.saveNote) await storeState.saveNote(newNote)
+  if (storeState.setSelectedNote) storeState.setSelectedNote(newNote)
 
   try {
     const systemPrompt = `You are Lumina AI, an intelligent personal knowledge assistant.
@@ -134,7 +135,7 @@ Formatting & Length Guidelines:
       const currentFull = `${headerSection}${streamed}`
       if (Date.now() - lastUpdateTime > UPDATE_INTERVAL) {
         lastUpdateTime = Date.now()
-        useVaultStore.getState().setDraft(newId, currentFull)
+        useWorkspaceStore.getState().setDraft(newId, currentFull)
         window.dispatchEvent(
           new CustomEvent('ai-saved-snippet', {
             detail: { id: newId, code: currentFull, title: finalTitle, autoScroll: true }
@@ -144,25 +145,31 @@ Formatting & Length Guidelines:
     }
 
     const finalBody = `${headerSection}${streamed}`
-    await useVaultStore.getState().saveSnippet({
-      ...newSnippet,
+    const finalNote = {
+      ...newNote,
       code: finalBody,
       updatedAt: new Date().toISOString()
-    })
+    }
+    if (useWorkspaceStore.getState().saveNote) {
+      await useWorkspaceStore.getState().saveNote(finalNote)
+    }
     window.dispatchEvent(
       new CustomEvent('ai-saved-snippet', {
         detail: { id: newId, code: finalBody, title: finalTitle, autoScroll: true }
       })
     )
     window.dispatchEvent(new CustomEvent('clear-toast'))
-    return newSnippet
+    return finalNote
   } catch (err) {
     const errorNotice = `${headerSection}> ⚠️ **Summary Generation Failed**\n>\n> ${err.message || 'Unknown error occurred while contacting AI service.'}`
-    await useVaultStore.getState().saveSnippet({
-      ...newSnippet,
+    const failedNote = {
+      ...newNote,
       code: errorNotice,
       updatedAt: new Date().toISOString()
-    })
+    }
+    if (useWorkspaceStore.getState().saveNote) {
+      await useWorkspaceStore.getState().saveNote(failedNote)
+    }
     window.dispatchEvent(
       new CustomEvent('ai-saved-snippet', {
         detail: { id: newId, code: errorNotice, title: finalTitle }
@@ -174,6 +181,6 @@ Formatting & Length Guidelines:
         detail: { message: `Summary failed: ${err.message || 'Error'}`, type: 'error' }
       })
     )
-    return newSnippet
+    return failedNote
   }
 }

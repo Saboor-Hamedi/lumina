@@ -4,8 +4,8 @@ import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 export const openNoteInEditor = (rawTitle) => {
   if (!rawTitle) return
   try {
-    const { snippets, setSelectedSnippet, setActiveTabId } = useWorkspaceStore.getState()
-    const snippetList = Array.isArray(snippets) ? snippets : Object.values(snippets || {})
+    const { notes, setSelectedNote, setActiveTabId } = useWorkspaceStore.getState()
+    const noteList = Array.isArray(notes) ? notes : []
     const clean = decodeURIComponent(rawTitle)
       .toLowerCase()
       .trim()
@@ -16,22 +16,22 @@ export const openNoteInEditor = (rawTitle) => {
       .pop()
 
     // 1. Exact title match
-    let target = snippetList.find(
+    let target = noteList.find(
       (s) => (s.title || '').toLowerCase().trim().replace(/\.md$/, '') === clean
     )
     // 2. Partial title match
     if (!target) {
-      target = snippetList.find((s) =>
+      target = noteList.find((s) =>
         (s.title || '').toLowerCase().trim().replace(/\.md$/, '').includes(clean)
       )
     }
     // 3. ID match
     if (!target) {
-      target = snippetList.find((s) => s.id === rawTitle)
+      target = noteList.find((s) => s.id === rawTitle)
     }
 
     if (target) {
-      if (setSelectedSnippet) setSelectedSnippet(target)
+      if (setSelectedNote) setSelectedNote(target)
       if (setActiveTabId) setActiveTabId(target.id)
     }
   } catch (err) {

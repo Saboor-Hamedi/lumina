@@ -45,11 +45,9 @@ export const renameFileTool = aiSdk.tool({
         }
       }
 
-      const { useVaultStore } = await import('../../../core/store/workspaceStore')
-      const vs = useVaultStore.getState()
-      const snippets = Array.isArray(vs.snippets)
-        ? vs.snippets
-        : Array.from(vs.snippets?.values?.() || [])
+      const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const vs = useWorkspaceStore.getState()
+      const snippets = vs.notes || []
 
       let target = null
       if (
@@ -60,7 +58,7 @@ export const renameFileTool = aiSdk.tool({
         cleanOldTitle.toLowerCase() === 'this note' ||
         cleanOldTitle.toLowerCase() === 'this file'
       ) {
-        target = vs.selectedSnippet || (vs.activeTabId ? snippets.find((s) => s.id === vs.activeTabId) : null)
+        target = vs.selectedNote || (vs.activeTabId ? snippets.find((s) => s.id === vs.activeTabId) : null)
       } else {
         const normalize = (t) => (t || '').toLowerCase().replace(/\.md$/i, '').trim()
 
@@ -109,16 +107,17 @@ export const renameFileTool = aiSdk.tool({
         return { success: false, error: `A file named "${cleanNewTitle}" already exists in folder "${target.folderId || 'root'}".` }
       }
 
-      const updated = await vs.saveSnippet({ ...target, title: cleanNewTitle })
+      const saveAction = vs.saveNote || vs.saveSnippet
+      const updated = saveAction ? await saveAction({ ...target, title: cleanNewTitle }) : null
       const finalSnippet = updated || { ...target, title: cleanNewTitle }
 
-      if (vs.loadVault) {
-        await vs.loadVault()
+      if (vs.loadWorkspace) {
+        await vs.loadWorkspace()
       }
 
-      const isCurrentlySelected = vs.selectedSnippet?.id === target.id
-      if (isCurrentlySelected && vs.setSelectedSnippet) {
-        vs.setSelectedSnippet(finalSnippet)
+      const isCurrentlySelected = vs.selectedNote?.id === target.id
+      if (isCurrentlySelected && vs.setSelectedNote) {
+        vs.setSelectedNote(finalSnippet)
       }
 
       window.dispatchEvent(

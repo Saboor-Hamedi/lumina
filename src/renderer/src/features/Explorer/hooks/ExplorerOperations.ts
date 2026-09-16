@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 import { revealSnippetFolders } from '../utils/explorerSelectionHelper'
 
@@ -76,8 +76,8 @@ export function useExplorerOperations({
   const expandedFoldersSetting = useSettingsStore((state) => (state.settings as any)?.expandedFolders)
   const folderOrder = useSettingsStore((state) => (state.settings as any)?.folderOrder)
   const updateSetting = useSettingsStore((state) => state.updateSetting)
-  const saveSnippet = useVaultStore((state) => state.saveSnippet)
-  const loadVault = useVaultStore((state) => state.loadVault)
+  const saveNote = useWorkspaceStore((state) => state.saveNote)
+  const loadWorkspace = useWorkspaceStore((state) => state.loadWorkspace)
 
   const [expandedFolders, setExpandedFoldersRaw] = useState<Set<string>>(() => {
     try {
@@ -264,11 +264,11 @@ export function useExplorerOperations({
         setExpandedFolders(next)
       }
 
-      useVaultStore.getState().setSelectedFolder(folderId)
+      useWorkspaceStore.getState().setSelectedFolder(folderId)
     }
 
     const handleFocusRoot = () => {
-      useVaultStore.getState().setSelectedFolder(null)
+      useWorkspaceStore.getState().setSelectedFolder(null)
       if (virtuosoRef?.current) {
         virtuosoRef.current.scrollToIndex({ index: 0, align: 'start' })
       }
@@ -288,7 +288,7 @@ export function useExplorerOperations({
   const toggleFolder = useCallback(
     (folderId: string, e?: React.MouseEvent | null) => {
       if (e) e.stopPropagation()
-      useVaultStore.getState().setSelectedFolder(folderId)
+      useWorkspaceStore.getState().setSelectedFolder(folderId)
       if (query.trim()) {
         setCollapsedDuringSearch((prev) => {
           const next = new Set(prev)
@@ -339,7 +339,7 @@ export function useExplorerOperations({
             : sanitizedName
           await (window as any).api.createFolder(folderPath)
           setExpandedFolders((prev) => new Set(prev).add(folderPath))
-          await loadVault()
+          await loadWorkspace()
         } else if (creating.type === 'canvas') {
           const newId = crypto.randomUUID
             ? crypto.randomUUID()
@@ -375,7 +375,7 @@ export function useExplorerOperations({
             isPinned: false,
             isLearned: false
           }
-          await saveSnippet(newSnippet)
+          if (saveNote) await saveNote(newSnippet)
           if (folderId) setExpandedFolders((prev) => new Set(prev).add(folderId))
           handleSelect(newSnippet)
         } else {
@@ -394,7 +394,7 @@ export function useExplorerOperations({
             isPinned: false,
             isLearned: false
           }
-          await saveSnippet(newSnippet)
+          if (saveNote) await saveNote(newSnippet)
           if (folderId) setExpandedFolders((prev) => new Set(prev).add(folderId))
           handleSelect(newSnippet)
         }
@@ -405,7 +405,7 @@ export function useExplorerOperations({
       setCreatingValue('')
       setSidebarFocus(null)
     },
-    [creating, creatingValue, folderOrder, updateSetting, loadVault, saveSnippet, handleSelect, setSidebarFocus, setExpandedFolders]
+    [creating, creatingValue, folderOrder, updateSetting, loadWorkspace, saveNote, handleSelect, setSidebarFocus, setExpandedFolders]
   )
 
   const submitRename = useCallback(
@@ -429,14 +429,14 @@ export function useExplorerOperations({
 
         if (newPath !== renamingFolder) {
           await (window as any).api.renameFolder(renamingFolder, newPath)
-          await loadVault()
+          await loadWorkspace()
         }
       } catch (err) {
         console.error('Rename failed:', err)
       }
       setRenamingFolder(null)
     },
-    [renamingFolder, renamingValue, loadVault]
+    [renamingFolder, renamingValue, loadWorkspace]
   )
 
   return {

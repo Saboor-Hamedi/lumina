@@ -15,7 +15,7 @@ import {
   Clipboard,
   LayoutDashboard
 } from 'lucide-react'
-import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
+import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import {
   DndContext,
@@ -156,24 +156,24 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
   const [isPositionReady, setIsPositionReady] = useState(false)
 
-  const snippets = useVaultStore((state) => state.snippets)
-  const folders = useVaultStore((state) => state.folders)
-  const folderColors = useVaultStore((state) => state.folderColors)
-  const setFolderColor = useVaultStore((state) => state.setFolderColor)
-  const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
-  const selectedSnippetId = useVaultStore(
+  const snippets = useWorkspaceStore((state) => state.notes) || []
+  const folders = useWorkspaceStore((state) => state.folders) || []
+  const folderColors = useWorkspaceStore((state) => state.folderColors) || {}
+  const setFolderColor = useWorkspaceStore((state) => state.setFolderColor)
+  const setSelectedSnippet = useWorkspaceStore((state) => state.setSelectedNote)
+  const selectedSnippetId = useWorkspaceStore(
     (state) =>
-      state.selectedSnippet?.id ||
+      state.selectedNote?.id ||
       (state.activeTabId && state.activeTabId !== GRAPH_TAB_ID ? state.activeTabId : null)
   )
-  const saveSnippet = useVaultStore((state) => state.saveSnippet)
-  const loadVault = useVaultStore((state) => state.loadVault)
-  const isLoading = useVaultStore((state) => state.isLoading)
-  const clipboard = useVaultStore((state) => state.clipboard)
-  const setClipboard = useVaultStore((state) => state.setClipboard)
+  const saveSnippet = useWorkspaceStore((state) => state.saveNote)
+  const loadWorkspace = useWorkspaceStore((state) => state.loadWorkspace)
+  const isLoading = useWorkspaceStore((state) => state.isLoading)
+  const clipboard = useWorkspaceStore((state) => state.clipboard)
+  const setClipboard = useWorkspaceStore((state) => state.setClipboard)
 
   const visibleSnippets = useMemo(() => {
-    return snippets.filter(
+    return (snippets || []).filter(
       (s) =>
         !s.folderId ||
         (!s.folderId.startsWith('Templates') &&
@@ -183,7 +183,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
   }, [snippets])
 
   const visibleFolders = useMemo(() => {
-    return folders.filter(
+    return (folders || []).filter(
       (f) => !f.startsWith('Templates') && !f.startsWith('.lumina') && !f.startsWith('.')
     )
   }, [folders])
@@ -201,7 +201,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         }
       } else if (selectedSnippetId) {
         // Fallback to currently selected note if nothing is highlighted in tree
-        const snippet = allSnippets.find((s) => s.id === selectedSnippetId)
+        const snippet = (snippets || []).find((s) => s.id === selectedSnippetId)
         if (snippet) {
           const relativePath = (snippet.folderId ? snippet.folderId + '/' : '') + snippet.fileName
           window.api?.openVaultFolder?.(relativePath)
@@ -334,7 +334,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     folderOrder: settings.folderOrder
   })
 
-  const deleteSnippet = useVaultStore((state) => state.deleteSnippet)
+  const deleteSnippet = useWorkspaceStore((state) => state.deleteNote)
   const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false)
 
   const {
@@ -414,10 +414,10 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
               filename
             )
 
-            await loadVault()
+            await loadWorkspace()
 
             if (result?.relativePath) {
-              const freshSnippets = useVaultStore.getState().snippets || []
+              const freshSnippets = useWorkspaceStore.getState().notes || []
               const targetSnippet = freshSnippets.find(
                 (s) =>
                   s.relativePath === result.relativePath ||
@@ -436,7 +436,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
 
     window.addEventListener('paste', handleExplorerPaste)
     return () => window.removeEventListener('paste', handleExplorerPaste)
-  }, [lastClickedFolder, loadVault, handleSelect])
+  }, [lastClickedFolder, loadWorkspace, handleSelect])
 
   const totalSelectedCount = selectedNoteIds.size + selectedFolderIds.size
 
@@ -470,13 +470,13 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
       }
 
       clearSelection()
-      await loadVault()
+      await loadWorkspace()
     } catch (err) {
       console.error('Failed to execute bulk deletion:', err)
     } finally {
       setBulkDeleteModalOpen(false)
     }
-  }, [selectedFolderIds, selectedNoteIds, deleteSnippet, clearSelection, loadVault])
+  }, [selectedFolderIds, selectedNoteIds, deleteSnippet, clearSelection, loadWorkspace])
 
   const {
     sensors,
@@ -489,7 +489,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     flatTree,
     selectedNoteIds,
     saveSnippet,
-    loadVault,
+    loadWorkspace,
     setExpandedFolders
   })
 
@@ -513,7 +513,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
     setCreatingValue,
     setRenamingFolder,
     setRenamingValue,
-    loadVault,
+    loadWorkspace,
     selectedCount: totalSelectedCount,
     selectedNotes,
     onSummarizeSelected: (notes) => summarizeNotes(notes),
@@ -901,7 +901,7 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
           allSnippets={allSnippets}
           lastClickedFolder={lastClickedFolder}
           setExpandedFolders={setExpandedFolders}
-          loadVault={loadVault}
+          loadWorkspace={loadWorkspace}
           isLoading={isLoading}
           collapseAllFolders={collapseAllFolders}
         />

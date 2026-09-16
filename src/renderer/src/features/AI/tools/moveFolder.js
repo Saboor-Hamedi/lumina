@@ -27,8 +27,8 @@ export const moveFolderTool = aiSdk.tool({
         return { success: false, error: 'Source folder path is required.' }
       }
 
-      const { useVaultStore } = await import('../../../core/store/workspaceStore')
-      const vs = useVaultStore.getState()
+      const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const vs = useWorkspaceStore.getState()
       const existingFolders = vs.folders || []
 
       const normalize = (f) => (f || '').toLowerCase().replace(/^[/\\]+|[/\\]+$/g, '')
@@ -62,8 +62,8 @@ export const moveFolderTool = aiSdk.tool({
         return { success: false, error: 'renameFolder API is not available' }
       }
 
-      if (vs.loadVault) {
-        await vs.loadVault()
+      if (vs.loadWorkspace) {
+        await vs.loadWorkspace()
       }
 
       const destName = cleanTarget ? `folder "${cleanTarget}"` : 'root workspace level'

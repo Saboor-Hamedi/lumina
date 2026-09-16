@@ -27,13 +27,13 @@ export const createFolderTool = aiSdk.tool({
         await window.api.createFolder(cleanPath)
       }
 
-      const { useVaultStore } = await import('../../../core/store/workspaceStore')
-      const vs = useVaultStore.getState()
+      const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const vs = useWorkspaceStore.getState()
       if (vs.addFolder) {
         vs.addFolder(cleanPath)
       }
-      if (vs.loadVault) {
-        await vs.loadVault()
+      if (vs.loadWorkspace) {
+        await vs.loadWorkspace()
       }
 
       window.dispatchEvent(

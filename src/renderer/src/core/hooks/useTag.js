@@ -2,19 +2,19 @@ import { useMemo } from 'react'
 import { useWorkspaceStore } from '../store/workspaceStore'
 
 export const useTag = () => {
-  const snippets = useWorkspaceStore((state) => state.snippets)
+  const notes = useWorkspaceStore((state) => state.notes) || []
 
   const tags = useMemo(() => {
     const tagSet = new Set()
     const tagRegex = /(?:^|\s)(#[\w-]+)/g
 
-    snippets.forEach((snippet) => {
+    notes.forEach((note) => {
       // 1. Add frontmatter tags
-      if (snippet.tags) {
-        const rawTags = Array.isArray(snippet.tags)
-          ? snippet.tags
-          : typeof snippet.tags === 'string'
-            ? snippet.tags.split(',')
+      if (note.tags) {
+        const rawTags = Array.isArray(note.tags)
+          ? note.tags
+          : typeof note.tags === 'string'
+            ? note.tags.split(',')
             : []
 
         rawTags.forEach((t) => {
@@ -26,7 +26,7 @@ export const useTag = () => {
       }
 
       // 2. Add inline tags from markdown body (exclude code blocks)
-      let code = snippet.code || ''
+      let code = note.code || ''
       code = code.replace(/```[\s\S]*?```/g, '')
       code = code.replace(/`[^`]+`/g, '')
 
@@ -37,7 +37,7 @@ export const useTag = () => {
     })
 
     return Array.from(tagSet).sort()
-  }, [snippets])
+  }, [notes])
 
   return { tags }
 }

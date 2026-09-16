@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Sparkles, Network } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import InlineGraph from '../../Graph/InlineGraph'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../../core/shortcuts'
 import ProgressTracker, { LearnedButton } from '../../roadmap/ProgressTracker'
 import VoiceButton from '../../voice'
@@ -188,7 +188,7 @@ export const EditorActionBar = ({
           <InlineGraph
             focusNodeId={snippet.id}
             onNavigate={(id) => {
-              useVaultStore.getState().setActiveTabId(id)
+              useWorkspaceStore.getState().setActiveTabId(id)
               setShowLocalGraph(false)
             }}
           />

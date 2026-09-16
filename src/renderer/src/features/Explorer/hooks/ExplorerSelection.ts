@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 
 interface Snippet {
   id: string
@@ -61,8 +61,8 @@ export function useExplorerSelection({
   onClose,
   onRequestBulkDelete
 }: UseExplorerSelectionParams): ExplorerSelectionResult {
-  const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
-  const setSelectedFolder = useVaultStore((state) => state.setSelectedFolder)
+  const setSelectedSnippet = useWorkspaceStore((state) => state.setSelectedNote)
+  const setSelectedFolder = useWorkspaceStore((state) => state.setSelectedFolder)
 
   const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(new Set())
   const [selectedFolderIds, setSelectedFolderIds] = useState<Set<string>>(new Set())

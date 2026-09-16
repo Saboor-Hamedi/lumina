@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Folder, ChevronRight, FileText, Database, Copy, Check, Hash } from 'lucide-react'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import ToolTip from '../../../components/atoms/ToolTip'
 import BreadcrumbDropdown from './BreadcrumbDropdown'
 import BreadcrumbOutlineDropdown from './BreadcrumbOutlineDropdown'
@@ -13,10 +13,10 @@ import {
 import '../css/Breadcrumbs.css'
 
 export const Breadcrumbs = ({ snippet, className = '' }) => {
-  const folders = useVaultStore((state) => state.folders) || []
-  const snippets = useVaultStore((state) => state.snippets) || []
-  const selectedSnippet = useVaultStore((state) => state.selectedSnippet)
-  const saveSnippet = useVaultStore((state) => state.saveSnippet)
+  const folders = useWorkspaceStore((state) => state.folders) || []
+  const snippets = useWorkspaceStore((state) => state.notes) || []
+  const selectedSnippet = useWorkspaceStore((state) => state.selectedNote)
+  const saveSnippet = useWorkspaceStore((state) => state.saveNote)
   const currentSnippet = snippet || selectedSnippet
 
   const [copied, setCopied] = useState(false)

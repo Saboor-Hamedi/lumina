@@ -2,15 +2,15 @@ import { useMemo } from 'react'
 import { useWorkspaceStore } from '../store/workspaceStore'
 
 export const useMention = () => {
-  const snippets = useWorkspaceStore((state) => state.snippets)
+  const notes = useWorkspaceStore((state) => state.notes) || []
 
   const mentions = useMemo(() => {
     const mentionSet = new Set()
     const mentionRegex = /(?:^|\s)(@[\w-]+)/g
 
-    snippets.forEach((snippet) => {
+    notes.forEach((note) => {
       // Add inline mentions from markdown body (exclude code blocks)
-      let code = snippet.code || ''
+      let code = note.code || ''
       code = code.replace(/```[\s\S]*?```/g, '')
       code = code.replace(/`[^`]+`/g, '')
 
@@ -21,7 +21,7 @@ export const useMention = () => {
     })
 
     return Array.from(mentionSet).sort()
-  }, [snippets])
+  }, [notes])
 
   return { mentions }
 }

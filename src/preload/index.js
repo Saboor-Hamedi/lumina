@@ -15,7 +15,7 @@ const api = {
 
   getSnippets: () => electronAPI.ipcRenderer.invoke('workspace:getSnippets'),
   readSnippet: (id) => electronAPI.ipcRenderer.invoke('workspace:readSnippet', id),
-  readSnippetPreview: (id) => electronAPI.ipcRenderer.invoke('workspace:readSnippetPreview', id),
+  readNotePreview: (id) => electronAPI.ipcRenderer.invoke('workspace:readNotePreview', id),
   saveSnippet: (snippet) => electronAPI.ipcRenderer.invoke('workspace:saveSnippet', snippet),
   saveImage: (buffer, name) => electronAPI.ipcRenderer.invoke('workspace:saveImage', { buffer, name }),
   saveImageFromPath: (filePath, name) =>

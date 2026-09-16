@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { FileText, Brain } from 'lucide-react'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { getBrainDocuments } from './services/brainKnowledge'
 import './css/luminSlash.css'
 
 export const LuminaMention = ({ isOpen, filterText, onSelect, onClose }) => {
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const snippets = useVaultStore((state) => state.snippets)
+  const notes = useWorkspaceStore((state) => state.notes) || []
 
   useKeyboardShortcuts({
     onEscape: isOpen
@@ -26,7 +26,7 @@ export const LuminaMention = ({ isOpen, filterText, onSelect, onClose }) => {
   const brainDocs = useMemo(() => getBrainDocuments(), [])
 
   const allItems = useMemo(() => {
-    const list = [...(snippets || [])]
+    const list = [...(notes || [])]
     brainDocs.forEach((bd) => {
       list.push({
         id: bd.id,
@@ -37,7 +37,7 @@ export const LuminaMention = ({ isOpen, filterText, onSelect, onClose }) => {
       })
     })
     return list
-  }, [snippets, brainDocs])
+  }, [notes, brainDocs])
 
   const filteredSnippets = allItems
     .filter((item) => {

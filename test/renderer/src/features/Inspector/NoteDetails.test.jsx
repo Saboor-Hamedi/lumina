@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import NoteDetails from '../../../../../src/renderer/src/features/Inspector/NoteDetails'
 
 vi.mock('../../../../../src/renderer/src/core/store/workspaceStore', () => ({
-  useVaultStore: (selector) =>
+  useWorkspaceStore: (selector) =>
     selector({
       pinnedTabIds: []
     })

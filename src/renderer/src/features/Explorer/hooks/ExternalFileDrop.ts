@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/useSettingsStore'
 
 interface ExternalFileDropResult {
@@ -15,8 +15,8 @@ export function useExternalFileDrop(): ExternalFileDropResult {
   const [isDraggingExternal, setIsDraggingExternal] = useState(false)
   const [hoveredFolderId, setHoveredFolderId] = useState<string | null>(null)
   const dragCounterRef = useRef(0)
-  const loadVault = useVaultStore((state) => state.loadVault)
-  const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
+  const loadWorkspace = useWorkspaceStore((state) => state.loadWorkspace)
+  const setSelectedSnippet = useWorkspaceStore((state) => state.setSelectedNote)
 
   const isExternalFileDrag = useCallback((e: DragEvent | React.DragEvent): boolean => {
     if (!e?.dataTransfer) return false
@@ -115,7 +115,7 @@ export function useExternalFileDrop(): ExternalFileDropResult {
 
       try {
         const result = await (window as any).api?.importExternalPaths?.(paths, targetFolderId || '')
-        await loadVault()
+        await loadWorkspace()
 
         if (result?.importedFolderIds && result.importedFolderIds.length > 0) {
           const currentExpanded = useSettingsStore.getState().settings.expandedFolders || []
@@ -126,10 +126,11 @@ export function useExternalFileDrop(): ExternalFileDropResult {
           useSettingsStore.getState().updateSetting('expandedFolders', nextExpanded)
         }
 
-        if (result?.importedSnippetIds && result.importedSnippetIds.length > 0) {
-          const targetId = result.importedSnippetIds[0]
-          const snippets = useVaultStore.getState().snippets || []
-          const found = snippets.find((s: any) => s.id === targetId)
+        const importedIds = result?.importedNoteIds || result?.importedSnippetIds || []
+        if (importedIds.length > 0) {
+          const targetId = importedIds[0]
+          const notes = useWorkspaceStore.getState().notes || []
+          const found = notes.find((s: any) => s.id === targetId)
           if (found) {
             setSelectedSnippet(found)
           }
@@ -138,7 +139,7 @@ export function useExternalFileDrop(): ExternalFileDropResult {
         console.error('Failed to import external files:', err)
       }
     },
-    [isExternalFileDrag, resetDragState, loadVault, setSelectedSnippet]
+    [isExternalFileDrag, resetDragState, loadWorkspace, setSelectedSnippet]
   )
 
   return {

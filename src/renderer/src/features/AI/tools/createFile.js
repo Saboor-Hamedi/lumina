@@ -43,8 +43,8 @@ export const createFileTool = aiSdk.tool({
       const cleanTitle = rawTitle.trim() || 'Untitled'
       const cleanFolder = rawFolder.replace(/^\/+|\/+$/g, '')
 
-      const { useVaultStore } = await import('../../../core/store/workspaceStore')
-      const vs = useVaultStore.getState()
+      const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const vs = useWorkspaceStore.getState()
 
       if (cleanFolder && window.api?.createFolder) {
         try {
@@ -65,7 +65,8 @@ export const createFileTool = aiSdk.tool({
         timestamp: Date.now()
       }
 
-      const saved = await vs.saveSnippet(snippet)
+      const saveAction = vs.saveNote || vs.saveSnippet
+      const saved = saveAction ? await saveAction(snippet) : null
       const targetSnippet = saved || snippet
 
       window.dispatchEvent(

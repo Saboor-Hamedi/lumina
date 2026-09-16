@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSettingsStore } from '../store/useSettingsStore'
-import { useVaultStore } from '../store/workspaceStore'
+import { useWorkspaceStore } from '../store/workspaceStore'
 import type { UseEditorStateProps, UseEditorStateReturn, Snippet } from './types'
 
 export interface ConflictPrompt {
@@ -44,7 +44,7 @@ export function useEditorState({
   const lastSavedCodeRef = useRef<string | undefined>(snippet?.code)
   const lastSaveTimeRef = useRef<number>(0)
 
-  const setDirty = useVaultStore((state: any) => state.setDirty)
+  const setDirty = useWorkspaceStore((state: any) => state.setDirty)
 
   // --- Save Logic ---
   const handleSave = useCallback(async () => {
@@ -115,7 +115,7 @@ export function useEditorState({
       setIsDirty(!isClean)
       if (snippet?.id) {
         setDirty(snippet.id, !isClean)
-        ;(useVaultStore.getState() as any).setDraft(snippet.id, md)
+        ;(useWorkspaceStore.getState() as any).setDraft(snippet.id, md)
       }
 
       const settings = (useSettingsStore.getState() as any).settings
@@ -236,7 +236,7 @@ export function useEditorState({
       if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
 
       const currentSettings = (useSettingsStore.getState() as any).settings
-      const dirtyIds = (useVaultStore.getState() as any).dirtySnippetIds || []
+      const dirtyIds = (useWorkspaceStore.getState() as any).dirtyNoteIds || []
 
       if (
         currentSettings?.autoSave &&
@@ -249,9 +249,10 @@ export function useEditorState({
           code: codeToSave || '',
           timestamp: Date.now()
         }
-        ;(useVaultStore.getState() as any)
-          .saveSnippet(snippetToSave)
-          .catch((err: any) => console.error('[Unmount AutoSave] Failed:', err))
+        const saveAction = (useWorkspaceStore.getState() as any).saveNote || (useWorkspaceStore.getState() as any).saveSnippet
+        if (saveAction) {
+          saveAction(snippetToSave).catch((err: any) => console.error('[Unmount AutoSave] Failed:', err))
+        }
       }
     }
   }, [])

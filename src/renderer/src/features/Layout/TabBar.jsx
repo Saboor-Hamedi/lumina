@@ -19,7 +19,7 @@ import {
 } from '@dnd-kit/sortable'
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers'
 import { Virtuoso } from 'react-virtuoso'
-import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
+import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useShallow } from 'zustand/react/shallow'
 import ContextMenu from '../modals/ContextMenu'
 import PromptModal from '../modals/PromptModal'
@@ -117,23 +117,23 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
     saveSnippet,
     dirtySnippetIds,
     pinnedTabIds
-  } = useVaultStore(
+  } = useWorkspaceStore(
     useShallow((state) => ({
-      snippets: state.snippets,
-      openTabs: state.openTabs,
+      snippets: state.notes || [],
+      openTabs: state.openTabs || [],
       activeTabId: state.activeTabId,
-      selectedSnippet: state.selectedSnippet,
+      selectedSnippet: state.selectedNote,
       setActiveTabId: state.setActiveTabId,
-      setSelectedSnippet: state.setSelectedSnippet,
+      setSelectedSnippet: state.setSelectedNote,
       reorderTabs: state.reorderTabs,
       closeTab: state.closeTab,
       closeOtherTabs: state.closeOtherTabs,
       closeTabsToRight: state.closeTabsToRight,
       closeAllTabs: state.closeAllTabs,
       togglePinTab: state.togglePinTab,
-      saveSnippet: state.saveSnippet,
-      dirtySnippetIds: state.dirtySnippetIds,
-      pinnedTabIds: state.pinnedTabIds
+      saveSnippet: state.saveNote,
+      dirtySnippetIds: state.dirtyNoteIds || [],
+      pinnedTabIds: state.pinnedTabIds || []
     }))
   )
 
@@ -181,7 +181,8 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
   // O(1) Snippet Lookup Map for Performance
   const snippetMap = useMemo(() => {
     const map = new Map()
-    snippets.forEach((s) => map.set(s.id, s))
+    const list = Array.isArray(snippets) ? snippets : []
+    list.forEach((s) => map.set(s.id, s))
     return map
   }, [snippets])
 

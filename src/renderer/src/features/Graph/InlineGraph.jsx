@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { buildGraphData } from '../../core/utils/graphBuilder'
 import { forceManyBody, forceCollide, forceX, forceY } from 'd3-force'
@@ -11,7 +11,7 @@ import GraphMiniMap from './GraphMiniMap'
 import { usePerformanceStore } from './usePerformanceStore'
 
 const InlineGraph = React.memo(({ focusNodeId, onNavigate, hideMiniMap = false }) => {
-  const snippets = useVaultStore((s) => s.snippets)
+  const snippets = useWorkspaceStore((s) => s.notes) || []
   const graphTheme = useSettingsStore((s) => s.settings.graphTheme || 'default')
 
   const graphRef = useRef()

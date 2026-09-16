@@ -1,13 +1,13 @@
 import React, { memo, useState, useMemo } from 'react'
 import { Calendar } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import Template from '../../template/Template'
 import { defaultTemplates } from '../../template/hooks/defaultTemplates'
 
 const DailyNotes = memo(({ isActivityBar = false }) => {
-  const saveSnippet = useVaultStore((state) => state.saveSnippet)
-  const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
+  const saveNote = useWorkspaceStore((state) => state.saveNote)
+  const setSelectedNote = useWorkspaceStore((state) => state.setSelectedNote)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -58,8 +58,8 @@ const DailyNotes = memo(({ isActivityBar = false }) => {
       folderId: 'DailyNotes',
       timestamp: Date.now()
     }
-    await saveSnippet(newNote)
-    setSelectedSnippet(newNote)
+    if (saveNote) await saveNote(newNote)
+    if (setSelectedNote) setSelectedNote(newNote)
   }
 
   return (

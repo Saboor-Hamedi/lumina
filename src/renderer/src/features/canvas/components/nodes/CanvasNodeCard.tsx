@@ -21,7 +21,7 @@ import { CanvasNode, CanvasEdgeSide } from '../../types'
 import { stripFrontmatter, getShapePortRatio } from '../../utils/canvasUtils'
 import { CanvasImagePreview } from './CanvasImagePreview'
 import { renderShapeSVG } from '../controls/ConvasShapes'
-import { useVaultStore } from '../../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../../core/store/workspaceStore'
 import ToolTip from '../../../../components/atoms/ToolTip'
 
 /**
@@ -463,7 +463,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                         className="lumina-canvas-action-btn"
                         onClick={(e) => {
                           e.stopPropagation()
-                          useVaultStore.getState().setActiveTabId(node.file!)
+                          useWorkspaceStore.getState().setActiveTabId(node.file!)
                         }}
                       >
                         <ExternalLink size={12} />
@@ -524,7 +524,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                     className="lumina-canvas-pdf-open-btn"
                     onClick={(e) => {
                       e.stopPropagation()
-                      useVaultStore.getState().setActiveTabId(node.file!)
+                      useWorkspaceStore.getState().setActiveTabId(node.file!)
                     }}
                   >
                     <ExternalLink size={13} />

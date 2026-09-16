@@ -1,6 +1,6 @@
 import { RangeSetBuilder, StateField } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { normalizeWikilinkTarget } from '../../../core/i18n'
 
 const WIKILINK_REGEX = /\[\[([^\]\n|]+)(?:\|([^\]\n]+))?\]\]/g
@@ -134,9 +134,9 @@ export function createLuminaWikiLinks(config = {}) {
 
   async function openNote(target) {
     try {
-      const { snippets: allSnippets, saveSnippet, setSelectedSnippet } = useVaultStore.getState()
+      const { notes: allNotes, saveNote, setSelectedNote } = useWorkspaceStore.getState()
       const targetKey = normalizeWikilinkTarget(target)
-      let targetSnippet = (allSnippets || []).find((s) => {
+      let targetSnippet = (allNotes || []).find((s) => {
         if (!s.title) return false
         const titleKey = normalizeWikilinkTarget(s.title)
         const titleWithoutMdKey = normalizeWikilinkTarget(s.title.replace(/\.md$/i, ''))
@@ -161,9 +161,9 @@ export function createLuminaWikiLinks(config = {}) {
           tags: '',
           timestamp: Date.now()
         }
-        await saveSnippet(targetSnippet)
+        if (saveNote) await saveNote(targetSnippet)
       }
-      setSelectedSnippet(targetSnippet)
+      if (setSelectedNote) setSelectedNote(targetSnippet)
     } catch (err) {
       console.error('Failed to open wikilink:', err)
     }

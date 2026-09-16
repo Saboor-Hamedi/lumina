@@ -30,7 +30,7 @@ import Indexing from '../../components/Indexing'
 import { VoiceCapsule } from '../voice'
 
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
 
@@ -77,7 +77,7 @@ export const AppModals = ({
   snippetToDelete,
   handleConfirmDelete,
   saveSnippet,
-  loadVault,
+  loadWorkspace,
   showToast,
   showActiveIconPicker,
   setShowActiveIconPicker,
@@ -228,8 +228,8 @@ export const AppModals = ({
             if (newFolderPath !== folderId) {
               try {
                 await window.api.renameFolder(folderId, newFolderPath)
-                useVaultStore.getState().setSelectedFolder(newFolderPath)
-                await loadVault()
+                useWorkspaceStore.getState().setSelectedFolder(newFolderPath)
+                await loadWorkspace()
               } catch (err) {
                 console.error('Failed to rename folder:', err)
                 showToast('❌ Failed to rename folder', 'error')

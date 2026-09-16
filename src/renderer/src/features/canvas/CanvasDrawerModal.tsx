@@ -42,20 +42,20 @@ export const CanvasDrawerModal: React.FC<CanvasDrawerModalProps> = () => {
   const [activeSnippetId, setActiveSnippetId] = useState<string | null>(null)
   const [showPicker, setShowPicker] = useState(false)
 
-  const snippets = useWorkspaceStore((state) => state.snippets)
-  const selectedSnippet = useWorkspaceStore((state) => state.selectedSnippet)
-  const setSelectedSnippet = useWorkspaceStore((state) => state.setSelectedSnippet)
-  const saveSnippet = useWorkspaceStore((state) => state.saveSnippet)
+  const notes = useWorkspaceStore((state) => state.notes) || []
+  const selectedNote = useWorkspaceStore((state) => state.selectedNote)
+  const setSelectedNote = useWorkspaceStore((state) => state.setSelectedNote)
+  const saveNote = useWorkspaceStore((state) => state.saveNote)
 
   // Filter all canvas snippets in the workspace vault
   const canvasSnippets = useMemo(() => {
-    return snippets.filter(
+    return (notes || []).filter(
       (s: any) =>
         s.type === 'canvas' ||
         s.language === 'canvas' ||
         s.fileName?.endsWith('.canvas')
     )
-  }, [snippets])
+  }, [notes])
 
   // Determine current active canvas snippet
   const currentSnippet = useMemo(() => {
@@ -65,18 +65,18 @@ export const CanvasDrawerModal: React.FC<CanvasDrawerModalProps> = () => {
     }
     // Fall back to selected snippet if it is a canvas
     if (
-      selectedSnippet &&
-      (selectedSnippet.type === 'canvas' ||
-        selectedSnippet.fileName?.endsWith('.canvas'))
+      selectedNote &&
+      (selectedNote.type === 'canvas' ||
+        selectedNote.fileName?.endsWith('.canvas'))
     ) {
-      return selectedSnippet
+      return selectedNote
     }
     // Fall back to first available canvas in workspace
     if (canvasSnippets.length > 0) {
       return canvasSnippets[0]
     }
     return null
-  }, [activeSnippetId, selectedSnippet, canvasSnippets])
+  }, [activeSnippetId, selectedNote, canvasSnippets])
 
   useEffect(() => {
     let lastToggleTime = 0
@@ -154,22 +154,22 @@ export const CanvasDrawerModal: React.FC<CanvasDrawerModalProps> = () => {
         isLearned: false
       }
 
-      await saveSnippet(newSnippet)
+      await saveNote(newSnippet)
       setActiveSnippetId(id)
       setShowPicker(false)
     } catch (err) {
       console.error('[CanvasDrawerModal] Failed to create canvas:', err)
     }
-  }, [canvasSnippets.length, saveSnippet])
+  }, [canvasSnippets.length, saveNote])
 
   // Open this canvas as a full tab in the workspace editor
   const handleOpenAsTab = useCallback(() => {
     if (currentSnippet) {
-      setSelectedSnippet(currentSnippet)
+      setSelectedNote(currentSnippet)
       setIsOpen(false)
       setShowPicker(false)
     }
-  }, [currentSnippet, setSelectedSnippet])
+  }, [currentSnippet, setSelectedNote])
 
   // Auto-create initial canvas if vault has none when drawer opened
   useEffect(() => {
@@ -291,7 +291,7 @@ export const CanvasDrawerModal: React.FC<CanvasDrawerModalProps> = () => {
             <CanvasTabPane
               key={currentSnippet.id}
               snippet={currentSnippet}
-              onSave={saveSnippet}
+              onSave={saveNote}
               isSelected={true}
               isDrawer={true}
             />

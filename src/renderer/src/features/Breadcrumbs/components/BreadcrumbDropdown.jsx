@@ -14,7 +14,7 @@ import {
   Image as ImageIcon,
   LayoutGrid
 } from 'lucide-react'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import ToolTip from '../../../components/atoms/ToolTip'
 import {
   getChildFolders,
@@ -39,10 +39,10 @@ const getFileIcon = (fileName = '') => {
 }
 
 const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) => {
-  const folders = useVaultStore((state) => state.folders) || []
-  const snippets = useVaultStore((state) => state.snippets) || []
-  const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
-  const saveSnippet = useVaultStore((state) => state.saveSnippet)
+  const folders = useWorkspaceStore((state) => state.folders) || []
+  const snippets = useWorkspaceStore((state) => state.notes) || []
+  const setSelectedSnippet = useWorkspaceStore((state) => state.setSelectedNote)
+  const saveSnippet = useWorkspaceStore((state) => state.saveNote)
 
   // Navigation stack: array of folder IDs
   const [stack, setStack] = useState(() => [isRootPath(parentFolderId) ? null : normalizePath(parentFolderId)])

@@ -641,16 +641,16 @@ class WorkspaceManager {
 
     const rawContent = await fs.readFile(filePath, 'utf-8')
     const parsed = safeParseFrontmatter(rawContent)
-    const loadedSnippet = {
+    const loadNote = {
       ...snippet,
       code: parsed.content || '',
       isOversized: false
     }
-    this.snippets.set(id, loadedSnippet)
-    return loadedSnippet
+    this.snippets.set(id, loadNote)
+    return loadNote
   }
 
-  async readSnippetPreview(id, maxBytes = 512 * 1024) {
+  async readNotePreview(id, maxBytes = 512 * 1024) {
     if (this.initializationPromise) {
       await this.initializationPromise
     }

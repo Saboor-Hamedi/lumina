@@ -3,7 +3,7 @@ import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
 import { EditorState, Prec } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { languages } from '@codemirror/language-data'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 // Media & editor extensions
 import { imageWidgetExtension } from '../media'
 import { htmlWidgetExtension } from '../Editor/extensions/htmlExtension'
@@ -51,15 +51,15 @@ export const PreviewCommandPalette = React.memo(({ content, onClose, customLinkH
         return
       }
       try {
-        const { snippets, setSelectedSnippet } = useVaultStore.getState()
+        const { notes, setSelectedNote } = useWorkspaceStore.getState()
         const targetLower = url.toLowerCase()
-        const targetSnippet = snippets?.find(
+        const targetSnippet = (notes || []).find(
           (s) =>
             s.title &&
             (s.title.toLowerCase() === targetLower || s.title.toLowerCase() === `${targetLower}.md`)
         )
         if (targetSnippet) {
-          setSelectedSnippet(targetSnippet)
+          if (setSelectedNote) setSelectedNote(targetSnippet)
           if (onClose) onClose()
         }
       } catch (e) {
@@ -85,9 +85,9 @@ export const PreviewCommandPalette = React.memo(({ content, onClose, customLinkH
       wikiLinks({
         openOnClick: true,
         resolve: async (target) => {
-          const { snippets } = useVaultStore.getState()
+          const { notes } = useWorkspaceStore.getState()
           const targetLower = target.toLowerCase()
-          const exists = snippets.some(
+          const exists = (notes || []).some(
             (s) =>
               s.title &&
               (s.title.toLowerCase() === targetLower ||

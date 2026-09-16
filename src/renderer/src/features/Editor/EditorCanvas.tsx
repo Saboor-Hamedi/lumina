@@ -18,7 +18,7 @@ import { languages } from '@codemirror/language-data'
 import type { EditorView } from '@codemirror/view'
 import type { Extension } from '@codemirror/state'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { setupWikilinkHover } from './wikilink/hoverWikilink'
 import ContextMenu from '../modals/ContextMenu'
 import { getEditorContextMenuOptions } from './menu'
@@ -145,13 +145,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
 
     const inlineTitle = useSettingsStore((state: any) => state.settings?.inlineTitle !== false)
     const inlineMetadata = useSettingsStore((state: any) => state.settings?.inlineMetadata !== false)
-    const snippets = useVaultStore((state: any) => state.snippets)
+    const notes = useWorkspaceStore((state: any) => state.notes) || []
 
     useEffect(() => {
       const wrapper = editorWrapperRef.current
       if (!wrapper) return
 
-      const cleanupHover = setupWikilinkHover(wrapper, useVaultStore.getState)
+      const cleanupHover = setupWikilinkHover(wrapper, useWorkspaceStore.getState)
       return () => {
         cleanupHover()
       }
@@ -182,7 +182,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
             titleRef={titleRef}
             snippet={snippet}
             onSave={onSave}
-            snippets={snippets}
+            notes={notes}
             title={title}
             setTitle={setTitle}
             setIsDirty={setIsDirty}

@@ -1,7 +1,7 @@
 import React, { forwardRef } from 'react'
 import ForceGraph2D from 'react-force-graph-2d'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { usePerformanceStore } from './usePerformanceStore'
 
 const Graph2D = forwardRef(
@@ -21,8 +21,8 @@ const Graph2D = forwardRef(
     },
     ref
   ) => {
-    const snippets = useVaultStore((s) => s.snippets)
-    const selectedSnippet = useVaultStore((s) => s.selectedSnippet)
+    const snippets = useWorkspaceStore((s) => s.notes) || []
+    const selectedSnippet = useWorkspaceStore((s) => s.selectedNote)
 
     return (
       <ForceGraph2D

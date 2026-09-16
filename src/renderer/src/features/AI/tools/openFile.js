@@ -12,27 +12,25 @@ export const openFileTool = aiSdk.tool({
   execute: async ({ title }) => {
     try {
       const cleanTitle = (title || '').trim().replace(/^@/, '')
-      const { useVaultStore } = await import('../../../core/store/workspaceStore')
-      const vs = useVaultStore.getState()
-      const snippets = Array.isArray(vs.snippets)
-        ? vs.snippets
-        : Array.from(vs.snippets?.values?.() || [])
+      const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const vs = useWorkspaceStore.getState()
+      const notes = vs.notes || []
 
       const normalize = (t) => (t || '').toLowerCase().replace(/\.md$/i, '').trim()
-      let target = snippets.find((s) => normalize(s.title) === normalize(cleanTitle))
+      let target = notes.find((s) => normalize(s.title) === normalize(cleanTitle))
       if (!target) {
-        target = snippets.find((s) => normalize(s.fileName) === normalize(cleanTitle))
+        target = notes.find((s) => normalize(s.fileName) === normalize(cleanTitle))
       }
       if (!target) {
-        target = snippets.find((s) => normalize(s.title).includes(normalize(cleanTitle)))
+        target = notes.find((s) => normalize(s.title).includes(normalize(cleanTitle)))
       }
 
       if (!target) {
         return { success: false, error: `Note "${title}" not found.` }
       }
 
-      if (vs.setSelectedSnippet) {
-        vs.setSelectedSnippet(target)
+      if (vs.setSelectedNote) {
+        vs.setSelectedNote(target)
       }
       if (vs.setActiveTabId) {
         vs.setActiveTabId(target.id)

@@ -34,11 +34,9 @@ export const moveFileTool = aiSdk.tool({
         .replace(/^[/\\]+|[/\\]+$/g, '')
       const sourceFolder = (fromFolder || '').trim().replace(/^[/\\]+|[/\\]+$/g, '')
 
-      const { useVaultStore } = await import('../../../core/store/workspaceStore')
-      const vs = useVaultStore.getState()
-      const snippets = Array.isArray(vs.snippets)
-        ? vs.snippets
-        : Array.from(vs.snippets?.values?.() || [])
+      const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const vs = useWorkspaceStore.getState()
+      const snippets = vs.notes || []
 
       if (targetFolder && window.api?.createFolder) {
         try {
@@ -68,12 +66,13 @@ export const moveFileTool = aiSdk.tool({
           }
         }
 
+        const saveAction = vs.saveNote || vs.saveSnippet
         for (const s of sourceNotes) {
-          await vs.saveSnippet({ ...s, folderId: targetFolder })
+          if (saveAction) await saveAction({ ...s, folderId: targetFolder })
         }
 
-        if (vs.loadVault) {
-          await vs.loadVault()
+        if (vs.loadWorkspace) {
+          await vs.loadWorkspace()
         }
 
         const destName = targetFolder ? `folder "${targetFolder}"` : 'root workspace level'
@@ -95,7 +94,7 @@ export const moveFileTool = aiSdk.tool({
         rawTitle.toLowerCase() === 'this note' ||
         rawTitle.toLowerCase() === 'this file'
       ) {
-        target = vs.selectedSnippet || (vs.activeTabId ? snippets.find((s) => s.id === vs.activeTabId) : null)
+        target = vs.selectedNote || (vs.activeTabId ? snippets.find((s) => s.id === vs.activeTabId) : null)
       } else {
         const cleanLower = rawTitle.toLowerCase().replace(/\.md$/i, '')
         const baseName = cleanLower.split(/[/\\]/).pop()
@@ -133,15 +132,16 @@ export const moveFileTool = aiSdk.tool({
         folderId: targetFolder
       }
 
-      const saved = await vs.saveSnippet(updated)
+      const saveAction = vs.saveNote || vs.saveSnippet
+      const saved = saveAction ? await saveAction(updated) : null
       const finalSnippet = saved || updated
 
-      if (vs.loadVault) {
-        await vs.loadVault()
+      if (vs.loadWorkspace) {
+        await vs.loadWorkspace()
       }
 
-      if (vs.selectedSnippet?.id === finalSnippet.id && vs.setSelectedSnippet) {
-        vs.setSelectedSnippet(finalSnippet)
+      if (vs.selectedNote?.id === finalSnippet.id && vs.setSelectedNote) {
+        vs.setSelectedNote(finalSnippet)
       }
 
       window.dispatchEvent(

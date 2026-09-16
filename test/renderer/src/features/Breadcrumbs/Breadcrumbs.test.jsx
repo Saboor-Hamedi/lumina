@@ -33,7 +33,7 @@ vi.mock('../../../../../src/renderer/src/features/Breadcrumbs/components/Breadcr
 }))
 
 vi.mock('../../../../../src/renderer/src/core/store/workspaceStore', () => ({
-  useVaultStore: (selector) =>
+  useWorkspaceStore: (selector) =>
     selector({
       folders: [{ id: 'f1', name: 'src', parentId: null }],
       snippets: [mockSnippet],

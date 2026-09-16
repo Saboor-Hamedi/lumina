@@ -92,10 +92,10 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         expandIcon.addEventListener('click', (evt) => {
           evt.preventDefault()
           evt.stopPropagation()
-          const { snippets, setSelectedSnippet } = getVaultStore()
-          const targetNote = snippets?.find((s) => s.id === noteId)
-          if (targetNote && setSelectedSnippet) {
-            setSelectedSnippet(targetNote)
+          const { notes, setSelectedNote } = getVaultStore()
+          const targetNote = notes?.find((s) => s.id === noteId)
+          if (targetNote && setSelectedNote) {
+            setSelectedNote(targetNote)
             removeCard()
           }
         })
@@ -343,9 +343,9 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         evt.preventDefault()
         evt.stopPropagation()
         try {
-          const { snippets, saveSnippet, setSelectedSnippet } = getVaultStore()
+          const { notes, saveNote, setSelectedNote } = getVaultStore()
           const targetLower = title.toLowerCase()
-          let targetSnippet = snippets?.find(
+          let targetSnippet = notes?.find(
             (s) =>
               s.title &&
               (s.title.toLowerCase() === targetLower ||
@@ -360,9 +360,9 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
               tags: '',
               timestamp: Date.now()
             }
-            if (saveSnippet) await saveSnippet(targetSnippet)
+            if (saveNote) await saveNote(targetSnippet)
           }
-          if (setSelectedSnippet) setSelectedSnippet(targetSnippet)
+          if (setSelectedNote) setSelectedNote(targetSnippet)
           removeCard()
         } catch (err) {
           console.error('Failed to create note from hover card:', err)
@@ -450,10 +450,10 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
   const triggerHoverForTarget = (linkEl, target) => {
     if (!target) return
-    const { snippets } = getVaultStore()
+    const { notes } = getVaultStore()
     const targetLower = target.toLowerCase()
 
-    let note = snippets?.find((s) => {
+    let note = notes?.find((s) => {
       if (!s.title) return false
       const titleLower = s.title.toLowerCase()
       const fullPathLower = s.folderId ? `${s.folderId}/${s.title}`.toLowerCase() : titleLower

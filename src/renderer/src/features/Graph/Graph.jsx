@@ -12,7 +12,7 @@ import {
 import * as THREE from 'three'
 import Graph3D from './Graph3D'
 import Graph2D from './Graph2D'
-import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
+import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useAIStore } from '../AI/tools/lumina'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { usePerformanceStore } from './usePerformanceStore'
@@ -98,12 +98,12 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       window.removeEventListener('storage', updateTheme)
     }
   }, [])
-  const snippets = useVaultStore((s) => s.snippets)
+  const snippets = useWorkspaceStore((s) => s.notes) || []
   const graphSnippets = useMemo(() => {
-    return snippets.filter((s) => s.type !== 'image' && s.language !== 'image')
+    return (snippets || []).filter((s) => s.type !== 'image' && s.language !== 'image')
   }, [snippets])
-  const selectedSnippet = useVaultStore((s) => s.selectedSnippet)
-  const dirtySnippetIds = useVaultStore((s) => s.dirtySnippetIds)
+  const selectedSnippet = useWorkspaceStore((s) => s.selectedNote)
+  const dirtySnippetIds = useWorkspaceStore((s) => s.dirtyNoteIds) || []
   const embeddingsCache = useAIStore((s) => s.embeddingsCache)
 
   const handleRecenter = (e) => {
@@ -157,7 +157,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
   const handleOpenAsTab = useCallback(() => {
     onClose?.()
-    useVaultStore.getState().setActiveTabId(GRAPH_TAB_ID)
+    useWorkspaceStore.getState().setActiveTabId(GRAPH_TAB_ID)
   }, [onClose])
 
   useEffect(() => {

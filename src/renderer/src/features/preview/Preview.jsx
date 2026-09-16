@@ -5,7 +5,7 @@ import { PreviewCommandPalette } from '../commandpalette/PreviewCommandPalette'
 import ToolTip from '../../components/atoms/ToolTip'
 import './preview.css'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 
 const Preview = ({ isOpen, onClose, title, content, snippetId }) => {
@@ -93,12 +93,10 @@ const Preview = ({ isOpen, onClose, title, content, snippetId }) => {
       : undefined
   })
 
-  const draft = useVaultStore((state) => (snippetId ? state.drafts?.[snippetId] : undefined))
-  const activeSnippet = useVaultStore((state) =>
+  const draft = useWorkspaceStore((state) => (snippetId ? state.drafts?.[snippetId] : undefined))
+  const activeSnippet = useWorkspaceStore((state) =>
     snippetId
-      ? (Array.isArray(state.snippets) ? state.snippets : Object.values(state.snippets || {})).find(
-          (s) => s.id === snippetId
-        )
+      ? (state.notes || []).find((s) => s.id === snippetId)
       : null
   )
 

@@ -20,11 +20,9 @@ export const clearFileTool = aiSdk.tool({
   execute: async ({ title, keepHeader = false }) => {
     try {
       const rawTitle = (title || '').trim().replace(/^@/, '')
-      const { useVaultStore } = await import('../../../core/store/workspaceStore')
-      const vs = useVaultStore.getState()
-      const snippets = Array.isArray(vs.snippets)
-        ? vs.snippets
-        : Array.from(vs.snippets?.values?.() || [])
+      const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const vs = useWorkspaceStore.getState()
+      const snippets = vs.notes || []
 
       let target = null
       if (
@@ -35,7 +33,7 @@ export const clearFileTool = aiSdk.tool({
         rawTitle.toLowerCase() === 'this note' ||
         rawTitle.toLowerCase() === 'this file'
       ) {
-        target = vs.selectedSnippet || (vs.activeTabId ? snippets.find((s) => s.id === vs.activeTabId) : null)
+        target = vs.selectedNote || (vs.activeTabId ? snippets.find((s) => s.id === vs.activeTabId) : null)
       } else {
         const cleanTitle = rawTitle.toLowerCase().replace(/\.md$/, '')
         target = snippets.find((s) => (s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle)
@@ -55,7 +53,10 @@ export const clearFileTool = aiSdk.tool({
         vs.setDraft(target.id, newCode)
       }
 
-      await vs.saveSnippet({ ...target, code: newCode })
+      const saveAction = vs.saveNote || vs.saveSnippet
+      if (saveAction) {
+        await saveAction({ ...target, code: newCode })
+      }
 
       window.dispatchEvent(
         new CustomEvent('ai-saved-snippet', { detail: { id: target.id, code: newCode } })

@@ -9,8 +9,8 @@ export const useSnippetData = () => {
   const loadData = useCallback(async () => {
     try {
       if (window.api?.getSnippets) {
-        const loadedSnippets = await window.api.getSnippets()
-        setSnippets(loadedSnippets || [])
+        const loadNotes = await window.api.getSnippets()
+        setSnippets(loadNotes || [])
       }
     } catch (error) {
       console.error('Failed to load data:', error)

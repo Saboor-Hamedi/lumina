@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 
 export const DroppableFolderItem = React.memo(
   ({
@@ -29,7 +29,7 @@ export const DroppableFolderItem = React.memo(
     const [isHovered, setIsHovered] = useState(false)
 
     const getFolderTooltipContent = useCallback(() => {
-      const allSnippets = useVaultStore.getState().snippets || []
+      const allSnippets = useWorkspaceStore.getState().notes || []
       const targetFolderId = (item.id || '').replace(/\\/g, '/')
       const folderSnippets = allSnippets.filter((s) => {
         const sFolder = (s.folderId || '').replace(/\\/g, '/')

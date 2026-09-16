@@ -18,7 +18,7 @@ vi.mock('../../../../../src/renderer/src/features/AI/tools/lumina', () => ({
 }))
 
 vi.mock('../../../../../src/renderer/src/core/store/workspaceStore', () => ({
-  useVaultStore: (selector) =>
+  useWorkspaceStore: (selector) =>
     selector({
       dirtySnippetIds: [],
       folders: [],

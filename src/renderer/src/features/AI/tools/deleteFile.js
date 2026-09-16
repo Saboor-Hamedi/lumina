@@ -16,11 +16,9 @@ export const deleteFileTool = aiSdk.tool({
   execute: async ({ title }) => {
     try {
       const rawTitle = (title || '').trim().replace(/^@/, '')
-      const { useVaultStore } = await import('../../../core/store/workspaceStore')
-      const vs = useVaultStore.getState()
-      const snippets = Array.isArray(vs.snippets)
-        ? vs.snippets
-        : Array.from(vs.snippets?.values?.() || [])
+      const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const vs = useWorkspaceStore.getState()
+      const snippets = vs.notes || []
 
       let target = null
       if (
@@ -31,7 +29,7 @@ export const deleteFileTool = aiSdk.tool({
         rawTitle.toLowerCase() === 'this note' ||
         rawTitle.toLowerCase() === 'this file'
       ) {
-        target = vs.selectedSnippet || (vs.activeTabId ? snippets.find((s) => s.id === vs.activeTabId) : null)
+        target = vs.selectedNote || (vs.activeTabId ? snippets.find((s) => s.id === vs.activeTabId) : null)
       } else {
         const cleanLower = rawTitle.toLowerCase().replace(/\.md$/i, '')
         target = snippets.find(
@@ -55,7 +53,10 @@ export const deleteFileTool = aiSdk.tool({
 
       const deletedTitle = target.title || target.fileName || rawTitle
       const removedWords = (target.code || '').trim() ? (target.code || '').trim().split(/\s+/).length : 0
-      await vs.deleteSnippet(target.id, true)
+      const deleteAction = vs.deleteNote || vs.deleteSnippet
+      if (deleteAction) {
+        await deleteAction(target.id, true)
+      }
 
       if (window.api?.deleteChunks) {
         await window.api.deleteChunks(deletedTitle)
@@ -65,8 +66,8 @@ export const deleteFileTool = aiSdk.tool({
         vs.closeTab(target.id)
       }
 
-      if (vs.loadVault) {
-        await vs.loadVault()
+      if (vs.loadWorkspace) {
+        await vs.loadWorkspace()
       }
 
       return {

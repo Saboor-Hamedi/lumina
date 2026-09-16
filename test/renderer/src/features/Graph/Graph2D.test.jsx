@@ -23,7 +23,7 @@ vi.mock('d3-force', () => ({
 
 import { render, screen } from '@testing-library/react'
 import Graph2D from '../../../../../src/renderer/src/features/Graph/Graph2D'
-import { useVaultStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
 import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
 
 describe('Graph2D', () => {
@@ -39,7 +39,7 @@ describe('Graph2D', () => {
       this.onmessage = null
     })
     global.Worker = MockWorker
-    useVaultStore.setState({ snippets: [] })
+    useWorkspaceStore.setState({ snippets: [] })
     useSettingsStore.setState({
       settings: { graphNodeSize: 1.5, repelForce: 1, linkForce: 1 }
     })
@@ -81,7 +81,7 @@ describe('Graph2D', () => {
 
   it('handles node clicks by navigating to the snippet', async () => {
     const snippet = { id: '1', title: 'Note', code: '' }
-    useVaultStore.setState({ snippets: [snippet] })
+    useWorkspaceStore.setState({ snippets: [snippet] })
     const onNavigate = vi.fn()
     const graphData = {
       nodes: [{ id: 'Note', snippetId: '1', val: 1, x: 0, y: 0 }],

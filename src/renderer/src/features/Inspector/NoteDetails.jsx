@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import {
   Clock,
   Code,
@@ -73,7 +73,7 @@ const PropertyRow = ({
 }
 
 export const NoteDetails = ({ snippet, isLoading = false }) => {
-  const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
+  const pinnedTabIds = useWorkspaceStore((state) => state.pinnedTabIds)
 
   if (isLoading) {
     return (

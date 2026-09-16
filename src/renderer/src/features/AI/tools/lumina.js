@@ -555,8 +555,8 @@ export const useAIStore = create((set, get) => {
           const prompt = `Write a detailed markdown document about ${topic}. Include headings, bullet points, and code examples if relevant.`
           const generatedContent = await get().generateLocalText(prompt)
 
-          const { useVaultStore } = await import('../../../core/store/workspaceStore')
-          const vaultStore = useVaultStore.getState()
+          const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+          const workspaceStore = useWorkspaceStore.getState()
           const newSnippet = {
             id: crypto.randomUUID(),
             title: topic,
@@ -565,7 +565,7 @@ export const useAIStore = create((set, get) => {
             tags: '',
             timestamp: Date.now()
           }
-          await vaultStore.saveSnippet(newSnippet)
+          await workspaceStore.saveSnippet(newSnippet)
 
           const successMsg = {
             id: crypto.randomUUID(),
@@ -626,8 +626,8 @@ export const useAIStore = create((set, get) => {
       }
 
       // 3. Resolve Workspace Context & Mentions
-      const { useVaultStore } = await import('../../../core/store/workspaceStore')
-      const vs = useVaultStore.getState()
+      const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const vs = useWorkspaceStore.getState()
       const allSnippets = Array.isArray(vs.snippets)
         ? vs.snippets
         : Object.values(vs.snippets || {})

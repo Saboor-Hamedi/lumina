@@ -1,16 +1,16 @@
 import React, { memo } from 'react'
 import { Plus, Network, MessageSquare, Calendar } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
-import { useVaultStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useShallow } from 'zustand/react/shallow'
 import DailyNotes from './DailyNotes'
 
 const SidebarHeader = memo(({ onToggleGraph }) => {
-  const { snippets, saveSnippet, setSelectedSnippet } = useVaultStore(
+  const { snippets, saveSnippet, setSelectedSnippet } = useWorkspaceStore(
     useShallow((state) => ({
-      snippets: state.snippets,
-      saveSnippet: state.saveSnippet,
-      setSelectedSnippet: state.setSelectedSnippet
+      snippets: state.notes || [],
+      saveSnippet: state.saveNote,
+      setSelectedSnippet: state.setSelectedNote
     }))
   )
 

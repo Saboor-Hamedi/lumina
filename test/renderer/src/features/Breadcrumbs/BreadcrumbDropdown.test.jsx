@@ -18,7 +18,7 @@ const mockSetSelectedSnippet = vi.fn()
 const mockSaveSnippet = vi.fn().mockResolvedValue({})
 
 vi.mock('../../../../../src/renderer/src/core/store/workspaceStore', () => ({
-  useVaultStore: (selector) =>
+  useWorkspaceStore: (selector) =>
     selector({
       folders: mockFolders,
       snippets: mockSnippets,

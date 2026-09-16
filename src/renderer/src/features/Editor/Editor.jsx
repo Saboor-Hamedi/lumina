@@ -20,7 +20,7 @@ import { EditorCanvas } from './EditorCanvas'
 
 import { useToast } from '../../core/notification'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import {
   useZoom,
   EditorState,
@@ -67,8 +67,8 @@ const Editor = React.memo(
       isActive
     })
 
-    const setSelectedSnippet = useVaultStore((state) => state.setSelectedSnippet)
-    const setDirty = useVaultStore((state) => state.setDirty)
+    const setSelectedNote = useWorkspaceStore((state) => state.setSelectedNote)
+    const setDirty = useWorkspaceStore((state) => state.setDirty)
 
     // 1. Editor State (Lifecycle, Auto-save, Conflict detection)
     const {
@@ -388,7 +388,7 @@ const Editor = React.memo(
               <EditorMenu
                 title={title}
                 snippet={snippet}
-                setSelectedSnippet={setSelectedSnippet}
+                setSelectedSnippet={setSelectedNote}
                 isDirty={isDirty}
                 isSaving={isSaving}
                 onSave={handleSave}

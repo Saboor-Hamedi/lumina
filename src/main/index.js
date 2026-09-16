@@ -406,7 +406,7 @@ app.whenReady().then(async () => {
 
   registerWorkspaceHandle('getSnippets', () => WorkspaceManager.getSnippets())
   registerWorkspaceHandle('readSnippet', async (_, id) => WorkspaceManager.readSnippet(id))
-  registerWorkspaceHandle('readSnippetPreview', async (_, id) => WorkspaceManager.readSnippetPreview(id))
+  registerWorkspaceHandle('readNotePreview', async (_, id) => WorkspaceManager.readNotePreview(id))
   registerWorkspaceHandle('saveSnippet', async (_, snippet) => {
     const updatedSnippet = await WorkspaceManager.saveSnippet(snippet)
     if (WorkspaceManager.workspacePath && updatedSnippet?.fileName) {

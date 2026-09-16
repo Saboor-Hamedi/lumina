@@ -6,7 +6,7 @@ import { deleteFileTool } from '../../../../../../src/renderer/src/features/AI/t
 import { renameFileTool } from '../../../../../../src/renderer/src/features/AI/tools/renameFile'
 import { deleteFolderTool } from '../../../../../../src/renderer/src/features/AI/tools/deleteFolder'
 import { renameFolderTool } from '../../../../../../src/renderer/src/features/AI/tools/renameFolder'
-import { useVaultStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
 
 describe('AI Folder & File Movement Tools', () => {
   beforeEach(() => {
@@ -21,7 +21,7 @@ describe('AI Folder & File Movement Tools', () => {
       deleteChunks: vi.fn().mockResolvedValue(true)
     }
 
-    useVaultStore.setState({
+    useWorkspaceStore.setState({
       snippets: [
         { id: 'note-1', title: 'Thermodynamics', code: '# Heat', folderId: '', fileName: 'Thermodynamics.md' },
         { id: 'note-2', title: 'Calculus', code: '# Integrals', folderId: 'Math', fileName: 'Calculus.md' }
@@ -30,7 +30,7 @@ describe('AI Folder & File Movement Tools', () => {
       folders: ['Math'],
       activeTabId: 'note-1',
       openTabs: ['note-1'],
-      loadVault: vi.fn().mockResolvedValue(true),
+      loadWorkspace: vi.fn().mockResolvedValue(true),
       deleteSnippet: vi.fn().mockResolvedValue(true),
       closeTab: vi.fn()
     })
@@ -41,7 +41,7 @@ describe('AI Folder & File Movement Tools', () => {
     expect(res.success).toBe(true)
     expect(res.path).toBe('Science/Physics')
     expect(window.api.createFolder).toHaveBeenCalledWith('Science/Physics')
-    expect(useVaultStore.getState().loadVault).toHaveBeenCalled()
+    expect(useWorkspaceStore.getState().loadWorkspace).toHaveBeenCalled()
   })
 
   it('createFileTool creates a note with target folder and saves it', async () => {
@@ -86,8 +86,8 @@ describe('AI Folder & File Movement Tools', () => {
     const res = await deleteFileTool.execute({ title: 'current' })
     expect(res.success).toBe(true)
     expect(res.title).toBe('Thermodynamics')
-    expect(useVaultStore.getState().deleteSnippet).toHaveBeenCalledWith('note-1', true)
-    expect(useVaultStore.getState().closeTab).toHaveBeenCalledWith('note-1')
+    expect(useWorkspaceStore.getState().deleteSnippet).toHaveBeenCalledWith('note-1', true)
+    expect(useWorkspaceStore.getState().closeTab).toHaveBeenCalledWith('note-1')
   })
 
   it('renameFileTool renames the active note', async () => {

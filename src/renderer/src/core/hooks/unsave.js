@@ -36,14 +36,18 @@ import '../../assets/unsave.css'
  * }}
  */
 export const useUnsaved = (snippetId) => {
-  const dirtySnippetIds = useWorkspaceStore((s) => s.dirtySnippetIds)
+  const dirtyNoteIds = useWorkspaceStore((s) => s.dirtyNoteIds)
   const setDirty = useWorkspaceStore((s) => s.setDirty)
 
-  const isUnsaved = Boolean(snippetId && dirtySnippetIds.includes(snippetId))
+  const isUnsaved = Boolean(
+    snippetId &&
+    Array.isArray(dirtyNoteIds) &&
+    dirtyNoteIds.includes(snippetId)
+  )
 
   const markUnsaved = useCallback(
     (dirty = true) => {
-      if (snippetId) {
+      if (snippetId && setDirty) {
         setDirty(snippetId, dirty)
       }
     },
@@ -51,14 +55,17 @@ export const useUnsaved = (snippetId) => {
   )
 
   const clearUnsaved = useCallback(() => {
-    if (snippetId) {
+    if (snippetId && setDirty) {
       setDirty(snippetId, false)
     }
   }, [snippetId, setDirty])
 
+  const safeList = Array.isArray(dirtyNoteIds) ? dirtyNoteIds : []
+
   return {
     isUnsaved,
-    dirtySnippetIds,
+    dirtySnippetIds: safeList,
+    dirtyNoteIds: safeList,
     markUnsaved,
     clearUnsaved
   }

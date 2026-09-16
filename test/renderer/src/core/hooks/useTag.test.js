@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useTag } from '../../../../../src/renderer/src/core/hooks/useTag'
-import { useVaultStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
 
 describe('useTag', () => {
   beforeEach(() => {
-    useVaultStore.setState({ snippets: [] })
+    useWorkspaceStore.setState({ notes: [] })
   })
 
   it('returns empty tags array when no snippets', () => {
@@ -14,8 +14,8 @@ describe('useTag', () => {
   })
 
   it('extracts tags from snippet frontmatter', () => {
-    useVaultStore.setState({
-      snippets: [{ id: '1', title: 'Test', code: '', tags: 'javascript, react' }]
+    useWorkspaceStore.setState({
+      notes: [{ id: '1', title: 'Test', code: '', tags: 'javascript, react' }]
     })
 
     const { result } = renderHook(() => useTag())
@@ -24,8 +24,8 @@ describe('useTag', () => {
   })
 
   it('handles tags that already start with #', () => {
-    useVaultStore.setState({
-      snippets: [{ id: '1', title: 'Test', code: '', tags: '#javascript, #react' }]
+    useWorkspaceStore.setState({
+      notes: [{ id: '1', title: 'Test', code: '', tags: '#javascript, #react' }]
     })
 
     const { result } = renderHook(() => useTag())
@@ -34,8 +34,8 @@ describe('useTag', () => {
   })
 
   it('extracts inline tags from markdown body', () => {
-    useVaultStore.setState({
-      snippets: [{ id: '1', title: 'Test', code: 'This is about #javascript and #react' }]
+    useWorkspaceStore.setState({
+      notes: [{ id: '1', title: 'Test', code: 'This is about #javascript and #react' }]
     })
 
     const { result } = renderHook(() => useTag())
@@ -44,8 +44,8 @@ describe('useTag', () => {
   })
 
   it('ignores tags inside code blocks', () => {
-    useVaultStore.setState({
-      snippets: [
+    useWorkspaceStore.setState({
+      notes: [
         {
           id: '1',
           title: 'Test',
@@ -60,8 +60,8 @@ describe('useTag', () => {
   })
 
   it('deduplicates tags across snippets', () => {
-    useVaultStore.setState({
-      snippets: [
+    useWorkspaceStore.setState({
+      notes: [
         { id: '1', title: 'Note 1', code: '#javascript', tags: '' },
         { id: '2', title: 'Note 2', code: '#javascript', tags: '' }
       ]
@@ -73,8 +73,8 @@ describe('useTag', () => {
   })
 
   it('sorts tags alphabetically', () => {
-    useVaultStore.setState({
-      snippets: [{ id: '1', title: 'Test', code: '#zebra #alpha #beta' }]
+    useWorkspaceStore.setState({
+      notes: [{ id: '1', title: 'Test', code: '#zebra #alpha #beta' }]
     })
 
     const { result } = renderHook(() => useTag())
@@ -82,8 +82,8 @@ describe('useTag', () => {
   })
 
   it('handles tags as array in frontmatter', () => {
-    useVaultStore.setState({
-      snippets: [{ id: '1', title: 'Test', code: '', tags: ['tag1', 'tag2'] }]
+    useWorkspaceStore.setState({
+      notes: [{ id: '1', title: 'Test', code: '', tags: ['tag1', 'tag2'] }]
     })
 
     const { result } = renderHook(() => useTag())
@@ -92,8 +92,8 @@ describe('useTag', () => {
   })
 
   it('filters out empty tags', () => {
-    useVaultStore.setState({
-      snippets: [{ id: '1', title: 'Test', code: '', tags: 'tag1, , tag2,' }]
+    useWorkspaceStore.setState({
+      notes: [{ id: '1', title: 'Test', code: '', tags: 'tag1, , tag2,' }]
     })
 
     const { result } = renderHook(() => useTag())

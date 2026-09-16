@@ -24,7 +24,7 @@ import TabContentPane from './TabContentPane'
 import AppModals from './AppModals'
 const Graph = React.lazy(() => import('../Graph/Graph'))
 import { useKeyboardShortcuts } from '../../core/shortcuts'
-import { useVaultStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
+import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { useUpdateStore } from '../../core/store/useUpdateStore'
 import { useToast } from '../../core/notification'
@@ -49,17 +49,17 @@ export const MainLayout = () => {
     setSelectedSnippet,
     saveSnippet,
     isLoading,
-    loadVault,
+    loadWorkspace,
     activeTabId,
     openTabs
-  } = useVaultStore(
+  } = useWorkspaceStore(
     useShallow((state) => ({
-      snippets: state.snippets,
-      selectedSnippet: state.selectedSnippet,
-      setSelectedSnippet: state.setSelectedSnippet,
-      saveSnippet: state.saveSnippet,
+      snippets: state.notes || [],
+      selectedSnippet: state.selectedNote,
+      setSelectedSnippet: state.setSelectedNote,
+      saveSnippet: state.saveNote,
       isLoading: state.isLoading,
-      loadVault: state.loadVault,
+      loadWorkspace: state.loadWorkspace,
       activeTabId: state.activeTabId,
       openTabs: state.openTabs
     }))
@@ -220,23 +220,23 @@ export const MainLayout = () => {
       try {
         await Promise.all([
           useSettingsStore.getState().init(),
-          loadVault()
+          loadWorkspace()
         ])
 
         const actualSettings = useSettingsStore.getState().settings || {}
 
         if (actualSettings.openTabs && Array.isArray(actualSettings.openTabs)) {
-          useVaultStore
+          useWorkspaceStore
             .getState()
             .restoreSession(
               actualSettings.openTabs,
-              actualSettings.lastSnippetId,
+              actualSettings.lastNoteId,
               actualSettings.pinnedTabIds || []
             )
-        } else if (actualSettings.lastSnippetId) {
-          const allSnippets = useVaultStore.getState().snippets || []
-          const last = allSnippets.find((s) => s.id === actualSettings.lastSnippetId)
-          if (last) setSelectedSnippet(last)
+        } else if (actualSettings.lastNoteId) {
+          const allSnippets = useWorkspaceStore.getState().notes || []
+          const last = allSnippets.find((s) => s.id === actualSettings.lastNoteId)
+          if (last) setSelectedNote(last)
         }
 
         let savedLeft = null
@@ -372,13 +372,13 @@ export const MainLayout = () => {
   useEffect(() => {
     if (window.api?.onVaultUpdated) {
       const cleanup = window.api.onVaultUpdated(() => {
-        loadVault()
+        loadWorkspace()
       })
       return cleanup
     }
-  }, [loadVault])
+  }, [loadWorkspace])
 
-  const pinnedTabIds = useVaultStore((state) => state.pinnedTabIds)
+  const pinnedTabIds = useWorkspaceStore((state) => state.pinnedTabIds)
 
   useEffect(() => {
     const handleRenameShortcut = (e) => {
@@ -392,7 +392,7 @@ export const MainLayout = () => {
       const key = e.key && e.key.toLowerCase()
       if ((e.ctrlKey || e.metaKey) && key === 'r' && !e.shiftKey && !e.altKey) {
         e.preventDefault()
-        const currentSelectedFolder = useVaultStore.getState().selectedFolder
+        const currentSelectedFolder = useWorkspaceStore.getState().selectedFolder
         if (currentSelectedFolder) {
           const folderName = currentSelectedFolder.split('/').pop()
           setRenameModal({
@@ -571,7 +571,7 @@ export const MainLayout = () => {
     },
     onCloseTab: () => {
       if (activeTabId) {
-        useVaultStore.getState().closeTab(activeTabId)
+        useWorkspaceStore.getState().closeTab(activeTabId)
       }
     },
     onCloseWindow: () => {
@@ -672,7 +672,7 @@ export const MainLayout = () => {
   const handleConfirmDelete = async () => {
     if (snippetToDelete) {
       try {
-        await useVaultStore.getState().deleteSnippet(snippetToDelete.id, true)
+        await useWorkspaceStore.getState().deleteNote(snippetToDelete.id, true)
         setSnippetToDelete(null)
       } catch (error) {
         console.error('[MainLayout] Failed to delete snippet:', error)
@@ -983,7 +983,7 @@ export const MainLayout = () => {
         snippetToDelete={snippetToDelete}
         handleConfirmDelete={handleConfirmDelete}
         saveSnippet={saveSnippet}
-        loadVault={loadVault}
+        loadWorkspace={loadWorkspace}
         showToast={showToast}
         showActiveIconPicker={showActiveIconPicker}
         setShowActiveIconPicker={setShowActiveIconPicker}

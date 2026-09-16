@@ -24,10 +24,10 @@ export const deleteFolderTool = aiSdk.tool({
         await window.api.deleteFolder(cleanPath)
       }
 
-      const { useVaultStore } = await import('../../../core/store/workspaceStore')
-      const vs = useVaultStore.getState()
-      if (vs.loadVault) {
-        await vs.loadVault()
+      const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const vs = useWorkspaceStore.getState()
+      if (vs.loadWorkspace) {
+        await vs.loadWorkspace()
       }
 
       return {

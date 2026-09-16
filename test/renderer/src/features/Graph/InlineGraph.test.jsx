@@ -23,7 +23,7 @@ vi.mock('../../../../../src/renderer/src/features/Graph/GraphMiniMap', () => ({
 
 import { render, screen, act } from '@testing-library/react'
 import InlineGraph from '../../../../../src/renderer/src/features/Graph/InlineGraph'
-import { useVaultStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
 import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
 
 describe('InlineGraph', () => {
@@ -39,7 +39,7 @@ describe('InlineGraph', () => {
       observe() {}
       disconnect() {}
     }
-    useVaultStore.setState({ snippets: [] })
+    useWorkspaceStore.setState({ snippets: [] })
     useSettingsStore.setState({
       settings: { graphTheme: 'default', graphNodeSize: 1.5, graphShowTexts: true }
     })

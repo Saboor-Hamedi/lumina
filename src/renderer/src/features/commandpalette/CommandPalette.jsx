@@ -32,7 +32,7 @@ import { useShallow } from 'zustand/react/shallow'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useAIStore } from '../AI/tools/lumina'
 import { MessageContent, ThinkingIndicator, ChatMessageRow } from '../AI/Lumina'
-import { useVaultStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/useSettingsStore'
 import { PreviewCommandPalette } from './PreviewCommandPalette'
 import '../AI/css/lumina.css'
@@ -253,11 +253,11 @@ const CommandPalette = React.memo(
       sendChatMessage,
       clearChat
     } = useAIStore()
-    const { dirtySnippetIds, folders, selectedSnippet } = useVaultStore(
+    const { dirtySnippetIds, folders, selectedSnippet } = useWorkspaceStore(
       useShallow((state) => ({
-        dirtySnippetIds: state.dirtySnippetIds,
+        dirtySnippetIds: state.dirtyNoteIds || [],
         folders: state.folders,
-        selectedSnippet: state.selectedSnippet
+        selectedSnippet: state.selectedNote
       }))
     )
     const { settings, updateSetting } = useSettingsStore()

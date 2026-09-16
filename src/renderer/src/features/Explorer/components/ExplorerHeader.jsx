@@ -37,7 +37,7 @@ import NoteNumbers from './NoteNumbers'
  * @param {Array<Object>} props.allSnippets - All workspace notes
  * @param {string|null} props.lastClickedFolder - Last clicked folder path
  * @param {Function} props.setExpandedFolders - Setter for expanded folder IDs
- * @param {Function} props.loadVault - Vault reload handler
+ * @param {Function} props.loadWorkspace - Vault reload handler
  * @param {boolean} props.isLoading - Whether the vault is actively reloading
  * @param {Function} props.collapseAllFolders - Handler to collapse all folders
  */
@@ -64,7 +64,7 @@ export const ExplorerHeader = ({
   allSnippets,
   lastClickedFolder,
   setExpandedFolders,
-  loadVault,
+  loadWorkspace,
   isLoading,
   collapseAllFolders
 }) => {
@@ -220,7 +220,7 @@ export const ExplorerHeader = ({
                 className="sort-toggle-btn"
                 onClick={(e) => {
                   e.stopPropagation()
-                  loadVault()
+                  loadWorkspace()
                 }}
                 disabled={isLoading}
                 style={{ opacity: isLoading ? 0.5 : 1 }}

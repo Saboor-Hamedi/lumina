@@ -3,11 +3,12 @@ import { Check } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 
-export function LearnedButton({ snippet }) {
-  const saveSnippet = useWorkspaceStore((state) => state.saveSnippet)
+export function LearnedButton({ snippet, note: propNote }) {
+  const note = propNote || snippet
+  const saveNote = useWorkspaceStore((state) => state.saveNote)
   const isStoreLearned = useWorkspaceStore((state) => {
-    const s = state.snippets.find((item) => item.id === snippet?.id)
-    return s ? !!s.isLearned : !!snippet?.isLearned
+    const n = (state.notes || []).find((item) => item.id === note?.id)
+    return n ? !!n.isLearned : !!note?.isLearned
   })
 
   const [localLearned, setLocalLearned] = useState(isStoreLearned)
@@ -20,38 +21,40 @@ export function LearnedButton({ snippet }) {
     (e) => {
       e.preventDefault()
       e.stopPropagation()
-      if (!snippet?.id) return
+      if (!note?.id) return
 
       const nextLearnedState = !localLearned
       setLocalLearned(nextLearnedState)
 
       requestAnimationFrame(() => {
         const state = useWorkspaceStore.getState()
-        const targetSnippet = state.snippets.find((s) => s.id === snippet.id) || snippet
+        const targetNote = (state.notes || []).find((n) => n.id === note.id) || note
 
         useWorkspaceStore.setState({
-          snippets: state.snippets.map((s) =>
-            s.id === snippet.id ? { ...s, isLearned: nextLearnedState } : s
+          notes: (state.notes || []).map((n) =>
+            n.id === note.id ? { ...n, isLearned: nextLearnedState } : n
           ),
-          selectedSnippet:
-            state.selectedSnippet?.id === snippet.id
-              ? { ...state.selectedSnippet, isLearned: nextLearnedState }
-              : state.selectedSnippet
+          selectedNote:
+            state.selectedNote?.id === note.id
+              ? { ...state.selectedNote, isLearned: nextLearnedState }
+              : state.selectedNote
         })
 
-        saveSnippet({
-          ...targetSnippet,
-          isLearned: nextLearnedState
-        }).catch((err) => {
-          console.error('[ProgressTracker] Failed to toggle learned status:', err)
-          setLocalLearned(!nextLearnedState)
-        })
+        if (saveNote) {
+          saveNote({
+            ...targetNote,
+            isLearned: nextLearnedState
+          }).catch((err) => {
+            console.error('[ProgressTracker] Failed to toggle learned status:', err)
+            setLocalLearned(!nextLearnedState)
+          })
+        }
       })
     },
-    [snippet, localLearned, saveSnippet]
+    [note, localLearned, saveNote]
   )
 
-  if (!snippet?.id) return null
+  if (!note?.id) return null
 
   const isLearned = localLearned
 
@@ -97,24 +100,25 @@ export function LearnedButton({ snippet }) {
   )
 }
 
-export function LearningTrackBadge({ snippetId }) {
-  const snippets = useWorkspaceStore((state) => state.snippets)
-  const selectedSnippet = useWorkspaceStore(
-    (state) => (snippetId ? state.snippets.find((s) => s.id === snippetId) : state.selectedSnippet)
+export function LearningTrackBadge({ snippetId, noteId: propNoteId }) {
+  const noteId = propNoteId || snippetId
+  const notes = useWorkspaceStore((state) => state.notes) || []
+  const selectedNote = useWorkspaceStore(
+    (state) => (noteId ? (state.notes || []).find((n) => n.id === noteId) : state.selectedNote)
   )
 
   const stats = useMemo(() => {
-    if (!snippets || snippets.length === 0) return null
+    if (!notes || notes.length === 0) return null
 
-    const totalWorkspace = snippets.length
-    const learnedWorkspace = snippets.filter((s) => !!s.isLearned).length
+    const totalWorkspace = notes.length
+    const learnedWorkspace = notes.filter((n) => !!n.isLearned).length
 
-    const folderId = selectedSnippet?.folderId
-    const folderSnippets = folderId ? snippets.filter((s) => (s.folderId || '') === folderId) : null
+    const folderId = selectedNote?.folderId
+    const folderNotes = folderId ? notes.filter((n) => (n.folderId || '') === folderId) : null
 
-    if (folderSnippets && folderSnippets.length > 0) {
-      const folderTotal = folderSnippets.length
-      const folderLearned = folderSnippets.filter((s) => !!s.isLearned).length
+    if (folderNotes && folderNotes.length > 0) {
+      const folderTotal = folderNotes.length
+      const folderLearned = folderNotes.filter((n) => !!n.isLearned).length
       const folderPercent = Math.min(100, Math.round((folderLearned / folderTotal) * 100))
       return {
         isFolder: true,
@@ -140,7 +144,7 @@ export function LearningTrackBadge({ snippetId }) {
       workspaceLearned: learnedWorkspace,
       workspaceTotal: totalWorkspace
     }
-  }, [snippets, selectedSnippet])
+  }, [notes, selectedNote])
 
   if (!stats || stats.total === 0) return null
 
@@ -203,8 +207,8 @@ export function LearningTrackBadge({ snippetId }) {
   )
 }
 
-export default function ProgressTracker({ snippetId }) {
-  return <LearningTrackBadge snippetId={snippetId} />
+export default function ProgressTracker({ snippetId, noteId }) {
+  return <LearningTrackBadge snippetId={snippetId} noteId={noteId} />
 }
 
 export { ProgressTracker as RoadmapProgressBar }

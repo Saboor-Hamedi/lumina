@@ -45,10 +45,10 @@ export function useWikilinkCompletion({ showToast }) {
     if (!match) return null
     if (match.from === match.to && !context.explicit) return null
 
-    const { snippets } = useWorkspaceStore.getState()
+    const { notes } = useWorkspaceStore.getState()
     const query = match[1] || ''
 
-    const opts = (snippets || [])
+    const opts = (notes || [])
       .filter(
         (s) =>
           s.title &&
@@ -87,9 +87,9 @@ export function useWikilinkCompletion({ showToast }) {
   const openOrCreateNote = useCallback(
     async (target) => {
       try {
-        const { snippets, saveSnippet, setSelectedSnippet } = useWorkspaceStore.getState()
+        const { notes, saveNote, setSelectedNote } = useWorkspaceStore.getState()
         const targetKey = normalizeWikilinkTarget(target)
-        let targetSnippet = (snippets || []).find((s) => {
+        let targetSnippet = (notes || []).find((s) => {
           if (!s.title || s.type === 'image') return false
           const titleKey = normalizeWikilinkTarget(s.title)
           const titleWithoutMdKey = normalizeWikilinkTarget(s.title.replace(/\.md$/i, ''))
@@ -105,9 +105,9 @@ export function useWikilinkCompletion({ showToast }) {
             tags: '',
             timestamp: Date.now()
           }
-          await saveSnippet(targetSnippet)
+          if (saveNote) await saveNote(targetSnippet)
         }
-        setSelectedSnippet(targetSnippet)
+        if (setSelectedNote) setSelectedNote(targetSnippet)
       } catch (e) {
         showToast?.(`Error: ${e.message}`, 'error')
       }

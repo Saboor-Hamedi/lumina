@@ -51,13 +51,13 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
   const [showCcBcc, setShowCcBcc] = useState<boolean>(false)
   const [isPreview, setIsPreview] = useState<boolean>(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const selectedSnippet = useWorkspaceStore((s) => s.selectedSnippet)
+  const selectedNote = useWorkspaceStore((s) => s.selectedNote)
 
   if (!isOpen) return null
 
   const handleAttachCurrentNote = () => {
-    if (selectedSnippet) {
-      onAttachNote(selectedSnippet.title || 'Note', selectedSnippet.code || '')
+    if (selectedNote) {
+      onAttachNote(selectedNote.title || 'Note', selectedNote.code || '')
     }
   }
 
