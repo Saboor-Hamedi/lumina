@@ -65,7 +65,8 @@ const SidebarItem = ({
   variant = 'list',
   dndProps,
   searchQuery,
-  matchSnippet
+  matchSnippet,
+  isDropOver
 }) => {
   const { deleteSnippet, saveSnippet, selectedSnippet, activeTabId } = useWorkspaceStore(
     useShallow((state) => ({
@@ -453,7 +454,7 @@ const SidebarItem = ({
   return (
     <div
       ref={dndProps?.setNodeRef}
-      className={`tree-item ${computedIsActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${hasSearchPreview ? 'has-search-preview' : ''}`}
+      className={`tree-item ${computedIsActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${hasSearchPreview ? 'has-search-preview' : ''} ${isDropOver ? 'drop-over' : ''}`}
       onClick={(e) => {
         if (e.button !== 0) return
         if (!isRenaming && onClick) onClick(e)

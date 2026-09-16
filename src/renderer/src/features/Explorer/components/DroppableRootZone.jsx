@@ -10,12 +10,12 @@ export const DroppableRootZone = React.memo(() => {
       style={{
         padding: '12px',
         margin: '4px 8px',
-        border: `2px dashed ${isOver ? 'var(--accent-primary)' : 'var(--border-dim)'}`,
+        border: `2px dashed ${isOver ? 'var(--text-accent, #40bafa)' : 'var(--border-dim)'}`,
         borderRadius: '8px',
         textAlign: 'center',
-        color: isOver ? 'var(--accent-primary)' : 'var(--text-muted)',
-        background: isOver ? 'rgba(59, 130, 246, 0.05)' : 'transparent',
-        boxShadow: isOver ? '0 0 8px rgba(59, 130, 246, 0.15)' : 'none',
+        color: isOver ? 'var(--text-accent, #40bafa)' : 'var(--text-muted)',
+        background: isOver ? 'color-mix(in srgb, var(--text-accent, #40bafa) 10%, transparent)' : 'transparent',
+        boxShadow: isOver ? '0 0 12px color-mix(in srgb, var(--text-accent, #40bafa) 30%, transparent)' : 'none',
         transition: 'all 0.2s',
         fontSize: '13px',
         fontWeight: 500

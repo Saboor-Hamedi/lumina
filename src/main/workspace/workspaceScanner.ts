@@ -5,8 +5,6 @@ import matter from 'gray-matter'
 
 /**
  * Recognized image file extensions for media attachments within the workspace.
- * Files matching these extensions are tracked as image snippets and surfaced in the explorer/graph.
- * @type {Set<string>}
  */
 const IMAGE_EXTS = new Set([
   '.png',
@@ -22,8 +20,6 @@ const IMAGE_EXTS = new Set([
 
 /**
  * Recognized PDF file extensions for document attachments within the workspace.
- * PDFs are tracked separately from images and notes — they open in the native PDF viewer tab.
- * @type {Set<string>}
  */
 const PDF_EXTS = new Set(['.pdf'])
 
@@ -31,26 +27,47 @@ export const MAX_WORKSPACE_TEXT_BYTES = 5 * 1024 * 1024
 
 /**
  * Recognized text note extensions.
- * Files matching these extensions are parsed for frontmatter, markdown wikilinks, and plain text content.
- * @type {Set<string>}
  */
 const TEXT_EXTS = new Set(['.md', '.markdown', '.txt', '.canvas'])
 
+export interface WorkspaceSnippet {
+  id: string
+  title: string
+  code: string
+  language: string
+  tags: string
+  timestamp: number
+  createdAt?: string
+  selection?: any
+  isPinned: boolean
+  isLearned: boolean
+  customIcon: string | null
+  color: string | null
+  type: 'snippet' | 'canvas' | 'image' | 'pdf'
+  is_draft: number
+  fileName: string
+  folderId: string
+  relativePath: string
+  size?: number
+  isOversized?: boolean
+  ext?: string
+  [key: string]: any
+}
+
+export interface FrontmatterResult {
+  data: Record<string, any>
+  content: string
+}
+
+export interface WorkspaceScanResult {
+  snippets: WorkspaceSnippet[]
+  folders: string[]
+}
+
 /**
  * Safely parses YAML frontmatter from raw markdown content without throwing fatal errors.
- *
- * Performance Optimization:
- * - Immediately short-circuits with `{ data: {}, content: rawContent }` if the document does not
- *   begin with standard YAML frontmatter markers (`---`), completely avoiding regex overhead and
- *   heavy YAML parser instantiation for standard notes.
- * - For files containing frontmatter, it sanitizes unquoted string values (e.g. titles with colons
- *   or quotes) to prevent gray-matter / js-yaml parse failures.
- * - Includes a regex-based fallback extractor if gray-matter throws an unrecoverable syntax exception.
- *
- * @param {string} rawContent - The full UTF-8 text read from disk.
- * @returns {{ data: Record<string, any>, content: string }} Parsed frontmatter data and remaining body.
  */
-export function safeParseFrontmatter(rawContent) {
+export function safeParseFrontmatter(rawContent: string): FrontmatterResult {
   if (!rawContent || typeof rawContent !== 'string') {
     return { data: {}, content: '' }
   }
@@ -105,9 +122,9 @@ export function safeParseFrontmatter(rawContent) {
     let content = parsed.content !== undefined ? parsed.content : rawContent
     if (content.trim() === '') content = ''
     return { data: parsed.data || {}, content }
-  } catch (err) {
+  } catch {
     // Fallback: simple line-by-line key:value parsing if gray-matter fails
-    let data = {}
+    const data: Record<string, any> = {}
     let content = rawContent
     if (fmMatch) {
       const fmText = fmMatch[1]
@@ -133,34 +150,22 @@ export function safeParseFrontmatter(rawContent) {
 
 /**
  * High-performance file scanner for Lumina workspaces.
- *
- * Responsibilities:
- * 1. Concurrently traverses workspace directory trees while ignoring git/node/dist build caches.
- * 2. Incremental Parsing: Reuses previously parsed snippets if file modification timestamp (mtimeMs)
- *    has not changed, eliminating massive disk read & YAML parse overhead on startup or window reloads.
- * 3. Normalizes note IDs, frontmatter titles, folders, and tags into uniform snippet records.
- * 4. Discovers image assets and exposes them as first-class image snippets.
  */
 export class WorkspaceScanner {
-  /**
-   * Scans a workspace directory tree and returns an indexed list of snippets and folders.
-   *
-   * @param {string} workspacePath - Absolute root directory of the workspace.
-   * @param {Map<string, any> | Array<any>} [existingCache=null] - Optional previously cached snippets
-   *        used to skip re-reading unchanged files based on mtime timestamps.
-   * @returns {Promise<{ snippets: Array<any>, folders: Array<string> }>}
-   */
-  static async scan(workspacePath, existingCache = null) {
+  static async scan(
+    workspacePath: string,
+    existingCache: Map<string, WorkspaceSnippet> | WorkspaceSnippet[] | null = null
+  ): Promise<WorkspaceScanResult> {
     if (!workspacePath) return { snippets: [], folders: [] }
 
     try {
-      const textFiles = []
-      const imageFiles = []
-      const pdfFiles = [] // PDFs tracked separately — open in native PDF viewer tab
-      const foundFolders = new Set()
+      const textFiles: Array<{ fileName: string; folderId: string; ext: string; fullPath: string; relPath: string }> = []
+      const imageFiles: Array<{ fileName: string; folderId: string; ext: string; fullPath: string; relPath: string }> = []
+      const pdfFiles: Array<{ fileName: string; folderId: string; ext: string; fullPath: string; relPath: string }> = []
+      const foundFolders = new Set<string>()
 
       // Build a fast lookup map for unchanged snippets by relative path
-      const cacheByRelPath = new Map()
+      const cacheByRelPath = new Map<string, WorkspaceSnippet>()
       if (existingCache) {
         const items = existingCache instanceof Map ? existingCache.values() : existingCache
         for (const item of items) {
@@ -170,28 +175,19 @@ export class WorkspaceScanner {
         }
       }
 
-      /**
-       * Asynchronously walks directory entries with concurrent sub-directory traversal.
-       * Excludes hidden folders (.git, .lumina, etc.) and heavy build directories.
-       *
-       * @param {string} dir - Current directory path.
-       * @param {string} [relativePath=''] - Relative path from workspace root.
-       */
-      const walk = async (dir, relativePath = '') => {
+      const walk = async (dir: string, relativePath = ''): Promise<void> => {
         let entries
         try {
           entries = await fs.readdir(dir, { withFileTypes: true })
-        } catch (err) {
-          // If directory is inaccessible or was deleted concurrently, skip gracefully
+        } catch {
           return
         }
 
-        const subDirPromises = []
+        const subDirPromises: Promise<void>[] = []
 
         for (const entry of entries) {
           const name = entry.name
 
-          // Skip hidden directories, version control, build outputs, and node_modules
           if (
             name === '.git' ||
             name === '.lumina' ||
@@ -217,13 +213,11 @@ export class WorkspaceScanner {
             } else if (IMAGE_EXTS.has(ext)) {
               imageFiles.push({ fileName: name, folderId: relativePath, ext, fullPath, relPath })
             } else if (PDF_EXTS.has(ext)) {
-              // PDFs get their own bucket — same metadata shape as images but type: 'pdf'
               pdfFiles.push({ fileName: name, folderId: relativePath, ext, fullPath, relPath })
             }
           }
         }
 
-        // Process subdirectories concurrently for maximum I/O throughput
         if (subDirPromises.length > 0) {
           await Promise.all(subDirPromises)
         }
@@ -231,16 +225,15 @@ export class WorkspaceScanner {
 
       await walk(workspacePath)
 
-      const seenIds = new Set()
-      const newSnippets = []
+      const seenIds = new Set<string>()
+      const newSnippets: WorkspaceSnippet[] = []
 
-      // Batch process text files concurrently to maintain high throughput without exhausting file handles
       const BATCH_SIZE = 64
       for (let i = 0; i < textFiles.length; i += BATCH_SIZE) {
         const batch = textFiles.slice(i, i + BATCH_SIZE)
 
         const batchResults = await Promise.all(
-          batch.map(async ({ fileName, folderId, ext, fullPath, relPath }) => {
+          batch.map(async ({ fileName, folderId, ext, fullPath, relPath }): Promise<WorkspaceSnippet | null> => {
             try {
               const stats = await fs.stat(fullPath)
               const isMarkdown = ext === '.md' || ext === '.markdown'
@@ -271,7 +264,6 @@ export class WorkspaceScanner {
                 }
               }
 
-              // Cache Check: If file mtime matches cached snippet, reuse it directly
               const cached = cacheByRelPath.get(relPath)
               if (
                 cached &&
@@ -279,7 +271,6 @@ export class WorkspaceScanner {
                 cached.fileName === fileName &&
                 cached.folderId === folderId
               ) {
-                // Ensure unique IDs across duplicates
                 let finalId = cached.id
                 if (!finalId || seenIds.has(finalId)) {
                   finalId = `note-${crypto.createHash('md5').update(relPath).digest('hex')}`
@@ -288,9 +279,8 @@ export class WorkspaceScanner {
                 return { ...cached, id: finalId }
               }
 
-              // File has been added or updated: read and parse
               const rawContent = await fs.readFile(fullPath, 'utf-8')
-              let data = {}
+              let data: Record<string, any> = {}
               let content = rawContent
 
               if (isMarkdown) {
@@ -299,7 +289,6 @@ export class WorkspaceScanner {
                 content = parsed.content || ''
               }
 
-              // Clean up title quotes or escape sequences
               let displayTitle = data.title
               if (displayTitle && typeof displayTitle === 'string') {
                 displayTitle = displayTitle
@@ -322,7 +311,6 @@ export class WorkspaceScanner {
                 }
               }
 
-              // Ensure stable, deterministic unique note ID
               let finalId = data.id
               if (!finalId || seenIds.has(finalId)) {
                 finalId = `note-${crypto.createHash('md5').update(relPath).digest('hex')}`
@@ -356,26 +344,24 @@ export class WorkspaceScanner {
                 folderId: folderId || '',
                 relativePath: relPath
               }
-            } catch (fileErr) {
+            } catch {
               return null
             }
           })
         )
 
-        newSnippets.push(...batchResults.filter(Boolean))
+        newSnippets.push(...batchResults.filter((s): s is WorkspaceSnippet => s !== null))
 
-        // Yield execution every 200 files to avoid starving event loop during huge imports
         if (i > 0 && i % 256 === 0) {
           await new Promise((resolve) => setImmediate(resolve))
         }
       }
 
-      // Batch process image assets
       for (let i = 0; i < imageFiles.length; i += BATCH_SIZE) {
         const batch = imageFiles.slice(i, i + BATCH_SIZE)
 
         const batchResults = await Promise.all(
-          batch.map(async ({ fileName, folderId, ext, fullPath, relPath }) => {
+          batch.map(async ({ fileName, folderId, ext, fullPath, relPath }): Promise<WorkspaceSnippet | null> => {
             try {
               const stats = await fs.stat(fullPath)
               const cached = cacheByRelPath.get(relPath)
@@ -410,21 +396,20 @@ export class WorkspaceScanner {
                 folderId: folderId || '',
                 relativePath: relPath
               }
-            } catch (err) {
+            } catch {
               return null
             }
           })
         )
 
-        newSnippets.push(...batchResults.filter(Boolean))
+        newSnippets.push(...batchResults.filter((s): s is WorkspaceSnippet => s !== null))
       }
 
-      // Batch process PDF documents — same shape as images but type: 'pdf', language: 'pdf'
       for (let i = 0; i < pdfFiles.length; i += BATCH_SIZE) {
         const batch = pdfFiles.slice(i, i + BATCH_SIZE)
 
         const batchResults = await Promise.all(
-          batch.map(async ({ fileName, folderId, ext, fullPath, relPath }) => {
+          batch.map(async ({ fileName, folderId, ext, fullPath, relPath }): Promise<WorkspaceSnippet | null> => {
             try {
               const stats = await fs.stat(fullPath)
               const cached = cacheByRelPath.get(relPath)
@@ -437,7 +422,6 @@ export class WorkspaceScanner {
                 return cached
               }
 
-              // Use 'pdf-' prefix to keep IDs separate from images and notes
               const id = `pdf-${crypto.createHash('md5').update(relPath).digest('hex')}`
 
               return {
@@ -460,13 +444,13 @@ export class WorkspaceScanner {
                 folderId: folderId || '',
                 relativePath: relPath
               }
-            } catch (err) {
+            } catch {
               return null
             }
           })
         )
 
-        newSnippets.push(...batchResults.filter(Boolean))
+        newSnippets.push(...batchResults.filter((s): s is WorkspaceSnippet => s !== null))
       }
 
       return { snippets: newSnippets, folders: Array.from(foundFolders) }

@@ -772,10 +772,26 @@
   color: var(--text-main);
 }
 
-.folder-tree-main.folder-over {
-  background: rgba(99, 102, 241, 0.12) !important;
-  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.5) !important;
+.folder-tree-main.folder-over,
+.tree-item.drop-over {
+  background: color-mix(in srgb, var(--text-accent, #40bafa) 6%, transparent) !important;
+  border-bottom: 0.5px solid var(--text-accent, #40bafa) !important;
   border-radius: 2px;
+  position: relative;
+}
+
+.folder-tree-main.folder-over::after,
+.tree-item.drop-over::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: 0;
+  height: 0.5px;
+  background: var(--text-accent, #40bafa);
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 10;
 }
 
 .start-menu-body.root-body-focused {
@@ -790,11 +806,19 @@
   border: none !important;
 }
 
-.recommended-list.root-drop-over {
-  box-shadow: inset 0 0 0 1.5px var(--text-accent, #6366f1) !important;
-  background: rgba(99, 102, 241, 0.03) !important;
-  border-radius: 2px;
+.start-menu-body.root-drop-over,
+.start-menu-body:has(.root-drop-over) {
+  box-shadow: inset 0 0 0 1.5px var(--text-accent, #40bafa),
+              inset 0 0 12px color-mix(in srgb, var(--text-accent, #40bafa) 10%, transparent) !important;
+  background: color-mix(in srgb, var(--text-accent, #40bafa) 4%, transparent) !important;
+  border-radius: 6px;
   transition: all 0.15s ease-out;
+}
+
+.recommended-list.root-drop-over {
+  box-shadow: none !important;
+  background: transparent !important;
+  border: none !important;
 }
 
 .tree-item.multi-selected {

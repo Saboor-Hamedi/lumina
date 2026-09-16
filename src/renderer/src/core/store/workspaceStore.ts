@@ -3,11 +3,75 @@ import { useSettingsStore } from './SettingStore'
 
 export const GRAPH_TAB_ID = '__graph__'
 
-let selectionTimeout = null
-let hasLoadedWorkspaceOnce = false
-const recentlyDeletedIds = new Set()
+export interface WorkspaceNote {
+  id: string
+  title?: string
+  code?: string
+  folderId?: string
+  fileName?: string
+  color?: string | null
+  tags?: string
+  language?: string
+  isPinned?: boolean
+  isLearned?: boolean
+  timestamp?: number
+  createdAt?: string
+  customIcon?: string | null
+  selection?: any
+  type?: string
+  size?: number
+  isOversized?: boolean
+  isPartial?: boolean
+  [key: string]: any
+}
 
-const persistNotesSnapshot = (notes, openTabs = []) => {
+export interface WorkspaceStoreState {
+  notes: WorkspaceNote[]
+  folders: string[]
+  folderColors: Record<string, string>
+  selectedNote: WorkspaceNote | null
+  selectedFolder: string | null
+  isLoading: boolean
+  searchQuery: string
+  dirtyNoteIds: string[]
+  drafts: Record<string, string>
+  openTabs: string[]
+  activeTabId: string | null
+  pinnedTabIds: string[]
+  clipboard: any
+
+  setNotes: (notes: WorkspaceNote[]) => void
+  setSelectedFolder: (selectedFolder: string | null) => void
+  setClipboard: (clipboard: any) => void
+  restoreSession: (tabs: string[], activeId: string | null, pinnedIds?: string[]) => void
+  setSelectedNote: (note: WorkspaceNote | null) => void
+  setActiveTabId: (id: string | null) => void
+  closeTab: (id: string) => void
+  reorderTabs: (newTabs: string[]) => void
+  closeOtherTabs: (keepId: string) => void
+  closeTabsToRight: (id: string) => void
+  closeAllTabs: () => void
+  togglePinTab: (id: string) => void
+  openGraphTab: () => void
+  setPinnedTabs: (pinnedTabIds: string[]) => void
+  setLoading: (isLoading: boolean) => void
+  setSearchQuery: (query: string) => void
+  setDraft: (id: string, code: string) => void
+  addFolder: (folderPath: string) => void
+  setDirty: (id: string, isDirty: boolean) => void
+  loadWorkspace: () => Promise<void>
+  loadVault: () => Promise<void>
+  saveNote: (note: Partial<WorkspaceNote> & { id: string }) => Promise<any>
+  deleteNote: (id: string, skipConfirm?: boolean) => Promise<void>
+  setFolderColor: (folderId: string, color: string | null) => Promise<void>
+  updateNoteSelection: (id: string, selection: any) => void
+  reorderNotes: (orderedIds: string[]) => void
+}
+
+let hasLoadedWorkspaceOnce = false
+const recentlyDeletedIds = new Set<string>()
+
+const persistNotesSnapshot = (notes: WorkspaceNote[], openTabs: string[] = []): void => {
   try {
     const openSet = new Set(openTabs)
     const slim = (notes || []).map((n) => {
@@ -24,7 +88,7 @@ const persistNotesSnapshot = (notes, openTabs = []) => {
   }
 }
 
-const persistFoldersSnapshot = (folders) => {
+const persistFoldersSnapshot = (folders: string[]): void => {
   try {
     if (Array.isArray(folders)) {
       localStorage.setItem('lumina_session_folders', JSON.stringify(folders))
@@ -40,11 +104,11 @@ const getCachedSession = () => {
     const rawPinned = localStorage.getItem('lumina_session_pinnedTabIds')
     const lastNoteId = localStorage.getItem('lumina_session_lastNoteId')
 
-    const notes = rawNotes ? JSON.parse(rawNotes) : []
-    const parsedFolders = rawFolders ? JSON.parse(rawFolders) : []
+    const notes: WorkspaceNote[] = rawNotes ? JSON.parse(rawNotes) : []
+    const parsedFolders: string[] = rawFolders ? JSON.parse(rawFolders) : []
 
     // Always derive all folders from notes AND merge with cached folders
-    const folderSet = new Set(Array.isArray(parsedFolders) ? parsedFolders : [])
+    const folderSet = new Set<string>(Array.isArray(parsedFolders) ? parsedFolders : [])
     notes.forEach((n) => {
       if (n.folderId && typeof n.folderId === 'string') {
         const clean = n.folderId.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
@@ -57,8 +121,8 @@ const getCachedSession = () => {
     })
     const folders = Array.from(folderSet)
 
-    const openTabs = rawTabs ? JSON.parse(rawTabs) : []
-    const pinnedTabIds = rawPinned ? JSON.parse(rawPinned) : []
+    const openTabs: string[] = rawTabs ? JSON.parse(rawTabs) : []
+    const pinnedTabIds: string[] = rawPinned ? JSON.parse(rawPinned) : []
     const noteIdSet = new Set(notes.map((n) => n.id))
     const validTabs = openTabs.filter((id) => id === GRAPH_TAB_ID || noteIdSet.has(id))
     const validPinned = pinnedTabIds.filter((id) => validTabs.includes(id))
@@ -97,7 +161,7 @@ const getCachedSession = () => {
 
 const initialSession = getCachedSession()
 
-export const useWorkspaceStore = create((set, get) => ({
+export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   // Core Workspace & Note State (Hydrated synchronously from localStorage)
   notes: initialSession.notes,
   folders: initialSession.folders,
@@ -113,11 +177,11 @@ export const useWorkspaceStore = create((set, get) => ({
   pinnedTabIds: initialSession.pinnedTabIds,
   clipboard: null,
 
-  setNotes: (notes) => set({ notes }),
-  setSelectedFolder: (selectedFolder) => set({ selectedFolder }),
-  setClipboard: (clipboard) => set({ clipboard }),
+  setNotes: (notes: WorkspaceNote[]) => set({ notes }),
+  setSelectedFolder: (selectedFolder: string | null) => set({ selectedFolder }),
+  setClipboard: (clipboard: any) => set({ clipboard }),
 
-  restoreSession: (tabs, activeId, pinnedIds = []) => {
+  restoreSession: (tabs: string[], activeId: string | null, pinnedIds: string[] = []) => {
     set((state) => {
       const allNotes = state.notes || []
       const validTabs = tabs.filter(
@@ -144,7 +208,7 @@ export const useWorkspaceStore = create((set, get) => ({
     })
   },
 
-  setSelectedNote: (note) => {
+  setSelectedNote: (note: WorkspaceNote | null) => {
     if (!note) {
       set({ selectedNote: null, activeTabId: null })
       return
@@ -161,8 +225,8 @@ export const useWorkspaceStore = create((set, get) => ({
     })
   },
 
-  setActiveTabId: (id) => {
-    let selectedItem = null
+  setActiveTabId: (id: string | null) => {
+    let selectedItem: WorkspaceNote | null = null
     set((state) => {
       if (id === GRAPH_TAB_ID) {
         const isAlreadyOpen = state.openTabs.includes(GRAPH_TAB_ID)
@@ -189,7 +253,7 @@ export const useWorkspaceStore = create((set, get) => ({
     })
   },
 
-  closeTab: (id) =>
+  closeTab: (id: string) =>
     set((state) => {
       const nextTabs = state.openTabs.filter((tid) => tid !== id)
 
@@ -197,7 +261,7 @@ export const useWorkspaceStore = create((set, get) => ({
       if (
         state.activeTabId === id ||
         state.selectedNote?.id === id ||
-        !nextTabs.includes(nextActiveId)
+        !nextTabs.includes(nextActiveId || '')
       ) {
         const idx = state.openTabs.indexOf(id)
         if (idx === -1) {
@@ -224,7 +288,7 @@ export const useWorkspaceStore = create((set, get) => ({
       }
     }),
 
-  reorderTabs: (newTabs) => {
+  reorderTabs: (newTabs: string[]) => {
     set((state) => {
       const pinnedSet = new Set(state.pinnedTabIds)
       const pTabs = newTabs.filter((tid) => pinnedSet.has(tid))
@@ -234,7 +298,7 @@ export const useWorkspaceStore = create((set, get) => ({
     })
   },
 
-  closeOtherTabs: (keepId) => {
+  closeOtherTabs: (keepId: string) => {
     set((state) => {
       const nextActiveId = keepId
       const allNotes = state.notes || []
@@ -247,12 +311,12 @@ export const useWorkspaceStore = create((set, get) => ({
     })
   },
 
-  closeTabsToRight: (id) => {
+  closeTabsToRight: (id: string) => {
     set((state) => {
       const idx = state.openTabs.indexOf(id)
       const nextTabs = state.openTabs.slice(0, idx + 1)
       let nextActiveId = state.activeTabId
-      if (!nextTabs.includes(state.activeTabId)) {
+      if (!nextTabs.includes(state.activeTabId || '')) {
         nextActiveId = id
       }
       const allNotes = state.notes || []
@@ -279,7 +343,7 @@ export const useWorkspaceStore = create((set, get) => ({
     })
   },
 
-  togglePinTab: (id) => {
+  togglePinTab: (id: string) => {
     set((state) => {
       const isPinned = state.pinnedTabIds.includes(id)
       const nextPinned = isPinned
@@ -308,15 +372,15 @@ export const useWorkspaceStore = create((set, get) => ({
       }
     }),
 
-  setPinnedTabs: (pinnedTabIds) => set({ pinnedTabIds }),
+  setPinnedTabs: (pinnedTabIds: string[]) => set({ pinnedTabIds }),
 
-  setLoading: (isLoading) => set({ isLoading }),
-  setSearchQuery: (query) => set({ searchQuery: query }),
-  setDraft: (id, code) =>
+  setLoading: (isLoading: boolean) => set({ isLoading }),
+  setSearchQuery: (query: string) => set({ searchQuery: query }),
+  setDraft: (id: string, code: string) =>
     set((state) => ({
       drafts: { ...state.drafts, [id]: code }
     })),
-  addFolder: (folderPath) => {
+  addFolder: (folderPath: string) => {
     if (!folderPath || typeof folderPath !== 'string') return
     const normalized = folderPath.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
     if (!normalized) return
@@ -336,7 +400,7 @@ export const useWorkspaceStore = create((set, get) => ({
     })
   },
 
-  setDirty: (id, isDirty) =>
+  setDirty: (id: string, isDirty: boolean) =>
     set((state) => {
       const currentDirty = state.dirtyNoteIds || []
       const hasId = currentDirty.includes(id)
@@ -354,13 +418,6 @@ export const useWorkspaceStore = create((set, get) => ({
 
   /**
    * Synchronizes workspace data (notes, folders, tab state) from the main process.
-   *
-   * Optimizations:
-   * - Retrieves current settings from in-memory `useSettingsStore` before issuing IPC calls.
-   * - Restores persisted open tabs, pinned tabs, and last active note during initial load.
-   * - Maps custom note colors and folder highlight colors seamlessly into state.
-   *
-   * @returns {Promise<void>}
    */
   loadWorkspace: async () => {
     const isInitialLoad = !hasLoadedWorkspaceOnce
@@ -369,27 +426,27 @@ export const useWorkspaceStore = create((set, get) => ({
     }
 
     try {
-      const getItems = window.api?.getNotes || window.api?.getSnippets
+      const getItems = (window as any).api?.getNotes || (window as any).api?.getSnippets
       if (getItems) {
         const freshData = await getItems()
         const rawNotes = freshData?.notes || freshData?.snippets
 
         if (freshData && rawNotes) {
           hasLoadedWorkspaceOnce = true
-          let merged = rawNotes
-          let folderColors = {}
+          let merged: WorkspaceNote[] = rawNotes
+          let folderColors: Record<string, string> = {}
           let persistedOpenTabs = get().openTabs
           let persistedPinnedTabs = get().pinnedTabIds
           let persistedActiveId = get().activeTabId
 
           try {
-            let allSettings = useSettingsStore.getState().settings
+            let allSettings = useSettingsStore.getState().settings as any
             if (!allSettings || Object.keys(allSettings).length === 0) {
-              allSettings = (await window.api.getSetting()) || {}
+              allSettings = (await (window as any).api.getSetting()) || {}
             }
             const noteColors = allSettings.noteColors || {}
             folderColors = allSettings.folderColors || {}
-            merged = rawNotes.map((n) => ({
+            merged = rawNotes.map((n: WorkspaceNote) => ({
               ...n,
               color: n.color || noteColors[n.id] || null
             }))
@@ -423,8 +480,8 @@ export const useWorkspaceStore = create((set, get) => ({
               ? merged.find((n) => n.id === validActiveId) || null
               : null
 
-          const rawFolderList = freshData.folders || []
-          const folderSet = new Set(rawFolderList)
+          const rawFolderList: string[] = freshData.folders || []
+          const folderSet = new Set<string>(rawFolderList)
           merged.forEach((n) => {
             if (n.folderId && typeof n.folderId === 'string') {
               const clean = n.folderId.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
@@ -474,7 +531,7 @@ export const useWorkspaceStore = create((set, get) => ({
     return get().loadWorkspace()
   },
 
-  saveNote: async (note) => {
+  saveNote: async (note: Partial<WorkspaceNote> & { id: string }) => {
     if (!note) {
       console.error('[WorkspaceStore] Cannot save: note is null or undefined')
       throw new Error('Note is required')
@@ -491,7 +548,7 @@ export const useWorkspaceStore = create((set, get) => ({
     }
 
     try {
-      const saveApi = window.api?.saveNote || window.api?.saveSnippet
+      const saveApi = (window as any).api?.saveNote || (window as any).api?.saveSnippet
       if (!saveApi) {
         throw new Error('Save API is not available. Please restart the application.')
       }
@@ -502,8 +559,8 @@ export const useWorkspaceStore = create((set, get) => ({
       const updatedNote = await saveApi(note)
 
       if (note.color && (!existing || existing.color !== note.color)) {
-        const currentColors = (await window.api.getSetting('noteColors')) || {}
-        await window.api.saveSetting('noteColors', {
+        const currentColors = (await (window as any).api.getSetting('noteColors')) || {}
+        await (window as any).api.saveSetting('noteColors', {
           ...currentColors,
           [note.id]: note.color
         })
@@ -525,10 +582,10 @@ export const useWorkspaceStore = create((set, get) => ({
         if (existing && existing.title && existing.title !== updatedNote.title) {
           const oldTitle = existing.title
           const newTitle = updatedNote.title
-          const escapeRegExp = (string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
           const linkRegex = new RegExp('\\[\\[' + escapeRegExp(oldTitle) + '([\\|#\\]])', 'gi')
 
-          const updates = []
+          const updates: WorkspaceNote[] = []
           nextNotes = nextNotes.map((n) => {
             if (n.id !== note.id && n.code && linkRegex.test(n.code)) {
               const newCode = n.code.replace(linkRegex, '[[' + newTitle + '$1')
@@ -540,7 +597,7 @@ export const useWorkspaceStore = create((set, get) => ({
           })
 
           updates.forEach((u) => {
-            const apiSave = window.api?.saveNote || window.api?.saveSnippet
+            const apiSave = (window as any).api?.saveNote || (window as any).api?.saveSnippet
             if (apiSave) apiSave(u).catch(console.error)
           })
         }
@@ -585,7 +642,7 @@ export const useWorkspaceStore = create((set, get) => ({
     }
   },
 
-  deleteNote: async (id, skipConfirm = false) => {
+  deleteNote: async (id: string, skipConfirm: boolean = false) => {
     if (!id) {
       console.error('[WorkspaceStore] Cannot delete: ID is missing')
       throw new Error('Note ID is required')
@@ -594,13 +651,13 @@ export const useWorkspaceStore = create((set, get) => ({
     recentlyDeletedIds.add(id)
     setTimeout(() => recentlyDeletedIds.delete(id), 5000)
 
-    const deleteApi = window.api?.deleteNote || window.api?.deleteSnippet
+    const deleteApi = (window as any).api?.deleteNote || (window as any).api?.deleteSnippet
     if (!deleteApi) {
       throw new Error('Delete API is not available. Please restart the application.')
     }
 
     if (!skipConfirm) {
-      const confirmed = await window.api.confirmDelete('Permanently delete this note?')
+      const confirmed = await (window as any).api.confirmDelete('Permanently delete this note?')
       if (!confirmed) return
     }
 
@@ -613,7 +670,7 @@ export const useWorkspaceStore = create((set, get) => ({
       if (
         state.activeTabId === id ||
         state.selectedNote?.id === id ||
-        !nextTabs.includes(nextActiveId)
+        !nextTabs.includes(nextActiveId || '')
       ) {
         const idx = state.openTabs.indexOf(id)
         if (idx === -1) {
@@ -662,23 +719,23 @@ export const useWorkspaceStore = create((set, get) => ({
     }
   },
 
-  setFolderColor: async (folderId, color) => {
+  setFolderColor: async (folderId: string, color: string | null) => {
     try {
-      const currentColors = (await window.api.getSetting('folderColors')) || {}
+      const currentColors = (await (window as any).api.getSetting('folderColors')) || {}
       const newColors = { ...currentColors }
       if (color) {
         newColors[folderId] = color
       } else {
         delete newColors[folderId]
       }
-      await window.api.saveSetting('folderColors', newColors)
+      await (window as any).api.saveSetting('folderColors', newColors)
       set({ folderColors: newColors })
     } catch (err) {
       console.error('[WorkspaceStore] Failed to save folder color', err)
     }
   },
 
-  updateNoteSelection: (id, selection) => {
+  updateNoteSelection: (id: string, selection: any) => {
     set((state) => {
       const allNotes = state.notes || []
       const nextNotes = allNotes.map((n) => (n.id === id ? { ...n, selection } : n))
@@ -694,7 +751,7 @@ export const useWorkspaceStore = create((set, get) => ({
     })
   },
 
-  reorderNotes: (orderedIds) => {
+  reorderNotes: (orderedIds: string[]) => {
     useSettingsStore.getState().updateSetting('noteOrder', orderedIds)
   }
 }))
@@ -716,17 +773,17 @@ useWorkspaceStore.subscribe((state) => {
   }
   if (state.openTabs !== lastWorkspaceState.openTabs) {
     useSettingsStore.getState().updateSetting?.('openTabs', state.openTabs)
-    window.api?.saveSetting('openTabs', state.openTabs)?.catch?.(() => {})
+    ;(window as any).api?.saveSetting('openTabs', state.openTabs)?.catch?.(() => {})
     try { localStorage.setItem('lumina_session_openTabs', JSON.stringify(state.openTabs)) } catch {}
   }
   if (state.pinnedTabIds !== lastWorkspaceState.pinnedTabIds) {
     useSettingsStore.getState().updateSetting?.('pinnedTabIds', state.pinnedTabIds)
-    window.api?.saveSetting('pinnedTabIds', state.pinnedTabIds)?.catch?.(() => {})
+    ;(window as any).api?.saveSetting('pinnedTabIds', state.pinnedTabIds)?.catch?.(() => {})
     try { localStorage.setItem('lumina_session_pinnedTabIds', JSON.stringify(state.pinnedTabIds)) } catch {}
   }
   if (state.activeTabId !== lastWorkspaceState.activeTabId) {
     useSettingsStore.getState().updateSetting?.('lastNoteId', state.activeTabId)
-    window.api?.saveSetting('lastNoteId', state.activeTabId)?.catch?.(() => {})
+    ;(window as any).api?.saveSetting('lastNoteId', state.activeTabId)?.catch?.(() => {})
     try { localStorage.setItem('lumina_session_lastNoteId', state.activeTabId ?? '') } catch {}
   }
   lastWorkspaceState = state

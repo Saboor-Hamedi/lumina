@@ -3,13 +3,13 @@ import fsSync from 'fs'
 import path from 'path'
 import { createHash } from 'crypto'
 import { MAX_WORKSPACE_TEXT_BYTES } from './workspaceScanner'
+import type { Worker } from 'worker_threads'
 
 class Mutex {
-  constructor() {
-    this.queue = []
-    this.locked = false
-  }
-  async lock() {
+  private queue: Array<() => void> = []
+  private locked: boolean = false
+
+  async lock(): Promise<void> {
     return new Promise((resolve) => {
       if (this.locked) {
         this.queue.push(resolve)
@@ -19,40 +19,87 @@ class Mutex {
       }
     })
   }
-  unlock() {
+
+  unlock(): void {
     if (this.queue.length > 0) {
       const next = this.queue.shift()
-      next()
+      if (next) next()
     } else {
       this.locked = false
     }
   }
 }
 
-class WorkspaceIndexer {
-  constructor() {
-    this.indexPath = null
-    this.embeddingsPath = null
-    this.statePath = null
-    this.chunksPath = null
-    this.version = '1.0.0'
-    this.embedder = null
-    this._worker = null
-    this._workerRequestId = 0
-    this._workerPending = new Map()
-    this.isIndexing = false
-    this.indexQueue = new Set()
-    this.writeLock = new Mutex()
-    this.stats = {
-      totalFiles: 0,
-      indexedFiles: 0,
-      totalChunks: 0,
-      errors: 0,
-      lastIndexTime: null
-    }
+export interface IndexerStats {
+  totalFiles: number
+  indexedFiles: number
+  totalChunks: number
+  errors: number
+  lastIndexTime: number | null
+}
+
+export interface IndexerFileState {
+  mtime: number
+  size: number
+  checksum: string | null
+  indexed: boolean
+  chunkCount: number
+  lastIndexed: number
+  oversized?: boolean
+}
+
+export interface IndexerState {
+  version: string
+  files: Record<string, IndexerFileState>
+  stats?: IndexerStats
+  lastIndexTime?: number
+}
+
+export interface IndexerChunk {
+  id: string
+  filePath: string
+  chunkIndex: number
+  text: string
+  start: number
+  end: number
+  type: string
+  metadata: Record<string, any>
+  embeddingOffset: number
+  embeddingLength: number
+}
+
+export interface IndexProgressEvent {
+  progress: number
+  indexed: number
+  total: number
+  chunks?: number
+  found?: number
+  checked?: number
+  stage?: string
+}
+
+export class WorkspaceIndexer {
+  indexPath: string | null = null
+  embeddingsPath: string | null = null
+  statePath: string | null = null
+  chunksPath: string | null = null
+  version: string = '1.0.0'
+  embedder: any = null
+  _worker: Worker | null = null
+  _workerRequestId: number = 0
+  _workerPending: Map<number, (results: any) => void> = new Map()
+  isIndexing: boolean = false
+  indexQueue: Set<string> = new Set()
+  writeLock: Mutex = new Mutex()
+  stats: IndexerStats = {
+    totalFiles: 0,
+    indexedFiles: 0,
+    totalChunks: 0,
+    errors: 0,
+    lastIndexTime: null
   }
 
-  async init(userDataPath) {
+  async init(userDataPath: string): Promise<void> {
     const indexDir = path.join(userDataPath, 'vault-index')
     await fs.mkdir(indexDir, { recursive: true })
 
@@ -64,7 +111,7 @@ class WorkspaceIndexer {
     await this.validateIndex()
   }
 
-  _resolveWorkerTarget() {
+  _resolveWorkerTarget(): URL | string {
     try {
       const u1 = new URL('./indexer-worker.js', import.meta.url)
       if (fsSync.existsSync(u1)) return u1
@@ -82,14 +129,14 @@ class WorkspaceIndexer {
     return new URL('./indexer-worker.js', import.meta.url)
   }
 
-  async _ensureWorker() {
+  async _ensureWorker(): Promise<Worker> {
     if (this._worker) return this._worker
 
     const { Worker } = await import('worker_threads')
 
     this._worker = new Worker(this._resolveWorkerTarget())
 
-    this._worker.on('message', (msg) => {
+    this._worker.on('message', (msg: any) => {
       if (msg.type === 'warmup-done') {
       } else if (msg.type === 'embeddings' && msg.batchId !== undefined) {
         const resolve = this._workerPending.get(msg.batchId)
@@ -106,12 +153,12 @@ class WorkspaceIndexer {
       }
     })
 
-    this._worker.on('error', (err) => {
+    this._worker.on('error', (err: any) => {
       console.error('[WorkspaceIndexer] Worker error:', err)
       this._worker = null
     })
 
-    this._worker.on('exit', (code) => {
+    this._worker.on('exit', (code: number) => {
       console.info(`[WorkspaceIndexer] Worker exited with code ${code}`)
       this._worker = null
     })
@@ -119,7 +166,7 @@ class WorkspaceIndexer {
     return this._worker
   }
 
-  async warmWorker() {
+  async warmWorker(): Promise<void> {
     try {
       const worker = await this._ensureWorker()
       worker.postMessage({ type: 'warmup' })
@@ -128,8 +175,12 @@ class WorkspaceIndexer {
     }
   }
 
-  async validateIndex() {
+  async validateIndex(): Promise<{ valid: boolean; reason?: string; error?: string }> {
     try {
+      if (!this.indexPath || !this.embeddingsPath || !this.statePath) {
+        return { valid: false, reason: 'uninitialized' }
+      }
+
       const indexExists = await this.fileExists(this.indexPath)
       const embeddingsExists = await this.fileExists(this.embeddingsPath)
       const stateExists = await this.fileExists(this.statePath)
@@ -159,13 +210,13 @@ class WorkspaceIndexer {
       }
 
       return { valid: true }
-    } catch (err) {
+    } catch (err: any) {
       console.error('[WorkspaceIndexer] Validation error:', err)
       return { valid: false, reason: 'validation_error', error: err.message }
     }
   }
 
-  async computeChecksum(filePath) {
+  async computeChecksum(filePath: string): Promise<string | null> {
     try {
       const content = await fs.readFile(filePath, 'utf-8')
       return createHash('sha256').update(content).digest('hex')
@@ -174,8 +225,8 @@ class WorkspaceIndexer {
     }
   }
 
-  chunkContent(filePath, content, metadata = {}) {
-    const chunks = []
+  chunkContent(filePath: string, content: string, metadata: Record<string, any> = {}): any[] {
+    const chunks: any[] = []
     const ext = path.extname(filePath).toLowerCase()
     const fileName = path.basename(filePath)
 
@@ -186,8 +237,8 @@ class WorkspaceIndexer {
 
       if (matches.length > 1) {
         for (let i = 0; i < matches.length; i++) {
-          const start = matches[i].index
-          const end = i < matches.length - 1 ? matches[i + 1].index : content.length
+          const start = matches[i].index!
+          const end = i < matches.length - 1 ? matches[i + 1].index! : content.length
           const chunkText = content.slice(start, end).trim()
 
           if (chunkText.length > 50) {
@@ -218,8 +269,8 @@ class WorkspaceIndexer {
 
       if (matches.length > 0) {
         for (let i = 0; i < matches.length; i++) {
-          const start = matches[i].index
-          const end = i < matches.length - 1 ? matches[i + 1].index : content.length
+          const start = matches[i].index!
+          const end = i < matches.length - 1 ? matches[i + 1].index! : content.length
           const chunkText = content.slice(start, end).trim()
 
           if (chunkText.length > 100) {
@@ -264,12 +315,12 @@ class WorkspaceIndexer {
     return chunks.filter((chunk) => chunk.text.length >= 50)
   }
 
-  async generateEmbedding(text) {
+  async generateEmbedding(text: string): Promise<number[]> {
     const worker = await this._ensureWorker()
     const id = this._workerRequestId++
 
     return new Promise((resolve, reject) => {
-      this._workerPending.set(id, (results) => {
+      this._workerPending.set(id, (results: any) => {
         if (results && results.length > 0) resolve(results[0])
         else reject(new Error('No embedding returned'))
       })
@@ -277,7 +328,7 @@ class WorkspaceIndexer {
     })
   }
 
-  async needsIndexing(filePath, force = false, state = null) {
+  async needsIndexing(filePath: string, force: boolean = false, state: IndexerState | null = null): Promise<boolean> {
     if (force) return true
 
     try {
@@ -298,7 +349,7 @@ class WorkspaceIndexer {
     }
   }
 
-  async indexFile(filePath, force = false, state = null) {
+  async indexFile(filePath: string, force: boolean = false, state: IndexerState | null = null): Promise<any> {
     try {
       const stats = await fs.stat(filePath)
       state = state || (await this.loadState())
@@ -400,7 +451,7 @@ class WorkspaceIndexer {
         }
       }
 
-      const chunkRecords = []
+      const chunkRecords: IndexerChunk[] = []
       const embeddingsBuffer = Buffer.alloc(chunks.length * 384 * 4)
 
       for (let i = 0; i < chunks.length; i++) {
@@ -456,7 +507,8 @@ class WorkspaceIndexer {
     }
   }
 
-  async appendToIndex(chunkRecords, embeddingsBuffer, updatedFiles) {
+  async appendToIndex(chunkRecords: IndexerChunk[], embeddingsBuffer: Buffer, updatedFiles?: string[]): Promise<void> {
+    if (!this.indexPath || !this.embeddingsPath) return
     await this.writeLock.lock()
     try {
       const updatedFilesSet = new Set(
@@ -474,7 +526,7 @@ class WorkspaceIndexer {
         return !updatedFilesSet.has(chunkNorm)
       })
 
-      const existingEmbeddingsParts = []
+      const existingEmbeddingsParts: Buffer[] = []
       if (await this.fileExists(this.embeddingsPath)) {
         const fullBuffer = await fs.readFile(this.embeddingsPath)
 
@@ -519,9 +571,9 @@ class WorkspaceIndexer {
     }
   }
 
-  async loadIndex() {
+  async loadIndex(): Promise<any[]> {
     try {
-      if (!(await this.fileExists(this.indexPath))) {
+      if (!this.indexPath || !(await this.fileExists(this.indexPath))) {
         return []
       }
 
@@ -537,15 +589,15 @@ class WorkspaceIndexer {
     }
   }
 
-  async loadEmbeddingsBuffer(chunks) {
+  async loadEmbeddingsBuffer(chunks: any[]): Promise<Buffer> {
     try {
-      if (!(await this.fileExists(this.embeddingsPath)) || chunks.length === 0) {
+      if (!this.embeddingsPath || !(await this.fileExists(this.embeddingsPath)) || chunks.length === 0) {
         return Buffer.alloc(0)
       }
 
       const fullBuffer = await fs.readFile(this.embeddingsPath)
 
-      const parts = []
+      const parts: Buffer[] = []
       for (const chunk of chunks) {
         const offset = chunk.embeddingOffset || 0
         const length = (chunk.embeddingLength || 384) * 4
@@ -561,9 +613,9 @@ class WorkspaceIndexer {
     }
   }
 
-  async loadState() {
+  async loadState(): Promise<IndexerState> {
     try {
-      if (!(await this.fileExists(this.statePath))) {
+      if (!this.statePath || !(await this.fileExists(this.statePath))) {
         return { version: this.version, files: {} }
       }
 
@@ -583,12 +635,13 @@ class WorkspaceIndexer {
     }
   }
 
-  async updateFileState(filePath, fileState) {
+  async updateFileState(filePath: string, fileState: Partial<IndexerFileState>): Promise<void> {
+    if (!this.statePath) return
     await this.writeLock.lock()
     try {
       const state = await this.loadState()
       state.files = state.files || {}
-      state.files[filePath] = { ...state.files[filePath], ...fileState }
+      state.files[filePath] = { ...state.files[filePath], ...(fileState as IndexerFileState) }
       state.files[filePath].indexed = true
       state.version = this.version
       state.lastIndexTime = Date.now()
@@ -599,32 +652,34 @@ class WorkspaceIndexer {
     }
   }
 
-  async removeFile(filePath) {
+  async removeFile(filePath: string): Promise<boolean> {
     return await this.removeFiles([filePath])
   }
 
-  async removeFiles(filePaths) {
+  async removeFiles(filePaths: string[]): Promise<boolean> {
     if (!Array.isArray(filePaths) || filePaths.length === 0) return true
     try {
       await this.appendToIndex([], Buffer.alloc(0), filePaths)
       await this.writeLock.lock()
       try {
-        const state = await this.loadState()
-        const normDeleted = new Set(
-          filePaths
-            .map((f) =>
-              typeof f === 'string' ? path.resolve(f).replace(/\\/g, '/').toLowerCase() : ''
-            )
-            .filter(Boolean)
-        )
-        if (state?.files) {
-          for (const key of Object.keys(state.files)) {
-            const normKey = path.resolve(key).replace(/\\/g, '/').toLowerCase()
-            if (normDeleted.has(normKey)) {
-              delete state.files[key]
+        if (this.statePath) {
+          const state = await this.loadState()
+          const normDeleted = new Set(
+            filePaths
+              .map((f) =>
+                typeof f === 'string' ? path.resolve(f).replace(/\\/g, '/').toLowerCase() : ''
+              )
+              .filter(Boolean)
+          )
+          if (state?.files) {
+            for (const key of Object.keys(state.files)) {
+              const normKey = path.resolve(key).replace(/\\/g, '/').toLowerCase()
+              if (normDeleted.has(normKey)) {
+                delete state.files[key]
+              }
             }
+            await fs.writeFile(this.statePath, JSON.stringify(state, null, 2), 'utf-8')
           }
-          await fs.writeFile(this.statePath, JSON.stringify(state, null, 2), 'utf-8')
         }
       } finally {
         this.writeLock.unlock()
@@ -636,11 +691,11 @@ class WorkspaceIndexer {
     }
   }
 
-  async deleteChunksForFile(filePathOrTitle) {
+  async deleteChunksForFile(filePathOrTitle: string): Promise<boolean> {
     return await this.deleteChunksForFiles([filePathOrTitle])
   }
 
-  async deleteChunksForFiles(targets) {
+  async deleteChunksForFiles(targets: string[]): Promise<boolean> {
     if (!Array.isArray(targets) || targets.length === 0) return true
     const normalizedTargets = targets
       .map((t) => (typeof t === 'string' ? t.replace(/\\/g, '/').toLowerCase().trim() : ''))
@@ -652,7 +707,7 @@ class WorkspaceIndexer {
       .filter(Boolean)
 
     const existingIndex = await this.loadIndex()
-    const matchingFiles = new Set()
+    const matchingFiles = new Set<string>()
 
     for (const chunk of existingIndex) {
       if (!chunk?.filePath) continue
@@ -682,11 +737,11 @@ class WorkspaceIndexer {
     return true
   }
 
-  async indexWorkspace(workspacePath, options = {}) {
+  async indexWorkspace(workspacePath: string, options: any = {}): Promise<any> {
     return await this.indexVault(workspacePath, options)
   }
 
-  async indexVault(vaultPath, options = {}) {
+  async indexVault(vaultPath: string, options: any = {}): Promise<any> {
     if (this.isIndexing) {
       console.info('[WorkspaceIndexer] Indexing already in progress, queuing...')
       return { queued: true }
@@ -754,7 +809,7 @@ class WorkspaceIndexer {
         }
       }
 
-      const filesToProcess = []
+      const filesToProcess: string[] = []
       const batchSize = 100
       let lastYieldTime = Date.now()
       let checkedCount = 0
@@ -820,10 +875,10 @@ class WorkspaceIndexer {
         })
       }
 
-      const allChunkRecords = []
-      const allEmbeddingsBuffers = []
-      const updatedFilesSet = new Set()
-      const accumulatedFileStates = {}
+      const allChunkRecords: IndexerChunk[] = []
+      const allEmbeddingsBuffers: Buffer[] = []
+      const updatedFilesSet = new Set<string>()
+      const accumulatedFileStates: Record<string, IndexerFileState> = {}
 
       for (let i = 0; i < filesToProcess.length; i++) {
         const filePath = filesToProcess[i]
@@ -868,7 +923,9 @@ class WorkspaceIndexer {
       finalState.files = { ...finalState.files, ...accumulatedFileStates }
       finalState.stats = this.stats
       finalState.lastIndexTime = Date.now()
-      await fs.writeFile(this.statePath, JSON.stringify(finalState, null, 2), 'utf-8')
+      if (this.statePath) {
+        await fs.writeFile(this.statePath, JSON.stringify(finalState, null, 2), 'utf-8')
+      }
 
       if (onProgress) {
         onProgress({
@@ -895,7 +952,8 @@ class WorkspaceIndexer {
     }
   }
 
-  async clearIndex() {
+  async clearIndex(): Promise<void> {
+    if (!this.indexPath || !this.embeddingsPath || !this.statePath) return
     await this.writeLock.lock()
     try {
       await fs.writeFile(this.indexPath, '', 'utf-8')
@@ -917,19 +975,19 @@ class WorkspaceIndexer {
     }
   }
 
-  async scanVaultFiles(vaultPath, onProgress = null) {
+  async scanVaultFiles(vaultPath: string, onProgress: any = null): Promise<string[]> {
     if (!vaultPath || typeof vaultPath !== 'string') {
       console.error('[WorkspaceIndexer] scanVaultFiles: Invalid path:', vaultPath)
       return []
     }
 
-    const files = []
+    const files: string[] = []
     const supportedExts = ['.md', '.markdown', '.txt']
     let entryCount = 0
 
     let lastYieldTime = Date.now()
 
-    async function scanDir(dir) {
+    async function scanDir(dir: string): Promise<void> {
       if (typeof dir !== 'string') {
         console.warn('[WorkspaceIndexer] scanDir: Invalid directory path:', dir)
         return
@@ -986,28 +1044,30 @@ class WorkspaceIndexer {
     return files
   }
 
-  async rebuildIndex(vaultPath, options = {}) {
+  async rebuildIndex(vaultPath: string, options: any = {}): Promise<any> {
     console.info('[WorkspaceIndexer] Rebuilding index from scratch...')
 
     await this.writeLock.lock()
     try {
       try {
-        if (await this.fileExists(this.indexPath)) {
+        if (this.indexPath && (await this.fileExists(this.indexPath))) {
           await fs.copyFile(this.indexPath, this.indexPath + '.bak')
         }
-        if (await this.fileExists(this.embeddingsPath)) {
+        if (this.embeddingsPath && (await this.fileExists(this.embeddingsPath))) {
           await fs.copyFile(this.embeddingsPath, this.embeddingsPath + '.bak')
         }
       } catch (err) {
         console.warn('[WorkspaceIndexer] Backup failed:', err)
       }
 
-      await fs.writeFile(this.indexPath, '', 'utf-8')
-      await fs.writeFile(this.embeddingsPath, Buffer.alloc(0))
-      await fs.writeFile(
-        this.statePath,
-        JSON.stringify({ version: this.version, files: {} }, null, 2)
-      )
+      if (this.indexPath) await fs.writeFile(this.indexPath, '', 'utf-8')
+      if (this.embeddingsPath) await fs.writeFile(this.embeddingsPath, Buffer.alloc(0))
+      if (this.statePath) {
+        await fs.writeFile(
+          this.statePath,
+          JSON.stringify({ version: this.version, files: {} }, null, 2)
+        )
+      }
     } finally {
       this.writeLock.unlock()
     }
@@ -1015,7 +1075,7 @@ class WorkspaceIndexer {
     return await this.indexVault(vaultPath, { force: true, ...options })
   }
 
-  async getStats() {
+  async getStats(): Promise<any> {
     const state = await this.loadState()
     const index = await this.loadIndex()
 
@@ -1027,7 +1087,7 @@ class WorkspaceIndexer {
     }
   }
 
-  async fileExists(filePath) {
+  async fileExists(filePath: string): Promise<boolean> {
     try {
       await fs.access(filePath)
       return true

@@ -56,7 +56,6 @@ import {
   DroppableFolderItem,
   SortableGridItem,
   OverlayWrapper,
-  DroppableRootZone,
   NoteNumbers,
   ExplorerHeader,
   ExplorerFavorites,

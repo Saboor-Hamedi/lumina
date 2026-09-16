@@ -1,9 +1,38 @@
 import fs from 'fs/promises'
 import fsSync from 'fs'
 import path from 'path'
-import slugify from 'slugify'
 import matter from 'gray-matter'
 import { WorkspaceMediaManager } from './workspaceMediaManager'
+import type { WorkspaceSnippet } from './workspaceScanner'
+
+export interface BulkDeleteParams {
+  folderIds?: string[]
+  snippetIds?: string[]
+}
+
+export interface BulkDeleteResult {
+  success: boolean
+  deletedCount: number
+  deletedFilePaths: string[]
+}
+
+export interface DeleteFolderResult {
+  success: boolean
+  deletedFilePaths: string[]
+}
+
+export interface ImportedFileName {
+  fileName: string
+  folderId: string
+}
+
+export interface ImportExternalPathsResult {
+  importedSnippetIds: string[]
+  importedFolderIds: string[]
+  importedFileNames: ImportedFileName[]
+  count: number
+  targetFolderId: string
+}
 
 /**
  * WorkspaceOperations
@@ -25,11 +54,8 @@ export class WorkspaceOperations {
   /**
    * Cleans a raw note title so it can be safely used as a filename across all operating systems.
    * Strips reserved characters: `< > : " / \ | ? *` and collapses contiguous spaces.
-   *
-   * @param {string} title - Raw note title.
-   * @returns {string} Sanitized filename base (defaults to 'Untitled' if blank).
    */
-  static sanitizeTitleForFilename(title) {
+  static sanitizeTitleForFilename(title: string): string {
     if (!title || typeof title !== 'string') return 'Untitled'
     return (
       title
@@ -41,24 +67,14 @@ export class WorkspaceOperations {
 
   /**
    * Saves a note (snippet) or updates its metadata in the workspace.
-   *
-   * Workflow:
-   * 1. If it's an image snippet, updates metadata in-memory without altering disk files.
-   * 2. Resolves filename and extension (appends `.md` if no extension).
-   * 3. Checks if the note was renamed or moved to another folder; if so, removes the old file.
-   * 4. Resolves filename collisions by appending a short 5-character hash.
-   * 5. Strips legacy raw frontmatter from the editor code and reconstructs standard YAML frontmatter.
-   * 6. Ensures the target directory exists and writes the file atomically.
-   * 7. Updates the in-memory snippets map.
-   *
-   * @param {string} workspacePath - Root directory of the workspace.
-   * @param {Map<string, any>} snippetsMap - In-memory snippet registry.
-   * @param {Set<string>} foldersSet - In-memory folder path registry.
-   * @param {any} snippet - Snippet data to persist.
-   * @param {any} [oldSnippet] - Previous snippet state before editing/renaming.
-   * @returns {Promise<any>} The saved snippet record.
    */
-  static async saveSnippet(workspacePath, snippetsMap, foldersSet, snippet, oldSnippet) {
+  static async saveSnippet(
+    workspacePath: string,
+    snippetsMap: Map<string, any>,
+    foldersSet: Set<string>,
+    snippet: any,
+    oldSnippet?: any
+  ): Promise<any> {
     if (!workspacePath) throw new Error('No workspace open')
     if (!snippet || !snippet.id) throw new Error('Valid snippet required')
 
@@ -180,7 +196,7 @@ export class WorkspaceOperations {
           if (fsSync.existsSync(oldFilePath)) {
             await fs.unlink(oldFilePath)
           }
-        } catch (err) {
+        } catch (err: any) {
           console.warn(
             '[WorkspaceOperations] Warning: Could not delete old file:',
             oldFileName,
@@ -191,24 +207,25 @@ export class WorkspaceOperations {
     }
 
     // Detect and resolve filename collisions in the target folder
-    const collision = Array.from(snippetsMap.values()).find((s) => {
+    const collision = Array.from(snippetsMap.values()).find((s: any) => {
       if (s.id === snippet.id) return false
       return s.fileName === newFileName && (s.folderId || '') === relativeFolder
     })
 
     if (collision) {
-      const ext = path.extname(newFileName)
-      const base = ext ? newFileName.slice(0, -ext.length) : newFileName
-      newFileName = `${base}-${snippet.id.slice(0, 5)}${ext}`
+      const extName = path.extname(newFileName)
+      const base = extName ? newFileName.slice(0, -extName.length) : newFileName
+      newFileName = `${base}-${snippet.id.slice(0, 5)}${extName}`
     }
 
     const finalPath = path.join(workspacePath, relativeFolder, newFileName)
     const contentChanged = !oldSnippet || oldSnippet.code !== snippet.code
-    const newTimestamp = snippet.timestamp !== undefined
-      ? snippet.timestamp
-      : contentChanged
-        ? Date.now()
-        : oldSnippet?.timestamp || Date.now()
+    const newTimestamp =
+      snippet.timestamp !== undefined
+        ? snippet.timestamp
+        : contentChanged
+          ? Date.now()
+          : oldSnippet?.timestamp || Date.now()
 
     let fileContent = ''
     if (isMarkdown) {
@@ -225,7 +242,7 @@ export class WorkspaceOperations {
           createdAt: snippet.createdAt || new Date().toISOString(),
           timestamp: newTimestamp
         })
-      } catch (strErr) {
+      } catch {
         const safeTitle = JSON.stringify(rawTitle || cleanedTitle || '')
         fileContent = `---\nid: ${snippet.id}\ntitle: ${safeTitle}\nlanguage: ${snippet.language || 'markdown'}\ntags: ${JSON.stringify(snippet.tags || '')}\nisPinned: ${!!snippet.isPinned}\nisLearned: ${!!snippet.isLearned}\ntimestamp: ${newTimestamp}\n---\n\n${cleanCode}`
       }
@@ -239,7 +256,7 @@ export class WorkspaceOperations {
     // Register folder path hierarchy
     if (relativeFolder) {
       let current = ''
-      relativeFolder.split('/').forEach((part) => {
+      relativeFolder.split('/').forEach((part: string) => {
         current = current ? `${current}/${part}` : part
         foldersSet.add(current)
       })
@@ -264,11 +281,8 @@ export class WorkspaceOperations {
   /**
    * Checks whether a relative path points to a protected or hidden system directory.
    * Prevents accidental modification or deletion of `.lumina`, `.git`, or dotfiles.
-   *
-   * @param {string} relPath - Relative file or folder path.
-   * @returns {boolean} True if the path is protected.
    */
-  static isProtectedPath(relPath) {
+  static isProtectedPath(relPath: string): boolean {
     if (!relPath) return true
     const norm = relPath.replace(/\\/g, '/').replace(/^\/+/, '')
     const segments = norm.split('/')
@@ -278,13 +292,12 @@ export class WorkspaceOperations {
   /**
    * Asserts that a path resolves strictly inside the workspace directory.
    * Throws an Error if path traversal is detected or if target equals the workspace root itself (when allowRoot is false).
-   *
-   * @param {string} workspacePath - Root workspace directory.
-   * @param {string} relativePath - Relative file or folder path.
-   * @param {boolean} [allowRoot=false] - Whether resolving to workspace root itself is permitted.
-   * @returns {string} Fully resolved safe absolute path.
    */
-  static assertSafeWorkspacePath(workspacePath, relativePath, allowRoot = false) {
+  static assertSafeWorkspacePath(
+    workspacePath: string,
+    relativePath: string,
+    allowRoot: boolean = false
+  ): string {
     if (!workspacePath) throw new Error('No workspace open')
     const root = path.resolve(workspacePath)
     const resolved = path.resolve(root, relativePath || '')
@@ -298,18 +311,17 @@ export class WorkspaceOperations {
 
   /**
    * Deletes a snippet by its ID or relative file path from disk and in-memory cache.
-   *
-   * @param {string} workspacePath - Root workspace directory.
-   * @param {Map<string, any>} snippetsMap - In-memory snippet registry.
-   * @param {string} id - Snippet ID or relative path.
-   * @returns {Promise<string|null>} Path of the deleted file, or null if ignored/failed.
    */
-  static async deleteSnippet(workspacePath, snippetsMap, id) {
+  static async deleteSnippet(
+    workspacePath: string,
+    snippetsMap: Map<string, any>,
+    id: string
+  ): Promise<string | null> {
     if (!workspacePath) throw new Error('No workspace open')
     let snippet = snippetsMap.get(id)
     if (!snippet) {
       snippet = Array.from(snippetsMap.values()).find(
-        (s) => s.id === id || s.relativePath === id || s.fileName === id
+        (s: any) => s.id === id || s.relativePath === id || s.fileName === id
       )
     }
 
@@ -321,7 +333,7 @@ export class WorkspaceOperations {
         return null
       }
 
-      let filePath
+      let filePath: string
       try {
         filePath = this.assertSafeWorkspacePath(workspacePath, relPath)
       } catch {
@@ -334,7 +346,7 @@ export class WorkspaceOperations {
         }
         snippetsMap.delete(snippet.id)
         return filePath
-      } catch (err) {
+      } catch {
         snippetsMap.delete(snippet.id)
         return null
       }
@@ -360,21 +372,15 @@ export class WorkspaceOperations {
   /**
    * Performs bulk deletion of multiple folders and notes in parallel,
    * then sweeps orphaned assets that are no longer linked.
-   *
-   * @param {string} workspacePath - Root workspace directory.
-   * @param {Map<string, any>} snippetsMap - In-memory snippet registry.
-   * @param {Set<string>} foldersSet - In-memory folder registry.
-   * @param {{ folderIds?: string[], snippetIds?: string[] }} target
-   * @returns {Promise<{ success: boolean, deletedCount: number, deletedFilePaths: string[] }>}
    */
   static async bulkDelete(
-    workspacePath,
-    snippetsMap,
-    foldersSet,
-    { folderIds = [], snippetIds = [] }
-  ) {
+    workspacePath: string,
+    snippetsMap: Map<string, any>,
+    foldersSet: Set<string>,
+    { folderIds = [], snippetIds = [] }: BulkDeleteParams
+  ): Promise<BulkDeleteResult> {
     if (!workspacePath) throw new Error('No workspace open')
-    const deletedFilePaths = []
+    const deletedFilePaths: string[] = []
     const normalizedFolders = folderIds
       .map((f) => f.replace(/\\/g, '/'))
       .filter((f) => !this.isProtectedPath(f))
@@ -407,7 +413,7 @@ export class WorkspaceOperations {
               snippetsMap.delete(id)
             }
           }
-        } catch (err) {
+        } catch (err: any) {
           console.warn(
             '[WorkspaceOperations] Bulk folder delete warning:',
             normFolder,
@@ -426,7 +432,7 @@ export class WorkspaceOperations {
           let snippet = snippetsMap.get(id)
           if (!snippet) {
             snippet = Array.from(snippetsMap.values()).find(
-              (s) => s.id === id || s.relativePath === id || s.fileName === id
+              (s: any) => s.id === id || s.relativePath === id || s.fileName === id
             )
           }
 
@@ -460,7 +466,7 @@ export class WorkspaceOperations {
               }
             }
           }
-        } catch (err) {
+        } catch (err: any) {
           console.warn('[WorkspaceOperations] Bulk note delete warning:', id, err.message)
         }
       })
@@ -478,13 +484,12 @@ export class WorkspaceOperations {
 
   /**
    * Moves a file from one relative path to another.
-   *
-   * @param {string} workspacePath - Root workspace directory.
-   * @param {string} oldRelPath - Source relative path.
-   * @param {string} newRelPath - Destination relative path.
-   * @returns {Promise<boolean>}
    */
-  static async moveFile(workspacePath, oldRelPath, newRelPath) {
+  static async moveFile(
+    workspacePath: string,
+    oldRelPath: string,
+    newRelPath: string
+  ): Promise<boolean> {
     if (!workspacePath) throw new Error('No workspace open')
     const fullOldPath = this.assertSafeWorkspacePath(workspacePath, oldRelPath)
     const fullNewPath = this.assertSafeWorkspacePath(workspacePath, newRelPath)
@@ -519,13 +524,12 @@ export class WorkspaceOperations {
 
   /**
    * Creates a directory on disk and registers it and parent segments in `foldersSet`.
-   *
-   * @param {string} workspacePath - Root workspace directory.
-   * @param {Set<string>} foldersSet - In-memory folder registry.
-   * @param {string} folderPath - Relative folder path to create.
-   * @returns {Promise<boolean>}
    */
-  static async createFolder(workspacePath, foldersSet, folderPath) {
+  static async createFolder(
+    workspacePath: string,
+    foldersSet: Set<string>,
+    folderPath: string
+  ): Promise<boolean> {
     if (!workspacePath) throw new Error('No workspace open')
     const normalized = (folderPath || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
     if (!normalized) return true
@@ -533,7 +537,7 @@ export class WorkspaceOperations {
     await fs.mkdir(fullPath, { recursive: true })
 
     let current = ''
-    normalized.split('/').forEach((part) => {
+    normalized.split('/').forEach((part: string) => {
       current = current ? `${current}/${part}` : part
       foldersSet.add(current)
     })
@@ -542,15 +546,14 @@ export class WorkspaceOperations {
 
   /**
    * Renames a folder on disk and updates folderIds for all child notes in memory.
-   *
-   * @param {string} workspacePath - Root workspace directory.
-   * @param {Map<string, any>} snippetsMap - In-memory snippet registry.
-   * @param {Set<string>} foldersSet - In-memory folder registry.
-   * @param {string} oldPath - Old relative path.
-   * @param {string} newPath - New relative path.
-   * @returns {Promise<boolean>}
    */
-  static async renameFolder(workspacePath, snippetsMap, foldersSet, oldPath, newPath) {
+  static async renameFolder(
+    workspacePath: string,
+    snippetsMap: Map<string, any>,
+    foldersSet: Set<string>,
+    oldPath: string,
+    newPath: string
+  ): Promise<boolean> {
     if (!workspacePath) throw new Error('No workspace open')
     const fullOldPath = this.assertSafeWorkspacePath(workspacePath, oldPath)
     const fullNewPath = this.assertSafeWorkspacePath(workspacePath, newPath)
@@ -580,14 +583,13 @@ export class WorkspaceOperations {
 
   /**
    * Deletes a folder and all its child files and subdirectories.
-   *
-   * @param {string} workspacePath - Root workspace directory.
-   * @param {Map<string, any>} snippetsMap - In-memory snippet registry.
-   * @param {Set<string>} foldersSet - In-memory folder registry.
-   * @param {string} folderPath - Relative folder path to delete.
-   * @returns {Promise<{ success: boolean, deletedFilePaths: string[] }>}
    */
-  static async deleteFolder(workspacePath, snippetsMap, foldersSet, folderPath) {
+  static async deleteFolder(
+    workspacePath: string,
+    snippetsMap: Map<string, any>,
+    foldersSet: Set<string>,
+    folderPath: string
+  ): Promise<DeleteFolderResult> {
     if (!workspacePath) throw new Error('No workspace open')
     if (!folderPath || folderPath === '.' || folderPath === '/' || folderPath === '\\') {
       return { success: false, deletedFilePaths: [] }
@@ -608,7 +610,7 @@ export class WorkspaceOperations {
       }
     }
 
-    const deletedFilePaths = []
+    const deletedFilePaths: string[] = []
     for (const [id, snippet] of snippetsMap.entries()) {
       if (snippet.folderId === folderPath || snippet.folderId?.startsWith(`${folderPath}/`)) {
         const sFilePath = path.join(
@@ -625,23 +627,16 @@ export class WorkspaceOperations {
 
   /**
    * Recursively imports files and directories dragged into Lumina from the host OS.
-   * Automatically renames colliding file and directory names with incrementing suffixes.
-   *
-   * @param {string} workspacePath - Root workspace directory.
-   * @param {Set<string>} foldersSet - In-memory folder registry.
-   * @param {string[]} [sourcePaths=[]] - Absolute paths on host OS to import.
-   * @param {string} [targetFolderId=''] - Destination relative folder path in workspace.
-   * @returns {Promise<{ importedSnippetIds: string[], importedFolderIds: string[], importedFileNames: any[], count: number, targetFolderId: string }>}
    */
   static async importExternalPaths(
-    workspacePath,
-    foldersSet,
-    sourcePaths = [],
-    targetFolderId = ''
-  ) {
+    workspacePath: string,
+    foldersSet: Set<string>,
+    sourcePaths: string[] = [],
+    targetFolderId: string = ''
+  ): Promise<ImportExternalPathsResult> {
     if (!workspacePath) throw new Error('No workspace open')
     if (!Array.isArray(sourcePaths) || sourcePaths.length === 0) {
-      return { importedSnippetIds: [], importedFolderIds: [], count: 0, targetFolderId: '' }
+      return { importedSnippetIds: [], importedFolderIds: [], importedFileNames: [], count: 0, targetFolderId: '' }
     }
 
     const normalizedTargetFolder = (targetFolderId || '').replace(/\\/g, '/')
@@ -651,10 +646,10 @@ export class WorkspaceOperations {
 
     await fs.mkdir(targetBaseDir, { recursive: true })
 
-    const importedSnippetIds = []
-    const importedFolderIds = []
-    const importedFileNames = []
-    const sanitizeName = (name) => name.replace(/[<>:"/\\|?*]/g, '_').trim()
+    const importedSnippetIds: string[] = []
+    const importedFolderIds: string[] = []
+    const importedFileNames: ImportedFileName[] = []
+    const sanitizeName = (name: string) => name.replace(/[<>:"/\\|?*]/g, '_').trim()
 
     const BATCH_SIZE = 4
     for (let i = 0; i < sourcePaths.length; i += BATCH_SIZE) {

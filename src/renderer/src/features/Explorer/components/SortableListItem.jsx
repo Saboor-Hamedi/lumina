@@ -67,6 +67,7 @@ export const SortableListItem = React.memo(
         searchQuery={searchQuery}
         matchSnippet={matchSnippet}
         dndProps={{ attributes, listeners, setNodeRef: setCombinedRef }}
+        isDropOver={isOver && !isDragging}
         style={style}
       />
     )

@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
-import VaultSearch from '../../src/main/workspace/workspaceSearch.js'
+import VaultSearch from '../../src/main/workspace/workspaceSearch'
 
 // Mock @xenova/transformers
 const mockEmbedder = vi.fn(() =>
@@ -21,10 +21,10 @@ vi.mock('@xenova/transformers', () => ({
 }))
 
 describe('VaultSearch', () => {
-  let testDataPath
-  let indexDir
-  let indexPath
-  let embeddingsPath
+  let testDataPath: string
+  let indexDir: string
+  let indexPath: string
+  let embeddingsPath: string
 
   beforeEach(async () => {
     testDataPath = path.join(os.tmpdir(), `lumina-search-test-${Date.now()}`)
@@ -121,18 +121,18 @@ describe('VaultSearch', () => {
       await VaultSearch.init(testDataPath)
       await VaultSearch.loadIndex()
 
-      const embedding = VaultSearch.getChunkEmbedding(VaultSearch.index[0])
+      const embedding = VaultSearch.getChunkEmbedding(VaultSearch.index![0])
 
       expect(embedding).toHaveLength(384)
-      expect(embedding[0]).toBeCloseTo(0, 5)
-      expect(embedding[1]).toBeCloseTo(0.1, 5)
+      expect(embedding![0]).toBeCloseTo(0, 5)
+      expect(embedding![1]).toBeCloseTo(0.1, 5)
     })
 
     it('returns null if no buffer', async () => {
       await VaultSearch.init(testDataPath)
       await VaultSearch.loadIndex()
 
-      const chunk = { embeddingOffset: 0, embeddingLength: 384 }
+      const chunk = { id: 'c1', filePath: 'test.md', text: 'test', embeddingOffset: 0, embeddingLength: 384 }
       const embedding = VaultSearch.getChunkEmbedding(chunk)
 
       expect(embedding).toBeNull()
@@ -150,7 +150,7 @@ describe('VaultSearch', () => {
       await VaultSearch.init(testDataPath)
       await VaultSearch.loadIndex()
 
-      const embedding = VaultSearch.getChunkEmbedding(VaultSearch.index[0])
+      const embedding = VaultSearch.getChunkEmbedding(VaultSearch.index![0])
 
       expect(embedding).toBeNull()
     })
@@ -268,7 +268,7 @@ describe('VaultSearch', () => {
       })
 
       // Results should all have score >= 0.9
-      expect(results.every((r) => r.score >= 0.9)).toBe(true)
+      expect(results.every((r) => (r.score ?? 0) >= 0.9)).toBe(true)
     })
 
     it('respects limit', async () => {
@@ -283,7 +283,7 @@ describe('VaultSearch', () => {
       const results = await VaultSearch.search('test')
 
       if (results.length > 1) {
-        expect(results[0].score).toBeGreaterThanOrEqual(results[1].score)
+        expect(results[0].score).toBeGreaterThanOrEqual(results[1].score ?? 0)
       }
     })
 
@@ -314,8 +314,8 @@ describe('VaultSearch', () => {
 
       expect(stats.totalChunks).toBe(3)
       expect(stats.fileCount).toBe(2) // 2 unique files
-      expect(stats.typeCounts.snippet).toBe(2)
-      expect(stats.typeCounts.note).toBe(1)
+      expect(stats.typeCounts?.snippet).toBe(2)
+      expect(stats.typeCounts?.note).toBe(1)
       expect(stats.loaded).toBe(true)
     })
 
@@ -334,7 +334,7 @@ describe('VaultSearch', () => {
       await VaultSearch.loadIndex()
 
       // Manually add to cache to test clearing
-      VaultSearch.queryCache.set('test-key', [{ id: '1', score: 0.8 }])
+      VaultSearch.queryCache.set('test-key', [{ id: '1', score: 0.8, filePath: 'test.md', text: 'test' }])
       expect(VaultSearch.queryCache.size).toBeGreaterThan(0)
 
       VaultSearch.clearCache()

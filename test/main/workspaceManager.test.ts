@@ -1,9 +1,8 @@
-
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
-import VaultManager from '../../src/main/workspace/workspaceManager.js'
-import matter from 'gray-matter'
+import VaultManager from '../../src/main/workspace/workspaceManager'
 
 vi.mock('electron', () => {
   const electronMock = {
@@ -18,8 +17,8 @@ vi.mock('electron', () => {
 })
 
 describe('VaultManager', () => {
-  let testVaultPath
-  let originalVaultPath
+  let testVaultPath: string
+  let originalVaultPath: string | null
 
   beforeEach(async () => {
     if (VaultManager.watcher) {
@@ -168,7 +167,7 @@ describe('VaultManager', () => {
 
       await VaultManager.scanVault()
 
-      const mdSnippet = Array.from(VaultManager.snippets.values()).find((s) => s.fileName === 'direct.md')
+      const mdSnippet = Array.from(VaultManager.snippets.values()).find((s) => s.fileName === 'direct.md')!
 
       await VaultManager.bulkDelete({
         folderIds: ['bulk-folder'],
@@ -205,8 +204,8 @@ describe('VaultManager', () => {
     })
 
     it('filters out invalid snippets', async () => {
-      VaultManager.snippets.set('invalid', null)
-      VaultManager.snippets.set('valid', { id: 'valid', timestamp: 1000 })
+      VaultManager.snippets.set('invalid', null as any)
+      VaultManager.snippets.set('valid', { id: 'valid', timestamp: 1000 } as any)
       const { snippets } = await VaultManager.getSnippets()
       expect(snippets.every((s) => s && s.id)).toBe(true)
     })
@@ -233,9 +232,9 @@ describe('VaultManager', () => {
       const scanResult = await VaultManager.scanWorkspace()
       const pdfSnippet = scanResult.snippets.find((s) => s.fileName === 'manual.pdf')
       expect(pdfSnippet).toBeDefined()
-      expect(pdfSnippet.type).toBe('pdf')
-      expect(pdfSnippet.language).toBe('pdf')
-      expect(pdfSnippet.ext).toBe('.pdf')
+      expect(pdfSnippet?.type).toBe('pdf')
+      expect(pdfSnippet?.language).toBe('pdf')
+      expect(pdfSnippet?.ext).toBe('.pdf')
 
       const asset = await VaultManager.readAsset('manual.pdf')
       expect(asset).toBeDefined()

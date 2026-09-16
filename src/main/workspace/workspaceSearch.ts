@@ -1,7 +1,52 @@
 import fs from 'fs/promises'
 import path from 'path'
 
-class WorkspaceSearch {
+export interface SearchChunkRecord {
+  id: string
+  filePath: string
+  chunkIndex?: number
+  text: string
+  start?: number
+  end?: number
+  type?: string
+  metadata?: Record<string, any>
+  embeddingOffset?: number
+  embeddingLength?: number
+  score?: number
+  finalScore?: number
+}
+
+export interface SearchFilters {
+  filePath?: string | RegExp
+  fileType?: string
+  type?: string
+}
+
+export interface SearchOptions {
+  threshold?: number
+  limit?: number
+  filters?: SearchFilters
+  rerank?: boolean
+}
+
+export interface SearchStats {
+  totalChunks: number
+  fileCount?: number
+  typeCounts?: Record<string, number>
+  loaded: boolean
+  cacheSize?: number
+}
+
+export class WorkspaceSearch {
+  indexPath: string | null
+  embeddingsPath: string | null
+  index: SearchChunkRecord[] | null
+  embeddingsBuffer: Buffer | null
+  embedder: any
+  queryCache: Map<string, SearchChunkRecord[]>
+  cacheMaxSize: number
+  isLoaded: boolean
+
   constructor() {
     this.indexPath = null
     this.embeddingsPath = null
@@ -13,7 +58,7 @@ class WorkspaceSearch {
     this.isLoaded = false
   }
 
-  async init(userDataPath) {
+  async init(userDataPath: string): Promise<void> {
     const indexDir = path.join(userDataPath, 'vault-index')
     this.indexPath = path.join(indexDir, 'vault_index.jsonl')
     this.embeddingsPath = path.join(indexDir, 'embeddings.bin')
@@ -23,7 +68,7 @@ class WorkspaceSearch {
     await this.loadIndex()
   }
 
-  async _getEmbedder() {
+  async _getEmbedder(): Promise<any> {
     if (this.embedder) return this.embedder
 
     try {
@@ -37,15 +82,15 @@ class WorkspaceSearch {
       })
       console.info('[WorkspaceSearch] ✓ Embedder initialized')
       return this.embedder
-    } catch (err) {
+    } catch (err: any) {
       console.error('[WorkspaceSearch] Failed to load embedder:', err)
       throw new Error(`Failed to initialize embedding model: ${err.message}`)
     }
   }
 
-  async loadIndex() {
+  async loadIndex(): Promise<void> {
     try {
-      if (!(await this.fileExists(this.indexPath))) {
+      if (!this.indexPath || !(await this.fileExists(this.indexPath))) {
         console.warn('[WorkspaceSearch] Index file not found')
         this.index = []
         this.embeddingsBuffer = null
@@ -60,7 +105,7 @@ class WorkspaceSearch {
         .filter((line) => line.trim())
         .map((line) => JSON.parse(line))
 
-      if (await this.fileExists(this.embeddingsPath)) {
+      if (this.embeddingsPath && (await this.fileExists(this.embeddingsPath))) {
         this.embeddingsBuffer = await fs.readFile(this.embeddingsPath)
       } else {
         this.embeddingsBuffer = null
@@ -76,13 +121,13 @@ class WorkspaceSearch {
     }
   }
 
-  async reload() {
+  async reload(): Promise<void> {
     this.isLoaded = false
     this.queryCache.clear()
     await this.loadIndex()
   }
 
-  async generateQueryEmbedding(query) {
+  async generateQueryEmbedding(query: string): Promise<number[]> {
     const embedder = await this._getEmbedder()
 
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
@@ -91,20 +136,20 @@ class WorkspaceSearch {
 
     try {
       const output = await embedder(query, { pooling: 'mean', normalize: true })
-      const embedding = Array.from(output.data)
+      const embedding = Array.from(output.data as Float32Array)
 
       if (embedding.length !== 384) {
         console.warn(`[WorkspaceSearch] Unexpected embedding size: ${embedding.length}, expected 384`)
       }
 
       return embedding
-    } catch (err) {
+    } catch (err: any) {
       console.error('[WorkspaceSearch] Query embedding failed:', err)
       throw new Error(`Failed to generate query embedding: ${err.message}`)
     }
   }
 
-  getChunkEmbedding(chunk) {
+  getChunkEmbedding(chunk: SearchChunkRecord): number[] | null {
     if (!this.embeddingsBuffer) {
       return null
     }
@@ -128,7 +173,7 @@ class WorkspaceSearch {
     return Array.from(embedding)
   }
 
-  cosineSimilarity(vecA, vecB) {
+  cosineSimilarity(vecA: number[] | null, vecB: number[] | null): number {
     if (!vecA || !vecB || vecA.length !== vecB.length) return 0
 
     let dot = 0
@@ -145,7 +190,7 @@ class WorkspaceSearch {
     return magnitude > 0 ? dot / magnitude : 0
   }
 
-  async search(query, options = {}) {
+  async search(query: string, options: SearchOptions = {}): Promise<SearchChunkRecord[]> {
     const { threshold = 0.3, limit = 20, filters = {}, rerank = true } = options
 
     if (!this.isLoaded || !this.index || this.index.length === 0) {
@@ -154,7 +199,7 @@ class WorkspaceSearch {
 
     const cacheKey = JSON.stringify({ query, threshold, filters })
     if (this.queryCache.has(cacheKey)) {
-      return this.queryCache.get(cacheKey)
+      return this.queryCache.get(cacheKey)!
     }
 
     try {
@@ -179,7 +224,7 @@ class WorkspaceSearch {
         candidates = candidates.filter((chunk) => chunk.type === filters.type)
       }
 
-      const results = []
+      const results: SearchChunkRecord[] = []
 
       for (const chunk of candidates) {
         const chunkEmbedding = this.getChunkEmbedding(chunk)
@@ -195,7 +240,7 @@ class WorkspaceSearch {
         }
       }
 
-      results.sort((a, b) => b.score - a.score)
+      results.sort((a, b) => (b.score || 0) - (a.score || 0))
 
       if (rerank && results.length > 0) {
         const queryLower = query.toLowerCase()
@@ -222,17 +267,17 @@ class WorkspaceSearch {
             }
           }
 
-          result.finalScore = result.score * boost
+          result.finalScore = (result.score || 0) * boost
         })
 
-        results.sort((a, b) => (b.finalScore || b.score) - (a.finalScore || a.score))
+        results.sort((a, b) => (b.finalScore || b.score || 0) - (a.finalScore || a.score || 0))
       }
 
       const finalResults = results.slice(0, limit)
 
       if (this.queryCache.size >= this.cacheMaxSize) {
         const firstKey = this.queryCache.keys().next().value
-        this.queryCache.delete(firstKey)
+        if (firstKey) this.queryCache.delete(firstKey)
       }
       this.queryCache.set(cacheKey, finalResults)
 
@@ -243,12 +288,12 @@ class WorkspaceSearch {
     }
   }
 
-  getChunksByFile(filePath) {
+  getChunksByFile(filePath: string): SearchChunkRecord[] {
     if (!this.isLoaded || !this.index) return []
     return this.index.filter((chunk) => chunk.filePath === filePath)
   }
 
-  async findSimilar(chunkId, limit = 10) {
+  async findSimilar(chunkId: string, limit: number = 10): Promise<SearchChunkRecord[]> {
     if (!this.isLoaded || !this.index) return []
 
     const chunk = this.index.find((c) => c.id === chunkId)
@@ -257,7 +302,7 @@ class WorkspaceSearch {
     const chunkEmbedding = this.getChunkEmbedding(chunk)
     if (!chunkEmbedding) return []
 
-    const results = []
+    const results: SearchChunkRecord[] = []
 
     for (const otherChunk of this.index) {
       if (otherChunk.id === chunkId) continue
@@ -274,18 +319,19 @@ class WorkspaceSearch {
       }
     }
 
-    return results.sort((a, b) => b.score - a.score).slice(0, limit)
+    return results.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, limit)
   }
 
-  getStats() {
+  getStats(): SearchStats {
     if (!this.isLoaded || !this.index) {
       return { totalChunks: 0, loaded: false }
     }
 
     const fileCount = new Set(this.index.map((c) => c.filePath)).size
-    const typeCounts = {}
+    const typeCounts: Record<string, number> = {}
     this.index.forEach((chunk) => {
-      typeCounts[chunk.type] = (typeCounts[chunk.type] || 0) + 1
+      const t = chunk.type || 'generic'
+      typeCounts[t] = (typeCounts[t] || 0) + 1
     })
 
     return {
@@ -297,11 +343,11 @@ class WorkspaceSearch {
     }
   }
 
-  clearCache() {
+  clearCache(): void {
     this.queryCache.clear()
   }
 
-  async fileExists(filePath) {
+  async fileExists(filePath: string): Promise<boolean> {
     try {
       await fs.access(filePath)
       return true
