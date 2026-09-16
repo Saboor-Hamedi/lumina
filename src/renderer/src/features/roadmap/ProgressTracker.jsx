@@ -5,9 +5,10 @@ import { useWorkspaceStore } from '../../core/store/workspaceStore'
 
 export function LearnedButton({ snippet, note: propNote }) {
   const note = propNote || snippet
-  const saveNote = useWorkspaceStore((state) => state.saveNote)
+  const saveNote = useWorkspaceStore((state) => state.saveNote || state.saveSnippet)
   const isStoreLearned = useWorkspaceStore((state) => {
-    const n = (state.notes || []).find((item) => item.id === note?.id)
+    const all = state.notes || state.snippets || []
+    const n = all.find((item) => item.id === note?.id)
     return n ? !!n.isLearned : !!note?.isLearned
   })
 
@@ -102,9 +103,12 @@ export function LearnedButton({ snippet, note: propNote }) {
 
 export function LearningTrackBadge({ snippetId, noteId: propNoteId }) {
   const noteId = propNoteId || snippetId
-  const notes = useWorkspaceStore((state) => state.notes) || []
+  const notes = useWorkspaceStore((state) => state.notes || state.snippets) || []
   const selectedNote = useWorkspaceStore(
-    (state) => (noteId ? (state.notes || []).find((n) => n.id === noteId) : state.selectedNote)
+    (state) =>
+      noteId
+        ? (state.notes || state.snippets || []).find((n) => n.id === noteId)
+        : state.selectedNote || state.selectedSnippet
   )
 
   const stats = useMemo(() => {

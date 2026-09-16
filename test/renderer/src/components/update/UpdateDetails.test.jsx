@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import UpdateDetails from '../../../../../src/renderer/src/components/update/UpdateDetails'
-import { useUpdateStore } from '../../../../../src/renderer/src/core/store/useUpdateStore'
+import { useUpdateStore } from '../../../../../src/renderer/src/core/store/UpdateSetting'
 
 describe('UpdateDetails', () => {
   beforeEach(() => {

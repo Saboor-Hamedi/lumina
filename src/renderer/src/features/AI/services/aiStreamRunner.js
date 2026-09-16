@@ -211,8 +211,8 @@ export const generateInitialThought = (prompt = '') => {
   if (lower.includes('delete')) {
     return `Targeting workspace items for deletion...`
   }
-  const cleanSnippet = p.replace(/[\r\n]+/g, ' ').slice(0, 80)
-  return `Analyzing request: "${cleanSnippet}"... Determining necessary workspace actions.`
+  const cleanPrompt = p.replace(/[\r\n]+/g, ' ').slice(0, 80)
+  return `Analyzing request: "${cleanPrompt}"... Determining necessary workspace actions.`
 }
 
 export const getToolStartThought = (toolName) => {
@@ -770,7 +770,7 @@ export const runFallbackProviderStream = async ({
 
 export const applyLegacyMarkdownBlocks = async (fullContent, workspaceStore) => {
   const contentOutsideThink = (fullContent || '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/<think>[\s\S]*$/gi, '')
-  const allSnippets = workspaceStore.notes || []
+  const allNotes = workspaceStore.notes || []
   let appliedCreations = 0
   let appliedUpdates = 0
   let appliedDeletions = 0
@@ -826,7 +826,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent, workspaceStore) => 
   // 1. Process lumina-create
   const createMatches = parseLuminaBlocks(contentOutsideThink, 'lumina-create')
   for (const { title, content } of createMatches) {
-    const newSnippet = {
+    const newNote = {
       id: crypto.randomUUID(),
       title,
       code: content,
@@ -834,7 +834,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent, workspaceStore) => 
       tags: '',
       timestamp: Date.now()
     }
-    await workspaceStore.saveNote(newSnippet)
+    await workspaceStore.saveNote(newNote)
     appliedCreations++
   }
 
@@ -855,7 +855,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent, workspaceStore) => 
           await window.api.createFolder(folderId)
         } catch (_) {}
       }
-      const newSnippet = {
+      const newNote = {
         id: crypto.randomUUID(),
         title,
         code: content,
@@ -864,7 +864,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent, workspaceStore) => 
         tags: '',
         timestamp: Date.now()
       }
-      await workspaceStore.saveNote(newSnippet)
+      await workspaceStore.saveNote(newNote)
       appliedCreations++
     }
   }
@@ -886,16 +886,16 @@ export const applyLegacyMarkdownBlocks = async (fullContent, workspaceStore) => 
   const updateMatches = parseLuminaBlocks(contentOutsideThink, 'lumina-update')
   for (const { title, content } of updateMatches) {
     const cleanTitle = title.toLowerCase().replace(/\.md$/, '')
-    const targetSnippet = allSnippets.find((s) => {
-      const sTitle = s.title.toLowerCase().replace(/\.md$/, '')
-      return sTitle === cleanTitle
+    const targetNote = allNotes.find((n) => {
+      const nTitle = (n.title || '').toLowerCase().replace(/\.md$/, '')
+      return nTitle === cleanTitle
     })
 
-    if (targetSnippet) {
-      const updatedSnippet = { ...targetSnippet, code: content, timestamp: Date.now() }
-      await workspaceStore.saveNote(updatedSnippet)
-      if (workspaceStore.selectedNote?.id === targetSnippet.id) {
-        workspaceStore.setSelectedNote(updatedSnippet)
+    if (targetNote) {
+      const updatedNote = { ...targetNote, code: content, timestamp: Date.now() }
+      await workspaceStore.saveNote(updatedNote)
+      if (workspaceStore.selectedNote?.id === targetNote.id) {
+        workspaceStore.setSelectedNote(updatedNote)
       }
       appliedUpdates++
     }
@@ -906,14 +906,15 @@ export const applyLegacyMarkdownBlocks = async (fullContent, workspaceStore) => 
   for (const match of deleteMatches) {
     const title = match[1].trim()
     const cleanTitle = title.toLowerCase().replace(/\.md$/, '')
-    const targetSnippet = allSnippets.find((s) => {
-      const sTitle = s.title.toLowerCase().replace(/\.md$/, '')
-      return sTitle === cleanTitle
+    const targetNote = allNotes.find((n) => {
+      const nTitle = (n.title || '').toLowerCase().replace(/\.md$/, '')
+      return nTitle === cleanTitle
     })
 
-    if (targetSnippet) {
+    if (targetNote) {
       try {
-        await workspaceStore.deleteSnippet(targetSnippet.id, true)
+        const deleteFn = workspaceStore.deleteNote || workspaceStore.deleteSnippet
+        await deleteFn.call(workspaceStore, targetNote.id, true)
         appliedDeletions++
       } catch (e) {
         console.warn(`[StreamRunner] Failed to delete "${title}":`, e)

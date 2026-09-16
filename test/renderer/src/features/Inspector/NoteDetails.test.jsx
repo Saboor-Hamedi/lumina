@@ -10,7 +10,7 @@ vi.mock('../../../../../src/renderer/src/core/store/workspaceStore', () => ({
     })
 }))
 
-vi.mock('../../../../../src/renderer/src/core/store/useSettingsStore', () => ({
+vi.mock('../../../../../src/renderer/src/core/store/SettingStore', () => ({
   useSettingsStore: {
     getState: () => ({
       settings: { vaultPath: 'Default Workspace' }
@@ -19,7 +19,7 @@ vi.mock('../../../../../src/renderer/src/core/store/useSettingsStore', () => ({
 }))
 
 describe('NoteDetails Component', () => {
-  const mockSnippet = {
+  const mockNote = {
     id: 'note-uuid-5678',
     title: 'Lumina Architecture',
     folderId: 'docs',
@@ -31,7 +31,7 @@ describe('NoteDetails Component', () => {
   }
 
   it('renders properties and statistics correctly', () => {
-    render(<NoteDetails snippet={mockSnippet} />)
+    render(<NoteDetails note={mockNote} />)
     expect(screen.getByText('note-uuid-5678')).toBeDefined()
     expect(screen.getByText('Lumina Architecture')).toBeDefined()
     expect(screen.getByText('9')).toBeDefined()
@@ -45,7 +45,7 @@ describe('NoteDetails Component', () => {
       }
     })
 
-    render(<NoteDetails snippet={mockSnippet} />)
+    render(<NoteDetails note={mockNote} />)
     const idRow = screen.getByText('note-uuid-5678')
     fireEvent.click(idRow)
 

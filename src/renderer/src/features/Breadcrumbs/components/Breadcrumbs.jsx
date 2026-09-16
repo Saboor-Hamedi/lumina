@@ -14,9 +14,9 @@ import '../css/Breadcrumbs.css'
 
 export const Breadcrumbs = ({ snippet, className = '' }) => {
   const folders = useWorkspaceStore((state) => state.folders) || []
-  const snippets = useWorkspaceStore((state) => state.notes) || []
-  const selectedSnippet = useWorkspaceStore((state) => state.selectedNote)
-  const saveSnippet = useWorkspaceStore((state) => state.saveNote)
+  const snippets = useWorkspaceStore((state) => state.notes || state.snippets) || []
+  const selectedSnippet = useWorkspaceStore((state) => state.selectedNote || state.selectedSnippet)
+  const saveSnippet = useWorkspaceStore((state) => state.saveNote || state.saveSnippet)
   const currentSnippet = snippet || selectedSnippet
 
   const [copied, setCopied] = useState(false)

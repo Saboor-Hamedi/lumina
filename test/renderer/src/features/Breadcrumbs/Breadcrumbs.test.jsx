@@ -37,9 +37,13 @@ vi.mock('../../../../../src/renderer/src/core/store/workspaceStore', () => ({
     selector({
       folders: [{ id: 'f1', name: 'src', parentId: null }],
       snippets: [mockSnippet],
+      notes: [mockSnippet],
       selectedSnippet: mockSnippet,
+      selectedNote: mockSnippet,
       setSelectedSnippet: vi.fn(),
-      saveSnippet: mockSaveSnippet
+      setSelectedNote: vi.fn(),
+      saveSnippet: mockSaveSnippet,
+      saveNote: mockSaveSnippet
     })
 }))
 

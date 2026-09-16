@@ -4,6 +4,8 @@
  * active note state resolution, and folder hierarchy expansion.
  */
 
+
+
 /**
  * Computes all ancestor folder paths for a given folder path.
  * E.g., 'Work/Projects/Lumina' -> ['Work', 'Work/Projects', 'Work/Projects/Lumina']

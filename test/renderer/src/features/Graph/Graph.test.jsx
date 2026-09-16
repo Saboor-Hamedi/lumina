@@ -79,7 +79,7 @@ vi.mock('../../../../../src/renderer/src/features/modals/ModalHeader', () => {
 import { render, screen } from '@testing-library/react'
 import Graph from '../../../../../src/renderer/src/features/Graph/Graph'
 import { useWorkspaceStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
-import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
+import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 
 describe('Graph', () => {
   beforeEach(() => {

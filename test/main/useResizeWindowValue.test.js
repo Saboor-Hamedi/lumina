@@ -3,7 +3,7 @@ import { useResizeWindowValue } from '../../src/main/handlers/useResizeWindowVal
 
 const settingsSet = vi.fn()
 
-vi.mock('../../src/main/SettingsManager', () => ({
+vi.mock('../../src/main/settings', () => ({
   default: {
     set: (...args) => settingsSet(...args)
   }

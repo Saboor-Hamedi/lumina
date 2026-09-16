@@ -14,7 +14,7 @@ const StatusBar = ({
   onSettingsClick,
   onThemeClick
 }) => {
-  const selectedSnippet = useWorkspaceStore((s) => s.selectedNote)
+  const selectedSnippet = useWorkspaceStore((s) => s.selectedNote || s.selectedSnippet)
   const [cursorPos, setCursorPos] = useState({ line: 1, col: 1, selectedChars: 0 })
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [imgError, setImgError] = useState(false)

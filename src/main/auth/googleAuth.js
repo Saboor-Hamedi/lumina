@@ -3,7 +3,7 @@ import http from 'http'
 import url from 'url'
 import path from 'path'
 import fs from 'fs'
-import SettingsManager from '../SettingsManager'
+import SettingsManager from '../settings'
 
 let authServer = null
 

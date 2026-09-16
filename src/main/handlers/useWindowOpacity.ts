@@ -1,5 +1,5 @@
 import { ipcMain, BrowserWindow } from 'electron'
-import SettingsManager from '../SettingsManager'
+import SettingsManager from '../settings'
 
 /**
  * Window Opacity handler

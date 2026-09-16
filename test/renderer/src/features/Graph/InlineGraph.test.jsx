@@ -24,7 +24,7 @@ vi.mock('../../../../../src/renderer/src/features/Graph/GraphMiniMap', () => ({
 import { render, screen, act } from '@testing-library/react'
 import InlineGraph from '../../../../../src/renderer/src/features/Graph/InlineGraph'
 import { useWorkspaceStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
-import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
+import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 
 describe('InlineGraph', () => {
   let resizeCallback

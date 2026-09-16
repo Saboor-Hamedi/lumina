@@ -53,21 +53,23 @@ import '../../assets/premimum-scroll.css'
 
 import {
   SortableListItem,
-  DroppableFolderItem,
   SortableGridItem,
   OverlayWrapper,
   NoteNumbers,
   ExplorerHeader,
-  ExplorerFavorites,
-  ExternalDropOverlay
+  ExplorerFavorites
 } from './components'
+import {
+  DroppableFolderItem,
+  ExternalDropOverlay,
+  useExternalFileDrop
+} from './drop'
 import { useFileSearch } from './hooks/FileSearch'
 import { useFileTree } from './hooks/FileTree'
 import { useExplorerSelection } from './hooks/ExplorerSelection'
 import { useExplorerDnd } from './hooks/ExplorerDnd'
 import { useExplorerOperations } from './hooks/ExplorerOperations'
 import { useFolderContextMenu } from './hooks/FolderMenu'
-import { useExternalFileDrop } from './hooks/ExternalFileDrop'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { summarizeNotes } from '../AI/services/summarizeNotes'
 import { isSnippetActive } from './utils/explorerSelectionHelper'

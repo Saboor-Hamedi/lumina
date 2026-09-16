@@ -662,8 +662,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 className="canvas-drawer-action-btn"
                 onClick={handleRecenter}
               >
-                <RefreshCw size={13} />
-                <span>Recenter</span>
+                <RefreshCw size={14} />
+                {/* <span>Recenter</span> */}
               </button>
             </ToolTip>
 
@@ -674,8 +674,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 className="canvas-drawer-action-btn"
                 onClick={handleOpenAsTab}
               >
-                <ExternalLink size={13} />
-                <span>Open in Tab</span>
+                <ExternalLink size={14} />
+                {/* <span>Open in Tab</span> */}
               </button>
             </ToolTip>
 
@@ -687,7 +687,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 aria-label="Close"
               >
                 <span className="sr-only" style={{ display: 'none' }}>Close</span>
-                <X size={15} />
+                <X size={14} />
               </button>
             </ToolTip>
           </div>

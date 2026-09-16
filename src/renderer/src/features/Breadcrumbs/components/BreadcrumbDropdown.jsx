@@ -40,9 +40,9 @@ const getFileIcon = (fileName = '') => {
 
 const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) => {
   const folders = useWorkspaceStore((state) => state.folders) || []
-  const snippets = useWorkspaceStore((state) => state.notes) || []
-  const setSelectedSnippet = useWorkspaceStore((state) => state.setSelectedNote)
-  const saveSnippet = useWorkspaceStore((state) => state.saveNote)
+  const snippets = useWorkspaceStore((state) => state.notes || state.snippets) || []
+  const setSelectedSnippet = useWorkspaceStore((state) => state.setSelectedNote || state.setSelectedSnippet)
+  const saveSnippet = useWorkspaceStore((state) => state.saveNote || state.saveSnippet)
 
   // Navigation stack: array of folder IDs
   const [stack, setStack] = useState(() => [isRootPath(parentFolderId) ? null : normalizePath(parentFolderId)])

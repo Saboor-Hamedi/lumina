@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, fireEvent, act } from '@testing-library/react'
 import { VoiceButton } from '../../../../../src/renderer/src/features/voice/VoiceButton'
 import { voiceService } from '../../../../../src/renderer/src/features/voice/hooks/Services'
-import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
+import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 
 describe('VoiceButton component', () => {
   beforeEach(() => {

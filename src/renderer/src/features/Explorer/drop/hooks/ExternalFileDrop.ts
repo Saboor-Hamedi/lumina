@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { useWorkspaceStore } from '../../../core/store/workspaceStore'
-import { useSettingsStore } from '../../../core/store/SettingStore'
+import { useWorkspaceStore } from '../../../../core/store/workspaceStore'
+import { useSettingsStore } from '../../../../core/store/SettingStore'
 
 interface ExternalFileDropResult {
   isDraggingExternal: boolean

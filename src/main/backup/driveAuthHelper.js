@@ -1,5 +1,5 @@
 import { net } from 'electron'
-import SettingsManager from '../SettingsManager'
+import SettingsManager from '../settings'
 
 /**
  * Retrieves the currently authenticated Google user from settings.

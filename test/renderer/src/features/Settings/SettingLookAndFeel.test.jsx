@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import SettingLookAndFeel from '../../../../../src/renderer/src/features/Settings/SettingLookAndFeel'
-import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
+import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 
 vi.mock('../../../../../src/renderer/src/core/hooks/useFontSettings', () => ({
   useFontSettings: () => ({

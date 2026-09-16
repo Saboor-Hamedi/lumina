@@ -10,7 +10,9 @@ describe('ProgressTracker', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useWorkspaceStore.setState({
+      notes: [],
       snippets: [],
+      selectedNote: null,
       selectedSnippet: null
     })
   })
@@ -27,16 +29,20 @@ describe('ProgressTracker', () => {
     })
 
     it('renders Learned when snippet isLearned', () => {
-      useWorkspaceStore.setState({ snippets: [{ id: '1', title: 'Note', isLearned: true }] })
+      const note = { id: '1', title: 'Note', isLearned: true }
+      useWorkspaceStore.setState({ notes: [note], snippets: [note] })
       render(<LearnedButton snippet={{ id: '1', title: 'Note' }} />)
       expect(screen.getByText('Learned')).toBeInTheDocument()
     })
 
     it('toggles isLearned via saveSnippet', async () => {
       const saveSnippet = vi.fn().mockResolvedValue(undefined)
+      const note = { id: '1', title: 'Note', isLearned: false }
       useWorkspaceStore.setState({
-        snippets: [{ id: '1', title: 'Note', isLearned: false }],
-        saveSnippet
+        notes: [note],
+        snippets: [note],
+        saveSnippet,
+        saveNote: saveSnippet
       })
       render(<LearnedButton snippet={{ id: '1', title: 'Note' }} />)
 
@@ -51,9 +57,12 @@ describe('ProgressTracker', () => {
     it('logs error when save fails', async () => {
       const saveSnippet = vi.fn().mockRejectedValue(new Error('boom'))
       const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const note = { id: '1', title: 'Note', isLearned: false }
       useWorkspaceStore.setState({
-        snippets: [{ id: '1', title: 'Note', isLearned: false }],
-        saveSnippet
+        notes: [note],
+        snippets: [note],
+        saveSnippet,
+        saveNote: saveSnippet
       })
       render(<LearnedButton snippet={{ id: '1', title: 'Note' }} />)
 
@@ -74,20 +83,24 @@ describe('ProgressTracker', () => {
     })
 
     it('shows count when nothing learned', () => {
+      const list = [{ id: '1' }, { id: '2' }]
       useWorkspaceStore.setState({
-        snippets: [{ id: '1' }, { id: '2' }]
+        notes: list,
+        snippets: list
       })
       render(<LearningTrackBadge />)
       expect(screen.getByText('0%')).toBeInTheDocument()
     })
 
     it('shows correct count or percentage', () => {
+      const list = [
+        { id: '1', isLearned: true },
+        { id: '2', isLearned: true },
+        { id: '3' }
+      ]
       useWorkspaceStore.setState({
-        snippets: [
-          { id: '1', isLearned: true },
-          { id: '2', isLearned: true },
-          { id: '3' }
-        ]
+        notes: list,
+        snippets: list
       })
       render(<LearningTrackBadge />)
       expect(screen.getByText('67%')).toBeInTheDocument()
@@ -101,18 +114,21 @@ describe('ProgressTracker', () => {
     })
 
     it('renders progress bar with correct height', () => {
+      const list = [
+        { id: '1', isLearned: true },
+        { id: '2' }
+      ]
       useWorkspaceStore.setState({
-        snippets: [
-          { id: '1', isLearned: true },
-          { id: '2' }
-        ]
+        notes: list,
+        snippets: list
       })
       render(<ProgressTracker />)
       expect(screen.getByText('50%')).toBeInTheDocument()
     })
 
     it('shows 100% when all learned', () => {
-      useWorkspaceStore.setState({ snippets: [{ id: '1', isLearned: true }] })
+      const list = [{ id: '1', isLearned: true }]
+      useWorkspaceStore.setState({ notes: list, snippets: list })
       render(<ProgressTracker />)
       expect(screen.getByText('100%')).toBeInTheDocument()
     })

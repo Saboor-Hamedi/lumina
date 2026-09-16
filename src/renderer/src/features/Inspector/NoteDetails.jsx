@@ -72,7 +72,8 @@ const PropertyRow = ({
   return content
 }
 
-export const NoteDetails = ({ snippet, isLoading = false }) => {
+export const NoteDetails = ({ note: propNote, snippet, isLoading = false }) => {
+  const note = propNote || snippet
   const pinnedTabIds = useWorkspaceStore((state) => state.pinnedTabIds)
 
   if (isLoading) {
@@ -87,7 +88,7 @@ export const NoteDetails = ({ snippet, isLoading = false }) => {
     )
   }
 
-  if (!snippet) {
+  if (!note) {
     return (
       <div className="details-modal-body" style={{ height: '100%', overflowY: 'auto' }}>
         <div
@@ -107,18 +108,18 @@ export const NoteDetails = ({ snippet, isLoading = false }) => {
   }
 
   // Calculate statistics
-  const charCount = snippet.code?.length || 0
-  const wordCount = snippet.code?.trim() ? snippet.code.trim().split(/\s+/).length : 0
+  const charCount = note.code?.length || 0
+  const wordCount = note.code?.trim() ? note.code.trim().split(/\s+/).length : 0
   const readTime = Math.max(1, Math.ceil(wordCount / 200)) + 'm'
 
   // Calculate true tag count (Frontmatter + Inline Tags, ignoring headings)
   const tagSet = new Set()
 
-  if (snippet.tags) {
-    const rawTags = Array.isArray(snippet.tags)
-      ? snippet.tags
-      : typeof snippet.tags === 'string' && snippet.tags.trim() !== ''
-        ? snippet.tags.split(',')
+  if (note.tags) {
+    const rawTags = Array.isArray(note.tags)
+      ? note.tags
+      : typeof note.tags === 'string' && note.tags.trim() !== ''
+        ? note.tags.split(',')
         : []
     rawTags.forEach((t) => {
       const trimmed = String(t).trim()
@@ -126,7 +127,7 @@ export const NoteDetails = ({ snippet, isLoading = false }) => {
     })
   }
 
-  let codeWithoutBlocks = (snippet.code || '')
+  let codeWithoutBlocks = (note.code || '')
     .replace(/```[\s\S]*?```/g, '')
     .replace(/`[^`]+`/g, '')
   const tagRegex = /(?:^|\s)(#[\w-]+)/g
@@ -153,37 +154,37 @@ export const NoteDetails = ({ snippet, isLoading = false }) => {
           <PropertyRow
             icon={Fingerprint}
             name="id"
-            value={snippet.id}
-            rawCopyValue={snippet.id}
+            value={note.id}
+            rawCopyValue={note.id}
             copyable={true}
             iconColor="#8b5cf6"
           />
-          <PropertyRow icon={Type} name="title" value={snippet.title || 'Untitled'} iconColor="#ec4899" />
+          <PropertyRow icon={Type} name="title" value={note.title || 'Untitled'} iconColor="#ec4899" />
           <PropertyRow
             icon={FolderOpen}
             name="location"
-            value={snippet.folderId || '/'}
+            value={note.folderId || '/'}
             iconColor="#eab308"
           />
           <PropertyRow
             icon={Clock}
             name="timestamp"
-            value={snippet.timestamp ? new Date(snippet.timestamp).toLocaleDateString() : 'none'}
+            value={note.timestamp ? new Date(note.timestamp).toLocaleDateString() : 'none'}
             iconColor="#14b8a6"
           />
-          <PropertyRow icon={Code} name="language" value={snippet.language || 'markdown'} iconColor="#3b82f6" />
+          <PropertyRow icon={Code} name="language" value={note.language || 'markdown'} iconColor="#3b82f6" />
           <PropertyRow icon={Tag} name="tags" value={tagCount} iconColor="#10b981" />
           <PropertyRow icon={Users} name="mentions" value={mentionCount} iconColor="#8b5cf6" />
           <PropertyRow
             icon={Pin}
             name="isPinned"
-            value={pinnedTabIds.includes(snippet.id) ? 'true' : 'false'}
+            value={pinnedTabIds.includes(note.id) ? 'true' : 'false'}
             iconColor="#f97316"
           />
           <PropertyRow
             icon={FileCode}
             name="customIcon"
-            value={snippet.customIcon || 'none'}
+            value={note.customIcon || 'none'}
             iconColor="#6366f1"
           />
           <PropertyRow icon={AtSign} name="aliases" value="none" iconColor="#f43f5e" />

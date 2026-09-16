@@ -322,8 +322,8 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
               </button>
             </ToolTip>
 
-            {selectedSnippet && (
-              <ToolTip text={`Attach note "${selectedSnippet.title || 'Untitled'}" as .md`} position="top">
+            {selectedNote && (
+              <ToolTip text={`Attach note "${selectedNote.title || 'Untitled'}" as .md`} position="top">
                 <button
                   type="button"
                   className="email-tool-btn"

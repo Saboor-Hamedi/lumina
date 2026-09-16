@@ -72,7 +72,8 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = ({
 
       saveTimeoutRef.current = setTimeout(() => {
         if (!onSave || !latestDataRef.current) return
-        const isStillInStore = useWorkspaceStore.getState().notes.some((n) => n.id === snippetRef.current.id)
+        const storeNotes = useWorkspaceStore.getState().notes || (useWorkspaceStore.getState() as any).snippets || []
+        const isStillInStore = storeNotes.length === 0 || storeNotes.some((n) => n.id === snippetRef.current.id)
         if (!isStillInStore) return
 
         const updated = {
@@ -93,7 +94,8 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = ({
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current)
-        const isStillInStore = useWorkspaceStore.getState().notes.some((n) => n.id === snippetRef.current.id)
+        const storeNotes = useWorkspaceStore.getState().notes || (useWorkspaceStore.getState() as any).snippets || []
+        const isStillInStore = storeNotes.length === 0 || storeNotes.some((n) => n.id === snippetRef.current.id)
         if (onSave && latestDataRef.current && isStillInStore) {
           const updated = {
             ...snippetRef.current,

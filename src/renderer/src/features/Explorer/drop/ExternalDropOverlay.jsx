@@ -1,6 +1,6 @@
 import React from 'react'
 import { FolderDown } from 'lucide-react'
-import '../css/externaldropOverlay.css'
+import './css/externaldropOverlay.css'
 
 const ExternalDropOverlay = ({ targetName = 'Vault', label, icon: Icon = FolderDown }) => {
   return (

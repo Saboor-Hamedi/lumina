@@ -32,7 +32,7 @@ describe('RightSidebarFooter Component', () => {
 
   it('renders Composer inside is-chat-composer container when tab is chat', () => {
     const { container } = render(
-      <RightSidebarFooter rightSidebarTab="chat" selectedSnippet={null} onClose={vi.fn()} />
+      <RightSidebarFooter rightSidebarTab="chat" selectedNote={null} onClose={vi.fn()} />
     )
 
     const section = container.querySelector('.inspector-footer-section.is-chat-composer')
@@ -41,20 +41,20 @@ describe('RightSidebarFooter Component', () => {
     expect(screen.getByTestId('mock-composer').getAttribute('data-sidebar')).toBe('true')
   })
 
-  it('renders word count when snippet has code in details tab', () => {
-    const mockSnippet = {
-      id: 'snippet-1',
+  it('renders word count when note has code in details tab', () => {
+    const mockNote = {
+      id: 'note-1',
       code: 'First second third fourth fifth'
     }
 
     render(
-      <RightSidebarFooter rightSidebarTab="details" selectedSnippet={mockSnippet} onClose={vi.fn()} />
+      <RightSidebarFooter rightSidebarTab="details" selectedNote={mockNote} onClose={vi.fn()} />
     )
 
     expect(screen.getByText('5 words')).toBeDefined()
   })
 
-  it('handles copying snippet code to clipboard', () => {
+  it('handles copying note code to clipboard', () => {
     const writeTextMock = vi.fn()
     Object.assign(navigator, {
       clipboard: {
@@ -62,13 +62,13 @@ describe('RightSidebarFooter Component', () => {
       }
     })
 
-    const mockSnippet = {
-      id: 'snippet-2',
+    const mockNote = {
+      id: 'note-2',
       code: 'console.log("hello world")'
     }
 
     const { container } = render(
-      <RightSidebarFooter rightSidebarTab="details" selectedSnippet={mockSnippet} onClose={vi.fn()} />
+      <RightSidebarFooter rightSidebarTab="details" selectedNote={mockNote} onClose={vi.fn()} />
     )
 
     const copyBtn = container.querySelector('.inspector-footer-btn')

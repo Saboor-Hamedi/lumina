@@ -22,8 +22,11 @@ vi.mock('../../../../../src/renderer/src/core/store/workspaceStore', () => ({
     selector({
       folders: mockFolders,
       snippets: mockSnippets,
+      notes: mockSnippets,
       setSelectedSnippet: mockSetSelectedSnippet,
-      saveSnippet: mockSaveSnippet
+      setSelectedNote: mockSetSelectedSnippet,
+      saveSnippet: mockSaveSnippet,
+      saveNote: mockSaveSnippet
     })
 }))
 

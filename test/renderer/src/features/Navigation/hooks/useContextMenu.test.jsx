@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook } from '@testing-library/react'
 import { useContextMenu } from '../../../../../../src/renderer/src/features/Navigation/hooks/useContextMenu'
 import { useWorkspaceStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
-import { useSettingsStore } from '../../../../../../src/renderer/src/core/store/useSettingsStore'
+import { useSettingsStore } from '../../../../../../src/renderer/src/core/store/SettingStore'
 
 describe('useContextMenu', () => {
   beforeEach(() => {
@@ -81,7 +81,7 @@ describe('useContextMenu', () => {
     const item = { id: '1', title: 'Note', fileName: 'n.md', folderId: null }
     useWorkspaceStore.setState({ clipboard: { action: 'copy', item }, snippets: [] })
     const saveSnippet = vi.fn().mockResolvedValue(undefined)
-    useWorkspaceStore.setState({ saveSnippet })
+    useWorkspaceStore.setState({ saveSnippet, saveNote: saveSnippet })
     const onClose = vi.fn()
 
     const { result } = setup({ onClose }, '2', 'folder')
@@ -97,7 +97,7 @@ describe('useContextMenu', () => {
     const item = { id: '1', title: 'Note', fileName: 'n.md', folderId: null }
     useWorkspaceStore.setState({ clipboard: { action: 'cut', item }, snippets: [] })
     const saveSnippet = vi.fn().mockResolvedValue(undefined)
-    useWorkspaceStore.setState({ saveSnippet })
+    useWorkspaceStore.setState({ saveSnippet, saveNote: saveSnippet })
     const onClose = vi.fn()
 
     const { result } = setup({ onClose }, '2', 'folder')
@@ -113,16 +113,17 @@ describe('useContextMenu', () => {
     expect(labels).toContain('New Note')
     expect(labels).toContain('New Folder')
     expect(labels).toContain('Rename')
+    expect(labels).toContain('Paste')
     expect(labels).toContain('Delete')
+    expect(labels).toContain('Background')
   })
 
   it('returns body options (no item) without Rename/Delete for folder', () => {
-    const { result } = setup({}, null, 'body')
+    const { result } = setup({}, null, 'folder')
     const labels = result.current.map((o) => o.label)
-    expect(labels).toContain('New Note')
-    expect(labels).toContain('New Folder')
     expect(labels).not.toContain('Rename')
     expect(labels).not.toContain('Delete')
+    expect(labels).not.toContain('Background')
   })
 
   it('Delete calls onDelete for file', () => {
@@ -132,17 +133,18 @@ describe('useContextMenu', () => {
 
     result.current.find((o) => o.label === 'Delete').onClick()
     expect(onDelete).toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
   })
 
   it('returns empty array for unknown type', () => {
-    const { result } = setup({}, null, 'unknown')
+    const { result } = setup({}, {}, 'unknown')
     expect(result.current).toEqual([])
   })
 
   it('color picker saves snippet color', async () => {
     const item = { id: '1', title: 'Note', fileName: 'n.md', color: null }
     const saveSnippet = vi.fn().mockResolvedValue(undefined)
-    useWorkspaceStore.setState({ saveSnippet })
+    useWorkspaceStore.setState({ saveSnippet, saveNote: saveSnippet })
     const { result } = setup({}, item, 'file')
 
     const bg = result.current.find((o) => o.label === 'Background')

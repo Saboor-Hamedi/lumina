@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo, type DragEvent as ReactDragEvent } from 'react'
-import { useWorkspaceStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../../../core/store/workspaceStore'
 
 export interface WorkspaceDropState {
   isOver: boolean

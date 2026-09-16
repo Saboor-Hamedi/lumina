@@ -1,5 +1,5 @@
 import { Tray, Menu } from 'electron'
-import SettingsManager from '../SettingsManager'
+import SettingsManager from '../settings'
 
 let tray = null
 let isQuitting = false

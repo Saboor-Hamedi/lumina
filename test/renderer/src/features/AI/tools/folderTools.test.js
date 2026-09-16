@@ -22,16 +22,26 @@ describe('AI Folder & File Movement Tools', () => {
     }
 
     useWorkspaceStore.setState({
+      notes: [
+        { id: 'note-1', title: 'Thermodynamics', code: '# Heat', folderId: '', fileName: 'Thermodynamics.md' },
+        { id: 'note-2', title: 'Calculus', code: '# Integrals', folderId: 'Math', fileName: 'Calculus.md' }
+      ],
       snippets: [
         { id: 'note-1', title: 'Thermodynamics', code: '# Heat', folderId: '', fileName: 'Thermodynamics.md' },
         { id: 'note-2', title: 'Calculus', code: '# Integrals', folderId: 'Math', fileName: 'Calculus.md' }
       ],
+      selectedNote: { id: 'note-1', title: 'Thermodynamics', code: '# Heat', folderId: '', fileName: 'Thermodynamics.md' },
       selectedSnippet: { id: 'note-1', title: 'Thermodynamics', code: '# Heat', folderId: '', fileName: 'Thermodynamics.md' },
       folders: ['Math'],
       activeTabId: 'note-1',
       openTabs: ['note-1'],
       loadWorkspace: vi.fn().mockResolvedValue(true),
+      deleteNote: vi.fn().mockResolvedValue(true),
       deleteSnippet: vi.fn().mockResolvedValue(true),
+      saveNote: vi.fn().mockImplementation((note) => {
+        window.api.saveSnippet(note)
+        return Promise.resolve(note)
+      }),
       closeTab: vi.fn()
     })
   })
@@ -58,6 +68,24 @@ describe('AI Folder & File Movement Tools', () => {
     expect(window.api.saveSnippet).toHaveBeenCalled()
   })
 
+  it('createFileTool handles path in title and dispatches events', async () => {
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
+
+    const res = await createFileTool.execute({
+      title: 'Database/Schema/Intro',
+      content: '# Intro',
+      folder: ''
+    })
+
+    expect(res.success).toBe(true)
+    expect(res.title).toBe('Intro')
+    expect(res.folderId).toBe('Database/Schema')
+    expect(dispatchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'ai-saved-note' })
+    )
+    dispatchSpy.mockRestore()
+  })
+
   it('moveFileTool moves a named note into a destination folder', async () => {
     const res = await moveFileTool.execute({
       title: 'Thermodynamics',
@@ -70,7 +98,7 @@ describe('AI Folder & File Movement Tools', () => {
     expect(window.api.createFolder).toHaveBeenCalledWith('Science/Physics')
   })
 
-  it('moveFileTool resolves "current" to the active open snippet', async () => {
+  it('moveFileTool resolves "current" to the active open note', async () => {
     const res = await moveFileTool.execute({
       title: 'current',
       folder: 'Archive'
@@ -82,11 +110,46 @@ describe('AI Folder & File Movement Tools', () => {
     expect(window.api.createFolder).toHaveBeenCalledWith('Archive')
   })
 
+  it('moveFileTool moves note to root level when folder is empty string', async () => {
+    const res = await moveFileTool.execute({
+      title: 'Calculus',
+      folder: ''
+    })
+
+    expect(res.success).toBe(true)
+    expect(res.title).toBe('Calculus')
+    expect(res.folder).toBe('')
+  })
+
+  it('moveFileTool moves all notes from a source folder when title is all', async () => {
+    const res = await moveFileTool.execute({
+      title: 'all',
+      fromFolder: 'Math',
+      folder: 'OldMath'
+    })
+
+    expect(res.success).toBe(true)
+    expect(res.movedCount).toBe(1)
+    expect(res.folder).toBe('OldMath')
+  })
+
+  it('moveFileTool returns error when note does not exist', async () => {
+    const res = await moveFileTool.execute({
+      title: 'NonExistentNote12345',
+      folder: 'Archive'
+    })
+
+    expect(res.success).toBe(false)
+    expect(res.error).toContain('not found in workspace')
+  })
+
   it('deleteFileTool deletes the active note and closes its tab', async () => {
     const res = await deleteFileTool.execute({ title: 'current' })
     expect(res.success).toBe(true)
     expect(res.title).toBe('Thermodynamics')
-    expect(useWorkspaceStore.getState().deleteSnippet).toHaveBeenCalledWith('note-1', true)
+    expect(
+      useWorkspaceStore.getState().deleteNote || useWorkspaceStore.getState().deleteSnippet
+    ).toHaveBeenCalledWith('note-1', true)
     expect(useWorkspaceStore.getState().closeTab).toHaveBeenCalledWith('note-1')
   })
 

@@ -26,7 +26,7 @@ vi.mock('../../../../../src/renderer/src/core/store/workspaceStore', () => ({
     })
 }))
 
-vi.mock('../../../../../src/renderer/src/core/store/useSettingsStore', () => ({
+vi.mock('../../../../../src/renderer/src/core/store/SettingStore', () => ({
   useSettingsStore: () => ({
     settings: { commandPaletteMode: 'search', commandPaletteSplitRatio: 50 },
     updateSetting: vi.fn()

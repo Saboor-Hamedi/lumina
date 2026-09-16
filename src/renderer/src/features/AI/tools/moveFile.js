@@ -36,7 +36,7 @@ export const moveFileTool = aiSdk.tool({
 
       const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
       const vs = useWorkspaceStore.getState()
-      const snippets = vs.notes || []
+      const notes = vs.notes || vs.snippets || []
 
       if (targetFolder && window.api?.createFolder) {
         try {
@@ -52,7 +52,7 @@ export const moveFileTool = aiSdk.tool({
         rawTitle.toLowerCase() === 'all notes'
 
       if (isAll) {
-        const sourceNotes = snippets.filter((s) => {
+        const sourceNotes = notes.filter((s) => {
           const sFolder = (s.folderId || '').replace(/^[/\\]+|[/\\]+$/g, '')
           return sourceFolder ? sFolder === sourceFolder : true
         })
@@ -94,14 +94,17 @@ export const moveFileTool = aiSdk.tool({
         rawTitle.toLowerCase() === 'this note' ||
         rawTitle.toLowerCase() === 'this file'
       ) {
-        target = vs.selectedNote || (vs.activeTabId ? snippets.find((s) => s.id === vs.activeTabId) : null)
+        target =
+          vs.selectedNote ||
+          vs.selectedSnippet ||
+          (vs.activeTabId ? notes.find((s) => s.id === vs.activeTabId) : null)
       } else {
         const cleanLower = rawTitle.toLowerCase().replace(/\.md$/i, '')
         const baseName = cleanLower.split(/[/\\]/).pop()
 
         const candidates = sourceFolder
-          ? snippets.filter((s) => (s.folderId || '').replace(/^[/\\]+|[/\\]+$/g, '') === sourceFolder)
-          : snippets
+          ? notes.filter((s) => (s.folderId || '').replace(/^[/\\]+|[/\\]+$/g, '') === sourceFolder)
+          : notes
 
         target = candidates.find((s) => {
           const sTitle = (s.title || '').toLowerCase().replace(/\.md$/i, '')
@@ -134,19 +137,24 @@ export const moveFileTool = aiSdk.tool({
 
       const saveAction = vs.saveNote || vs.saveSnippet
       const saved = saveAction ? await saveAction(updated) : null
-      const finalSnippet = saved || updated
+      const finalNote = saved || updated
 
       if (vs.loadWorkspace) {
         await vs.loadWorkspace()
       }
 
-      if (vs.selectedNote?.id === finalSnippet.id && vs.setSelectedNote) {
-        vs.setSelectedNote(finalSnippet)
+      if (vs.selectedNote?.id === finalNote.id && vs.setSelectedNote) {
+        vs.setSelectedNote(finalNote)
       }
 
       window.dispatchEvent(
+        new CustomEvent('ai-saved-note', {
+          detail: { id: finalNote.id, code: finalNote.code, title: finalNote.title }
+        })
+      )
+      window.dispatchEvent(
         new CustomEvent('ai-saved-snippet', {
-          detail: { id: finalSnippet.id, code: finalSnippet.code, title: finalSnippet.title }
+          detail: { id: finalNote.id, code: finalNote.code, title: finalNote.title }
         })
       )
 
@@ -154,10 +162,10 @@ export const moveFileTool = aiSdk.tool({
 
       return {
         success: true,
-        title: finalSnippet.title,
+        title: finalNote.title,
         folder: targetFolder,
-        summary: `Moved **${finalSnippet.title}** to ${destName}.`,
-        instruction_to_ai: `Note "${finalSnippet.title}" was moved to ${destName} successfully in the background without opening tabs. Inform the user concisely.`
+        summary: `Moved **${finalNote.title}** to ${destName}.`,
+        instruction_to_ai: `Note "${finalNote.title}" was moved to ${destName} successfully in the background without opening tabs. Inform the user concisely.`
       }
     } catch (err) {
       return { success: false, error: err.message || 'Failed to move file' }

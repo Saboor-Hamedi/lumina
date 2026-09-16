@@ -450,7 +450,8 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
   const triggerHoverForTarget = (linkEl, target) => {
     if (!target) return
-    const { notes } = getVaultStore()
+    const vault = getVaultStore()
+    const notes = vault?.notes || vault?.snippets || []
     const targetLower = target.toLowerCase()
 
     let note = notes?.find((s) => {

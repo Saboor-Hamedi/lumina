@@ -1,5 +1,5 @@
 import { net, ipcMain, dialog, Notification, BrowserWindow, app } from 'electron'
-import SettingsManager from '../SettingsManager'
+import SettingsManager from '../settings'
 import fs from 'fs/promises'
 import fsSync from 'fs'
 import path from 'path'

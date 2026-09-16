@@ -11,7 +11,7 @@ import {
   getTrackStats,
   calculateDocumentRoadmapProgress
 } from '../../../../../src/renderer/src/features/roadmap/useStoreProgress'
-import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
+import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 
 describe('useStoreProgress', () => {
   beforeEach(() => {

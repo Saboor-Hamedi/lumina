@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react'
 import './NoteDetails.css'
 
-export const NoteOutline = ({ snippet }) => {
+export const NoteOutline = ({ note: propNote, snippet }) => {
+  const note = propNote || snippet
   const headings = useMemo(() => {
-    if (!snippet || !snippet.code) return []
-    const lines = snippet.code.split('\n')
+    if (!note || !note.code) return []
+    const lines = note.code.split('\n')
     const extracted = []
     lines.forEach((line, index) => {
       const match = line.match(/^(#{1,6})\s+(.*)/)
@@ -17,9 +18,9 @@ export const NoteOutline = ({ snippet }) => {
       }
     })
     return extracted
-  }, [snippet?.code])
+  }, [note?.code])
 
-  if (!snippet) {
+  if (!note) {
     return (
       <div className="details-modal-body" style={{ height: '100%', overflowY: 'auto' }}>
         <div

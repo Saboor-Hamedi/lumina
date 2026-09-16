@@ -16,16 +16,20 @@ describe('hoverWikilink.js', () => {
     contentEl.className = 'cm-content'
     wrapper.appendChild(contentEl)
 
+    const testNotes = [
+      {
+        id: 'note-1',
+        title: 'TargetNote',
+        code: 'This is preview content for note 1\nLine 2\nLine 3',
+        updatedAt: Date.now()
+      }
+    ]
     mockGetVaultStore = vi.fn(() => ({
-      snippets: [
-        {
-          id: 'note-1',
-          title: 'TargetNote',
-          code: 'This is preview content for note 1\nLine 2\nLine 3',
-          updatedAt: Date.now()
-        }
-      ],
+      notes: testNotes,
+      snippets: testNotes,
+      setSelectedNote: vi.fn(),
       setSelectedSnippet: vi.fn(),
+      saveNote: vi.fn(),
       saveSnippet: vi.fn()
     }))
 

@@ -66,6 +66,13 @@ export interface WorkspaceStoreState {
   setFolderColor: (folderId: string, color: string | null) => Promise<void>
   updateNoteSelection: (id: string, selection: any) => void
   reorderNotes: (orderedIds: string[]) => void
+
+  // Backward compatibility properties & methods
+  snippets?: WorkspaceNote[]
+  selectedSnippet?: WorkspaceNote | null
+  setSelectedSnippet?: (note: WorkspaceNote | null) => void
+  saveSnippet?: (note: Partial<WorkspaceNote> & { id: string }) => Promise<any>
+  deleteSnippet?: (id: string, skipConfirm?: boolean) => Promise<void>
 }
 
 let hasLoadedWorkspaceOnce = false
@@ -164,9 +171,11 @@ const initialSession = getCachedSession()
 export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   // Core Workspace & Note State (Hydrated synchronously from localStorage)
   notes: initialSession.notes,
+  snippets: initialSession.notes,
   folders: initialSession.folders,
   folderColors: {},
   selectedNote: initialSession.selectedNote,
+  selectedSnippet: initialSession.selectedNote,
   selectedFolder: null,
   isLoading: initialSession.isLoading,
   searchQuery: '',
@@ -177,7 +186,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   pinnedTabIds: initialSession.pinnedTabIds,
   clipboard: null,
 
-  setNotes: (notes: WorkspaceNote[]) => set({ notes }),
+  setNotes: (notes: WorkspaceNote[]) => set({ notes, snippets: notes }),
   setSelectedFolder: (selectedFolder: string | null) => set({ selectedFolder }),
   setClipboard: (clipboard: any) => set({ clipboard }),
 
@@ -203,14 +212,15 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         openTabs: validTabs,
         pinnedTabIds: validPinned,
         activeTabId: finalActiveId,
-        selectedNote: activeNote
+        selectedNote: activeNote,
+        selectedSnippet: activeNote
       }
     })
   },
 
   setSelectedNote: (note: WorkspaceNote | null) => {
     if (!note) {
-      set({ selectedNote: null, activeTabId: null })
+      set({ selectedNote: null, selectedSnippet: null, activeTabId: null })
       return
     }
 
@@ -219,11 +229,16 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, note.id]
       return {
         selectedNote: note,
+        selectedSnippet: note,
         openTabs: nextTabs,
         activeTabId: note.id
       }
     })
   },
+
+  setSelectedSnippet: (note: WorkspaceNote | null) => get().setSelectedNote(note),
+  saveSnippet: (note: Partial<WorkspaceNote> & { id: string }) => get().saveNote(note),
+  deleteSnippet: (id: string, skipConfirm?: boolean) => get().deleteNote(id, skipConfirm),
 
   setActiveTabId: (id: string | null) => {
     let selectedItem: WorkspaceNote | null = null
@@ -234,11 +249,12 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         return {
           activeTabId: GRAPH_TAB_ID,
           selectedNote: null,
+          selectedSnippet: null,
           openTabs: nextTabs
         }
       }
       if (!id) {
-        return { activeTabId: null, selectedNote: null }
+        return { activeTabId: null, selectedNote: null, selectedSnippet: null }
       }
       const allNotes = state.notes || []
       const note = allNotes.find((n) => n.id === id) || null
@@ -248,6 +264,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       return {
         activeTabId: id,
         selectedNote: selectedItem,
+        selectedSnippet: selectedItem,
         openTabs: nextTabs
       }
     })
@@ -556,7 +573,11 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       const current = get().notes || []
       const existing = current.find((n) => n.id === note.id)
 
-      const updatedNote = await saveApi(note)
+      const returnedNote = await saveApi(note)
+      const updatedNote: WorkspaceNote =
+        returnedNote && typeof returnedNote === 'object'
+          ? returnedNote
+          : ({ ...(existing || {}), ...note } as WorkspaceNote)
 
       if (note.color && (!existing || existing.color !== note.color)) {
         const currentColors = (await (window as any).api.getSetting('noteColors')) || {}
@@ -579,7 +600,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         const nextDrafts = { ...state.drafts }
         delete nextDrafts[note.id]
 
-        if (existing && existing.title && existing.title !== updatedNote.title) {
+        if (existing && existing.title && updatedNote?.title && existing.title !== updatedNote.title) {
           const oldTitle = existing.title
           const newTitle = updatedNote.title
           const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -622,6 +643,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
         return {
           notes: nextNotes,
+          snippets: nextNotes,
           folders: nextFolders,
           drafts: nextDrafts,
           dirtyNoteIds: dirtyNotes
@@ -629,7 +651,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       })
 
       if (get().selectedNote?.id === note.id) {
-        set({ selectedNote: updatedNote })
+        set({ selectedNote: updatedNote, selectedSnippet: updatedNote })
       }
 
       persistNotesSnapshot(get().notes, get().openTabs)
@@ -696,9 +718,11 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
       return {
         notes: next,
+        snippets: next,
         openTabs: nextTabs,
         activeTabId: nextActiveId,
         selectedNote: nextSelectedNote,
+        selectedSnippet: nextSelectedNote,
         drafts: nextDrafts,
         dirtyNoteIds: dirtyNotes
       }

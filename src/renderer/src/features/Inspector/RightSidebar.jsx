@@ -15,7 +15,7 @@ import './NoteDetails.css'
 export const RightSidebar = React.memo(({
   rightSidebarTab,
   setRightSidebarTab,
-  selectedSnippet,
+  selectedNote,
   isLoading,
   isRightSidebarOpen,
   setIsRightSidebarOpen,
@@ -102,9 +102,9 @@ export const RightSidebar = React.memo(({
         {rightSidebarTab === 'details' && (
           <div className="inspector-sub-header">
             <span className="inspector-sub-title">Note Details</span>
-            {selectedSnippet?.title && (
-              <span className="inspector-sub-badge" title={selectedSnippet.title}>
-                {selectedSnippet.title}
+            {selectedNote?.title && (
+              <span className="inspector-sub-badge" title={selectedNote.title}>
+                {selectedNote.title}
               </span>
             )}
           </div>
@@ -113,9 +113,9 @@ export const RightSidebar = React.memo(({
         {rightSidebarTab === 'outline' && (
           <div className="inspector-sub-header">
             <span className="inspector-sub-title">Note Outline</span>
-            {selectedSnippet?.title && (
-              <span className="inspector-sub-badge" title={selectedSnippet.title}>
-                {selectedSnippet.title}
+            {selectedNote?.title && (
+              <span className="inspector-sub-badge" title={selectedNote.title}>
+                {selectedNote.title}
               </span>
             )}
           </div>
@@ -168,7 +168,7 @@ export const RightSidebar = React.memo(({
         >
           <GlobalErrorHandler>
             {rightSidebarTab === 'outline' ? (
-              <NoteOutline snippet={selectedSnippet} />
+              <NoteOutline note={selectedNote} />
             ) : rightSidebarTab === 'chat' ? (
               <React.Suspense
                 fallback={
@@ -189,14 +189,14 @@ export const RightSidebar = React.memo(({
                 <LuminaChatContent isSidebar={true} onPopOut={handlePopOut} />
               </React.Suspense>
             ) : (
-              <NoteDetails snippet={selectedSnippet} isLoading={isLoading} />
+              <NoteDetails note={selectedNote} isLoading={isLoading} />
             )}
           </GlobalErrorHandler>
         </div>
       </div>
 
       <RightSidebarFooter
-        selectedSnippet={selectedSnippet}
+        selectedNote={selectedNote}
         rightSidebarTab={rightSidebarTab}
         onClose={() => setIsRightSidebarOpen?.(false)}
       />

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useExplorerOperations } from '../../../../../src/renderer/src/features/Explorer/hooks/useExplorerOperations'
-import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
-import SettingsManager from '../../../../../src/main/SettingsManager'
+import { useExplorerOperations } from '../../../../../src/renderer/src/features/Explorer/hooks/ExplorerOperations'
+import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
+import SettingsManager from '../../../../../src/main/settings'
 
 describe('Explorer and Sidebar Persistence', () => {
   beforeEach(() => {

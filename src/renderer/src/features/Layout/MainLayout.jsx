@@ -22,8 +22,7 @@ import Welcome from '../../Welcome'
 import TabBar from './TabBar'
 import TabContentPane from './TabContentPane'
 import AppModals from './AppModals'
-import ExternalDropOverlay from '../Explorer/components/ExternalDropOverlay'
-import { useWorkspaceDrop } from './useWorkspaceDrop'
+import { ExternalDropOverlay, useWorkspaceDrop } from '../Explorer/drop'
 import { FileText, FolderDown } from 'lucide-react'
 const Graph = React.lazy(() => import('../Graph/Graph'))
 import { useKeyboardShortcuts } from '../../core/shortcuts'
@@ -960,7 +959,7 @@ export const MainLayout = () => {
               rightWidth={rightWidth}
               setIsRightSidebarOpen={handleCloseRightSidebar}
               setShowAIChatModal={setShowAIChatModal}
-              selectedSnippet={selectedSnippet}
+              selectedNote={selectedSnippet}
               isLoading={isLoading}
             />
           </GlobalErrorHandler>

@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
 import SettingAdvanced from '../../../../../src/renderer/src/features/Settings/SettingAdvanced'
-import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
-import { useUpdateStore } from '../../../../../src/renderer/src/core/store/useUpdateStore'
+import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
+import { useUpdateStore } from '../../../../../src/renderer/src/core/store/UpdateSetting'
 
 const baseSettings = () => ({
   vaultPath: '/fake/vault',

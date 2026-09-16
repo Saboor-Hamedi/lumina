@@ -30,10 +30,10 @@ export function useContextMenu({ item, type, callbacks }) {
   const { saveSnippet, clipboard, setClipboard, snippets, folderColors, setFolderColor } =
     useWorkspaceStore(
       useShallow((state) => ({
-        saveSnippet: state.saveNote,
+        saveSnippet: state.saveNote || state.saveSnippet,
         clipboard: state.clipboard,
         setClipboard: state.setClipboard,
-        snippets: state.notes || [],
+        snippets: state.notes || state.snippets || [],
         folderColors: state.folderColors,
         setFolderColor: state.setFolderColor
       }))

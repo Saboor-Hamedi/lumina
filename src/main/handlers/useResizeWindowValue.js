@@ -1,4 +1,4 @@
-import SettingsManager from '../SettingsManager'
+import SettingsManager from '../settings'
 
 export function useResizeWindowValue(mainWindow) {
   let boundsTimeout

@@ -1,7 +1,7 @@
 import electron from 'electron'
 const { BrowserWindow, app, screen } = electron.default || electron
 import { join } from 'path'
-import SettingsManager from './SettingsManager'
+import SettingsManager from './settings'
 
 // Store reference to main window for notifications
 let mainWindowRef = null

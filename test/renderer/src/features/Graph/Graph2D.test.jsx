@@ -24,7 +24,7 @@ vi.mock('d3-force', () => ({
 import { render, screen } from '@testing-library/react'
 import Graph2D from '../../../../../src/renderer/src/features/Graph/Graph2D'
 import { useWorkspaceStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
-import { useSettingsStore } from '../../../../../src/renderer/src/core/store/useSettingsStore'
+import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 
 describe('Graph2D', () => {
   let MockWorker

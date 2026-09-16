@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import SettingDropdown from '../../../../../../src/renderer/src/features/Navigation/components/SettingDropdown'
-import { useSettingsStore } from '../../../../../../src/renderer/src/core/store/useSettingsStore'
-import { useUpdateStore } from '../../../../../../src/renderer/src/core/store/useUpdateStore'
+import { useSettingsStore } from '../../../../../../src/renderer/src/core/store/SettingStore'
+import { useUpdateStore } from '../../../../../../src/renderer/src/core/store/UpdateSetting'
 
 describe('SettingDropdown', () => {
   const defaultProps = () => ({

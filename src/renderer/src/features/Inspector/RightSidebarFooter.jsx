@@ -4,7 +4,8 @@ import ToolTip from '../../components/atoms/ToolTip'
 import { Composer } from '../AI/Composer'
 import { useAIStore } from '../AI/tools/lumina'
 
-export const RightSidebarFooter = ({ selectedSnippet, rightSidebarTab, onClose }) => {
+export const RightSidebarFooter = ({ selectedNote, selectedSnippet, rightSidebarTab, onClose }) => {
+  const note = selectedNote || selectedSnippet
   const [copied, setCopied] = useState(false)
   const sendChatMessage = useAIStore((state) => state.sendChatMessage)
   const isChatLoading = useAIStore((state) => state.isChatLoading)
@@ -19,13 +20,13 @@ export const RightSidebarFooter = ({ selectedSnippet, rightSidebarTab, onClose }
         const addedIds = new Set()
 
         if (attachedMentions.length > 0) {
-          attachedMentions.forEach((snippet) => {
-            contextSnippets.push(snippet)
-            addedIds.add(snippet.id)
+          attachedMentions.forEach((item) => {
+            contextSnippets.push(item)
+            addedIds.add(item.id)
           })
-        } else if (selectedSnippet && !addedIds.has(selectedSnippet.id)) {
-          contextSnippets.push(selectedSnippet)
-          addedIds.add(selectedSnippet.id)
+        } else if (note && !addedIds.has(note.id)) {
+          contextSnippets.push(note)
+          addedIds.add(note.id)
         }
 
         await sendChatMessage(text, contextSnippets, mode, attachedMentions)
@@ -33,17 +34,17 @@ export const RightSidebarFooter = ({ selectedSnippet, rightSidebarTab, onClose }
         console.error('Error sending message:', err)
       }
     },
-    [selectedSnippet, sendChatMessage]
+    [note, sendChatMessage]
   )
 
-  const wordCount = selectedSnippet?.code
-    ? selectedSnippet.code.trim().split(/\s+/).filter(Boolean).length
+  const wordCount = note?.code
+    ? note.code.trim().split(/\s+/).filter(Boolean).length
     : 0
 
   const handleCopy = (e) => {
     e.stopPropagation()
-    if (!selectedSnippet?.code) return
-    navigator.clipboard.writeText(selectedSnippet.code)
+    if (!note?.code) return
+    navigator.clipboard.writeText(note.code)
     setCopied(true)
     setTimeout(() => setCopied(false), 1500)
   }
@@ -65,7 +66,7 @@ export const RightSidebarFooter = ({ selectedSnippet, rightSidebarTab, onClose }
   return (
     <div className="inspector-footer-section">
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-        {selectedSnippet ? (
+        {note ? (
           <>
             <FileText size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
             <span
@@ -89,7 +90,7 @@ export const RightSidebarFooter = ({ selectedSnippet, rightSidebarTab, onClose }
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-        {selectedSnippet?.code && (
+        {note?.code && (
           <ToolTip text={copied ? 'Copied!' : 'Copy Markdown'} position="top">
             <button
               className="inspector-footer-btn"

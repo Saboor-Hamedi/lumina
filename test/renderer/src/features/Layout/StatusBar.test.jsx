@@ -59,12 +59,14 @@ describe('StatusBar.jsx', () => {
   })
 
   it('renders document statistics when a snippet is selected', () => {
+    const note = {
+      id: '1',
+      title: 'Note',
+      code: 'Hello world this is a test note'
+    }
     useWorkspaceStore.setState({
-      selectedSnippet: {
-        id: '1',
-        title: 'Note',
-        code: 'Hello world this is a test note'
-      }
+      selectedNote: note,
+      selectedSnippet: note
     })
 
     render(<StatusBar {...defaultProps()} />)
