@@ -1,0 +1,232 @@
+/* ============================================================
+ * LUMINA OBSIDIAN-STYLE SCREEN LOADER
+ * ============================================================ */
+
+.screen-loader-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-app, #0e0f15);
+  user-select: none;
+  overflow: hidden;
+  will-change: opacity, transform;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.screen-loader-overlay.inline-loader {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+}
+
+.screen-loader-overlay.screen-loader-fade-out {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: scale(1.02);
+}
+
+/* Ambient subtle background glow */
+.screen-loader-ambient {
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.12) 0%, rgba(99, 102, 241, 0.04) 45%, transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+  animation: ambientBreathe 6s ease-in-out infinite alternate;
+}
+
+@keyframes ambientBreathe {
+  0% { transform: scale(0.85); opacity: 0.5; }
+  100% { transform: scale(1.15); opacity: 0.9; }
+}
+
+/* Container holding the emblem, pulse rings, and round spinner */
+.screen-loader-emblem-wrap {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+/* Obsidian-style expanding concentric pulse wave rings */
+.screen-loader-pulse-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid rgba(168, 85, 247, 0.35);
+  pointer-events: none;
+  animation: pulseWave 2.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+.screen-loader-pulse-ring.ring-1 {
+  width: 72px;
+  height: 72px;
+  animation-delay: 0s;
+}
+
+.screen-loader-pulse-ring.ring-2 {
+  width: 72px;
+  height: 72px;
+  animation-delay: 1.2s;
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+@keyframes pulseWave {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+/* Circular round spinning accent loader */
+.screen-loader-spinner-ring {
+  position: absolute;
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.05);
+  border-top-color: var(--text-accent, #a855f7);
+  border-right-color: #6366f1;
+  animation: spinLoader 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes spinLoader {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Central Lumina Emblem */
+.screen-loader-emblem {
+  position: relative;
+  z-index: 2;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: emblemBreathe 3s ease-in-out infinite alternate;
+}
+
+@keyframes emblemBreathe {
+  0% {
+    transform: scale(0.97);
+    filter: drop-shadow(0 0 14px rgba(168, 85, 247, 0.4));
+  }
+  100% {
+    transform: scale(1.04);
+    filter: drop-shadow(0 0 26px rgba(168, 85, 247, 0.75));
+  }
+}
+
+/* Typography */
+.screen-loader-title {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: #f1f5f9;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #ffffff 40%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Progress bar container */
+.screen-loader-bar-container {
+  width: 210px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Inner progress track fill */
+.screen-loader-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #7c3aed, #a855f7, #6366f1);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.55);
+  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Indeterminate shimmer traveling across progress bar */
+.screen-loader-bar-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 100%
+  );
+  animation: progressShimmer 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes progressShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+/* Status message and percentage */
+.screen-loader-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 210px;
+  margin-top: 12px;
+}
+
+.screen-loader-status {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+  transition: opacity 0.2s ease;
+}
+
+.screen-loader-percent {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.screen-loader-substatus {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 11px;
+  color: #475569;
+  margin-top: 6px;
+  text-align: center;
+  max-width: 240px;
+}

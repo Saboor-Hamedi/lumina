@@ -1,10 +1,12 @@
 import './assets/index.css'
 import './assets/globalErrorHandler.css'
-import { StrictMode } from 'react'
+import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
-import App from './App'
+import ScreenLoader from './components/ScreenLoader.tsx'
 import GlobalErrorHandler from './components/GlobalErrorHandler'
 import { initDomTooltips } from './components/atoms/domTooltip'
+
+const App = lazy(() => import('./App'))
 
 initDomTooltips()
 
@@ -47,7 +49,9 @@ if (import.meta.env.PROD) {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <GlobalErrorHandler isRoot={true}>
-      <App />
+      <Suspense fallback={<ScreenLoader status="Loading workspace..." />}>
+        <App />
+      </Suspense>
     </GlobalErrorHandler>
   </StrictMode>
 )
