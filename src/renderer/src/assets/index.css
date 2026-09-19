@@ -111,6 +111,7 @@
   --bg-panel: #0a0a0a;
   --bg-editor: var(--bg-app);
   --bg-active: #1a1a1a;
+  --bg-card: #141414;
   --bg-overlay: rgba(0, 0, 0, 0.85);
 
   --text-main: #f0f0f0;
@@ -120,7 +121,7 @@
   --text-accent-rgb: 64, 186, 250;
 
   --border-dim: #1f1f1f;
-  --border-card: #111111;
+  --border-card: #1f1f1f;
   --scroll-thumb: #222222;
   --bg-selection: rgba(64, 186, 250, 0.4);
 }
@@ -134,6 +135,7 @@
   --bg-panel: #f1f5f9;
   --bg-editor: var(--bg-app);
   --bg-active: #e0f2fe;
+  --bg-card: #ffffff;
   --bg-overlay: rgba(15, 23, 42, 0.4);
 
   --text-main: #0f172a;
@@ -143,7 +145,8 @@
   --text-accent-rgb: 64, 186, 250;
 
   --border-dim: #e2e8f0;
-  --border-card: #eff6ff;
+  --border-card: #e2e8f0;
+  --border-subtle: #cbd5e1;
   --scroll-thumb: #cbd5e1;
   --bg-selection: rgba(64, 186, 250, 0.2);
 }

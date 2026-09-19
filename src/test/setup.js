@@ -20,7 +20,8 @@ vi.mock('@atomic-editor/editor', () => ({
 
 // Mock window.api for Electron
 global.window = global.window || {}
-global.window.dispatchEvent = vi.fn()
+const originalDispatchEvent = window.dispatchEvent ? window.dispatchEvent.bind(window) : () => true
+global.window.dispatchEvent = vi.fn((event) => originalDispatchEvent(event))
 global.window.api = {
   getSnippets: vi.fn(),
   saveSnippet: vi.fn(),

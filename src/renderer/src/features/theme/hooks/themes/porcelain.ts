@@ -11,7 +11,7 @@ export const porcelain: ThemeDefinition = {
     '--bg-panel': '#f2efe8',
     '--bg-editor': '#f8f6f2',
     '--bg-active': 'rgba(59, 130, 246, 0.10)',
-    '--bg-card': '#fdfcfa',
+    '--bg-card': '#eae6dd',
     '--text-main': '#2c2a26',
     '--text-muted': '#6b6862',
     '--text-faint': '#9a968e',

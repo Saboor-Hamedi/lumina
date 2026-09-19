@@ -564,9 +564,6 @@ export const updateFileTool = aiSdk.tool({
     newCode = newCode.replace(/^(#{1,6}\s+[^\r\n]+)\r?\n+(?:\1\r?\n*)+/gm, '$1\n\n')
 
     const isCurrentlySelected = vs.selectedNote?.id === target.id
-    if (isCurrentlySelected && vs.setSelectedNote) {
-      vs.setSelectedNote({ ...target, code: newCode })
-    }
 
     try {
       const { streamCodeToEditor } = await import('../services/editorStreamer')

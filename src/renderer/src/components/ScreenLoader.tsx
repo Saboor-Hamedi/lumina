@@ -67,9 +67,6 @@ export function ScreenLoader({
 
   const [dynamicProgress, setDynamicProgress] = useState<number>(12)
   const [dynamicStatus, setDynamicStatus] = useState<string>(status)
-  const [dynamicInfo, setDynamicInfo] = useState<string>(
-    'Syncing your notes and recent workspaces'
-  )
 
   useEffect(() => {
     if (isExplicit) return
@@ -78,32 +75,27 @@ export function ScreenLoader({
       {
         atMs: 250,
         target: 26,
-        label: 'Opening your vault...',
-        info: 'Syncing your notes and recent workspaces'
+        label: 'Opening your workspace...'
       },
       {
         atMs: 1600,
         target: 48,
-        label: 'Loading notes & folders...',
-        info: 'Indexing tags, links, and documents'
+        label: 'Loading notes & folders...'
       },
       {
         atMs: 4200,
         target: 70,
-        label: 'Preparing your note editor...',
-        info: 'Tip: Press Ctrl+P anytime to open the Command Palette'
+        label: 'Preparing your note editor...'
       },
       {
         atMs: 8000,
         target: 86,
-        label: 'Connecting knowledge graph...',
-        info: 'Tip: Use [[wikilinks]] to link your ideas together'
+        label: 'Connecting knowledge graph...'
       },
       {
         atMs: 13000,
         target: 94,
-        label: 'Starting Lumina AI assistant...',
-        info: 'Tip: Type / in any note to insert blocks and templates'
+        label: 'Finalizing your workspace...'
       }
     ]
 
@@ -113,7 +105,6 @@ export function ScreenLoader({
     stages.forEach((stage) => {
       const t = setTimeout(() => {
         setDynamicStatus(stage.label)
-        if (stage.info) setDynamicInfo(stage.info)
         const interval = setInterval(() => {
           current += 1
           if (current >= stage.target) {
@@ -134,7 +125,7 @@ export function ScreenLoader({
 
   const activeProgress = isExplicit ? (clampedExplicit as number) : dynamicProgress
   const activeStatus = isExplicit ? status : dynamicStatus
-  const activeSubStatus = subStatus !== undefined ? subStatus : dynamicInfo
+  const activeSubStatus = subStatus
 
   return (
     <div

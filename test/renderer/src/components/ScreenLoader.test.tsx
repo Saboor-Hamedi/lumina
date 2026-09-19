@@ -25,19 +25,19 @@ describe('ScreenLoader Component', () => {
     expect(screen.getByText('Loading your notes...')).toBeInTheDocument()
     expect(screen.getByTestId('screen-loader-progressbar')).toBeInTheDocument()
     expect(screen.getByTestId('screen-loader-spinner')).toBeInTheDocument()
-    expect(screen.getByTestId('screen-loader-substatus')).toBeInTheDocument()
+    expect(screen.queryByTestId('screen-loader-substatus')).toBeNull()
   })
 
   it('renders custom title, status, and subStatus', () => {
     render(
       <ScreenLoader
-        title="Lumina Vault"
+        title="Lumina Workspace"
         status="Synchronizing knowledge graph..."
         subStatus="Scanning 420 markdown files"
       />
     )
 
-    expect(screen.getByText('Lumina Vault')).toBeInTheDocument()
+    expect(screen.getByText('Lumina Workspace')).toBeInTheDocument()
     expect(screen.getByText('Synchronizing knowledge graph...')).toBeInTheDocument()
     expect(screen.getByText('Scanning 420 markdown files')).toBeInTheDocument()
   })

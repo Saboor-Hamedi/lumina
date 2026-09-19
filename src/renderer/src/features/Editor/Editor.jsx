@@ -77,9 +77,11 @@ const Editor = React.memo(
       setTitle,
       isDirty,
       setIsDirty,
+      isDirtyRef,
       isSaving,
       editorKey,
       conflictPrompt,
+      setConflictPrompt,
       snippetRef,
       latestCodeRef,
       lastSavedCodeRef,
@@ -125,7 +127,10 @@ const Editor = React.memo(
       lastSavedCodeRef,
       latestCodeRef,
       setIsDirty,
-      setDirty
+      isDirty,
+      isDirtyRef,
+      setDirty,
+      setConflictPrompt
     })
 
     // 4. CodeMirror Extensions & Keymaps

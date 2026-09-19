@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { computeMinimalChange } from './editorDiff'
 import { useSettingsStore } from '../store/SettingStore'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import type { UseEditorStateProps, UseEditorStateReturn, Snippet } from './types'
@@ -32,6 +33,10 @@ export function useEditorState({
   }, [title])
 
   const [isDirty, setIsDirty] = useState<boolean>(false)
+  const isDirtyRef = useRef<boolean>(false)
+  useEffect(() => {
+    isDirtyRef.current = isDirty
+  }, [isDirty])
   const [isSaving, setIsSaving] = useState<boolean>(false)
   const [editorKey, setEditorKey] = useState<number>(Date.now())
   const [conflictPrompt, setConflictPrompt] = useState<ConflictPrompt | null>(null)
@@ -180,9 +185,12 @@ export function useEditorState({
             const view = realViewRef.current
             const currentDoc = view.state.doc.toString()
             if (currentDoc !== incomingCode) {
-              view.dispatch({
-                changes: { from: 0, to: view.state.doc.length, insert: incomingCode }
-              })
+              const minimalChange = computeMinimalChange(currentDoc, incomingCode)
+              if (minimalChange.from !== minimalChange.to || minimalChange.insert.length > 0) {
+                view.dispatch({
+                  changes: minimalChange
+                })
+              }
             }
           } else {
             if (currentCode !== incomingCode) {
@@ -266,9 +274,15 @@ export function useEditorState({
     latestCodeRef.current = code
     if (realViewRef.current) {
       const view = realViewRef.current
-      view.dispatch({
-        changes: { from: 0, to: view.state.doc.length, insert: code }
-      })
+      const currentDoc = view.state.doc.toString()
+      if (currentDoc !== code) {
+        const minimalChange = computeMinimalChange(currentDoc, code)
+        if (minimalChange.from !== minimalChange.to || minimalChange.insert.length > 0) {
+          view.dispatch({
+            changes: minimalChange
+          })
+        }
+      }
     } else {
       setEditorKey((k) => k + 1)
     }
@@ -280,9 +294,11 @@ export function useEditorState({
     setTitle,
     isDirty,
     setIsDirty,
+    isDirtyRef,
     isSaving,
     editorKey,
     conflictPrompt,
+    setConflictPrompt,
     snippetRef,
     latestCodeRef,
     lastSavedCodeRef,

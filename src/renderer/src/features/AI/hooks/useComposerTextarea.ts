@@ -45,11 +45,25 @@ export const useComposerTextarea = ({
     }
   }, [input, isSidebar])
 
-  // Restore focus to input when AI finishes generating
+  // Restore focus to input when AI finishes generating (only if user hasn't focused editor or another input)
   useEffect(() => {
     if (prevIsLoading.current === true && isLoading === false) {
       setTimeout(() => {
-        textareaRef.current?.focus()
+        const active = document.activeElement
+        const isUserInEditor = Boolean(
+          active?.closest?.('.cm-editor') ||
+          active?.closest?.('.editor-canvas-wrap')
+        )
+        const isUserInOtherInput = Boolean(
+          active &&
+          active !== document.body &&
+          active !== textareaRef.current &&
+          (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || (active as HTMLElement).isContentEditable)
+        )
+
+        if (!isUserInEditor && !isUserInOtherInput) {
+          textareaRef.current?.focus()
+        }
       }, 10)
     }
     prevIsLoading.current = isLoading
@@ -84,9 +98,14 @@ export const useComposerTextarea = ({
     window.addEventListener('keydown', handleFocusShortcut, { capture: true })
     window.addEventListener('focus-ai-composer', handleCustomFocus)
 
-    // Autofocus on initial mount
+    // Autofocus on initial mount only if user is not already focused in editor
     const timer = setTimeout(() => {
-      if (textareaRef.current) {
+      const active = document.activeElement
+      const isUserInEditor = Boolean(
+        active?.closest?.('.cm-editor') ||
+        active?.closest?.('.editor-canvas-wrap')
+      )
+      if (textareaRef.current && !isUserInEditor) {
         textareaRef.current.focus()
       }
     }, 80)

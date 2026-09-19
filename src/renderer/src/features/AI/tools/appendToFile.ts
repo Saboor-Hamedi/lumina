@@ -40,9 +40,6 @@ export const appendToFileTool = aiSdk.tool({
     const newCode = currentCode + separator + content
 
     const isCurrentlySelected = vs.selectedNote?.id === target.id
-    if (isCurrentlySelected && vs.setSelectedNote) {
-      vs.setSelectedNote({ ...target, code: newCode })
-    }
 
     try {
       const { streamCodeToEditor } = await import('../services/editorStreamer')

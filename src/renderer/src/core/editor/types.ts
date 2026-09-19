@@ -71,6 +71,8 @@ export interface UseEditorStateReturn {
   isSaving: boolean
   editorKey: number
   conflictPrompt: any
+  setConflictPrompt: React.Dispatch<React.SetStateAction<any>>
+  isDirtyRef: React.MutableRefObject<boolean>
   snippetRef: React.MutableRefObject<Snippet | null>
   latestCodeRef: React.MutableRefObject<string>
   lastSavedCodeRef: React.MutableRefObject<string | undefined>

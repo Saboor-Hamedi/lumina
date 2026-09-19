@@ -290,10 +290,10 @@
   min-height: 116px !important;
   max-height: 300px !important;
   padding: 0 !important;
-  background: var(--bg-panel, #16161e) !important;
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.12)) !important;
+  background: var(--bg-card, var(--bg-panel)) !important;
+  border: 1px solid var(--border-card, var(--border-dim)) !important;
   border-radius: 8px !important;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: var(--shadow-soft, 0 4px 16px rgba(0, 0, 0, 0.15)) !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;

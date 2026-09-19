@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { Decoration, type EditorView } from '@codemirror/view'
+import { computeMinimalChange } from './editorDiff'
 import { updateSearchHighlights } from './EditorExtensions'
 import { applyTableSearchHighlight, clearTableSearchHighlight } from '../../features/table/tableCell'
 import type { Snippet } from './types'
@@ -18,7 +19,10 @@ export interface UseEditorEventsProps {
   lastSavedCodeRef: React.MutableRefObject<string | undefined>
   latestCodeRef: React.MutableRefObject<string>
   setIsDirty: React.Dispatch<React.SetStateAction<boolean>>
+  isDirty?: boolean
+  isDirtyRef?: React.MutableRefObject<boolean>
   setDirty: (id: string, isDirty: boolean) => void
+  setConflictPrompt?: React.Dispatch<React.SetStateAction<any>>
 }
 
 export interface UseEditorEventsReturn {
@@ -34,7 +38,7 @@ export interface UseEditorEventsReturn {
  *   - Focus editor start & title input
  *   - Scroll to line
  *   - Global toast dispatching
- *   - AI save synchronization
+ *   - AI save synchronization & overwrite conflict detection
  *   - Global search/preview shortcuts (Ctrl+F, Ctrl+H)
  */
 export function useEditorEvents({
@@ -50,7 +54,10 @@ export function useEditorEvents({
   lastSavedCodeRef,
   latestCodeRef,
   setIsDirty,
-  setDirty
+  isDirty = false,
+  isDirtyRef,
+  setDirty,
+  setConflictPrompt
 }: UseEditorEventsProps): UseEditorEventsReturn {
   const isActiveRef = useRef<boolean>(isActive)
   useEffect(() => {
@@ -234,85 +241,178 @@ export function useEditorEvents({
       const explicitLine = customEvent.detail?.changeLine
       const scrollToBottom = customEvent.detail?.scrollToBottom === true
 
+      if (!realViewRef.current) {
+        latestCodeRef.current = newCode
+        setIsDirty(false)
+        if (snippet?.id) setDirty(snippet.id, false)
+        return
+      }
+
+      const view = realViewRef.current
+      const current = view.state.doc.toString()
+      if (current === newCode) {
+        latestCodeRef.current = newCode
+        setIsDirty(false)
+        if (snippet?.id) setDirty(snippet.id, false)
+        return
+      }
+
       lastSaveTimeRef.current = Date.now()
       lastSavedCodeRef.current = newCode
-      latestCodeRef.current = newCode
 
-      setIsDirty(false)
-      if (snippet?.id) {
-        setDirty(snippet.id, false)
+      const minimalChange = computeMinimalChange(current, newCode)
+      if (minimalChange.from === minimalChange.to && minimalChange.insert.length === 0) {
+        return
       }
 
-      if (realViewRef.current) {
-        const view = realViewRef.current
-        const current = view.state.doc.toString()
-        if (current !== newCode) {
-          // Locate where the update occurred in the document
-          let targetPos: number | null = null
-          if (typeof explicitPos === 'number') {
-            targetPos = Math.max(0, Math.min(explicitPos, newCode.length))
-          } else if (typeof explicitLine === 'number') {
-            // will resolve after dispatch
-          } else if (!scrollToBottom) {
-            // Compute the first difference between current text and newCode
-            let diffIdx = 0
-            const minLen = Math.min(current.length, newCode.length)
-            while (diffIdx < minLen && current[diffIdx] === newCode[diffIdx]) {
-              diffIdx++
-            }
-            targetPos = diffIdx
+      // Check if user has active focus in the editor
+      const isEditorFocused = view.hasFocus || Boolean(document.activeElement?.closest?.('.cm-editor'))
+      const activeEl = document.activeElement
+      // Check if user is typing in composer or another input
+      const isUserTypingElsewhere = Boolean(
+        activeEl &&
+        activeEl !== document.body &&
+        !activeEl.closest?.('.cm-editor') &&
+        (activeEl.tagName === 'INPUT' ||
+          activeEl.tagName === 'TEXTAREA' ||
+          (activeEl as HTMLElement).isContentEditable ||
+          activeEl.closest?.('.composer-container') ||
+          activeEl.closest?.('.composer-card'))
+      )
+
+      // Concurrent user activity protection:
+      // If the user is actively working in the editor or another input (like the AI composer),
+      // apply the minimal change while pinning the user's cursor position and preventing viewport hijacking!
+      if (isEditorFocused || isUserTypingElsewhere) {
+        const delta = minimalChange.insert.length - (minimalChange.to - minimalChange.from)
+        const dispatchOptions: any = {
+          changes: minimalChange,
+          scrollIntoView: false
+        }
+
+        if (isEditorFocused) {
+          const currentSel = view.state.selection.main
+          const userAnchor = currentSel.anchor
+          const userHead = currentSel.head
+
+          let newAnchor = userAnchor
+          let newHead = userHead
+
+          // Anchor tracking
+          if (minimalChange.to < userAnchor) {
+            newAnchor = userAnchor + delta
+          } else if (minimalChange.from <= userAnchor) {
+            newAnchor = Math.min(userAnchor, minimalChange.from)
           }
 
-          const selectionPos = scrollToBottom
-            ? newCode.length
-            : (targetPos ?? Math.min(view.state.selection.main.head, newCode.length))
-
-          view.dispatch({
-            changes: { from: 0, to: view.state.doc.length, insert: newCode },
-            selection: { anchor: selectionPos, head: selectionPos }
-          })
-
-          const performScroll = () => {
-            if (!realViewRef.current) return
-            const activeView = realViewRef.current
-            const scroller =
-              (activeView.dom?.closest('.editor-scroller') as HTMLElement | null) ||
-              (document.querySelector('.editor-scroller') as HTMLElement | null)
-
-            if (scrollToBottom) {
-              if (scroller) scroller.scrollTop = scroller.scrollHeight
-              if (activeView.scrollDOM) activeView.scrollDOM.scrollTop = activeView.scrollDOM.scrollHeight
-              return
-            }
-
-            try {
-              let scrollLine = null
-              if (typeof explicitLine === 'number') {
-                const targetLineNum = Math.max(1, Math.min(explicitLine, activeView.state.doc.lines))
-                scrollLine = activeView.state.doc.line(targetLineNum)
-              } else if (typeof selectionPos === 'number') {
-                scrollLine = activeView.state.doc.lineAt(selectionPos)
-              }
-
-              if (scrollLine && scroller) {
-                const lineBlock = activeView.lineBlockAt(scrollLine.from)
-                // Center the modified section vertically in the viewport so the user clearly sees the update
-                const scrollY = lineBlock.top - scroller.clientHeight / 2 + lineBlock.height / 2
-                scroller.scrollTo({ top: Math.max(0, scrollY), behavior: 'smooth' })
-              }
-            } catch (err) {
-              console.warn('[Editor] Scroll to change position error:', err)
-            }
+          // Head (cursor) tracking:
+          // If the AI edit is strictly before user cursor, offset it by delta.
+          // If the AI edit is at or overlaps the user cursor, pin cursor at the boundary
+          // so it NEVER gets pushed forward after Lumina's incoming text stream!
+          // If the AI edit is after user cursor, keep current position unchanged.
+          if (minimalChange.to < userHead) {
+            newHead = userHead + delta
+          } else if (minimalChange.from <= userHead) {
+            newHead = Math.min(userHead, minimalChange.from)
           }
 
-          requestAnimationFrame(performScroll)
-          setTimeout(performScroll, 50)
+          const maxDocLen = current.length + delta
+          newAnchor = Math.max(0, Math.min(newAnchor, maxDocLen))
+          newHead = Math.max(0, Math.min(newHead, maxDocLen))
+
+          dispatchOptions.selection = { anchor: newAnchor, head: newHead }
+        }
+
+        view.dispatch(dispatchOptions)
+
+        const updatedDoc = view.state.doc.toString()
+        latestCodeRef.current = updatedDoc
+
+        // If the user made concurrent edits, preserve dirty flag so edits auto-save
+        if (updatedDoc !== newCode) {
+          setIsDirty(true)
+          if (snippet?.id) setDirty(snippet.id, true)
+        } else {
+          setIsDirty(false)
+          if (snippet?.id) setDirty(snippet.id, false)
+        }
+        return
+      }
+
+      // User is idle / observing AI response:
+      let targetPos: number | null = null
+      if (typeof explicitPos === 'number') {
+        targetPos = Math.max(0, Math.min(explicitPos, newCode.length))
+      } else if (typeof explicitLine === 'number') {
+        // will resolve after dispatch
+      } else if (!scrollToBottom) {
+        targetPos = minimalChange.from
+      }
+
+      const selectionPos = scrollToBottom
+        ? newCode.length
+        : (targetPos ?? Math.min(view.state.selection.main.head, newCode.length))
+
+      view.dispatch({
+        changes: minimalChange,
+        selection: { anchor: selectionPos, head: selectionPos }
+      })
+
+      latestCodeRef.current = view.state.doc.toString()
+      setIsDirty(false)
+      if (snippet?.id) setDirty(snippet.id, false)
+
+      const performScroll = () => {
+        if (!realViewRef.current) return
+        const activeView = realViewRef.current
+        const scroller =
+          (activeView.dom?.closest('.editor-scroller') as HTMLElement | null) ||
+          (document.querySelector('.editor-scroller') as HTMLElement | null)
+
+        if (scrollToBottom) {
+          if (scroller) scroller.scrollTop = scroller.scrollHeight
+          if (activeView.scrollDOM) activeView.scrollDOM.scrollTop = activeView.scrollDOM.scrollHeight
+          return
+        }
+
+        try {
+          let scrollLine = null
+          if (typeof explicitLine === 'number') {
+            const targetLineNum = Math.max(1, Math.min(explicitLine, activeView.state.doc.lines))
+            scrollLine = activeView.state.doc.line(targetLineNum)
+          } else if (typeof selectionPos === 'number') {
+            scrollLine = activeView.state.doc.lineAt(selectionPos)
+          }
+
+          if (scrollLine && scroller) {
+            const lineBlock = activeView.lineBlockAt(scrollLine.from)
+            // Center the modified section vertically in the viewport so the user clearly sees the update
+            const scrollY = lineBlock.top - scroller.clientHeight / 2 + lineBlock.height / 2
+            scroller.scrollTo({ top: Math.max(0, scrollY), behavior: 'smooth' })
+          }
+        } catch (err) {
+          console.warn('[Editor] Scroll to change position error:', err)
         }
       }
+
+      requestAnimationFrame(performScroll)
+      setTimeout(performScroll, 50)
     }
     window.addEventListener('ai-saved-snippet', handleAISave)
     return () => window.removeEventListener('ai-saved-snippet', handleAISave)
-  }, [snippet?.id, setDirty, realViewRef, lastSaveTimeRef, lastSavedCodeRef, latestCodeRef, setIsDirty])
+  }, [
+    snippet?.id,
+    snippet?.title,
+    setDirty,
+    realViewRef,
+    lastSaveTimeRef,
+    lastSavedCodeRef,
+    latestCodeRef,
+    setIsDirty,
+    isDirty,
+    isDirtyRef,
+    setConflictPrompt
+  ])
 
   return {
     isActiveRef

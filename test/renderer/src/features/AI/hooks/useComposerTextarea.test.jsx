@@ -61,4 +61,52 @@ describe('useComposerTextarea hook', () => {
     expect(el.style.height).toBe('260px')
     expect(el.style.overflowY).toBe('auto')
   })
+
+  it('does NOT steal focus to composer when user is actively focused in editor', async () => {
+    // Create simulated editor element in DOM
+    const editorDiv = document.createElement('div')
+    editorDiv.className = 'cm-editor'
+    const editorContent = document.createElement('div')
+    editorContent.className = 'cm-content'
+    editorContent.tabIndex = 0
+    editorDiv.appendChild(editorContent)
+    document.body.appendChild(editorDiv)
+
+    const { getByTestId, rerender } = render(
+      <TestComponent input="" isSidebar={true} isLoading={true} />
+    )
+    const textareaEl = getByTestId('composer-textarea')
+
+    // Simulate user focusing into the editor while AI is loading
+    editorContent.focus()
+    expect(document.activeElement).toBe(editorContent)
+
+    // AI finishes generating
+    rerender(<TestComponent input="" isSidebar={true} isLoading={false} />)
+
+    // Wait for the 10ms timeout
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    // Focus must remain on the editor, NOT stolen by textarea
+    expect(document.activeElement).toBe(editorContent)
+    expect(document.activeElement).not.toBe(textareaEl)
+
+    document.body.removeChild(editorDiv)
+  })
+
+  it('restores focus to composer when user has not focused into the editor', async () => {
+    const { getByTestId, rerender } = render(
+      <TestComponent input="" isSidebar={true} isLoading={true} />
+    )
+    const textareaEl = getByTestId('composer-textarea')
+
+    // AI finishes generating
+    rerender(<TestComponent input="" isSidebar={true} isLoading={false} />)
+
+    // Wait for the 10ms timeout
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    // Focus is restored to the composer
+    expect(document.activeElement).toBe(textareaEl)
+  })
 })

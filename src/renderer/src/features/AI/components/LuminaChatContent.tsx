@@ -310,11 +310,10 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
                         width: '100%',
                         margin: '0 auto',
                         borderRadius: '8px',
-                        border:
-                          '1px solid var(--border-card, rgba(255, 255, 255, 0.12))',
-                        background: 'var(--bg-panel, #16161e)',
+                        border: '1px solid var(--border-card, var(--border-dim))',
+                        background: 'var(--bg-card, var(--bg-panel))',
                         overflow: 'hidden',
-                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25)',
+                        boxShadow: 'var(--shadow-soft, 0 4px 16px rgba(0, 0, 0, 0.15))',
                         boxSizing: 'border-box'
                       }}
                     >

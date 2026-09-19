@@ -76,6 +76,68 @@ const ensureElements = (): boolean => {
   return false
 }
 
+let simTimeouts: ReturnType<typeof setTimeout>[] = []
+let simIntervals: ReturnType<typeof setInterval>[] = []
+
+export const stopLoaderSimulation = (): void => {
+  simTimeouts.forEach((t) => clearTimeout(t))
+  simIntervals.forEach((i) => clearInterval(i))
+  simTimeouts = []
+  simIntervals = []
+}
+
+export const startLoaderSimulation = (customStatus?: string, customSubStatus?: string): void => {
+  stopLoaderSimulation()
+  currentProgress = 12
+  const initialStatus = customStatus || 'Opening your workspace...'
+  const initialSubStatus = customSubStatus !== undefined ? customSubStatus : ''
+  setScreenLoaderProgress(12, initialStatus)
+  setScreenLoaderStatus(initialStatus, initialSubStatus)
+
+  const stages = [
+    {
+      atMs: 250,
+      target: 26,
+      label: 'Opening your workspace...'
+    },
+    {
+      atMs: 1600,
+      target: 48,
+      label: 'Loading notes & folders...'
+    },
+    {
+      atMs: 4200,
+      target: 70,
+      label: 'Preparing your note editor...'
+    },
+    {
+      atMs: 8000,
+      target: 86,
+      label: 'Connecting knowledge graph...'
+    },
+    {
+      atMs: 13000,
+      target: 94,
+      label: 'Finalizing your workspace...'
+    }
+  ]
+
+  stages.forEach((stage) => {
+    const t = setTimeout(() => {
+      setScreenLoaderStatus(stage.label, customSubStatus || '')
+      const interval = setInterval(() => {
+        if (currentProgress < stage.target) {
+          setScreenLoaderProgress(currentProgress + 1)
+        } else {
+          clearInterval(interval)
+        }
+      }, 35)
+      simIntervals.push(interval)
+    }, stage.atMs)
+    simTimeouts.push(t)
+  })
+}
+
 /**
  * Initializes or binds to the screen loader in the DOM
  */
@@ -84,7 +146,10 @@ export const initScreenLoader = (options?: ScreenLoaderOptions): HTMLElement | n
 
   if (ensureElements() && loaderElement) {
     if (options?.status) setScreenLoaderStatus(options.status, options.subStatus)
-    if (options?.progress !== undefined) setScreenLoaderProgress(options.progress)
+    if (options?.progress !== undefined) {
+      stopLoaderSimulation()
+      setScreenLoaderProgress(options.progress)
+    }
     return loaderElement
   }
 
@@ -107,11 +172,11 @@ export const initScreenLoader = (options?: ScreenLoaderOptions): HTMLElement | n
     </div>
     <div class="screen-loader-title">Lumina</div>
     <div class="screen-loader-bar-container">
-      <div class="screen-loader-bar-fill" id="screen-loader-bar-fill" style="width: 0%"></div>
+      <div class="screen-loader-bar-fill" id="screen-loader-bar-fill" style="width: 12%"></div>
     </div>
     <div class="screen-loader-footer">
-      <span class="screen-loader-status" id="screen-loader-status">${options?.status || 'Loading your notes...'}</span>
-      <span class="screen-loader-percent" id="screen-loader-percent">0%</span>
+      <span class="screen-loader-status" id="screen-loader-status">${options?.status || 'Opening your workspace...'}</span>
+      <span class="screen-loader-percent" id="screen-loader-percent">${options?.progress !== undefined ? options.progress + '%' : '12%'}</span>
     </div>
     <div class="screen-loader-substatus" id="screen-loader-substatus">${options?.subStatus || ''}</div>
   `
@@ -119,6 +184,12 @@ export const initScreenLoader = (options?: ScreenLoaderOptions): HTMLElement | n
   document.body.prepend(loaderElement)
   ensureElements()
   isVisible = true
+
+  if (options?.progress !== undefined) {
+    setScreenLoaderProgress(options.progress)
+  } else {
+    startLoaderSimulation(options?.status, options?.subStatus)
+  }
 
   return loaderElement
 }
@@ -169,6 +240,8 @@ export const hideScreenLoader = (options?: ScreenLoaderOptions): Promise<void> =
       resolve()
       return
     }
+
+    stopLoaderSimulation()
 
     // Stop any standalone background simulation running in index.html
     const globalObj = typeof window !== 'undefined' ? (window as unknown as { __LUMINA_SCREEN_LOADER__?: { stopSimulation?: () => void } }) : null
@@ -256,6 +329,7 @@ export const getScreenLoaderProgress = (): number => currentProgress
 export const getScreenLoaderStatus = (): string => currentStatus
 
 export const resetScreenLoader = (): void => {
+  stopLoaderSimulation()
   if (loaderElement && loaderElement.parentNode) {
     loaderElement.parentNode.removeChild(loaderElement)
   }
