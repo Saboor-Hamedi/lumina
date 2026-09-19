@@ -1,9 +1,9 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 
 export interface ScreenLoaderProps {
   /**
    * Primary status message displayed below the progress bar
-   * @default 'Loading workspace...'
+   * @default 'Loading your notes...'
    */
   status?: string
   /**
@@ -12,7 +12,7 @@ export interface ScreenLoaderProps {
   subStatus?: string
   /**
    * Numeric progress from 0 to 100.
-   * If omitted, an indeterminate animated shimmer is displayed.
+   * If omitted, a dynamic progressive simulation with live percentage is displayed.
    */
   progress?: number
   /**
@@ -51,7 +51,7 @@ export interface ScreenLoaderProps {
 }
 
 export function ScreenLoader({
-  status = 'Loading workspace...',
+  status = 'Loading your notes...',
   subStatus,
   progress,
   showProgress = true,
@@ -62,8 +62,79 @@ export function ScreenLoader({
   className = '',
   style
 }: ScreenLoaderProps) {
-  const clampedProgress =
-    progress !== undefined ? Math.max(0, Math.min(100, Math.round(progress))) : null
+  const isExplicit = progress !== undefined
+  const clampedExplicit = isExplicit ? Math.max(0, Math.min(100, Math.round(progress))) : null
+
+  const [dynamicProgress, setDynamicProgress] = useState<number>(12)
+  const [dynamicStatus, setDynamicStatus] = useState<string>(status)
+  const [dynamicInfo, setDynamicInfo] = useState<string>(
+    'Syncing your notes and recent workspaces'
+  )
+
+  useEffect(() => {
+    if (isExplicit) return
+
+    const stages = [
+      {
+        atMs: 250,
+        target: 26,
+        label: 'Opening your vault...',
+        info: 'Syncing your notes and recent workspaces'
+      },
+      {
+        atMs: 1600,
+        target: 48,
+        label: 'Loading notes & folders...',
+        info: 'Indexing tags, links, and documents'
+      },
+      {
+        atMs: 4200,
+        target: 70,
+        label: 'Preparing your note editor...',
+        info: 'Tip: Press Ctrl+P anytime to open the Command Palette'
+      },
+      {
+        atMs: 8000,
+        target: 86,
+        label: 'Connecting knowledge graph...',
+        info: 'Tip: Use [[wikilinks]] to link your ideas together'
+      },
+      {
+        atMs: 13000,
+        target: 94,
+        label: 'Starting Lumina AI assistant...',
+        info: 'Tip: Type / in any note to insert blocks and templates'
+      }
+    ]
+
+    const timeouts: NodeJS.Timeout[] = []
+    let current = 12
+
+    stages.forEach((stage) => {
+      const t = setTimeout(() => {
+        setDynamicStatus(stage.label)
+        if (stage.info) setDynamicInfo(stage.info)
+        const interval = setInterval(() => {
+          current += 1
+          if (current >= stage.target) {
+            current = stage.target
+            clearInterval(interval)
+          }
+          setDynamicProgress(current)
+        }, 35)
+        timeouts.push(interval as unknown as NodeJS.Timeout)
+      }, stage.atMs)
+      timeouts.push(t)
+    })
+
+    return () => {
+      timeouts.forEach((t) => clearTimeout(t))
+    }
+  }, [isExplicit])
+
+  const activeProgress = isExplicit ? (clampedExplicit as number) : dynamicProgress
+  const activeStatus = isExplicit ? status : dynamicStatus
+  const activeSubStatus = subStatus !== undefined ? subStatus : dynamicInfo
 
   return (
     <div
@@ -71,7 +142,7 @@ export function ScreenLoader({
       style={style}
       role="status"
       aria-live="polite"
-      aria-label={`${title} Loading: ${status}`}
+      aria-label={`${title} Loading: ${activeStatus}`}
       data-testid="screen-loader"
     >
       {/* Ambient background glow */}
@@ -150,7 +221,7 @@ export function ScreenLoader({
         </div>
       </div>
 
-      {/* Brand title */}
+      {/* Brand title - high-contrast solid crisp typography */}
       <div className="screen-loader-title">{title}</div>
 
       {/* Progress Bar and Status */}
@@ -159,7 +230,7 @@ export function ScreenLoader({
           <div
             className="screen-loader-bar-container"
             role="progressbar"
-            aria-valuenow={clampedProgress !== null ? clampedProgress : undefined}
+            aria-valuenow={activeProgress}
             aria-valuemin={0}
             aria-valuemax={100}
             data-testid="screen-loader-progressbar"
@@ -167,23 +238,25 @@ export function ScreenLoader({
             <div
               className="screen-loader-bar-fill"
               style={{
-                width: clampedProgress !== null ? `${clampedProgress}%` : '50%'
+                width: `${activeProgress}%`
               }}
             />
           </div>
 
           <div className="screen-loader-footer">
-            <span className="screen-loader-status" title={status}>
-              {status}
+            <span className="screen-loader-status" title={activeStatus}>
+              {activeStatus}
             </span>
-            {clampedProgress !== null && (
-              <span className="screen-loader-percent">{clampedProgress}%</span>
-            )}
+            <span className="screen-loader-percent">{activeProgress}%</span>
           </div>
         </>
       )}
 
-      {subStatus && <div className="screen-loader-substatus">{subStatus}</div>}
+      {activeSubStatus && (
+        <div className="screen-loader-substatus" data-testid="screen-loader-substatus">
+          {activeSubStatus}
+        </div>
+      )}
     </div>
   )
 }

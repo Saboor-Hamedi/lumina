@@ -22,9 +22,10 @@ describe('ScreenLoader Component', () => {
 
     expect(screen.getByTestId('screen-loader')).toBeInTheDocument()
     expect(screen.getByText('Lumina')).toBeInTheDocument()
-    expect(screen.getByText('Loading workspace...')).toBeInTheDocument()
+    expect(screen.getByText('Loading your notes...')).toBeInTheDocument()
     expect(screen.getByTestId('screen-loader-progressbar')).toBeInTheDocument()
     expect(screen.getByTestId('screen-loader-spinner')).toBeInTheDocument()
+    expect(screen.getByTestId('screen-loader-substatus')).toBeInTheDocument()
   })
 
   it('renders custom title, status, and subStatus', () => {

@@ -19,7 +19,7 @@ let percentElement: HTMLElement | null = null
 let subStatusElement: HTMLElement | null = null
 let isVisible = true
 let currentProgress = 0
-let currentStatus = 'Loading workspace...'
+let currentStatus = 'Loading your notes...'
 const startTime = Date.now()
 
 /**
@@ -110,7 +110,7 @@ export const initScreenLoader = (options?: ScreenLoaderOptions): HTMLElement | n
       <div class="screen-loader-bar-fill" id="screen-loader-bar-fill" style="width: 0%"></div>
     </div>
     <div class="screen-loader-footer">
-      <span class="screen-loader-status" id="screen-loader-status">${options?.status || 'Loading workspace...'}</span>
+      <span class="screen-loader-status" id="screen-loader-status">${options?.status || 'Loading your notes...'}</span>
       <span class="screen-loader-percent" id="screen-loader-percent">0%</span>
     </div>
     <div class="screen-loader-substatus" id="screen-loader-substatus">${options?.subStatus || ''}</div>
@@ -266,7 +266,7 @@ export const resetScreenLoader = (): void => {
   subStatusElement = null
   isVisible = false
   currentProgress = 0
-  currentStatus = 'Loading workspace...'
+  currentStatus = 'Loading your notes...'
 }
 
 export const screenLoader = {

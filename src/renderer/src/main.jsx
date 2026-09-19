@@ -49,7 +49,7 @@ if (import.meta.env.PROD) {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <GlobalErrorHandler isRoot={true}>
-      <Suspense fallback={<ScreenLoader status="Loading workspace..." />}>
+      <Suspense fallback={<ScreenLoader status="Loading your notes..." />}>
         <App />
       </Suspense>
     </GlobalErrorHandler>

@@ -41,7 +41,7 @@ export function useEditorState({
   const handleSaveRef = useRef<(() => Promise<void>) | null>(null)
   const snippetRef = useRef<Snippet | null>(snippet)
   const latestCodeRef = useRef<string>(snippet?.code || '')
-  const lastSavedCodeRef = useRef<string | undefined>(snippet?.code)
+  const lastSavedCodeRef = useRef<string>(snippet?.code || '')
   const lastSaveTimeRef = useRef<number>(0)
 
   const setDirty = useWorkspaceStore((state: any) => state.setDirty)
@@ -84,38 +84,26 @@ export function useEditorState({
         setIsDirty(false)
         setDirty(snippet.id, false)
       }
-    } catch (error: any) {
-      console.error('Failed to save note:', error)
-      if (isMountedRef.current) {
-        showToast(`Failed to save note: ${error?.message || 'Unknown error'}`, 'error')
-      }
+    } catch (error) {
+      console.error('[EditorState] Save failed:', error)
     } finally {
       if (isMountedRef.current) {
         setIsSaving(false)
       }
     }
-  }, [title, snippet?.id, onSave, setDirty, showToast, isSaving, editorHandleRef])
+  }, [snippet?.id, isSaving, title, onSave, setDirty, editorHandleRef])
 
-  useEffect(() => {
-    handleSaveRef.current = handleSave
-  }, [handleSave])
+  handleSaveRef.current = handleSave
 
-  // --- Markdown Change Handler ---
+  // --- Change Handler ---
   const handleMarkdownChange = useCallback(
-    (md: string) => {
+    (newContent: string) => {
       if (snippet?.isOversized) return
-      latestCodeRef.current = md
-      const originalCode = lastSavedCodeRef.current ?? snippetRef.current?.code ?? ''
-      const isContentClean = md === originalCode
-      const currentTitle = (titleStateRef.current ?? snippetRef.current?.title ?? '').trim()
-      const originalTitle = (snippetRef.current?.title ?? '').trim()
-      const isTitleClean = currentTitle === originalTitle
 
-      const isClean = isContentClean && isTitleClean
-      setIsDirty(!isClean)
+      latestCodeRef.current = newContent
+      setIsDirty(true)
       if (snippet?.id) {
-        setDirty(snippet.id, !isClean)
-        ;(useWorkspaceStore.getState() as any).setDraft(snippet.id, md)
+        setDirty(snippet.id, true)
       }
 
       const settings = (useSettingsStore.getState() as any).settings
@@ -145,7 +133,7 @@ export function useEditorState({
 
     if (!isSameFile) {
       // Tab switched: React key on AtomicCodeMirrorEditor handles remount
-      lastSavedCodeRef.current = snippet?.code
+      lastSavedCodeRef.current = snippet?.code || ''
       latestCodeRef.current = snippet?.code || ''
       setIsDirty(false)
       return
@@ -153,60 +141,58 @@ export function useEditorState({
 
     if (editorHandleRef.current) {
       const currentCode = editorHandleRef.current.getMarkdown()
+      const incomingCode = snippet?.code ?? ''
 
-      // If store snippet content matches current editor text or latest edits, sync lastSavedCodeRef and do nothing
-      if (snippet?.code === currentCode || snippet?.code === latestCodeRef.current) {
-        lastSavedCodeRef.current = snippet?.code
+      // If store snippet content matches current editor text or latest edits, sync and do nothing
+      if (incomingCode === currentCode || incomingCode === latestCodeRef.current) {
+        lastSavedCodeRef.current = incomingCode
         return
       }
 
-      const codeChangedFromOutside = snippet?.code !== lastSavedCodeRef.current
+      const codeChangedFromOutside = incomingCode !== lastSavedCodeRef.current
 
       if (codeChangedFromOutside) {
         const timeSinceLastSave = Date.now() - lastSaveTimeRef.current
-        // Suppress chokidar echo if saved within last 3s
-        if (timeSinceLastSave < 3000) {
+        // Suppress chokidar echo if saved within last 3s and not dirty
+        if (timeSinceLastSave < 3000 && !isDirty) {
+          lastSavedCodeRef.current = incomingCode
           return
         }
 
-        const hasLocalEdits = currentCode !== lastSavedCodeRef.current
-        const isTrivialExternalChange =
-          (snippet?.code || '').trim() === (lastSavedCodeRef.current || '').trim()
+        // A true conflict ONLY exists if user has active unsaved local edits
+        // that differ non-trivially from both incomingCode and currentCode
+        const hasUnsavedEdits = isDirty && currentCode !== lastSavedCodeRef.current
+        const isTrivialDifference = incomingCode.trim() === currentCode.trim()
 
-        if (hasLocalEdits && !isTrivialExternalChange) {
-          // Real conflict: prompt user
+        if (hasUnsavedEdits && !isTrivialDifference) {
+          // Real conflict: user is actively typing and external changes arrived
           setConflictPrompt({
-            snippetCode: snippet?.code,
-            snippetTitle: snippet?.title
+            snippetCode: incomingCode,
+            snippetTitle: snippet?.title || 'Untitled'
           })
-        } else if (hasLocalEdits && isTrivialExternalChange) {
-          // Trivial external change (e.g. trailing newline): preserve local edits
-          lastSavedCodeRef.current = snippet?.code
         } else {
-          // Safe to overwrite
+          // Safe to sync external changes (e.g. reload, disk sync, or AI tool updates)
           setIsDirty(false)
-          lastSavedCodeRef.current = snippet?.code
+          lastSavedCodeRef.current = incomingCode
+          latestCodeRef.current = incomingCode
 
           if (realViewRef.current) {
             const view = realViewRef.current
-            const needsClear = snippet?.code === '' && view.state.doc.length > 0
-            if (
-              (typeof snippet?.code === 'string' && currentCode !== snippet.code) ||
-              needsClear
-            ) {
+            const currentDoc = view.state.doc.toString()
+            if (currentDoc !== incomingCode) {
               view.dispatch({
-                changes: { from: 0, to: view.state.doc.length, insert: snippet.code || '' }
+                changes: { from: 0, to: view.state.doc.length, insert: incomingCode }
               })
             }
           } else {
-            if (typeof snippet?.code === 'string' && currentCode !== snippet.code) {
+            if (currentCode !== incomingCode) {
               setEditorKey((k) => k + 1)
             }
           }
         }
       }
     }
-  }, [snippet, editorHandleRef, realViewRef])
+  }, [snippet, isDirty, editorHandleRef, realViewRef])
 
   // --- Auto-Save on State Change ---
   useEffect(() => {
@@ -259,25 +245,35 @@ export function useEditorState({
 
   // --- Conflict Modal Handlers ---
   const handleOverwriteClose = useCallback(() => {
-    if (conflictPrompt) lastSavedCodeRef.current = conflictPrompt.snippetCode
+    // User chose "Keep My Edits": preserve user's local edits and save them
+    if (conflictPrompt) {
+      lastSavedCodeRef.current = latestCodeRef.current
+      if (handleSaveRef.current) {
+        handleSaveRef.current()
+      }
+    }
     setConflictPrompt(null)
   }, [conflictPrompt])
 
   const handleOverwriteConfirm = useCallback(async () => {
     if (!conflictPrompt) return
-    const code = conflictPrompt.snippetCode
+    const code = conflictPrompt.snippetCode || ''
     setIsDirty(false)
+    if (snippet?.id) {
+      setDirty(snippet.id, false)
+    }
     lastSavedCodeRef.current = code
+    latestCodeRef.current = code
     if (realViewRef.current) {
       const view = realViewRef.current
       view.dispatch({
-        changes: { from: 0, to: view.state.doc.length, insert: code || '' }
+        changes: { from: 0, to: view.state.doc.length, insert: code }
       })
     } else {
       setEditorKey((k) => k + 1)
     }
     setConflictPrompt(null)
-  }, [conflictPrompt, realViewRef])
+  }, [conflictPrompt, realViewRef, snippet?.id, setDirty])
 
   return {
     title,
