@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useAIStore } from '../../../../../src/renderer/src/features/AI/tools/lumina'
-import { getPendingTasks } from '../../../../../src/renderer/src/features/AI/services/aiWorkerManager.js'
+import { getPendingTasks } from '../../../../../src/renderer/src/features/AI/services/aiWorkerManager'
 
 // Worker is mocked in setup.js
 

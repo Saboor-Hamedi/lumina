@@ -111,7 +111,7 @@ export interface AIStoreState {
   aiError: Error | string | null
   isModelReady: boolean
   modelLoadingProgress: number
-  pendingTasks: number
+  pendingTasks: Map<string, unknown>
   embeddingsCache: Record<string, number[]>
 
   // Chat state

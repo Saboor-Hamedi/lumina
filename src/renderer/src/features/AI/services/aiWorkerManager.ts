@@ -54,7 +54,7 @@ export const initAIWorker = ({ onProgress, onReady, onError }: InitAIWorkerCallb
   return worker
 }
 
-export const getPendingTasks = (): number => pendingTasks.size
+export const getPendingTasks = (): Map<string, PendingTask> => pendingTasks
 
 export const generateEmbedding = (text: string): Promise<number[]> => {
   return new Promise((resolve, reject) => {

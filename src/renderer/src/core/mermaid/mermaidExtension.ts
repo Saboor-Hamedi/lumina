@@ -80,9 +80,14 @@ class MermaidWidget extends WidgetType {
     return other.code === this.code
   }
 
+  updateDOM(_dom: HTMLElement): boolean {
+    return true
+  }
+
   toDOM(view: EditorView): HTMLElement {
     const wrap = document.createElement('div') as HTMLElement & { _reactRoot?: Root | null }
     wrap.className = 'cm-mermaid-widget'
+    wrap.dataset.code = encodeURIComponent(this.code)
 
     wrap.addEventListener('mousedown', (e) => {
       if ((e.target as HTMLElement | null)?.closest('.mermaid-edit-btn')) return
@@ -257,7 +262,7 @@ class MermaidWidget extends WidgetType {
       )
 
       const editBtn = React.createElement(
-        ToolTip,
+        ToolTip as any,
         { text: 'Edit Code', position: 'top' },
         React.createElement(
           'div',
@@ -270,7 +275,7 @@ class MermaidWidget extends WidgetType {
       )
 
       const copyImageBtn = React.createElement(
-        ToolTip,
+        ToolTip as any,
         { text: 'Copy as Image', position: 'top' },
         React.createElement(
           'div',
@@ -287,7 +292,7 @@ class MermaidWidget extends WidgetType {
       )
 
       const copySyntaxBtn = React.createElement(
-        ToolTip,
+        ToolTip as any,
         { text: 'Copy Code', position: 'top' },
         React.createElement(
           'div',
@@ -336,6 +341,7 @@ class MermaidWidget extends WidgetType {
     const cachedSvg = mermaidSvgCache.get(this.code)
     if (cachedSvg) {
       contentDiv.innerHTML = cachedSvg
+      classifyMermaidDiagram(contentDiv, this.code)
     } else {
       contentDiv.innerHTML = `
         <div class="mermaid-loading">
@@ -373,6 +379,30 @@ class MermaidWidget extends WidgetType {
 
 let mermaidRenderQueue = Promise.resolve()
 
+function classifyMermaidDiagram(container: HTMLElement, code: string): void {
+  const isLR = /^\s*(flowchart|graph)\s+LR\b/i.test(code)
+  const isTD = /^\s*(flowchart|graph)\s+(TD|TB)\b/i.test(code)
+  const svgEl = container.querySelector('svg')
+  let aspectRatio = 1
+  if (svgEl) {
+    const vb = svgEl.getAttribute('viewBox')
+    if (vb) {
+      const parts = vb.split(/[\s,]+/).map(Number)
+      if (parts.length === 4 && parts[3] > 0) {
+        aspectRatio = parts[2] / parts[3]
+      }
+    }
+  }
+
+  if (isLR || aspectRatio > 2.0) {
+    container.classList.add('mermaid-flowchart-lr')
+    container.classList.remove('mermaid-flowchart-td')
+  } else if (isTD || aspectRatio < 1.0) {
+    container.classList.add('mermaid-flowchart-td')
+    container.classList.remove('mermaid-flowchart-lr')
+  }
+}
+
 export function renderMermaidToElement(
   container: HTMLElement,
   code: string,
@@ -383,6 +413,7 @@ export function renderMermaidToElement(
   const cachedSvg = mermaidSvgCache.get(code)
   if (cachedSvg) {
     container.innerHTML = cachedSvg
+    classifyMermaidDiagram(container, code)
     return
   }
 
@@ -393,6 +424,7 @@ export function renderMermaidToElement(
       const alreadyCached = mermaidSvgCache.get(code)
       if (alreadyCached) {
         container.innerHTML = alreadyCached
+        classifyMermaidDiagram(container, code)
         return
       }
 
@@ -425,11 +457,9 @@ export function renderMermaidToElement(
           startOnLoad: false,
           suppressErrorRendering: true,
           theme: 'base',
-          useMaxWidth: false,
           htmlLabels: false,
           flowchart: { htmlLabels: false, curve: 'basis' },
           sequence: {
-            htmlLabels: false,
             mirrorActors: false,
             actorMargin: 50,
             boxMargin: 10,
@@ -441,7 +471,7 @@ export function renderMermaidToElement(
             padding: 16,
             maxNodeWidth: 200
           },
-          state: { htmlLabels: false },
+          state: {},
           class: { htmlLabels: false },
           themeVariables: {
             fontFamily: fontEditor,
@@ -564,11 +594,28 @@ export function renderMermaidToElement(
         const { svg } = await mermaid.render(uniqueId, code)
         mermaidSvgCache.set(code, svg)
         container.innerHTML = svg
+        classifyMermaidDiagram(container, code)
+
+        // If CodeMirror updated or replaced the widget DOM node while asynchronous rendering was in flight,
+        // also populate the live active widget(s) in the document.
+        const encoded = encodeURIComponent(code)
+        document.querySelectorAll<HTMLElement>(
+          `.cm-mermaid-widget[data-code="${encoded}"] .mermaid-content`
+        ).forEach((el) => {
+          if (el !== container) {
+            el.innerHTML = svg
+            classifyMermaidDiagram(el, code)
+          }
+        })
       } catch (err: any) {
         // If transient DOM race occurred (e.g. firstChild on null), retry once cleanly
         if (!isRetry && (err?.message?.includes('firstChild') || err?.message?.includes('null'))) {
-          document.getElementById(`d${uniqueId}`)?.remove()
-          document.getElementById(uniqueId)?.remove()
+          const tempDiv = document.getElementById(`d${uniqueId}`)
+          if (tempDiv && tempDiv !== container && !container.contains(tempDiv)) {
+            tempDiv.remove()
+          }
+          const straySvg = document.body.querySelector(`:scope > #${uniqueId}, :scope > svg#${uniqueId}`)
+          straySvg?.remove()
           return new Promise<void>((resolve) => {
             setTimeout(() => {
               renderMermaidToElement(container, code, uniqueId, true)
@@ -578,9 +625,14 @@ export function renderMermaidToElement(
         }
         container.innerHTML = `<div class="mermaid-error"><strong>Mermaid Syntax Error</strong>\n${err?.message || err}</div>`
       } finally {
-        // Only remove this specific diagram's temporary container, NEVER wildcard other diagrams
-        document.getElementById(`d${uniqueId}`)?.remove()
-        document.getElementById(uniqueId)?.remove()
+        // Clean up Mermaid's temporary scratch container from body without touching the rendered diagram
+        const tempDiv = document.getElementById(`d${uniqueId}`)
+        if (tempDiv && tempDiv !== container && !container.contains(tempDiv)) {
+          tempDiv.remove()
+        }
+        // If Mermaid left a stray element directly under body, remove only that direct child
+        const strayBodySvg = document.body.querySelector(`:scope > #${uniqueId}, :scope > svg#${uniqueId}`)
+        strayBodySvg?.remove()
       }
     })
     .catch((err) => {
