@@ -22,6 +22,7 @@ import {
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/SettingStore'
 import { useShallow } from 'zustand/react/shallow'
+// Lumina AI Note Summarizer
 import { summarizeNotes } from '../../AI/services/summarizeNotes'
 
 

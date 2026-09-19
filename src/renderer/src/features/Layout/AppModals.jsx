@@ -35,6 +35,7 @@ import { useSettingsStore } from '../../core/store/SettingStore'
 import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
 
 // Lazy-load heavy modals and panels to optimize initial bundle evaluation time
+// Lumina AI Chat Modal
 const LuminaChat = React.lazy(() => import('../AI/Lumina'))
 const Settings = React.lazy(() => import('../Settings/Settings'))
 const Theme = React.lazy(() => import('../theme/Theme'))

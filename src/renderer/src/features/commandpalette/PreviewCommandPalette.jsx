@@ -18,6 +18,7 @@ import {
   copyCodeAsImage
 } from '../../core/code'
 import { Sparkles } from 'lucide-react'
+// Lumina AI Thinking Block
 import { ThinkingBlock } from '../AI/components/LuminaThinkingBlock'
 
 import '@atomic-editor/editor/styles.css'

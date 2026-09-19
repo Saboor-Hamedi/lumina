@@ -13,6 +13,7 @@ import * as THREE from 'three'
 import Graph3D from './Graph3D'
 import Graph2D from './Graph2D'
 import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
+// Lumina AI Agent store
 import { useAIStore } from '../AI/tools/lumina'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { usePerformanceStore } from './usePerformanceStore'

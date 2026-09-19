@@ -13,6 +13,7 @@ import EditorMenu from './menu/EditorMenu'
 import ToastNotification from '../../core/notification'
 import Preview from '../preview/Preview'
 import OverwriteModal from '../modals/OverwriteModal'
+// Lumina AI Inline assistant
 import InlineLumina from '../AI/InlineLumina'
 import RulerScrollbar from './RulerScrollbar'
 import Find from './components/Find'

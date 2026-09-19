@@ -71,6 +71,7 @@ import { useExplorerDnd } from './hooks/ExplorerDnd'
 import { useExplorerOperations } from './hooks/ExplorerOperations'
 import { useFolderContextMenu } from './hooks/FolderMenu'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
+// Lumina AI Note Summarizer
 import { summarizeNotes } from '../AI/services/summarizeNotes'
 import { isSnippetActive } from './utils/explorerSelectionHelper'
 

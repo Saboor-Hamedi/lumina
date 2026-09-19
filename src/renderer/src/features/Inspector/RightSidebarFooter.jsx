@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react'
 import { Copy, Check, X, FileText } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
+// Lumina AI Composer & Store
 import { Composer } from '../AI/Composer'
 import { useAIStore } from '../AI/tools/lumina'
 

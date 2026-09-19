@@ -2,6 +2,7 @@ import React from 'react'
 import { Info, List as ListIcon, MessageSquare, ExternalLink, History, BarChart3 } from 'lucide-react'
 import NoteDetails from './NoteDetails'
 import NoteOutline from './NoteOutline'
+// Lumina AI Chat Content
 const LuminaChatContent = React.lazy(() =>
   import('../AI/Lumina').then((m) => ({ default: m.LuminaChatContent }))
 )

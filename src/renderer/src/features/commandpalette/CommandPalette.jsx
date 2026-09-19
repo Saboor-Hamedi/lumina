@@ -30,7 +30,9 @@ import { useTag } from '../../core/hooks/useTag'
 import { useMention } from '../../core/hooks/useMention'
 import { useShallow } from 'zustand/react/shallow'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
+// Lumina AI Agent store
 import { useAIStore } from '../AI/tools/lumina'
+// Lumina AI chat components
 import { MessageContent, ThinkingIndicator, ChatMessageRow } from '../AI/Lumina'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/SettingStore'
