@@ -14,7 +14,8 @@ export const IntentCategory = {
   ORGANIZE_FILES: 'ORGANIZE_FILES',
   VAULT_SUMMARY: 'VAULT_SUMMARY',
   PLAN_SCAFFOLD: 'PLAN_SCAFFOLD',
-  MEMORY_OP: 'MEMORY_OP'
+  MEMORY_OP: 'MEMORY_OP',
+  DIAGNOSTICS: 'DIAGNOSTICS'
 } as const
 
 export type IntentCategoryType = (typeof IntentCategory)[keyof typeof IntentCategory]
@@ -25,6 +26,13 @@ export const detectUserIntent = (
   activeSnippet: any = null
 ): IntentCategoryType => {
   const clean = (message || '').trim().toLowerCase()
+
+  const diagnosticPatterns =
+    /(?:^|\s)\/doctor\b|\b(check yourself|run diagnostics|test (?:your )?health|system health|diagnostics?|check health|health check)\b/i
+
+  if (diagnosticPatterns.test(clean)) {
+    return IntentCategory.DIAGNOSTICS
+  }
 
   const memoryPatterns =
     /\b(remember|save (?:this )?to (?:your )?memory|save (?:this )?in (?:your )?memory|keep in mind|store in memory|don'?t forget|my name is|call me|i am called|forget (?:my )?|remove (?:this )?from (?:your )?memory|delete (?:this )?from (?:your )?memory|erase (?:this )?from memory|update (?:my )?memory)\b/i
@@ -318,6 +326,11 @@ Execution:
 
 User: "what do you know about me?"
 Execution: DO NOT call saveMemory. Answer warmly based on the persistent memory block provided in context.`
+
+    case IntentCategory.DIAGNOSTICS:
+      return `\n**EXEMPLAR FOR SYSTEM DIAGNOSTICS**:
+User: "check yourself" or "run diagnostics" or "/doctor"
+Execution: Immediately invoke the \`diagnoseSystem\` tool! Do NOT merely say you are checking. Invoke \`diagnoseSystem\` to perform live write-read verification on lumina-health.md and measure latency across all subsystems. Then output the structured health report table and summary directly in chat.`
 
     case IntentCategory.CONVERSATIONAL_EXPLAIN:
     default:

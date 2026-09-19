@@ -116,7 +116,8 @@ export interface SettingStoreState {
 
 export const useSettingStore = create<SettingStoreState>((set, get) => ({
   settings: {
-    theme: 'default',
+    theme:
+      (typeof localStorage !== 'undefined' && localStorage.getItem('theme-id')) || 'dark',
     fontSize: 16,
     fontFamily: 'Inter',
     lineHeight: 1.6,
@@ -274,6 +275,11 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
         if (allSettings) {
           const currentSettings = get().settings
           const mergedSettings: Settings = { ...currentSettings, ...allSettings }
+          const activeTheme =
+            mergedSettings.theme && mergedSettings.theme !== 'default'
+              ? mergedSettings.theme
+              : ((typeof localStorage !== 'undefined' && localStorage.getItem('theme-id')) || 'dark')
+          mergedSettings.theme = activeTheme
 
           set({ settings: mergedSettings })
 
@@ -320,6 +326,11 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
             if (allSettings) {
               const currentDefaults = get().settings
               const mergedSettings: Settings = { ...currentDefaults, ...allSettings }
+              const activeTheme =
+                mergedSettings.theme && mergedSettings.theme !== 'default'
+                  ? mergedSettings.theme
+                  : ((typeof localStorage !== 'undefined' && localStorage.getItem('theme-id')) || 'dark')
+              mergedSettings.theme = activeTheme
               set({ settings: mergedSettings })
               if (typeof document !== 'undefined') {
                 const root = document.documentElement

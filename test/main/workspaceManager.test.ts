@@ -119,6 +119,40 @@ describe('VaultManager', () => {
         .catch(() => false)
       expect(exists).toBe(true)
     })
+
+    it('populates and returns relativePath and allows immediate readSnippet', async () => {
+      const saved = await VaultManager.saveSnippet({
+        id: 'rel-test',
+        title: 'Relative Test Note',
+        code: '# Hello Relative',
+        folderId: 'MyFolder'
+      })
+
+      expect(saved.relativePath).toBe('MyFolder/Relative Test Note.md')
+
+      const readBack = await VaultManager.readSnippet('rel-test')
+      expect(readBack).toBeDefined()
+      expect(readBack.id).toBe('rel-test')
+      expect(readBack.code.trim()).toBe('# Hello Relative')
+    })
+
+    it('readSnippet falls back gracefully if relativePath is not pre-populated in memory', async () => {
+      await VaultManager.saveSnippet({
+        id: 'fallback-test',
+        title: 'Fallback Note',
+        code: 'Fallback content'
+      })
+
+      // Simulate a legacy or stripped snippet in memory without relativePath
+      const inMemory = VaultManager.snippets.get('fallback-test')
+      expect(inMemory).toBeDefined()
+      delete inMemory.relativePath
+
+      const readBack = await VaultManager.readSnippet('fallback-test')
+      expect(readBack).toBeDefined()
+      expect(readBack.relativePath).toBe('Fallback Note.md')
+      expect(readBack.code.trim()).toBe('Fallback content')
+    })
   })
 
   describe('deleteSnippet', () => {

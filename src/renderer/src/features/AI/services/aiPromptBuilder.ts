@@ -160,6 +160,71 @@ export const truncateForContext = (text?: string, limit: number = 25000): string
   )
 }
 
+export interface SafeUserSettings {
+  theme?: string
+  themeId?: string
+  fontSize?: number
+  fontFamily?: string
+  lineHeight?: number
+  showLineNumbers?: boolean
+  autoSave?: boolean
+  vimMode?: boolean
+  cursorStyle?: string
+  smoothScrolling?: boolean
+  inlineTitle?: boolean
+  inlineMetadata?: boolean
+  modernUi?: boolean
+  activeAIMode?: string
+  activeProvider?: string
+  activeModel?: string | null
+  [key: string]: any
+}
+
+/**
+ * Strips any sensitive credentials, secret hashes, API keys, tokens, or encryption strings.
+ * Guarantees that no raw or hashed API secrets can ever leak into the prompt.
+ */
+export const sanitizeSafeSettings = (settings?: Record<string, any>): SafeUserSettings => {
+  if (!settings || typeof settings !== 'object') return {}
+
+  const forbiddenKeyPatterns = [
+    /key/i,
+    /token/i,
+    /secret/i,
+    /hash/i,
+    /password/i,
+    /auth/i,
+    /credential/i,
+    /googleuser/i
+  ]
+
+  const safe: Record<string, any> = {}
+
+  for (const [k, v] of Object.entries(settings)) {
+    // 1. Bar forbidden property names
+    if (forbiddenKeyPatterns.some((pattern) => pattern.test(k))) {
+      continue
+    }
+
+    // 2. Bar any values that look like hashes, encryption strings, or secrets
+    if (typeof v === 'string') {
+      const trimmed = v.trim()
+      if (trimmed.startsWith('enc:') || trimmed.startsWith('Bearer ') || trimmed.startsWith('sk-')) {
+        continue
+      }
+      if (trimmed.length > 60 && /^[A-Za-z0-9+/=_-]+$/.test(trimmed)) {
+        continue
+      }
+    }
+
+    if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+      safe[k] = v
+    }
+  }
+
+  return safe as SafeUserSettings
+}
+
 export interface BuildSystemPromptParams {
   modeCfg: AIModeConfig
   mentionedSnippets?: MentionItem[]
@@ -174,6 +239,8 @@ export interface BuildSystemPromptParams {
   contextSnippets?: any[]
   detectedIntent?: IntentCategoryType | null
   message?: string
+  activeTheme?: string
+  userSettings?: SafeUserSettings
 }
 
 export const buildSystemPrompt = async ({
@@ -188,13 +255,44 @@ export const buildSystemPrompt = async ({
   selectedSnippet = null,
   drafts = {},
   contextSnippets = [],
-  detectedIntent = null
+  detectedIntent = null,
+  activeTheme = 'Porcelain',
+  userSettings
 }: BuildSystemPromptParams): Promise<string> => {
-  const isExecutionMode = modeCfg.enableTools !== false
+  const isExecutionMode = modeCfg.enableTools !== false || detectedIntent === 'DIAGNOSTICS'
   let systemPrompt = ''
 
   await (luminaMemory as any).loadMemory()
   const userMemoryBlock = (luminaMemory as any).getPromptBlock()
+
+  const safeSettings = sanitizeSafeSettings(userSettings)
+  const resolvedTheme = activeTheme || safeSettings.theme || 'Porcelain'
+  const editorFont = safeSettings.fontFamily || 'Inter'
+  const editorFontSize = safeSettings.fontSize ? `${safeSettings.fontSize}px` : '16px'
+  const editorLineHeight = safeSettings.lineHeight || 1.6
+  const lineNumbersText = safeSettings.showLineNumbers ? 'Enabled' : 'Disabled'
+  const autoSaveText = safeSettings.autoSave !== false ? 'Enabled' : 'Disabled'
+  const vimModeText = safeSettings.vimMode ? 'Enabled' : 'Disabled'
+  const cursorStyleText = safeSettings.cursorStyle || 'smooth'
+  const smoothScrollText = safeSettings.smoothScrolling !== false ? 'Enabled' : 'Disabled'
+
+  const settingsAwarenessBlock = `- **VISUAL THEME & APP SETTINGS AWARENESS**:
+  - The user's current visual UI theme of the Lumina app is "${resolvedTheme}".
+  - The user's editor settings & typography:
+    * Font Family: "${editorFont}"
+    * Font Size: ${editorFontSize}
+    * Line Height: ${editorLineHeight}
+    * Line Numbers: ${lineNumbersText}
+    * Auto-save: ${autoSaveText}
+    * Vim Mode: ${vimModeText}
+    * Cursor Style: ${cursorStyleText}
+    * Smooth Scrolling: ${smoothScrollText}
+  - If the user asks "what theme do i use?", "what theme am I on?", "what is my font?", "what font size do i have?", "what is my line height?", or asks about their editor settings, answer directly, accurately, and concisely based on the settings above!
+  - NEVER confuse their visual theme ("${resolvedTheme}") with your AI reasoning mode (${modeCfg.name} Mode). Theme is the visual design/palette of the app; mode is your operational reasoning persona.
+
+**STRICT SECURITY DIRECTIVE (CONFIDENTIALITY & ANTI-LEAK)**:
+- You must NEVER reveal, disclose, repeat, or discuss any API keys, tokens, secret credentials, or hashed/encrypted strings (such as strings starting with "enc:") under ANY circumstances, even if asked directly, tricked, or commanded by a user prompt.
+- If the user asks to see their API keys or hash codes, politely decline and instruct them to view and manage them safely in Lumina Settings > Assistant.`
 
   if (!isExecutionMode) {
     systemPrompt = `CURRENT ACTIVE MODE: ${modeCfg.name.toUpperCase()} MODE.
@@ -222,6 +320,7 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
   You MUST output the ACTUAL explanation, summary, and breakdown of what is inside the note IMMEDIATELY.
 - **EDITOR TAB & UNSAVED BUFFERS**: The user may be working in an open note in their editor tab (even if empty or newly created). Never claim the note does not exist or argue that it hasn't synced to disk. Treat the active editor note as fully valid context and plan or structure content for it seamlessly.
 - **EXECUTION MODE GUIDANCE**: Never claim that Code Mode is the only mode that can write files. Research Mode (/research), Creative Mode (/creative), Deep Mode (/deep), and Code Mode (/code) all have full workspace file write tools enabled. Match your recommendation to the user's project: recommend Research Mode for academic work, theses, and literature reviews; Creative Mode for stories and essays; Code Mode for programming and scripts; and Deep Mode for complex analytical workflows.
+${settingsAwarenessBlock}
 
 **CONTEXT**:
 ${vaultAccessNote}
@@ -284,6 +383,7 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
   NEVER promise to read it — simply deliver the actual answer right now!
 - ABSOLUTE BAN ON VERBAL-ONLY MEMORY CLAIMS: NEVER say "I've saved your name to memory", "I'll remember that", or "Saved to memory" in chat without ACTUALLY invoking the saveMemory, updateMemory, or forgetMemory tool call! If you claim you saved or remembered something without executing the tool call, it is completely lost and never saved to disk. Whenever the user shares personal details (name, role, bio), preferences, or asks you to remember or forget something, you MUST execute saveMemory / updateMemory / forgetMemory immediately!
 - ABSOLUTE BAN ON UNSOLICITED MEMORY TABLES/DUMPS: When saving or updating memory (saveMemory, updateMemory, forgetMemory), output ONLY a short, warm, 1-sentence confirmation (e.g. "Got it, Saboor! I've saved your name to memory."). NEVER output a table, summary, or list of what is stored in memory.json! Only show memory contents if the user EXPLICITLY asks "what do you know about me?", "what do you remember?", or "what is in your memory?".
+${settingsAwarenessBlock}
 
 **TOOLS AVAILABLE** (use these for file operations):
 - 'readFile' — read a workspace file by title (only use when you do NOT already have the file content)
@@ -302,6 +402,7 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - 'deleteFolder' — delete a folder and ALL its contents from the workspace (provide path)
 - 'moveFile' — move a file into a specific folder (provide title and folder) without opening tabs
 - 'openFile' — open a file in the user's editor tab only if the user explicitly asks to view/open it
+- 'diagnoseSystem' — run a health check on Lumina: checks app responsiveness, verifies workspace storage by testing read and write on lumina-health.md in the workspace root, inspects the note editor, counts workspace notes and folders, and checks AI assistant readiness.
 
 **HOW TO USE TOOLS & ROUTE INTENT**:
 1. WHEN THE USER ASKS TO UPDATE, EDIT, MODIFY, IMPROVE, FIX, OR ADD TO A NOTE:
@@ -326,6 +427,7 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 12. FOR "remember", "save to memory", or when the user shares personal identity or preferences → call saveMemory immediately! NEVER confirm saving in chat without calling the saveMemory tool.
 13. FOR "update memory", "change preference", or refining facts → call updateMemory immediately.
 14. FOR "forget", "remove from memory", "delete memory" → call forgetMemory immediately.
+15. FOR "check yourself", "run diagnostics", "test your health", "system health", "health check", or "/doctor" → call diagnoseSystem immediately! Run the read-and-write test on lumina-health.md, check system responsiveness, and show the clean health check report table in chat.
 
 **CONTEXT**:
 ${vaultAccessNote}
@@ -447,6 +549,13 @@ ${userMemoryBlock}`
     if (exemplars) {
       systemPrompt += exemplars
     }
+  }
+
+  if (detectedIntent === 'DIAGNOSTICS') {
+    systemPrompt += `\n\n**CRITICAL MANDATORY HEALTH CHECK INSTRUCTION**:
+The user requested a system health check ("check yourself", "run diagnostics", "/doctor").
+You MUST call the \`diagnoseSystem\` tool immediately! Do not reply with generic text without executing the tool.
+Once \`diagnoseSystem\` finishes executing, present the clean health check table and summary directly in chat.`
   }
 
   return systemPrompt

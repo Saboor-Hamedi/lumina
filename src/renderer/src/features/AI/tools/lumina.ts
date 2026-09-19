@@ -22,12 +22,13 @@ import {
   retrieveWorkspaceRAG,
   buildSystemPrompt
 } from '../services/aiPromptBuilder'
+import { getTheme } from '../../theme/hooks/themeDefinitions'
 import {
   runDeepSeekStream,
   runFallbackProviderStream,
   applyLegacyMarkdownBlocks
 } from '../services/aiStreamRunner'
-import { detectUserIntent } from '../services/intentRouter'
+import { detectUserIntent, IntentCategory } from '../services/intentRouter'
 import { getAIMode } from '../modes/index'
 import { getAITools, getMemoryTools } from './index'
 import { AIProviderFactory, resolveProviderConfig } from '../providers/index'
@@ -706,6 +707,41 @@ export const useAIStore = create<AIStore>((set, get) => {
           vs.selectedSnippet || vs.selectedNote
         )
 
+        const storedThemeId =
+          (typeof localStorage !== 'undefined' && localStorage.getItem('theme-id')) || null
+        const domThemeId =
+          (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme')) || null
+        const settingsThemeId = settingsObj?.theme || null
+
+        // Avoid 'default' if a valid theme is stored
+        const rawThemeId =
+          (storedThemeId && storedThemeId !== 'default' ? storedThemeId : null) ||
+          (domThemeId && domThemeId !== 'default' ? domThemeId : null) ||
+          (settingsThemeId && settingsThemeId !== 'default' ? settingsThemeId : null) ||
+          storedThemeId ||
+          domThemeId ||
+          'dark'
+
+        const themeDef = getTheme(rawThemeId)
+        const activeTheme = themeDef?.name || rawThemeId
+
+        // Pass safe editor and appearance settings (strictly omitting API keys, tokens, or hashes)
+        const safeSettings = {
+          theme: activeTheme,
+          themeId: themeDef?.id || rawThemeId,
+          fontSize: settingsObj?.fontSize ?? 16,
+          fontFamily: settingsObj?.fontFamily ?? 'Inter',
+          lineHeight: settingsObj?.lineHeight ?? 1.6,
+          showLineNumbers: Boolean(settingsObj?.showLineNumbers),
+          autoSave: settingsObj?.autoSave !== false,
+          vimMode: Boolean(settingsObj?.vimMode),
+          cursorStyle: settingsObj?.cursorStyle || 'smooth',
+          smoothScrolling: settingsObj?.smoothScrolling !== false,
+          inlineTitle: settingsObj?.inlineTitle !== false,
+          inlineMetadata: Boolean(settingsObj?.inlineMetadata),
+          modernUi: Boolean(settingsObj?.modernUi)
+        }
+
         const systemPrompt = await buildSystemPrompt({
           modeCfg,
           mentionedSnippets,
@@ -719,7 +755,9 @@ export const useAIStore = create<AIStore>((set, get) => {
           drafts: vs.drafts || {},
           contextSnippets: Array.isArray(contextSnippets) ? contextSnippets : [],
           detectedIntent,
-          message: cleanMessage
+          message: cleanMessage,
+          activeTheme,
+          userSettings: safeSettings
         })
 
         const { providerType, activeModel, apiKey, baseUrl } =
@@ -761,7 +799,10 @@ export const useAIStore = create<AIStore>((set, get) => {
         const isOpenIntent = openIntentKeywords.test(cleanMessage)
 
         let sdkTools = getMemoryTools()
-        if (modeCfg.enableTools !== false && !isConversationalOverride) {
+        if (
+          (modeCfg.enableTools !== false || detectedIntent === IntentCategory.DIAGNOSTICS) &&
+          !isConversationalOverride
+        ) {
           sdkTools = getAITools(blockReadFile, isOpenIntent)
         }
 

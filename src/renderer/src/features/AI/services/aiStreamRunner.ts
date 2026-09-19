@@ -55,6 +55,8 @@ export const getToolStatusDescription = (toolName: string, args: Record<string, 
     case 'forgetMemory':
     case 'forgeMemory':
       return `🧠 *Removing from memory...*`
+    case 'diagnoseSystem':
+      return `🩺 *Checking Lumina health & testing lumina-health.md...*`
     default:
       return `⚙️ *Working on ${toolName}...*`
   }
@@ -62,6 +64,8 @@ export const getToolStatusDescription = (toolName: string, args: Record<string, 
 
 export const getToolInputStartStatus = (toolName?: string): string => {
   switch (toolName) {
+    case 'diagnoseSystem':
+      return 'Checking Lumina health...'
     case 'createFolder':
       return 'Planning folder creation...'
     case 'createFile':

@@ -666,11 +666,25 @@ export class WorkspaceManager {
     }
 
     const snippet = this.snippets.get(id)
-    if (!snippet || !this.workspacePath || !snippet.relativePath) {
+    if (!snippet || !this.workspacePath) {
       throw new Error('Snippet not found')
     }
 
-    const filePath = path.resolve(this.workspacePath, snippet.relativePath)
+    const relPath =
+      snippet.relativePath ||
+      (snippet.fileName
+        ? (snippet.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet.fileName)
+        : null)
+
+    if (!relPath) {
+      throw new Error('Snippet not found')
+    }
+
+    if (!snippet.relativePath) {
+      snippet.relativePath = relPath
+    }
+
+    const filePath = path.resolve(this.workspacePath, relPath)
     const workspaceRoot = path.resolve(this.workspacePath)
     if (!filePath.startsWith(workspaceRoot + path.sep)) {
       throw new Error('Invalid snippet path')

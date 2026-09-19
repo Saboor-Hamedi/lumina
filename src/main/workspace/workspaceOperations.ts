@@ -264,6 +264,8 @@ export class WorkspaceOperations {
 
     await fs.writeFile(finalPath, fileContent)
 
+    const computedRelativePath = relativeFolder ? `${relativeFolder}/${newFileName}` : newFileName
+
     const updatedSnippet = {
       ...snippet,
       title: isMarkdown || isCanvas ? (rawTitle || cleanedTitle) : newFileName,
@@ -271,6 +273,7 @@ export class WorkspaceOperations {
       createdAt: snippet.createdAt || new Date().toISOString(),
       fileName: newFileName,
       folderId: relativeFolder,
+      relativePath: computedRelativePath,
       type: isCanvas ? 'canvas' : snippet.type || 'snippet',
       language: isCanvas ? 'canvas' : snippet.language || (isMarkdown ? 'markdown' : 'text')
     }

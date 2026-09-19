@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { applyTheme as applyThemeUtil, getTheme, THEMES, ThemeDefinition } from './themeDefinitions'
+import { useSettingStore } from '../../../core/store/SettingStore'
 
 export interface UseThemeReturn {
   theme: string
@@ -48,6 +49,11 @@ export const useTheme = (): UseThemeReturn => {
     localStorage.setItem('theme-id', target)
     // applyThemeUtil handles caret color from theme definition
     applyThemeUtil(target)
+    try {
+      useSettingStore.getState().updateSetting('theme', target).catch(() => {})
+    } catch {
+      // Ignore if store is inaccessible
+    }
   }, [])
 
   const themeData = useMemo(() => getTheme(currentTheme), [currentTheme])

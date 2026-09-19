@@ -10,7 +10,8 @@ export interface SlashCommandItem {
   description?: string
   desc?: string
   icon?: React.ReactNode
-  action?: (setMode?: any) => void
+  insertText?: string
+  action?: (setMode?: any, context?: any) => void
   [key: string]: unknown
 }
 
@@ -98,27 +99,52 @@ export const useComposerAutocomplete = ({
   const handleCommandSelect = useCallback(
     (cmd: SlashCommandItem) => {
       if (cmd && cmd.action && setMode) {
-        cmd.action(setMode)
+        cmd.action(setMode, { setInput })
       }
-      const match = input.match(/(?:^|\s)\/([a-zA-Z0-9_-]*)$/)
-      if (match && match.index !== undefined) {
-        const matchIndex = match.index + (match[0].startsWith(' ') ? 1 : 0)
-        const preserved = input.slice(0, matchIndex)
-        setInput(preserved)
-        setTimeout(() => {
-          if (textareaRef.current) {
-            textareaRef.current.focus()
-            textareaRef.current.setSelectionRange(preserved.length, preserved.length)
-          }
-        }, 0)
+      if (cmd?.insertText !== undefined) {
+        const textToInsert = cmd.insertText
+        const match = input.match(/(?:^|\s)\/([a-zA-Z0-9_-]*)$/)
+        if (match && match.index !== undefined) {
+          const matchIndex = match.index + (match[0].startsWith(' ') ? 1 : 0)
+          const preserved = input.slice(0, matchIndex)
+          const newText = preserved + textToInsert
+          setInput(newText)
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.focus()
+              textareaRef.current.setSelectionRange(newText.length, newText.length)
+            }
+          }, 0)
+        } else {
+          setInput(textToInsert)
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.focus()
+              textareaRef.current.setSelectionRange(textToInsert.length, textToInsert.length)
+            }
+          }, 0)
+        }
       } else {
-        setTimeout(() => {
-          if (textareaRef.current) {
-            textareaRef.current.focus()
-            const len = textareaRef.current.value.length
-            textareaRef.current.setSelectionRange(len, len)
-          }
-        }, 0)
+        const match = input.match(/(?:^|\s)\/([a-zA-Z0-9_-]*)$/)
+        if (match && match.index !== undefined) {
+          const matchIndex = match.index + (match[0].startsWith(' ') ? 1 : 0)
+          const preserved = input.slice(0, matchIndex)
+          setInput(preserved)
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.focus()
+              textareaRef.current.setSelectionRange(preserved.length, preserved.length)
+            }
+          }, 0)
+        } else {
+          setTimeout(() => {
+            if (textareaRef.current) {
+              textareaRef.current.focus()
+              const len = textareaRef.current.value.length
+              textareaRef.current.setSelectionRange(len, len)
+            }
+          }, 0)
+        }
       }
       setShowSlashMenu(false)
     },
