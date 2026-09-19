@@ -8,6 +8,8 @@ import { ChatLink } from './LuminaChatLink'
 import { ThinkingBlock } from './LuminaThinkingBlock'
 import { ActivityCard } from './LuminaActivityCard'
 import { MemoryBadge } from './LuminaMemoryBadge'
+import { LuminaAuditBadge } from './LuminaAuditBadge'
+import { LuminaHealthBadge } from './LuminaHealthBadge'
 import {
   processMarkdownContent,
   parseMessageSections,
@@ -114,6 +116,24 @@ export const MessageContent: React.FC<MessageContentProps> = React.memo(
               <ActivityCard
                 key={`act-${idx}`}
                 rawContent={block.content}
+                isStreaming={isStreaming}
+              />
+            )
+          }
+          if (block.type === 'audit') {
+            return (
+              <LuminaAuditBadge
+                key={`audit-${idx}`}
+                content={block.content}
+                isStreaming={isStreaming}
+              />
+            )
+          }
+          if (block.type === 'health') {
+            return (
+              <LuminaHealthBadge
+                key={`health-${idx}`}
+                content={block.content}
                 isStreaming={isStreaming}
               />
             )

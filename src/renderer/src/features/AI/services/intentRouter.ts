@@ -15,7 +15,8 @@ export const IntentCategory = {
   VAULT_SUMMARY: 'VAULT_SUMMARY',
   PLAN_SCAFFOLD: 'PLAN_SCAFFOLD',
   MEMORY_OP: 'MEMORY_OP',
-  DIAGNOSTICS: 'DIAGNOSTICS'
+  DIAGNOSTICS: 'DIAGNOSTICS',
+  AUDIT_WIKILINKS: 'AUDIT_WIKILINKS'
 } as const
 
 export type IntentCategoryType = (typeof IntentCategory)[keyof typeof IntentCategory]
@@ -32,6 +33,13 @@ export const detectUserIntent = (
 
   if (diagnosticPatterns.test(clean)) {
     return IntentCategory.DIAGNOSTICS
+  }
+
+  const wikilinkAuditPatterns =
+    /\b(broken (?:wiki)?links?|dead (?:wiki)?links?|missing (?:notes?|links?)|orphan (?:notes?|files?)|orphans?(?: in workspace)?|audit (?:wiki)?links?|check (?:my )?(?:wiki)?links?|find broken (?:wiki)?links?|unlinked (?:notes?|files?)|how many files? (?:do not have|lack|without) (?:wiki)?links?|files? (?:do not have|without) (?:wiki)?links? or broken)\b/i
+
+  if (wikilinkAuditPatterns.test(clean)) {
+    return IntentCategory.AUDIT_WIKILINKS
   }
 
   const memoryPatterns =

@@ -800,7 +800,9 @@ export const useAIStore = create<AIStore>((set, get) => {
 
         let sdkTools = getMemoryTools()
         if (
-          (modeCfg.enableTools !== false || detectedIntent === IntentCategory.DIAGNOSTICS) &&
+          (modeCfg.enableTools !== false ||
+            detectedIntent === IntentCategory.DIAGNOSTICS ||
+            detectedIntent === IntentCategory.AUDIT_WIKILINKS) &&
           !isConversationalOverride
         ) {
           sdkTools = getAITools(blockReadFile, isOpenIntent)

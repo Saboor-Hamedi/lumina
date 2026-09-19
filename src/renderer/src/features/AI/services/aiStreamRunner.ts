@@ -57,6 +57,8 @@ export const getToolStatusDescription = (toolName: string, args: Record<string, 
       return `🧠 *Removing from memory...*`
     case 'diagnoseSystem':
       return `🩺 *Checking Lumina health & testing lumina-health.md...*`
+    case 'auditWikilinks':
+      return `🔗 *Auditing workspace links & orphan notes...*`
     default:
       return `⚙️ *Working on ${toolName}...*`
   }
@@ -66,6 +68,8 @@ export const getToolInputStartStatus = (toolName?: string): string => {
   switch (toolName) {
     case 'diagnoseSystem':
       return 'Checking Lumina health...'
+    case 'auditWikilinks':
+      return 'Auditing workspace links & orphan notes...'
     case 'createFolder':
       return 'Planning folder creation...'
     case 'createFile':
@@ -138,6 +142,16 @@ export const buildRealtimeDisplay = ({
         const memText = (seg.content || '').trim()
         if (memText) {
           blocks.push(`<lumina-memory>\n${memText}\n</lumina-memory>`)
+        }
+      } else if (seg.type === 'audit') {
+        const auditText = (seg.content || '').trim()
+        if (auditText) {
+          blocks.push(`<lumina-audit>\n${auditText}\n</lumina-audit>`)
+        }
+      } else if (seg.type === 'health') {
+        const healthText = (seg.content || '').trim()
+        if (healthText) {
+          blocks.push(`<lumina-health>\n${healthText}\n</lumina-health>`)
         }
       } else if (seg.type === 'think') {
         const cleanThink = stripDSML(seg.content).trim()
@@ -478,11 +492,27 @@ export const runDeepSeekStream = async ({
       recordedTarget = ''
       activeToolStatus = getToolStatusDescription(streamingToolName, { title: 'note' })
       const isMemoryTool = ['saveMemory', 'updateMemory', 'forgetMemory', 'forgeMemory'].includes(streamingToolName)
+      const isAuditTool = streamingToolName === 'auditWikilinks'
+      const isHealthTool = ['diagnoseSystem', 'luminaDiagnoseSystem'].includes(streamingToolName)
       if (isMemoryTool) {
         timeline.push({
           type: 'memory',
           toolName: streamingToolName,
           content: activeToolStatus,
+          isExecuting: true
+        })
+      } else if (isAuditTool) {
+        timeline.push({
+          type: 'audit',
+          toolName: streamingToolName,
+          content: JSON.stringify({ isScanning: true }),
+          isExecuting: true
+        })
+      } else if (isHealthTool) {
+        timeline.push({
+          type: 'health',
+          toolName: streamingToolName,
+          content: JSON.stringify({ isChecking: true }),
           isExecuting: true
         })
       } else {
@@ -533,14 +563,28 @@ export const runDeepSeekStream = async ({
       if (target) recordedTarget = target
       activeToolStatus = getToolStatusDescription(chunk.toolName, args)
       const isMemoryTool = ['saveMemory', 'updateMemory', 'forgetMemory', 'forgeMemory'].includes(chunk.toolName)
+      const isAuditTool = chunk.toolName === 'auditWikilinks'
+      const isHealthTool = ['diagnoseSystem', 'luminaDiagnoseSystem'].includes(chunk.toolName)
 
       let targetSeg = timeline.slice().reverse().find(
-        (s) => s.isExecuting && (isMemoryTool ? s.type === 'memory' : s.type === 'activity')
+        (s) =>
+          s.isExecuting &&
+          (isMemoryTool
+            ? s.type === 'memory'
+            : isAuditTool
+              ? s.type === 'audit'
+              : isHealthTool
+                ? s.type === 'health'
+                : s.type === 'activity')
       )
       if (!targetSeg) {
         targetSeg = isMemoryTool
           ? { type: 'memory', toolName: chunk.toolName, content: activeToolStatus, isExecuting: true }
-          : { type: 'activity', toolName: chunk.toolName, summary: '', activeStatus: activeToolStatus, isExecuting: true }
+          : isAuditTool
+            ? { type: 'audit', toolName: chunk.toolName, content: JSON.stringify({ isScanning: true }), isExecuting: true }
+            : isHealthTool
+              ? { type: 'health', toolName: chunk.toolName, content: JSON.stringify({ isChecking: true }), isExecuting: true }
+              : { type: 'activity', toolName: chunk.toolName, summary: '', activeStatus: activeToolStatus, isExecuting: true }
         timeline.push(targetSeg)
       } else if (targetSeg.type === 'activity') {
         targetSeg.activeStatus = activeToolStatus
@@ -551,14 +595,28 @@ export const runDeepSeekStream = async ({
     } else if (chunk.type === 'tool-result') {
       const res = chunk.output || chunk.result
       const isMemoryTool = ['saveMemory', 'updateMemory', 'forgetMemory', 'forgeMemory'].includes(chunk.toolName)
+      const isAuditTool = chunk.toolName === 'auditWikilinks'
+      const isHealthTool = ['diagnoseSystem', 'luminaDiagnoseSystem'].includes(chunk.toolName)
 
       let targetSeg = timeline.slice().reverse().find(
-        (s) => s.isExecuting && (isMemoryTool ? s.type === 'memory' : s.type === 'activity')
+        (s) =>
+          s.isExecuting &&
+          (isMemoryTool
+            ? s.type === 'memory'
+            : isAuditTool
+              ? s.type === 'audit'
+              : isHealthTool
+                ? s.type === 'health'
+                : s.type === 'activity')
       )
       if (!targetSeg) {
         targetSeg = isMemoryTool
           ? { type: 'memory', toolName: chunk.toolName, content: '', isExecuting: false }
-          : { type: 'activity', toolName: chunk.toolName, summary: '', activeStatus: '', isExecuting: false }
+          : isAuditTool
+            ? { type: 'audit', toolName: chunk.toolName, content: '', isExecuting: false }
+            : isHealthTool
+              ? { type: 'health', toolName: chunk.toolName, content: '', isExecuting: false }
+              : { type: 'activity', toolName: chunk.toolName, summary: '', activeStatus: '', isExecuting: false }
         timeline.push(targetSeg)
       }
 
@@ -567,6 +625,32 @@ export const runDeepSeekStream = async ({
           targetSeg.content = `⚠️ ${res.error || 'Failed to save memory'}`
         } else if (res?.summary) {
           targetSeg.content = res.summary
+        }
+        targetSeg.isExecuting = false
+      } else if (isAuditTool) {
+        if (res && res.success === false) {
+          targetSeg.content = JSON.stringify({ error: res.error, isScanning: false })
+        } else {
+          targetSeg.content = JSON.stringify({
+            totalNotesScanned: res?.totalNotesScanned,
+            totalLinksFound: res?.totalLinksFound,
+            healthyLinksCount: res?.healthyLinksCount,
+            brokenLinksCount: res?.brokenLinksCount,
+            orphanNotesCount: res?.orphanNotesCount,
+            brokenLinks: res?.brokenLinks,
+            orphanNotes: res?.orphanNotes,
+            isScanning: false
+          })
+        }
+        targetSeg.isExecuting = false
+      } else if (isHealthTool) {
+        if (res && res.success === false) {
+          targetSeg.content = JSON.stringify({ error: res.error, isChecking: false })
+        } else {
+          targetSeg.content = JSON.stringify({
+            ...(res?.result || {}),
+            isChecking: false
+          })
         }
         targetSeg.isExecuting = false
       } else {
@@ -731,6 +815,8 @@ export const runDeepSeekStream = async ({
       .replace(/<\/?think>/gi, '')
       .replace(/<lumina-activity>[\s\S]*?<\/lumina-activity>/gi, '')
       .replace(/<lumina-memory>[\s\S]*?<\/lumina-memory>/gi, '')
+      .replace(/<lumina-audit>[\s\S]*?<\/lumina-audit>/gi, '')
+      .replace(/<lumina-health>[\s\S]*?<\/lumina-health>/gi, '')
       .replace(/<[^>]*[｜|][^>]*>/g, '')
       .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
       .trim()

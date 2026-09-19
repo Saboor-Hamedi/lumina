@@ -13,17 +13,20 @@ import { moveFolderTool } from './moveFolder'
 import { checkFileTool } from './checkFile'
 import { clearFileTool } from './clearFile'
 import { readBrainFileTool } from './readBrainFile'
-import { diagnoseSystemTool } from './diagnoseSystem'
+import { luminaDiagnoseSystemTool, diagnoseSystemTool } from './luminaDiagnoseSystem'
+import { auditWikilinksTool } from './auditWikilinks'
 import { saveMemoryTool, updateMemoryTool, forgetMemoryTool } from '../../../core/ai/memory'
 
-export { diagnoseSystemTool }
+export { luminaDiagnoseSystemTool, diagnoseSystemTool, auditWikilinksTool }
 
 export const getAITools = (blockReadFile?: boolean, allowOpenFile: boolean = false): Record<string, any> => {
   const tools: Record<string, any> = {
     createFile: createFileTool,
     readFile: getReadFileTool(blockReadFile),
     checkFile: checkFileTool,
-    diagnoseSystem: diagnoseSystemTool,
+    diagnoseSystem: luminaDiagnoseSystemTool,
+    luminaDiagnoseSystem: luminaDiagnoseSystemTool,
+    auditWikilinks: auditWikilinksTool,
     readBrainFile: readBrainFileTool,
     saveMemory: saveMemoryTool,
     updateMemory: updateMemoryTool,

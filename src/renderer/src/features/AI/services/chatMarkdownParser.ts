@@ -5,7 +5,7 @@
  */
 
 export interface MessageBlock {
-  type: 'think' | 'activity' | 'memory' | 'markdown'
+  type: 'think' | 'activity' | 'memory' | 'audit' | 'health' | 'markdown'
   content: string
 }
 
@@ -76,13 +76,13 @@ export const parseMessageBlocks = (content?: string): MessageBlock[] => {
       .trim()
 
   const blocks: MessageBlock[] = []
-  const tagRegex = /(?:<think>([\s\S]*?)(?:<\/think>|$))|(?:<lumina-activity>([\s\S]*?)(?:<\/lumina-activity>|$))|(?:<lumina-memory>([\s\S]*?)(?:<\/lumina-memory>|$))/gi
+  const tagRegex = /(?:<think>([\s\S]*?)(?:<\/think>|$))|(?:<lumina-activity>([\s\S]*?)(?:<\/lumina-activity>|$))|(?:<lumina-memory>([\s\S]*?)(?:<\/lumina-memory>|$))|(?:<lumina-audit>([\s\S]*?)(?:<\/lumina-audit>|$))|(?:<lumina-health>([\s\S]*?)(?:<\/lumina-health>|$))/gi
   let lastIndex = 0
   let match: RegExpExecArray | null
 
   while ((match = tagRegex.exec(content)) !== null) {
     const textBefore = content.slice(lastIndex, match.index)
-    const cleanBefore = stripDSML(textBefore).replace(/<\/?(?:think|lumina-activity|lumina-memory)>/gi, '').trim()
+    const cleanBefore = stripDSML(textBefore).replace(/<\/?(?:think|lumina-activity|lumina-memory|lumina-audit|lumina-health)>/gi, '').trim()
     if (cleanBefore) {
       blocks.push({ type: 'markdown', content: cleanBefore })
     }
@@ -102,13 +102,23 @@ export const parseMessageBlocks = (content?: string): MessageBlock[] => {
       if (memText) {
         blocks.push({ type: 'memory', content: memText })
       }
+    } else if (match[4] !== undefined) {
+      const auditText = (match[4] || '').trim()
+      if (auditText) {
+        blocks.push({ type: 'audit', content: auditText })
+      }
+    } else if (match[5] !== undefined) {
+      const healthText = (match[5] || '').trim()
+      if (healthText) {
+        blocks.push({ type: 'health', content: healthText })
+      }
     }
 
     lastIndex = tagRegex.lastIndex
   }
 
   const trailingText = content.slice(lastIndex)
-  const cleanTrailing = stripDSML(trailingText).replace(/<\/?(?:think|lumina-activity|lumina-memory)>/gi, '').trim()
+  const cleanTrailing = stripDSML(trailingText).replace(/<\/?(?:think|lumina-activity|lumina-memory|lumina-audit|lumina-health)>/gi, '').trim()
   if (cleanTrailing) {
     blocks.push({ type: 'markdown', content: cleanTrailing })
   }

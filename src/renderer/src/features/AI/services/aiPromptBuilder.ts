@@ -259,7 +259,10 @@ export const buildSystemPrompt = async ({
   activeTheme = 'Porcelain',
   userSettings
 }: BuildSystemPromptParams): Promise<string> => {
-  const isExecutionMode = modeCfg.enableTools !== false || detectedIntent === 'DIAGNOSTICS'
+  const isExecutionMode =
+    modeCfg.enableTools !== false ||
+    detectedIntent === 'DIAGNOSTICS' ||
+    detectedIntent === 'AUDIT_WIKILINKS'
   let systemPrompt = ''
 
   await (luminaMemory as any).loadMemory()
@@ -403,6 +406,7 @@ ${settingsAwarenessBlock}
 - 'moveFile' — move a file into a specific folder (provide title and folder) without opening tabs
 - 'openFile' — open a file in the user's editor tab only if the user explicitly asks to view/open it
 - 'diagnoseSystem' — run a health check on Lumina: checks app responsiveness, verifies workspace storage by testing read and write on lumina-health.md in the workspace root, inspects the note editor, counts workspace notes and folders, and checks AI assistant readiness.
+- 'auditWikilinks' — scan and audit the entire workspace for broken wikilinks (links pointing to notes that do not exist yet), orphan notes (notes with zero incoming or outgoing connections), and report link connectivity health across all files.
 
 **HOW TO USE TOOLS & ROUTE INTENT**:
 1. WHEN THE USER ASKS TO UPDATE, EDIT, MODIFY, IMPROVE, FIX, OR ADD TO A NOTE:
@@ -428,6 +432,7 @@ ${settingsAwarenessBlock}
 13. FOR "update memory", "change preference", or refining facts → call updateMemory immediately.
 14. FOR "forget", "remove from memory", "delete memory" → call forgetMemory immediately.
 15. FOR "check yourself", "run diagnostics", "test your health", "system health", "health check", or "/doctor" → call diagnoseSystem immediately! Run the read-and-write test on lumina-health.md, check system responsiveness, and show the clean health check report table in chat.
+16. FOR "how many files do not have wikilink or broken?", "check my links", "find broken links", "audit wikilinks", or questions about link health or orphan notes → call auditWikilinks immediately! Do NOT claim you cannot see file contents or cannot scan the workspace. Run auditWikilinks, display the complete health table, and offer to scaffold missing notes.
 
 **CONTEXT**:
 ${vaultAccessNote}
@@ -554,8 +559,16 @@ ${userMemoryBlock}`
   if (detectedIntent === 'DIAGNOSTICS') {
     systemPrompt += `\n\n**CRITICAL MANDATORY HEALTH CHECK INSTRUCTION**:
 The user requested a system health check ("check yourself", "run diagnostics", "/doctor").
-You MUST call the \`diagnoseSystem\` tool immediately! Do not reply with generic text without executing the tool.
-Once \`diagnoseSystem\` finishes executing, present the clean health check table and summary directly in chat.`
+You MUST call the \`diagnoseSystem\` (or \`luminaDiagnoseSystem\`) tool immediately! Do not reply with generic text without executing the tool.
+Do NOT create or save \`lumina-health.md\` to disk unless the user explicitly requests to save or export the health report to a note.
+The clean in-app health badge will render directly in chat.`
+  }
+
+  if (detectedIntent === 'AUDIT_WIKILINKS') {
+    systemPrompt += `\n\n**CRITICAL MANDATORY WIKILINK AUDIT INSTRUCTION**:
+The user asked about broken wikilinks, orphan notes, or link connectivity health across their workspace.
+You MUST call the \`auditWikilinks\` tool immediately! Do NOT claim that you cannot inspect files or cannot scan the workspace.
+Once \`auditWikilinks\` finishes executing, present the clear link health table, list any broken references and orphan notes, and warmly offer to create starter notes for missing targets.`
   }
 
   return systemPrompt
