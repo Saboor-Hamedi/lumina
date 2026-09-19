@@ -1,5 +1,6 @@
 import React from 'react'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
+import '../css/chatMentions.css'
 
 /**
  * Global helper to find and navigate to a note in the editor by title, filename, or ID.

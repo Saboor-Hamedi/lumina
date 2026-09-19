@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { openNoteInEditor } from './LuminaChatLink'
 import type { LuminaHealthReportData } from '../tools/luminaDiagnoseSystem'
+import '../css/healthBadge.css'
 
 export interface LuminaHealthBadgeProps {
   content?: string

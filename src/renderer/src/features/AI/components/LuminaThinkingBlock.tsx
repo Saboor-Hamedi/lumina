@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Brain, ChevronDown } from 'lucide-react'
 import { formatLuminaTime } from './LuminaTimer'
+import '../css/chatThinking.css'
 
 export interface ThinkingBlockProps {
   thinkContent?: string

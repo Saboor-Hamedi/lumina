@@ -1,0 +1,417 @@
+/**
+ * Lumina Health Badge & In-App Diagnostics Component UI
+ */
+
+.lumina-health-card {
+  margin: 6px 0 10px;
+  border-radius: 8px;
+  background: var(--bg-card, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
+  width: 100%;
+  max-width: 620px;
+  animation: fadeInHealthCard 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme='light'] .lumina-health-card,
+[data-theme='porcelain'] .lumina-health-card {
+  background: var(--bg-card, #eae6dd) !important;
+  border-color: var(--border-card, #e0dcd4) !important;
+  box-shadow: 0 1px 3px rgba(44, 42, 38, 0.08) !important;
+}
+
+.lumina-health-card.checking {
+  border-color: rgba(52, 211, 153, 0.28);
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.04) 0%, rgba(56, 189, 248, 0.04) 100%);
+}
+
+.lumina-health-card.complete {
+  border-color: var(--border-subtle, rgba(255, 255, 255, 0.1));
+}
+
+.lumina-health-card.complete:hover {
+  border-color: rgba(52, 211, 153, 0.3);
+}
+
+[data-theme='light'] .lumina-health-card.complete,
+[data-theme='porcelain'] .lumina-health-card.complete {
+  border-color: var(--border-card, #e0dcd4) !important;
+}
+
+[data-theme='light'] .lumina-health-card.complete:hover,
+[data-theme='porcelain'] .lumina-health-card.complete:hover {
+  border-color: rgba(52, 211, 153, 0.5) !important;
+}
+
+.lumina-health-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  gap: 10px;
+}
+
+.lumina-health-card.checking .lumina-health-header {
+  cursor: default;
+}
+
+.lumina-health-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.lumina-health-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.lumina-health-icon-badge.pulse {
+  background: rgba(52, 211, 153, 0.2);
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
+}
+
+.heartbeat-pulse {
+  animation: heartbeatAnim 1.4s ease-in-out infinite;
+}
+
+@keyframes heartbeatAnim {
+  0% { transform: scale(1); }
+  14% { transform: scale(1.2); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.15); }
+  70% { transform: scale(1); }
+}
+
+.lumina-health-text-block {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.lumina-health-checking-row,
+.lumina-health-complete-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lumina-health-main-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-main, #e2e8f0);
+}
+
+[data-theme='light'] .lumina-health-main-title,
+[data-theme='porcelain'] .lumina-health-main-title {
+  color: var(--text-main, #2c2a26) !important;
+}
+
+.lumina-health-pulse-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  margin-left: 2px;
+  animation: pulseHealthDot 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulseHealthDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.4);
+  }
+}
+
+.lumina-health-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1.5px 6.5px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.lumina-health-badge-pill.pill-healthy {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.22);
+}
+
+.lumina-health-badge-pill.pill-neutral {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted, #94a3b8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='light'] .lumina-health-badge-pill.pill-neutral,
+[data-theme='porcelain'] .lumina-health-badge-pill.pill-neutral {
+  background: rgba(44, 42, 38, 0.06) !important;
+  color: var(--text-muted, #6b6862) !important;
+  border-color: rgba(44, 42, 38, 0.1) !important;
+}
+
+.lumina-health-controls {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.lumina-health-scanner-track {
+  position: relative;
+  width: 70px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(52, 211, 153, 0.15);
+  overflow: hidden;
+}
+
+.lumina-health-scanner-beam {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, #34d399, transparent);
+  border-radius: 2px;
+  animation: healthScannerBeam 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes healthScannerBeam {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(180%); }
+}
+
+.lumina-health-status-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lumina-health-check-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #34d399;
+  opacity: 0.85;
+}
+
+.lumina-health-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #94a3b8);
+  transition: transform 0.15s ease;
+}
+
+.lumina-health-body {
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.12);
+  animation: expandHealthDrawer 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme='light'] .lumina-health-body,
+[data-theme='porcelain'] .lumina-health-body {
+  background: var(--bg-panel, #f2efe8) !important;
+  border-color: var(--border-subtle, #d8d4cc) !important;
+}
+
+@keyframes expandHealthDrawer {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lumina-health-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.lumina-health-metric-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 4px;
+  border-radius: 6px;
+  background: var(--bg-panel, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  text-align: center;
+}
+
+[data-theme='light'] .lumina-health-metric-card,
+[data-theme='porcelain'] .lumina-health-metric-card {
+  background: var(--bg-card, #eae6dd) !important;
+  border-color: var(--border-card, #e0dcd4) !important;
+}
+
+.lumina-health-metric-card .metric-val {
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-main, #f1f5f9);
+}
+
+[data-theme='light'] .lumina-health-metric-card .metric-val,
+[data-theme='porcelain'] .lumina-health-metric-card .metric-val {
+  color: var(--text-main, #2c2a26) !important;
+}
+
+.lumina-health-metric-card .metric-val.truncate-model {
+  max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12px;
+  color: #38bdf8;
+}
+
+.lumina-health-metric-card .metric-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, #94a3b8);
+  margin-top: 2px;
+}
+
+[data-theme='light'] .lumina-health-metric-card .metric-label,
+[data-theme='porcelain'] .lumina-health-metric-card .metric-label {
+  color: var(--text-muted, #6b6862) !important;
+}
+
+.lumina-health-checks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme='light'] .lumina-health-checks-list,
+[data-theme='porcelain'] .lumina-health-checks-list {
+  background: rgba(44, 42, 38, 0.03) !important;
+  border-color: rgba(44, 42, 38, 0.06) !important;
+}
+
+.lumina-health-check-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.lumina-health-check-row .check-bullet {
+  color: #34d399;
+  display: flex;
+  align-items: center;
+}
+
+.lumina-health-check-row .check-name {
+  font-weight: 600;
+  color: var(--text-main, #cbd5e1);
+}
+
+[data-theme='light'] .lumina-health-check-row .check-name,
+[data-theme='porcelain'] .lumina-health-check-row .check-name {
+  color: var(--text-main, #2c2a26) !important;
+}
+
+.lumina-health-check-row .check-detail {
+  color: var(--text-muted, #94a3b8);
+  font-size: 10.5px;
+}
+
+[data-theme='light'] .lumina-health-check-row .check-detail,
+[data-theme='porcelain'] .lumina-health-check-row .check-detail {
+  color: var(--text-muted, #6b6862) !important;
+}
+
+.lumina-health-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+.lumina-health-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  font-size: 10.5px;
+  font-weight: 500;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted, #cbd5e1);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+[data-theme='light'] .lumina-health-save-btn,
+[data-theme='porcelain'] .lumina-health-save-btn {
+  background: rgba(44, 42, 38, 0.05) !important;
+  border-color: rgba(44, 42, 38, 0.1) !important;
+  color: var(--text-muted, #2c2a26) !important;
+}
+
+.lumina-health-save-btn:hover {
+  background: rgba(52, 211, 153, 0.12);
+  border-color: rgba(52, 211, 153, 0.3);
+  color: #34d399;
+}
+
+.lumina-health-saved-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #34d399;
+}
+
+@keyframes fadeInHealthCard {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

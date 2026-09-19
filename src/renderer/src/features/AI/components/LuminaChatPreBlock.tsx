@@ -4,6 +4,8 @@ import { Folder, Code as CodeIcon, Copy, Check, ChevronDown } from 'lucide-react
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 // @ts-ignore
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { LuminaTreeBadge, isAsciiTree } from './LuminaTreeBadge'
+import '../css/chatCode.css'
 
 export interface ChatPreBlockProps {
   children?: React.ReactNode
@@ -12,11 +14,10 @@ export interface ChatPreBlockProps {
 
 /**
  * ChatPreBlock renders code blocks with syntax highlighting, language badges, line counters,
- * quick clipboard copy, and interactive expandable file tree rendering for `lumina-tree` code fences.
+ * quick clipboard copy, and automatically extracts folder structure trees into LuminaTreeBadge.
  */
 export const ChatPreBlock: React.FC<ChatPreBlockProps> = React.memo(({ children, ...props }) => {
   const [copied, setCopied] = useState<boolean>(false)
-  const [isExpanded, setIsExpanded] = useState<boolean>(true)
 
   let codeString = ''
   let className = ''
@@ -38,30 +39,21 @@ export const ChatPreBlock: React.FC<ChatPreBlockProps> = React.memo(({ children,
   const match = /language-([a-zA-Z0-9-]+)/.exec(className)
   const lang = match ? match[1] : 'text'
   const isDelete = lang.startsWith('lumina-delete')
-  const isTree = lang === 'lumina-tree'
+  const isTree = lang === 'lumina-tree' || lang === 'tree' || isAsciiTree(codeString)
   const lineCount = codeString ? codeString.split('\n').length : 0
+
+  if (isTree) {
+    return <LuminaTreeBadge rawCode={codeString} />
+  }
 
   const displayTag = lang.toUpperCase()
 
   return (
-    <div className={`chat-code-block ${isTree ? 'is-tree' : ''}`}>
-      <div
-        className={`chat-code-header ${isTree ? 'is-tree-header' : ''}`}
-        onClick={isTree ? () => setIsExpanded((prev) => !prev) : undefined}
-      >
+    <div className="chat-code-block">
+      <div className="chat-code-header">
         <div className="chat-code-header-left">
-          {isTree ? (
-            <>
-              <ChevronDown
-                size={12}
-                className={`chat-tree-chevron ${isExpanded ? 'is-open' : ''}`}
-              />
-              <Folder size={11} style={{ color: 'var(--text-accent)', opacity: 0.85 }} />
-            </>
-          ) : (
-            <CodeIcon size={11} style={{ color: 'var(--text-faint)', opacity: 0.8 }} />
-          )}
-          <span className={`chat-code-tag ${isTree ? 'is-tree' : ''}`}>{displayTag}</span>
+          <CodeIcon size={11} style={{ color: 'var(--text-faint)', opacity: 0.8 }} />
+          <span className="chat-code-tag">{displayTag}</span>
           <span className="chat-code-stats">
             {lineCount} {lineCount === 1 ? 'line' : 'lines'}
           </span>
@@ -94,31 +86,7 @@ export const ChatPreBlock: React.FC<ChatPreBlockProps> = React.memo(({ children,
           </button>
         )}
       </div>
-      {!isDelete && isTree && isExpanded ? (
-        <div className="chat-tree-display seamless-scrollbar">
-          {codeString.split('\n').map((line, idx) => {
-            const isFolder = /📁/.test(line) || line.trim().endsWith('/')
-            const branchMatch = line.match(/^([│├└┌─\s]+)(.*)$/)
-            if (branchMatch) {
-              return (
-                <div key={idx} className="chat-tree-line">
-                  <span className="chat-tree-branch">{branchMatch[1]}</span>
-                  <span className={`chat-tree-label ${isFolder ? 'is-folder' : 'is-file'}`}>
-                    {branchMatch[2]}
-                  </span>
-                </div>
-              )
-            }
-            return (
-              <div key={idx} className="chat-tree-line">
-                <span className={`chat-tree-label ${isFolder ? 'is-folder' : 'is-file'}`}>
-                  {line}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      ) : !isDelete && !isTree ? (
+      {!isDelete && (
         <SyntaxHighlighter
           style={vscDarkPlus as any}
           language={lang === 'text' ? 'markdown' : lang}
@@ -139,7 +107,7 @@ export const ChatPreBlock: React.FC<ChatPreBlockProps> = React.memo(({ children,
         >
           {codeString}
         </SyntaxHighlighter>
-      ) : null}
+      )}
     </div>
   )
 })

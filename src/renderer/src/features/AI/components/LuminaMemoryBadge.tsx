@@ -1,5 +1,6 @@
 import React from 'react'
 import { Brain, Check } from 'lucide-react'
+import '../css/memoryBadge.css'
 
 export interface MemoryBadgeProps {
   content?: string

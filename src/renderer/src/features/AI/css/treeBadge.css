@@ -1,0 +1,245 @@
+/**
+ * Lumina Tree Badge & Folder Structure Explorer UI
+ */
+
+.lumina-tree-card {
+  margin: 8px 0 12px;
+  border-radius: 6px;
+  background: var(--bg-card, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  max-width: 620px;
+  width: 100%;
+  animation: fadeInTreeCard 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme='light'] .lumina-tree-card,
+[data-theme='porcelain'] .lumina-tree-card {
+  background: var(--bg-card, #eae6dd) !important;
+  border-color: var(--border-card, #e0dcd4) !important;
+  box-shadow: 0 1px 3px rgba(44, 42, 38, 0.08) !important;
+}
+
+/* Minimal, sleek header matching code blocks */
+.lumina-tree-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 28px;
+  padding: 0 10px;
+  cursor: pointer;
+  user-select: none;
+  gap: 8px;
+  background: var(--bg-panel, rgba(255, 255, 255, 0.02));
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  font-family: var(--font-editor, 'Inter', sans-serif);
+  font-size: 11px;
+  color: var(--text-faint);
+  transition: background 0.12s ease;
+}
+
+.lumina-tree-header:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme='light'] .lumina-tree-header,
+[data-theme='porcelain'] .lumina-tree-header {
+  background: var(--bg-panel, #f2efe8) !important;
+  border-color: var(--border-subtle, #d8d4cc) !important;
+  color: var(--text-muted, #6b6862) !important;
+}
+
+[data-theme='light'] .lumina-tree-header:hover,
+[data-theme='porcelain'] .lumina-tree-header:hover {
+  background: #ebe7df !important;
+}
+
+.lumina-tree-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.lumina-tree-icon {
+  color: var(--text-accent, #3b82f6);
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.lumina-tree-main-title {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--text-main, #e2e8f0);
+}
+
+[data-theme='light'] .lumina-tree-main-title,
+[data-theme='porcelain'] .lumina-tree-main-title {
+  color: var(--text-main, #2c2a26) !important;
+  font-weight: 600;
+}
+
+.lumina-tree-stats {
+  font-size: 10px;
+  color: var(--text-muted, #94a3b8);
+  font-weight: 400;
+  opacity: 0.75;
+}
+
+[data-theme='light'] .lumina-tree-stats,
+[data-theme='porcelain'] .lumina-tree-stats {
+  color: var(--text-muted, #78756e) !important;
+}
+
+.lumina-tree-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Minimal ghost copy button without heavy boxes */
+.lumina-tree-copy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 3px;
+  color: var(--text-faint);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.lumina-tree-copy-btn:hover {
+  color: var(--text-main);
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+}
+
+.lumina-tree-copy-btn.copied {
+  width: auto;
+  padding: 0 5px;
+  color: #4ade80;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+[data-theme='light'] .lumina-tree-copy-btn:hover,
+[data-theme='porcelain'] .lumina-tree-copy-btn:hover {
+  background: rgba(44, 42, 38, 0.08) !important;
+  color: var(--text-main, #2c2a26) !important;
+}
+
+.lumina-tree-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: var(--text-faint);
+  transition: transform 0.15s ease, color 0.12s ease;
+}
+
+.lumina-tree-header:hover .lumina-tree-chevron {
+  color: var(--text-main);
+}
+
+[data-theme='light'] .lumina-tree-chevron,
+[data-theme='porcelain'] .lumina-tree-chevron {
+  color: var(--text-muted, #78756e) !important;
+}
+
+/* Tree Body Structure */
+.lumina-tree-body {
+  padding: 8px 12px;
+  font-family: var(--font-mono, monospace);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-main, #e2e8f0);
+  overflow-x: auto;
+  white-space: pre;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='light'] .lumina-tree-body,
+[data-theme='porcelain'] .lumina-tree-body {
+  background: var(--bg-card, #eae6dd) !important;
+  color: var(--text-main, #2c2a26) !important;
+}
+
+.lumina-tree-line {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+  white-space: pre;
+}
+
+.lumina-tree-branch {
+  color: var(--text-accent, #3b82f6);
+  opacity: 0.85;
+  font-family: var(--font-mono, monospace);
+  user-select: none;
+  flex-shrink: 0;
+  white-space: pre;
+}
+
+.lumina-tree-node-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.lumina-tree-folder-icon {
+  color: var(--text-accent, #3b82f6);
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.lumina-tree-file-icon {
+  color: var(--text-muted, #94a3b8);
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+
+.lumina-tree-label {
+  white-space: pre;
+}
+
+.lumina-tree-label.is-folder {
+  color: var(--text-main, #f1f5f9);
+  font-weight: 600;
+}
+
+[data-theme='light'] .lumina-tree-label.is-folder,
+[data-theme='porcelain'] .lumina-tree-label.is-folder {
+  color: var(--text-main, #2c2a26) !important;
+  font-weight: 600;
+}
+
+.lumina-tree-label.is-file {
+  color: var(--text-muted, #94a3b8);
+}
+
+[data-theme='light'] .lumina-tree-label.is-file,
+[data-theme='porcelain'] .lumina-tree-label.is-file {
+  color: var(--text-muted, #6b6862) !important;
+}
+
+@keyframes fadeInTreeCard {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

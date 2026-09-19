@@ -1,5 +1,0 @@
-/**
- * Root Lumina CSS Entrypoint
- * Re-exports modular stylesheets from ./css/lumina.css
- */
-@import './css/lumina.css';

@@ -1,0 +1,488 @@
+/**
+ * Lumina Audit Badge & Workspace Link Scanner UI
+ */
+
+.lumina-audit-card {
+  margin: 6px 0 10px;
+  border-radius: 8px;
+  background: var(--bg-card, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
+  width: 100%;
+  max-width: 620px;
+  animation: fadeInAuditCard 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme='light'] .lumina-audit-card,
+[data-theme='porcelain'] .lumina-audit-card {
+  background: var(--bg-card, #eae6dd) !important;
+  border-color: var(--border-card, #e0dcd4) !important;
+  box-shadow: 0 1px 3px rgba(44, 42, 38, 0.08) !important;
+}
+
+.lumina-audit-card.scanning {
+  border-color: rgba(56, 189, 248, 0.25);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.04) 0%, rgba(99, 102, 241, 0.04) 100%);
+}
+
+.lumina-audit-card.complete {
+  border-color: var(--border-subtle, rgba(255, 255, 255, 0.1));
+}
+
+.lumina-audit-card.complete:hover {
+  border-color: var(--border-focus, rgba(255, 255, 255, 0.18));
+}
+
+[data-theme='light'] .lumina-audit-card.complete,
+[data-theme='porcelain'] .lumina-audit-card.complete {
+  border-color: var(--border-card, #e0dcd4) !important;
+}
+
+[data-theme='light'] .lumina-audit-card.complete:hover,
+[data-theme='porcelain'] .lumina-audit-card.complete:hover {
+  border-color: rgba(56, 189, 248, 0.4) !important;
+}
+
+.lumina-audit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  gap: 10px;
+}
+
+.lumina-audit-card.scanning .lumina-audit-header {
+  cursor: default;
+}
+
+.lumina-audit-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.lumina-audit-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.lumina-audit-icon-badge.pulse {
+  background: rgba(56, 189, 248, 0.18);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+}
+
+.spinning-radar {
+  animation: radarSpin 1.8s linear infinite;
+}
+
+@keyframes radarSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.lumina-audit-text-block {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.lumina-audit-scanning-row,
+.lumina-audit-complete-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lumina-audit-main-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-main, #e2e8f0);
+}
+
+[data-theme='light'] .lumina-audit-main-title,
+[data-theme='porcelain'] .lumina-audit-main-title {
+  color: var(--text-main, #2c2a26) !important;
+}
+
+.lumina-audit-subcount {
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  font-weight: 500;
+}
+
+[data-theme='light'] .lumina-audit-subcount,
+[data-theme='porcelain'] .lumina-audit-subcount {
+  color: var(--text-muted, #6b6862) !important;
+}
+
+.lumina-audit-radar-pulse {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #38bdf8;
+  margin-left: 2px;
+  animation: pulseDot 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.4);
+  }
+}
+
+/* Status Badges / Pills */
+.lumina-audit-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1.5px 6.5px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+}
+
+.lumina-audit-badge-pill.pill-neutral {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted, #94a3b8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='light'] .lumina-audit-badge-pill.pill-neutral,
+[data-theme='porcelain'] .lumina-audit-badge-pill.pill-neutral {
+  background: rgba(44, 42, 38, 0.06) !important;
+  color: var(--text-muted, #6b6862) !important;
+  border-color: rgba(44, 42, 38, 0.1) !important;
+}
+
+.lumina-audit-badge-pill.pill-healthy {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.22);
+}
+
+.lumina-audit-badge-pill.pill-warning {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+}
+
+.lumina-audit-badge-pill.pill-orphan {
+  background: rgba(168, 85, 247, 0.12);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.22);
+}
+
+/* Scanner beam animation */
+.lumina-audit-controls {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.lumina-audit-scanner-track {
+  position: relative;
+  width: 70px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(56, 189, 248, 0.15);
+  overflow: hidden;
+}
+
+.lumina-audit-scanner-beam {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, #38bdf8, transparent);
+  border-radius: 2px;
+  animation: scannerBeam 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes scannerBeam {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(180%);
+  }
+}
+
+.lumina-audit-status-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lumina-audit-check-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #34d399;
+  opacity: 0.85;
+}
+
+.lumina-audit-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted, #94a3b8);
+  transition: transform 0.15s ease;
+}
+
+/* Expandable Drawer Body */
+.lumina-audit-body {
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.12);
+  animation: expandAuditDrawer 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme='light'] .lumina-audit-body,
+[data-theme='porcelain'] .lumina-audit-body {
+  background: var(--bg-panel, #f2efe8) !important;
+  border-color: var(--border-subtle, #d8d4cc) !important;
+}
+
+@keyframes expandAuditDrawer {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lumina-audit-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.lumina-audit-metric-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  border-radius: 6px;
+  background: var(--bg-panel, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+}
+
+[data-theme='light'] .lumina-audit-metric-card,
+[data-theme='porcelain'] .lumina-audit-metric-card {
+  background: var(--bg-card, #eae6dd) !important;
+  border-color: var(--border-card, #e0dcd4) !important;
+}
+
+.lumina-audit-metric-card .metric-val {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.lumina-audit-metric-card .metric-label {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted, #94a3b8);
+  margin-top: 2px;
+}
+
+[data-theme='light'] .lumina-audit-metric-card .metric-label,
+[data-theme='porcelain'] .lumina-audit-metric-card .metric-label {
+  color: var(--text-muted, #6b6862) !important;
+}
+
+.lumina-audit-metric-card.metric-notes .metric-val {
+  color: var(--text-main, #f1f5f9);
+}
+
+[data-theme='light'] .lumina-audit-metric-card.metric-notes .metric-val,
+[data-theme='porcelain'] .lumina-audit-metric-card.metric-notes .metric-val {
+  color: var(--text-main, #2c2a26) !important;
+}
+
+.lumina-audit-metric-card.metric-links .metric-val {
+  color: #38bdf8;
+}
+
+.lumina-audit-metric-card.metric-broken .metric-val {
+  color: #fbbf24;
+}
+
+.lumina-audit-metric-card.metric-orphans .metric-val {
+  color: #c084fc;
+}
+
+/* Detail Sections inside Drawer */
+.lumina-audit-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lumina-audit-section-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted, #cbd5e1);
+}
+
+[data-theme='light'] .lumina-audit-section-header,
+[data-theme='porcelain'] .lumina-audit-section-header {
+  color: var(--text-muted, #2c2a26) !important;
+}
+
+.lumina-audit-section-header .warning-icon {
+  color: #fbbf24;
+}
+
+.lumina-audit-section-header .orphan-icon {
+  color: #c084fc;
+}
+
+.lumina-audit-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lumina-audit-broken-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(251, 191, 36, 0.05);
+  border: 1px solid rgba(251, 191, 36, 0.12);
+}
+
+[data-theme='light'] .lumina-audit-broken-item,
+[data-theme='porcelain'] .lumina-audit-broken-item {
+  background: rgba(251, 191, 36, 0.1) !important;
+  border-color: rgba(251, 191, 36, 0.25) !important;
+}
+
+.lumina-audit-source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-main, #e2e8f0);
+  cursor: pointer;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme='light'] .lumina-audit-source-link,
+[data-theme='porcelain'] .lumina-audit-source-link {
+  color: var(--text-main, #2c2a26) !important;
+  text-decoration-color: rgba(44, 42, 38, 0.3) !important;
+}
+
+.lumina-audit-source-link:hover {
+  color: #38bdf8;
+  text-decoration-color: #38bdf8;
+}
+
+.lumina-audit-arrow {
+  color: var(--text-muted, #94a3b8);
+  font-size: 10px;
+}
+
+.lumina-audit-target-missing {
+  color: #fbbf24;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+}
+
+.lumina-audit-orphans-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.lumina-audit-orphan-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2.5px 7px;
+  border-radius: 4px;
+  background: rgba(168, 85, 247, 0.09);
+  border: 1px solid rgba(168, 85, 247, 0.18);
+  color: #d8b4fe;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lumina-audit-orphan-pill:hover {
+  background: rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.35);
+  color: #f3e8ff;
+  transform: translateY(-1px);
+}
+
+[data-theme='light'] .lumina-audit-orphan-pill,
+[data-theme='porcelain'] .lumina-audit-orphan-pill {
+  background: rgba(168, 85, 247, 0.12) !important;
+  color: #7e22ce !important;
+  border-color: rgba(168, 85, 247, 0.28) !important;
+}
+
+.lumina-audit-more-indicator {
+  font-size: 10.5px;
+  color: var(--text-muted, #94a3b8);
+  font-style: italic;
+  padding: 2px 4px;
+}
+
+@keyframes fadeInAuditCard {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

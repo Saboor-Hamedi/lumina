@@ -9,6 +9,7 @@ import {
   FileText
 } from 'lucide-react'
 import { openNoteInEditor } from './LuminaChatLink'
+import '../css/auditBadge.css'
 
 export interface AuditBadgeData {
   totalNotesScanned?: number

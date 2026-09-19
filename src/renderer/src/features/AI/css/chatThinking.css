@@ -1,0 +1,166 @@
+/**
+ * Lumina Chat AI Thinking & Reasoning Indicator / Drawer
+ */
+
+/* Spinner animation */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Thinking / Generating indicator */
+.thinking-indicator {
+  display: flex;
+  align-items: center;
+  padding: 3px 0 5px 0;
+  background: transparent;
+  border: none;
+  width: fit-content;
+}
+
+.thinking-text {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--text-faint, rgba(255, 255, 255, 0.45));
+  font-weight: 450;
+  letter-spacing: 0.01em;
+  user-select: none;
+}
+
+.thinking-text .spin {
+  animation: spin 1.4s linear infinite;
+  color: var(--text-accent, #40bafa);
+}
+
+.thinking-dot-pulse {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-accent, #40bafa);
+  animation: pulse-dot 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(64, 186, 250, 0.35);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 0.3; transform: scale(0.85); }
+  50%       { opacity: 1;   transform: scale(1.15); box-shadow: 0 0 8px rgba(64, 186, 250, 0.65); }
+}
+
+/* Thinking Collapsible Container */
+.chat-thinking-container {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin: 4px 0 8px;
+  border-radius: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  overflow: hidden;
+  transition: all 0.15s ease;
+}
+
+.chat-thinking-container.open {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  background: var(--bg-surface, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
+}
+
+.chat-thinking-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: background 0.15s ease, color 0.15s ease;
+  border-radius: 5px;
+}
+
+.chat-thinking-header:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-main);
+}
+
+.chat-thinking-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-thinking-brain-icon {
+  color: var(--text-accent);
+}
+
+.chat-thinking-brain-icon.pulsing {
+  animation: brainPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes brainPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+    filter: drop-shadow(0 0 4px var(--text-accent));
+  }
+}
+
+.chat-thinking-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+.chat-thinking-pill {
+  font-size: 8px;
+  font-weight: 500;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.1);
+  color: var(--text-accent);
+}
+
+.chat-thinking-chevron {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--text-faint);
+}
+
+.chat-thinking-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.chat-thinking-body {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 8px 12px 10px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.04));
+  max-height: 280px;
+  overflow-y: auto;
+  background: transparent;
+  scroll-behavior: smooth;
+}
+
+.chat-thinking-content {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: var(--text-faint, rgba(255, 255, 255, 0.45));
+  font-style: normal;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-left: 2px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  padding-left: 10px;
+  margin: 2px 0;
+  letter-spacing: 0.01em;
+}

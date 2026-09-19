@@ -1,0 +1,148 @@
+/**
+ * Lumina Chat Mentions, Wikilinks & Chips
+ */
+
+/* Inline @Mention Tag (matches #tag styling) */
+.inline-mention-tag {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 4px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(var(--text-accent-rgb, 167, 139, 250), 0.15);
+  color: var(--text-accent);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 500;
+  vertical-align: baseline;
+  user-select: text;
+}
+
+/* Mention Autocomplete Highlight */
+.highlight-mention {
+  color: var(--text-accent);
+  font-weight: 500;
+  text-shadow: 0 0 10px rgba(var(--text-accent-rgb, 64, 186, 250), 0.3);
+}
+
+/* Wikilinks & Note Mentions in AI Response */
+.chat-wikilink-chip {
+  display: inline;
+  color: var(--text-accent, #40bafa);
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  text-decoration: none;
+  transition: opacity 0.15s ease, text-decoration 0.15s ease;
+}
+
+.chat-wikilink-chip:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+.chat-user-mention {
+  color: var(--text-accent, #40bafa);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s ease, text-decoration 0.15s ease;
+}
+
+.chat-user-mention:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+/* External Link */
+.chat-external-link {
+  color: var(--text-accent, #40bafa);
+  text-decoration: none;
+  display: inline;
+  font-weight: 500;
+  transition: opacity 0.15s;
+}
+
+.chat-external-link:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+/* Mention Pill in Chat */
+.chat-user-mention-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 5px;
+  padding: 1.5px 7px;
+  margin: 0 3px;
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  vertical-align: baseline;
+  user-select: text;
+  line-height: 1.35;
+}
+
+.chat-mention-symbol {
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.chat-mention-symbol.react-symbol {
+  color: #38bdf8;
+  font-size: 13px;
+}
+
+.chat-mention-symbol.css-symbol {
+  color: #38bdf8;
+  font-size: 11px;
+  letter-spacing: -0.05em;
+}
+
+.chat-mention-symbol.code-symbol {
+  color: #38bdf8;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.chat-mention-icon {
+  color: #38bdf8;
+  opacity: 0.9;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.chat-user-mention-text {
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', Consolas, monospace) !important;
+  color: #fde68a;
+  font-weight: 450;
+  letter-spacing: 0.01em;
+  transition: color 0.15s ease;
+}
+
+.chat-user-mention-pill:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.chat-user-mention-pill:hover .chat-user-mention-text {
+  color: #fef08a;
+  text-decoration: underline;
+}
+
+.chat-user-mention-pill:hover .chat-mention-icon,
+.chat-user-mention-pill:hover .chat-mention-symbol {
+  color: #7dd3fc;
+}

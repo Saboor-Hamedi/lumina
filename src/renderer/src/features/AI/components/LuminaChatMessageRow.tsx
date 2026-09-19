@@ -6,6 +6,7 @@ import { ThinkingIndicator } from './LuminaThinkingIndicator'
 import { openNoteInEditor } from './LuminaChatLink'
 import { useAIStore } from '../tools/lumina'
 import type { ChatMessage } from '../types/ai.types'
+import '../css/chatMentions.css'
 
 const getMentionIcon = (target: string): React.ReactNode => {
   const lower = (target || '').toLowerCase().trim()
