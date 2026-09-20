@@ -544,7 +544,7 @@ export class ImageWidget extends WidgetType {
                 res instanceof Uint8Array ||
                 (typeof Buffer !== 'undefined' && Buffer.isBuffer(res))
               ) {
-                return URL.createObjectURL(new Blob([res]))
+                return URL.createObjectURL(new Blob([res as any]))
               }
               return null
             } catch {

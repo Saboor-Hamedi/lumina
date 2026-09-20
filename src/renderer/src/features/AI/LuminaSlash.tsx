@@ -51,13 +51,11 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   {
     id: 'doctor',
     label: 'Doctor',
-    desc: 'Check Lumina health and test workspace storage with lumina-health.md.',
+    desc: 'Self-diagnostics and system health check.',
     icon: <Activity size={14} />,
     insertText: '/doctor',
     action: (_setMode, context) => {
-      if (context?.setInput) {
-        context.setInput('/doctor')
-      }
+      context?.setInput?.('/doctor')
     }
   }
 ]

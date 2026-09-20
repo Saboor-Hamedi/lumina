@@ -567,6 +567,32 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   )
 
   /**
+   * Tracks connected ports to render sleek docking heads and fill socket gaps
+   */
+  const connectedPortsMap = useMemo(() => {
+    const map = new Map<string, Partial<Record<CanvasEdgeSide, { hasArrow: boolean; color?: CanvasNodeColor }>>>()
+    for (const edge of edges) {
+      if (edge.fromNode && edge.fromSide) {
+        const ports = map.get(edge.fromNode) || {}
+        ports[edge.fromSide] = {
+          hasArrow: edge.fromEnd === 'arrow',
+          color: edge.color
+        }
+        map.set(edge.fromNode, ports)
+      }
+      if (edge.toNode && edge.toSide) {
+        const ports = map.get(edge.toNode) || {}
+        ports[edge.toSide] = {
+          hasArrow: edge.toEnd !== 'none',
+          color: edge.color
+        }
+        map.set(edge.toNode, ports)
+      }
+    }
+    return map
+  }, [edges])
+
+  /**
    * Multi-selection alignment & distribution handlers
    */
   const selectedNodes = useMemo(() => {
@@ -782,6 +808,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           editingField={editingField}
           snappedPortTargetNodeId={snappedTarget?.nodeId}
           snappedPortSide={snappedTarget?.side}
+          connectedPortsMap={connectedPortsMap}
           selectionBox={selectionBox}
           onNodeMouseDown={handleNodeMouseDown}
           onPortMouseDown={handlePortMouseDown}

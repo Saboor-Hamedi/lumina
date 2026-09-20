@@ -41,7 +41,12 @@
   height: 100%;
   pointer-events: none;
   overflow: visible;
-  z-index: 1;
+  z-index: 2;
+}
+
+/* While connecting, bring live wire and its dragging head knob directly over shape port sockets */
+.lumina-canvas-container.is-connecting .lumina-canvas-edges-layer {
+  z-index: 35;
 }
 
 .lumina-canvas-edge-line {

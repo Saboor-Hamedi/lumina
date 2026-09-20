@@ -30,7 +30,13 @@ import {
 } from '../services/aiStreamRunner'
 import { detectUserIntent, IntentCategory } from '../services/intentRouter'
 import { getAIMode } from '../modes/index'
-import { getAITools, getMemoryTools } from './index'
+import {
+  getAITools,
+  getMemoryTools,
+  luminaQueryIndexTool,
+  luminaDiagnoseSystemTool,
+  auditWikilinksTool
+} from './index'
 import { AIProviderFactory, resolveProviderConfig } from '../providers/index'
 import type {
   AIStore,
@@ -651,6 +657,97 @@ export const useAIStore = create<AIStore>((set, get) => {
       const currentMessages = get().chatMessages || []
       const newHistory = [...currentMessages, userMsg]
 
+      // Direct offline execution for workspace slash commands (/index, /query, /doctor, /audit)
+      const isDirectIndexCmd = /^\/(?:index|query)(?:\s+.*)?$/i.test(cleanMessage)
+      const isDirectDoctorCmd = /^\/doctor(?:\s+.*)?$/i.test(cleanMessage)
+      const isDirectAuditCmd = /^\/audit(?:\s+.*)?$/i.test(cleanMessage)
+
+      if (isDirectIndexCmd) {
+        const cmdArgs = cleanMessage.replace(/^\/(?:index|query)\s*/i, '').trim()
+        const params: Record<string, any> = { limit: 50, sortBy: 'modified' }
+        if (cmdArgs) {
+          const tagMatch = cmdArgs.match(/(?:#|tag:)\s*([a-zA-Z0-9_\-/]+)/i)
+          const folderMatch = cmdArgs.match(/folder:\s*([^\s]+)/i)
+          const linksMatch = cmdArgs.match(/(?:links|to):\s*([^\s]+)/i)
+          const backlinksMatch = cmdArgs.match(/backlinks?:\s*([^\s]+)/i)
+          if (tagMatch) params.tag = tagMatch[1]
+          if (folderMatch) params.folder = folderMatch[1]
+          if (linksMatch) params.linksTo = linksMatch[1]
+          if (backlinksMatch) params.backlinksFor = backlinksMatch[1]
+
+          const cleanedTerms = cmdArgs
+            .replace(/(?:#|tag:)\s*([a-zA-Z0-9_\-/]+)/gi, '')
+            .replace(/folder:\s*([^\s]+)/gi, '')
+            .replace(/(?:links|to):\s*([^\s]+)/gi, '')
+            .replace(/backlinks?:\s*([^\s]+)/gi, '')
+            .trim()
+          if (cleanedTerms) {
+            params.query = cleanedTerms
+          }
+        }
+
+        try {
+          const res: any = await (luminaQueryIndexTool.execute as any)(params)
+          const assistantMsg: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `<lumina-index>\n${res.summaryMarkdown || res.summary || ''}\n</lumina-index>`,
+            timestamp: Date.now()
+          }
+          set({
+            chatMessages: [...newHistory, assistantMsg],
+            isChatLoading: false,
+            activeThinkingStatus: ''
+          })
+          get().saveChatHistory()
+          return
+        } catch (err: any) {
+          console.error('[AIStore] Direct index query failed:', err)
+        }
+      }
+
+      if (isDirectDoctorCmd) {
+        try {
+          const res: any = await (luminaDiagnoseSystemTool.execute as any)({})
+          const assistantMsg: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `<lumina-health>\n${res.summaryMarkdown || res.summary || ''}\n</lumina-health>`,
+            timestamp: Date.now()
+          }
+          set({
+            chatMessages: [...newHistory, assistantMsg],
+            isChatLoading: false,
+            activeThinkingStatus: ''
+          })
+          get().saveChatHistory()
+          return
+        } catch (err: any) {
+          console.error('[AIStore] Direct doctor check failed:', err)
+        }
+      }
+
+      if (isDirectAuditCmd) {
+        try {
+          const res: any = await (auditWikilinksTool.execute as any)({})
+          const assistantMsg: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `<lumina-audit>\n${res.summaryMarkdown || res.summary || ''}\n</lumina-audit>`,
+            timestamp: Date.now()
+          }
+          set({
+            chatMessages: [...newHistory, assistantMsg],
+            isChatLoading: false,
+            activeThinkingStatus: ''
+          })
+          get().saveChatHistory()
+          return
+        } catch (err: any) {
+          console.error('[AIStore] Direct audit check failed:', err)
+        }
+      }
+
       if (!visibleKey) {
         set({
           chatMessages: newHistory,
@@ -802,7 +899,8 @@ export const useAIStore = create<AIStore>((set, get) => {
         if (
           (modeCfg.enableTools !== false ||
             detectedIntent === IntentCategory.DIAGNOSTICS ||
-            detectedIntent === IntentCategory.AUDIT_WIKILINKS) &&
+            detectedIntent === IntentCategory.AUDIT_WIKILINKS ||
+            detectedIntent === IntentCategory.QUERY_INDEX) &&
           !isConversationalOverride
         ) {
           sdkTools = getAITools(blockReadFile, isOpenIntent)

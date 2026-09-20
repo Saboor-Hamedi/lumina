@@ -35,7 +35,7 @@ export const CapsLock: React.FC<CapsLockProps> = React.memo(
       // Query native CapsLock status from main process immediately upon mounting
       let isMounted = true
       if (typeof window !== 'undefined' && window.api?.isCapsLockOn) {
-        window.api.isCapsLockOn().then((active) => {
+        window.api.isCapsLockOn().then((active: boolean) => {
           if (isMounted && typeof active === 'boolean') {
             stateRef.current = active
             setIsCapsLockOn(active)
@@ -48,7 +48,7 @@ export const CapsLock: React.FC<CapsLockProps> = React.memo(
 
       const handleFocus = () => {
         if (window.api?.isCapsLockOn) {
-          window.api.isCapsLockOn().then((active) => {
+          window.api.isCapsLockOn().then((active: boolean) => {
             if (isMounted && typeof active === 'boolean' && stateRef.current !== active) {
               stateRef.current = active
               setIsCapsLockOn(active)

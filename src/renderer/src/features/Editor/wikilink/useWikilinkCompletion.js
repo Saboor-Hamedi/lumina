@@ -6,30 +6,31 @@ import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { shouldTriggerWikilinkCompletion, matchesNormalized, normalizeWikilinkTarget } from '../../../core/i18n'
 
 export function useWikilinkCompletion({ showToast }) {
-  const autocompleteTriggerListener = useCallback(
-    EditorView.updateListener.of((update) => {
-      if (update.docChanged) {
-        const view = update.view
-        if (!shouldTriggerWikilinkCompletion(view)) return
+  const autocompleteTriggerListener = useMemo(
+    () =>
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged) {
+          const view = update.view
+          if (!shouldTriggerWikilinkCompletion(view)) return
 
-        const head = view.state.selection.main.head
-        const line = view.state.doc.lineAt(head)
-        const col = head - line.from
-        const textBefore = line.text.slice(0, col)
+          const head = view.state.selection.main.head
+          const line = view.state.doc.lineAt(head)
+          const col = head - line.from
+          const textBefore = line.text.slice(0, col)
 
-        const lastOpen = textBefore.lastIndexOf('[[')
-        if (lastOpen !== -1) {
-          const lastClose = textBefore.lastIndexOf(']]')
-          if (lastOpen > lastClose) {
-            setTimeout(() => {
-              if (!view.isDestroyed && shouldTriggerWikilinkCompletion(view)) {
-                startCompletion(view)
-              }
-            }, 10)
+          const lastOpen = textBefore.lastIndexOf('[[')
+          if (lastOpen !== -1) {
+            const lastClose = textBefore.lastIndexOf(']]')
+            if (lastOpen > lastClose) {
+              setTimeout(() => {
+                if (!view.isDestroyed && shouldTriggerWikilinkCompletion(view)) {
+                  startCompletion(view)
+                }
+              }, 10)
+            }
           }
         }
-      }
-    }),
+      }),
     []
   )
 
@@ -57,7 +58,7 @@ export function useWikilinkCompletion({ showToast }) {
           (!query || matchesNormalized(s.title, query))
       )
       .map((s) => ({
-        label: s.title,
+        label: String(s.title || ''),
         type: 'text',
         info: 'Link to note',
         apply: (view, completion, from, to) => {

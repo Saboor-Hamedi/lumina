@@ -10,6 +10,7 @@ import { ActivityCard } from './LuminaActivityCard'
 import { MemoryBadge } from './LuminaMemoryBadge'
 import { LuminaAuditBadge } from './LuminaAuditBadge'
 import { LuminaHealthBadge } from './LuminaHealthBadge'
+import { LuminaIndexBadge } from './LuminaIndexBadge'
 import {
   processMarkdownContent,
   parseMessageSections,
@@ -36,16 +37,20 @@ export const MessageContent: React.FC<MessageContentProps> = React.memo(
       return parseMessageBlocks(content)
     }, [content])
 
-    const hasMemoryBlock = useMemo(() => {
+    const hasExplicitMemoryBlock = useMemo(() => {
+      return blocks.some((b) => b.type === 'memory')
+    }, [blocks])
+
+    const hasMemoryFallback = useMemo(() => {
       return (
-        blocks.some((b) => b.type === 'memory') ||
-        (Boolean(content) &&
-          /\b(memory\.json|Saved to memory|Updated user (?:name|role|bio)|Cleared user (?:name|role|bio)|Updated preference:)\b/i.test(
-            content || ''
-          ) &&
-          !(content || '').includes('```'))
+        !hasExplicitMemoryBlock &&
+        Boolean(content) &&
+        /\b(memory\.json|Saved to memory|Updated user (?:name|role|bio)|Cleared user (?:name|role|bio)|Updated preference:)\b/i.test(
+          content || ''
+        ) &&
+        !(content || '').includes('```')
       )
-    }, [blocks, content])
+    }, [hasExplicitMemoryBlock, content])
 
     const memoryContent = useMemo(() => {
       const memBlock = blocks.find((b) => b.type === 'memory')
@@ -96,13 +101,15 @@ export const MessageContent: React.FC<MessageContentProps> = React.memo(
 
     return (
       <>
-        {hasMemoryBlock && <MemoryBadge content={memoryContent} />}
         {blocks.map((block, idx) => {
           if (block.type === 'memory') {
-            return null
+            return (
+              <div key={`mem-${idx}`} className="lumina-memory-block-wrap">
+                <MemoryBadge content={block.content} />
+              </div>
+            )
           }
           if (block.type === 'think') {
-            if (hasMemoryBlock) return null
             return (
               <ThinkingBlock
                 key={`think-${idx}`}
@@ -138,6 +145,15 @@ export const MessageContent: React.FC<MessageContentProps> = React.memo(
               />
             )
           }
+          if (block.type === 'index') {
+            return (
+              <LuminaIndexBadge
+                key={`index-${idx}`}
+                content={block.content}
+                isStreaming={isStreaming}
+              />
+            )
+          }
           const processed = processMarkdownContent(block.content)
           return (
             <ReactMarkdown
@@ -149,6 +165,11 @@ export const MessageContent: React.FC<MessageContentProps> = React.memo(
             </ReactMarkdown>
           )
         })}
+        {hasMemoryFallback && (
+          <div className="lumina-memory-block-wrap">
+            <MemoryBadge content={memoryContent} />
+          </div>
+        )}
       </>
     )
   },

@@ -13,34 +13,34 @@ describe('Notification', () => {
   })
 
   it('should not render when toast is null', () => {
-    const { container } = render(<Notification toast={null} />)
+    const { container } = render(<Notification toast={null} onClose={vi.fn()} />)
     expect(container.firstChild).toBeNull()
   })
 
   it('should render success toast with icon', () => {
     const toast = { type: 'success', message: 'Success message' }
-    render(<Notification toast={toast} />)
+    render(<Notification toast={toast} onClose={vi.fn()} />)
 
     expect(screen.getByText('Success message')).toBeInTheDocument()
   })
 
   it('should render error toast with icon', () => {
     const toast = { type: 'error', message: 'Error message' }
-    render(<Notification toast={toast} />)
+    render(<Notification toast={toast} onClose={vi.fn()} />)
 
     expect(screen.getByText('Error message')).toBeInTheDocument()
   })
 
   it('should render info toast with icon', () => {
     const toast = { type: 'info', message: 'Info message' }
-    render(<Notification toast={toast} />)
+    render(<Notification toast={toast} onClose={vi.fn()} />)
 
     expect(screen.getByText('Info message')).toBeInTheDocument()
   })
 
   it('should apply correct CSS class based on type', () => {
     const toast = { type: 'success', message: 'Test' }
-    const { container } = render(<Notification toast={toast} />)
+    const { container } = render(<Notification toast={toast} onClose={vi.fn()} />)
 
     const toastElement = document.body.querySelector('.toast-notification')
     expect(toastElement).toHaveClass('toast-success')
@@ -48,12 +48,12 @@ describe('Notification', () => {
 
   it('should handle exit animation', () => {
     const toast = { type: 'success', message: 'Test' }
-    const { rerender } = render(<Notification toast={toast} />)
+    const { rerender } = render(<Notification toast={toast} onClose={vi.fn()} />)
 
     expect(screen.getByText('Test')).toBeInTheDocument()
 
     // Clear toast — component returns null immediately when toast prop is null
-    rerender(<Notification toast={null} />)
+    rerender(<Notification toast={null} onClose={vi.fn()} />)
 
     // Advance any pending timers
     act(() => {
@@ -66,7 +66,7 @@ describe('Notification', () => {
 
   it('should apply theme variables to notification container and message for light/white theme compatibility', () => {
     const toast = { type: 'info', message: 'Theme contrast test' }
-    render(<Notification toast={toast} />)
+    render(<Notification toast={toast} onClose={vi.fn()} />)
 
     const toastElement = document.body.querySelector('.toast-notification') as HTMLElement
     expect(toastElement).toBeInTheDocument()

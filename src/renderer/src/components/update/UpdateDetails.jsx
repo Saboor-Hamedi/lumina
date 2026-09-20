@@ -8,85 +8,27 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
-- Spatial Infinite Canvas Engine: Full 2D infinite spatial whiteboard with pan/zoom (10% to 500%), dot-grid background, smooth inertial panning, spacebar drag, and minimap navigation for visual thinking and architecture diagrams.
-- 12+ Geometric Vector Shapes: Add and customize Rectangle, Rounded Rectangle, Diamond, Ellipse/Circle, Cylinder/Database, Document, Stickman/Actor, Cloud, Triangle, Hexagon, Star, and Message Callout Bubble with scalable vector SVG geometry and double-click Markdown text editing.
-- Smart Dynamic Ports & Magnetic Connection Snapping: Automatic edge calculation for shapes (actor head and hands, cylinder rim, callout tail) with magnetic snap radius and glowing socket docking when drawing connectors.
-- Orthogonal 90° Connector Routing: Obstacle-aware connector routing that navigates around nodes with clean 90-degree doglegs, alongside smooth Bezier curves and straight paths with custom markers (arrows, triangles, diamonds, circles, bars) and stroke patterns (solid, dashed, dotted).
-- Alignment Snapping & Smart Guides: Visual alignment crosshair lines and magnetic snapping against neighboring nodes' edges and centers during drag and resize operations.
-- Marquee Selection & Bulk Operations: Drag-to-select box marquee lasso, multi-node translation, bulk deletion, multi-node color cycling, and a floating alignment toolbar (align left, center, right, top, middle, bottom; distribute horizontally and vertically).
-- Interactive Radar MiniMap HUD: Floating radar minimap with real-time viewport bounding box tracking, click-to-pan navigation, and instant zoom reset controls.
-- Minimalist Sticky Notes: Headerless sticky notes with subtle hover controls, soft ambient shadows, auto-expanding text areas, and Ctrl+Enter / Escape keyboard shortcuts.
-- Vault Drag & Drop Ingestion: Drag notes, images, and PDFs directly from FileExplorer onto the canvas with live Markdown AST rendering, title badges, and one-click "Open in Tab" integration.
-- Live-Preview Markdown Highlighting (==highlight==): Real-time live preview for ==text== and == text == syntax in the markdown editor. Delimiters collapse into a clean, colored highlight span when the cursor is away, and gently reveal with Mod-Shift-H (Ctrl+Shift+H / Cmd+Shift+H) keyboard shortcut for quick toggling.
-- Theme-Aware Code Block Image Export: Code block "Copy as image" now uses solid theme backgrounds (--bg-app, --bg-card) from your active theme instead of an artificial gradient, perfectly matching your color palette.
-- Standalone Editor Zoom HUD Component: Extracted the bottom-right zoom percentage indicator into a standalone component with Lucide ZoomIn icon, theme-adaptive backdrop blur, and smooth entrance animation.
-- Standardized ActivityBar 6-Button Stack: ActivityBar navigation has been standardized with a dedicated 6-button stack: 1. New Note, 2. Daily Note, 3. Knowledge Graph, 4. Canvas, 5. Lumina AI Chat, and 6. Lumina Mail. AI Chat and Mail icons are presented in a clean, borderless unaccented style.
-- Instant Canvas Note Creation: Canvas button on the ActivityBar immediately creates a new .canvas note via saveSnippet and activates it directly in the editor workspace.
-- Draggable Gmail Portal Modal: EmailContainer now renders into document.body via React createPortal with z-index: 100000, preventing sidebar resizers from capturing clicks. Features a dedicated WindowControls drag handle beside the Compose button in EmailSidebar for free viewport repositioning with localStorage coordinate persistence.
-- Hardware Caps Lock Startup Detection: Added native Windows PowerShell hardware query ([Console]::CapsLock) via Electron IPC (system:isCapsLockOn) so the ambient glowing Caps Lock blob illuminates immediately on startup even before typing any keys.
-- Core Notification System Refactoring: ToastNotification has been promoted to a clean, modular Notification system (Notification.jsx, css/notification.css, useNotification.ts, and index.ts public exports).
-- TypeScript Template Architecture: Moved and typed template foundations (defaultTemplates.ts, useTemplate.ts) with full TypeScript interfaces and aligned test suites.
-- Lumina Mail Client (Gmail Integration): A full-featured, private email suite seamlessly integrated into Lumina. Access your Gmail inbox, All Inboxes, Categories (Promotions, Social, Updates, Forums), custom labels, sent messages, drafts, and starred emails with rich HTML rendering, live search filtering, and one-click star/unread toggles.
-- Modular 3-Pane Email Architecture: Cleanly separated into dedicated components (EmailSidebar, EmailListPane, and EmailDetailPane) with an elevated Compose button container, live folder search bar, and resizable layout panes.
-- Programmatic Crystal Audio Synthesizer: Isolated Web Audio API engine (emailSoundService.ts) synthesizing a relaxing 3-note crystal chime on incoming email notifications with zero external audio dependencies and mute/unmute persistence.
-- Desktop Notifications & High-Capacity Rounded Badge: Native OS notifications for new emails with click-to-open window focus, paired with a compact rounded unread count badge supporting counts into the millions.
-- Email Composer with Note Attachment: Built-in composer with support for file attachments, CC/BCC, and one-click "Attach Current Note" directly from your active workspace note into email drafts.
-- CapsLock Organic Blob Indicator: When Caps Lock is active, a glowing organic blob light illuminates at the very center of the status bar. Styled using the active accent color with soft ambient light reflections and zero boxy borders, it automatically turns off when Caps Lock is disabled.
-- Compact Responsive StatusBar: Streamlined status bar metrics with 10px typography, compact icons, and responsive breakpoints, keeping the center strictly dedicated to the glowing indicator while preserving the exact profile button dimensions.
-- Breadcrumbs Horizontal Keyboard Navigation: Smoothly jump across breadcrumb segments (Workspace → Folders → Note → Heading Outline) by pressing Ctrl + Left Arrow and Ctrl + Right Arrow with immediate dropdown activation.
-- Unified Modal Geometry (900px × 76vh): Standardized all major modal dialogs (Preview, Settings, Theme, Graph, Documentation, Guide, Template, Lumina AI, and Lumina Mail) to identical dimensions, responsive maximums (94vw × 78vh), and 12px rounded glass cards.
-- Persistent Modal Maximize/Restore State: Window states for Preview, Settings, Theme, Graph, Documentation, Guide, Template, Lumina AI, and Lumina Mail are remembered persistently across sessions via the settings engine.
-- Unified Glass Overlay Blur: Elevated all modal backdrops to an identical glass blur aesthetic (blur(12px) saturate(180%)) while preserving IconPicker's dedicated light modal design.
-- Premium Unified Scrollbar Engine (premimum-scroll.css): Centralized all custom scrollbar rules across modals and panels into an ultra-sleek, premium scrollbar design modeled after the preview modal.
-- Interactive Breadcrumbs & Heading Outline: Breadcrumbs feature an active heading segment (# Section) dynamically tracking the editor cursor with instant search filter and Table of Contents outline dropdown.
-- Unified Dropdown Geometry (320px × 340px): Dropdowns for Workspace, folder siblings, and heading outlines share identical, rock-solid dimensions matching the Workspace dropdown width, with invisible scrollbars and elegant ellipsis truncation on long titles.
-- Quick Note Creation in Folders: Add a new note directly inside any folder via the + button in the dropdown header or on individual folder rows.
-- Breadcrumb Drag-and-Drop: Drag notes or tabs directly onto Workspace or folder segments in the breadcrumb bar to move files instantly.
-- Focus Breadcrumbs Shortcut: Focus and open breadcrumb navigation instantly with Ctrl + Shift + . (or Ctrl + Shift + ;). Note/Tab icon picker updated to Ctrl + Win + . to prevent key conflicts.
-- Rich Word/HTML Paste with Format Preservation: Pasting from Microsoft Word (Ctrl + V) now preserves tables, headings, bold/italic, images, table of contents, references, and figure captions — converting them seamlessly to clean Markdown.
-- Word Image Extraction: Images copied from Word documents are automatically saved to .lumina/assets/ and embedded inline. Supports VML (v:imagedata), standard img tags with file:/// paths, and system clipboard image buffer fallback.
-- Paste as Plain Text: Ctrl + Shift + V now pastes raw unformatted text, bypassing all HTML conversion — useful for pasting code snippets or raw content without any rich formatting.
-- Breadcrumbs Long-Title Truncation: Note titles of any length are now gracefully truncated in the breadcrumbs bar with ellipsis (…). Hovering reveals the full title. Scales responsively with the viewport (clamp 140px → 380px).
+- Workspace Index Query Engine (luminaQueryIndex): Query your workspace like a database. Search and filter notes across tags (#tag), folders, incoming and outgoing wikilinks, YAML frontmatter, and headings with structured graph records.
+- Dynamic Inline LuminaIndexBadge: Sleek inline search badge with live scan beam, active filter pills, matched note counters, and an expandable drawer with clickable note rows that open directly in the editor. Appears in natural document flow right where the query ran.
+- In-App System Health Diagnostics (luminaDiagnoseSystem / /doctor): Live multi-subsystem diagnostic tool measuring latency across Disk I/O, IndexedDB, Notes Store, and Memory without cluttering disk files unless requested.
+- Wikilink & Orphan Note Auditor (auditWikilinks / /audit): Scans workspace connectivity, highlights broken links and orphan notes, and offers immediate scaffolding for missing files.
+- Spatial Infinite Canvas (.canvas): 2D infinite spatial whiteboard with pan/zoom (10% to 500%), dot-grid canvas, 12+ geometric vector shapes, dynamic shape ports, magnetic snapping, and 90° orthogonal connector routing.
+- Live-Preview Markdown Highlighting (==highlight==): Real-time live preview for ==text== in the editor. Delimiters collapse into clean colored spans and reveal on cursor focus (Mod+Shift+H).
 
 Improved
-- Modularized Canvas CSS Architecture: Decomposed monolithic canvas styling into 10 clean domain modules (canvas-base, canvas-studio, canvas-minimap, canvas-toolbar, canvas-nodes, canvas-connectors, canvas-drawing, etc.), loaded as direct ES modules.
-- Multi-Selection Toolbar & Noise Reduction: Suppressed individual element action tooltips during marquee multi-selection, presenting only the primary alignment and bulk action controls.
-- Sticky Note Keyboard Ergonomics: Pressing Ctrl+Enter (or Cmd+Enter) in sticky notes commits the text and cleanly exits edit mode; pressing Escape cancels editing.
-- Connector Line Selection Persistence: Selecting a connector line preserves its active selection without accidental immediate deletion, allowing stroke, color, and marker adjustments.
-- Unified Inline Code Typography: Single backtick inline code (\`code\`) now seamlessly inherits the user-configured editor font family and font size instead of switching to a smaller, disparate monospace font.
-- Code Block Architecture & TypeScript Migration: Consolidated all code block styling, headers, and image export mechanisms cleanly inside src/renderer/src/core/code/ with full TypeScript typings.
-- Email Modal Viewport Dragging: Replaced bulky header drag bars with a sleek WindowControls button directly beside Compose, eliminating awkward modal shifting and providing smooth pointer tracking.
-- Outside-Click Email Modal Toggle: Fixed double-toggle conflict where clicking the ActivityBar mail button while the modal was open would trigger both outside-click close and button-click open.
-- TypeScript Migration Across Core Hooks: Converted useTemplate, defaultTemplates, and notification hooks to strict TypeScript types, improving developer ergonomics and runtime stability.
-- Email Service TypeScript Migration: Converted src/main/email/gmailService.ts to TypeScript with comprehensive interfaces for Gmail API models, RFC 2822 Base64URL MIME message serialization, and IPC handlers.
-- Instant Email Deletion & Thread Management: Email deletion executes optimistically without re-fetching entire mailbox lists, and email cards prevent layout shifts on hover.
-- Template Modal Architecture: Templates modal now shares the 900px × 76vh geometry, custom window header buttons, and seamless maximize behavior.
-- Guide Modal Elevation: Guide modal now supports window maximize/restore toggling with persistent state and updated overlay styling.
-- Responsive Scrollbar Aesthetics: High-resolution scrollbar tracks and custom offset thumbs with smooth hover transitions everywhere across the application.
-- Interactive Breadcrumb Key Interception: Ctrl + ArrowLeft and Ctrl + ArrowRight events are intelligently captured before internal list/search handlers can interfere.
-- Standardized Custom ToolTips: All breadcrumb actions, navigation buttons, and counter pills now use Lumina's high-precision <ToolTip /> component with zero-background shortcut styling.
-- Word Table Cell Cleaning: Table cells from Word paste are fully sanitized — no more raw <u>, <span>, <font>, or <br> tags leaking into Markdown tables. Names like Dr. Sajarwo Anggai., S.ST., M.T. paste correctly.
-- Figure Captions Preserved: Figure numbers, captions, and the text between figures are now correctly extracted. The non-greedy VML conditional comment regex was hardened to never bridge across multiple figures.
-- Table of Contents Formatting: Word TOC entries are converted to clean hierarchical Markdown lists (- and  -) with dot leaders stripped and tight vertical spacing.
-- References Auto-Linking: Plain text URLs in references sections are auto-detected and formatted as Markdown hyperlinks, keeping references tight and readable.
-- Paragraph Justification: Ragged mid-sentence line breaks from Word are normalized into continuous, smooth paragraphs.
-- Voice Dictation Shortcut: Moved to Shift + Alt + V to free Ctrl + Shift + V for plain-text paste. Updated everywhere: keyboard engine, settings panel, tooltip, and documentation.
-- Breadcrumbs Icon Stability: Breadcrumb icons now have flex-shrink: 0 and never collapse under layout pressure.
+- Modularized CSS Architecture: Decomposed monolithic chat stylesheets into domain modules (indexBadge.css, healthBadge.css, auditBadge.css, treeBadge.css, memoryBadge.css, chatCode.css, chatThinking.css), cutting duplicate rules.
+- Sleek TreeBadge Header: Low-profile 28px tree badge header with micro-stats and ghost copy button.
+- Theme Polish & Porcelain Support: Authentic Porcelain theme integration across all badges with warm paper background variables (--bg-card: #eae6dd).
+- Slash Commands & Natural Intent Routing: Added /index, /query, and /audit shortcuts with natural language intent routing.
+- Code Block Image Export: Theme-aware solid backgrounds matching your active color palette instead of gradients.
+- Canvas Ergonomics: Marquee selection, multi-node alignment toolbar, minimap radar HUD, and sticky note shortcuts (Ctrl+Enter).
 
 Fixed
-- Vite PostCSS HMR Crash: Fixed periodic "[postcss] postcss-import: canvas-studio.css: Unexpected }" error during hot module reload by bypassing PostCSS @import rules and loading modular CSS files as native Vite ES modules.
-- FileExplorer Canvas Ingestion: Fixed issue where dropped notes appeared clear/blank by extracting Markdown content from snippet.code and enriching metadata from useWorkspaceStore.
-- FileExplorer Drag Snapback: Fixed @dnd-kit drag-cancel snapback when dropping notes onto the canvas by adding multi-tier drop coordinate detection.
-- Actor Dynamic Port Alignment: Fixed actor connection ports so crown and side ports dynamically calculate aspect ratio, perfectly docking connectors to the actor's head and limbs.
-- Inline Code Font Shrinking & Mismatched Typeface: Fixed issue where single backtick (\`code\`) rendered text noticeably smaller than surrounding body text due to third-party 0.88em CSS rules, and ensured it matches the configured editor font family.
-- Code Image Background Gradient Clashing: Removed artificial hardcoded gradient backgrounds from code-to-image export in favor of clean, solid active theme colors.
-- Media Extension 404 Route Resolutions: Removed stale .js file references in favor of strict TypeScript barrel exports in src/renderer/src/features/media/.
-- Sidebar Resizer Overlapping Email Modal: Fixed issue where dragging the left sidebar resizer would capture pointer events or sit on top of the email modal by rendering EmailContainer into document.body via createPortal with z-index: 100000.
-- CapsLock Initial State on App Launch: Fixed issue where Caps Lock was not detected until the first keypress by adding native PowerShell query via IPC on mount and window focus.
-- Dropdown Width Auto-Expansion: Breadcrumb dropdowns no longer resize or balloon to 480px based on filename length. All dropdowns strictly adhere to the polished 320px width standard with ellipsis truncation.
-- YAML Title Reversion Bug: Note titles containing YAML block scalar characters (>-, |, >, |+) no longer revert to - when renamed. safeParseFrontmatter correctly handles these as literal strings and sanitizeTitleForFilename preserves the raw title in frontmatter while only cleaning the disk filename.
-- Figure Text Deletion: The conditional VML comment regex previously used a greedy pattern that bridged across multiple figures, consuming all text and captions between Figure 1 and Figure 2. Fixed with a negative lookahead so each comment block terminates strictly at its own closing delimiter.
-- Jump Anchor Links in Paste: Internal Word anchor links (e.g. [1](#_Ref...)) that jumped to the next image are now flattened to clean plain text (1) with no clickable href.`
+- Natural Badge Flow: Index badges now render sequentially inline at the inquiry point instead of being pinned to the top.
+- Hex Color Tag Collision: Prevented 3/6-digit hex color codes (#38bdf8, #ffffff) from being falsely matched as tags.
+- YAML Frontmatter Primitives: Correctly parses booleans and numbers in frontmatter attributes.
+- LevelDB Dev Manifest Recovery: Automatically repairs and resets corrupted dev LevelDB manifests on startup.
+- Breadcrumbs Long-Title Truncation: Long note titles truncate gracefully with responsive clamping and full hover tooltips.`
 
 /**
  * Simple, clean release notes parser for our Markdown release notes.

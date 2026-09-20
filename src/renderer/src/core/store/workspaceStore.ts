@@ -760,12 +760,12 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   },
 
   updateNoteSelection: (id: string, selection: any) => {
-    set((state) => {
+    set((state: WorkspaceStoreState): any => {
       const allNotes = state.notes || []
       const nextNotes = allNotes.map((n) => (n.id === id ? { ...n, selection } : n))
       const isSelected = state.selectedNote?.id === id
       const nextSelected = isSelected
-        ? { ...state.selectedNote, selection }
+        ? ({ ...state.selectedNote, selection } as any)
         : state.selectedNote
 
       return {

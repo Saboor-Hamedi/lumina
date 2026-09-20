@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
-import TemplateSidebar from '../../../../../src/renderer/src/features/template/TemplateSidebar'
+import RawTemplateSidebar from '../../../../../src/renderer/src/features/template/TemplateSidebar'
+const TemplateSidebar = RawTemplateSidebar as React.ComponentType<any>
 
 const mockTemplates = [
   {
@@ -78,7 +79,7 @@ describe('TemplateSidebar.jsx', () => {
 
     // Other templates have .template-badge
     expect(cards[1].querySelector('.template-badge')).toBeInTheDocument()
-    expect(cards[1].querySelector('.template-badge').textContent).toBe('TEMPLATE')
+    expect(cards[1].querySelector('.template-badge')?.textContent).toBe('TEMPLATE')
   })
 
   it('renders the blank note empty document preview wireframe', () => {
@@ -90,21 +91,21 @@ describe('TemplateSidebar.jsx', () => {
   it('renders checklist wireframe for daily log templates', () => {
     render(<TemplateSidebar {...defaultProps} />)
     const dailyCard = screen.getByText('Daily Log').closest('.template-modal-card')
-    expect(dailyCard.querySelectorAll('.template-mini-todo-item').length).toBeGreaterThan(0)
-    expect(dailyCard.querySelector('.template-mini-checkbox.checked')).toBeInTheDocument()
+    expect(dailyCard?.querySelectorAll('.template-mini-todo-item').length).toBeGreaterThan(0)
+    expect(dailyCard?.querySelector('.template-mini-checkbox.checked')).toBeInTheDocument()
   })
 
   it('renders meeting bullets wireframe for meeting templates', () => {
     render(<TemplateSidebar {...defaultProps} />)
     const meetingCard = screen.getByText('Meeting Notes').closest('.template-modal-card')
-    expect(meetingCard.querySelectorAll('.template-mini-bullet-item').length).toBeGreaterThan(0)
-    expect(meetingCard.querySelector('.template-mini-avatars')).toBeInTheDocument()
+    expect(meetingCard?.querySelectorAll('.template-mini-bullet-item').length).toBeGreaterThan(0)
+    expect(meetingCard?.querySelector('.template-mini-avatars')).toBeInTheDocument()
   })
 
   it('renders table wireframe for templates with markdown tables', () => {
     render(<TemplateSidebar {...defaultProps} />)
     const projectCard = screen.getByText('Project Tracker').closest('.template-modal-card')
-    expect(projectCard.querySelector('.template-mini-table')).toBeInTheDocument()
+    expect(projectCard?.querySelector('.template-mini-table')).toBeInTheDocument()
   })
 
   it('calls onSelect when a template card is clicked', () => {
@@ -120,7 +121,7 @@ describe('TemplateSidebar.jsx', () => {
     render(<TemplateSidebar {...defaultProps} onApply={onApply} />)
 
     const card = screen.getByText('Daily Log').closest('.template-modal-card')
-    fireEvent.doubleClick(card)
+    if (card) fireEvent.doubleClick(card)
     expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ id: 't-daily' }))
   })
 

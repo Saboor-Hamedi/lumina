@@ -14,11 +14,12 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "ignoreDeprecations": "6.0",
     "paths": {
       "@renderer/*": ["./src/renderer/src/*"]
     },
-    "types": ["vite/client", "@testing-library/jest-dom"]
+    "types": ["vite/client", "@testing-library/jest-dom", "vitest/globals"]
   },
   "include": [
     "src/main/**/*",

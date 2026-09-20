@@ -17,8 +17,8 @@ import React, { useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ExternalLink, Palette, X, FileText, Copy } from 'lucide-react'
-import { CanvasNode, CanvasEdgeSide } from '../../types'
-import { stripFrontmatter, getShapePortRatio } from '../../utils/canvasUtils'
+import { CanvasNode, CanvasEdgeSide, CanvasNodeColor } from '../../types'
+import { stripFrontmatter, getShapePortRatio, CANVAS_NODE_COLOR_HEX } from '../../utils/canvasUtils'
 import { CanvasImagePreview } from './CanvasImagePreview'
 import { renderShapeSVG } from '../controls/ConvasShapes'
 import { useWorkspaceStore } from '../../../../core/store/workspaceStore'
@@ -50,6 +50,7 @@ export interface CanvasNodeCardProps {
   isEditing: boolean
   editingField: 'title' | 'text' | null
   snappedPortSide?: CanvasEdgeSide | null
+  connectedPorts?: Partial<Record<CanvasEdgeSide, { hasArrow: boolean; color?: CanvasNodeColor }>>
   onNodeMouseDown: (e: React.MouseEvent, node: CanvasNode) => void
   onPortMouseDown: (e: React.MouseEvent, nodeId: string, side: CanvasEdgeSide) => void
   onResizeMouseDown: (e: React.MouseEvent, node: CanvasNode) => void
@@ -70,6 +71,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
     isEditing,
     editingField,
     snappedPortSide,
+    connectedPorts,
     onNodeMouseDown,
     onPortMouseDown,
     onResizeMouseDown,
@@ -112,44 +114,46 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
             topRatio = { rx: 0.5, ry: Math.max(0.01, 0.18 - headRy) }
           }
 
+          const sides: CanvasEdgeSide[] = ['top', 'right', 'bottom', 'left']
+          const ratios: Record<CanvasEdgeSide, { rx: number; ry: number } | null> = {
+            top: topRatio,
+            right: rightRatio,
+            bottom: bottomRatio,
+            left: leftRatio
+          }
+
           return (
             <>
-              <div
-                className={`lumina-canvas-port port-top ${snappedPortSide === 'top' ? 'is-magnetic-snap' : ''}`}
-                data-node-id={node.id}
-                data-port-side="top"
-                title="Connect top"
-                style={topRatio ? { left: `${topRatio.rx * 100}%`, top: `${topRatio.ry * 100}%`, transform: 'translate(-50%, -50%)', margin: 0 } : undefined}
-                onMouseDown={(e) => onPortMouseDown(e, node.id, 'top')}
-                onClick={(e) => onPortMouseDown(e, node.id, 'top')}
-              />
-              <div
-                className={`lumina-canvas-port port-right ${snappedPortSide === 'right' ? 'is-magnetic-snap' : ''}`}
-                data-node-id={node.id}
-                data-port-side="right"
-                title="Connect right"
-                style={rightRatio ? { left: `${rightRatio.rx * 100}%`, top: `${rightRatio.ry * 100}%`, transform: 'translate(-50%, -50%)', margin: 0 } : undefined}
-                onMouseDown={(e) => onPortMouseDown(e, node.id, 'right')}
-                onClick={(e) => onPortMouseDown(e, node.id, 'right')}
-              />
-              <div
-                className={`lumina-canvas-port port-bottom ${snappedPortSide === 'bottom' ? 'is-magnetic-snap' : ''}`}
-                data-node-id={node.id}
-                data-port-side="bottom"
-                title="Connect bottom"
-                style={bottomRatio ? { left: `${bottomRatio.rx * 100}%`, top: `${bottomRatio.ry * 100}%`, transform: 'translate(-50%, -50%)', margin: 0 } : undefined}
-                onMouseDown={(e) => onPortMouseDown(e, node.id, 'bottom')}
-                onClick={(e) => onPortMouseDown(e, node.id, 'bottom')}
-              />
-              <div
-                className={`lumina-canvas-port port-left ${snappedPortSide === 'left' ? 'is-magnetic-snap' : ''}`}
-                data-node-id={node.id}
-                data-port-side="left"
-                title="Connect left"
-                style={leftRatio ? { left: `${leftRatio.rx * 100}%`, top: `${leftRatio.ry * 100}%`, transform: 'translate(-50%, -50%)', margin: 0 } : undefined}
-                onMouseDown={(e) => onPortMouseDown(e, node.id, 'left')}
-                onClick={(e) => onPortMouseDown(e, node.id, 'left')}
-              />
+              {sides.map((side) => {
+                const ratio = ratios[side]
+                const isSnapped = snappedPortSide === side
+                const connectedInfo = connectedPorts?.[side]
+                const isConnected = !!connectedInfo
+                const hasArrow = !!connectedInfo?.hasArrow
+                const portColorHex = connectedInfo?.color
+                  ? CANVAS_NODE_COLOR_HEX[connectedInfo.color as keyof typeof CANVAS_NODE_COLOR_HEX]
+                  : undefined
+
+                const portStyle: React.CSSProperties = {
+                  ...(ratio
+                    ? { left: `${ratio.rx * 100}%`, top: `${ratio.ry * 100}%`, transform: 'translate(-50%, -50%)', margin: 0 }
+                    : {}),
+                  ...(portColorHex ? ({ '--port-color': portColorHex } as any) : {})
+                }
+
+                return (
+                  <div
+                    key={side}
+                    className={`lumina-canvas-port port-${side} ${isSnapped ? 'is-magnetic-snap' : ''} ${isConnected ? 'is-connected' : ''} ${hasArrow ? 'is-arrow-docked' : ''}`}
+                    data-node-id={node.id}
+                    data-port-side={side}
+                    title={isConnected ? `Connected ${side}${hasArrow ? ' (arrow docked)' : ''}` : `Connect ${side}`}
+                    style={portStyle}
+                    onMouseDown={(e) => onPortMouseDown(e, node.id, side)}
+                    onClick={(e) => onPortMouseDown(e, node.id, side)}
+                  />
+                )
+              })}
             </>
           )
         })()}
@@ -604,14 +608,15 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
     )
   },
   (prev, next) => {
-    // Only re-render if node data, selection, editing state, or snapped port changed
+    // Only re-render if node data, selection, editing state, snapped port, or connected ports changed
     return (
       prev.node === next.node &&
       prev.isSelected === next.isSelected &&
       prev.isMultiSelection === next.isMultiSelection &&
       prev.isEditing === next.isEditing &&
       prev.editingField === next.editingField &&
-      prev.snappedPortSide === next.snappedPortSide
+      prev.snappedPortSide === next.snappedPortSide &&
+      prev.connectedPorts === next.connectedPorts
     )
   }
 )

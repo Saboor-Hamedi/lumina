@@ -33,7 +33,7 @@ describe('Template.jsx', () => {
     const activePill = document.querySelector('.template-header-active-pill')
     expect(activePill).toBeInTheDocument()
     // Blank Note is default
-    expect(activePill.textContent).toBe('Blank Note')
+    expect(activePill?.textContent).toBe('Blank Note')
   })
 
   it('toggles sidebar when sidebar button is clicked', () => {
@@ -42,7 +42,7 @@ describe('Template.jsx', () => {
     fireEvent.click(toggleBtn)
 
     const sidebar = document.querySelector('.template-sidebar')
-    expect(sidebar.className).toContain('closed')
+    expect(sidebar?.className).toContain('closed')
     expect(screen.getByLabelText('Show Sidebar')).toBeInTheDocument()
   })
 
@@ -52,7 +52,7 @@ describe('Template.jsx', () => {
     fireEvent.click(maxBtn)
 
     const container = document.querySelector('.template-modal-container')
-    expect(container.className).toContain('maximized')
+    expect(container?.className).toContain('maximized')
     expect(screen.getByLabelText('Restore Window')).toBeInTheDocument()
   })
 
@@ -76,7 +76,7 @@ describe('Template.jsx', () => {
     // ArrowDown from Blank to Daily Log
     fireEvent.keyDown(document, { key: 'ArrowDown' })
     const activePill = document.querySelector('.template-header-active-pill')
-    expect(activePill.textContent).toBe('Daily Log')
+    expect(activePill?.textContent).toBe('Daily Log')
 
     // Enter to apply
     fireEvent.keyDown(document, { key: 'Enter' })
@@ -99,7 +99,7 @@ describe('Template.jsx', () => {
     render(<Template {...props} />)
 
     const overlay = document.querySelector('.guide-modal-overlay')
-    fireEvent.click(overlay)
+    if (overlay) fireEvent.click(overlay)
     expect(props.onClose).toHaveBeenCalled()
   })
 
@@ -108,7 +108,7 @@ describe('Template.jsx', () => {
     render(<Template {...props} />)
 
     const container = document.querySelector('.template-modal-container')
-    fireEvent.click(container)
+    if (container) fireEvent.click(container)
     expect(props.onClose).not.toHaveBeenCalled()
   })
 })

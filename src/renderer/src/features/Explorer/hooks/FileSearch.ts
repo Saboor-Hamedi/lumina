@@ -65,7 +65,7 @@ export function useFileSearch(
     const q = query.trim().toLowerCase()
     if (!q) return { filteredSnippets: snippets, isQueryActive: false, matchMetaMap: new Map<string, MatchMeta>() }
     const { results, matchMetaMap } = rankSnippets(snippets, q, fuseIndex)
-    return { filteredSnippets: results as Snippet[], isQueryActive: true, matchMetaMap: matchMetaMap as Map<string, MatchMeta> }
+    return { filteredSnippets: results as Snippet[], isQueryActive: true, matchMetaMap: matchMetaMap as unknown as Map<string, MatchMeta> }
   }, [query, fuseIndex, snippets])
 
   const existingFolderIds = useMemo(() => {

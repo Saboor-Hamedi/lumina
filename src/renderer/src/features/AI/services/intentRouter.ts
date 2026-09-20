@@ -16,7 +16,8 @@ export const IntentCategory = {
   PLAN_SCAFFOLD: 'PLAN_SCAFFOLD',
   MEMORY_OP: 'MEMORY_OP',
   DIAGNOSTICS: 'DIAGNOSTICS',
-  AUDIT_WIKILINKS: 'AUDIT_WIKILINKS'
+  AUDIT_WIKILINKS: 'AUDIT_WIKILINKS',
+  QUERY_INDEX: 'QUERY_INDEX'
 } as const
 
 export type IntentCategoryType = (typeof IntentCategory)[keyof typeof IntentCategory]
@@ -36,10 +37,17 @@ export const detectUserIntent = (
   }
 
   const wikilinkAuditPatterns =
-    /\b(broken (?:wiki)?links?|dead (?:wiki)?links?|missing (?:notes?|links?)|orphan (?:notes?|files?)|orphans?(?: in workspace)?|audit (?:wiki)?links?|check (?:my )?(?:wiki)?links?|find broken (?:wiki)?links?|unlinked (?:notes?|files?)|how many files? (?:do not have|lack|without) (?:wiki)?links?|files? (?:do not have|without) (?:wiki)?links? or broken)\b/i
+    /(?:^|\s)\/audit\b|\b(audit(?:h)?\b|broken (?:wiki)?links?|dead (?:wiki)?links?|missing (?:notes?|links?)|orphan (?:notes?|files?)|orphans?(?: in workspace)?|audit (?:wiki)?links?|check (?:my )?(?:wiki)?links?|find broken (?:wiki)?links?|unlinked (?:notes?|files?)|how many files? (?:do not have|lack|without) (?:wiki)?links?|files? (?:do not have|without) (?:wiki)?links? or broken|link health|inspect (?:my )?links)\b/i
 
   if (wikilinkAuditPatterns.test(clean)) {
     return IntentCategory.AUDIT_WIKILINKS
+  }
+
+  const queryIndexPatterns =
+    /(?:^|\s)\/(?:index|query)\b|\b(query\s+index|search\s+index|workspace\s+index|show\s+(?:the\s+)?index|index\s+of\s+notes|notes?\s+index|list\s+all\s+notes|show\s+all\s+notes|notes?\s+with\s+tag|tagged\s+with|tag:\s*#?\w+|#\w+\s+notes?|which\s+notes?\s+have\s+tag|find\s+notes?\s+tagged|notes?\s+linking\s+to|notes?\s+that\s+link\s+to|backlinks\s+(?:for|to)|which\s+notes?\s+link|filter\s+notes?|notes?\s+in\s+folder|list\s+notes?\s+in\s+folder|notes?\s+with\s+frontmatter)\b/i
+
+  if (queryIndexPatterns.test(clean)) {
+    return IntentCategory.QUERY_INDEX
   }
 
   const memoryPatterns =
@@ -339,6 +347,23 @@ Execution: DO NOT call saveMemory. Answer warmly based on the persistent memory 
       return `\n**EXEMPLAR FOR SYSTEM DIAGNOSTICS**:
 User: "check yourself" or "run diagnostics" or "/doctor"
 Execution: Immediately invoke the \`diagnoseSystem\` tool! Do NOT merely say you are checking. Invoke \`diagnoseSystem\` to perform live write-read verification on lumina-health.md and measure latency across all subsystems. Then output the structured health report table and summary directly in chat.`
+
+    case IntentCategory.QUERY_INDEX:
+      return `\n**EXEMPLAR FOR WORKSPACE INDEX QUERY**:
+User: "Find all notes tagged with #research" or "which notes have tag research?"
+Execution:
+1. Call \`luminaQueryIndex\` with tag="research".
+2. Synthesize results and explain relevant connections in chat.
+
+User: "Which notes link to [[Project Roadmap]]?"
+Execution:
+1. Call \`luminaQueryIndex\` with linksTo="Project Roadmap".
+2. Present matching notes and describe reciprocal connections.
+
+User: "Show notes in folder AI with backlinks to [[Overview]]"
+Execution:
+1. Call \`luminaQueryIndex\` with folder="AI", linksTo="Overview".
+2. Detail results in chat.`
 
     case IntentCategory.CONVERSATIONAL_EXPLAIN:
     default:

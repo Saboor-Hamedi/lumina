@@ -42,6 +42,8 @@ Our brains don't think in rigid folders; we think in connections.
 ### 🤝 An AI Companion That Listens and Remembers
 Unlike generic AI tools that forget who you are every time you start a new conversation, Lumina features an intelligent sidekick (`Ctrl + Shift + \`) that gets to know you:
 - **Personalized Memory:** It remembers your name, goals, writing style, and project details, so you never have to repeat background context.
+- **Instant Workspace Indexing (`/index`):** Query notes across tags, folders, or links with dynamic interactive index badges that let you jump right to matching files.
+- **Self-Healing Diagnostics (`/doctor`):** Run an instantaneous, zero-overhead health check on your workspace database, storage, and sync.
 - **Project Partner:** Ask it to summarize lengthy articles, draft introductions, review your grammar, or brainstorm creative names.
 - **Inline Assistance (`Ctrl + K`):** Highlight any paragraph and ask the AI to expand, shorten, or polish it right where you are writing.
 

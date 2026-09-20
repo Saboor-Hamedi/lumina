@@ -2,44 +2,60 @@
  * Lumina Memory Badge UI
  */
 
+.lumina-memory-block-wrap {
+  display: block;
+  margin: 4px 0 8px;
+}
+
 .lumina-memory-badge {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 2px 7px 2px 6px;
-  margin: 2px 0 6px;
-  border-radius: 5px;
-  background: rgba(168, 85, 247, 0.07);
-  border: 1px solid rgba(168, 85, 247, 0.18);
+  height: 22px;
+  padding: 0 8px;
+  margin: 2px 0;
+  border-radius: 4px;
+  background: var(--bg-panel, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
   user-select: none;
   animation: fadeInMemoryBadge 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   width: fit-content;
   cursor: default;
   transition: all 0.15s ease;
+  vertical-align: middle;
+  font-family: var(--font-editor, 'Inter', sans-serif);
 }
 
 [data-theme='light'] .lumina-memory-badge,
 [data-theme='porcelain'] .lumina-memory-badge {
-  background: rgba(168, 85, 247, 0.08) !important;
-  border-color: rgba(168, 85, 247, 0.25) !important;
+  background: var(--bg-panel, #f2efe8) !important;
+  border-color: var(--border-subtle, #d8d4cc) !important;
 }
 
 .lumina-memory-badge:hover {
-  background: rgba(168, 85, 247, 0.12);
-  border-color: rgba(168, 85, 247, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-focus, rgba(255, 255, 255, 0.15));
+}
+
+[data-theme='light'] .lumina-memory-badge:hover,
+[data-theme='porcelain'] .lumina-memory-badge:hover {
+  background: #ebe7df !important;
+  border-color: #c4c0b6 !important;
 }
 
 .lumina-memory-badge-icon {
-  color: #c084fc;
+  color: var(--text-accent, #818cf8);
+  opacity: 0.85;
+  flex-shrink: 0;
 }
 
 [data-theme='light'] .lumina-memory-badge-icon,
 [data-theme='porcelain'] .lumina-memory-badge-icon {
-  color: #9333ea;
+  color: #4f46e5 !important;
 }
 
 .lumina-memory-badge-text {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--text-muted, #94a3b8);
   font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -47,12 +63,13 @@
 
 [data-theme='light'] .lumina-memory-badge-text,
 [data-theme='porcelain'] .lumina-memory-badge-text {
-  color: #2c2a26;
+  color: var(--text-muted, #6b6862) !important;
 }
 
 .lumina-memory-badge-check {
-  color: #34d399;
-  margin-left: 1px;
+  color: #10b981;
+  opacity: 0.85;
+  margin-left: 2px;
 }
 
 @keyframes fadeInMemoryBadge {

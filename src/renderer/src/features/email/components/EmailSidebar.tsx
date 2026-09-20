@@ -105,6 +105,8 @@ export const EmailSidebar = React.memo<EmailSidebarProps>(({
           <WindowControls
             onMouseDownDrag={onMouseDownDrag}
             title="Drag modal"
+            isSidebarOpen={false}
+            onToggleSidebar={() => {}}
           />
         )}
         <button

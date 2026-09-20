@@ -37,7 +37,7 @@ describe('UpdateDetails', () => {
     expect(screen.getByText('New')).toBeInTheDocument()
     expect(screen.getByText('Improved')).toBeInTheDocument()
     expect(screen.getByText('Fixed')).toBeInTheDocument()
-    expect(screen.getByText(/Rich Word\/HTML Paste with Format Preservation/)).toBeInTheDocument()
+    expect(screen.getByText(/Spatial Infinite Canvas/)).toBeInTheDocument()
     expect(screen.getByText(/Breadcrumbs Long-Title Truncation/)).toBeInTheDocument()
   })
 

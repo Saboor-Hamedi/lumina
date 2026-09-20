@@ -8,7 +8,7 @@
  */
 
 import React from 'react'
-import { CanvasNode, CanvasNodeColor } from '../../types'
+import { CanvasNode, CanvasNodeColor, CanvasEdgeSide } from '../../types'
 import { CanvasNodeCard } from './CanvasNodeCard'
 import { CanvasSelectionToolbar } from '../controls/CanvasSelectionToolbar'
 import { CanvasAlignmentType, CanvasDistributionType } from '../../utils/canvasAlignment'
@@ -20,6 +20,7 @@ export interface CanvasNodesLayerProps {
   editingField: 'title' | 'text' | null
   snappedPortTargetNodeId?: string | null
   snappedPortSide?: any
+  connectedPortsMap?: Map<string, Partial<Record<CanvasEdgeSide, { hasArrow: boolean; color?: CanvasNodeColor }>>>
   selectionBox: { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number } | null
   onNodeMouseDown: (e: React.MouseEvent, node: CanvasNode) => void
   onPortMouseDown: (e: React.MouseEvent, nodeId: string, side: any) => void
@@ -47,6 +48,7 @@ export const CanvasNodesLayer: React.FC<CanvasNodesLayerProps> = React.memo(
     editingField,
     snappedPortTargetNodeId,
     snappedPortSide,
+    connectedPortsMap,
     selectionBox,
     onNodeMouseDown,
     onPortMouseDown,
@@ -77,6 +79,7 @@ export const CanvasNodesLayer: React.FC<CanvasNodesLayerProps> = React.memo(
             isEditing={editingNodeId === node.id}
             editingField={editingNodeId === node.id ? editingField : null}
             snappedPortSide={snappedPortTargetNodeId === node.id ? snappedPortSide : null}
+            connectedPorts={connectedPortsMap?.get(node.id)}
             onNodeMouseDown={onNodeMouseDown}
             onPortMouseDown={onPortMouseDown}
             onResizeMouseDown={onResizeMouseDown}

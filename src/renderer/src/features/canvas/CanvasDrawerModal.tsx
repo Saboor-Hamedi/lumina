@@ -290,7 +290,7 @@ export const CanvasDrawerModal: React.FC<CanvasDrawerModalProps> = () => {
           {currentSnippet ? (
             <CanvasTabPane
               key={currentSnippet.id}
-              snippet={currentSnippet}
+              snippet={{ ...currentSnippet, title: currentSnippet.title || '' }}
               onSave={saveNote}
               isSelected={true}
               isDrawer={true}

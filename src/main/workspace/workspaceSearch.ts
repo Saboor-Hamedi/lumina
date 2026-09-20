@@ -78,7 +78,7 @@ export class WorkspaceSearch {
       env.useBrowserCache = false
       env.useCustomCache = false
       this.embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
-        progress_callback: null
+        progress_callback: undefined
       })
       console.info('[WorkspaceSearch] ✓ Embedder initialized')
       return this.embedder

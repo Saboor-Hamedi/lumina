@@ -115,7 +115,7 @@ function getShapeSvgMarkup(
       const handRx = 2.5
       const handRy = handRx * Math.min(2.5, Math.max(0.4, actorAspect))
       const chinY = 18 + headRy
-      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="50" cy="18" rx="${headRx}" ry="${headRy}" fill="${fill}" fill-opacity="${Math.max(0.12, fillOpacity)}" /><line x1="50" y1="${chinY}" x2="50" y2="65" /><line x1="15" y1="48" x2="50" y2="44" /><line x1="50" y1="44" x2="85" y2="48" /><ellipse cx="14" cy="48" rx="${handRx}" ry="${handRy}" fill="${stroke}" /><ellipse cx="86" cy="48" rx="${handRx}" ry="${handRy}" fill="${stroke}" /><line x1="50" y1="65" x2="26" y2="94" /><line x1="50" y1="65" x2="74" y2="94" /><line x1="26" y1="94" x2="19" y2="94" /><line x1="74" y1="94" x2="81" y2="94" /></g>`
+      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="50" cy="18" rx="${headRx}" ry="${headRy}" fill="${fill}" fill-opacity="${Math.max(0.12, parseFloat(fillOpacity))}" /><line x1="50" y1="${chinY}" x2="50" y2="65" /><line x1="15" y1="48" x2="50" y2="44" /><line x1="50" y1="44" x2="85" y2="48" /><ellipse cx="14" cy="48" rx="${handRx}" ry="${handRy}" fill="${stroke}" /><ellipse cx="86" cy="48" rx="${handRx}" ry="${handRy}" fill="${stroke}" /><line x1="50" y1="65" x2="26" y2="94" /><line x1="50" y1="65" x2="74" y2="94" /><line x1="26" y1="94" x2="19" y2="94" /><line x1="74" y1="94" x2="81" y2="94" /></g>`
       break
     }
     case 'envelope':

@@ -158,7 +158,7 @@ export function useEditorExtensions({
     )
   }, [realViewRef, snippetRef])
 
-  const dropExtension = useMemo(() => imageDropExtension(showToast), [showToast])
+  const dropExtension = useMemo(() => imageDropExtension(), [])
   const collapsibleExtension = useCollapsible()
 
   const {
@@ -171,7 +171,7 @@ export function useEditorExtensions({
   // --- Keymap & High-Priority Extensions ---
   const editorExtensions = useMemo(
     () => [
-      collapsibleExtension,
+      ...collapsibleExtension,
       luminaSyntaxHighlighting,
       Prec.highest(
         keymap.of([
@@ -458,7 +458,7 @@ export function useEditorExtensions({
       searchHighlightField,
       codeBlockDecorations,
       mermaidWidgetExtension,
-      tagMentionExtension,
+      ...tagMentionExtension,
       emptyLineSelectionFix,
       wikiLinksExtension,
       bidiExtension,

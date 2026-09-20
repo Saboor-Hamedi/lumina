@@ -179,18 +179,20 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
         )}
         {(inlineTitle || inlineMetadata) && (
           <EditorMetadata
-            titleRef={titleRef}
-            snippet={snippet}
-            onSave={onSave}
-            notes={notes}
-            title={title}
-            setTitle={setTitle}
-            setIsDirty={setIsDirty}
-            isDirty={isDirty}
-            onInlineAI={onInlineAI}
-            editorMenu={editorMenu}
-            showTitle={inlineTitle}
-            showActions={inlineMetadata}
+            {...({
+              titleRef,
+              snippet,
+              onSave,
+              notes,
+              title,
+              setTitle,
+              setIsDirty,
+              isDirty,
+              onInlineAI,
+              editorMenu,
+              showTitle: inlineTitle,
+              showActions: inlineMetadata
+            } as any)}
           />
         )}
         {snippet?.isPartial && (
@@ -210,7 +212,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
             documentId={snippet?.id}
             markdownSource={snippet?.code || ''}
             onMarkdownChange={handleMarkdownChange}
-            editorHandleRef={editorHandleRef}
+            editorHandleRef={editorHandleRef as any}
             codeLanguages={languages}
             extensions={finalExtensions}
             onLinkClick={(url: string) => {

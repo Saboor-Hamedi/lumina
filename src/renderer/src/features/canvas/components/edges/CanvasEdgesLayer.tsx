@@ -114,57 +114,85 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
     return (
       <svg className="lumina-canvas-edges-layer">
         <defs>
-          {/* Default Forward Arrowhead */}
+          {/* Default Forward Filled Round Knob Head */}
           <marker
             id="arrow"
-            viewBox="0 0 10 10"
-            refX="7"
-            refY="5"
-            markerWidth="5.5"
-            markerHeight="5.5"
-            orient="auto-start-reverse"
-          >
-            <path d="M 0 2 L 7 5 L 0 8 z" fill="var(--text-accent, #38bdf8)" />
-          </marker>
-
-          {/* Default Backward Arrowhead for Bidirectional Links */}
-          <marker
-            id="arrow-start"
-            viewBox="0 0 10 10"
-            refX="0"
-            refY="5"
-            markerWidth="5.5"
-            markerHeight="5.5"
+            viewBox="0 0 12 12"
+            refX="6"
+            refY="6"
+            markerWidth="8"
+            markerHeight="8"
             orient="auto"
           >
-            <path d="M 7 2 L 0 5 L 7 8 z" fill="var(--text-accent, #38bdf8)" />
+            <circle
+              cx="6"
+              cy="6"
+              r="4.2"
+              fill="var(--text-accent, #38bdf8)"
+              stroke="#ffffff"
+              strokeWidth="1.2"
+            />
           </marker>
 
-          {/* Per-Color Styled Arrow Markers */}
+          {/* Default Backward Filled Round Knob Head for Bidirectional Links */}
+          <marker
+            id="arrow-start"
+            viewBox="0 0 12 12"
+            refX="6"
+            refY="6"
+            markerWidth="8"
+            markerHeight="8"
+            orient="auto"
+          >
+            <circle
+              cx="6"
+              cy="6"
+              r="4.2"
+              fill="var(--text-accent, #38bdf8)"
+              stroke="#ffffff"
+              strokeWidth="1.2"
+            />
+          </marker>
+
+          {/* Per-Color Styled Filled Round Knob Markers */}
           {COLOR_CYCLE.map((cKey) => (
             <React.Fragment key={cKey}>
               <marker
                 id={`arrow-${cKey}`}
-                viewBox="0 0 10 10"
-                refX="7"
-                refY="5"
-                markerWidth="5.5"
-                markerHeight="5.5"
-                orient="auto-start-reverse"
+                viewBox="0 0 12 12"
+                refX="6"
+                refY="6"
+                markerWidth="8"
+                markerHeight="8"
+                orient="auto"
               >
-                <path d="M 0 2 L 7 5 L 0 8 z" fill={CANVAS_NODE_COLOR_HEX[cKey]} />
+                <circle
+                  cx="6"
+                  cy="6"
+                  r="4.2"
+                  fill={CANVAS_NODE_COLOR_HEX[cKey]}
+                  stroke="#ffffff"
+                  strokeWidth="1.2"
+                />
               </marker>
 
               <marker
                 id={`arrow-start-${cKey}`}
-                viewBox="0 0 10 10"
-                refX="0"
-                refY="5"
-                markerWidth="5.5"
-                markerHeight="5.5"
+                viewBox="0 0 12 12"
+                refX="6"
+                refY="6"
+                markerWidth="8"
+                markerHeight="8"
                 orient="auto"
               >
-                <path d="M 7 2 L 0 5 L 7 8 z" fill={CANVAS_NODE_COLOR_HEX[cKey]} />
+                <circle
+                  cx="6"
+                  cy="6"
+                  r="4.2"
+                  fill={CANVAS_NODE_COLOR_HEX[cKey]}
+                  stroke="#ffffff"
+                  strokeWidth="1.2"
+                />
               </marker>
             </React.Fragment>
           ))}

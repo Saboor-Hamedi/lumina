@@ -56,7 +56,7 @@ describe('System Self-Diagnostics & Health Verification (luminaDiagnoseSystem)',
   })
 
   it('runs diagnostic check in-memory without creating lumina-health.md on disk by default', async () => {
-    const result = await luminaDiagnoseSystemTool.execute({ fullCheck: true, saveToDisk: false })
+    const result: any = await (luminaDiagnoseSystemTool.execute as any)({ fullCheck: true, saveToDisk: false })
 
     expect(result.success).toBe(true)
     expect(result.summary).toContain('Health Check Passed')
@@ -75,7 +75,7 @@ describe('System Self-Diagnostics & Health Verification (luminaDiagnoseSystem)',
   })
 
   it('creates lumina-health.md on disk when saveToDisk is explicitly requested', async () => {
-    const result = await luminaDiagnoseSystemTool.execute({ fullCheck: true, saveToDisk: true })
+    const result: any = await (luminaDiagnoseSystemTool.execute as any)({ fullCheck: true, saveToDisk: true })
 
     expect(result.success).toBe(true)
     expect(result.summary).toContain('Saved report to lumina-health.md')

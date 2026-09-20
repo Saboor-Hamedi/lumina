@@ -69,7 +69,9 @@ export const LuminaAuditBadge: React.FC<LuminaAuditBadgeProps> = React.memo(
     const orphanCount = auditData.orphanNotesCount ?? (auditData.orphanNotes?.length || 0)
 
     return (
-      <div className={`lumina-audit-card ${isExpanded ? 'expanded' : 'collapsed'} ${isScanning ? 'scanning' : 'complete'}`}>
+      <div
+        className={`lumina-audit-card ${isExpanded ? 'is-expanded' : 'is-collapsed'} ${isScanning ? 'is-scanning' : 'is-complete'}`}
+      >
         <div
           className="lumina-audit-header"
           onClick={() => {
@@ -77,53 +79,25 @@ export const LuminaAuditBadge: React.FC<LuminaAuditBadgeProps> = React.memo(
           }}
         >
           <div className="lumina-audit-title-group">
-            <div className={`lumina-audit-icon-badge ${isScanning ? 'pulse' : ''}`}>
-              <Compass size={13} className={`lumina-audit-icon ${isScanning ? 'spinning-radar' : ''}`} />
-            </div>
-
-            <div className="lumina-audit-text-block">
+            <Link2 size={12} className={`lumina-audit-icon ${isScanning ? 'spinning-radar' : ''}`} />
+            <span className="lumina-audit-main-title">
+              {isScanning ? 'Scanning workspace links...' : 'Workspace Link Audit'}
+            </span>
+            <span className="lumina-audit-stats">
               {isScanning ? (
-                <div className="lumina-audit-scanning-row">
-                  <span className="lumina-audit-main-title">
-                    Scanning workspace links
-                  </span>
-                  {totalNotes ? (
-                    <span className="lumina-audit-subcount">({totalNotes.toLocaleString()} notes)</span>
-                  ) : null}
-                  <span className="lumina-audit-radar-pulse" />
-                </div>
+                <span className="lumina-audit-pulse-dot" />
               ) : (
-                <div className="lumina-audit-complete-row">
-                  <span className="lumina-audit-main-title">
-                    Workspace Links Checked
-                  </span>
-                  {totalNotes !== null && (
-                    <span className="lumina-audit-badge-pill pill-neutral">
-                      {totalNotes.toLocaleString()} notes
-                    </span>
-                  )}
-                  {totalLinks > 0 && (
-                    <span className="lumina-audit-badge-pill pill-healthy">
-                      {totalLinks.toLocaleString()} links
-                    </span>
-                  )}
+                <>
+                  {totalLinks > 0 && `${totalLinks.toLocaleString()} links · `}
                   {brokenCount > 0 ? (
-                    <span className="lumina-audit-badge-pill pill-warning">
-                      {brokenCount} broken
-                    </span>
+                    <span className="audit-broken-warn">{brokenCount} broken</span>
                   ) : (
-                    <span className="lumina-audit-badge-pill pill-healthy">
-                      0 broken
-                    </span>
+                    <span>0 broken</span>
                   )}
-                  {orphanCount > 0 && (
-                    <span className="lumina-audit-badge-pill pill-orphan">
-                      {orphanCount} orphans
-                    </span>
-                  )}
-                </div>
+                  {orphanCount > 0 && ` · ${orphanCount} orphan${orphanCount !== 1 ? 's' : ''}`}
+                </>
               )}
-            </div>
+            </span>
           </div>
 
           <div className="lumina-audit-controls">
@@ -132,14 +106,9 @@ export const LuminaAuditBadge: React.FC<LuminaAuditBadgeProps> = React.memo(
                 <span className="lumina-audit-scanner-beam" />
               </span>
             ) : (
-              <div className="lumina-audit-status-right">
-                <span className="lumina-audit-check-icon">
-                  <Check size={11} />
-                </span>
-                <span className="lumina-audit-chevron">
-                  {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                </span>
-              </div>
+              <span className="lumina-audit-chevron">
+                {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              </span>
             )}
           </div>
         </div>

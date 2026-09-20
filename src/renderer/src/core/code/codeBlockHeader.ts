@@ -241,7 +241,7 @@ export class CodeBlockHeaderWidget extends WidgetType {
       )
 
       const copyImageBtn = React.createElement(
-        ToolTip,
+        ToolTip as any,
         { text: 'Copy as Image', position: 'top' },
         React.createElement(
           'div',
@@ -258,7 +258,7 @@ export class CodeBlockHeaderWidget extends WidgetType {
       )
 
       const copySyntaxBtn = React.createElement(
-        ToolTip,
+        ToolTip as any,
         { text: 'Copy Code', position: 'top' },
         React.createElement(
           'div',

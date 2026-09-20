@@ -8,16 +8,22 @@ import { PortInfo } from '../../../../../src/renderer/src/features/canvas/utils/
 
 describe('canvasRouting - Direction-aware Bézier, Manhattan Orthogonal & Fan-Out', () => {
   const fromPort: PortInfo = {
+    id: 'e',
     side: 'right',
     x: 100,
     y: 100,
+    nx: 1,
+    ny: 0,
     normal: { nx: 1, ny: 0 }
   }
 
   const toPort: PortInfo = {
+    id: 'w',
     side: 'left',
     x: 300,
     y: 100,
+    nx: -1,
+    ny: 0,
     normal: { nx: -1, ny: 0 }
   }
 
@@ -36,15 +42,21 @@ describe('canvasRouting - Direction-aware Bézier, Manhattan Orthogonal & Fan-Ou
 
   it('generates orthogonal Manhattan paths with rounded fillets and right angles', () => {
     const vFromPort: PortInfo = {
+      id: 's',
       side: 'bottom',
       x: 100,
       y: 100,
+      nx: 0,
+      ny: 1,
       normal: { nx: 0, ny: 1 }
     }
     const vToPort: PortInfo = {
+      id: 'w',
       side: 'left',
       x: 300,
       y: 200,
+      nx: -1,
+      ny: 0,
       normal: { nx: -1, ny: 0 }
     }
 

@@ -394,3 +394,42 @@
 .lumina-canvas-node.shape-octagon .lumina-canvas-shape-content {
   inset: 14%;
 }
+
+/* ==========================================================================
+   Shape Connection Ports & Docking Heads (Fills Gap of Empty Knobs)
+   ========================================================================== */
+.lumina-canvas-node.is-shape .lumina-canvas-port {
+  width: 12px;
+  height: 12px;
+  background-color: var(--bg-panel, #18181b);
+  border: 1.5px solid var(--node-accent, var(--text-accent, #38bdf8));
+  border-radius: 50%;
+}
+
+/* When a line's filled head knob is docked to a shape knob, keep the filled head visible */
+.lumina-canvas-node.is-shape .lumina-canvas-port.is-connected {
+  opacity: 0.95;
+  transform: scale(0.95);
+  background-color: var(--port-color, var(--node-accent, var(--text-accent, #38bdf8)));
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) 55%, transparent);
+  pointer-events: auto;
+}
+
+.lumina-canvas-node.is-shape:hover .lumina-canvas-port.is-connected,
+.lumina-canvas-node.is-shape.selected .lumina-canvas-port.is-connected {
+  opacity: 1;
+  transform: scale(1.15);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) 80%, transparent);
+}
+
+/* Filled round head knob docked into shape knob */
+.lumina-canvas-node.is-shape .lumina-canvas-port.is-arrow-docked {
+  transform: scale(1.05);
+}
+
+.lumina-canvas-node.is-shape:hover .lumina-canvas-port.is-arrow-docked,
+.lumina-canvas-node.is-shape.selected .lumina-canvas-port.is-arrow-docked {
+  transform: scale(1.2);
+}
+

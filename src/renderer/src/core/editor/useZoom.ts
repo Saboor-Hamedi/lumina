@@ -19,7 +19,7 @@ export const useZoom = ({
 
   const settingsFontSize = useSettingsStore((state: any) => state.settings?.fontSize)
   const updateSetting = useSettingsStore((state: any) => state.updateSetting)
-  const { editorFontSize, updateEditorFontSize } = useFontSettings()
+  const { editorFontSize, updateEditorFontSize } = useFontSettings() as any
 
   const currentSize = settingsFontSize ?? editorFontSize ?? defaultSize
 
@@ -145,9 +145,9 @@ export const useZoom = ({
       }
     }
 
-    window.addEventListener('wheel', handleWheel, { capture: true, passive: false })
+    window.addEventListener('wheel', handleWheel as EventListener, { capture: true, passive: false })
     return () => {
-      window.removeEventListener('wheel', handleWheel, { capture: true, passive: false })
+      window.removeEventListener('wheel', handleWheel as EventListener, { capture: true })
     }
   }, [containerRef, setZoom, step])
 

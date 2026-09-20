@@ -33,7 +33,7 @@ describe('VaultManager', () => {
     VaultManager.snippets = new Map()
     VaultManager.folders = new Set()
     if (VaultManager.watcher) {
-      VaultManager.watcher.on('error', () => {})
+      ;(VaultManager.watcher as any).on('error', () => {})
     }
   })
 
@@ -146,7 +146,9 @@ describe('VaultManager', () => {
       // Simulate a legacy or stripped snippet in memory without relativePath
       const inMemory = VaultManager.snippets.get('fallback-test')
       expect(inMemory).toBeDefined()
-      delete inMemory.relativePath
+      if (inMemory) {
+        delete (inMemory as any).relativePath
+      }
 
       const readBack = await VaultManager.readSnippet('fallback-test')
       expect(readBack).toBeDefined()

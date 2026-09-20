@@ -65,7 +65,7 @@ And another genuine link: [[Pandas Advanced]].
   })
 
   it('accurately identifies broken links, healthy connections, and orphan notes', async () => {
-    const result = await auditWikilinksTool.execute({})
+    const result: any = await (auditWikilinksTool.execute as any)({})
 
     expect(result.success).toBe(true)
     const data = result.result as any

@@ -24,8 +24,8 @@ export const emptyLineSelectionFix: Extension = EditorView.domEventHandlers({
     if (!lineEl) return false
 
     try {
-      const coords = view.posAtCoords({ x: e.clientX, y: e.clientY })
-      if (!coords || typeof coords.pos !== 'number') return false
+      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY })
+      if (typeof pos !== 'number') return false
 
       const domPos = typeof view.posAtDOM === 'function' ? view.posAtDOM(lineEl) : -1
       if (typeof domPos !== 'number' || domPos < 0) return false
@@ -34,7 +34,7 @@ export const emptyLineSelectionFix: Extension = EditorView.domEventHandlers({
 
       // If clicked inside this line element but the coordinates resolved past line.to
       // (into the next line/paragraph), clamp the cursor to line.to so it stays at the end of this sentence.
-      if (coords.pos > line.to) {
+      if (pos > line.to) {
         e.preventDefault()
         view.focus()
         view.dispatch({
@@ -52,10 +52,10 @@ export const emptyLineSelectionFix: Extension = EditorView.domEventHandlers({
 
   dblclick(e: MouseEvent, view: EditorView) {
     try {
-      const coords = view.posAtCoords({ x: e.clientX, y: e.clientY })
-      if (!coords || typeof coords.pos !== 'number') return false
+      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY })
+      if (typeof pos !== 'number') return false
 
-      const line = view.state.doc.lineAt(coords.pos)
+      const line = view.state.doc.lineAt(pos)
       // 1. If the line is empty whitespace, collapse caret to line.from
       if (line.text.trim().length === 0) {
         e.preventDefault()
@@ -66,7 +66,7 @@ export const emptyLineSelectionFix: Extension = EditorView.domEventHandlers({
       }
 
       // 2. If double-clicking past the text on the line, simply place the caret at line.to without selecting full block
-      if (coords.pos >= line.to) {
+      if (pos >= line.to) {
         e.preventDefault()
         view.dispatch({
           selection: { anchor: line.to }
@@ -84,10 +84,10 @@ export const emptyLineSelectionFix: Extension = EditorView.domEventHandlers({
     // 3. Triple-click on a line: select strictly the line text without capturing trailing newline
     if (e.detail === 3) {
       try {
-        const coords = view.posAtCoords({ x: e.clientX, y: e.clientY })
-        if (!coords || typeof coords.pos !== 'number') return false
+        const pos = view.posAtCoords({ x: e.clientX, y: e.clientY })
+        if (typeof pos !== 'number') return false
 
-        const line = view.state.doc.lineAt(coords.pos)
+        const line = view.state.doc.lineAt(pos)
         e.preventDefault()
         view.dispatch({
           selection: { anchor: line.from, head: line.to }

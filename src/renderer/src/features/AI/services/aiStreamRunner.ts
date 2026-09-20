@@ -56,9 +56,13 @@ export const getToolStatusDescription = (toolName: string, args: Record<string, 
     case 'forgeMemory':
       return `🧠 *Removing from memory...*`
     case 'diagnoseSystem':
+    case 'luminaDiagnoseSystem':
       return `🩺 *Checking Lumina health & testing lumina-health.md...*`
     case 'auditWikilinks':
       return `🔗 *Auditing workspace links & orphan notes...*`
+    case 'luminaQueryIndex':
+    case 'queryIndex':
+      return `🔍 *Querying workspace index (${args.tag ? '#' + args.tag : ''}${args.folder ? ' in ' + args.folder : ''}${args.query ? ' "' + args.query + '"' : ''})...*`
     default:
       return `⚙️ *Working on ${toolName}...*`
   }
@@ -67,9 +71,13 @@ export const getToolStatusDescription = (toolName: string, args: Record<string, 
 export const getToolInputStartStatus = (toolName?: string): string => {
   switch (toolName) {
     case 'diagnoseSystem':
+    case 'luminaDiagnoseSystem':
       return 'Checking Lumina health...'
     case 'auditWikilinks':
       return 'Auditing workspace links & orphan notes...'
+    case 'luminaQueryIndex':
+    case 'queryIndex':
+      return 'Querying workspace index...'
     case 'createFolder':
       return 'Planning folder creation...'
     case 'createFile':
@@ -122,13 +130,7 @@ export const buildRealtimeDisplay = ({
   beforeToolText = '',
   afterToolText = ''
 }: RealtimeDisplayParams): string => {
-  const stripDSML = (text?: string): string =>
-    (text || '')
-      .replace(/<[^>]*[｜|][^>]*>/g, '')
-      .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
-      .replace(/<[｜|][^>]*$/g, '')
-      .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*$/gi, '')
-      .trim()
+  const stripDSML = (text?: string): string => cleanRawToolLeaks(text)
 
   const normalizeCodeBlocks = (text?: string): string => {
     if (!text) return ''
@@ -152,6 +154,11 @@ export const buildRealtimeDisplay = ({
         const healthText = (seg.content || '').trim()
         if (healthText) {
           blocks.push(`<lumina-health>\n${healthText}\n</lumina-health>`)
+        }
+      } else if (seg.type === 'index') {
+        const indexText = (seg.content || '').trim()
+        if (indexText) {
+          blocks.push(`<lumina-index>\n${indexText}\n</lumina-index>`)
         }
       } else if (seg.type === 'think') {
         const cleanThink = stripDSML(seg.content).trim()
@@ -272,6 +279,9 @@ export const getToolStartThought = (toolName: string): string => {
     case 'forgetMemory':
     case 'forgeMemory':
       return `Removing specified items from memory.json...`
+    case 'luminaQueryIndex':
+    case 'queryIndex':
+      return `Querying structured workspace index...`
     default:
       return `Executing ${toolName}...`
   }
@@ -305,76 +315,176 @@ export const getToolResultThought = (toolName: string, res: any, target: string 
     case 'forgetMemory':
     case 'forgeMemory':
       return `Removed from memory.json.`
+    case 'luminaQueryIndex':
+    case 'queryIndex':
+      return `Workspace index query returned matching records. Synthesizing insights...`
     default:
       return `Completed ${toolName}. Preparing walkthrough...`
   }
 }
 
+export const cleanRawToolLeaks = (text?: string): string => {
+  if (!text) return ''
+  return text
+    .replace(/<[｜|]{1,2}[\s\S]*?[｜|]{1,2}>/g, '')
+    .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
+    .replace(
+      /<\/?(?:tool_calls?|invoke|parameter|luminaQueryIndex|queryIndex|luminaDiagnoseSystem|diagnoseSystem|auditWikilinks)[^>]*>/gi,
+      ''
+    )
+    .replace(
+      /<(?:query|sortby|limit|tag|folder|linksTo|backlinksFor|hasFrontmatter|hasHeadings)>[\s\S]*?<\/(?:query|sortby|limit|tag|folder|linksTo|backlinksFor|hasFrontmatter|hasHeadings)>/gi,
+      ''
+    )
+    .replace(/limit>\s*\d+\s*<\/limit>/gi, '')
+    .replace(/(?:^|\s)[a-zA-Z0-9_-]+">\s*/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+export const extractParamsFromBody = (body: string, tagAttrText: string = ''): Record<string, any> => {
+  const params: Record<string, any> = {}
+
+  if (tagAttrText) {
+    const attrRegex = /([a-zA-Z0-9_-]+)=["']([^"']*)["']/g
+    for (const attrMatch of tagAttrText.matchAll(attrRegex)) {
+      params[attrMatch[1]] = attrMatch[2].trim()
+    }
+  }
+
+  const paramRegex =
+    /<[｜|]{1,2}(?:DSML[｜|]{1,2})?parameter\s+name=["']([a-zA-Z0-9_-]+)["']>([\s\S]*?)(?:<\/[｜|]{1,2}(?:DSML[｜|]{1,2})?parameter>|$)/gi
+  for (const pMatch of body.matchAll(paramRegex)) {
+    params[pMatch[1]] = pMatch[2].trim()
+  }
+
+  const childRegex = /<([a-zA-Z0-9_-]+)>([\s\S]*?)<\/\1>/gi
+  for (const cMatch of body.matchAll(childRegex)) {
+    params[cMatch[1]] = cMatch[2].trim()
+  }
+
+  const limitMatch = body.match(/limit>\s*(\d+)\s*<\/limit>/i)
+  if (limitMatch && !params.limit) {
+    params.limit = Number(limitMatch[1])
+  }
+
+  const trimmed = body.trim()
+  if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+    try {
+      const parsed = JSON.parse(trimmed)
+      Object.assign(params, parsed)
+    } catch (_) {}
+  }
+
+  return params
+}
+
+export interface ParseAndExecuteResult {
+  cleanedText: string
+  didExecute: boolean
+  toolOutputs: Array<{
+    type: 'index' | 'health' | 'audit' | 'activity' | 'memory'
+    content: string
+    summary?: string
+  }>
+}
+
 /**
- * Fallback parser for leaked DeepSeek Markup Language (DSML) tool invocations.
+ * Robust parser for leaked tool invocations (DSML, standard XML, direct tags, or pseudo-markup).
  */
 export const parseAndExecuteDSML = async (
   text: string,
   sdkTools: Record<string, any>,
   executedActions: string[]
-): Promise<{ cleanedText: string; didExecute: boolean }> => {
-  if (!text || (!text.includes('DSML') && !text.includes('tool_calls') && !text.includes('｜') && !text.includes('|'))) {
+): Promise<ParseAndExecuteResult> => {
+  const toolOutputs: ParseAndExecuteResult['toolOutputs'] = []
+  if (!text) {
+    return { cleanedText: '', didExecute: false, toolOutputs }
+  }
+
+  const hasToolIndicator =
+    text.includes('DSML') ||
+    text.includes('tool_call') ||
+    text.includes('invoke') ||
+    text.includes('｜') ||
+    text.includes('|') ||
+    /<(?:luminaQueryIndex|queryIndex|luminaDiagnoseSystem|diagnoseSystem|auditWikilinks|createFile|createFolder|updateFile|deleteFile)\b/i.test(
+      text
+    ) ||
+    /\b(?:luminaQueryIndex|queryIndex|luminaDiagnoseSystem|diagnoseSystem|auditWikilinks)">/i.test(text)
+
+  if (!hasToolIndicator) {
     return {
-      cleanedText: text
-        ? text
-            .replace(/<[^>]*[｜|][^>]*>/g, '')
-            .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
-            .trim()
-        : '',
-      didExecute: false
+      cleanedText: cleanRawToolLeaks(text),
+      didExecute: false,
+      toolOutputs
     }
   }
 
   let didExecute = false
 
-  const invokeRegex =
-    /<[｜|]{1,2}(?:DSML[｜|]{1,2})?invoke:?([a-zA-Z0-9_-]*)[\s\S]*?>([\s\S]*?)(?:<\/[｜|]{1,2}(?:DSML[｜|]{1,2})?invoke>|$)/gi
+  const handleToolRun = async (toolName: string, rawParams: Record<string, any>) => {
+    if (!toolName || !sdkTools || !sdkTools[toolName]?.execute) return
+    try {
+      console.log(`[StreamRunner] Intercepted leaked tool call: ${toolName}`, rawParams)
+      const res = await sdkTools[toolName].execute(rawParams)
+      didExecute = true
+      if (toolName === 'luminaQueryIndex' || toolName === 'queryIndex') {
+        const payload = res?.result
+          ? `<<<LUMINA_INDEX_QUERY:${JSON.stringify(res.result)}>>>\n${res?.summaryMarkdown || res?.summary || ''}`
+          : res?.summaryMarkdown || res?.summary || ''
+        toolOutputs.push({ type: 'index', content: payload })
+      } else if (toolName === 'luminaDiagnoseSystem' || toolName === 'diagnoseSystem') {
+        toolOutputs.push({ type: 'health', content: res?.summaryMarkdown || res?.summary || '' })
+      } else if (toolName === 'auditWikilinks') {
+        toolOutputs.push({ type: 'audit', content: res?.summaryMarkdown || res?.summary || '' })
+      } else if (toolName.includes('Memory')) {
+        toolOutputs.push({ type: 'memory', content: res?.summary || 'Updated memory.' })
+      } else if (res?.summary && !executedActions.includes(res.summary)) {
+        executedActions.push(res.summary)
+        toolOutputs.push({ type: 'activity', content: res.summary, summary: res.summary })
+      }
+    } catch (err) {
+      console.warn(`[StreamRunner] Error executing intercepted tool ${toolName}:`, err)
+    }
+  }
 
-  const matches = [...text.matchAll(invokeRegex)]
-  for (const match of matches) {
+  // Regex 1: DeepSeek DSML invokes <|invoke:name|>...<|/invoke|>
+  const dsmlRegex =
+    /<[｜|]{1,2}(?:DSML[｜|]{1,2})?invoke:?([a-zA-Z0-9_-]*)[\s\S]*?>([\s\S]*?)(?:<\/[｜|]{1,2}(?:DSML[｜|]{1,2})?invoke>|$)/gi
+  for (const match of text.matchAll(dsmlRegex)) {
     let toolName = (match[1] || '').trim()
     const body = match[2] || ''
-
     if (!toolName) {
       const nameMatch = match[0].match(/name=["']([a-zA-Z0-9_-]+)["']/i)
       if (nameMatch) toolName = nameMatch[1].trim()
     }
-
-    if (toolName && sdkTools && sdkTools[toolName]?.execute) {
-      const params: Record<string, any> = {}
-      const paramRegex =
-        /<[｜|]{1,2}(?:DSML[｜|]{1,2})?parameter\s+name=["']([a-zA-Z0-9_-]+)["']>([\s\S]*?)(?:<\/[｜|]{1,2}(?:DSML[｜|]{1,2})?parameter>|$)/gi
-      const paramMatches = [...body.matchAll(paramRegex)]
-      for (const pMatch of paramMatches) {
-        const paramName = pMatch[1]
-        const paramVal = pMatch[2].trim()
-        params[paramName] = paramVal
-      }
-
-      try {
-        console.log(`[StreamRunner] Intercepted leaked DSML tool: ${toolName}`, params)
-        const res = await sdkTools[toolName].execute(params)
-        if (res?.summary && !executedActions.includes(res.summary)) {
-          executedActions.push(res.summary)
-        }
-        didExecute = true
-      } catch (err) {
-        console.warn(`[StreamRunner] Error executing DSML tool ${toolName}:`, err)
-      }
-    }
+    const params = extractParamsFromBody(body, match[0])
+    await handleToolRun(toolName, params)
   }
 
-  const cleanedText = text
-    .replace(/<[^>]*[｜|][^>]*>/g, '')
-    .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
-    .trim()
+  // Regex 2: Standard XML pseudo-calls: <tool_call name="luminaQueryIndex">...</tool_call>
+  const toolCallRegex =
+    /<(?:tool_call|call|invoke)(?:\s*:\s*([a-zA-Z0-9_-]+)|\s+name=["']([a-zA-Z0-9_-]+)["'])?[^>]*>([\s\S]*?)<\/(?:tool_call|call|invoke)>/gi
+  for (const match of text.matchAll(toolCallRegex)) {
+    const toolName = (match[1] || match[2] || '').trim()
+    const body = match[3] || ''
+    const params = extractParamsFromBody(body, match[0])
+    await handleToolRun(toolName, params)
+  }
 
-  return { cleanedText, didExecute }
+  // Regex 3: Direct XML tool tag: <luminaQueryIndex>...</luminaQueryIndex> or mangled luminaQueryIndex">...
+  const directTagRegex =
+    /(?:<tool_call[^>]*name=["']?)?<?\b(luminaQueryIndex|queryIndex|luminaDiagnoseSystem|diagnoseSystem|auditWikilinks|saveMemory|createFile|createFolder|updateFile|deleteFile)["']?>\s*([\s\S]*?)<\/\1>/gi
+  for (const match of text.matchAll(directTagRegex)) {
+    const toolName = match[1].trim()
+    const body = match[2] || ''
+    const params = extractParamsFromBody(body, match[0])
+    await handleToolRun(toolName, params)
+  }
+
+  const cleanedText = cleanRawToolLeaks(text)
+  return { cleanedText, didExecute, toolOutputs }
 }
 
 export interface RunDeepSeekStreamParams {
@@ -494,6 +604,7 @@ export const runDeepSeekStream = async ({
       const isMemoryTool = ['saveMemory', 'updateMemory', 'forgetMemory', 'forgeMemory'].includes(streamingToolName)
       const isAuditTool = streamingToolName === 'auditWikilinks'
       const isHealthTool = ['diagnoseSystem', 'luminaDiagnoseSystem'].includes(streamingToolName)
+      const isIndexTool = ['luminaQueryIndex', 'queryIndex'].includes(streamingToolName)
       if (isMemoryTool) {
         timeline.push({
           type: 'memory',
@@ -513,6 +624,13 @@ export const runDeepSeekStream = async ({
           type: 'health',
           toolName: streamingToolName,
           content: JSON.stringify({ isChecking: true }),
+          isExecuting: true
+        })
+      } else if (isIndexTool) {
+        timeline.push({
+          type: 'index',
+          toolName: streamingToolName,
+          content: JSON.stringify({ isQuerying: true, filters: {} }),
           isExecuting: true
         })
       } else {
@@ -565,6 +683,7 @@ export const runDeepSeekStream = async ({
       const isMemoryTool = ['saveMemory', 'updateMemory', 'forgetMemory', 'forgeMemory'].includes(chunk.toolName)
       const isAuditTool = chunk.toolName === 'auditWikilinks'
       const isHealthTool = ['diagnoseSystem', 'luminaDiagnoseSystem'].includes(chunk.toolName)
+      const isIndexTool = ['luminaQueryIndex', 'queryIndex'].includes(chunk.toolName)
 
       let targetSeg = timeline.slice().reverse().find(
         (s) =>
@@ -575,7 +694,9 @@ export const runDeepSeekStream = async ({
               ? s.type === 'audit'
               : isHealthTool
                 ? s.type === 'health'
-                : s.type === 'activity')
+                : isIndexTool
+                  ? s.type === 'index'
+                  : s.type === 'activity')
       )
       if (!targetSeg) {
         targetSeg = isMemoryTool
@@ -584,7 +705,9 @@ export const runDeepSeekStream = async ({
             ? { type: 'audit', toolName: chunk.toolName, content: JSON.stringify({ isScanning: true }), isExecuting: true }
             : isHealthTool
               ? { type: 'health', toolName: chunk.toolName, content: JSON.stringify({ isChecking: true }), isExecuting: true }
-              : { type: 'activity', toolName: chunk.toolName, summary: '', activeStatus: activeToolStatus, isExecuting: true }
+              : isIndexTool
+                ? { type: 'index', toolName: chunk.toolName, content: JSON.stringify({ isQuerying: true, filters: args }), isExecuting: true }
+                : { type: 'activity', toolName: chunk.toolName, summary: '', activeStatus: activeToolStatus, isExecuting: true }
         timeline.push(targetSeg)
       } else if (targetSeg.type === 'activity') {
         targetSeg.activeStatus = activeToolStatus
@@ -597,6 +720,7 @@ export const runDeepSeekStream = async ({
       const isMemoryTool = ['saveMemory', 'updateMemory', 'forgetMemory', 'forgeMemory'].includes(chunk.toolName)
       const isAuditTool = chunk.toolName === 'auditWikilinks'
       const isHealthTool = ['diagnoseSystem', 'luminaDiagnoseSystem'].includes(chunk.toolName)
+      const isIndexTool = ['luminaQueryIndex', 'queryIndex'].includes(chunk.toolName)
 
       let targetSeg = timeline.slice().reverse().find(
         (s) =>
@@ -607,7 +731,9 @@ export const runDeepSeekStream = async ({
               ? s.type === 'audit'
               : isHealthTool
                 ? s.type === 'health'
-                : s.type === 'activity')
+                : isIndexTool
+                  ? s.type === 'index'
+                  : s.type === 'activity')
       )
       if (!targetSeg) {
         targetSeg = isMemoryTool
@@ -616,7 +742,9 @@ export const runDeepSeekStream = async ({
             ? { type: 'audit', toolName: chunk.toolName, content: '', isExecuting: false }
             : isHealthTool
               ? { type: 'health', toolName: chunk.toolName, content: '', isExecuting: false }
-              : { type: 'activity', toolName: chunk.toolName, summary: '', activeStatus: '', isExecuting: false }
+              : isIndexTool
+                ? { type: 'index', toolName: chunk.toolName, content: '', isExecuting: false }
+                : { type: 'activity', toolName: chunk.toolName, summary: '', activeStatus: '', isExecuting: false }
         timeline.push(targetSeg)
       }
 
@@ -650,6 +778,21 @@ export const runDeepSeekStream = async ({
           targetSeg.content = JSON.stringify({
             ...(res?.result || {}),
             isChecking: false
+          })
+        }
+        targetSeg.isExecuting = false
+      } else if (isIndexTool) {
+        if (res && res.success === false) {
+          targetSeg.content = JSON.stringify({ error: res.error, isQuerying: false })
+        } else {
+          const resultObj = res?.result || res || {}
+          targetSeg.content = JSON.stringify({
+            totalWorkspaceNotes: resultObj.totalWorkspaceNotes ?? res?.totalWorkspaceNotes ?? 0,
+            totalMatched: resultObj.totalMatched ?? res?.totalMatched ?? 0,
+            filters: resultObj.filters ?? res?.filters ?? {},
+            notes: resultObj.notes ?? res?.notes ?? [],
+            foldersRepresented: resultObj.foldersRepresented ?? res?.foldersRepresented ?? [],
+            isQuerying: false
           })
         }
         targetSeg.isExecuting = false
@@ -770,7 +913,7 @@ export const runDeepSeekStream = async ({
     const rawFinalText = await result.text
     if (rawFinalText && rawFinalText.trim()) {
       const executedActions: string[] = []
-      const { cleanedText } = await parseAndExecuteDSML(
+      const { cleanedText, toolOutputs } = await parseAndExecuteDSML(
         rawFinalText,
         sdkTools,
         executedActions
@@ -781,12 +924,37 @@ export const runDeepSeekStream = async ({
         }
       }
 
-      const cleanFinal = cleanedText
-        .replace(/<think>[\s\S]*?<\/think>/gi, '')
-        .replace(/<\/?think>/gi, '')
-        .replace(/<[^>]*[｜|][^>]*>/g, '')
-        .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
-        .trim()
+      if (toolOutputs && toolOutputs.length > 0) {
+        for (const out of toolOutputs) {
+          if (
+            out.type === 'index' &&
+            !timeline.some((s) => s.type === 'index' && s.content === out.content)
+          ) {
+            timeline.push({ type: 'index', content: out.content, isExecuting: false })
+          } else if (
+            out.type === 'health' &&
+            !timeline.some((s) => s.type === 'health' && s.content === out.content)
+          ) {
+            timeline.push({ type: 'health', content: out.content, isExecuting: false })
+          } else if (
+            out.type === 'audit' &&
+            !timeline.some((s) => s.type === 'audit' && s.content === out.content)
+          ) {
+            timeline.push({ type: 'audit', content: out.content, isExecuting: false })
+          } else if (
+            out.type === 'memory' &&
+            !timeline.some((s) => s.type === 'memory' && s.content === out.content)
+          ) {
+            timeline.push({ type: 'memory', content: out.content, isExecuting: false })
+          }
+        }
+      }
+
+      const cleanFinal = cleanRawToolLeaks(
+        cleanedText
+          .replace(/<think>[\s\S]*?<\/think>/gi, '')
+          .replace(/<\/?think>/gi, '')
+      )
 
       if (cleanFinal) {
         const existingText = timeline
@@ -809,17 +977,18 @@ export const runDeepSeekStream = async ({
     }
   } catch (_) {}
 
-  const stripStray = (txt?: string): string =>
-    (txt || '')
+  const stripStray = (txt?: string): string => {
+    if (!txt) return ''
+    const withoutSpecial = txt
       .replace(/<think>[\s\S]*?<\/think>/gi, '')
       .replace(/<\/?think>/gi, '')
       .replace(/<lumina-activity>[\s\S]*?<\/lumina-activity>/gi, '')
       .replace(/<lumina-memory>[\s\S]*?<\/lumina-memory>/gi, '')
       .replace(/<lumina-audit>[\s\S]*?<\/lumina-audit>/gi, '')
       .replace(/<lumina-health>[\s\S]*?<\/lumina-health>/gi, '')
-      .replace(/<[^>]*[｜|][^>]*>/g, '')
-      .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
-      .trim()
+      .replace(/<lumina-index>[\s\S]*?<\/lumina-index>/gi, '')
+    return cleanRawToolLeaks(withoutSpecial)
+  }
 
   for (const seg of timeline) {
     if (seg.type === 'text') {
@@ -1051,6 +1220,59 @@ export const applyLegacyMarkdownBlocks = async (fullContent: string, workspaceSt
     }
   }
 
+  // 4. Process luminaQueryIndex / queryIndex in fallback stream
+  const indexMatches = [
+    ...contentOutsideThink.matchAll(
+      /(?:<tool_call[^>]*name=["']?)?<?\b(?:luminaQueryIndex|queryIndex)["']?>\s*([\s\S]*?)<\/(?:luminaQueryIndex|queryIndex)>/gi
+    )
+  ]
+  for (const match of indexMatches) {
+    const body = match[1] || ''
+    const params = extractParamsFromBody(body, match[0])
+    try {
+      const { luminaQueryIndexTool } = await import('../tools/luminaQueryIndex')
+      const res: any = await (luminaQueryIndexTool.execute as any)(params)
+      const badgeBlock = `<lumina-index>\n${res.summaryMarkdown || res.summary || ''}\n</lumina-index>`
+      fullContent = fullContent.replace(match[0], badgeBlock)
+    } catch (err) {
+      console.warn('[StreamRunner] Fallback index execution failed:', err)
+    }
+  }
+
+  // 5. Process diagnoseSystem / luminaDiagnoseSystem in fallback stream
+  const doctorMatches = [
+    ...contentOutsideThink.matchAll(
+      /(?:<tool_call[^>]*name=["']?)?<?\b(?:diagnoseSystem|luminaDiagnoseSystem)["']?>\s*([\s\S]*?)<\/(?:diagnoseSystem|luminaDiagnoseSystem)>/gi
+    )
+  ]
+  for (const match of doctorMatches) {
+    try {
+      const { luminaDiagnoseSystemTool } = await import('../tools/luminaDiagnoseSystem')
+      const res: any = await (luminaDiagnoseSystemTool.execute as any)({})
+      const badgeBlock = `<lumina-health>\n${res.summaryMarkdown || res.summary || ''}\n</lumina-health>`
+      fullContent = fullContent.replace(match[0], badgeBlock)
+    } catch (err) {
+      console.warn('[StreamRunner] Fallback health execution failed:', err)
+    }
+  }
+
+  // 6. Process auditWikilinks in fallback stream
+  const auditMatches = [
+    ...contentOutsideThink.matchAll(
+      /(?:<tool_call[^>]*name=["']?)?<?\bauditWikilinks["']?>\s*([\s\S]*?)<\/auditWikilinks>/gi
+    )
+  ]
+  for (const match of auditMatches) {
+    try {
+      const { auditWikilinksTool } = await import('../tools/auditWikilinks')
+      const res: any = await (auditWikilinksTool.execute as any)({})
+      const badgeBlock = `<lumina-audit>\n${res.summaryMarkdown || res.summary || ''}\n</lumina-audit>`
+      fullContent = fullContent.replace(match[0], badgeBlock)
+    } catch (err) {
+      console.warn('[StreamRunner] Fallback audit execution failed:', err)
+    }
+  }
+
   // Strip tool blocks from chat display if any were applied
   if (appliedCreations > 0 || appliedUpdates > 0 || appliedDeletions > 0) {
     const prefixes = ['```lumina-create ', '```lumina-update ']
@@ -1071,8 +1293,8 @@ export const applyLegacyMarkdownBlocks = async (fullContent: string, workspaceSt
       if (appliedDeletions > 0) parts.push(`Deleted`)
       return `I've ${parts.join(' and ')}. You can find them in your workspace!`
     }
-    return text
+    return cleanRawToolLeaks(text)
   }
 
-  return fullContent
+  return cleanRawToolLeaks(fullContent)
 }

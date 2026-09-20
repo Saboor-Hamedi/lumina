@@ -28,6 +28,7 @@ export type CanvasNodeType =
   | 'image'
   | 'pdf'
   | 'shape'
+  | 'sticky'
 
 /**
  * Geometric shape identifier supported by the visual diagramming engine.
@@ -81,6 +82,8 @@ export interface CanvasNode {
   type: CanvasNodeType
   /** Optional geometry shape for 'shape' nodes */
   shape?: CanvasShapeType
+  /** Optional legacy/alternative shapeType property */
+  shapeType?: CanvasShapeType
   /** Canvas X coordinate in virtual canvas pixels */
   x: number
   /** Canvas Y coordinate in virtual canvas pixels */
@@ -93,6 +96,8 @@ export interface CanvasNode {
   color?: CanvasNodeColor
   /** Relative workspace file path (for 'note' or 'file' types) */
   file?: string
+  /** Image source URL for 'image' nodes */
+  imageUrl?: string
   /** Markdown text or plaintext content */
   text?: string
   /** External hyperlink URL (for 'link' type) */
@@ -101,6 +106,7 @@ export interface CanvasNode {
   title?: string
   /** Stacking order layer */
   zIndex?: number
+  [key: string]: any
 }
 
 /**

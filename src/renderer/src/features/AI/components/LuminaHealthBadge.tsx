@@ -128,8 +128,8 @@ export const LuminaHealthBadge: React.FC<LuminaHealthBadgeProps> = React.memo(
 
     return (
       <div
-        className={`lumina-health-card ${isExpanded ? 'expanded' : 'collapsed'} ${
-          isChecking ? 'checking' : 'complete'
+        className={`lumina-health-card ${isExpanded ? 'is-expanded expanded' : 'is-collapsed collapsed'} ${
+          isChecking ? 'is-checking checking' : 'is-complete complete'
         }`}
       >
         <div
@@ -139,40 +139,26 @@ export const LuminaHealthBadge: React.FC<LuminaHealthBadgeProps> = React.memo(
           }}
         >
           <div className="lumina-health-title-group">
-            <div className={`lumina-health-icon-badge ${isChecking ? 'pulse' : ''}`}>
-              <Activity
-                size={13}
-                className={`lumina-health-icon ${isChecking ? 'heartbeat-pulse' : ''}`}
-              />
-            </div>
-
-            <div className="lumina-health-text-block">
+            <Activity
+              size={12}
+              className={`lumina-health-icon ${isChecking ? 'heartbeat-pulse' : ''}`}
+            />
+            <span className="lumina-health-main-title">
+              {isChecking ? 'Diagnosing Lumina systems...' : 'Lumina System Diagnostics'}
+            </span>
+            <span className="lumina-health-stats">
               {isChecking ? (
-                <div className="lumina-health-checking-row">
-                  <span className="lumina-health-main-title">
-                    Diagnosing Lumina systems...
-                  </span>
-                  <span className="lumina-health-pulse-dot" />
-                </div>
+                <span className="lumina-health-pulse-dot" />
               ) : (
-                <div className="lumina-health-complete-row">
-                  <span className="lumina-health-main-title">
-                    All Systems Healthy
-                  </span>
-                  <span className="lumina-health-badge-pill pill-healthy">
-                    {healthData.checksPassed}/{healthData.totalChecks} checks passed
-                  </span>
-                  <span className="lumina-health-badge-pill pill-neutral">
-                    {healthData.ipcLatencyMs}ms response
-                  </span>
+                <>
+                  <span>{healthData.checksPassed}/{healthData.totalChecks} checks passed</span>
+                  <span> · {healthData.ipcLatencyMs}ms response</span>
                   {healthData.totalNotes > 0 && (
-                    <span className="lumina-health-badge-pill pill-neutral">
-                      {healthData.totalNotes.toLocaleString()} notes
-                    </span>
+                    <span> · {healthData.totalNotes.toLocaleString()} notes</span>
                   )}
-                </div>
+                </>
               )}
-            </div>
+            </span>
           </div>
 
           <div className="lumina-health-controls">
@@ -181,14 +167,9 @@ export const LuminaHealthBadge: React.FC<LuminaHealthBadgeProps> = React.memo(
                 <span className="lumina-health-scanner-beam" />
               </span>
             ) : (
-              <div className="lumina-health-status-right">
-                <span className="lumina-health-check-icon">
-                  <Check size={12} />
-                </span>
-                <span className="lumina-health-chevron">
-                  {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                </span>
-              </div>
+              <span className="lumina-health-chevron">
+                {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              </span>
             )}
           </div>
         </div>

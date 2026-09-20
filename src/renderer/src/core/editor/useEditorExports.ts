@@ -1,19 +1,6 @@
 import { useCallback } from 'react'
 import type { UseEditorExportsProps, UseEditorExportsReturn, ExportResult } from './types'
 
-declare global {
-  interface Window {
-    api?: {
-      exportHTML?: (payload: { title: string; content: string; language?: string }) => Promise<ExportResult>
-      exportPDF?: (payload: { title: string; content: string; language?: string }) => Promise<ExportResult>
-      exportText?: (payload: { title: string; content: string; language?: string }) => Promise<ExportResult>
-      exportDocs?: (payload: { title: string; content: string; language?: string }) => Promise<ExportResult>
-      exportMarkdown?: (payload: { title: string; content: string; language?: string }) => Promise<ExportResult>
-      exportMarkdownBundle?: (payload: { title: string; content: string; language?: string }) => Promise<ExportResult>
-      [key: string]: any
-    }
-  }
-}
 
 /**
  * Hardened Editor Exports Hook (`useEditorExports.ts`)

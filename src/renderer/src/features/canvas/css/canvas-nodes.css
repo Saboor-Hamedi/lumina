@@ -318,41 +318,59 @@
   box-shadow: 0 0 8px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 70%, transparent);
 }
 
-/* When magnetically pulled / snapped (Key enters hole / Precision Docking Socket) */
+/* When magnetically pulled / snapped: The empty round knob socket receives the filled head knob */
 .lumina-canvas-port.is-magnetic-snap {
   opacity: 1 !important;
   transform: scale(1.35) !important;
-  background-color: var(--bg-panel, #18181b) !important;
+  background-color: transparent !important;
   border-color: #ffffff !important;
-  border-width: 1.5px !important;
-  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 75%, transparent),
-              0 0 8px var(--node-accent, var(--text-accent, #38bdf8)) !important;
+  border-width: 2px !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) 85%, transparent),
+              0 0 16px var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) !important;
   animation: socketDockPulse 1.1s ease-in-out infinite alternate !important;
   z-index: 50;
 }
 
-/* Precision keyhole center receptor notch */
-.lumina-canvas-port.is-magnetic-snap::after {
+/* Connected Port (Arrow / wire docked, completely filling the empty knob gap) */
+.lumina-canvas-port.is-connected {
+  background-color: var(--port-color, var(--node-accent, var(--text-accent, #38bdf8)));
+  border-color: rgba(255, 255, 255, 0.85);
+  border-width: 1.5px;
+  box-shadow: 0 0 6px color-mix(in srgb, var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) 50%, transparent);
+}
+
+.lumina-canvas-port.is-connected::after {
   content: '';
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 2.5px;
-  height: 2.5px;
+  width: 3.5px;
+  height: 3.5px;
   border-radius: 50%;
-  background-color: var(--node-accent, var(--text-accent, #38bdf8));
-  box-shadow: 0 0 3px #ffffff;
+  background-color: #ffffff;
+  opacity: 0.95;
+}
+
+/* When port has an incoming arrow docked into it */
+.lumina-canvas-port.is-arrow-docked {
+  transform: scale(1.05);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) 65%, transparent);
+}
+
+.lumina-canvas-port.is-connected:hover {
+  transform: scale(1.3);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) 85%, transparent);
 }
 
 @keyframes socketDockPulse {
   0% {
-    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 70%, transparent),
-                0 0 6px var(--node-accent, var(--text-accent, #38bdf8));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) 70%, transparent),
+                0 0 8px var(--port-color, var(--node-accent, var(--text-accent, #38bdf8)));
   }
   100% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 85%, transparent),
-                0 0 12px var(--node-accent, var(--text-accent, #38bdf8));
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) 90%, transparent),
+                0 0 16px var(--port-color, var(--node-accent, var(--text-accent, #38bdf8)));
   }
 }
 

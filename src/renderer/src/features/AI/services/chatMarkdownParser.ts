@@ -5,7 +5,7 @@
  */
 
 export interface MessageBlock {
-  type: 'think' | 'activity' | 'memory' | 'audit' | 'health' | 'markdown'
+  type: 'think' | 'activity' | 'memory' | 'audit' | 'health' | 'index' | 'markdown'
   content: string
 }
 
@@ -71,18 +71,29 @@ export const parseMessageBlocks = (content?: string): MessageBlock[] => {
 
   const stripDSML = (txt: string) =>
     (txt || '')
-      .replace(/<[^>]*[｜|][^>]*>/g, '')
+      .replace(/<[｜|]{1,2}[\s\S]*?[｜|]{1,2}>/g, '')
       .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
+      .replace(
+        /<\/?(?:tool_calls?|invoke|parameter|luminaQueryIndex|queryIndex|luminaDiagnoseSystem|diagnoseSystem|auditWikilinks)[^>]*>/gi,
+        ''
+      )
+      .replace(
+        /<(?:query|sortby|limit|tag|folder|linksTo|backlinksFor|hasFrontmatter|hasHeadings)>[\s\S]*?<\/(?:query|sortby|limit|tag|folder|linksTo|backlinksFor|hasFrontmatter|hasHeadings)>/gi,
+        ''
+      )
+      .replace(/limit>\s*\d+\s*<\/limit>/gi, '')
+      .replace(/(?:^|\s)[a-zA-Z0-9_-]+">\s*/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
       .trim()
 
   const blocks: MessageBlock[] = []
-  const tagRegex = /(?:<think>([\s\S]*?)(?:<\/think>|$))|(?:<lumina-activity>([\s\S]*?)(?:<\/lumina-activity>|$))|(?:<lumina-memory>([\s\S]*?)(?:<\/lumina-memory>|$))|(?:<lumina-audit>([\s\S]*?)(?:<\/lumina-audit>|$))|(?:<lumina-health>([\s\S]*?)(?:<\/lumina-health>|$))/gi
+  const tagRegex = /(?:<think>([\s\S]*?)(?:<\/think>|$))|(?:<lumina-activity>([\s\S]*?)(?:<\/lumina-activity>|$))|(?:<lumina-memory>([\s\S]*?)(?:<\/lumina-memory>|$))|(?:<lumina-audit>([\s\S]*?)(?:<\/lumina-audit>|$))|(?:<lumina-health>([\s\S]*?)(?:<\/lumina-health>|$))|(?:<lumina-index>([\s\S]*?)(?:<\/lumina-index>|$))/gi
   let lastIndex = 0
   let match: RegExpExecArray | null
 
   while ((match = tagRegex.exec(content)) !== null) {
     const textBefore = content.slice(lastIndex, match.index)
-    const cleanBefore = stripDSML(textBefore).replace(/<\/?(?:think|lumina-activity|lumina-memory|lumina-audit|lumina-health)>/gi, '').trim()
+    const cleanBefore = stripDSML(textBefore).replace(/<\/?(?:think|lumina-activity|lumina-memory|lumina-audit|lumina-health|lumina-index)>/gi, '').trim()
     if (cleanBefore) {
       blocks.push({ type: 'markdown', content: cleanBefore })
     }
@@ -112,13 +123,18 @@ export const parseMessageBlocks = (content?: string): MessageBlock[] => {
       if (healthText) {
         blocks.push({ type: 'health', content: healthText })
       }
+    } else if (match[6] !== undefined) {
+      const indexText = (match[6] || '').trim()
+      if (indexText) {
+        blocks.push({ type: 'index', content: indexText })
+      }
     }
 
     lastIndex = tagRegex.lastIndex
   }
 
   const trailingText = content.slice(lastIndex)
-  const cleanTrailing = stripDSML(trailingText).replace(/<\/?(?:think|lumina-activity|lumina-memory|lumina-audit|lumina-health)>/gi, '').trim()
+  const cleanTrailing = stripDSML(trailingText).replace(/<\/?(?:think|lumina-activity|lumina-memory|lumina-audit|lumina-health|lumina-index)>/gi, '').trim()
   if (cleanTrailing) {
     blocks.push({ type: 'markdown', content: cleanTrailing })
   }
@@ -147,6 +163,51 @@ export const parseMessageBlocks = (content?: string): MessageBlock[] => {
       fallbackBlocks.push({ type: 'activity', content: actionLines.join('\n') })
       if (after) fallbackBlocks.push({ type: 'markdown', content: after })
       return fallbackBlocks
+    }
+  }
+
+  // Fallback for <<<LUMINA_INDEX_QUERY:...>>> markers without <lumina-index> tags
+  for (let i = 0; i < blocks.length; i++) {
+    if (blocks[i].type === 'markdown' && blocks[i].content.includes('<<<LUMINA_INDEX_QUERY:')) {
+      const fullText = blocks[i].content
+      const markerMatch = fullText.match(/<<<LUMINA_INDEX_QUERY:[\s\S]*?>>>/)
+      if (markerMatch && markerMatch.index !== undefined) {
+        const before = fullText.slice(0, markerMatch.index).trim()
+        const indexContent = markerMatch[0]
+        const after = fullText.slice(markerMatch.index + markerMatch[0].length).trim()
+
+        const replacement: MessageBlock[] = []
+        if (before) replacement.push({ type: 'markdown', content: before })
+        replacement.push({ type: 'index', content: indexContent })
+        if (after) replacement.push({ type: 'markdown', content: after })
+
+        blocks.splice(i, 1, ...replacement)
+        break
+      }
+    }
+  }
+
+  // Fallback for raw index query tables without <lumina-index> tags
+  for (let i = 0; i < blocks.length; i++) {
+    if (blocks[i].type === 'markdown' && blocks[i].content.includes('### 🔍 Workspace Index Query Results')) {
+      const fullText = blocks[i].content
+      const idx = fullText.indexOf('### 🔍 Workspace Index Query Results')
+      const before = fullText.slice(0, idx).trim()
+      const remainder = fullText.slice(idx)
+      const tableEndMatch = remainder.match(/(?:\|[^\n]+\|\n?)(?:\n(?![|*]))/i)
+      const endIdx = tableEndMatch && tableEndMatch.index !== undefined
+        ? tableEndMatch.index + tableEndMatch[0].length
+        : remainder.length
+      const indexContent = remainder.slice(0, endIdx).trim()
+      const after = remainder.slice(endIdx).trim()
+
+      const replacement: MessageBlock[] = []
+      if (before) replacement.push({ type: 'markdown', content: before })
+      replacement.push({ type: 'index', content: indexContent })
+      if (after) replacement.push({ type: 'markdown', content: after })
+
+      blocks.splice(i, 1, ...replacement)
+      break
     }
   }
 

@@ -262,7 +262,8 @@ export const buildSystemPrompt = async ({
   const isExecutionMode =
     modeCfg.enableTools !== false ||
     detectedIntent === 'DIAGNOSTICS' ||
-    detectedIntent === 'AUDIT_WIKILINKS'
+    detectedIntent === 'AUDIT_WIKILINKS' ||
+    detectedIntent === 'QUERY_INDEX'
   let systemPrompt = ''
 
   await (luminaMemory as any).loadMemory()
@@ -330,10 +331,12 @@ ${vaultAccessNote}
 
 ${userMemoryBlock}`
   } else {
-    systemPrompt = `CURRENT ACTIVE MODE: ${modeCfg.name.toUpperCase()} MODE.
-${modeCfg.systemAddon}
-
-CRITICAL MANDATORY EXECUTION DIRECTIVE:
+    const modeNameUpper = (modeCfg?.name || 'CODE').toUpperCase()
+    const modeAddon = modeCfg?.systemAddon || ''
+    systemPrompt =
+      `CURRENT ACTIVE MODE: ${modeNameUpper} MODE.\n` +
+      `${modeAddon}\n\n` +
+      `CRITICAL MANDATORY EXECUTION DIRECTIVE:
 1. CONVERSATIONAL OVERRIDE:
    - If the user says "let's talk", "talk first", "just talk", "don't write", "do not write", "don't create yet", "no files", "just brainstorm", "in chat", or asks to discuss without saving to workspace, DO NOT call any workspace file tools. Respond purely in chat conversation.
 2. DIRECT WORKSPACE CREATION BY DEFAULT (NOT IN PLAN MODE):
@@ -379,11 +382,12 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - Use wikilinks naturally and selectively.
 
 **CRITICAL EXECUTION DIRECTIVES (ZERO TOLERANCE FOR FILLER PROMISES)**:
-- ABSOLUTE BAN ON FUTURE-TENSE PROMISES: NEVER say "Let me read the file...", "Let me pull that up...", "I'll read it now...", "Let me check...", or "Let me see what's in it".
+- ABSOLUTE BAN ON FUTURE-TENSE PROMISES: NEVER say "Let me read the file...", "Let me pull that up...", "I'll read it now...", "Let me check...", "I'll run a structured index query...", or "I'll audit your links...".
 - When the user asks "what do you see?", "what do you read?", "have you read?", "so when?", or asks about any file:
   The note content is ALREADY provided in your context below.
   You MUST output the ACTUAL explanation, summary, and breakdown of what is inside the note IMMEDIATELY.
   NEVER promise to read it — simply deliver the actual answer right now!
+- ABSOLUTE BAN ON LEAKED XML PSEUDO-TOOL SYNTAX: NEVER write out raw pseudo-XML or tags like '<luminaQueryIndex>', '<auditWikilinks>', '<query>', '<sortBy>', etc., as conversational text. Call the tool natively through the tool-calling interface, or directly synthesize your findings and explain relevant workspace context in clean markdown!
 - ABSOLUTE BAN ON VERBAL-ONLY MEMORY CLAIMS: NEVER say "I've saved your name to memory", "I'll remember that", or "Saved to memory" in chat without ACTUALLY invoking the saveMemory, updateMemory, or forgetMemory tool call! If you claim you saved or remembered something without executing the tool call, it is completely lost and never saved to disk. Whenever the user shares personal details (name, role, bio), preferences, or asks you to remember or forget something, you MUST execute saveMemory / updateMemory / forgetMemory immediately!
 - ABSOLUTE BAN ON UNSOLICITED MEMORY TABLES/DUMPS: When saving or updating memory (saveMemory, updateMemory, forgetMemory), output ONLY a short, warm, 1-sentence confirmation (e.g. "Got it, Saboor! I've saved your name to memory."). NEVER output a table, summary, or list of what is stored in memory.json! Only show memory contents if the user EXPLICITLY asks "what do you know about me?", "what do you remember?", or "what is in your memory?".
 ${settingsAwarenessBlock}
@@ -407,6 +411,7 @@ ${settingsAwarenessBlock}
 - 'openFile' — open a file in the user's editor tab only if the user explicitly asks to view/open it
 - 'diagnoseSystem' — run a health check on Lumina: checks app responsiveness, verifies workspace storage by testing read and write on lumina-health.md in the workspace root, inspects the note editor, counts workspace notes and folders, and checks AI assistant readiness.
 - 'auditWikilinks' — scan and audit the entire workspace for broken wikilinks (links pointing to notes that do not exist yet), orphan notes (notes with zero incoming or outgoing connections), and report link connectivity health across all files.
+- 'luminaQueryIndex' (or 'queryIndex') — query the structured workspace index to find and filter notes by frontmatter, tags (#tag), folder, outgoing wikilinks, backlinks, headings, or keyword search. Returns structured index records and formatted markdown summary table.
 
 **HOW TO USE TOOLS & ROUTE INTENT**:
 1. WHEN THE USER ASKS TO UPDATE, EDIT, MODIFY, IMPROVE, FIX, OR ADD TO A NOTE:
@@ -433,6 +438,7 @@ ${settingsAwarenessBlock}
 14. FOR "forget", "remove from memory", "delete memory" → call forgetMemory immediately.
 15. FOR "check yourself", "run diagnostics", "test your health", "system health", "health check", or "/doctor" → call diagnoseSystem immediately! Run the read-and-write test on lumina-health.md, check system responsiveness, and show the clean health check report table in chat.
 16. FOR "how many files do not have wikilink or broken?", "check my links", "find broken links", "audit wikilinks", or questions about link health or orphan notes → call auditWikilinks immediately! Do NOT claim you cannot see file contents or cannot scan the workspace. Run auditWikilinks, display the complete health table, and offer to scaffold missing notes.
+17. FOR queries about notes by tag (e.g. "#tag"), folder contents, backlinks ("notes linking to X"), outgoing links, frontmatter keys, or structured workspace index queries → call luminaQueryIndex (or queryIndex) immediately! Query the structured index to get accurate records, and synthesize your findings in chat.
 
 **CONTEXT**:
 ${vaultAccessNote}
@@ -569,6 +575,13 @@ The clean in-app health badge will render directly in chat.`
 The user asked about broken wikilinks, orphan notes, or link connectivity health across their workspace.
 You MUST call the \`auditWikilinks\` tool immediately! Do NOT claim that you cannot inspect files or cannot scan the workspace.
 Once \`auditWikilinks\` finishes executing, present the clear link health table, list any broken references and orphan notes, and warmly offer to create starter notes for missing targets.`
+  }
+
+  if (detectedIntent === 'QUERY_INDEX') {
+    systemPrompt += `\n\n**CRITICAL MANDATORY WORKSPACE INDEX QUERY INSTRUCTION**:
+The user asked to query or filter workspace notes (e.g. by tag, folder, backlinks, outgoing links, frontmatter, or headings).
+You MUST call the \`luminaQueryIndex\` (or \`queryIndex\`) tool immediately to inspect structured index records!
+After calling the tool, synthesize your findings and explain relevant connections.`
   }
 
   return systemPrompt

@@ -812,3 +812,65 @@ Sidebars previously shrank/compressed their content when dragged inward. The tar
   - Interactive viewport bounding rectangle reflecting current pan and zoom coordinates.
   - Click-and-drag navigation across the minimap to instantly reposition the main canvas viewport.
   - Quick zoom controls (+, -, 100% reset) and fit-to-view calculation.
+
+### II. Workspace Index Query Engine & Dynamic Interactive Badges
+- **Architecture & Tool Registration (`luminaQueryIndex.ts` & `src/renderer/src/features/AI/tools/`)**:
+  - Registered as `luminaQueryIndex` in the central tool registry and system prompt instructions.
+  - Queries indexed workspace metadata (files, tags, folders, backlinks, frontmatter keys, and timestamps) directly from `useWorkspaceStore` without heavy file I/O or full-text parsing overhead.
+  - Flexible query parameters:
+    - `query` (optional keyword/pattern matching against note title and relative filepath)
+    - `tag` (optional filter for notes containing specific hashtags or YAML frontmatter tags)
+    - `folder` (optional filter restricting results to specific subdirectories)
+    - `hasBacklinks` (boolean flag to isolate connected hubs vs. orphan notes)
+    - `limit` (configurable maximum records, default 20)
+- **Natural Document Block Flow (Not Pinned to Top)**:
+  - Outputs a structured marker `<<<LUMINA_INDEX_QUERY: { ... }>>>` within the AI's response stream.
+  - Renders inline at the exact semantic location where the search happens—whether at the top, middle, or bottom of the response, between thinking blocks and explanatory text.
+  - Preserves natural conversational reading order without artificial layout pinning or jarring layout shifts.
+- **Interactive Index Badge Component (`LuminaIndexBadge.tsx` & `indexBadge.css`)**:
+  - High-performance, accessible React component with collapsible accordions.
+  - Header displays search parameters, matched count, and execution context.
+  - Each item renders an interactive row with file icon, note title, relative path, tag chips, and backlink count.
+  - Clicking any item triggers `openNoteInEditor(path)` to navigate directly to the note inside Lumina.
+  - Styled with semantic tokens (`--ai-badge-bg`, `--ai-badge-border`, `--ai-text-secondary`).
+- **Natural Language Intent Routing (`intentRouter.ts` & `/index`)**:
+  - Supports natural questions (e.g., "What notes are tagged #project?", "Show my workspace structure in /research", "Find connected notes") and slash commands `/index` and `/query`.
+  - Automatically routes matching requests to the `luminaQueryIndex` tool.
+
+### JJ. Live System Health Diagnostics Engine & Zero-Overhead Telemetry
+- **Architecture & Tool Registry (`luminaDiagnoseSystem.ts` & `LuminaHealthBadge.tsx`)**:
+  - Registered as `luminaDiagnoseSystem` with slash shortcut `/doctor`.
+  - Provides instantaneous, read-only diagnostic telemetry across core subsystems without disk write pollution or side effects:
+    1. Workspace Store: note count, active file, folder depth, memory footprint estimate.
+    2. Knowledge Graph: node count, directed edge connections, orphan note count, hub density.
+    3. Storage & Sync: Google Drive sync configuration, LevelDB key-value manifest health, localStorage utilization.
+    4. AI Engine: active provider (Ollama, OpenRouter, Claude, LM Studio, etc.), current model, context window budget, memory store status.
+- **LuminaHealthBadge HUD (`healthBadge.css`)**:
+  - Semantic status indicators: `healthy` (emerald green), `warning` (amber), `critical` (rose red).
+  - Interactive drill-down into latency benchmarks and subsystem integrity.
+
+### KK. Wikilink & Orphan Note Knowledge Graph Auditor
+- **Auditor Architecture (`auditWikilinks.ts` & `LuminaAuditBadge.tsx`)**:
+  - Registered as `auditWikilinks` tool and slash shortcut `/audit`.
+  - Performs full relational audit across all workspace Markdown documents:
+    - Broken Wikilinks: identifies `[[target]]` links pointing to non-existent notes, offering 1-click note creation.
+    - Orphan Notes: isolates disconnected notes with 0 incoming and 0 outgoing links for pruning or synthesis.
+    - Dead-End Notes: notes with incoming links but 0 outgoing references.
+    - Link Integrity Score: percentage of healthy cross-references across the workspace graph.
+
+### LL. AI Chat Modular CSS Architecture & Porcelain Theme Ergonomics
+- **CSS Modularization & File Pruning**:
+  - Deconstructed monolithic `chatMessages.css` into specialized, single-responsibility stylesheets:
+    - `src/renderer/src/features/AI/css/treeBadge.css` — Workspace file tree inspector badge.
+    - `src/renderer/src/features/AI/css/indexBadge.css` — Query index badge.
+    - `src/renderer/src/features/AI/css/healthBadge.css` — System doctor HUD.
+    - `src/renderer/src/features/AI/css/auditBadge.css` — Wikilink auditor HUD.
+    - `src/renderer/src/features/AI/css/memoryBadge.css` — Long-term memory preview badge.
+  - Eliminated redundant `src/renderer/src/features/AI/lumina.css` in favor of centralized `src/renderer/src/features/AI/css/lumina.css`.
+- **Refined Tree Badge Design**:
+  - Streamlined tree badge header from bloated, oversized container down to a sleek 28px height with compact, subtle copy and expand icons.
+  - Removed duplicate copy buttons and excess padding.
+- **Porcelain Light Theme & Contrast Polish**:
+  - Hardened CSS variable fallback chains for high-luminance themes (Porcelain, Paper, Alabaster).
+  - Guaranteed crisp contrast on code blocks, tool badges, and user/assistant message bubbles.
+

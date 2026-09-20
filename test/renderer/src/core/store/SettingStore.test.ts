@@ -3,6 +3,7 @@
  * @description Unit tests for SettingStore.ts (TypeScript migration).
  */
 
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useSettingStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 
 describe('SettingStore', () => {

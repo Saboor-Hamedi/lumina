@@ -3,6 +3,7 @@
  * @description Unit tests for UpdateSetting.ts (TypeScript migration).
  */
 
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { useUpdateSettingStore } from '../../../../../src/renderer/src/core/store/UpdateSetting'
 
 describe('UpdateSetting store', () => {

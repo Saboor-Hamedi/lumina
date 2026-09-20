@@ -15,9 +15,10 @@ import { clearFileTool } from './clearFile'
 import { readBrainFileTool } from './readBrainFile'
 import { luminaDiagnoseSystemTool, diagnoseSystemTool } from './luminaDiagnoseSystem'
 import { auditWikilinksTool } from './auditWikilinks'
+import { luminaQueryIndexTool, queryIndexTool } from './luminaQueryIndex'
 import { saveMemoryTool, updateMemoryTool, forgetMemoryTool } from '../../../core/ai/memory'
 
-export { luminaDiagnoseSystemTool, diagnoseSystemTool, auditWikilinksTool }
+export { luminaDiagnoseSystemTool, diagnoseSystemTool, auditWikilinksTool, luminaQueryIndexTool, queryIndexTool }
 
 export const getAITools = (blockReadFile?: boolean, allowOpenFile: boolean = false): Record<string, any> => {
   const tools: Record<string, any> = {
@@ -27,6 +28,8 @@ export const getAITools = (blockReadFile?: boolean, allowOpenFile: boolean = fal
     diagnoseSystem: luminaDiagnoseSystemTool,
     luminaDiagnoseSystem: luminaDiagnoseSystemTool,
     auditWikilinks: auditWikilinksTool,
+    luminaQueryIndex: luminaQueryIndexTool,
+    queryIndex: queryIndexTool,
     readBrainFile: readBrainFileTool,
     saveMemory: saveMemoryTool,
     updateMemory: updateMemoryTool,

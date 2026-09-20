@@ -5,7 +5,7 @@ import { useWorkspaceStore } from '../../../../../../src/renderer/src/core/store
 import { defaultTemplates } from '../../../../../../src/renderer/src/features/template/hooks/defaultTemplates'
 
 vi.mock('../../../../../../src/renderer/src/features/template/Template', () => ({
-  default: ({ isOpen, onClose, templates, onSelectTemplate }) =>
+  default: ({ isOpen, onClose, templates, onSelectTemplate }: any) =>
     isOpen ? (
       <div data-testid="template-modal">
         <button
@@ -34,11 +34,10 @@ describe('DailyNotes', () => {
       selectedSnippet: null,
       isLoading: false,
       searchQuery: '',
-      dirtySnippetIds: [],
       openTabs: [],
       activeTabId: null,
       pinnedTabIds: []
-    })
+    } as any)
     global.window.api = {
       ...global.window.api,
       createFolder: vi.fn().mockResolvedValue(true),
@@ -60,7 +59,7 @@ describe('DailyNotes', () => {
 
     expect(await screen.findByTestId('template-modal')).toBeInTheDocument()
     const templateSaves = global.window.api.saveSnippet.mock.calls.filter(
-      ([snip]) => snip.folderId === 'Templates'
+      ([snip]: any) => snip.folderId === 'Templates'
     )
     expect(templateSaves.length).toBe(0)
     expect(global.window.api.createFolder).not.toHaveBeenCalledWith('Templates')
@@ -74,7 +73,7 @@ describe('DailyNotes', () => {
       expect(screen.getByTestId('template-modal')).toBeInTheDocument()
     })
     const templateSaves = global.window.api.saveSnippet.mock.calls.filter(
-      ([snip]) => snip.folderId === 'Templates'
+      ([snip]: any) => snip.folderId === 'Templates'
     )
     expect(templateSaves.length).toBe(0)
   })
@@ -88,13 +87,13 @@ describe('DailyNotes', () => {
 
     await waitFor(() => {
       const daily = global.window.api.saveSnippet.mock.calls.find(
-        ([snip]) => snip.folderId === 'DailyNotes'
+        ([snip]: any) => snip.folderId === 'DailyNotes'
       )
       expect(daily).toBeTruthy()
     })
-    const daily = global.window.api.saveSnippet.mock.calls.find(
-      ([snip]) => snip.folderId === 'DailyNotes'
-    )[0]
+    const daily = (global.window.api.saveSnippet.mock.calls.find(
+      ([snip]: any) => snip.folderId === 'DailyNotes'
+    ) as any)[0]
     expect(daily.title.startsWith(`${todayISO} - `)).toBe(true)
     expect(daily.code.startsWith(`# ${daily.title}`)).toBe(true)
   })
@@ -117,7 +116,7 @@ describe('DailyNotes', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Choose Template' }))
     await waitFor(() => {
-      expect(useWorkspaceStore.getState().selectedSnippet?.folderId).toBe('DailyNotes')
+      expect((useWorkspaceStore.getState() as any).selectedSnippet?.folderId).toBe('DailyNotes')
     })
   })
 
@@ -129,13 +128,13 @@ describe('DailyNotes', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Choose Blank' }))
     await waitFor(() => {
       const daily = global.window.api.saveSnippet.mock.calls.find(
-        ([snip]) => snip.folderId === 'DailyNotes'
+        ([snip]: any) => snip.folderId === 'DailyNotes'
       )
       expect(daily).toBeTruthy()
     })
-    const daily = global.window.api.saveSnippet.mock.calls.find(
-      ([snip]) => snip.folderId === 'DailyNotes'
-    )[0]
+    const daily = (global.window.api.saveSnippet.mock.calls.find(
+      ([snip]: any) => snip.folderId === 'DailyNotes'
+    ) as any)[0]
     expect(daily.title).toBe(`${todayISO} - Note`)
   })
 
@@ -147,7 +146,7 @@ describe('DailyNotes', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close Modal' }))
     expect(screen.queryByTestId('template-modal')).not.toBeInTheDocument()
     const dailySaves = global.window.api.saveSnippet.mock.calls.filter(
-      ([snip]) => snip.folderId === 'DailyNotes'
+      ([snip]: any) => snip.folderId === 'DailyNotes'
     )
     expect(dailySaves.length).toBe(0)
   })
