@@ -404,6 +404,18 @@
   background-color: var(--bg-panel, #18181b);
   border: 1.5px solid var(--node-accent, var(--text-accent, #38bdf8));
   border-radius: 50%;
+  transition: opacity 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+
+/* When magnetically snapped close to shape, round empty knob slightly expands by 1px */
+.lumina-canvas-node.is-shape .lumina-canvas-port.is-magnetic-snap {
+  opacity: 1 !important;
+  width: 13px !important;
+  height: 13px !important;
+  background-color: var(--bg-panel, #18181b) !important;
+  border: 1.5px solid var(--node-accent, var(--text-accent, #38bdf8)) !important;
+  box-shadow: none !important;
+  animation: none !important;
 }
 
 /* When a line's filled head knob is docked to a shape knob, keep the filled head visible */

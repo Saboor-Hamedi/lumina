@@ -318,60 +318,25 @@
   box-shadow: 0 0 8px color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 70%, transparent);
 }
 
-/* When magnetically pulled / snapped: The empty round knob socket receives the filled head knob */
+/* When magnetically pulled / snapped: Empty round knob simply slightly expands by 1px */
 .lumina-canvas-port.is-magnetic-snap {
   opacity: 1 !important;
-  transform: scale(1.35) !important;
-  background-color: transparent !important;
-  border-color: #ffffff !important;
-  border-width: 2px !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) 85%, transparent),
-              0 0 16px var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) !important;
-  animation: socketDockPulse 1.1s ease-in-out infinite alternate !important;
-  z-index: 50;
+  width: 13px !important;
+  height: 13px !important;
+  background-color: var(--bg-panel, #18181b) !important;
+  border: 1.5px solid var(--node-accent, var(--text-accent, #38bdf8)) !important;
+  box-shadow: none !important;
+  animation: none !important;
+  z-index: 30;
 }
 
-/* Connected Port (Arrow / wire docked, completely filling the empty knob gap) */
-.lumina-canvas-port.is-connected {
-  background-color: var(--port-color, var(--node-accent, var(--text-accent, #38bdf8)));
-  border-color: rgba(255, 255, 255, 0.85);
-  border-width: 1.5px;
-  box-shadow: 0 0 6px color-mix(in srgb, var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) 50%, transparent);
+.lumina-canvas-node:not(.is-shape) .lumina-canvas-port.port-top.is-magnetic-snap,
+.lumina-canvas-node:not(.is-shape) .lumina-canvas-port.port-bottom.is-magnetic-snap {
+  margin-left: -6.5px !important;
 }
-
-.lumina-canvas-port.is-connected::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 3.5px;
-  height: 3.5px;
-  border-radius: 50%;
-  background-color: #ffffff;
-  opacity: 0.95;
-}
-
-/* When port has an incoming arrow docked into it */
-.lumina-canvas-port.is-arrow-docked {
-  transform: scale(1.05);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) 65%, transparent);
-}
-
-.lumina-canvas-port.is-connected:hover {
-  transform: scale(1.3);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) 85%, transparent);
-}
-
-@keyframes socketDockPulse {
-  0% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) 70%, transparent),
-                0 0 8px var(--port-color, var(--node-accent, var(--text-accent, #38bdf8)));
-  }
-  100% {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--port-color, var(--node-accent, var(--text-accent, #38bdf8))) 90%, transparent),
-                0 0 16px var(--port-color, var(--node-accent, var(--text-accent, #38bdf8)));
-  }
+.lumina-canvas-node:not(.is-shape) .lumina-canvas-port.port-left.is-magnetic-snap,
+.lumina-canvas-node:not(.is-shape) .lumina-canvas-port.port-right.is-magnetic-snap {
+  margin-top: -6.5px !important;
 }
 
 .lumina-canvas-port.port-top {
@@ -562,19 +527,19 @@
 }
 
 .lumina-canvas-edge-label-bg {
-  fill: color-mix(in srgb, var(--bg-panel, #18181b) 96%, transparent);
-  stroke: var(--border-subtle, rgba(255, 255, 255, 0.15));
-  stroke-width: 1px;
-  transition: stroke 0.15s ease, filter 0.15s ease;
-  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.25));
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 0;
+  filter: none;
 }
 
 .lumina-canvas-edge-label-badge:hover .lumina-canvas-edge-label-bg {
-  stroke: var(--text-accent, #38bdf8);
+  fill: transparent;
+  stroke: transparent;
 }
 
 .lumina-canvas-edge-label-text {
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 500;
   font-family: inherit;
   fill: var(--text-main, #e2e8f0);
@@ -583,6 +548,12 @@
   alignment-baseline: central;
   user-select: none;
   pointer-events: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 2px rgba(0, 0, 0, 0.9);
+  transition: fill 0.15s ease;
+}
+
+.lumina-canvas-edge-label-badge:hover .lumina-canvas-edge-label-text {
+  fill: var(--text-accent, #38bdf8);
 }
 
 /* Edge Label Inline Editor */
