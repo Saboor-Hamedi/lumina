@@ -35,7 +35,8 @@ import {
   CanvasEdgesLayer,
   CanvasNodesLayer,
   CanvasAlignmentGuidesLayer,
-  ConvasToolBarCenter
+  ConvasToolBarCenter,
+  SHAPE_COLOR_OPTIONS
 } from './components'
 import { ConvasToolBarRight } from './toolbar'
 import { Notification, useToast } from '../../core/notification'
@@ -98,6 +99,8 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     updateNodeText,
     updateNodeTitle,
     updateNodeColor,
+    updateNodeShape,
+    updateNodesShapes,
     deleteNode,
     deleteSelected,
     duplicateNodes,
@@ -688,6 +691,36 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     [nodeMap, updateNodeColor, setEdges, pushHistory]
   )
 
+  const selectedShapeNodes = useMemo(
+    () => selectedNodes.filter((n) => n.type === 'shape' || !!n.shape || !!(n as any).shapeType),
+    [selectedNodes]
+  )
+
+  const canReplaceShape = selectedShapeNodes.length > 0
+
+  const selectedShapeType = useMemo(() => {
+    if (selectedShapeNodes.length === 0) return null
+    return (selectedShapeNodes[0].shape || (selectedShapeNodes[0] as any).shapeType || 'rectangle') as CanvasShapeType
+  }, [selectedShapeNodes])
+
+  const selectedColorHex = useMemo(() => {
+    if (selectedNodes.length === 0) return undefined
+    const colorId = selectedNodes[0].color || 'default'
+    const found = SHAPE_COLOR_OPTIONS.find((c) => c.id === colorId)
+    return found ? found.hex : undefined
+  }, [selectedNodes])
+
+  const handleReplaceShape = useCallback(
+    (newShape: CanvasShapeType) => {
+      const targetIds = selectedNodes
+        .filter((n) => n.type === 'shape' || !!n.shape || !!(n as any).shapeType)
+        .map((n) => n.id)
+      if (targetIds.length === 0) return
+      updateNodesShapes(targetIds, newShape)
+    },
+    [selectedNodes, updateNodesShapes]
+  )
+
   /**
    * Export handlers
    */
@@ -810,6 +843,9 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           snappedPortSide={snappedTarget?.side}
           connectedPortsMap={connectedPortsMap}
           selectionBox={selectionBox}
+          selectedShapeType={selectedShapeType}
+          canReplaceShape={canReplaceShape}
+          selectedColorHex={selectedColorHex}
           onNodeMouseDown={handleNodeMouseDown}
           onPortMouseDown={handlePortMouseDown}
           onResizeMouseDown={handleResizeMouseDown}
@@ -826,6 +862,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           onCycleColor={handleCycleColor}
           onDuplicateNode={(id) => duplicateNodes([id])}
           onDeleteNode={deleteNode}
+          onReplaceShape={handleReplaceShape}
           onAlignSelection={handleAlignSelection}
           onDistributeSelection={handleDistributeSelection}
           onDuplicateSelection={() => duplicateNodes()}

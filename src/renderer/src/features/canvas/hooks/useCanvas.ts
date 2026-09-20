@@ -12,7 +12,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { CanvasViewport, CanvasNode, CanvasEdge, CanvasData, CanvasNodeColor, CanvasEdgeLineStyle, CanvasEdgeEnd } from '../types'
+import { CanvasViewport, CanvasNode, CanvasEdge, CanvasData, CanvasNodeColor, CanvasEdgeLineStyle, CanvasEdgeEnd, CanvasShapeType } from '../types'
 import { normalizeNode, safeNumber } from '../utils/canvasUtils'
 
 export interface UseCanvasOptions {
@@ -315,6 +315,40 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   }, [])
 
   /**
+   * Updates a shape node's geometry without disconnecting wires or resetting theme/size.
+   */
+  const updateNodeShape = useCallback(
+    (id: string, shape: CanvasShapeType) => {
+      pushHistory()
+      setNodes((prev) =>
+        prev.map((n) => {
+          if (n.id !== id) return n
+          return { ...n, type: 'shape', shape, shapeType: shape }
+        })
+      )
+    },
+    [pushHistory]
+  )
+
+  /**
+   * Updates shape geometry for multiple nodes in batch.
+   */
+  const updateNodesShapes = useCallback(
+    (ids: string[], shape: CanvasShapeType) => {
+      if (ids.length === 0) return
+      pushHistory()
+      const idSet = new Set(ids)
+      setNodes((prev) =>
+        prev.map((n) => {
+          if (!idSet.has(n.id)) return n
+          return { ...n, type: 'shape', shape, shapeType: shape }
+        })
+      )
+    },
+    [pushHistory]
+  )
+
+  /**
    * Deletes a node and cleans up any connected edges automatically.
    */
   const deleteNode = useCallback((id: string) => {
@@ -549,6 +583,8 @@ export function useCanvas(options: UseCanvasOptions = {}) {
     updateNodeText,
     updateNodeTitle,
     updateNodeColor,
+    updateNodeShape,
+    updateNodesShapes,
     deleteNode,
     deleteSelected,
     duplicateNodes,

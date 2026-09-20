@@ -278,4 +278,85 @@ describe('ConvasShapes Palette & Renderer', () => {
     // The other node is preserved
     expect(screen.getByText('Preserve Me')).toBeInTheDocument()
   })
+
+  it('replaces shape in-place from selection toolbar while preserving connected wires, theme color, and text', async () => {
+    const dataWithEdge: CanvasData = {
+      nodes: [
+        {
+          id: 'triangle-node',
+          type: 'shape',
+          shape: 'triangle',
+          text: 'My Triangle Process',
+          x: 50,
+          y: 50,
+          width: 140,
+          height: 100,
+          color: 'cyan'
+        },
+        {
+          id: 'target-node',
+          type: 'text',
+          title: 'Connected Target',
+          text: 'Preserved Target',
+          x: 300,
+          y: 50,
+          width: 180,
+          height: 100,
+          color: 'purple'
+        }
+      ],
+      edges: [
+        {
+          id: 'test-edge-1',
+          fromNode: 'triangle-node',
+          fromSide: 'right',
+          toNode: 'target-node',
+          toSide: 'left'
+        }
+      ],
+      viewport: { x: 0, y: 0, zoom: 1 }
+    }
+
+    const { container } = render(<CanvasView initialData={dataWithEdge} />)
+    const shapeNode = container.querySelector('[data-node-id="triangle-node"]')!
+    expect(shapeNode).toBeInTheDocument()
+    expect(shapeNode).toHaveClass('shape-triangle')
+    expect(shapeNode).toHaveClass('color-cyan')
+    expect(screen.getByText('My Triangle Process')).toBeInTheDocument()
+
+    // Select the triangle shape node
+    fireEvent.mouseDown(shapeNode, { button: 0, clientX: 60, clientY: 60 })
+    await waitFor(() => {
+      expect(shapeNode).toHaveClass('selected')
+    })
+
+    // The selection toolbar should be rendered and have the Replace Shape button
+    const replaceBtn = await waitFor(() => {
+      const btn = container.querySelector('button[aria-label="Replace Shape"]')
+      expect(btn).toBeInTheDocument()
+      return btn!
+    })
+
+    // Click Replace Shape button to open popover
+    fireEvent.click(replaceBtn)
+
+    // Select 'Diamond' from the popover
+    const diamondOption = await waitFor(() => {
+      const btn = container.querySelector('.lumina-canvas-replace-shape-item[title*="Diamond"]')
+      expect(btn).toBeInTheDocument()
+      return btn!
+    })
+    fireEvent.click(diamondOption)
+
+    // Verify node shape changed to diamond in-place
+    await waitFor(() => {
+      expect(shapeNode).toHaveClass('shape-diamond')
+    })
+
+    // Verify wires, theme color, and text are 100% preserved
+    expect(shapeNode).toHaveClass('color-cyan')
+    expect(screen.getByText('My Triangle Process')).toBeInTheDocument()
+    const edgeLine = container.querySelector('[data-edge-id="test-edge-1"]')
+    expect(edgeLine).toBeInTheDocument()
+  })
 })

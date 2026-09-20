@@ -135,12 +135,12 @@ export function getShapePortRatio(
       break
 
     case 'heart':
-      // Heart contour: tip at bottom 88%, cleft at top 16% (or top arc 4%), sides at 6% / 94%
+      // Heart contour: tip at bottom 90%, cleft at top 25% (inner apex), sides at 8% / 92%
       switch (side) {
-        case 'top': return { rx: 0.5, ry: 0.16 }
-        case 'bottom': return { rx: 0.5, ry: 0.88 }
-        case 'left': return { rx: 0.06, ry: 0.45 }
-        case 'right': return { rx: 0.94, ry: 0.45 }
+        case 'top': return { rx: 0.5, ry: 0.25 }
+        case 'bottom': return { rx: 0.5, ry: 0.90 }
+        case 'left': return { rx: 0.08, ry: 0.44 }
+        case 'right': return { rx: 0.92, ry: 0.44 }
       }
       break
 

@@ -227,34 +227,34 @@
   filter: drop-shadow(0 0 5px color-mix(in srgb, var(--node-accent, #38bdf8) 45%, transparent));
 }
 
-/* Shape Floating Actions: Floats completely above the shape with zero overlap */
+/* Shape Inner Actions: Sits neatly inside the shape at the top-right corner */
 .lumina-canvas-shape-actions {
   position: absolute;
-  top: -28px;
-  right: 0;
+  top: 6px;
+  right: 6px;
   display: flex;
   align-items: center;
   gap: 2px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s ease;
-  background: color-mix(in srgb, var(--bg-panel, #18181b) 95%, transparent);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  background: color-mix(in srgb, var(--bg-panel, #18181b) 88%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.14));
   border-radius: 6px;
-  padding: 2px 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  padding: 2px 3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(8px);
-  z-index: 50;
+  z-index: 40;
 }
 
-.lumina-canvas-node.is-shape:not(.is-multi-selected):hover .lumina-canvas-shape-actions,
-.lumina-canvas-node.is-shape.selected:not(.is-multi-selected) .lumina-canvas-shape-actions,
-.lumina-canvas-shape-actions.is-selected {
+/* Show inner shape actions on hover ONLY when the shape is not selected */
+.lumina-canvas-node.is-shape:not(.selected):hover .lumina-canvas-shape-actions {
   opacity: 1;
   pointer-events: auto;
 }
 
-.lumina-canvas-node.is-shape.is-multi-selected .lumina-canvas-shape-actions {
+/* When selected, the top floating selection toolbar is active; hide the inner panel to avoid duplicate controls */
+.lumina-canvas-node.is-shape.selected .lumina-canvas-shape-actions {
   display: none !important;
   opacity: 0 !important;
   pointer-events: none !important;

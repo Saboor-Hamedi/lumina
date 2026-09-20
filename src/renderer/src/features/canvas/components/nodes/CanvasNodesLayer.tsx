@@ -8,7 +8,7 @@
  */
 
 import React from 'react'
-import { CanvasNode, CanvasNodeColor, CanvasEdgeSide } from '../../types'
+import { CanvasNode, CanvasNodeColor, CanvasEdgeSide, CanvasShapeType } from '../../types'
 import { CanvasNodeCard } from './CanvasNodeCard'
 import { CanvasSelectionToolbar } from '../controls/CanvasSelectionToolbar'
 import { CanvasAlignmentType, CanvasDistributionType } from '../../utils/canvasAlignment'
@@ -22,6 +22,9 @@ export interface CanvasNodesLayerProps {
   snappedPortSide?: any
   connectedPortsMap?: Map<string, Partial<Record<CanvasEdgeSide, { hasArrow: boolean; color?: CanvasNodeColor }>>>
   selectionBox: { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number } | null
+  selectedShapeType?: CanvasShapeType | null
+  canReplaceShape?: boolean
+  selectedColorHex?: string
   onNodeMouseDown: (e: React.MouseEvent, node: CanvasNode) => void
   onPortMouseDown: (e: React.MouseEvent, nodeId: string, side: any) => void
   onResizeMouseDown: (e: React.MouseEvent, node: CanvasNode) => void
@@ -32,6 +35,7 @@ export interface CanvasNodesLayerProps {
   onCycleColor: (id: string) => void
   onDuplicateNode: (id: string) => void
   onDeleteNode: (id: string) => void
+  onReplaceShape?: (newShape: CanvasShapeType) => void
   onAlignSelection: (alignment: CanvasAlignmentType) => void
   onDistributeSelection: (direction: CanvasDistributionType) => void
   onDuplicateSelection: () => void
@@ -50,6 +54,9 @@ export const CanvasNodesLayer: React.FC<CanvasNodesLayerProps> = React.memo(
     snappedPortSide,
     connectedPortsMap,
     selectionBox,
+    selectedShapeType,
+    canReplaceShape,
+    selectedColorHex,
     onNodeMouseDown,
     onPortMouseDown,
     onResizeMouseDown,
@@ -60,6 +67,7 @@ export const CanvasNodesLayer: React.FC<CanvasNodesLayerProps> = React.memo(
     onCycleColor,
     onDuplicateNode,
     onDeleteNode,
+    onReplaceShape,
     onAlignSelection,
     onDistributeSelection,
     onDuplicateSelection,
@@ -93,13 +101,15 @@ export const CanvasNodesLayer: React.FC<CanvasNodesLayerProps> = React.memo(
           />
         ))}
 
-        {/* Floating Multi-Selection Action Bar (Alignment, Distribution, Duplicate, Color, Delete, Snap) */}
-        {selectionBox && selectedNodeIds.length > 1 && (
+        {/* Floating Selection Action Bar (Color, Replace Shape, Duplicate, Snap, Delete) */}
+        {selectionBox && selectedNodeIds.length >= 1 && (
           <CanvasSelectionToolbar
             selectionBox={selectionBox}
             selectedCount={selectedNodeIds.length}
-            onAlign={onAlignSelection}
-            onDistribute={onDistributeSelection}
+            selectedShapeType={selectedShapeType}
+            canReplaceShape={canReplaceShape}
+            selectedColorHex={selectedColorHex}
+            onReplaceShape={onReplaceShape}
             onDuplicate={onDuplicateSelection}
             onCycleColor={onCycleSelectionColor}
             onDelete={onDeleteSelection}

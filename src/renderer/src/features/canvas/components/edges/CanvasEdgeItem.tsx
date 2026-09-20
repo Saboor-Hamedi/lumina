@@ -211,6 +211,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
 
     return (
       <g
+        data-edge-id={edge.id}
         className={`lumina-canvas-edge-group ${isSelected ? 'is-selected' : ''} ${isHovered ? 'is-hovered' : ''}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}

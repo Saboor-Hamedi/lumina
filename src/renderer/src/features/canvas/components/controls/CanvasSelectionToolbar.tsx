@@ -10,49 +10,77 @@
  * ============================================================================
  */
 
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignStartVertical,
-  AlignCenterVertical,
-  AlignEndVertical,
-  AlignHorizontalDistributeCenter,
-  AlignVerticalDistributeCenter,
   Copy,
   Palette,
   Trash2,
-  Grid
+  Grid,
+  Shapes
 } from 'lucide-react'
 import ToolTip from '../../../../components/atoms/ToolTip'
 import { CanvasAlignmentType, CanvasDistributionType } from '../../utils/canvasAlignment'
+import { CanvasShapeType } from '../../types'
+import { CANVAS_SHAPES, renderShapeSVG } from './ConvasShapes'
 
 export interface CanvasSelectionToolbarProps {
   selectionBox: { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number }
   selectedCount: number
-  onAlign: (alignment: CanvasAlignmentType) => void
-  onDistribute: (direction: CanvasDistributionType) => void
+  selectedShapeType?: CanvasShapeType | null
+  canReplaceShape?: boolean
+  selectedColorHex?: string
   onDuplicate: () => void
   onCycleColor: () => void
   onDelete: () => void
+  onReplaceShape?: (newShape: CanvasShapeType) => void
   onSnapToGrid?: () => void
+  onAlign?: (alignment: CanvasAlignmentType) => void
+  onDistribute?: (direction: CanvasDistributionType) => void
 }
 
 export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = React.memo(
   ({
     selectionBox,
     selectedCount,
-    onAlign,
-    onDistribute,
+    selectedShapeType,
+    canReplaceShape,
+    selectedColorHex,
     onDuplicate,
     onCycleColor,
     onDelete,
+    onReplaceShape,
     onSnapToGrid
   }) => {
+    const [isReplaceOpen, setIsReplaceOpen] = useState(false)
+    const popoverRef = useRef<HTMLDivElement>(null)
+
     // Dock 44px above the top-center of the selection bounding box
     const toolbarX = selectionBox.minX + selectionBox.width / 2
     const toolbarY = selectionBox.minY - 44
+
+    // Close replace popover on pointerdown outside or on escape
+    useEffect(() => {
+      if (!isReplaceOpen) return
+
+      const handlePointerDown = (e: PointerEvent) => {
+        if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+          setIsReplaceOpen(false)
+        }
+      }
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setIsReplaceOpen(false)
+        }
+      }
+
+      window.addEventListener('pointerdown', handlePointerDown)
+      window.addEventListener('keydown', handleKeyDown)
+      return () => {
+        window.removeEventListener('pointerdown', handlePointerDown)
+        window.removeEventListener('keydown', handleKeyDown)
+      }
+    }, [isReplaceOpen])
 
     return (
       <div
@@ -67,126 +95,16 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
         onClick={(e) => e.stopPropagation()}
         onWheel={(e) => e.stopPropagation()}
       >
-        <span className="lumina-canvas-selection-count">
-          {selectedCount} selected
-        </span>
-
-        <div className="lumina-canvas-divider vertical" />
-
-        {/* Horizontal Alignment */}
-        <ToolTip text="Align Left" position="top">
-          <button
-            type="button"
-            className="lumina-canvas-tool-btn"
-            onClick={() => onAlign('left')}
-            aria-label="Align Left"
-          >
-            <AlignLeft size={13} />
-          </button>
-        </ToolTip>
-
-        <ToolTip text="Align Center Horizontally" position="top">
-          <button
-            type="button"
-            className="lumina-canvas-tool-btn"
-            onClick={() => onAlign('center')}
-            aria-label="Align Center"
-          >
-            <AlignCenter size={13} />
-          </button>
-        </ToolTip>
-
-        <ToolTip text="Align Right" position="top">
-          <button
-            type="button"
-            className="lumina-canvas-tool-btn"
-            onClick={() => onAlign('right')}
-            aria-label="Align Right"
-          >
-            <AlignRight size={13} />
-          </button>
-        </ToolTip>
-
-        <div className="lumina-canvas-divider vertical" />
-
-        {/* Vertical Alignment */}
-        <ToolTip text="Align Top" position="top">
-          <button
-            type="button"
-            className="lumina-canvas-tool-btn"
-            onClick={() => onAlign('top')}
-            aria-label="Align Top"
-          >
-            <AlignStartVertical size={13} />
-          </button>
-        </ToolTip>
-
-        <ToolTip text="Align Middle Vertically" position="top">
-          <button
-            type="button"
-            className="lumina-canvas-tool-btn"
-            onClick={() => onAlign('middle')}
-            aria-label="Align Middle"
-          >
-            <AlignCenterVertical size={13} />
-          </button>
-        </ToolTip>
-
-        <ToolTip text="Align Bottom" position="top">
-          <button
-            type="button"
-            className="lumina-canvas-tool-btn"
-            onClick={() => onAlign('bottom')}
-            aria-label="Align Bottom"
-          >
-            <AlignEndVertical size={13} />
-          </button>
-        </ToolTip>
-
-        {/* Distribution (enabled for 3+ nodes) */}
-        {selectedCount >= 3 && (
+        {selectedCount > 1 && (
           <>
+            <span className="lumina-canvas-selection-count">
+              {selectedCount} selected
+            </span>
             <div className="lumina-canvas-divider vertical" />
-
-            <ToolTip text="Distribute Horizontally" position="top">
-              <button
-                type="button"
-                className="lumina-canvas-tool-btn"
-                onClick={() => onDistribute('horizontal')}
-                aria-label="Distribute Horizontally"
-              >
-                <AlignHorizontalDistributeCenter size={13} />
-              </button>
-            </ToolTip>
-
-            <ToolTip text="Distribute Vertically" position="top">
-              <button
-                type="button"
-                className="lumina-canvas-tool-btn"
-                onClick={() => onDistribute('vertical')}
-                aria-label="Distribute Vertically"
-              >
-                <AlignVerticalDistributeCenter size={13} />
-              </button>
-            </ToolTip>
           </>
         )}
 
-        <div className="lumina-canvas-divider vertical" />
-
-        {/* Multi-Node Duplicate */}
-        <ToolTip text="Duplicate Selection (Alt+D)" position="top">
-          <button
-            type="button"
-            className="lumina-canvas-tool-btn"
-            onClick={onDuplicate}
-            aria-label="Duplicate Selection (Alt+D)"
-          >
-            <Copy size={13} />
-          </button>
-        </ToolTip>
-
-        {/* Multi-Node Cycle Color */}
+        {/* Change Color */}
         <ToolTip text="Change Color" position="top">
           <button
             type="button"
@@ -198,7 +116,85 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
           </button>
         </ToolTip>
 
-        {/* Snap Selection to Grid */}
+        {/* Replace Shape (Active when a shape is selected) */}
+        {canReplaceShape && onReplaceShape && (
+          <div className="lumina-canvas-toolbar-anchor">
+            <ToolTip text="Replace Shape" position="top">
+              <button
+                type="button"
+                className={`lumina-canvas-tool-btn ${isReplaceOpen ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsReplaceOpen((prev) => !prev)
+                }}
+                aria-label="Replace Shape"
+              >
+                <Shapes size={13} />
+              </button>
+            </ToolTip>
+
+            {isReplaceOpen && (
+              <div
+                ref={popoverRef}
+                className="lumina-canvas-replace-shape-popover"
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                onWheel={(e) => e.stopPropagation()}
+              >
+                <div className="lumina-canvas-replace-shape-header">
+                  <span className="lumina-canvas-replace-shape-title">Replace Shape</span>
+                  <span className="lumina-canvas-replace-shape-hint">Preserves wires</span>
+                </div>
+                <div className="lumina-canvas-replace-shape-grid">
+                  {CANVAS_SHAPES.map((s) => {
+                    const isCurrent = selectedShapeType === s.id
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        className={`lumina-canvas-replace-shape-item ${isCurrent ? 'active' : ''}`}
+                        title={`${s.label} (${s.description})`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onReplaceShape(s.id)
+                          setIsReplaceOpen(false)
+                        }}
+                      >
+                        <div className="lumina-canvas-replace-shape-preview">
+                          <svg viewBox="0 0 100 100" className="lumina-canvas-shape-mini-svg">
+                            {renderShapeSVG(
+                              s.id,
+                              isCurrent ? 'currentColor' : (selectedColorHex || 'var(--node-accent, #38bdf8)'),
+                              isCurrent ? 'currentColor' : (selectedColorHex || 'var(--node-accent, #38bdf8)'),
+                              0.12,
+                              2.2
+                            )}
+                          </svg>
+                        </div>
+                        <span className="lumina-canvas-replace-shape-label">{s.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Duplicate Selection */}
+        <ToolTip text="Duplicate (Alt+D)" position="top">
+          <button
+            type="button"
+            className="lumina-canvas-tool-btn"
+            onClick={onDuplicate}
+            aria-label="Duplicate (Alt+D)"
+          >
+            <Copy size={13} />
+          </button>
+        </ToolTip>
+
+        {/* Snap to Grid */}
         {onSnapToGrid && (
           <ToolTip text="Snap to Grid" position="top">
             <button
@@ -212,13 +208,15 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
           </ToolTip>
         )}
 
-        {/* Multi-Node Delete */}
-        <ToolTip text="Delete Selection (Del)" position="top">
+        <div className="lumina-canvas-divider vertical" />
+
+        {/* Delete Selection */}
+        <ToolTip text="Delete (Del)" position="top">
           <button
             type="button"
             className="lumina-canvas-tool-btn delete"
             onClick={onDelete}
-            aria-label="Delete Selection (Del)"
+            aria-label="Delete (Del)"
           >
             <Trash2 size={13} />
           </button>

@@ -148,11 +148,18 @@
   z-index: 20;
 }
 
-.lumina-canvas-node.is-sticky:hover .lumina-canvas-sticky-actions,
-.lumina-canvas-node.is-sticky.selected .lumina-canvas-sticky-actions {
+/* Show sticky actions on hover ONLY when the note is not selected */
+.lumina-canvas-node.is-sticky:not(.selected):hover .lumina-canvas-sticky-actions {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
+}
+
+/* When selected, the top floating selection toolbar is active; hide sticky actions to avoid duplicate controls */
+.lumina-canvas-node.is-sticky.selected .lumina-canvas-sticky-actions {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Multi-selection suppresses sticky actions so selection toolbar is prominent */

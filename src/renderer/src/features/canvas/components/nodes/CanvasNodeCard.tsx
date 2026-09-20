@@ -183,9 +183,9 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
               )}
             </svg>
 
-            {/* Shape Floating Actions (Cycle Color & Delete - suppressed during multi-selection) */}
-            {!isMultiSelection && (
-              <div className={`lumina-canvas-shape-actions ${isSelected ? 'is-selected' : ''}`}>
+            {/* Shape Inner Actions (Cycle Color, Duplicate, Delete - hidden via CSS when selected) */}
+            {!isMultiSelection && !isEditing && (
+              <div className="lumina-canvas-shape-actions">
                 <ToolTip text="Change Color" position="top">
                   <button
                     className="lumina-canvas-action-btn"
@@ -298,8 +298,8 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
           </>
         ) : isSticky ? (
           <>
-            {/* Sticky Actions Toolbar (Appears on hover in top-right corner, subtle) */}
-            {!isMultiSelection && (
+            {/* Sticky Actions Toolbar (Appears on hover in top-right corner, hidden via CSS when selected) */}
+            {!isMultiSelection && !isEditing && (
               <div className="lumina-canvas-sticky-actions">
                 <ToolTip text="Change Color" position="top">
                   <button

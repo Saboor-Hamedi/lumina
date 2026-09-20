@@ -94,7 +94,7 @@ function getShapeSvgMarkup(
       shapeContent = `<path d="M 50 4 L 92 18 L 92 56 C 92 78, 50 96, 50 96 C 50 96, 8 78, 8 56 L 8 18 Z" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
       break
     case 'heart':
-      shapeContent = `<path d="M 50 88 C 22 62, 6 44, 6 26 C 6 12, 16 4, 30 4 C 39 4, 46 9, 50 16 C 54 9, 61 4, 70 4 C 84 4, 94 12, 94 26 C 94 44, 78 62, 50 88 Z" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+      shapeContent = `<path d="M 50 90 C 25 72, 8 52, 8 33 C 8 16, 22 6, 37 6 C 45 6, 49 14, 50 25 C 51 14, 55 6, 63 6 C 78 6, 92 16, 92 33 C 92 52, 75 72, 50 90 Z" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
       break
     case 'octagon':
       shapeContent = `<polygon points="30,4 70,4 96,30 96,70 70,96 30,96 4,70 4,30" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
