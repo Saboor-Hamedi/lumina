@@ -59,6 +59,7 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   // Undo / Redo History Stacks
   const undoStackRef = useRef<{ nodes: CanvasNode[]; edges: CanvasEdge[] }[]>([])
   const redoStackRef = useRef<{ nodes: CanvasNode[]; edges: CanvasEdge[] }[]>([])
+  const clipboardRef = useRef<{ nodes: CanvasNode[]; edges: CanvasEdge[]; pasteCount: number } | null>(null)
   const [, setHistoryCount] = useState(0)
 
   const pushHistory = useCallback(() => {
@@ -443,6 +444,70 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   }, [pushHistory])
 
   /**
+   * Copies selected nodes and their internal connecting edges to the internal canvas clipboard.
+   */
+  const copyNodes = useCallback((targetIds?: string[]) => {
+    const toCopy = targetIds && targetIds.length > 0 ? targetIds : selectedNodeIdsRef.current
+    if (!toCopy || toCopy.length === 0) return 0
+
+    const copySet = new Set(toCopy)
+    const nodesToCopy = nodesRef.current.filter((n) => copySet.has(n.id)).map((n) => ({ ...n }))
+    const edgesToCopy = edgesRef.current
+      .filter((e) => copySet.has(e.fromNode) && copySet.has(e.toNode))
+      .map((e) => ({ ...e }))
+
+    clipboardRef.current = { nodes: nodesToCopy, edges: edgesToCopy, pasteCount: 0 }
+    return nodesToCopy.length
+  }, [])
+
+  /**
+   * Pastes previously copied nodes and edges with incremental offset (+32px, +32px).
+   */
+  const pasteNodes = useCallback(() => {
+    if (!clipboardRef.current || clipboardRef.current.nodes.length === 0) return []
+
+    pushHistory()
+
+    clipboardRef.current.pasteCount += 1
+    const offset = 32 * clipboardRef.current.pasteCount
+    const idMap = new Map<string, string>()
+
+    const pastedNodes: CanvasNode[] = clipboardRef.current.nodes.map((n) => {
+      const newId = `node-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+      idMap.set(n.id, newId)
+      return {
+        ...n,
+        id: newId,
+        x: n.x + offset,
+        y: n.y + offset
+      }
+    })
+
+    const pastedEdges: CanvasEdge[] = clipboardRef.current.edges.map((e) => ({
+      ...e,
+      id: `edge-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      fromNode: idMap.get(e.fromNode) || e.fromNode,
+      toNode: idMap.get(e.toNode) || e.toNode
+    }))
+
+    setNodes((prev) => [...prev, ...pastedNodes])
+    if (pastedEdges.length > 0) {
+      setEdges((prev) => [...prev, ...pastedEdges])
+    }
+
+    const newIds = pastedNodes.map((n) => n.id)
+    setSelectedNodeIds(newIds)
+    return newIds
+  }, [pushHistory])
+
+  /**
+   * Checks whether the canvas clipboard currently contains copied nodes.
+   */
+  const hasCopiedNodes = useCallback(() => {
+    return Boolean(clipboardRef.current && clipboardRef.current.nodes.length > 0)
+  }, [])
+
+  /**
    * Snaps selected nodes (or all nodes) to the nearest 20px grid.
    */
   const snapNodesToGrid = useCallback((targetIds?: string[]) => {
@@ -594,6 +659,9 @@ export function useCanvas(options: UseCanvasOptions = {}) {
     deleteNode,
     deleteSelected,
     duplicateNodes,
+    copyNodes,
+    pasteNodes,
+    hasCopiedNodes,
     snapNodesToGrid,
     updateEdgeLineStyle,
     updateEdgeColor,

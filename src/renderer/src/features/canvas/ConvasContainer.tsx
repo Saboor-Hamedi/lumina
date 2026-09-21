@@ -63,6 +63,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   onOpenDrawer
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
+  const isNudgingRef = useRef(false)
   const { toast, showToast, clearToast } = useToast()
 
   // Local editing & tool states
@@ -104,6 +105,9 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     deleteNode,
     deleteSelected,
     duplicateNodes,
+    copyNodes,
+    pasteNodes,
+    hasCopiedNodes,
     snapNodesToGrid,
     updateEdgeLineStyle,
     updateEdgeColor,
@@ -337,8 +341,13 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         return
       }
 
-      const activeTag = (document.activeElement?.tagName || '').toLowerCase()
-      const isInputActive = activeTag === 'input' || activeTag === 'textarea'
+      const activeEl = document.activeElement as HTMLElement | null
+      const activeTag = (activeEl?.tagName || '').toLowerCase()
+      const isInputActive =
+        activeTag === 'input' ||
+        activeTag === 'textarea' ||
+        Boolean(activeEl?.isContentEditable) ||
+        Boolean(activeEl?.closest?.('[contenteditable="true"], .ProseMirror, input, textarea'))
 
       if (e.code === 'Space' && !isInputActive && !e.repeat) {
         setIsSpacePressed(true)
@@ -368,6 +377,71 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           e.preventDefault()
           e.stopPropagation()
           duplicateNodes(selectedNodeIds)
+        }
+      } else if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === 'c' || e.key === 'C') &&
+        !isInputActive &&
+        !e.shiftKey &&
+        !e.altKey &&
+        selectedNodeIds.length > 0 &&
+        !window.getSelection()?.toString()
+      ) {
+        // Safe canvas copy: only when not typing in any editor/input, not selecting text, and has canvas nodes selected
+        e.preventDefault()
+        e.stopPropagation()
+        const count = copyNodes(selectedNodeIds)
+        if (count > 0) {
+          showToast(`Copied ${count} ${count === 1 ? 'shape' : 'shapes'} to canvas clipboard`, 'info')
+        }
+      } else if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === 'v' || e.key === 'V') &&
+        !isInputActive &&
+        !e.shiftKey &&
+        !e.altKey &&
+        hasCopiedNodes()
+      ) {
+        // Safe canvas paste: only when not typing in any editor/input and canvas clipboard has items
+        e.preventDefault()
+        e.stopPropagation()
+        const pasted = pasteNodes()
+        if (pasted.length > 0) {
+          showToast(`Pasted ${pasted.length} ${pasted.length === 1 ? 'item' : 'items'}`, 'info')
+        }
+      } else if (
+        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) &&
+        !isInputActive &&
+        !e.altKey &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        selectedNodeIds.length > 0
+      ) {
+        // Pixel-perfect arrow key nudging for selected canvas shapes/cards
+        e.preventDefault()
+        e.stopPropagation()
+
+        if (!isNudgingRef.current) {
+          isNudgingRef.current = true
+          pushHistory()
+        }
+
+        const step = e.shiftKey ? 10 : snapToGrid ? 20 : 2
+        let dx = 0
+        let dy = 0
+
+        if (e.key === 'ArrowUp') dy = -step
+        else if (e.key === 'ArrowDown') dy = step
+        else if (e.key === 'ArrowLeft') dx = -step
+        else if (e.key === 'ArrowRight') dx = step
+
+        const selectedSet = new Set(selectedNodeIds)
+        const updates = nodes
+          .filter((n) => selectedSet.has(n.id))
+          .map((n) => ({ id: n.id, x: n.x + dx, y: n.y + dy }))
+
+        if (updates.length > 0) {
+          updateNodesPositions(updates)
         }
       } else if ((e.ctrlKey || e.metaKey) && (e.key === "'" || e.key === '"') && !isInputActive) {
         // Ctrl+' toggles 20px grid snapping
@@ -452,6 +526,9 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
       if (e.code === 'Space') {
         setIsSpacePressed(false)
       }
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+        isNudgingRef.current = false
+      }
     }
 
     window.addEventListener('keydown', handleKeyDown)
@@ -467,6 +544,12 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     deleteEdge,
     setSelectedEdgeId,
     duplicateNodes,
+    copyNodes,
+    pasteNodes,
+    hasCopiedNodes,
+    updateNodesPositions,
+    snapToGrid,
+    pushHistory,
     handleToggleSnapToGrid,
     setSelectedNodeIds,
     nodes,
