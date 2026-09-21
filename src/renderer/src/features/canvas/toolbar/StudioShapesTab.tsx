@@ -101,7 +101,7 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
           <span className="banner-sub">
             {selectedCount > 0
               ? `Apply theme to ${selectedCount > 1 ? `${selectedCount} selected items` : 'selected item'}`
-              : 'Click or drag directly into your diagram'}
+              : 'Drag to add'}
           </span>
         </div>
 
@@ -139,18 +139,7 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
                   aria-label={`Color ${c.label}`}
                 >
                   {isSelected && (
-                    <span
-                      style={{
-                        width: '11px',
-                        height: '11px',
-                        borderRadius: '50%',
-                        backgroundColor: '#22c55e',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                      }}
-                    >
+                    <span className="lumina-canvas-studio-color-selected-indicator">
                       <Check size={7} color="#ffffff" strokeWidth={3.5} />
                     </span>
                   )}
@@ -212,7 +201,7 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
                       >
                         <div className="shape-preview-svg" style={{ color: activeColorHex }}>
                           <svg viewBox="0 0 100 100" width="100%" height="100%">
-                            {renderShapeSVG(shape.id, activeColorHex, activeColorHex, 0.08, 1.35)}
+                            {renderShapeSVG(shape.id, activeColorHex, activeColorHex, 0.08, 1.5)}
                           </svg>
                         </div>
                         <span className="shape-label">{shape.label}</span>

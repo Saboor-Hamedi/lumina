@@ -148,7 +148,7 @@ export const StudioWiresTab: React.FC<StudioWiresTabProps> = React.memo(
         <div className="studio-section-banner">
           <span className="banner-title">Connectors</span>
           <span className="banner-sub">
-            {selectedEdgeId ? 'Selected connector line style & endpoints' : 'Line geometry and arrow endpoints'}
+            {selectedEdgeId ? 'Selected connector style & direction' : 'Style & Direction'}
           </span>
         </div>
 

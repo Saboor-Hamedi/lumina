@@ -18,7 +18,7 @@
 
 import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react'
 import { useCanvas, useCanvasGestures, useCanvasDrop, useCanvasShortcuts } from './hooks'
-import { CanvasData, CanvasNode, CanvasEdgeSide, CanvasShapeType, CanvasNodeColor, CanvasEdgeLineStyle } from './types'
+import { CanvasData, CanvasNode, CanvasEdgeSide, CanvasEdgeEnd, CanvasShapeType, CanvasNodeColor, CanvasEdgeLineStyle } from './types'
 import {
   COLOR_CYCLE,
   getNodePortCoord,

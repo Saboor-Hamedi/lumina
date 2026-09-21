@@ -308,7 +308,7 @@
   border-radius: 50%;
   cursor: crosshair;
   z-index: 25;
-  opacity: 0;
+  opacity: 0.35;
   transition: opacity 0.15s ease, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.15s ease, box-shadow 0.18s ease;
   pointer-events: auto;
   box-sizing: border-box;
@@ -534,14 +534,19 @@
 }
 
 .lumina-canvas-edge-label-bg {
-  fill: var(--bg-app, #0c0d10);
-  stroke: transparent;
-  stroke-width: 0;
-  opacity: 0.88;
+  fill: var(--bg-card, var(--bg-app, #0c0d10));
+  stroke: var(--border-subtle, rgba(255, 255, 255, 0.15));
+  stroke-width: 1px;
+  opacity: 0.95;
+}
+
+[data-theme='porcelain'] .lumina-canvas-edge-label-bg {
+  fill: rgba(255, 250, 240, 0.95) !important;
+  stroke: rgba(156, 149, 133, 0.3) !important;
 }
 
 .lumina-canvas-edge-label-badge:hover .lumina-canvas-edge-label-bg {
-  opacity: 0.96;
+  opacity: 1;
 }
 
 .lumina-canvas-edge-label-text {
@@ -567,14 +572,14 @@
 .lumina-canvas-edge-label-text.edge-red { fill: #ef4444; }
 .lumina-canvas-edge-label-text.edge-default { fill: var(--text-accent, #38bdf8); }
 
-[data-theme='porcelain'] .lumina-canvas-edge-label-text,
+[data-theme='porcelain'] .lumina-canvas-edge-label-text {
+  fill: #2c2a25 !important;
+  font-weight: 500;
+}
+
 [data-theme='light'] .lumina-canvas-edge-label-text,
 .theme-light .lumina-canvas-edge-label-text {
   fill: var(--text-accent, #3b82f6);
-}
-
-[data-theme='porcelain'] .lumina-canvas-edge-label-text.edge-default {
-  fill: #3b82f6;
 }
 
 .lumina-canvas-edge-label-badge:hover .lumina-canvas-edge-label-text {

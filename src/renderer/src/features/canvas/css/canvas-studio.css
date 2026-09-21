@@ -1030,3 +1030,109 @@
   border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
   background: color-mix(in srgb, var(--bg-panel, #121316) 95%, transparent);
 }
+
+/* Studio Field Headers & Typography Refinements */
+.studio-field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.studio-field-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.studio-field-sub {
+  font-size: 9.5px;
+  color: var(--text-dim, #64748b);
+}
+
+/* Studio Full-Width Action Buttons (Export Panel & Layout) */
+.lumina-canvas-studio-action-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: color-mix(in srgb, var(--bg-card, #18191d) 65%, transparent);
+  color: var(--text-main, #ffffff);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  user-select: none;
+}
+
+.lumina-canvas-studio-action-btn:hover {
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  border-color: var(--text-accent, #38bdf8);
+  color: var(--text-accent, #38bdf8);
+}
+
+/* Color Indicator */
+.lumina-canvas-studio-color-selected-indicator {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Porcelain Theme Refinements (bugs.md) */
+[data-theme='porcelain'] .lumina-canvas-studio-action-btn {
+  border: 1px solid #e8e4d9;
+  background: rgba(255, 255, 255, 0.85);
+  color: #2c2a25;
+}
+
+[data-theme='porcelain'] .lumina-canvas-studio-action-btn:hover {
+  background: #ffffff;
+  border-color: var(--text-accent, #3b82f6);
+  color: var(--text-accent, #3b82f6);
+}
+
+/* Thin dark charcoal ring (#2C2A25) for selected color swatch in Porcelain */
+[data-theme='porcelain'] .lumina-canvas-studio-color-dot.selected {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 3.5px #2c2a25 !important;
+}
+
+[data-theme='porcelain'] .lumina-canvas-studio-color-selected-indicator {
+  display: none !important;
+}
+
+/* Wire & Shape Cards: 1px subtle warm border in Porcelain */
+[data-theme='porcelain'] .lumina-canvas-studio-wire-card,
+[data-theme='porcelain'] .lumina-canvas-studio-shape-card {
+  border: 1px solid #e8e4d9 !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+}
+
+[data-theme='porcelain'] .lumina-canvas-studio-wire-card:hover,
+[data-theme='porcelain'] .lumina-canvas-studio-shape-card:hover {
+  border-color: var(--text-accent, #3b82f6) !important;
+  background: #ffffff !important;
+}
+
+[data-theme='porcelain'] .lumina-canvas-studio-wire-card.active,
+[data-theme='porcelain'] .lumina-canvas-studio-shape-card.active {
+  border-color: var(--text-accent, #3b82f6) !important;
+  background: color-mix(in srgb, var(--text-accent, #3b82f6) 12%, #ffffff) !important;
+}
+
+/* Unified 1.5px stroke weight for Porcelain drafting vectors */
+[data-theme='porcelain'] .lumina-canvas-studio-shape-card .shape-preview-svg svg,
+[data-theme='porcelain'] .lumina-canvas-studio-wire-card .wire-preview-svg svg {
+  stroke-width: 1.5px !important;
+}
+

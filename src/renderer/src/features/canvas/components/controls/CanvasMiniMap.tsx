@@ -155,9 +155,9 @@ export const CanvasMiniMap: React.FC<CanvasMiniMapProps> = React.memo(
         <div className="lumina-canvas-minimap-header" onClick={onToggleOpen}>
           <div className="lumina-canvas-minimap-title">
             <MapPin size={12} className="lumina-canvas-minimap-icon" />
-            <span>Spatial Navigator</span>
+            <span>Overview</span>
             <span className="lumina-canvas-minimap-badge">
-              {nodes.length} {nodes.length === 1 ? 'node' : 'nodes'}
+              {nodes.length} {nodes.length === 1 ? 'item' : 'items'}
             </span>
           </div>
           <button

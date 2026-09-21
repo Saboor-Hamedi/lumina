@@ -19,7 +19,7 @@ export const StudioHeader: React.FC<StudioHeaderProps> = React.memo(
         <div className="lumina-canvas-studio-title-group">
           <SlidersHorizontal size={14} className="lumina-canvas-studio-title-icon" />
           <span className="lumina-canvas-studio-title">Canvas Studio</span>
-          <span className="lumina-canvas-studio-badge">{cardCount} cards</span>
+          <span className="lumina-canvas-studio-badge">{cardCount} item{cardCount !== 1 ? 's' : ''}</span>
         </div>
 
         <div className="lumina-canvas-studio-actions">

@@ -26,7 +26,7 @@ export const StudioExportTab: React.FC<StudioExportTabProps> = React.memo(
           <span className="banner-sub">
             {hasSelectedNodes
               ? `${selectedCount} item${selectedCount > 1 ? 's' : ''} selected for export`
-              : 'Save snapshot or vector graphic'}
+              : 'Export as image or vector'}
           </span>
         </div>
 
@@ -40,7 +40,7 @@ export const StudioExportTab: React.FC<StudioExportTabProps> = React.memo(
                 onClick={onCopyImage}
               >
                 <Copy size={13} />
-                <span>{hasSelectedNodes ? 'Copy Selection as Image' : 'Copy Diagram as Image'}</span>
+                <span>{hasSelectedNodes ? 'Copy Selection to Clipboard' : 'Copy to Clipboard'}</span>
               </button>
             )}
 
@@ -51,7 +51,7 @@ export const StudioExportTab: React.FC<StudioExportTabProps> = React.memo(
                 onClick={onExportPNG}
               >
                 <ImageIcon size={13} />
-                <span>Export as High-Res PNG</span>
+                <span>Export as PNG</span>
               </button>
             )}
 

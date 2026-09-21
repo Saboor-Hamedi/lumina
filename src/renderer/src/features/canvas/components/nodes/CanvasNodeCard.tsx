@@ -31,7 +31,7 @@ import ToolTip from '../../../../components/atoms/ToolTip'
 const MemoizedMarkdownPreview = React.memo<{ text: string }>(({ text }) => {
   const strippedText = useMemo(() => stripFrontmatter(text || ''), [text])
   if (!strippedText) {
-    return <span className="placeholder">Double-click to type...</span>
+    return <span className="placeholder">Double-click to edit...</span>
   }
   return (
     <div className="lumina-canvas-markdown" dir="auto">
@@ -290,7 +290,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                   {node.text ? (
                     <MemoizedMarkdownPreview text={node.text} />
                   ) : (
-                    <span className="placeholder">Double-click to type</span>
+                    <span className="placeholder">Double-click to edit</span>
                   )}
                 </span>
               )}
