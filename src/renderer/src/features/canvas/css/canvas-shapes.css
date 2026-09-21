@@ -374,19 +374,19 @@
 /* Shape Geometry-Aware Text Centering Boundaries */
 .lumina-canvas-node.shape-triangle .lumina-canvas-shape-content { inset: 28% 18% 12% 18%; }
 .lumina-canvas-node.shape-diamond .lumina-canvas-shape-content { inset: 20%; }
-.lumina-canvas-node.shape-cylinder .lumina-canvas-shape-content { inset: 22% 12% 14% 12%; }
+.lumina-canvas-node.shape-cylinder .lumina-canvas-shape-content { inset: 24% 12% 14% 12%; }
 .lumina-canvas-node.shape-actor .lumina-canvas-shape-content { inset: 50% 12% 12% 12%; }
-.lumina-canvas-node.shape-speech-bubble .lumina-canvas-shape-content { inset: 12% 12% 22% 12%; }
-.lumina-canvas-node.shape-cloud .lumina-canvas-shape-content { inset: 20% 16%; }
+.lumina-canvas-node.shape-speech-bubble .lumina-canvas-shape-content { inset: 10% 10% 30% 10%; }
+.lumina-canvas-node.shape-cloud .lumina-canvas-shape-content { inset: 22% 12% 28% 12%; }
 .lumina-canvas-node.shape-heart .lumina-canvas-shape-content { inset: 20% 14% 20% 14%; }
-.lumina-canvas-node.shape-envelope .lumina-canvas-shape-content { inset: 22% 14% 16% 14%; }
+.lumina-canvas-node.shape-envelope .lumina-canvas-shape-content { inset: 24% 14% 16% 14%; }
 .lumina-canvas-node.shape-circle .lumina-canvas-shape-content { inset: 14%; }
-.lumina-canvas-node.shape-star .lumina-canvas-shape-content { inset: 26% 16% 22% 16%; }
+.lumina-canvas-node.shape-star .lumina-canvas-shape-content { inset: 26% 20% 24% 20%; }
 .lumina-canvas-node.shape-shield .lumina-canvas-shape-content { inset: 16% 14% 24% 14%; }
-.lumina-canvas-node.shape-step .lumina-canvas-shape-content { inset: 14% 14% 20% 14%; }
+.lumina-canvas-node.shape-step .lumina-canvas-shape-content { inset: 14% 16% 14% 20%; }
 .lumina-canvas-node.shape-parallelogram .lumina-canvas-shape-content { inset: 14% 20%; }
-.lumina-canvas-node.shape-trapezoid .lumina-canvas-shape-content { inset: 18% 18% 14% 18%; }
-.lumina-canvas-node.shape-document .lumina-canvas-shape-content { inset: 18% 12% 12% 12%; }
+.lumina-canvas-node.shape-trapezoid .lumina-canvas-shape-content { inset: 14% 18% 14% 18%; }
+.lumina-canvas-node.shape-document .lumina-canvas-shape-content { inset: 22% 12% 8% 12%; }
 .lumina-canvas-node.shape-pill .lumina-canvas-shape-content { inset: 16% 14%; }
 .lumina-canvas-node.shape-hexagon .lumina-canvas-shape-content {
   inset: 14% 16%;

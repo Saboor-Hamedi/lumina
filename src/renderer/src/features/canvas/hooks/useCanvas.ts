@@ -82,6 +82,9 @@ export function useCanvas(options: UseCanvasOptions = {}) {
       edges: edgesRef.current.map((e) => ({ ...e }))
     }
     redoStackRef.current.push(currentSnapshot)
+    if (redoStackRef.current.length > 50) {
+      redoStackRef.current.shift()
+    }
     setNodes(prevSnapshot.nodes)
     setEdges(prevSnapshot.edges)
     setSelectedNodeIds([])
@@ -96,6 +99,9 @@ export function useCanvas(options: UseCanvasOptions = {}) {
       edges: edgesRef.current.map((e) => ({ ...e }))
     }
     undoStackRef.current.push(currentSnapshot)
+    if (undoStackRef.current.length > 50) {
+      undoStackRef.current.shift()
+    }
     setNodes(nextSnapshot.nodes)
     setEdges(nextSnapshot.edges)
     setSelectedNodeIds([])

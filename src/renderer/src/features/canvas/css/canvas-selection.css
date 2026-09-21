@@ -107,6 +107,11 @@
   box-sizing: border-box;
 }
 
+.lumina-canvas-replace-shape-popover.open-upward {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
 .lumina-canvas-replace-shape-header {
   display: flex;
   align-items: center;

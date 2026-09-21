@@ -125,9 +125,9 @@ export function getShapePortRatio(
       break
 
     case 'cylinder':
-      // Cylinder top cap ellipse cy=22 ry=14 (top is at 22-14=8%), bottom arc at 90%
+      // Cylinder top cap ellipse cy=24 ry=14 (top rim at ~10%), bottom arc at 90%
       switch (side) {
-        case 'top': return { rx: 0.5, ry: 0.08 }
+        case 'top': return { rx: 0.5, ry: 0.10 }
         case 'bottom': return { rx: 0.5, ry: 0.90 }
         case 'left': return { rx: 0.06, ry: 0.5 }
         case 'right': return { rx: 0.94, ry: 0.5 }
@@ -155,31 +155,32 @@ export function getShapePortRatio(
       break
 
     case 'star':
-      // Star: top tip at 4%, bottom indent at 75%, sides at 4% and 96%
+      // Star: top tip at 4%, inner bottom valley at 87%, sides at 6% and 94%
       switch (side) {
         case 'top': return { rx: 0.5, ry: 0.04 }
-        case 'bottom': return { rx: 0.5, ry: 0.75 }
-        case 'left': return { rx: 0.12, ry: 0.5 }
-        case 'right': return { rx: 0.88, ry: 0.5 }
+        case 'bottom': return { rx: 0.5, ry: 0.87 }
+        case 'left': return { rx: 0.06, ry: 0.5 }
+        case 'right': return { rx: 0.94, ry: 0.5 }
       }
       break
 
     case 'cloud':
+      // Cloud: top bump peak at ~22%, flat bottom at 76%, sides at ~6% and ~94%
       switch (side) {
-        case 'top': return { rx: 0.5, ry: 0.16 }
-        case 'bottom': return { rx: 0.5, ry: 0.74 }
-        case 'left': return { rx: 0.07, ry: 0.5 }
-        case 'right': return { rx: 0.93, ry: 0.5 }
+        case 'top': return { rx: 0.5, ry: 0.22 }
+        case 'bottom': return { rx: 0.5, ry: 0.76 }
+        case 'left': return { rx: 0.06, ry: 0.5 }
+        case 'right': return { rx: 0.94, ry: 0.5 }
       }
       break
 
     case 'speech-bubble':
-      // Bubble body ends at 77% height with pointer at bottom
+      // Bubble body top at 6%, body bottom at 72% height (tail tip at 94%)
       switch (side) {
         case 'top': return { rx: 0.5, ry: 0.06 }
-        case 'bottom': return { rx: 0.5, ry: 0.77 }
-        case 'left': return { rx: 0.04, ry: 0.42 }
-        case 'right': return { rx: 0.96, ry: 0.42 }
+        case 'bottom': return { rx: 0.5, ry: 0.72 }
+        case 'left': return { rx: 0.04, ry: 0.38 }
+        case 'right': return { rx: 0.96, ry: 0.38 }
       }
       break
 

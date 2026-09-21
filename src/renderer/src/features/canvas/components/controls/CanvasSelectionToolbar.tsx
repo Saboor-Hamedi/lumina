@@ -52,15 +52,41 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
     onSnapToGrid
   }) => {
     const [isReplaceOpen, setIsReplaceOpen] = useState(false)
+    const [openUpward, setOpenUpward] = useState(false)
+    const anchorRef = useRef<HTMLDivElement>(null)
     const popoverRef = useRef<HTMLDivElement>(null)
 
     // Dock 44px above the top-center of the selection bounding box
     const toolbarX = selectionBox.minX + selectionBox.width / 2
     const toolbarY = selectionBox.minY - 44
 
-    // Close replace popover on pointerdown outside or on escape
+    // Prevent popover clipping near viewport edges (flip upward if close to bottom)
     useEffect(() => {
       if (!isReplaceOpen) return
+
+      if (anchorRef.current) {
+        const anchorRect = anchorRef.current.getBoundingClientRect()
+        if (anchorRect.bottom + 230 > window.innerHeight) {
+          setOpenUpward(true)
+        } else {
+          setOpenUpward(false)
+        }
+      }
+
+      const adjustHorizontal = () => {
+        if (!popoverRef.current) return
+        const popoverRect = popoverRef.current.getBoundingClientRect()
+        const padding = 12
+        if (popoverRect.right > window.innerWidth - padding) {
+          const overflow = popoverRect.right - (window.innerWidth - padding)
+          popoverRef.current.style.transform = `translateX(calc(-50% - ${overflow}px))`
+        } else if (popoverRect.left < padding) {
+          const overflow = padding - popoverRect.left
+          popoverRef.current.style.transform = `translateX(calc(-50% + ${overflow}px))`
+        }
+      }
+
+      const raf = requestAnimationFrame(adjustHorizontal)
 
       const handlePointerDown = (e: PointerEvent) => {
         if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
@@ -77,6 +103,7 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
       window.addEventListener('pointerdown', handlePointerDown)
       window.addEventListener('keydown', handleKeyDown)
       return () => {
+        cancelAnimationFrame(raf)
         window.removeEventListener('pointerdown', handlePointerDown)
         window.removeEventListener('keydown', handleKeyDown)
       }
@@ -118,7 +145,7 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
 
         {/* Replace Shape (Active when a shape is selected) */}
         {canReplaceShape && onReplaceShape && (
-          <div className="lumina-canvas-toolbar-anchor">
+          <div ref={anchorRef} className="lumina-canvas-toolbar-anchor">
             <ToolTip text="Replace Shape" position="top">
               <button
                 type="button"
@@ -136,7 +163,7 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
             {isReplaceOpen && (
               <div
                 ref={popoverRef}
-                className="lumina-canvas-replace-shape-popover"
+                className={`lumina-canvas-replace-shape-popover ${openUpward ? 'open-upward' : ''}`}
                 onClick={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}

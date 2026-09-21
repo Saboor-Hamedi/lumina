@@ -391,6 +391,41 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         setToolMode('select')
       } else if (e.key === 'h' && !isInputActive && !e.ctrlKey && !e.metaKey) {
         setToolMode('hand')
+      } else if ((e.key === 'l' || e.key === 'L') && !isInputActive && !e.ctrlKey && !e.metaKey && !e.altKey && selectedEdgeId) {
+        // Cycle line style on selected wire
+        e.preventDefault()
+        const currentEdge = edges.find((ed) => ed.id === selectedEdgeId)
+        if (currentEdge) {
+          const nextStyle: Record<CanvasEdgeLineStyle, CanvasEdgeLineStyle> = {
+            curved: 'step',
+            step: 'straight',
+            straight: 'curved'
+          }
+          updateEdgeLineStyle(selectedEdgeId, nextStyle[currentEdge.lineStyle || 'curved'] || 'curved')
+        }
+      } else if ((e.key === 'c' || e.key === 'C') && !isInputActive && !e.ctrlKey && !e.metaKey && !e.altKey && selectedEdgeId) {
+        // Cycle color on selected wire
+        e.preventDefault()
+        const currentEdge = edges.find((ed) => ed.id === selectedEdgeId)
+        if (currentEdge) {
+          const currentColor = currentEdge.color || 'default'
+          const idx = COLOR_CYCLE.indexOf(currentColor)
+          const nextColor = COLOR_CYCLE[(idx + 1) % COLOR_CYCLE.length]
+          updateEdgeColor(selectedEdgeId, nextColor)
+        }
+      } else if ((e.key === 'a' || e.key === 'A') && !isInputActive && !e.ctrlKey && !e.metaKey && !e.altKey && selectedEdgeId) {
+        // Cycle arrow endpoints on selected wire
+        e.preventDefault()
+        const currentEdge = edges.find((ed) => ed.id === selectedEdgeId)
+        if (currentEdge) {
+          if (currentEdge.toEnd === 'none') {
+            updateEdgeEndpoints(selectedEdgeId, 'none', 'arrow')
+          } else if (currentEdge.fromEnd === 'arrow') {
+            updateEdgeEndpoints(selectedEdgeId, 'none', 'none')
+          } else {
+            updateEdgeEndpoints(selectedEdgeId, 'arrow', 'arrow')
+          }
+        }
       } else if (
         (e.ctrlKey || e.metaKey) &&
         (e.key === 'z' || e.key === 'Z') &&
@@ -435,6 +470,10 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     handleToggleSnapToGrid,
     setSelectedNodeIds,
     nodes,
+    edges,
+    updateEdgeLineStyle,
+    updateEdgeColor,
+    updateEdgeEndpoints,
     zoomToFit,
     resetViewport,
     setConnecting,

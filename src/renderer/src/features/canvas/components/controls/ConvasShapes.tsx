@@ -170,25 +170,36 @@ export function renderShapeSVG(
     case 'cylinder':
       return (
         <g stroke={stroke} strokeWidth={strokeWidth} vectorEffect="non-scaling-stroke">
-          {/* Cylinder Body */}
+          {/* Cylinder Body (side walls only, between the two ellipse caps) */}
           <path
-            d="M 6 22 L 6 78 C 6 90, 94 90, 94 78 L 94 22 Z"
+            d="M 6 24 L 6 78 C 6 90, 94 90, 94 78 L 94 24"
             fill={fill}
             fillOpacity={fillOpacity}
+            stroke="none"
           />
-          {/* Top Cap */}
+          {/* Bottom cap ellipse (hidden arc, fill only) */}
           <ellipse
             cx="50"
-            cy="22"
+            cy="78"
             rx="44"
             ry="14"
             fill={fill}
             fillOpacity={fillOpacity}
+            stroke="none"
           />
-          {/* Bottom Rim Arc */}
-          <path
-            d="M 6 78 C 6 90, 94 90, 94 78"
-            fill="none"
+          {/* Bottom rim arc - only the visible bottom curve */}
+          <path d="M 6 78 C 6 90, 94 90, 94 78" fill="none" />
+          {/* Side stroke lines */}
+          <line x1="6" y1="24" x2="6" y2="78" />
+          <line x1="94" y1="24" x2="94" y2="78" />
+          {/* Top cap ellipse - drawn last so it's always on top */}
+          <ellipse
+            cx="50"
+            cy="24"
+            rx="44"
+            ry="14"
+            fill={fill}
+            fillOpacity={fillOpacity}
           />
         </g>
       )
@@ -196,7 +207,7 @@ export function renderShapeSVG(
     case 'cloud':
       return (
         <path
-          d="M 24 74 C 12 74, 5 63, 9 49 C 5 36, 19 23, 33 29 C 41 15, 65 15, 73 29 C 87 24, 96 37, 92 51 C 97 61, 91 74, 77 74 Z"
+          d="M 20 76 A 16 16 0 0 1 6 60 A 16 16 0 0 1 24 44 A 18 18 0 0 1 36 34 A 22 22 0 0 1 62 22 A 18 18 0 0 1 78 34 A 16 16 0 0 1 94 50 A 16 16 0 0 1 80 76 Z"
           fill={fill}
           fillOpacity={fillOpacity}
           stroke={stroke}
@@ -209,7 +220,7 @@ export function renderShapeSVG(
     case 'star':
       return (
         <polygon
-          points="50,4 62,35 96,38 70,60 78,94 50,75 22,94 30,60 4,38 38,35"
+          points="50,4 61,35 94,36 68,56 77,87 50,69 23,87 32,56 6,36 39,35"
           fill={fill}
           fillOpacity={fillOpacity}
           stroke={stroke}
@@ -235,7 +246,7 @@ export function renderShapeSVG(
     case 'speech-bubble':
       return (
         <path
-          d="M 12 6 C 6 6, 4 10, 4 17 L 4 66 C 4 73, 10 77, 18 77 L 22 77 L 16 94 L 38 77 L 84 77 C 92 77, 96 73, 96 66 L 96 17 C 96 10, 92 6, 84 6 Z"
+          d="M 12 6 C 6 6, 4 10, 4 14 L 4 62 C 4 68, 8 72, 14 72 L 32 72 L 24 94 L 50 72 L 86 72 C 92 72, 96 68, 96 62 L 96 14 C 96 10, 92 6, 86 6 Z"
           fill={fill}
           fillOpacity={fillOpacity}
           stroke={stroke}
@@ -265,7 +276,7 @@ export function renderShapeSVG(
     case 'document':
       return (
         <path
-          d="M 6 6 L 94 6 L 94 80 C 72 72, 50 94, 6 82 Z"
+          d="M 8 4 L 76 4 L 92 20 L 92 96 L 8 96 Z M 76 4 L 76 20 L 92 20"
           fill={fill}
           fillOpacity={fillOpacity}
           stroke={stroke}
@@ -278,7 +289,7 @@ export function renderShapeSVG(
     case 'step':
       return (
         <polygon
-          points="4,6 74,6 96,50 74,94 4,94 22,50"
+          points="4,6 76,6 96,50 76,94 4,94 18,50"
           fill={fill}
           fillOpacity={fillOpacity}
           stroke={stroke}
@@ -401,11 +412,11 @@ export function renderShapeSVG(
           <ellipse cx="14" cy="48" rx={handRx} ry={handRy} fill={stroke} />
           <ellipse cx="86" cy="48" rx={handRx} ry={handRy} fill={stroke} />
           {/* Legs */}
-          <line x1="50" y1="65" x2="26" y2="94" />
-          <line x1="50" y1="65" x2="74" y2="94" />
-          {/* Feet */}
-          <line x1="26" y1="94" x2="19" y2="94" />
-          <line x1="74" y1="94" x2="81" y2="94" />
+          <line x1="50" y1="65" x2="28" y2="90" />
+          <line x1="50" y1="65" x2="72" y2="90" />
+          {/* Feet - angled outward naturally */}
+          <line x1="28" y1="90" x2="16" y2="94" />
+          <line x1="72" y1="90" x2="84" y2="94" />
         </g>
       )
     }
@@ -416,8 +427,8 @@ export function renderShapeSVG(
           <rect x="4" y="14" width="92" height="72" rx="6" ry="6" fill={fill} fillOpacity={fillOpacity} />
           {/* Flap fold lines */}
           <path d="M 6 18 L 50 56 L 94 18" fill="none" />
-          <path d="M 6 82 L 38 48" fill="none" opacity={0.6} />
-          <path d="M 94 82 L 62 48" fill="none" opacity={0.6} />
+          <path d="M 6 82 L 38 48" fill="none" opacity={0.35} />
+          <path d="M 94 82 L 62 48" fill="none" opacity={0.35} />
         </g>
       )
 

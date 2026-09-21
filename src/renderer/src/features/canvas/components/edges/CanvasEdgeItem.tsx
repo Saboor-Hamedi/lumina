@@ -236,11 +236,13 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
           }}
         />
 
-        {/* Generous hover retention bridge connecting midpoint to controls badge */}
-        <circle
-          cx={midX}
-          cy={edge.label ? midY - 20 : midY}
-          r={45}
+        {/* Generous hover retention zone encompassing wire midpoint, label, and controls badge */}
+        <rect
+          x={midX - 60}
+          y={edge.label ? midY - 36 : midY - 22}
+          width={120}
+          height={edge.label ? 58 : 44}
+          rx={12}
           fill="transparent"
           style={{ pointerEvents: (isHovered || isSelected) && !isMultiSelectionActive ? 'all' : 'none' }}
         />

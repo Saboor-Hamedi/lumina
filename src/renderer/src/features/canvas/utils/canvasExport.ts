@@ -63,32 +63,35 @@ function getShapeSvgMarkup(
     case 'cylinder':
       shapeContent = `
         <g stroke="${stroke}" stroke-width="${strokeWidth}">
-          <path d="M 6 22 L 6 78 C 6 90, 94 90, 94 78 L 94 22 Z" fill="${fill}" fill-opacity="${fillOpacity}" />
-          <ellipse cx="50" cy="22" rx="44" ry="14" fill="${fill}" fill-opacity="${fillOpacity}" />
+          <path d="M 6 24 L 6 78 C 6 90, 94 90, 94 78 L 94 24" fill="${fill}" fill-opacity="${fillOpacity}" stroke="none" />
+          <ellipse cx="50" cy="78" rx="44" ry="14" fill="${fill}" fill-opacity="${fillOpacity}" stroke="none" />
           <path d="M 6 78 C 6 90, 94 90, 94 78" fill="none" />
+          <line x1="6" y1="24" x2="6" y2="78" />
+          <line x1="94" y1="24" x2="94" y2="78" />
+          <ellipse cx="50" cy="24" rx="44" ry="14" fill="${fill}" fill-opacity="${fillOpacity}" />
         </g>
       `
       break
     case 'cloud':
-      shapeContent = `<path d="M 24 74 C 12 74, 5 63, 9 49 C 5 36, 19 23, 33 29 C 41 15, 65 15, 73 29 C 87 24, 96 37, 92 51 C 97 61, 91 74, 77 74 Z" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+      shapeContent = `<path d="M 20 76 A 16 16 0 0 1 6 60 A 16 16 0 0 1 24 44 A 18 18 0 0 1 36 34 A 22 22 0 0 1 62 22 A 18 18 0 0 1 78 34 A 16 16 0 0 1 94 50 A 16 16 0 0 1 80 76 Z" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
       break
     case 'star':
-      shapeContent = `<polygon points="50,4 62,35 96,38 70,60 78,94 50,75 22,94 30,60 4,38 38,35" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+      shapeContent = `<polygon points="50,4 61,35 94,36 68,56 77,87 50,69 23,87 32,56 6,36 39,35" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
       break
     case 'parallelogram':
       shapeContent = `<polygon points="22,5 96,5 78,95 4,95" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
       break
     case 'speech-bubble':
-      shapeContent = `<path d="M 12 6 C 6 6, 4 10, 4 17 L 4 66 C 4 73, 10 77, 18 77 L 22 77 L 16 94 L 38 77 L 84 77 C 92 77, 96 73, 96 66 L 96 17 C 96 10, 92 6, 84 6 Z" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+      shapeContent = `<path d="M 12 6 C 6 6, 4 10, 4 14 L 4 62 C 4 68, 8 72, 14 72 L 32 72 L 24 94 L 50 72 L 86 72 C 92 72, 96 68, 96 62 L 96 14 C 96 10, 92 6, 86 6 Z" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
       break
     case 'pill':
       shapeContent = `<rect x="4" y="12" width="92" height="76" rx="38" ry="38" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" />`
       break
     case 'document':
-      shapeContent = `<path d="M 6 6 L 94 6 L 94 80 C 72 72, 50 94, 6 82 Z" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+      shapeContent = `<path d="M 8 4 L 76 4 L 92 20 L 92 96 L 8 96 Z M 76 4 L 76 20 L 92 20" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
       break
     case 'step':
-      shapeContent = `<polygon points="4,6 74,6 96,50 74,94 4,94 22,50" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+      shapeContent = `<polygon points="4,6 76,6 96,50 76,94 4,94 18,50" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
       break
     case 'shield':
       shapeContent = `<path d="M 50 4 L 92 18 L 92 56 C 92 78, 50 96, 50 96 C 50 96, 8 78, 8 56 L 8 18 Z" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
@@ -115,11 +118,11 @@ function getShapeSvgMarkup(
       const handRx = 2.5
       const handRy = handRx * Math.min(2.5, Math.max(0.4, actorAspect))
       const chinY = 18 + headRy
-      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="50" cy="18" rx="${headRx}" ry="${headRy}" fill="${fill}" fill-opacity="${Math.max(0.12, parseFloat(fillOpacity))}" /><line x1="50" y1="${chinY}" x2="50" y2="65" /><line x1="15" y1="48" x2="50" y2="44" /><line x1="50" y1="44" x2="85" y2="48" /><ellipse cx="14" cy="48" rx="${handRx}" ry="${handRy}" fill="${stroke}" /><ellipse cx="86" cy="48" rx="${handRx}" ry="${handRy}" fill="${stroke}" /><line x1="50" y1="65" x2="26" y2="94" /><line x1="50" y1="65" x2="74" y2="94" /><line x1="26" y1="94" x2="19" y2="94" /><line x1="74" y1="94" x2="81" y2="94" /></g>`
+      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="50" cy="18" rx="${headRx}" ry="${headRy}" fill="${fill}" fill-opacity="${Math.max(0.12, parseFloat(fillOpacity))}" /><line x1="50" y1="${chinY}" x2="50" y2="65" /><line x1="15" y1="48" x2="50" y2="44" /><line x1="50" y1="44" x2="85" y2="48" /><ellipse cx="14" cy="48" rx="${handRx}" ry="${handRy}" fill="${stroke}" /><ellipse cx="86" cy="48" rx="${handRx}" ry="${handRy}" fill="${stroke}" /><line x1="50" y1="65" x2="28" y2="90" /><line x1="50" y1="65" x2="72" y2="90" /><line x1="28" y1="90" x2="16" y2="94" /><line x1="72" y1="90" x2="84" y2="94" /></g>`
       break
     }
     case 'envelope':
-      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="92" height="72" rx="6" ry="6" fill="${fill}" fill-opacity="${fillOpacity}" /><path d="M 6 18 L 50 56 L 94 18" fill="none" /><path d="M 6 82 L 38 48" fill="none" opacity="0.6" /><path d="M 94 82 L 62 48" fill="none" opacity="0.6" /></g>`
+      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="92" height="72" rx="6" ry="6" fill="${fill}" fill-opacity="${fillOpacity}" /><path d="M 6 18 L 50 56 L 94 18" fill="none" /><path d="M 6 82 L 38 48" fill="none" opacity="0.35" /><path d="M 94 82 L 62 48" fill="none" opacity="0.35" /></g>`
       break
     case 'rectangle':
     default:
