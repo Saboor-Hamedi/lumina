@@ -1,61 +1,137 @@
 import React from 'react'
-import {
-  Sparkles,
-  Spline,
-  CornerDownRight,
-  Minus,
-  ArrowRight,
-  ArrowLeftRight
-} from 'lucide-react'
 import { CanvasEdgeLineStyle } from '../types'
-import { StudioDropdown, StudioDropdownOption } from './StudioDropdown'
 
 export interface StudioWiresTabProps {
   defaultLineStyle?: CanvasEdgeLineStyle
   onChangeDefaultLineStyle?: (style: CanvasEdgeLineStyle) => void
   defaultEndpoints?: 'directed' | 'bidirectional' | 'none'
   onChangeDefaultEndpoints?: (mode: 'directed' | 'bidirectional' | 'none') => void
+  selectedEdgeId?: string | null
 }
 
-const LINE_STYLE_OPTIONS: StudioDropdownOption<CanvasEdgeLineStyle>[] = [
+interface LineStyleItem {
+  id: CanvasEdgeLineStyle
+  label: string
+  title: string
+  svg: React.ReactNode
+}
+
+interface EndpointItem {
+  id: 'directed' | 'bidirectional' | 'none'
+  label: string
+  title: string
+  svg: React.ReactNode
+}
+
+const LINE_STYLES: LineStyleItem[] = [
   {
     id: 'curved',
-    label: 'Curved (Spline)',
-    icon: <Spline size={13} />,
-    description: 'Direction-aware smooth Bezier paths'
+    label: 'Curved',
+    title: 'Curved (Spline) connector',
+    svg: (
+      <svg viewBox="0 0 38 22" width="38" height="22" fill="none">
+        <path
+          d="M 5 17 C 15 17, 23 5, 33 5"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    )
   },
   {
     id: 'step',
-    label: 'Orthogonal (Manhattan)',
-    icon: <CornerDownRight size={13} />,
-    description: 'Right-angle architecture lines with 8px rounded corners'
+    label: 'Orthogonal',
+    title: 'Orthogonal (Manhattan right-angle) connector',
+    svg: (
+      <svg viewBox="0 0 38 22" width="38" height="22" fill="none">
+        <path
+          d="M 5 17 H 19 V 5 H 33"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    )
   },
   {
     id: 'straight',
-    label: 'Straight Line',
-    icon: <Minus size={13} />,
-    description: 'Direct point-to-point connection'
+    label: 'Straight',
+    title: 'Straight direct wire',
+    svg: (
+      <svg viewBox="0 0 38 22" width="38" height="22" fill="none">
+        <line
+          x1="5"
+          y1="17"
+          x2="33"
+          y2="5"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    )
   }
 ]
 
-const ENDPOINT_OPTIONS: StudioDropdownOption<'directed' | 'bidirectional' | 'none'>[] = [
+const ENDPOINTS: EndpointItem[] = [
   {
     id: 'directed',
-    label: 'Directed (Single Arrow)',
-    icon: <ArrowRight size={13} />,
-    description: 'Points from source to target'
+    label: 'Directed',
+    title: 'Directed (Single arrow to target)',
+    svg: (
+      <svg viewBox="0 0 38 22" width="38" height="22" fill="none">
+        <line
+          x1="5"
+          y1="11"
+          x2="28"
+          y2="11"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <polygon points="26,7 34,11 26,15" fill="currentColor" />
+      </svg>
+    )
   },
   {
     id: 'bidirectional',
-    label: 'Mutual (Two Arrows)',
-    icon: <ArrowLeftRight size={13} />,
-    description: 'Arrows on both ends'
+    label: 'Mutual',
+    title: 'Mutual (Dual arrows on both ends)',
+    svg: (
+      <svg viewBox="0 0 38 22" width="38" height="22" fill="none">
+        <polygon points="12,7 4,11 12,15" fill="currentColor" />
+        <line
+          x1="10"
+          y1="11"
+          x2="28"
+          y2="11"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <polygon points="26,7 34,11 26,15" fill="currentColor" />
+      </svg>
+    )
   },
   {
     id: 'none',
-    label: 'Plain (No Arrowheads)',
-    icon: <Minus size={13} />,
-    description: 'Undirected connection wire'
+    label: 'Plain',
+    title: 'Plain line without arrowheads',
+    svg: (
+      <svg viewBox="0 0 38 22" width="38" height="22" fill="none">
+        <line
+          x1="5"
+          y1="11"
+          x2="33"
+          y2="11"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      </svg>
+    )
   }
 ]
 
@@ -64,54 +140,68 @@ export const StudioWiresTab: React.FC<StudioWiresTabProps> = React.memo(
     defaultLineStyle = 'curved',
     onChangeDefaultLineStyle,
     defaultEndpoints = 'directed',
-    onChangeDefaultEndpoints
+    onChangeDefaultEndpoints,
+    selectedEdgeId
   }) => {
     return (
       <div className="lumina-canvas-studio-tab-pane">
         <div className="studio-section-banner">
-          <span className="banner-title">Smart Connectors</span>
-          <span className="banner-sub">Directional wires and relationship arrows</span>
+          <span className="banner-title">Connectors</span>
+          <span className="banner-sub">
+            {selectedEdgeId ? 'Selected connector line style & endpoints' : 'Line geometry and arrow endpoints'}
+          </span>
         </div>
 
-        {/* Super Smart Dynamic Port Routing Feature Card */}
-        <div className="lumina-canvas-studio-chip-active">
-          <Sparkles size={14} className="chip-icon" />
-          <div className="chip-content">
-            <span className="chip-title">Super Smart Direction: Active</span>
-            <span className="chip-subtitle">
-              Wires auto-flip to the closest facing ports as shapes move in 2D space. No loops or awkward crossovers!
-            </span>
+        {/* Feature 1: Wire Path Style Cards Grid (Matching Shapes Aesthetic) */}
+        <div className="lumina-canvas-studio-card-box">
+          <div className="studio-field-header">
+            <span className="studio-field-label">Line Style</span>
+          </div>
+
+          <div className="lumina-canvas-studio-wire-cards-grid">
+            {LINE_STYLES.map((style) => {
+              const isActive = defaultLineStyle === style.id
+              return (
+                <button
+                  key={style.id}
+                  type="button"
+                  className={`lumina-canvas-studio-wire-card ${isActive ? 'active' : ''}`}
+                  onClick={() => onChangeDefaultLineStyle?.(style.id)}
+                  title={style.title}
+                  aria-pressed={isActive}
+                >
+                  <div className="wire-preview-svg">{style.svg}</div>
+                  <span className="wire-card-label">{style.label}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
-        {/* Feature 1: Default Wire Path Dropdown */}
+        {/* Feature 2: Arrowhead Endpoints Cards Grid (Matching Shapes Aesthetic) */}
         <div className="lumina-canvas-studio-card-box">
-          <StudioDropdown<CanvasEdgeLineStyle>
-            label="Wire Path Style"
-            description="Geometry for new connections"
-            value={defaultLineStyle}
-            options={LINE_STYLE_OPTIONS}
-            onChange={(style) => onChangeDefaultLineStyle?.(style)}
-          />
-        </div>
+          <div className="studio-field-header">
+            <span className="studio-field-label">Arrowheads</span>
+          </div>
 
-        {/* Feature 2: Default Arrowhead Dropdown */}
-        <div className="lumina-canvas-studio-card-box">
-          <StudioDropdown<'directed' | 'bidirectional' | 'none'>
-            label="Default Arrowheads"
-            description="Terminator style"
-            value={defaultEndpoints}
-            options={ENDPOINT_OPTIONS}
-            onChange={(endpoints) => onChangeDefaultEndpoints?.(endpoints)}
-          />
-        </div>
-
-        {/* Wire linking tips */}
-        <div className="studio-info-callout">
-          <span className="info-title">Quick Tip:</span>
-          <span className="info-text">
-            Click any card port knob to start linking, click target port to finish. Click empty space or press Escape to cancel.
-          </span>
+          <div className="lumina-canvas-studio-wire-cards-grid">
+            {ENDPOINTS.map((endpoint) => {
+              const isActive = defaultEndpoints === endpoint.id
+              return (
+                <button
+                  key={endpoint.id}
+                  type="button"
+                  className={`lumina-canvas-studio-wire-card ${isActive ? 'active' : ''}`}
+                  onClick={() => onChangeDefaultEndpoints?.(endpoint.id)}
+                  title={endpoint.title}
+                  aria-pressed={isActive}
+                >
+                  <div className="wire-preview-svg">{endpoint.svg}</div>
+                  <span className="wire-card-label">{endpoint.label}</span>
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
     )

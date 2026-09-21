@@ -15,7 +15,8 @@ import {
   Download,
   Image as ImageIcon,
   Undo2,
-  Redo2
+  Redo2,
+  ChevronDown
 } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { CanvasShapeType, CanvasNodeColor } from '../types'
@@ -287,7 +288,7 @@ export const SlimCanvasDock: React.FC<SlimCanvasDockProps> = React.memo(
                 <button
                   ref={slimExportBtnRef}
                   type="button"
-                  className={`lumina-canvas-tool-btn ${isSlimExportOpen ? 'active' : ''}`}
+                  className={`lumina-canvas-tool-btn has-dropdown ${isSlimExportOpen ? 'active' : ''}`}
                   onClick={(e) => {
                     e.stopPropagation()
                     setIsSlimExportOpen((prev) => !prev)
@@ -295,6 +296,7 @@ export const SlimCanvasDock: React.FC<SlimCanvasDockProps> = React.memo(
                   aria-label="Export / Copy as Image"
                 >
                   <Camera size={13} />
+                  <ChevronDown size={8} className="lumina-canvas-dropdown-caret" />
                 </button>
               </ToolTip>
 

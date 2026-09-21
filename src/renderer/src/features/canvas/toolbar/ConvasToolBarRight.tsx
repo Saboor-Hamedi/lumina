@@ -19,7 +19,7 @@
  * ============================================================================
  */
 
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import {
   StudioTab,
   ConvasToolBarRightProps
@@ -61,6 +61,7 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     onToggleMiniMap,
     nodes = [],
     edges = [],
+    selectedEdgeId,
     defaultLineStyle = 'curved',
     onChangeDefaultLineStyle,
     defaultEndpoints = 'directed',
@@ -111,29 +112,12 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     // Top Navigation Tabs
     const [activeTab, setActiveTab] = useState<StudioTab>('shapes')
 
-    // Diagram metrics calculations for the Export / Insights tab
-    const stats = useMemo(() => {
-      let shapeCount = 0
-      let noteCount = 0
-      let textCount = 0
-      let linkCount = 0
-
-      for (const n of nodes) {
-        if (n.type === 'shape') shapeCount++
-        else if (n.type === 'note') noteCount++
-        else if (n.type === 'text') textCount++
-        else if (n.type === 'link') linkCount++
+    // Automatically switch to connectors tab when an edge is selected
+    useEffect(() => {
+      if (selectedEdgeId) {
+        setActiveTab('connectors')
       }
-
-      return {
-        totalNodes: nodes.length,
-        shapeCount,
-        noteCount,
-        textCount,
-        linkCount,
-        edgeCount: edges.length
-      }
-    }, [nodes, edges])
+    }, [selectedEdgeId])
 
     // ========================================================================
     // EXPANDED STUDIO DRAWER VIEW
@@ -178,23 +162,16 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
                 onChangeDefaultLineStyle={onChangeDefaultLineStyle}
                 defaultEndpoints={defaultEndpoints}
                 onChangeDefaultEndpoints={onChangeDefaultEndpoints}
+                selectedEdgeId={selectedEdgeId}
               />
             )}
 
             {activeTab === 'grid' && (
               <StudioLayoutTab
-                zoom={zoom}
-                onZoomIn={onZoomIn}
-                onZoomOut={onZoomOut}
-                onResetViewport={onResetViewport}
-                onZoomToFit={onZoomToFit}
-                onSetZoom={onSetZoom}
                 selectedCount={selectedCount}
                 snapToGrid={snapToGrid}
                 onToggleSnapToGrid={onToggleSnapToGrid}
                 onSnapAllToGrid={onSnapAllToGrid}
-                isMiniMapOpen={isMiniMapOpen}
-                onToggleMiniMap={onToggleMiniMap}
                 onAlignSelection={onAlignSelection}
                 onDistributeSelection={onDistributeSelection}
               />
@@ -207,7 +184,6 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
                 onExportSVG={onExportSVG}
                 hasSelectedNodes={hasSelectedNodes}
                 selectedCount={selectedCount}
-                stats={stats}
               />
             )}
           </div>

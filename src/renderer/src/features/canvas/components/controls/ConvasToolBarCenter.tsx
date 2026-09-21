@@ -11,7 +11,7 @@
  */
 
 import React, { useState } from 'react'
-import { MousePointer, Hand, StickyNote, Shapes } from 'lucide-react'
+import { MousePointer, Hand, StickyNote, Shapes, ChevronDown } from 'lucide-react'
 import ToolTip from '../../../../components/atoms/ToolTip'
 import { CanvasShapeType, CanvasNodeColor } from '../../types'
 import ConvasShapes from './ConvasShapes'
@@ -69,7 +69,7 @@ export const ConvasToolBarCenter: React.FC<ConvasToolBarCenterProps> = React.mem
           <div style={{ position: 'relative' }}>
             <ToolTip text="Shapes & Diagrams" position="top">
               <button
-                className={`lumina-canvas-tool-btn ${isShapesOpen ? 'active' : ''}`}
+                className={`lumina-canvas-tool-btn has-dropdown ${isShapesOpen ? 'active' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation()
                   setIsShapesOpen((prev) => !prev)
@@ -77,6 +77,7 @@ export const ConvasToolBarCenter: React.FC<ConvasToolBarCenterProps> = React.mem
                 aria-label="Shapes & Diagrams"
               >
                 <Shapes size={13} />
+                <ChevronDown size={9} className="lumina-canvas-dropdown-caret" />
               </button>
             </ToolTip>
 

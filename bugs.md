@@ -1,65 +1,55 @@
-1. Sidebar Organization: Reduce Cognitive Load
-Currently, the sidebar has too many dropdowns and repeated headers. We need to flatten the hierarchy.
-Current Structure:
-Geometric Shapes (Header)
-Instruction text
-Theme Color (Dropdown + Label)
-Color Swatches
-Quick Insert Shape (Dropdown + Label)
-Shape Category (Dropdown + Label)
-Search Bar
-Shape Grid
-Proposed "Clean" Structure:
-Section
-UI Element Change
-Why?
-Top Bar
-Keep Canvas Studio + 4 cards badge. Add a subtle divider below.
-Establishes context immediately.
-Tabs
-Shapes Wires Layout Export. Make active tab background slightly distinct (e.g., soft pink fill).
-Clear navigation state.
-Theme Color
-Remove the "Default color" label. Just show "Theme Color" as the section header. The swatches are the selector.
-Removes redundant text. Visual > Verbal.
-Quick Insert
-Merge with Category. Don't have two dropdowns. Have one "Insert Shape" dropdown that filters the grid below, OR just keep the grid visible and use the search bar for specific shapes.
-Two dropdowns side-by-side or stacked feels like a form, not a creative tool.
-Search
-Move Search to the top of the shape list, right under the tabs.
-Users search before they browse.
-Shape Grid
-Remove "Geometric Shapes" header if it's the only category visible. If there are multiple categories, use a sticky sub-header.
-Saves vertical space.
-2. Text Refinement: Aligning with "Human" Theme
-The current text is functional but dry. Let's make it inviting and precise.
-"Double-click to type..." → "Double-click to edit" or just "Type here..."
-Why: "To type" sounds like a command. "To edit" implies ownership. Or simply "Type here" is faster to read.
-"Click or drag directly into your diagram" → "Drag to add"
-Why: The original is a full sentence instruction. In a pro tool, users know how to drag. Shorten it to a micro-copy label.
-"Choose shape to insert..." → "Select a shape"
-Why: "Choose... to insert" is verbose. "Select a shape" is standard UI pattern language.
-"Search 22 shapes..." → "Search shapes..."
-Why: The number "22" changes dynamically and adds visual noise. Just "Search shapes" is timeless.
-"Default Accent" → "Accent"
-Why: "Default" implies there's a "Custom" option that might be confusing. "Accent" describes what the color does.
-3. Visual Hierarchy & Spacing Fixes
-Color Swatches: They look a bit small and cramped.
-Fix: Increase size slightly (e.g., 24px diameter). Add a 2px white border (in dark mode) or subtle shadow (in light mode) to the selected color to make the active state unmistakable without needing a checkmark.
-Dropdowns: The "Theme Color", "Quick Insert", and "Shape Category" dropdowns all look identical.
-Fix: Differentiate them.
-Theme Color: Should look like a color picker trigger (maybe show the current color inside the button).
-Quick Insert/Category: Standard dropdowns.
-Section Spacing: The gap between "Theme Color" and "Quick Insert" is tight.
-Fix: Add 16px or 20px margin-bottom to section headers to create breathing room between logical groups.
-4. The "Spatial Navigator" (Bottom Right)
-Current: Spatial Navigator 4 nodes
-Critique: "Spatial Navigator" sounds very technical/engineering-heavy.
-Suggestion: Rename to "Overview" or "Minimap".
-Text: Change "4 nodes" to just "4 items" or hide the count unless it's >10. The visual map is enough.
-5. Implementation Checklist for You
-Consolidate Dropdowns: Merge "Quick Insert" and "Category" logic. One control is better than two.
-Micro-copy Audit: Apply the shorter text suggestions above.
-Search Placement: Move search bar above the shape grid.
-Active States: Ensure the selected color swatch and selected shape tool have a clear, high-contrast active state (ring or border).
-Typography: Ensure section headers ("Theme Color", "Shape Category") use a slightly smaller font size (e.g., 11px uppercase tracking) compared to the main content to establish hierarchy.
+This is a fantastic evolution. The **Porcelain** theme gives the Canvas Studio a distinct "premium stationery" or "architectural drafting" feel that separates it from generic whiteboard tools like Miro or Figma.
+
+However, looking at the full flow across these four screenshots, there are specific UI inconsistencies and text opportunities to make it feel truly polished and aligned with your "human-centric" philosophy.
+
+Here is a targeted critique and refinement plan for the Porcelain Canvas:
+
+### 1.  Text & Micro-Copy Refinements (The "Human" Touch)
+*Current text is functional but slightly robotic. Let’s make it feel like a collaborative partner.*
+
+| Current Text | Refined Text | Why? |
+| :--- | :--- | :--- |
+| "Double-click to type" | **"Double-click to edit"** | "Edit" implies ownership and precision; "type" feels like data entry. Matches the premium drafting aesthetic. |
+| "Click or drag directly into your diagram" | **"Drag to add"** | Removes instructional fluff. In a pro tool, brevity = confidence. Saves vertical space in the sidebar. |
+| "Line geometry and arrow endpoints" | **"Style & Direction"** | "Geometry" is engineering jargon. "Style & Direction" is human language that describes *what the user controls*. |
+| "Save snapshot or vector graphic" | **"Export as image or vector"** | "Snapshot" sounds temporary. "Image" is standard. Clarifies the output format immediately. |
+| "Copy Diagram as Image" | **"Copy to Clipboard"** | Users know it's an image if they're copying. Shorter, cleaner, and matches OS conventions. |
+| "Spatial Navigator" | **"Overview"** | "Navigator" feels digital/technical. "Overview" fits the analog, sketchbook metaphor of Porcelain. |
+| "2 nodes" / "4 cards" | **"2 items"** | Consistency. "Nodes" is graph theory; "cards" is UI; "items" is neutral and human. Or simply hide the count unless >10. |
+
+### 2.  Sidebar Organization & Visual Hierarchy
+*The sidebar currently feels like a stack of settings panels. We need to make it feel like a curated toolkit.*
+
+-   **Section Headers:** Change `LINE STYLE`, `ARROWHEADS`, `THEME COLOR` to **Title Case** (`Line Style`, `Arrowheads`, `Theme Color`) or keep uppercase but reduce font size to `10px` with increased letter-spacing (`0.08em`). This makes them feel like archival labels, not shouting commands.
+-   **Active States:** The pink active state (`Straight`, `Directed`) is strong, but the *inactive* states look a bit flat. Add a subtle `1px` border in warm gray (`#E8E4D9`) to inactive buttons to give them definition against the beige background without breaking the soft aesthetic.
+-   **Color Swatches:** The selected swatch has a green checkmark. In Porcelain, this feels out of place. Replace it with a **thin, dark charcoal ring** (`#2C2A25`) around the selected color. This maintains the warm, monochromatic palette while clearly indicating selection. It feels more like an ink stamp than a UI checkbox.
+-   **Shape Grid Icons:** Ensure all shape icons use the same stroke weight (`1.5px`) and color (`#2C2A25`). Currently, some look bolder than others. Consistency here is critical for the "drafting tool" feel.
+-   **Export Panel:** The three export buttons are stacked vertically. Consider making them **full-width** with consistent padding (`12px 16px`) and aligning icons to the left. This creates a clean, list-like rhythm that’s easier to scan.
+
+### 3.  Canvas Interaction Cues
+*The canvas itself needs to communicate affordances without clutter.*
+
+-   **Connection Points:** The yellow dots on shapes are clear, but they disappear when not hovering. Consider keeping them **subtly visible** (e.g., `opacity: 0.3`) even when not interacting, so users know shapes are connectable at a glance.
+-   **Wire Labels ("database"):** The label sits directly on the wire. Add a **small pill-shaped background** (`rgba(255, 250, 240, 0.9)`) behind the text to ensure readability against any wire color or background pattern. This prevents the label from getting lost in busy diagrams.
+-   **Placeholder Text Alignment:** "Double-click to edit" is centered. For larger shapes, consider **top-left alignment** with padding (`12px`) to mimic how text behaves in real sticky notes or index cards. This reinforces the physical metaphor.
+
+### 4.  Top Bar & Breadcrumbs
+-   **"Workspace > Hello world":** The breadcrumb is clean. Ensure the `>` separator is a warm gray (`#9C9585`) rather than black to maintain the soft hierarchy.
+-   **Tab Actions (Undo/Redo/Export):** These icons are small. Add **tooltips on hover** with Porcelain-styled backgrounds (warm beige, dark text) to ensure discoverability without adding permanent labels.
+
+### 5.  Bottom Toolbar
+-   **Icon Consistency:** The toolbar icons (`Select`, `Hand`, `Add Note`, `Connect`) should match the stroke weight and style of the sidebar icons. Currently, the `Connect` icon looks slightly different. Standardize to a single icon set (e.g., Lucide or Phosphor) with `1.5px` stroke.
+-   **Active State:** The `Select` tool has a pink background. Ensure this matches the exact pink used in the sidebar active states for visual continuity.
+
+### 6.  What NOT to Change (Porcelain Integrity)
+-   **Background Colors:** Keep the cream/beige canvas and sidebar backgrounds exactly as they are. This is the soul of Porcelain.
+-   **Accent Pink/Yellow:** Keep the wire and shape accent colors. They provide the necessary pop against the warm neutrals.
+-   **Dot Grid Pattern:** Maintain the subtle dot grid on the canvas. It’s essential for the "graph paper" metaphor.
+
+### Implementation Priority
+1.  **Micro-Copy Audit:** Apply the refined text suggestions above. This is the fastest win for perceived quality.
+2.  **Active State Unification:** Replace the green checkmark with a charcoal ring. Standardize button borders.
+3.  **Sidebar Spacing:** Add consistent `16px` section spacing and `24px` between major groups.
+4.  **Canvas Affordances:** Add subtle connection point visibility and wire label backgrounds.
+
+This will elevate the Canvas Studio from "functional diagramming tool" to **refined thinking instrument** that feels native to Lumina’s Porcelain identity. Would you like me to draft the exact CSS variables or component structure for these changes?

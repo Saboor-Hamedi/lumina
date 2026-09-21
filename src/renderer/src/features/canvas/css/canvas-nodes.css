@@ -303,7 +303,7 @@
   position: absolute;
   width: 12px;
   height: 12px;
-  background-color: var(--bg-panel, #18181b);
+  background-color: var(--bg-card, var(--bg-app, #18181b));
   border: 1.5px solid var(--node-accent, var(--text-accent, #38bdf8));
   border-radius: 50%;
   cursor: crosshair;
@@ -330,7 +330,7 @@
   opacity: 1 !important;
   width: 13px !important;
   height: 13px !important;
-  background-color: var(--bg-panel, #18181b) !important;
+  background-color: var(--bg-card, var(--bg-app, #18181b)) !important;
   border: 1.5px solid var(--node-accent, var(--text-accent, #38bdf8)) !important;
   box-shadow: none !important;
   animation: none !important;
@@ -680,16 +680,24 @@
   right: 3px;
   width: 6px;
   height: 6px;
-  border-right: 2px solid var(--text-muted, #94a3b8);
-  border-bottom: 2px solid var(--text-muted, #94a3b8);
-  opacity: 0.3;
-  transition: opacity 0.15s ease, border-color 0.15s ease;
+  border-right: 2px solid var(--node-accent, var(--text-accent, #38bdf8));
+  border-bottom: 2px solid var(--node-accent, var(--text-accent, #38bdf8));
+  opacity: 0.35;
+  transition: opacity 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
 .lumina-canvas-node:hover .lumina-canvas-resize-handle.handle-br::after,
 .lumina-canvas-node.selected .lumina-canvas-resize-handle.handle-br::after {
   opacity: 1;
-  border-color: var(--text-accent, #38bdf8);
+  border-color: var(--node-accent, var(--text-accent, #38bdf8));
+}
+
+[data-theme='light'] .lumina-canvas-node:not(.is-shape) .lumina-canvas-resize-handle.handle-br::after,
+[data-theme='porcelain'] .lumina-canvas-node:not(.is-shape) .lumina-canvas-resize-handle.handle-br::after,
+.theme-light .lumina-canvas-node:not(.is-shape) .lumina-canvas-resize-handle.handle-br::after {
+  border-right-color: var(--node-accent, var(--text-accent, #3b82f6));
+  border-bottom-color: var(--node-accent, var(--text-accent, #3b82f6));
+  opacity: 0.5;
 }
 
 /* ============================================================================

@@ -9,7 +9,7 @@
   background-color: var(--bg-panel, #18181b) !important;
   background: var(--bg-panel, #18181b) !important;
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
-  border-radius: 12px;
+  border-radius: 5px;
   box-shadow: 0 16px 40px -4px rgba(0, 0, 0, 0.7);
   padding: 10px 12px;
   z-index: 105;
@@ -151,7 +151,7 @@
   padding: 6px 7px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 7px;
+  border-radius: 4px;
   color: var(--text-muted, #94a3b8);
   cursor: grab;
   transition: all 0.14s ease;
@@ -278,9 +278,9 @@
   width: 8px;
   height: 8px;
   border-radius: 2px;
-  background-color: var(--bg-panel, #18181b);
+  background-color: var(--bg-card, var(--bg-app, #18181b));
   border: 1.5px solid var(--node-accent, var(--text-accent, #38bdf8));
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   opacity: 0;
   transition: opacity 0.15s ease, transform 0.15s ease;
   transform: scale(0.85);
@@ -296,6 +296,14 @@
   background-color: var(--node-accent, var(--text-accent, #38bdf8));
   border-color: #ffffff;
   transform: scale(1.2);
+}
+
+[data-theme='light'] .lumina-canvas-node.is-shape .lumina-canvas-resize-handle.handle-br::after,
+[data-theme='porcelain'] .lumina-canvas-node.is-shape .lumina-canvas-resize-handle.handle-br::after,
+.theme-light .lumina-canvas-node.is-shape .lumina-canvas-resize-handle.handle-br::after {
+  background-color: var(--bg-card, #ffffff);
+  border-color: var(--node-accent, var(--text-accent, #3b82f6));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
 .lumina-canvas-shape-content {
@@ -401,7 +409,7 @@
 .lumina-canvas-node.is-shape .lumina-canvas-port {
   width: 12px;
   height: 12px;
-  background-color: var(--bg-panel, #18181b);
+  background-color: var(--bg-card, var(--bg-app, #18181b));
   border: 1.5px solid var(--node-accent, var(--text-accent, #38bdf8));
   border-radius: 50%;
   transition: opacity 0.15s ease, width 0.15s ease, height 0.15s ease;
@@ -412,10 +420,24 @@
   opacity: 1 !important;
   width: 13px !important;
   height: 13px !important;
-  background-color: var(--bg-panel, #18181b) !important;
+  background-color: var(--bg-card, var(--bg-app, #18181b)) !important;
   border: 1.5px solid var(--node-accent, var(--text-accent, #38bdf8)) !important;
   box-shadow: none !important;
   animation: none !important;
+}
+
+[data-theme='light'] .lumina-canvas-node.is-shape .lumina-canvas-port,
+[data-theme='porcelain'] .lumina-canvas-node.is-shape .lumina-canvas-port,
+.theme-light .lumina-canvas-node.is-shape .lumina-canvas-port {
+  background-color: var(--bg-card, #ffffff);
+  border-color: var(--node-accent, var(--text-accent, #3b82f6));
+}
+
+[data-theme='light'] .lumina-canvas-node.is-shape .lumina-canvas-port.is-magnetic-snap,
+[data-theme='porcelain'] .lumina-canvas-node.is-shape .lumina-canvas-port.is-magnetic-snap,
+.theme-light .lumina-canvas-node.is-shape .lumina-canvas-port.is-magnetic-snap {
+  background-color: var(--bg-card, #ffffff) !important;
+  border-color: var(--node-accent, var(--text-accent, #3b82f6)) !important;
 }
 
 /* When a line's filled head knob is docked to a shape knob, keep the filled head visible */

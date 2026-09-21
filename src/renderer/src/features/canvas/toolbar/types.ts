@@ -49,6 +49,7 @@ export interface ConvasToolBarRightProps {
   onToggleMiniMap?: () => void
   nodes?: CanvasNode[]
   edges?: CanvasEdge[]
+  selectedEdgeId?: string | null
   defaultLineStyle?: CanvasEdgeLineStyle
   onChangeDefaultLineStyle?: (style: CanvasEdgeLineStyle) => void
   defaultEndpoints?: 'directed' | 'bidirectional' | 'none'

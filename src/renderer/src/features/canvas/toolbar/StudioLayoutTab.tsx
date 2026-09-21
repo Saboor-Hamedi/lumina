@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import {
   Grid,
   AlignLeft,
@@ -8,22 +8,18 @@ import {
   AlignCenterVertical,
   AlignEndVertical,
   AlignHorizontalDistributeCenter,
-  AlignVerticalDistributeCenter,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Maximize2,
-  Map as MapIcon
+  AlignVerticalDistributeCenter
 } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
+import Toggle from '../../../components/toggle/Toggle'
 import { CanvasAlignmentType, CanvasDistributionType } from '../utils/canvasAlignment'
 import { StudioDropdown, StudioDropdownOption } from './StudioDropdown'
 
 export interface StudioLayoutTabProps {
-  zoom: number
-  onZoomIn: () => void
-  onZoomOut: () => void
-  onResetViewport: () => void
+  zoom?: number
+  onZoomIn?: () => void
+  onZoomOut?: () => void
+  onResetViewport?: () => void
   onZoomToFit?: () => void
   onSetZoom?: (targetZoom: number) => void
   selectedCount?: number
@@ -60,57 +56,20 @@ const DISTRIBUTION_OPTIONS: StudioDropdownOption<CanvasDistributionType>[] = [
   }
 ]
 
-const ZOOM_PRESET_OPTIONS: StudioDropdownOption<string>[] = [
-  { id: '0.25', label: '25% — Overview', badge: '0.25x' },
-  { id: '0.5', label: '50% — Bird’s Eye', badge: '0.5x' },
-  { id: '0.75', label: '75% — Compact', badge: '0.75x' },
-  { id: '1', label: '100% — Default', badge: '1.0x' },
-  { id: '1.25', label: '125% — Expanded', badge: '1.25x' },
-  { id: '1.5', label: '150% — Focus', badge: '1.5x' },
-  { id: '2', label: '200% — Close-up', badge: '2.0x' },
-  { id: 'fit', label: 'Zoom to Fit Diagram', badge: 'Fit', icon: <Maximize2 size={13} /> }
-]
-
 export const StudioLayoutTab: React.FC<StudioLayoutTabProps> = React.memo(
   ({
-    zoom,
-    onZoomIn,
-    onZoomOut,
-    onResetViewport,
-    onZoomToFit,
-    onSetZoom,
     selectedCount = 0,
     snapToGrid = false,
     onToggleSnapToGrid,
     onSnapAllToGrid,
-    isMiniMapOpen = false,
-    onToggleMiniMap,
     onAlignSelection,
     onDistributeSelection
   }) => {
-    // Current zoom label matching preset
-    const currentZoomKey = useMemo(() => {
-      const rounded = Math.round(zoom * 100) / 100
-      const exact = ZOOM_PRESET_OPTIONS.find((opt) => opt.id === String(rounded))
-      return exact ? exact.id : `${Math.round(zoom * 100)}%`
-    }, [zoom])
-
-    const handleSelectZoom = (val: string) => {
-      if (val === 'fit') {
-        onZoomToFit?.()
-      } else {
-        const num = parseFloat(val)
-        if (!isNaN(num) && onSetZoom) {
-          onSetZoom(num)
-        }
-      }
-    }
-
     return (
       <div className="lumina-canvas-studio-tab-pane">
         <div className="studio-section-banner">
           <span className="banner-title">Layout & Precision</span>
-          <span className="banner-sub">Snapping, alignment, distribution & viewport zoom</span>
+          <span className="banner-sub">Snapping, alignment, and distribution</span>
         </div>
 
         {/* Feature 1: Grid Snapping Controls */}
@@ -120,14 +79,11 @@ export const StudioLayoutTab: React.FC<StudioLayoutTabProps> = React.memo(
               <span className="switch-title">20px Grid Snapping</span>
               <span className="switch-hint">Hold Shift or toggle (Ctrl+&apos;)</span>
             </div>
-            <button
-              type="button"
-              className={`lumina-canvas-studio-switch-pill ${snapToGrid ? 'active' : ''}`}
-              onClick={onToggleSnapToGrid}
-              aria-label="Toggle Grid Snapping"
-            >
-              <div className="switch-thumb" />
-            </button>
+            <Toggle
+              checked={snapToGrid}
+              onChange={() => onToggleSnapToGrid?.()}
+              ariaLabel="Toggle Grid Snapping"
+            />
           </div>
 
           {onSnapAllToGrid && (
@@ -260,86 +216,6 @@ export const StudioLayoutTab: React.FC<StudioLayoutTabProps> = React.memo(
             </div>
           </div>
         )}
-
-        {/* Feature 4: Viewport Zoom Dropdown & Navigator Controls */}
-        <div className="lumina-canvas-studio-card-box">
-          <StudioDropdown<string>
-            label="Viewport Zoom Level"
-            description={`${Math.round(zoom * 100)}% active`}
-            value={currentZoomKey}
-            options={ZOOM_PRESET_OPTIONS}
-            onChange={handleSelectZoom}
-          />
-
-          {/* Quick Zoom Buttons */}
-          <div className="lumina-canvas-studio-btn-row" style={{ marginTop: 6 }}>
-            <ToolTip text="Zoom Out" position="top">
-              <button
-                type="button"
-                className="studio-icon-btn"
-                onClick={onZoomOut}
-                aria-label="Zoom Out"
-              >
-                <ZoomOut size={13} />
-              </button>
-            </ToolTip>
-
-            <span className="studio-zoom-display">{Math.round(zoom * 100)}%</span>
-
-            <ToolTip text="Zoom In" position="top">
-              <button
-                type="button"
-                className="studio-icon-btn"
-                onClick={onZoomIn}
-                aria-label="Zoom In"
-              >
-                <ZoomIn size={13} />
-              </button>
-            </ToolTip>
-
-            <ToolTip text="Reset Zoom (Ctrl+0)" position="top">
-              <button
-                type="button"
-                className="studio-icon-btn"
-                onClick={onResetViewport}
-                aria-label="Reset Viewport"
-              >
-                <RotateCcw size={12} />
-              </button>
-            </ToolTip>
-
-            {onZoomToFit && (
-              <ToolTip text="Fit to View (Shift+1)" position="top">
-                <button
-                  type="button"
-                  className="studio-icon-btn"
-                  onClick={onZoomToFit}
-                  aria-label="Zoom to Fit"
-                >
-                  <Maximize2 size={12} />
-                </button>
-              </ToolTip>
-            )}
-          </div>
-
-          {/* Mini-Map Navigator Toggle */}
-          {onToggleMiniMap && (
-            <div className="lumina-canvas-studio-row-switch" style={{ marginTop: 6 }}>
-              <div className="switch-text">
-                <span className="switch-title">Mini-Map Radar</span>
-                <span className="switch-hint">Spatial canvas navigator</span>
-              </div>
-              <button
-                type="button"
-                className={`lumina-canvas-studio-switch-pill ${isMiniMapOpen ? 'active' : ''}`}
-                onClick={onToggleMiniMap}
-                aria-label="Toggle Mini-Map"
-              >
-                <div className="switch-thumb" />
-              </button>
-            </div>
-          )}
-        </div>
       </div>
     )
   }
