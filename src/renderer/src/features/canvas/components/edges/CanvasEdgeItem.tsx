@@ -292,7 +292,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
                     textAnchor="middle"
                     dominantBaseline="central"
                     alignmentBaseline="central"
-                    className="lumina-canvas-edge-label-text"
+                    className={`lumina-canvas-edge-label-text edge-${targetColor}`}
                   >
                     {edge.label}
                   </text>

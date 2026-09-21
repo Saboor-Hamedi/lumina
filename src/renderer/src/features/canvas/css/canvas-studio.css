@@ -23,6 +23,7 @@
 }
 
 [data-theme='light'] .lumina-canvas-toolbar-right.is-expanded,
+[data-theme='porcelain'] .lumina-canvas-toolbar-right.is-expanded,
 .theme-light .lumina-canvas-toolbar-right.is-expanded {
   background-color: color-mix(in srgb, var(--bg-card, #ffffff) 98%, transparent);
   border: none;
@@ -487,6 +488,10 @@
   color: var(--text-muted, #94a3b8);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+[data-theme='porcelain'] .lumina-canvas-studio-field-group .field-label {
+  color: var(--text-accent, #3b82f6);
 }
 
 .lumina-canvas-studio-field-group .field-sub {

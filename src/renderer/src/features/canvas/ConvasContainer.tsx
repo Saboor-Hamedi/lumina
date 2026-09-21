@@ -17,7 +17,7 @@
  */
 
 import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react'
-import { useCanvas, useCanvasGestures, useCanvasDrop } from './hooks'
+import { useCanvas, useCanvasGestures, useCanvasDrop, useCanvasShortcuts } from './hooks'
 import { CanvasData, CanvasNode, CanvasEdgeSide, CanvasShapeType, CanvasNodeColor, CanvasEdgeLineStyle } from './types'
 import {
   COLOR_CYCLE,
@@ -63,7 +63,6 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   onOpenDrawer
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
-  const isNudgingRef = useRef(false)
   const { toast, showToast, clearToast } = useToast()
 
   // Local editing & tool states
@@ -292,13 +291,10 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
       const next = !prev
       if (next) {
         snapNodesToGrid(selectedNodeIds.length > 0 ? selectedNodeIds : undefined)
-        showToast('Snap to Grid: ON', 'info')
-      } else {
-        showToast('Snap to Grid: OFF', 'info')
       }
       return next
     })
-  }, [snapNodesToGrid, selectedNodeIds, showToast])
+  }, [snapNodesToGrid, selectedNodeIds])
 
   /**
    * Camera pan-to helper (used by Mini-Map Navigator)
@@ -317,256 +313,43 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   )
 
   /**
-   * Global keyboard shortcut listener
+   * Central Keyboard Shortcuts Hook (encapsulated, protected, and clean)
    */
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const isCtrl = e.ctrlKey || e.metaKey
-      const isSlash = e.code === 'Slash' || e.key === '/' || e.key === '?' || e.code === 'NumpadDivide'
-
-      if (isCtrl && e.shiftKey && isSlash) {
-        e.preventDefault()
-        e.stopPropagation()
-        e.stopImmediatePropagation()
-        const now = Date.now()
-        if ((window as any).__lastCanvasDrawerDispatch && now - (window as any).__lastCanvasDrawerDispatch < 300) {
-          return
-        }
-        ;(window as any).__lastCanvasDrawerDispatch = now
-        if (onOpenDrawer) {
-          onOpenDrawer()
-        } else {
-          window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))
-        }
-        return
-      }
-
-      const activeEl = document.activeElement as HTMLElement | null
-      const activeTag = (activeEl?.tagName || '').toLowerCase()
-      const isInputActive =
-        activeTag === 'input' ||
-        activeTag === 'textarea' ||
-        Boolean(activeEl?.isContentEditable) ||
-        Boolean(activeEl?.closest?.('[contenteditable="true"], .ProseMirror, input, textarea'))
-
-      if (e.code === 'Space' && !isInputActive && !e.repeat) {
-        setIsSpacePressed(true)
-      } else if ((e.key === 'Delete' || e.key === 'Backspace') && !isInputActive) {
-        if (selectedNodeIds.length > 0) {
-          e.preventDefault()
-          e.stopPropagation()
-          deleteSelected(selectedNodeIds)
-        } else if (selectedEdgeId) {
-          e.preventDefault()
-          e.stopPropagation()
-          deleteEdge(selectedEdgeId)
-          setSelectedEdgeId(null)
-        }
-      } else if (e.key === 'Escape') {
-        setConnecting(null)
-        if (connectingRef) connectingRef.current = null
-        setSnappedTarget(null)
-        if (snappedTargetRef) snappedTargetRef.current = null
-        setEditingNodeId(null)
-        setEditingField(null)
-        setSelectedNodeIds([])
-        setSelectedEdgeId(null)
-      } else if (e.altKey && (e.key === 'd' || e.key === 'D') && !isInputActive) {
-        // Alt+D duplicates selected nodes (Ctrl+D reserved for Documentation!)
-        if (selectedNodeIds.length > 0) {
-          e.preventDefault()
-          e.stopPropagation()
-          duplicateNodes(selectedNodeIds)
-        }
-      } else if (
-        (e.ctrlKey || e.metaKey) &&
-        (e.key === 'c' || e.key === 'C') &&
-        !isInputActive &&
-        !e.shiftKey &&
-        !e.altKey &&
-        selectedNodeIds.length > 0 &&
-        !window.getSelection()?.toString()
-      ) {
-        // Safe canvas copy: only when not typing in any editor/input, not selecting text, and has canvas nodes selected
-        e.preventDefault()
-        e.stopPropagation()
-        const count = copyNodes(selectedNodeIds)
-        if (count > 0) {
-          showToast(`Copied ${count} ${count === 1 ? 'shape' : 'shapes'} to canvas clipboard`, 'info')
-        }
-      } else if (
-        (e.ctrlKey || e.metaKey) &&
-        (e.key === 'v' || e.key === 'V') &&
-        !isInputActive &&
-        !e.shiftKey &&
-        !e.altKey &&
-        hasCopiedNodes()
-      ) {
-        // Safe canvas paste: only when not typing in any editor/input and canvas clipboard has items
-        e.preventDefault()
-        e.stopPropagation()
-        const pasted = pasteNodes()
-        if (pasted.length > 0) {
-          showToast(`Pasted ${pasted.length} ${pasted.length === 1 ? 'item' : 'items'}`, 'info')
-        }
-      } else if (
-        ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) &&
-        !isInputActive &&
-        !e.altKey &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        selectedNodeIds.length > 0
-      ) {
-        // Pixel-perfect arrow key nudging for selected canvas shapes/cards
-        e.preventDefault()
-        e.stopPropagation()
-
-        if (!isNudgingRef.current) {
-          isNudgingRef.current = true
-          pushHistory()
-        }
-
-        const step = e.shiftKey ? 10 : snapToGrid ? 20 : 2
-        let dx = 0
-        let dy = 0
-
-        if (e.key === 'ArrowUp') dy = -step
-        else if (e.key === 'ArrowDown') dy = step
-        else if (e.key === 'ArrowLeft') dx = -step
-        else if (e.key === 'ArrowRight') dx = step
-
-        const selectedSet = new Set(selectedNodeIds)
-        const updates = nodes
-          .filter((n) => selectedSet.has(n.id))
-          .map((n) => ({ id: n.id, x: n.x + dx, y: n.y + dy }))
-
-        if (updates.length > 0) {
-          updateNodesPositions(updates)
-        }
-      } else if ((e.ctrlKey || e.metaKey) && (e.key === "'" || e.key === '"') && !isInputActive) {
-        // Ctrl+' toggles 20px grid snapping
-        e.preventDefault()
-        e.stopPropagation()
-        handleToggleSnapToGrid()
-      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A') && !isInputActive) {
-        e.preventDefault()
-        e.stopPropagation()
-        setSelectedEdgeId(null)
-        setSelectedNodeIds(nodes.map((n) => n.id))
-      } else if (((e.ctrlKey || e.metaKey) && e.key === '1') || (e.shiftKey && e.key === '!')) {
-        if (!isInputActive) {
-          e.preventDefault()
-          zoomToFit(containerRef.current?.getBoundingClientRect())
-        }
-      } else if ((e.ctrlKey || e.metaKey) && e.key === '0' && !isInputActive) {
-        e.preventDefault()
-        resetViewport()
-      } else if (e.key === 'v' && !isInputActive && !e.ctrlKey && !e.metaKey) {
-        setToolMode('select')
-      } else if (e.key === 'h' && !isInputActive && !e.ctrlKey && !e.metaKey) {
-        setToolMode('hand')
-      } else if ((e.key === 'l' || e.key === 'L') && !isInputActive && !e.ctrlKey && !e.metaKey && !e.altKey && selectedEdgeId) {
-        // Cycle line style on selected wire
-        e.preventDefault()
-        const currentEdge = edges.find((ed) => ed.id === selectedEdgeId)
-        if (currentEdge) {
-          const nextStyle: Record<CanvasEdgeLineStyle, CanvasEdgeLineStyle> = {
-            curved: 'step',
-            step: 'straight',
-            straight: 'curved'
-          }
-          updateEdgeLineStyle(selectedEdgeId, nextStyle[currentEdge.lineStyle || 'curved'] || 'curved')
-        }
-      } else if ((e.key === 'c' || e.key === 'C') && !isInputActive && !e.ctrlKey && !e.metaKey && !e.altKey && selectedEdgeId) {
-        // Cycle color on selected wire
-        e.preventDefault()
-        const currentEdge = edges.find((ed) => ed.id === selectedEdgeId)
-        if (currentEdge) {
-          const currentColor = currentEdge.color || 'default'
-          const idx = COLOR_CYCLE.indexOf(currentColor)
-          const nextColor = COLOR_CYCLE[(idx + 1) % COLOR_CYCLE.length]
-          updateEdgeColor(selectedEdgeId, nextColor)
-        }
-      } else if ((e.key === 'a' || e.key === 'A') && !isInputActive && !e.ctrlKey && !e.metaKey && !e.altKey && selectedEdgeId) {
-        // Cycle arrow endpoints on selected wire
-        e.preventDefault()
-        const currentEdge = edges.find((ed) => ed.id === selectedEdgeId)
-        if (currentEdge) {
-          if (currentEdge.toEnd === 'none') {
-            updateEdgeEndpoints(selectedEdgeId, 'none', 'arrow')
-          } else if (currentEdge.fromEnd === 'arrow') {
-            updateEdgeEndpoints(selectedEdgeId, 'none', 'none')
-          } else {
-            updateEdgeEndpoints(selectedEdgeId, 'arrow', 'arrow')
-          }
-        }
-      } else if (
-        (e.ctrlKey || e.metaKey) &&
-        (e.key === 'z' || e.key === 'Z') &&
-        !e.shiftKey &&
-        !isInputActive
-      ) {
-        e.preventDefault()
-        e.stopPropagation()
-        undo()
-        showToast('Undo', 'info')
-      } else if (
-        (((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) ||
-          ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'z' || e.key === 'Z'))) &&
-        !isInputActive
-      ) {
-        e.preventDefault()
-        e.stopPropagation()
-        redo()
-        showToast('Redo', 'info')
-      }
-    }
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.code === 'Space') {
-        setIsSpacePressed(false)
-      }
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-        isNudgingRef.current = false
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
-    }
-  }, [
-    deleteSelected,
+  useCanvasShortcuts({
+    containerRef,
+    nodes,
+    edges,
     selectedNodeIds,
     selectedEdgeId,
+    snapToGrid,
+    onOpenDrawer,
+    deleteSelected,
     deleteEdge,
     setSelectedEdgeId,
+    setSelectedNodeIds,
     duplicateNodes,
     copyNodes,
     pasteNodes,
     hasCopiedNodes,
     updateNodesPositions,
-    snapToGrid,
-    pushHistory,
-    handleToggleSnapToGrid,
-    setSelectedNodeIds,
-    nodes,
-    edges,
     updateEdgeLineStyle,
     updateEdgeColor,
     updateEdgeEndpoints,
+    handleToggleSnapToGrid,
     zoomToFit,
     resetViewport,
+    setToolMode,
+    setIsSpacePressed,
     setConnecting,
     connectingRef,
     setSnappedTarget,
     snappedTargetRef,
+    setEditingNodeId,
+    setEditingField,
     undo,
     redo,
-    showToast
-  ])
+    pushHistory
+  })
 
   /**
    * Double clicking canvas background creates a new note at cursor
@@ -734,10 +517,9 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
       if (updates.length > 0) {
         pushHistory()
         updateNodesPositions(updates)
-        showToast(`Aligned ${selectedNodes.length} nodes to ${alignment}`, 'info')
       }
     },
-    [selectedNodes, updateNodesPositions, showToast, pushHistory]
+    [selectedNodes, updateNodesPositions, pushHistory]
   )
 
   const handleDistributeSelection = useCallback(
@@ -746,10 +528,9 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
       if (updates.length > 0) {
         pushHistory()
         updateNodesPositions(updates)
-        showToast(`Distributed nodes ${direction}ly`, 'info')
       }
     },
-    [selectedNodes, updateNodesPositions, showToast, pushHistory]
+    [selectedNodes, updateNodesPositions, pushHistory]
   )
 
   const handleCycleSelectionColor = useCallback(() => {
@@ -901,11 +682,8 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     })
     if (updates.length > 0) {
       updateNodesPositions(updates)
-      showToast(`Snapped ${updates.length} nodes to 20px grid`, 'info')
-    } else {
-      showToast('All nodes are already aligned to 20px grid', 'info')
     }
-  }, [nodes, updateNodesPositions, showToast])
+  }, [nodes, updateNodesPositions])
 
   const cursorStyle = isPanningState
     ? 'grabbing'

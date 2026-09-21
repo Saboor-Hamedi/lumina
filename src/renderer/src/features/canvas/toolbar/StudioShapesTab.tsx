@@ -124,7 +124,7 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
         <div className="lumina-canvas-studio-card-box">
           <StudioDropdown<CanvasNodeColor>
             label="Theme Color"
-            description={selectedCount > 0 ? 'Recolors selection' : 'Default color'}
+            description={selectedCount > 0 ? 'Recolors selection' : undefined}
             value={activeColor}
             options={colorDropdownOptions}
             onChange={handleColorClick}

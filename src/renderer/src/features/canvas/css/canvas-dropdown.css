@@ -31,6 +31,10 @@
   color: var(--text-muted, #94a3b8);
 }
 
+[data-theme='porcelain'] .studio-dropdown-label {
+  color: var(--text-accent, #3b82f6);
+}
+
 .studio-dropdown-desc {
   font-size: 9.5px;
   color: var(--text-dim, #64748b);

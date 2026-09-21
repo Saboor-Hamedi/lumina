@@ -534,33 +534,51 @@
 }
 
 .lumina-canvas-edge-label-bg {
-  fill: transparent;
+  fill: var(--bg-app, #0c0d10);
   stroke: transparent;
   stroke-width: 0;
-  filter: none;
+  opacity: 0.88;
 }
 
 .lumina-canvas-edge-label-badge:hover .lumina-canvas-edge-label-bg {
-  fill: transparent;
-  stroke: transparent;
+  opacity: 0.96;
 }
 
 .lumina-canvas-edge-label-text {
   font-size: 10px;
   font-weight: 500;
   font-family: inherit;
-  fill: var(--text-main, #e2e8f0);
+  fill: var(--text-accent, #38bdf8);
   text-anchor: middle;
   dominant-baseline: central;
   alignment-baseline: central;
   user-select: none;
   pointer-events: none;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 2px rgba(0, 0, 0, 0.9);
   transition: fill 0.15s ease;
 }
 
+.lumina-canvas-edge-label-text.edge-yellow { fill: #eab308; }
+.lumina-canvas-edge-label-text.edge-blue { fill: #3b82f6; }
+.lumina-canvas-edge-label-text.edge-purple { fill: #a855f7; }
+.lumina-canvas-edge-label-text.edge-pink { fill: #ec4899; }
+.lumina-canvas-edge-label-text.edge-cyan { fill: #06b6d4; }
+.lumina-canvas-edge-label-text.edge-green { fill: #22c55e; }
+.lumina-canvas-edge-label-text.edge-orange { fill: #f97316; }
+.lumina-canvas-edge-label-text.edge-red { fill: #ef4444; }
+.lumina-canvas-edge-label-text.edge-default { fill: var(--text-accent, #38bdf8); }
+
+[data-theme='porcelain'] .lumina-canvas-edge-label-text,
+[data-theme='light'] .lumina-canvas-edge-label-text,
+.theme-light .lumina-canvas-edge-label-text {
+  fill: var(--text-accent, #3b82f6);
+}
+
+[data-theme='porcelain'] .lumina-canvas-edge-label-text.edge-default {
+  fill: #3b82f6;
+}
+
 .lumina-canvas-edge-label-badge:hover .lumina-canvas-edge-label-text {
-  fill: var(--text-accent, #38bdf8);
+  filter: drop-shadow(0 0 4px currentColor);
 }
 
 /* Edge Label Inline Editor */

@@ -12,3 +12,4 @@
 export * from './useCanvas'
 export * from './useCanvasGestures'
 export * from './useCanvasDrop'
+export * from './useCanvasShortcuts'
