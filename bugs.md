@@ -39,3 +39,25 @@
   - Converted tab lookup to O(1) `Map` lookup (`snippetMap`).
   - Switched `renderedEditors` dependency to `selectedSnippet?.id` and `activeTabId`, preventing editor re-renders during active note typing.
   - Stabilized `handleToggleInspector` with `rightSidebarTabRef`.
+
+## 6. Layout Feature TypeScript Migration & Barrel Architecture (Completed)
+- **Files Migrated to `.tsx`**:
+  1. `StatusBar.jsx` -> `StatusBar.tsx`
+  2. `TabBar.jsx` -> `TabBar.tsx`
+  3. `TabContentPane.jsx` -> `TabContentPane.tsx`
+  4. `TitleBar.jsx` -> `TitleBar.tsx`
+  5. `WorkspaceStat.tsx` (verified intact)
+- **All Old `.jsx` Files Removed**:
+  - Deleted `Welcome.jsx`, `CommandPalette.jsx`, `PreviewCommandPalette.jsx`, `Preview.jsx`, `Profile.jsx`, `StatusBar.jsx`, `TabBar.jsx`, `TabContentPane.jsx`, and `TitleBar.jsx`.
+- **Architectural Barrels Created**:
+  - `src/renderer/src/features/commandpalette/index.ts`
+  - `src/renderer/src/features/preview/index.ts`
+  - `src/renderer/src/features/profile/index.ts`
+  - `src/renderer/src/features/Layout/index.ts`
+
+## 7. Active Line Left Border: Theme Decoupling & 1px Width (Fixed)
+- **Root Cause**: Hardcoded theme overrides in `Editor.css` (`[data-theme='dark']`, `[data-theme='obsidian-robust']`, `[data-theme='light']`) forced active line box-shadows on specific themes and used a 2px border width.
+- **Resolution**:
+  - Removed all theme-specific active-line CSS overrides.
+  - Active line left border is now controlled exclusively via the Settings toggle (`Active Line Left Border` / `data-use-active-line-border="true"`).
+  - Width is strictly enforced to `1px` across all themes. When toggled off, `border-left` and `box-shadow` are completely disabled (`none !important`).

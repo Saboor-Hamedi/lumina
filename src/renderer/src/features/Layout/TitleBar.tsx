@@ -1,6 +1,20 @@
-import React from 'react'
+/**
+ * =========================================================================
+ * TitleBar Component (`TitleBar.tsx`)
+ * =========================================================================
+ *
+ * Custom Electron frameless application title bar for Lumina.
+ *
+ * Architecture & Features:
+ * - Left pane: Left sidebar toggle, app logo, and update status indicator.
+ * - Center pane: Unified "Ask anything or Search..." quick-trigger input (Ctrl + P / Cmd + P).
+ * - Right pane: User avatar / accent color quick controls & native-feel window buttons (Minimize, Maximize, Close).
+ * - Memoized and typed with strict TypeScript safety.
+ * =========================================================================
+ */
+
+import React, { useState, useEffect, useCallback, memo } from 'react'
 import { Square, X, Minus, Search, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react'
-import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import logoUrl from '../../assets/logo.png'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -9,39 +23,44 @@ import AccentColor from '../theme/AccentColor'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 import '../../assets/titlebar.css'
 
-const TitleBar = () => {
-  const handleMinimize = () => window.api?.minimize()
-  const handleToggleMaximize = () => window.api?.toggleMaximize()
-  const handleClose = () => window.api?.closeWindow()
+export interface TitleBarProps {
+  className?: string
+}
 
-  const [version, setVersion] = React.useState('')
-  const [isAccentOpen, setIsAccentOpen] = React.useState(false)
+export const TitleBar: React.FC<TitleBarProps> = memo(() => {
+  const handleMinimize = useCallback(() => (window as any).api?.minimize?.(), [])
+  const handleToggleMaximize = useCallback(() => (window as any).api?.toggleMaximize?.(), [])
+  const handleClose = useCallback(() => (window as any).api?.closeWindow?.(), [])
+
+  const [, setVersion] = useState<string>('')
+  const [isAccentOpen, setIsAccentOpen] = useState<boolean>(false)
   const { themeAccentColor, updateThemeAccentColor } = useFontSettings()
   const { user, isLoggedIn } = useCurrentUser()
-  const [imgError, setImgError] = React.useState(false)
+  const [imgError, setImgError] = useState<boolean>(false)
 
-  React.useEffect(() => {
+  useEffect(() => {
     setImgError(false)
   }, [user?.picture])
 
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = React.useState(() => {
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState<boolean>(() => {
     if (typeof localStorage !== 'undefined') {
       const saved = localStorage.getItem('lumina_left_sidebar_open')
       if (saved !== null) return saved === 'true'
     }
     return true
   })
-  const selectedSnippet = useWorkspaceStore((s) => s.selectedNote)
+
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
 
-  React.useEffect(() => {
-    if (window.api?.getVersion) {
-      window.api.getVersion().then(setVersion)
+  useEffect(() => {
+    if ((window as any).api?.getVersion) {
+      (window as any).api.getVersion().then(setVersion)
     }
 
-    const handleLeftSidebarChange = (e) => {
-      if (typeof e.detail?.open === 'boolean') {
-        setIsLeftSidebarOpen(e.detail.open)
+    const handleLeftSidebarChange = (e: Event) => {
+      const customEvent = e as CustomEvent<{ open?: boolean }>
+      if (typeof customEvent.detail?.open === 'boolean') {
+        setIsLeftSidebarOpen(customEvent.detail.open)
       }
     }
     window.addEventListener('left-sidebar-toggle', handleLeftSidebarChange)
@@ -50,17 +69,19 @@ const TitleBar = () => {
     }
   }, [])
 
-  const handleToggleLeftSidebar = () => {
+  const handleToggleLeftSidebar = useCallback(() => {
     window.dispatchEvent(new CustomEvent('toggle-left-sidebar'))
-  }
+  }, [])
 
   return (
     <div className="title-bar" data-testid="title-bar">
       <div className="title-left">
-        <ToolTip text={isLeftSidebarOpen ? "Close Sidebar" : "Open Sidebar"} position="bottom">
+        <ToolTip text={isLeftSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'} position="bottom">
           <button
+            type="button"
             onClick={handleToggleLeftSidebar}
             className="control-btn titlebar-sidebar-toggle-btn"
+            aria-label={isLeftSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'}
           >
             {isLeftSidebarOpen ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
           </button>
@@ -92,7 +113,7 @@ const TitleBar = () => {
       </div>
 
       <div className="title-center">
-        <ToolTip text={isMac ? "Search or Ask AI (⌘P)" : "Search or Ask AI (Ctrl + P)"} position="bottom">
+        <ToolTip text={isMac ? 'Search or Ask AI (⌘P)' : 'Search or Ask AI (Ctrl + P)'} position="bottom">
           <div
             className="unified-search-bar"
             onClick={() => window.dispatchEvent(new CustomEvent('open-ask-anything'))}
@@ -160,7 +181,7 @@ const TitleBar = () => {
               onClose={() => setIsAccentOpen(false)}
               initialColor={themeAccentColor}
               defaultColor="#40bafa"
-              onSelect={(color) => {
+              onSelect={(color: string) => {
                 updateThemeAccentColor(color)
               }}
               previewProperty="--text-accent"
@@ -168,19 +189,21 @@ const TitleBar = () => {
               variant="dropdown"
             />
           </div>
-          <button onClick={handleMinimize} className="control-btn" aria-label="Minimize">
+          <button type="button" onClick={handleMinimize} className="control-btn" aria-label="Minimize">
             <Minus size={14} strokeWidth={2} />
           </button>
-          <button onClick={handleToggleMaximize} className="control-btn" aria-label="Maximize">
+          <button type="button" onClick={handleToggleMaximize} className="control-btn" aria-label="Maximize">
             <Square size={14} strokeWidth={2} />
           </button>
-          <button onClick={handleClose} className="control-btn close" aria-label="Close">
+          <button type="button" onClick={handleClose} className="control-btn close" aria-label="Close">
             <X size={14} strokeWidth={2} />
           </button>
         </div>
       </div>
     </div>
   )
-}
+})
+
+TitleBar.displayName = 'TitleBar'
 
 export default TitleBar

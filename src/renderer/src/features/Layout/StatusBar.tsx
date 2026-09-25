@@ -1,5 +1,32 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react'
-import { BookOpen, PanelRight, Keyboard, FileText, Hash, Clock, Navigation, Compass, Settings, LayoutGrid } from 'lucide-react'
+/**
+ * =========================================================================
+ * StatusBar Component (`StatusBar.tsx`)
+ * =========================================================================
+ *
+ * System bottom status bar for Lumina.
+ *
+ * Architecture & Features:
+ * - Left utility tray: Settings & profile dropdown, inspector toggle, docs, guide, shortcuts, canvas drawer.
+ * - Center status area: Minimalist glowing CapsLock blob.
+ * - Right live metrics: Line/column cursor coordinates, word count, character count, estimated reading time, format.
+ * - Horizontal mouse wheel scrolling for overflow safety.
+ * - Memoized and optimized for 120 FPS typing performance.
+ * =========================================================================
+ */
+
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import {
+  BookOpen,
+  PanelRight,
+  Keyboard,
+  FileText,
+  Hash,
+  Clock,
+  Navigation,
+  Compass,
+  Settings,
+  LayoutGrid
+} from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import SettingDropdown from '../Navigation/components/SettingDropdown'
@@ -7,33 +34,53 @@ import ToolTip from '../../components/atoms/ToolTip'
 import CapsLock from '../../components/capsLock'
 import '../../assets/statusbar.css'
 
-const StatusBar = ({
+export interface StatusBarProps {
+  /** Toggle right inspector sidebar */
+  onToggleInspector?: () => void
+  /** Open documentation panel */
+  onDocsClick?: () => void
+  /** Open keyboard shortcuts dialog */
+  onShortcutsClick?: () => void
+  /** Open application settings dialog */
+  onSettingsClick?: () => void
+  /** Open theme picker */
+  onThemeClick?: () => void
+}
+
+interface CursorPosition {
+  line: number
+  col: number
+  selectedChars: number
+}
+
+export const StatusBar: React.FC<StatusBarProps> = ({
   onToggleInspector,
   onDocsClick,
   onShortcutsClick,
   onSettingsClick,
   onThemeClick
 }) => {
-  const selectedSnippet = useWorkspaceStore((s) => s.selectedNote || s.selectedSnippet)
-  const [cursorPos, setCursorPos] = useState({ line: 1, col: 1, selectedChars: 0 })
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [imgError, setImgError] = useState(false)
-  const settingsBtnRef = useRef(null)
+  const selectedSnippet = useWorkspaceStore((s) => s.selectedNote || (s as any).selectedSnippet)
+  const [cursorPos, setCursorPos] = useState<CursorPosition>({ line: 1, col: 1, selectedChars: 0 })
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false)
+  const [imgError, setImgError] = useState<boolean>(false)
+  const settingsBtnRef = useRef<HTMLButtonElement | null>(null)
   const { user, isLoggedIn } = useCurrentUser()
 
-  const toggleDropdown = (e) => {
+  const toggleDropdown = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     setIsDropdownOpen((prev) => !prev)
-  }
+  }, [])
 
   // Listen for active editor cursor movements and selection changes
   useEffect(() => {
-    const handleCursorPos = (e) => {
-      if (e.detail) {
+    const handleCursorPos = (e: Event) => {
+      const customEvent = e as CustomEvent<CursorPosition>
+      if (customEvent.detail) {
         setCursorPos({
-          line: e.detail.line || 1,
-          col: e.detail.col || 1,
-          selectedChars: e.detail.selectedChars || 0
+          line: customEvent.detail.line || 1,
+          col: customEvent.detail.col || 1,
+          selectedChars: customEvent.detail.selectedChars || 0
         })
       }
     }
@@ -45,11 +92,11 @@ const StatusBar = ({
   // Calculate live document statistics
   const stats = useMemo(() => {
     if (!selectedSnippet || !selectedSnippet.code) {
-      return { chars: 0, words: 0, readTime: '0 min' }
+      return { chars: '0', words: '0', readTime: '0 min read' }
     }
     const text = selectedSnippet.code.trim()
     const chars = selectedSnippet.code.length
-    const words = text ? text.split(/\s+/).length : 0
+    const words = text ? text.split(/\s+/).filter(Boolean).length : 0
     const readMinutes = Math.max(1, Math.ceil(words / 200))
     return {
       chars: chars.toLocaleString(),
@@ -58,17 +105,15 @@ const StatusBar = ({
     }
   }, [selectedSnippet?.code])
 
-  const statusBarRef = React.useRef(null)
+  const statusBarRef = useRef<HTMLDivElement | null>(null)
 
   // Enable invisible horizontal mouse wheel scrolling when status bar content overflows
   useEffect(() => {
     const el = statusBarRef.current
     if (!el) return
 
-    const handleWheel = (e) => {
-      // Check if content overflows horizontally
+    const handleWheel = (e: WheelEvent) => {
       if (el.scrollWidth > el.clientWidth) {
-        // If vertical scrolling on mouse wheel, map deltaY to horizontal scrollLeft
         if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
           e.preventDefault()
           el.scrollLeft += e.deltaY
@@ -94,6 +139,7 @@ const StatusBar = ({
         >
           <button
             ref={settingsBtnRef}
+            type="button"
             className={`status-bar-btn status-bar-profile-btn ${isDropdownOpen ? 'active' : ''}`}
             onClick={toggleDropdown}
             data-testid="status-bar-settings-btn"
@@ -129,7 +175,7 @@ const StatusBar = ({
         <span className="status-bar-divider" />
 
         <ToolTip text="Toggle Details & Outline (Ctrl + \)" position="top">
-          <button className="status-bar-btn" onClick={onToggleInspector}>
+          <button type="button" className="status-bar-btn" onClick={onToggleInspector}>
             <PanelRight size={11} />
             <span>Details</span>
           </button>
@@ -138,7 +184,7 @@ const StatusBar = ({
         <span className="status-bar-divider" />
 
         <ToolTip text="Documentation (Ctrl + D)" position="top">
-          <button className="status-bar-btn" onClick={onDocsClick}>
+          <button type="button" className="status-bar-btn" onClick={onDocsClick}>
             <BookOpen size={11} />
             <span>Docs</span>
           </button>
@@ -148,6 +194,7 @@ const StatusBar = ({
 
         <ToolTip text="Interactive Guide" position="top">
           <button
+            type="button"
             className="status-bar-btn"
             onClick={() => window.dispatchEvent(new CustomEvent('open-guide'))}
           >
@@ -159,7 +206,7 @@ const StatusBar = ({
         <span className="status-bar-divider status-bar-hide-sm" />
 
         <ToolTip text="Keyboard Shortcuts (Ctrl + /)" position="top">
-          <button className="status-bar-btn" onClick={onShortcutsClick}>
+          <button type="button" className="status-bar-btn" onClick={onShortcutsClick}>
             <Keyboard size={11} />
             <span className="status-bar-label-collapse">Shortcuts</span>
           </button>
@@ -169,6 +216,7 @@ const StatusBar = ({
 
         <ToolTip text="Canvas Drawer (Ctrl + Shift + /)" position="top">
           <button
+            type="button"
             className="status-bar-btn"
             onClick={() => window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))}
           >
@@ -179,7 +227,6 @@ const StatusBar = ({
       </div>
 
       {/* Guaranteed open & empty center */}
-      {/* Center contains exclusively the glowing CapsLock blob with no text */}
       <div className="status-bar-center">
         <CapsLock showLabel={false} />
       </div>

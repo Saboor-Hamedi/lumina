@@ -1,8 +1,10 @@
 /**
- * TabContentPane.jsx
- * 
+ * =========================================================================
+ * TabContentPane (`TabContentPane.tsx`)
+ * =========================================================================
+ *
  * Individual Tab Content Pane renderer for Lumina's multi-tab workspace.
- * 
+ *
  * Architecture & Responsibilities:
  * - Keeps tab contents mounted in the DOM to preserve local editor scroll positions,
  *   undo/redo history, canvas zoom, and media playback state across tab switching.
@@ -15,6 +17,9 @@
  *     4. Markdown & Code notes (default fallback) -> Editor
  * - Wrapped with GlobalErrorHandler so any unhandled renderer exception in one note
  *   never crashes the entire application shell.
+ * - Memoized with high-performance comparator: unselected background tabs never
+ *   re-render when switching active notes, eliminating layout thrashing.
+ * =========================================================================
  */
 
 import React from 'react'
@@ -25,7 +30,38 @@ const ImageViewerTab = React.lazy(() => import('../media/ImageViewerTab'))
 const PDFViewerTab = React.lazy(() => import('../media/PDFViewerTab'))
 const CanvasTabPane = React.lazy(() => import('../canvas/CanvasTabPane'))
 
-export const TabContentPane = React.memo(
+export interface TabContentPaneProps {
+  /** The note or snippet record to render in this pane */
+  snippet: {
+    id: string
+    title?: string
+    code?: string
+    type?: string
+    language?: string
+    fileName?: string
+    timestamp?: number
+    color?: string
+    isPinned?: boolean
+    isLearned?: boolean
+    [key: string]: any
+  }
+  /** Whether this tab is currently the active, focused pane */
+  isSelected: boolean
+  /** Callback fired to persist note changes */
+  onSave?: (snippet: any) => Promise<any> | void
+  /** Action: toggle right inspector sidebar */
+  onToggleInspector?: () => void
+  /** Action: toggle quick explorer modal */
+  onToggleExplorerModal?: () => void
+  /** Action: open settings modal */
+  onSettingsClick?: () => void
+  /** Action: open theme selection modal */
+  onThemeClick?: () => void
+  /** Action: open knowledge graph view */
+  onGraphClick?: () => void
+}
+
+export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
   ({
     snippet,
     isSelected,
@@ -62,7 +98,9 @@ export const TabContentPane = React.memo(
               <ImageViewerTab snippet={snippet} />
             ) : snippet.type === 'pdf' ? (
               <PDFViewerTab snippet={snippet} />
-            ) : snippet.type === 'canvas' || snippet.language === 'canvas' || snippet.fileName?.endsWith('.canvas') ? (
+            ) : snippet.type === 'canvas' ||
+              snippet.language === 'canvas' ||
+              snippet.fileName?.endsWith('.canvas') ? (
               <CanvasTabPane snippet={snippet} onSave={onSave} isSelected={isSelected} />
             ) : (
               <Editor
@@ -95,5 +133,7 @@ export const TabContentPane = React.memo(
     )
   }
 )
+
+TabContentPane.displayName = 'TabContentPane'
 
 export default TabContentPane

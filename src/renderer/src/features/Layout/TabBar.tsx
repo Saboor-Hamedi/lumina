@@ -1,16 +1,33 @@
+/**
+ * =========================================================================
+ * TabBar Component (`TabBar.tsx`)
+ * =========================================================================
+ *
+ * High-performance, premium workspace tab management for Lumina.
+ *
+ * Features:
+ * - Native feel, horizontal DND reordering via @dnd-kit
+ * - Pinned tabs support with dedicated unpin/pin operations
+ * - Unsaved changes dirty safety prompt dialog
+ * - Context menu: Pin/Unpin, Change Icon, Summarize with Lumina AI, Close, Close Others, Close to Right, Close All
+ * - Auto-scroll to active tab on tab selection changes
+ * - Smooth horizontal mouse-wheel scrolling
+ * - O(1) Snippet Lookup Map for instant tab rendering
+ * =========================================================================
+ */
+
 import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react'
 import {
   X,
   Pin,
   MoreHorizontal,
   ArrowRight,
-  Trash2,
   Image,
   Network,
   Sparkles,
   PanelBottomOpen
 } from 'lucide-react'
-import { DndContext, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core'
+import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, DragEndEvent } from '@dnd-kit/core'
 import {
   SortableContext,
   useSortable,
@@ -18,7 +35,6 @@ import {
   arrayMove
 } from '@dnd-kit/sortable'
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers'
-import { Virtuoso } from 'react-virtuoso'
 import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useShallow } from 'zustand/react/shallow'
 import ContextMenu from '../modals/ContextMenu'
@@ -31,10 +47,21 @@ import { useExternalFileDrop } from '../Explorer/drop'
 import { summarizeNotes } from '../AI/services/summarizeNotes'
 import { UnsavedIndicator } from '../../core/hooks/unsave'
 
+interface SortableTabItemProps {
+  id: string
+  snippet: any
+  isActive: boolean
+  isDirty: boolean
+  isPinned: boolean
+  onOpen: (id: string) => void
+  onClose: (e: React.MouseEvent, id: string) => void
+  onContextMenu: (e: React.MouseEvent, id: string) => void
+}
+
 /**
  * SortableTabItem — draggable tab using @dnd-kit/sortable
  */
-const SortableTabItem = memo(
+const SortableTabItem = memo<SortableTabItemProps>(
   ({ id, snippet, isActive, isDirty, isPinned, onOpen, onClose, onContextMenu }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
       id,
@@ -65,8 +92,8 @@ const SortableTabItem = memo(
           {...attributes}
           {...listeners}
           onClick={() => onOpen(id)}
-          onAuxClick={(e) => e.button === 1 && onClose(e, id)}
-          onContextMenu={(e) => onContextMenu(e, id)}
+          onAuxClick={(e: React.MouseEvent) => e.button === 1 && onClose(e, id)}
+          onContextMenu={(e: React.MouseEvent) => onContextMenu(e, id)}
         >
           <div className="tab-context">
             {getIcon()}
@@ -75,12 +102,19 @@ const SortableTabItem = memo(
 
           <div className="tab-actions">
             {isDirty ? (
-              <div onClick={(e) => onClose(e, id)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <div
+                onClick={(e: React.MouseEvent) => onClose(e, id)}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+              >
                 <UnsavedIndicator className="tab-dirty" />
               </div>
             ) : (
               !isPinned && (
-                <button className="tab-close-btn" onClick={(e) => onClose(e, id)}>
+                <button
+                  type="button"
+                  className="tab-close-btn"
+                  onClick={(e: React.MouseEvent) => onClose(e, id)}
+                >
                   <X size={14} />
                 </button>
               )
@@ -106,20 +140,19 @@ const SortableTabItem = memo(
 
 SortableTabItem.displayName = 'SortableTabItem'
 
-/**
- * TabBar Component
- * High-performance, premium workspace tab management.
- * Features: Native feel, DND reordering, context menus, and dirty-safety.
- *
- * Supports regular snippet tabs with dirty-safety, pinned tabs, and DND reordering.
- */
-const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLeftSidebar }) => {
+export interface TabBarProps {
+  isSidebarOpen?: boolean
+  onToggleSidebar?: () => void
+  isLeftSidebarOpen?: boolean
+  onToggleLeftSidebar?: () => void
+}
+
+export const TabBar: React.FC<TabBarProps> = () => {
   const {
     openTabs,
     activeTabId,
     selectedSnippet,
     snippets,
-    setSelectedSnippet,
     setActiveTabId,
     closeTab,
     reorderTabs,
@@ -137,7 +170,6 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
       activeTabId: state.activeTabId,
       selectedSnippet: state.selectedNote,
       setActiveTabId: state.setActiveTabId,
-      setSelectedSnippet: state.setSelectedNote,
       reorderTabs: state.reorderTabs,
       closeTab: state.closeTab,
       closeOtherTabs: state.closeOtherTabs,
@@ -150,11 +182,10 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
     }))
   )
 
-  const [contextMenu, setContextMenu] = useState(null)
-  const [prompt, setPrompt] = useState(null)
-  const [iconPickerId, setIconPickerId] = useState(null)
-  const tabbarRef = useRef(null)
-  const virtuosoRef = useRef(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; id: string } | null>(null)
+  const [prompt, setPrompt] = useState<{ id: string; title: string } | null>(null)
+  const [iconPickerId, setIconPickerId] = useState<string | null>(null)
+  const tabbarRef = useRef<HTMLDivElement | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -168,17 +199,14 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
   useEffect(() => {
     if (!tabbarRef.current || !activeTabId) return
 
-    // Use requestAnimationFrame to ensure DOM is updated and painted
     requestAnimationFrame(() => {
       if (!tabbarRef.current) return
 
-      const activeTabElement = tabbarRef.current.querySelector('.workspace-tab.active')
+      const activeTabElement = tabbarRef.current.querySelector('.workspace-tab.active') as HTMLElement | null
       if (activeTabElement) {
-        // Scroll the tabbar so the active tab is visible
         const containerRect = tabbarRef.current.getBoundingClientRect()
         const tabRect = activeTabElement.getBoundingClientRect()
 
-        // If the tab is partially or fully out of view to the left or right, scroll it
         if (tabRect.left < containerRect.left || tabRect.right > containerRect.right) {
           const scrollLeftTarget =
             tabbarRef.current.scrollLeft +
@@ -193,21 +221,21 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
 
   // O(1) Snippet Lookup Map for Performance
   const snippetMap = useMemo(() => {
-    const map = new Map()
+    const map = new Map<string, any>()
     const list = Array.isArray(snippets) ? snippets : []
     list.forEach((s) => map.set(s.id, s))
     return map
   }, [snippets])
 
   const handleTabClick = useCallback(
-    (id) => {
+    (id: string) => {
       setActiveTabId(id)
     },
     [setActiveTabId]
   )
 
   const handleCloseTrigger = useCallback(
-    (e, id) => {
+    (e: React.MouseEvent | { stopPropagation: () => void }, id: string) => {
       e.stopPropagation()
       if (pinnedTabIds.includes(id)) return
 
@@ -222,7 +250,7 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
   )
 
   // --- Dirty Prompt Handlers ---
-  const handleConfirmSave = async () => {
+  const handleConfirmSave = async (): Promise<void> => {
     if (!prompt) return
     const snippet = snippetMap.get(prompt.id)
     if (snippet) {
@@ -232,24 +260,24 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
     setPrompt(null)
   }
 
-  const handleDiscard = () => {
+  const handleDiscard = (): void => {
     if (prompt) closeTab(prompt.id)
     setPrompt(null)
   }
 
-  const handleContextMenu = useCallback((e, id) => {
+  const handleContextMenu = useCallback((e: React.MouseEvent, id: string) => {
     e.preventDefault()
     setContextMenu({ x: e.clientX, y: e.clientY, id })
   }, [])
 
   // --- Sortable Drag Handler ---
   const handleDragEnd = useCallback(
-    (event) => {
+    (event: DragEndEvent) => {
       const { active, over } = event
       if (!active || !over || active.id === over.id) return
 
-      const oldIndex = openTabs.indexOf(active.id)
-      const newIndex = openTabs.indexOf(over.id)
+      const oldIndex = openTabs.indexOf(String(active.id))
+      const newIndex = openTabs.indexOf(String(over.id))
       if (oldIndex === -1 || newIndex === -1) return
 
       const reordered = arrayMove(openTabs, oldIndex, newIndex)
@@ -258,7 +286,7 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
     [openTabs, reorderTabs]
   )
 
-  const handleWheel = useCallback((e) => {
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
     if (!tabbarRef.current) return
     if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
       tabbarRef.current.scrollLeft += e.deltaY
@@ -276,10 +304,10 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
     return (
       <div
         className="tabbar-outer-wrapper"
-        onDragEnter={(e) => handleExternalDragEnter(e, '')}
-        onDragOver={(e) => handleExternalDragOver(e, '')}
+        onDragEnter={(e: React.DragEvent) => handleExternalDragEnter(e, '')}
+        onDragOver={(e: React.DragEvent) => handleExternalDragOver(e, '')}
         onDragLeave={handleExternalDragLeave}
-        onDrop={(e) => handleExternalDrop(e, '')}
+        onDrop={(e: React.DragEvent) => handleExternalDrop(e, '')}
         style={{
           display: 'flex',
           width: '100%',
@@ -303,10 +331,10 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
     >
       <div
         className="tabbar-outer-wrapper"
-        onDragEnter={(e) => handleExternalDragEnter(e, '')}
-        onDragOver={(e) => handleExternalDragOver(e, '')}
+        onDragEnter={(e: React.DragEvent) => handleExternalDragEnter(e, '')}
+        onDragOver={(e: React.DragEvent) => handleExternalDragOver(e, '')}
         onDragLeave={handleExternalDragLeave}
-        onDrop={(e) => handleExternalDrop(e, '')}
+        onDrop={(e: React.DragEvent) => handleExternalDrop(e, '')}
         style={{
           display: 'flex',
           width: '100%',
@@ -433,7 +461,7 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
       )}
 
       <PromptModal
-        isOpen={!!prompt}
+        isOpen={Boolean(prompt)}
         title="Unsaved Changes"
         message={`"${prompt?.title}" has unsaved changes. Do you want to save them before closing?`}
         confirmLabel="Save & Close"
@@ -444,10 +472,11 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
       />
 
       <IconPicker
-        isOpen={!!iconPickerId}
+        isOpen={Boolean(iconPickerId)}
         onClose={() => setIconPickerId(null)}
-        currentIcon={snippetMap.get(iconPickerId)?.customIcon}
-        onSelect={(iconName) => {
+        currentIcon={iconPickerId ? snippetMap.get(iconPickerId)?.customIcon : undefined}
+        onSelect={(iconName: string) => {
+          if (!iconPickerId) return
           const s = snippetMap.get(iconPickerId)
           if (s) saveSnippet({ ...s, customIcon: iconName })
         }}
@@ -456,4 +485,4 @@ const TabBar = ({ isSidebarOpen, onToggleSidebar, isLeftSidebarOpen, onToggleLef
   )
 }
 
-export default TabBar
+export default React.memo(TabBar)

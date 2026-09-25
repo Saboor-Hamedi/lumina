@@ -11,7 +11,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import EditorMenu from './menu/EditorMenu'
 import ToastNotification from '../../core/notification'
-import Preview from '../preview/Preview'
+import Preview from '../preview'
 import OverwriteModal from '../modals/OverwriteModal'
 // Lumina AI Inline assistant
 import InlineLumina from '../AI/InlineLumina'

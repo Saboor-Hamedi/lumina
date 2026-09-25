@@ -28,6 +28,8 @@ function tsDevServerPlugin() {
       str.includes('features\\preview') ||
       str.includes('features/commandpalette') ||
       str.includes('features\\commandpalette') ||
+      str.includes('features/Layout') ||
+      str.includes('features\\Layout') ||
       str.includes('Welcome') ||
       str.includes('useFontSettings')
     )

@@ -21,7 +21,7 @@
  */
 
 import React from 'react'
-import CommandPalette from '../commandpalette/CommandPalette'
+import { CommandPalette } from '../commandpalette'
 import Confirm from '../modals/Confirm'
 import Rename from '../modals/Rename'
 import IconPicker from '../Icons/IconPicker'

@@ -1273,11 +1273,6 @@ html[data-use-active-line-border="true"] .cm-heading.cm-activeLine::before {
   pointer-events: none !important;
 }
 
-html[data-use-active-line-border="true"][data-theme='dark'] .cm-activeLine,
-html[data-use-active-line-border="true"][data-theme='obsidian-robust'] .cm-activeLine,
-html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
-  box-shadow: inset 1px 0 0 0 var(--text-accent) !important;
-}
 
 .cm-selectionBackground {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
@@ -1779,7 +1774,7 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 
 /* Active Line Left Border Toggle Support */
 html[data-use-active-line-border="true"] .cm-activeLine {
-  border-left: 2px solid var(--caret-color, var(--text-accent, #40bafa)) !important;
+  border-left: 1px solid var(--caret-color, var(--text-accent, #40bafa)) !important;
 }
 
 html:not([data-use-active-line-border="true"]) .cm-activeLine,

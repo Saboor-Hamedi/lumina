@@ -1,4 +1,4 @@
-import Profile from '../features/profile/Profile'
+import Profile from '../features/profile'
 
 export { Profile as UserProfileCard }
 export default Profile

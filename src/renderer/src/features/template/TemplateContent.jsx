@@ -1,6 +1,6 @@
 import React from 'react'
 import { Check, Plus } from 'lucide-react'
-import { PreviewCommandPalette } from '../commandpalette/PreviewCommandPalette'
+import { PreviewCommandPalette } from '../commandpalette'
 
 const TemplateContent = ({ template, onApply }) => {
   const isBlank = !template || template.id === 'blank' || !template.code
