@@ -134,7 +134,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     sortBy: 'name',
     sortDirection: 'asc',
     noteOrder: null, // Array of snippet IDs for custom drag sort order
-    inlineMetadata: true,
+    inlineMetadata: false,
     inlineTitle: true,
     graphTheme: 'default',
     graphNodeSize: 1.5,
@@ -368,6 +368,13 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       }
       if (key === 'fontFamily') root.style.setProperty('--font-editor', value)
       if (key === 'fontSize') root.style.setProperty('--font-size-editor', `${value}px`)
+      if (key === 'cursor' || key === 'useBorderLeft') {
+        const isBorder = key === 'cursor' ? (value?.useBorderLeft !== false) : Boolean(value)
+        root.setAttribute('data-use-active-line-border', isBorder ? 'true' : 'false')
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('caret-style-update'))
+        }
+      }
     }
 
     try {

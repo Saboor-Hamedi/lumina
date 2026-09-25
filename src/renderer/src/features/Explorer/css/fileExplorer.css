@@ -473,20 +473,40 @@
   justify-content: flex-start;
   gap: 7px;
   cursor: pointer;
-  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translate3d(0, 0, 0);
+  will-change: transform, background-color;
+  transition:
+    transform 0.12s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.12s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.1s ease;
   position: relative;
   overflow: hidden;
+  user-select: none;
 }
 
 .tree-item:hover,
 .start-section .tree-item:hover {
-  background: rgba(255, 255, 255, 0.045);
+  background: rgba(255, 255, 255, 0.055);
+  transform: translate3d(2.5px, 0, 0);
+}
+
+.tree-item:active,
+.start-section .tree-item:active {
+  transform: translate3d(1px, 0, 0) scale(0.995);
+  transition-duration: 0.05s;
 }
 
 .tree-item.active,
 .start-section .tree-item.active {
-  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.12) !important;
+  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.14) !important;
   color: var(--text-main, #ffffff);
+  transform: translate3d(0, 0, 0);
+}
+
+.tree-item.active:hover,
+.start-section .tree-item.active:hover {
+  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.18) !important;
+  transform: translate3d(1.5px, 0, 0);
 }
 
 .tree-item .item-icon-wrap,
@@ -719,7 +739,22 @@
   background: transparent;
   padding: 0;
   border-radius: 3px;
-  transition: color 0.12s ease, transform 0.12s ease;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.85);
+  transition:
+    opacity 0.12s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.12s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.12s ease;
+}
+
+.tree-item:hover .item-favorite-icon,
+.start-section .tree-item:hover .item-favorite-icon,
+.tree-item .item-favorite-icon.is-pinned,
+.start-section .tree-item .item-favorite-icon.is-pinned {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
 }
 
 .tree-item .item-favorite-icon.is-pinned,
@@ -730,7 +765,7 @@
 .tree-item .item-favorite-icon:hover,
 .start-section .tree-item .item-favorite-icon:hover {
   color: #fbbf24;
-  transform: scale(1.15);
+  transform: scale(1.18);
 }
 
 .pin-icon {

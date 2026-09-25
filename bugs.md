@@ -1,10 +1,41 @@
-This project, Lumina Note, prioritizes performance and has undergone architectural changes specifically to enhance speed and efficiency. The migration from Tauri to Electron, for instance, aimed to improve startup times and reduce the overhead of a Rust sidecar, even while acknowledging a potential increase in memory usage.
+# Resolved Issues
 
-Several key areas contribute to its perceived speed:
+## 1. `index.html?html-proxy&index=0.ts: Unexpected "!"` (Fixed)
+- **Root Cause**: An inline `<script type="module">` in `index.html` importing `screenLoader.ts` caused Vite to create a virtual `html-proxy` module. During transform/esbuild resolution, the proxy module was parsed improperly as a TypeScript file.
+- **Resolution**:
+  1. Removed the inline `<script>` from `index.html` and relocated `initScreenLoader()` to the top of `src/main.jsx`.
+  2. Vite no longer generates `html-proxy` virtual modules for `index.html`.
+  3. Added explicit negative guards (`!str.includes('html-proxy') && !str.includes('node_modules')`) in `electron.vite.config.mjs`.
+  4. Wiped `node_modules/.vite` cache.
 
-Optimized File System Operations: The project employs an iterative Depth-First Search (DFS) algorithm for walking the workspace, as seen in walkWorkspace within electron/main/handlers/fs.ts. This approach is designed to prevent stack overflows with deeply nested directories and includes built-in limits (MAX_WORKSPACE_ENTRIES, WORKSPACE_DEADLINE_MS) to avoid processing excessively large or slow file systems, thus ensuring responsiveness. It also uses efficient methods for shallow directory listings when expanding parts of the file tree on demand.
-Decoupled Components and State Management: The application leverages Zustand for its state management, organizing different functional domains into separate stores. This allows for efficient updates and prevents unnecessary re-renders, as detailed in the Application State Management wiki section.
-Benchmarking and Performance Monitoring: The project actively benchmarks file system operations, comparing new implementations against legacy ones and measuring performance across different vault sizes, as illustrated in electron/main/handlers/fs.bench.ts. This continuous evaluation helps identify and address performance bottlenecks.
-Focused Scope: The project explicitly decided to not implement certain features like RAG/vector retrieval and extensive memory layering for AI agents, as described in docs/plans/2026-04-17-electron-migration-plan.md. This narrowed scope allows for more focused optimization on its core features.
-Elimination of Rust Sidecar: The migration to a pure Electron build (v2) from a Tauri v2 app with a Rust sidecar (src-tauri/ removal) means all agent runtime and IPC subsystems now run as Node.js processes, eliminating FFI overhead and enabling them to share the main Node event loop and subprocess pool, according to /blueberryconcongee/lumina-note/docs/electron-migration-perf-report.md. This change specifically aimed to reduce complexity and improve integration, which often translates to better performance.
-Proactive Code Smell and Debt Management: Regular code smell reports, such as doc/code-smell-report-2026-03-06.md, identify and prioritize issues like large, coupled modules, type escapism, inefficient bundling, and Rust-side clippy warnings. Addressing these proactively helps maintain and improve performance over time.
+## 2. `Failed to resolve dependency: react-window` (Fixed)
+- **Root Cause**: `electron.vite.config.mjs` still had `optimizeDeps: { include: ['react-window'] }` even though the app migrated to `react-virtuoso` and `react-window` was removed from dependencies.
+- **Resolution**: Removed `optimizeDeps.include: ['react-window']` from `electron.vite.config.mjs`.
+
+## 3. `No electron app entry file found: out\main\index.js` (Fixed)
+- **Root Cause**: Deleting `out/` deleted Electron's compiled main process entry point.
+- **Resolution**: Rebuilt `out/` via `electron-vite build`. `out/main/index.js` (271 kB) and `out/preload/index.js` (12.98 kB) are verified intact.
+
+## 4. TypeScript Feature Migrations (Completed)
+- **Files Migrated**:
+  1. `Welcome.jsx` -> `Welcome.tsx`
+  2. `Profile.jsx` -> `Profile.tsx`
+  3. `PreviewCommandPalette.jsx` -> `PreviewCommandPalette.tsx`
+  4. `Preview.jsx` -> `Preview.tsx`
+  5. `CommandPalette.jsx` -> `CommandPalette.tsx`
+- **Resolution**:
+  - Fully typed props, data structures, and callbacks with zero `any` leaks.
+  - Superseded `.jsx` files deleted to eliminate disk duplicates.
+  - `electron.vite.config.mjs` updated to include new paths in dev-server resolver.
+
+## 5. Instant Note Opening & Zero-Jank Switching (Polished)
+- **Root Causes**:
+  - `setSelectedNote` and `setActiveTabId` triggered full state re-renders even when clicking the already-active note or tab.
+  - `renderedEditors` recalculated on any note edit because the full `selectedSnippet` object was in the dependency array.
+  - In `MainLayout`, finding snippets for open tabs executed an O(N*M) array scan.
+  - `handleToggleInspector` invalidated on tab switch due to `rightSidebarTab` state dependency.
+- **Resolution**:
+  - Added identity guards to `setSelectedNote` and `setActiveTabId` in `workspaceStore.ts`.
+  - Converted tab lookup to O(1) `Map` lookup (`snippetMap`).
+  - Switched `renderedEditors` dependency to `selectedSnippet?.id` and `activeTabId`, preventing editor re-renders during active note typing.
+  - Stabilized `handleToggleInspector` with `rightSidebarTabRef`.

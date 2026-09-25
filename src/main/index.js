@@ -913,7 +913,7 @@ app.whenReady().then(async () => {
             .catch((err) => {
               console.error('[Main] Startup workspace indexing failed:', err)
             })
-        }, 250)
+        }, 1200)
       }
     })
   } catch (err) {

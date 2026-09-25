@@ -225,6 +225,13 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     }
 
     set((state) => {
+      if (
+        state.activeTabId === note.id &&
+        state.selectedNote?.id === note.id &&
+        state.openTabs.includes(note.id)
+      ) {
+        return state
+      }
       const isAlreadyOpen = state.openTabs.includes(note.id)
       const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, note.id]
       return {
@@ -243,6 +250,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   setActiveTabId: (id: string | null) => {
     let selectedItem: WorkspaceNote | null = null
     set((state) => {
+      if (state.activeTabId === id && (!id || state.selectedNote?.id === id || id === GRAPH_TAB_ID)) {
+        return state
+      }
       if (id === GRAPH_TAB_ID) {
         const isAlreadyOpen = state.openTabs.includes(GRAPH_TAB_ID)
         const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, GRAPH_TAB_ID]

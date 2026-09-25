@@ -80,6 +80,19 @@ export const TabContentPane = React.memo(
         </GlobalErrorHandler>
       </div>
     )
+  },
+  (prev, next) => {
+    return (
+      prev.isSelected === next.isSelected &&
+      prev.snippet?.id === next.snippet?.id &&
+      prev.snippet?.timestamp === next.snippet?.timestamp &&
+      prev.snippet?.title === next.snippet?.title &&
+      prev.snippet?.code === next.snippet?.code &&
+      prev.snippet?.color === next.snippet?.color &&
+      prev.snippet?.isPinned === next.snippet?.isPinned &&
+      prev.snippet?.isLearned === next.snippet?.isLearned &&
+      prev.onSave === next.onSave
+    )
   }
 )
 

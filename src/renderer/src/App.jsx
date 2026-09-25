@@ -16,7 +16,7 @@ function App() {
     document.documentElement.setAttribute('data-modern-ui', String(isModern))
 
     // Smoothly dissolve screen loader once React layout is ready
-    hideScreenLoader({ minDuration: 300, fadeDuration: 380 })
+    hideScreenLoader({ minDuration: 50, fadeDuration: 150 })
   }, [])
 
   useEffect(() => {

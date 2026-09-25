@@ -20,6 +20,7 @@ files:
   - '!**/node_modules/*/*.map'
 asarUnpack:
   - resources/**
+  - "**/*.node"
 extraResources:
   - from: resources
     to: .

@@ -16,3 +16,8 @@ build
 # Playwright test artifacts
 test-results/
 test/e2e/report/
+
+# Rust build artifacts
+target/
+crates/**/target/
+

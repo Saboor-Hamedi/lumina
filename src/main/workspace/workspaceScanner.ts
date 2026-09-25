@@ -2,6 +2,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import crypto from 'crypto'
 import matter from 'gray-matter'
+import { NativeEngine } from './nativeEngine'
 
 /**
  * Recognized image file extensions for media attachments within the workspace.
@@ -66,70 +67,53 @@ export interface WorkspaceScanResult {
 
 /**
  * Safely parses YAML frontmatter from raw markdown content without throwing fatal errors.
+const KNOWN_METADATA_KEYS = new Set([
+  'id',
+  'title',
+  'language',
+  'tags',
+  'selection',
+  'ispinned',
+  'pinned',
+  'islearned',
+  'learned',
+  'customicon',
+  'icon',
+  'createdat',
+  'created_at',
+  'timestamp',
+  'color',
+  'type',
+  'folderid',
+  'folder_id'
+])
+
+/**
+ * Safely parses YAML frontmatter from raw markdown content without throwing fatal errors.
+ * Robustly strips both standard `---...---` blocks and loose metadata blocks.
  */
 export function safeParseFrontmatter(rawContent: string): FrontmatterResult {
   if (!rawContent || typeof rawContent !== 'string') {
     return { data: {}, content: '' }
   }
 
-  // Fast path: if the document doesn't begin with frontmatter delimiters, return immediately
-  if (!rawContent.startsWith('---')) {
-    return { data: {}, content: rawContent }
-  }
+  let text = rawContent.replace(/^\uFEFF/, '')
+  const data: Record<string, any> = {}
 
-  let preprocessed = rawContent
-  const fmMatch = rawContent.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/)
+  // 1. Strip any standard `---...---` blocks (including repeated/nested)
+  while (/^\s*---\r?\n/.test(text)) {
+    const match = text.match(/^\s*---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/)
+    if (!match) break
+    const fmHeader = match[1]
+    text = match[2] || ''
 
-  if (fmMatch) {
-    const fmHeader = fmMatch[1]
-    const bodyContent = fmMatch[2] || ''
-
-    // Sanitize frontmatter lines to ensure string values with special YAML characters are quoted
-    const sanitizedLines = fmHeader.split(/\r?\n/).map((line) => {
-      const colonIdx = line.indexOf(':')
-      if (colonIdx !== -1) {
-        const key = line.slice(0, colonIdx).trim()
-        let val = line.slice(colonIdx + 1).trim()
-        if (
-          val &&
-          val !== 'true' &&
-          val !== 'false' &&
-          val !== 'null' &&
-          val !== '~' &&
-          val !== '>' &&
-          val !== '|' &&
-          val !== '>-' &&
-          val !== '|-' &&
-          val !== '>+' &&
-          val !== '|+' &&
-          !/^-?\d+(\.\d+)?$/.test(val) &&
-          !val.startsWith('[') &&
-          !val.startsWith('{') &&
-          !(val.startsWith('"') && val.endsWith('"')) &&
-          !(val.startsWith("'") && val.endsWith("'"))
-        ) {
-          return `${key}: "${val.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
-        }
+    try {
+      const parsed = matter(`---\n${fmHeader}\n---`)
+      if (parsed.data) {
+        Object.assign(data, parsed.data)
       }
-      return line
-    })
-
-    preprocessed = `---\n${sanitizedLines.join('\n')}\n---\n${bodyContent}`
-  }
-
-  try {
-    const parsed = matter(preprocessed)
-    let content = parsed.content !== undefined ? parsed.content : rawContent
-    if (content.trim() === '') content = ''
-    return { data: parsed.data || {}, content }
-  } catch {
-    // Fallback: simple line-by-line key:value parsing if gray-matter fails
-    const data: Record<string, any> = {}
-    let content = rawContent
-    if (fmMatch) {
-      const fmText = fmMatch[1]
-      content = fmMatch[2] || ''
-      fmText.split(/\r?\n/).forEach((line) => {
+    } catch {
+      fmHeader.split(/\r?\n/).forEach((line) => {
         const colonIdx = line.indexOf(':')
         if (colonIdx !== -1) {
           const key = line.slice(0, colonIdx).trim()
@@ -144,8 +128,58 @@ export function safeParseFrontmatter(rawContent: string): FrontmatterResult {
         }
       })
     }
-    return { data, content }
   }
+
+  // 2. Strip any loose metadata key: value lines at the top of content
+  const lines = text.split(/\r?\n/)
+  let lineIdx = 0
+  let foundLooseMetadata = false
+
+  while (lineIdx < lines.length) {
+    const line = lines[lineIdx].trim()
+    if (!line) {
+      if (foundLooseMetadata) {
+        lineIdx++
+        continue
+      }
+      lineIdx++
+      continue
+    }
+
+    const colonIdx = line.indexOf(':')
+    if (colonIdx !== -1) {
+      const key = line.slice(0, colonIdx).trim().toLowerCase()
+      if (KNOWN_METADATA_KEYS.has(key)) {
+        foundLooseMetadata = true
+        let val: any = line.slice(colonIdx + 1).trim()
+        if (
+          (val.startsWith('"') && val.endsWith('"')) ||
+          (val.startsWith("'") && val.endsWith("'"))
+        ) {
+          val = val.slice(1, -1)
+        }
+        if (val === 'true') val = true
+        else if (val === 'false') val = false
+        else if (val === 'null') val = null
+        else if (!isNaN(Number(val)) && val !== '') val = Number(val)
+
+        const originalKey = line.slice(0, colonIdx).trim()
+        if (!data[originalKey]) {
+          data[originalKey] = val
+        }
+        lineIdx++
+        continue
+      }
+    }
+
+    break
+  }
+
+  if (foundLooseMetadata) {
+    text = lines.slice(lineIdx).join('\n')
+  }
+
+  return { data, content: text.replace(/^[\r\n]+/, '') }
 }
 
 /**
@@ -157,6 +191,33 @@ export class WorkspaceScanner {
     existingCache: Map<string, WorkspaceSnippet> | WorkspaceSnippet[] | null = null
   ): Promise<WorkspaceScanResult> {
     if (!workspacePath) return { snippets: [], folders: [] }
+
+    // 1. Ultra-fast native Rust scanner path (multithreaded Rayon)
+    if (NativeEngine.isAvailable()) {
+      try {
+        const nativeResult = NativeEngine.scanVault(workspacePath, MAX_WORKSPACE_TEXT_BYTES)
+        if (nativeResult && Array.isArray(nativeResult.notes)) {
+          const foldersSet = new Set<string>(nativeResult.folders || [])
+          for (const note of nativeResult.notes) {
+            if (note.folderId) {
+              const parts = note.folderId.split('/')
+              let current = ''
+              for (const part of parts) {
+                if (!part) continue
+                current = current ? `${current}/${part}` : part
+                foldersSet.add(current)
+              }
+            }
+          }
+          return {
+            snippets: nativeResult.notes as WorkspaceSnippet[],
+            folders: Array.from(foldersSet)
+          }
+        }
+      } catch (err) {
+        console.warn('[WorkspaceScanner] Native scan error, falling back to JS scanner:', err)
+      }
+    }
 
     try {
       const textFiles: Array<{ fileName: string; folderId: string; ext: string; fullPath: string; relPath: string }> = []

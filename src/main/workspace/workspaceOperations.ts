@@ -106,9 +106,48 @@ export class WorkspaceOperations {
     }
 
     let cleanCode = snippet.code || ''
-    if (/^---\r?\n/.test(cleanCode)) {
-      cleanCode = cleanCode.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
+    // Strip UTF-8 BOM
+    cleanCode = cleanCode.replace(/^\uFEFF/, '')
+    // Strip standard ---...--- frontmatter blocks
+    while (/^\s*---\r?\n/.test(cleanCode)) {
+      const match = cleanCode.match(/^\s*---\r?\n[\s\S]*?\r?\n---\r?\n?([\s\S]*)$/)
+      if (!match) break
+      cleanCode = match[1] || ''
     }
+    // Strip any loose metadata key: value lines at the top of the body
+    const lines = cleanCode.split(/\r?\n/)
+    let lineIdx = 0
+    let foundLoose = false
+    const knownKeys = new Set([
+      'id', 'title', 'language', 'tags', 'selection', 'ispinned', 'pinned',
+      'islearned', 'learned', 'customicon', 'icon', 'createdat', 'created_at',
+      'timestamp', 'color', 'type', 'folderid', 'folder_id'
+    ])
+    while (lineIdx < lines.length) {
+      const line = lines[lineIdx].trim()
+      if (!line) {
+        if (foundLoose) {
+          lineIdx++
+          continue
+        }
+        lineIdx++
+        continue
+      }
+      const colonIdx = line.indexOf(':')
+      if (colonIdx !== -1) {
+        const key = line.slice(0, colonIdx).trim().toLowerCase()
+        if (knownKeys.has(key)) {
+          foundLoose = true
+          lineIdx++
+          continue
+        }
+      }
+      break
+    }
+    if (foundLoose) {
+      cleanCode = lines.slice(lineIdx).join('\n')
+    }
+    cleanCode = cleanCode.replace(/^[\r\n]+/, '')
 
     let rawTitle = (snippet.title || '').trim()
     if (

@@ -1,0 +1,233 @@
+/**
+ * =========================================================================
+ * Profile Component (`Profile.tsx`)
+ * =========================================================================
+ *
+ * Robust, sleek user profile component matching the compact sidebar footer design.
+ * Displays user avatar, name, application version, and sign in / sign out actions.
+ *
+ * Used in:
+ * 1. TitleBar (via AccentColor dropdown)
+ * 2. SidebarFooter (Sidebar bottom section)
+ * 3. SettingDropdown (Settings menu)
+ * =========================================================================
+ */
+
+import React, { useState, useEffect, memo } from 'react'
+import { User, LogOut } from 'lucide-react'
+import { useCurrentUser } from '../../core/hooks/useCurrentUser'
+import Version from '../../components/Version'
+import ToolTip from '../../components/atoms/ToolTip'
+import './profile.css'
+
+export interface ProfileProps {
+  /** Callback fired after successful login or logout action */
+  onActionComplete?: () => void
+  /** Theme accent color */
+  accentColor?: string
+  /** Whether to display the logout button when logged in */
+  showLogout?: boolean
+  /** Custom fallback display label when user is logged out */
+  fallbackName?: string
+  /** Custom fallback icon element when user has no avatar */
+  fallbackIcon?: React.ReactNode
+  /** Extra CSS classes */
+  className?: string
+  /** Inline style overrides */
+  style?: React.CSSProperties
+  /** Optional click handler for the entire profile component */
+  onClick?: (e: React.MouseEvent<HTMLDivElement>) => void
+}
+
+export const Profile: React.FC<ProfileProps> = memo(({
+  onActionComplete,
+  accentColor,
+  showLogout = true,
+  fallbackName,
+  fallbackIcon,
+  className = '',
+  style = {},
+  onClick
+}) => {
+  const { user, isLoggedIn, login, logout, isLoading } = useCurrentUser()
+  const [imgError, setImgError] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+
+  useEffect(() => {
+    setImgError(false)
+  }, [user?.picture])
+
+  const handleLogin = async (e: React.MouseEvent): Promise<void> => {
+    e.stopPropagation()
+    const res = await login()
+    if (res?.success && onActionComplete) {
+      onActionComplete()
+    }
+  }
+
+  const handleLogout = async (e: React.MouseEvent): Promise<void> => {
+    e.stopPropagation()
+    const res = await logout()
+    if (res?.success && onActionComplete) {
+      onActionComplete()
+    }
+  }
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>): void => {
+    if (onClick) {
+      onClick(e)
+    } else if (!isLoggedIn) {
+      handleLogin(e)
+    }
+  }
+
+  const displayName = isLoggedIn && user
+    ? (user.name || user.email || 'Google User')
+    : (fallbackName || (isLoading ? 'Signing in…' : 'Sign in with Google'))
+
+  return (
+    <div style={{ position: 'relative', width: '100%', flexShrink: 0 }}>
+      <div
+        className={`sidebar-footer-section ${className}`.trim()}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={handleClick}
+        style={{
+          position: 'relative',
+          zIndex: 50,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+          gap: '8px',
+          margin: 0,
+          borderRadius: '5px',
+          boxSizing: 'border-box',
+          padding: '0 8px',
+          transition: 'background-color 0.15s ease, border-color 0.15s ease',
+          ...style
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            minWidth: 0,
+            flex: '1 1 0%'
+          }}
+        >
+          <div
+            className="profile-avatar-wrap"
+            style={{
+              borderColor: 'var(--border-dim)',
+              borderWidth: '1px',
+              borderStyle: 'solid'
+            }}
+          >
+            {isLoggedIn && user?.picture && !imgError ? (
+              <img
+                alt="Profile"
+                referrerPolicy="no-referrer"
+                src={user.picture}
+                className="profile-avatar-img"
+                onError={() => setImgError(true)}
+              />
+            ) : fallbackIcon ? (
+              fallbackIcon
+            ) : (
+              <div className="profile-avatar-fallback">
+                <User
+                  size={18}
+                  strokeWidth={2}
+                  style={{
+                    color: 'var(--text-muted, #94a3b8)',
+                    flexShrink: 0
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          <ToolTip
+            text={
+              isLoggedIn && user
+                ? (user.email && user.name ? `${user.name} • ${user.email}` : user.name || user.email || 'Google User')
+                : (fallbackName || (isLoading ? 'Signing in…' : 'Sign in with Google'))
+            }
+            position="top"
+          >
+            <span
+              style={{
+                fontSize: '11.5px',
+                fontWeight: '500',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                color: isHovered ? 'var(--text-main)' : 'var(--text-muted)',
+                transition: 'color 0.15s ease',
+                flex: '1 1 0%',
+                minWidth: 0
+              }}
+            >
+              {displayName}
+            </span>
+          </ToolTip>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            paddingRight: '2px',
+            flexShrink: 0
+          }}
+        >
+          <div style={{ opacity: 0.5 }}>
+            <Version />
+          </div>
+
+          {isLoggedIn && showLogout && (
+            <ToolTip text="Sign out of Google" position="top">
+              <button
+                type="button"
+                onClick={handleLogout}
+                aria-label="Sign out of Google"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: isHovered ? 'var(--text-muted)' : 'transparent',
+                  pointerEvents: isHovered ? 'auto' : 'none',
+                  transition: 'color 0.15s ease, background-color 0.15s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.stopPropagation()
+                  e.currentTarget.style.color = '#ef4444'
+                  e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.12)'
+                }}
+                onMouseLeave={(e) => {
+                  e.stopPropagation()
+                  e.currentTarget.style.color = 'var(--text-muted)'
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }}
+              >
+                <LogOut size={12} strokeWidth={2} />
+              </button>
+            </ToolTip>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+})
+
+Profile.displayName = 'Profile'
+
+export default Profile

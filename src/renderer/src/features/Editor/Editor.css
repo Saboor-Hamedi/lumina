@@ -1776,3 +1776,15 @@ html[data-use-active-line-border="true"][data-theme='light'] .cm-activeLine {
 }
 
 .virtuoso-scroller-no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Active Line Left Border Toggle Support */
+html[data-use-active-line-border="true"] .cm-activeLine {
+  border-left: 2px solid var(--caret-color, var(--text-accent, #40bafa)) !important;
+}
+
+html:not([data-use-active-line-border="true"]) .cm-activeLine,
+html[data-use-active-line-border="false"] .cm-activeLine {
+  border-left: none !important;
+  box-shadow: none !important;
+}
+

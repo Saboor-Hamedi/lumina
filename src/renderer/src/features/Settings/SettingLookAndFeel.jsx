@@ -79,7 +79,9 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
     updateEditorFontFamily,
     updateEditorFontSize,
     themeAccentColor,
-    updateThemeAccentColor
+    updateThemeAccentColor,
+    useBorderLeft,
+    updateUseBorderLeft
   } = useFontSettings()
 
   const handleOpenTheme = () => {
@@ -256,11 +258,13 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
             </div>
           </div>
           <Toggle
-            checked={(settings.cursor && settings.cursor.useBorderLeft) ?? true}
+            checked={useBorderLeft ?? ((settings.cursor && settings.cursor.useBorderLeft) ?? true)}
             onChange={(e) => {
+              const checked = e.target.checked
+              updateUseBorderLeft(checked)
               const next = {
                 ...(settings.cursor || {}),
-                useBorderLeft: e.target.checked
+                useBorderLeft: checked
               }
               updateSetting('cursor', next)
             }}

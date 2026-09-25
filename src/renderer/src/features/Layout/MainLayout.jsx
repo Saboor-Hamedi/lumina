@@ -124,6 +124,11 @@ export const MainLayout = () => {
     return false
   })
   const [rightSidebarTab, setRightSidebarTab] = useState('details')
+  const rightSidebarTabRef = useRef(rightSidebarTab)
+  useEffect(() => {
+    rightSidebarTabRef.current = rightSidebarTab
+  }, [rightSidebarTab])
+
   const [renameModal, setRenameModal] = useState({ isOpen: false, item: null, newName: '' })
   const [savedRightSidebarState, setSavedRightSidebarState] = useState(null)
   const appShellRef = useRef(null)
@@ -193,13 +198,13 @@ export const MainLayout = () => {
       setRightSidebarTab('details')
       updateRightSidebarOpen(true)
     } else {
-      if (rightSidebarTab !== 'details') {
+      if (rightSidebarTabRef.current !== 'details') {
         setRightSidebarTab('details')
       } else {
         updateRightSidebarOpen(false)
       }
     }
-  }, [rightSidebarTab, updateRightSidebarOpen])
+  }, [updateRightSidebarOpen])
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [snippetToDelete, setSnippetToDelete] = useState(null)
@@ -759,8 +764,16 @@ export const MainLayout = () => {
   }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme])
 
 
+  const snippetMap = useMemo(() => {
+    const map = new Map()
+    for (let i = 0; i < snippets.length; i++) {
+      map.set(snippets[i].id, snippets[i])
+    }
+    return map
+  }, [snippets])
+
   const renderedEditors = useMemo(() => {
-    const effectiveSelectedId = selectedSnippet?.id || activeTabId || openTabs[0]
+    const effectiveSelectedId = activeTabId || selectedSnippet?.id || openTabs[0]
     return openTabs.map((tabId) => {
       if (tabId === GRAPH_TAB_ID) {
         return (
@@ -785,7 +798,7 @@ export const MainLayout = () => {
           </div>
         )
       }
-      const snippet = snippets.find((s) => s.id === tabId)
+      const snippet = snippetMap.get(tabId)
       if (!snippet) return null
       return (
         <TabContentPane
@@ -803,15 +816,16 @@ export const MainLayout = () => {
     })
   }, [
     openTabs,
-    snippets,
-    selectedSnippet,
+    snippetMap,
+    selectedSnippet?.id,
     activeTabId,
     saveSnippet,
     handleToggleInspector,
     handleToggleExplorerModal,
     handleOpenSettings,
     handleOpenTheme,
-    handleToggleGraph
+    handleToggleGraph,
+    setSelectedSnippet
   ])
 
   return (

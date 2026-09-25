@@ -1,0 +1,16 @@
+{
+  "name": "lumina-core",
+  "version": "0.1.0",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "napi": {
+    "binaryName": "lumina-core",
+    "triples": {
+      "default": true
+    }
+  },
+  "scripts": {
+    "build": "napi build --platform --release",
+    "build:debug": "napi build --platform"
+  }
+}

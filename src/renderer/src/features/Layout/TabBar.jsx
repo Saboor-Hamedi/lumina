@@ -89,6 +89,18 @@ const SortableTabItem = memo(
         </div>
       </ToolTip>
     )
+  },
+  (prev, next) => {
+    return (
+      prev.id === next.id &&
+      prev.isActive === next.isActive &&
+      prev.isDirty === next.isDirty &&
+      prev.isPinned === next.isPinned &&
+      prev.snippet?.title === next.snippet?.title &&
+      prev.snippet?.customIcon === next.snippet?.customIcon &&
+      prev.snippet?.color === next.snippet?.color &&
+      prev.snippet?.type === next.snippet?.type
+    )
   }
 )
 

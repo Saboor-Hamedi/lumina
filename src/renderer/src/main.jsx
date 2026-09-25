@@ -3,11 +3,13 @@ import './assets/globalErrorHandler.css'
 import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import ScreenLoader from './components/ScreenLoader.tsx'
+import { initScreenLoader } from './components/screenLoader'
 import GlobalErrorHandler from './components/GlobalErrorHandler'
 import { initDomTooltips } from './components/atoms/domTooltip'
 
 const App = lazy(() => import('./App'))
 
+initScreenLoader()
 initDomTooltips()
 
 /**
