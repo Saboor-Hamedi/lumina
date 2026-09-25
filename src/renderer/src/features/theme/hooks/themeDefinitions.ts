@@ -139,13 +139,7 @@ export const applyTheme = (themeId: string): void => {
     // Ignore parse errors, use theme defaults
   }
 
-  // Clear all existing theme variables
-  const allVars = Object.keys(theme.colors)
-  allVars.forEach((varName) => {
-    root.style.removeProperty(varName)
-  })
-
-  // Apply new theme
+  // Apply new theme variables directly (setProperty automatically overrides previous values)
   const computedColors: Record<string, string> = {}
   Object.entries(theme.colors).forEach(([varName, value]) => {
     let finalVal = value

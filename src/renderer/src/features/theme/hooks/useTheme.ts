@@ -12,6 +12,8 @@ export interface UseThemeReturn {
 // Static theme list reference (computed once at module load, zero allocation on renders)
 const ALL_THEMES_ARRAY = Array.from(new Set(Object.values(THEMES)))
 
+let saveThemeTimer: ReturnType<typeof setTimeout> | null = null
+
 /**
  * useTheme Hook
  * Manages theme selection and application
@@ -49,11 +51,16 @@ export const useTheme = (): UseThemeReturn => {
     localStorage.setItem('theme-id', target)
     // applyThemeUtil handles caret color from theme definition
     applyThemeUtil(target)
-    try {
-      useSettingStore.getState().updateSetting('theme', target).catch(() => {})
-    } catch {
-      // Ignore if store is inaccessible
-    }
+
+    // Debounce the setting store update and disk IPC write so rapid switching is buttery smooth
+    if (saveThemeTimer) clearTimeout(saveThemeTimer)
+    saveThemeTimer = setTimeout(() => {
+      try {
+        useSettingStore.getState().updateSetting('theme', target).catch(() => {})
+      } catch {
+        // Ignore if store is inaccessible
+      }
+    }, 150)
   }, [])
 
   const themeData = useMemo(() => getTheme(currentTheme), [currentTheme])

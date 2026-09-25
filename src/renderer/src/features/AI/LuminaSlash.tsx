@@ -155,7 +155,9 @@ export const LuminaSlash: React.FC<LuminaSlashProps> = ({
         return (
           <div
             key={cmd.id}
-            ref={(el) => (itemRefs.current[index] = el)}
+            ref={(el) => {
+              itemRefs.current[index] = el
+            }}
             className={`slash-menu-item ${isKeyboardSelected ? 'highlighted' : ''} ${
               isCurrentActive ? 'is-active-mode' : ''
             }`}

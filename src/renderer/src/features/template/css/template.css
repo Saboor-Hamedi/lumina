@@ -64,21 +64,27 @@
 .template-header-apply-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
+  gap: 5px;
+  padding: 4px 12px;
   background: var(--text-accent, #40bafa);
   color: #0b0b12;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: opacity 0.15s ease;
+  user-select: none;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
 }
 
 .template-header-apply-btn:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
+  opacity: 0.88;
+  transform: none !important;
+  filter: none !important;
+  box-shadow: none !important;
 }
 
 .template-sidebar-toggle-btn,
@@ -133,7 +139,6 @@
   bottom: 10px;
   height: calc(100% - 20px);
   z-index: 50;
-  backdrop-filter: blur(12px);
 }
 
 .template-sidebar.closed {
@@ -245,7 +250,6 @@
 .template-modal-card:hover {
   background: rgba(255, 255, 255, 0.04);
   border-color: rgba(255, 255, 255, 0.16);
-  transform: translateY(-1px);
 }
 
 .template-modal-card:hover .template-modal-preview {

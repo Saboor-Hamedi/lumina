@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 import MainLayout from './features/Layout/MainLayout'
 import TitleBar from './features/Layout/TitleBar'
-import { useTheme } from './features/theme/hooks/useTheme'
 import { applyTheme } from './features/theme/hooks/themeDefinitions'
 import GlobalErrorHandler from './components/GlobalErrorHandler'
 import { hideScreenLoader } from './components/screenLoader'
@@ -9,7 +8,6 @@ import './assets/globalErrorHandler.css'
 import './assets/modernUi.css'
 
 function App() {
-  const { theme } = useTheme()
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme-id') || 'dark'

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { LayoutTemplate, PanelLeftClose, PanelLeftOpen, Square, Copy, X, Check } from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen, Square, Copy, X, Check } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import TemplateSidebar from './TemplateSidebar'
 import TemplateContent from './TemplateContent'
@@ -130,25 +130,16 @@ const Template = ({
                 )}
               </button>
             </ToolTip>
-            <div className="guide-logo-badge">
-              <LayoutTemplate size={15} />
-            </div>
-            <div className="guide-header-title">Templates</div>
-            {selectedTemplate && (
-              <div className="guide-step-counter template-header-active-pill">
-                {selectedTemplate.title}
-              </div>
-            )}
           </div>
 
           <div className="template-header-right">
             <button
               className="template-header-apply-btn"
               onClick={() => handleApply(selectedTemplate)}
-              aria-label="Use selected template"
+              aria-label="Apply template"
             >
-              <Check size={13} strokeWidth={2.5} />
-              <span>Use Template</span>
+              <Check size={12} strokeWidth={2.5} />
+              <span>Apply</span>
             </button>
             <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
               <button
@@ -165,11 +156,11 @@ const Template = ({
             </ToolTip>
             <ToolTip text="Close (Esc)" position="bottom">
               <button
-                className="guide-close-btn"
+                className="template-window-btn"
                 onClick={onClose}
                 aria-label="Close Templates (Esc)"
               >
-                <X size={17} />
+                <X size={15} />
               </button>
             </ToolTip>
           </div>

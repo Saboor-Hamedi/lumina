@@ -47,9 +47,25 @@ export async function copyMermaidAsImage(svgElement: SVGSVGElement | HTMLElement
 
   const overrideStyle = document.createElement('style')
   overrideStyle.textContent = `
-    svg { background: transparent !important; background-color: transparent !important; }
-    rect.background, rect[class*="background"], rect[id*="background"] { fill: transparent !important; }
-    text, tspan, .label text { fill: ${accent} !important; }
+    :root, svg {
+      --text-accent: ${accent} !important;
+      background: transparent !important;
+      background-color: transparent !important;
+    }
+    rect.background, rect[class*="background"], rect[id*="background"] {
+      fill: transparent !important;
+    }
+    text, tspan, .label, .label text, .label span, .label p, .label div,
+    .nodeLabel, .nodeLabel span, .nodeLabel p,
+    .edgeLabel, .edgeLabel span, .edgeLabel p, .edgeTerminals text,
+    foreignObject, foreignObject div, foreignObject span, foreignObject p,
+    text.actor, .actor, .messageText, .noteText, .loopText, .taskText,
+    .classTitle, .classText, .state-title, .statediagram-state text,
+    .commit-label, .branch-label,
+    .mindmap-node text, .mindmap-node tspan, .mindmap-node span {
+      fill: ${accent} !important;
+      color: ${accent} !important;
+    }
   `
   clonedSvg.appendChild(overrideStyle)
 

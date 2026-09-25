@@ -50,11 +50,81 @@ export const editingMermaidField = StateField.define<number | null>({
 const mermaidSvgCache = new Map<string, string>()
 const activeEditorViews = new Set<EditorView>()
 let mermaidThemeVersion = 0
+let currentAccent = '#40bafa'
+let currentFont = 'monospace'
+
+function initializeMermaid(): void {
+  if (typeof window === 'undefined') return
+  const computed = getComputedStyle(document.documentElement)
+  const raw = computed.getPropertyValue('--text-accent').trim()
+  currentAccent = raw
+    ? raw.startsWith('#') || raw.startsWith('rgb') ? raw : `#${raw}`
+    : '#40bafa'
+  currentFont = computed.getPropertyValue('--font-editor').trim() || 'monospace'
+
+  mermaid.initialize({
+    startOnLoad: false,
+    suppressErrorRendering: true,
+    theme: 'default',
+    htmlLabels: false,
+    flowchart: { htmlLabels: false, curve: 'basis' },
+    sequence: {
+      mirrorActors: false,
+      actorMargin: 50,
+      boxMargin: 10,
+      boxTextMargin: 5,
+      noteMargin: 10,
+      messageMargin: 35
+    },
+    mindmap: { padding: 16, maxNodeWidth: 200 },
+    state: {},
+    class: { htmlLabels: false },
+    themeVariables: {
+      fontFamily: currentFont,
+      textColor: currentAccent,
+      primaryTextColor: currentAccent,
+      nodeTextColor: currentAccent,
+      actorTextColor: currentAccent,
+      signalTextColor: currentAccent,
+      labelTextColor: currentAccent,
+      loopTextColor: currentAccent,
+      noteTextColor: currentAccent,
+      taskTextColor: currentAccent,
+      titleColor: currentAccent,
+      gitBranchLabel0: currentAccent
+    },
+    themeCSS: `
+      .node .label, .node .label text, .nodeLabel, .edgeLabel, .edgeLabel span, .edgeLabel p, .label, .label span, .label p, foreignObject span, foreignObject p, foreignObject div, text, tspan, p, span {
+        font-family: ${currentFont} !important;
+        fill: var(--text-accent, #40bafa) !important;
+        color: var(--text-accent, #40bafa) !important;
+      }
+      text.actor, text.actor > tspan, .actor {
+        fill: var(--text-accent, #40bafa) !important;
+        color: var(--text-accent, #40bafa) !important;
+        font-family: ${currentFont} !important;
+      }
+      .mindmap-node text, .mindmap-node tspan, .mindmap-node span {
+        fill: var(--text-accent, #40bafa) !important;
+        color: var(--text-accent, #40bafa) !important;
+      }
+      text.messageText, .noteText, text.loopText, .taskText {
+        fill: var(--text-accent, #40bafa) !important;
+        color: var(--text-accent, #40bafa) !important;
+      }
+      .classTitle, .classText, .state-title, .statediagram-state text, .entityBox text,
+      .commit-label, .branch-label {
+        fill: var(--text-accent, #40bafa) !important;
+        color: var(--text-accent, #40bafa) !important;
+      }
+    `
+  })
+}
 
 export function clearMermaidCache(): void {
   mermaidSvgCache.clear()
   mermaidThemeVersion++
-  // Immediately re-render all visible widgets with the new theme/accent
+  initializeMermaid() // re-initialize with new accent/font before re-renders start
   for (const view of activeEditorViews) {
     if (!view.state) continue
     try {
@@ -66,11 +136,8 @@ export function clearMermaidCache(): void {
 }
 
 if (typeof window !== 'undefined') {
+  initializeMermaid()
   window.addEventListener('theme-changed', clearMermaidCache)
-  mermaid.initialize({
-    startOnLoad: false,
-    suppressErrorRendering: true
-  })
   const cleanupStrayMermaid = () => {
     document.querySelectorAll('body > [id^="dmermaid"], body > svg[id^="mermaid-"]').forEach((el) => {
       el.remove()
@@ -95,7 +162,7 @@ class MermaidWidget extends WidgetType {
   }
 
   updateDOM(_dom: HTMLElement): boolean {
-    return true
+    return false
   }
 
   toDOM(view: EditorView): HTMLElement {
@@ -359,7 +426,6 @@ class MermaidWidget extends WidgetType {
             <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
             <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
           </svg>
-          Rendering...
         </div>
       `
       const id = `mermaid-${mermaidIdCounter++}`
@@ -432,71 +498,10 @@ export function renderMermaidToElement(
         return
       }
 
-      const computed = getComputedStyle(document.documentElement)
-
-      let accent = computed.getPropertyValue('--text-accent').trim()
-      if (!accent) accent = '#40bafa'
-      if (!accent.startsWith('#') && !accent.startsWith('rgb')) accent = '#' + accent
-
-      let fontEditor = computed.getPropertyValue('--font-editor').trim() || 'monospace'
+      // Yield to the browser event loop so consecutive diagrams do not block the UI thread
+      await new Promise((r) => setTimeout(r, 0))
 
       try {
-        mermaid.initialize({
-          startOnLoad: false,
-          suppressErrorRendering: true,
-          theme: 'default',
-          htmlLabels: false,
-          flowchart: { htmlLabels: false, curve: 'basis' },
-          sequence: {
-            mirrorActors: false,
-            actorMargin: 50,
-            boxMargin: 10,
-            boxTextMargin: 5,
-            noteMargin: 10,
-            messageMargin: 35
-          },
-          mindmap: {
-            padding: 16,
-            maxNodeWidth: 200
-          },
-          state: {},
-          class: { htmlLabels: false },
-          themeVariables: {
-            fontFamily: fontEditor,
-            textColor: accent,
-            primaryTextColor: accent,
-            nodeTextColor: accent,
-            actorTextColor: accent,
-            signalTextColor: accent,
-            labelTextColor: accent,
-            loopTextColor: accent,
-            noteTextColor: accent,
-            taskTextColor: accent,
-            titleColor: accent,
-            gitBranchLabel0: accent
-          },
-          themeCSS: `
-            .node .label, .node .label text, text, tspan {
-              font-family: ${fontEditor} !important;
-              fill: ${accent} !important;
-            }
-            text.actor, text.actor > tspan {
-              fill: ${accent} !important;
-              font-family: ${fontEditor} !important;
-            }
-            .mindmap-node text, .mindmap-node tspan {
-              fill: ${accent} !important;
-            }
-            text.messageText, .noteText, text.loopText {
-              fill: ${accent} !important;
-            }
-            .classTitle, .state-title, .entityBox text,
-            .commit-label, .branch-label {
-              fill: ${accent} !important;
-            }
-          `
-        })
-
         const isValid = await mermaid.parse(code, { suppressErrors: true })
         if (isValid === false) {
           throw new Error('Invalid Mermaid syntax')
@@ -504,14 +509,12 @@ export function renderMermaidToElement(
 
         let { svg } = await mermaid.render(uniqueId, code)
 
-        // Force accent colour on every text element — Mermaid's 'default' theme sets inline
-        // fill attributes on some text nodes that CSS cannot override; stamping the attribute
-        // directly ensures a single uniform label colour.
+        // Force accent color variable on text elements so CSS variable changes apply live
         svg = svg.replace(/<(text|tspan)(\s[^>]*)?>/g, (match, tag, attrs = '') => {
           if (/fill\s*=/.test(attrs)) {
-            attrs = attrs.replace(/fill\s*=\s*["'][^"']*["']/, `fill="${accent}"`)
+            attrs = attrs.replace(/fill\s*=\s*["'][^"']*["']/, 'fill="var(--text-accent, #40bafa)"')
           } else {
-            attrs = attrs + ` fill="${accent}"`
+            attrs = attrs + ' fill="var(--text-accent, #40bafa)"'
           }
           return `<${tag}${attrs}>`
         })

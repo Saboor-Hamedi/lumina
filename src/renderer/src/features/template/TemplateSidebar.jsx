@@ -144,10 +144,21 @@ const TemplateSidebar = ({
 }) => {
   const searchInputRef = useRef(null)
   const activeItemRef = useRef(null)
+  const scrollContainerRef = useRef(null)
 
   useEffect(() => {
-    if (activeItemRef.current && typeof activeItemRef.current.scrollIntoView === 'function') {
-      activeItemRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    const el = activeItemRef.current
+    const container = scrollContainerRef.current
+    if (!el || !container) return
+    const elTop = el.offsetTop
+    const elBottom = elTop + el.offsetHeight
+    const containerTop = container.scrollTop
+    const containerBottom = containerTop + container.clientHeight
+
+    if (elTop < containerTop) {
+      container.scrollTo({ top: elTop - 8, behavior: 'smooth' })
+    } else if (elBottom > containerBottom) {
+      container.scrollTo({ top: elBottom - container.clientHeight + 8, behavior: 'smooth' })
     }
   }, [selectedId])
 
@@ -177,7 +188,7 @@ const TemplateSidebar = ({
         </div>
       </div>
 
-      <div className="template-sidebar-scrollable">
+      <div ref={scrollContainerRef} className="template-sidebar-scrollable">
         <div className="template-sidebar-count">
           {templates.length} {templates.length === 1 ? 'Template' : 'Templates'}
         </div>

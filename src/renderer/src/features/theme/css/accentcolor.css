@@ -255,8 +255,8 @@
   right: 0;
   width: 256px;
   background: color-mix(in srgb, var(--bg-panel, #18181b) 92%, transparent);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   box-shadow: 0 20px 48px -8px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.06);
@@ -266,7 +266,9 @@
   overflow: hidden;
   padding: 12px;
   gap: 10px;
-  animation: fadeIn 0.15s ease-out;
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  animation: fadeIn 0.1s ease-out;
 }
 
 .accent-dropdown-header {

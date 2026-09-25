@@ -133,26 +133,97 @@
   }
 }
 
-/* Text Accent Styling - Shapes keep their colorful designs */
+/* Text Accent Styling - Shapes keep their colorful designs, all labels use accent */
 .cm-mermaid-widget svg text,
 .cm-mermaid-widget svg tspan,
+.cm-mermaid-widget svg .label,
 .cm-mermaid-widget svg .label text,
+.cm-mermaid-widget svg .label span,
+.cm-mermaid-widget svg .label p,
+.cm-mermaid-widget svg .label div,
+.cm-mermaid-widget svg .nodeLabel,
+.cm-mermaid-widget svg .nodeLabel span,
+.cm-mermaid-widget svg .nodeLabel p,
+.cm-mermaid-widget svg .edgeLabel,
+.cm-mermaid-widget svg .edgeLabel span,
+.cm-mermaid-widget svg .edgeLabel p,
+.cm-mermaid-widget svg .edgeTerminals text,
+.cm-mermaid-widget svg foreignObject,
+.cm-mermaid-widget svg foreignObject div,
+.cm-mermaid-widget svg foreignObject span,
+.cm-mermaid-widget svg foreignObject p,
+.cm-mermaid-widget svg text.actor,
+.cm-mermaid-widget svg .actor,
+.cm-mermaid-widget svg .messageText,
+.cm-mermaid-widget svg .noteText,
+.cm-mermaid-widget svg .loopText,
+.cm-mermaid-widget svg .taskText,
+.cm-mermaid-widget svg .classTitle,
+.cm-mermaid-widget svg .classText,
+.cm-mermaid-widget svg .state-title,
+.cm-mermaid-widget svg .statediagram-state text,
+.cm-mermaid-widget svg .commit-label,
+.cm-mermaid-widget svg .branch-label,
+.cm-mermaid-widget svg .mindmap-node text,
+.cm-mermaid-widget svg .mindmap-node tspan,
+.cm-mermaid-widget svg .mindmap-node span,
 .mermaid-lightbox-canvas svg text,
 .mermaid-lightbox-canvas svg tspan,
-.mermaid-lightbox-canvas svg .label text {
+.mermaid-lightbox-canvas svg .label,
+.mermaid-lightbox-canvas svg .label text,
+.mermaid-lightbox-canvas svg .label span,
+.mermaid-lightbox-canvas svg .label p,
+.mermaid-lightbox-canvas svg .label div,
+.mermaid-lightbox-canvas svg .nodeLabel,
+.mermaid-lightbox-canvas svg .nodeLabel span,
+.mermaid-lightbox-canvas svg .nodeLabel p,
+.mermaid-lightbox-canvas svg .edgeLabel,
+.mermaid-lightbox-canvas svg .edgeLabel span,
+.mermaid-lightbox-canvas svg .edgeLabel p,
+.mermaid-lightbox-canvas svg .edgeTerminals text,
+.mermaid-lightbox-canvas svg foreignObject,
+.mermaid-lightbox-canvas svg foreignObject div,
+.mermaid-lightbox-canvas svg foreignObject span,
+.mermaid-lightbox-canvas svg foreignObject p,
+.mermaid-lightbox-canvas svg text.actor,
+.mermaid-lightbox-canvas svg .actor,
+.mermaid-lightbox-canvas svg .messageText,
+.mermaid-lightbox-canvas svg .noteText,
+.mermaid-lightbox-canvas svg .loopText,
+.mermaid-lightbox-canvas svg .taskText,
+.mermaid-lightbox-canvas svg .classTitle,
+.mermaid-lightbox-canvas svg .classText,
+.mermaid-lightbox-canvas svg .state-title,
+.mermaid-lightbox-canvas svg .statediagram-state text,
+.mermaid-lightbox-canvas svg .commit-label,
+.mermaid-lightbox-canvas svg .branch-label,
+.mermaid-lightbox-canvas svg .mindmap-node text,
+.mermaid-lightbox-canvas svg .mindmap-node tspan,
+.mermaid-lightbox-canvas svg .mindmap-node span {
   fill: var(--text-accent, #40bafa) !important;
+  color: var(--text-accent, #40bafa) !important;
 }
 
 .cm-mermaid-widget .mermaid-loading {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  color: var(--text-muted);
-  font-size: 12px;
-  padding: 20px;
-  opacity: 0.7;
-  letter-spacing: 0.02em;
+  padding: 24px;
+  color: var(--text-accent, #40bafa);
+  opacity: 0.8;
+}
+
+.cm-mermaid-widget .mermaid-loading svg {
+  animation: mermaid-spin 0.9s linear infinite;
+}
+
+@keyframes mermaid-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .mermaid-lightbox-overlay {
