@@ -473,11 +473,8 @@
   justify-content: flex-start;
   gap: 7px;
   cursor: pointer;
-  transform: translate3d(0, 0, 0);
-  will-change: transform, background-color;
   transition:
-    transform 0.12s cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 0.12s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.1s ease,
     color 0.1s ease;
   position: relative;
   overflow: hidden;
@@ -487,26 +484,22 @@
 .tree-item:hover,
 .start-section .tree-item:hover {
   background: rgba(255, 255, 255, 0.055);
-  transform: translate3d(2.5px, 0, 0);
 }
 
 .tree-item:active,
 .start-section .tree-item:active {
-  transform: translate3d(1px, 0, 0) scale(0.995);
-  transition-duration: 0.05s;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .tree-item.active,
 .start-section .tree-item.active {
   background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.14) !important;
   color: var(--text-main, #ffffff);
-  transform: translate3d(0, 0, 0);
 }
 
 .tree-item.active:hover,
 .start-section .tree-item.active:hover {
   background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.18) !important;
-  transform: translate3d(1.5px, 0, 0);
 }
 
 .tree-item .item-icon-wrap,

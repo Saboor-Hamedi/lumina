@@ -106,7 +106,9 @@ const SortableTabItem = memo<SortableTabItemProps>(
                 onClick={(e: React.MouseEvent) => onClose(e, id)}
                 style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
               >
-                <UnsavedIndicator className="tab-dirty" />
+                <span className="tab-dirty">
+                  <UnsavedIndicator />
+                </span>
               </div>
             ) : (
               !isPinned && (

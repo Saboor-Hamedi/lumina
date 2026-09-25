@@ -1,19 +1,29 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { useNoteCreatedAt } from '../../../core/utils/noteCreatedAt'
-
 /**
- * EditorCreatedAt
+ * =========================================================================
+ * EditorCreatedAt Component (`EditorCreatedAt.tsx`)
+ * =========================================================================
  *
  * Displays a sleek, VS Code-style creation timestamp floating top-center
  * directly under the Breadcrumbs bar.
  *
- * Interaction:
- * - Slides down and appears the moment the user scrolls down into the document.
- * - Smoothly slides up out of view when scrolling up or returning to top.
- * - Locks the initial timestamp per snippet ID so saving a note doesn't reset it.
+ * Performance Architecture:
+ * - Debounced / guard-checked visibility state: Only dispatches React state
+ *   when visibility actually toggles, ensuring 0 redundant re-renders on scroll.
+ * - Hardware-accelerated CSS transforms.
+ * =========================================================================
  */
-export const EditorCreatedAt = React.memo(({ snippet, scrollerRef }) => {
-  const lockedCreatedMap = useRef(new Map())
+
+import React, { useState, useEffect, useRef, memo } from 'react'
+import { useNoteCreatedAt } from '../../../core/utils/noteCreatedAt'
+import type { Snippet } from '../../../core/editor/types'
+
+export interface EditorCreatedAtProps {
+  snippet: Snippet | any
+  scrollerRef: React.RefObject<HTMLDivElement | null>
+}
+
+export const EditorCreatedAt: React.FC<EditorCreatedAtProps> = memo(({ snippet, scrollerRef }) => {
+  const lockedCreatedMap = useRef(new Map<string, any>())
   if (snippet?.id && !lockedCreatedMap.current.has(snippet.id)) {
     lockedCreatedMap.current.set(
       snippet.id,
@@ -26,10 +36,12 @@ export const EditorCreatedAt = React.memo(({ snippet, scrollerRef }) => {
   const createdAtLabel = useNoteCreatedAt(effectiveCreatedAt)
 
   const [isVisible, setIsVisible] = useState(false)
+  const isVisibleRef = useRef(false)
   const lastScrollTopRef = useRef(0)
 
   useEffect(() => {
     setIsVisible(false)
+    isVisibleRef.current = false
     lastScrollTopRef.current = 0
   }, [snippet?.id])
 
@@ -37,26 +49,40 @@ export const EditorCreatedAt = React.memo(({ snippet, scrollerRef }) => {
     const el = scrollerRef?.current
     if (!el) return
 
+    let rafId: number | null = null
+
     const handleScroll = () => {
-      const st = el.scrollTop
-      const prev = lastScrollTopRef.current
+      if (rafId) cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(() => {
+        const st = el.scrollTop
+        const prev = lastScrollTopRef.current
 
-      if (st <= 12) {
-        // Near top of document: smoothly tuck away under Breadcrumbs
-        setIsVisible(false)
-      } else if (st > prev + 2) {
-        // Scrolling down: the moment we scroll down it appears
-        setIsVisible(true)
-      } else if (st < prev - 2) {
-        // Scrolling up: when we scroll up, it goes up smooth
-        setIsVisible(false)
-      }
+        if (st <= 12) {
+          if (isVisibleRef.current) {
+            isVisibleRef.current = false
+            setIsVisible(false)
+          }
+        } else if (st > prev + 4) {
+          if (!isVisibleRef.current) {
+            isVisibleRef.current = true
+            setIsVisible(true)
+          }
+        } else if (st < prev - 4) {
+          if (isVisibleRef.current) {
+            isVisibleRef.current = false
+            setIsVisible(false)
+          }
+        }
 
-      lastScrollTopRef.current = st
+        lastScrollTopRef.current = st
+      })
     }
 
     el.addEventListener('scroll', handleScroll, { passive: true })
-    return () => el.removeEventListener('scroll', handleScroll)
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId)
+      el.removeEventListener('scroll', handleScroll)
+    }
   }, [scrollerRef, snippet?.id])
 
   if (!createdAtLabel) return null
@@ -79,12 +105,10 @@ export const EditorCreatedAt = React.memo(({ snippet, scrollerRef }) => {
         lineHeight: 1,
         fontWeight: 500,
         color: 'var(--text-faint, rgba(255, 255, 255, 0.45))',
-        // background: 'var(--bg-panel, rgba(24, 24, 31, 0.85))',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
         padding: '3px 9px',
         borderRadius: '2px',
-        // border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
         display: 'flex',
         alignItems: 'center',
@@ -97,4 +121,5 @@ export const EditorCreatedAt = React.memo(({ snippet, scrollerRef }) => {
 })
 
 EditorCreatedAt.displayName = 'EditorCreatedAt'
+
 export default EditorCreatedAt

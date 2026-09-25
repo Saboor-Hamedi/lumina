@@ -184,9 +184,11 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
               onSelect={(color: string) => {
                 updateThemeAccentColor(color)
               }}
-              previewProperty="--text-accent"
-              title="Theme Accent"
-              variant="dropdown"
+              {...({
+                previewProperty: '--text-accent',
+                title: 'Theme Accent',
+                variant: 'dropdown'
+              } as any)}
             />
           </div>
           <button type="button" onClick={handleMinimize} className="control-btn" aria-label="Minimize">

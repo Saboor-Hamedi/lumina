@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react'
-import MainLayout from './features/Layout/MainLayout'
-import TitleBar from './features/Layout/TitleBar'
+import { MainLayout, TitleBar } from './features/Layout'
 import { applyTheme } from './features/theme/hooks/themeDefinitions'
 import GlobalErrorHandler from './components/GlobalErrorHandler'
 import { hideScreenLoader } from './components/screenLoader'

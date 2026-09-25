@@ -42,7 +42,7 @@ import { useShallow } from 'zustand/react/shallow'
 import RightSidebar from '../Inspector/RightSidebar'
 import Breadcrumbs from '../Breadcrumbs/index'
 import StatusBar from './StatusBar'
-import { useSidebarResize } from './useSidebarResize'
+import { useSidebarResize } from './resizeSidebar'
 
 export const MainLayout = () => {
   const {

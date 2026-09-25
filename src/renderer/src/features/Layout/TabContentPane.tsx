@@ -101,11 +101,11 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
             ) : snippet.type === 'canvas' ||
               snippet.language === 'canvas' ||
               snippet.fileName?.endsWith('.canvas') ? (
-              <CanvasTabPane snippet={snippet} onSave={onSave} isSelected={isSelected} />
+              <CanvasTabPane {...({ snippet, onSave, isSelected } as any)} />
             ) : (
               <Editor
-                snippet={snippet}
-                onSave={onSave}
+                snippet={snippet as any}
+                onSave={onSave as any}
                 onToggleInspector={onToggleInspector}
                 isActive={isSelected}
                 onToggleExplorerModal={onToggleExplorerModal}

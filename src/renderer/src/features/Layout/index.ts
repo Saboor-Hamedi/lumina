@@ -23,3 +23,15 @@ export type { StatusBarProps } from './StatusBar'
 
 export { MainLayout } from './MainLayout'
 export { default as AppModals } from './AppModals'
+
+export { useSidebarResize, resizeSidebar } from './resizeSidebar'
+export type {
+  SidebarSide,
+  UseSidebarResizeParams,
+  UseSidebarResizeReturn
+} from './resizeSidebar'
+
+export { WindowControls } from './WindowControls'
+export type { WindowControlsProps } from './WindowControls'
+
+export { Workspace } from './workspace'

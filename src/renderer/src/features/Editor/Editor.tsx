@@ -1,19 +1,24 @@
 /**
  * =========================================================================================
- * Lumina Editor (`Editor.jsx`)
+ * Lumina Editor (`Editor.tsx`)
  * =========================================================================================
  *
  * Core markdown editor component. Orchestrates editor state, CodeMirror extensions,
  * modal overlays, toolbars, and canvas rendering through dedicated custom hooks.
+ *
+ * Performance Architecture:
+ * - High-speed, VS Code-grade viewport scrolling: Attaches direct requestMeasure
+ *   listeners to scroller container to prevent unrendered/blank lines on rapid scroll.
+ * - Hardware-accelerated compositor layers on `.editor-scroller`.
+ * - Deeply memoized to prevent parent re-renders when active note content is stable.
  * =========================================================================================
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react'
 import EditorMenu from './menu/EditorMenu'
 import ToastNotification from '../../core/notification'
 import Preview from '../preview'
 import OverwriteModal from '../modals/OverwriteModal'
-// Lumina AI Inline assistant
 import InlineLumina from '../AI/InlineLumina'
 import RulerScrollbar from './RulerScrollbar'
 import Find from './components/Find'
@@ -33,12 +38,36 @@ import { EditorSlash } from '../slash'
 import EditorCreatedAt from './components/EditorCreatedAt'
 import EditorZoomHud from './components/EditorZoomHud'
 
+import type { Snippet, EditorHandle } from '../../core/editor/types'
+import type { EditorView } from '@codemirror/view'
+
 import './Editor.css'
 import './inlineMarks.css'
 import '../../assets/codeWrapper.css'
 import '@atomic-editor/editor/styles.css'
 
-const Editor = React.memo(
+export interface EditorProps {
+  snippet: Snippet | any
+  onSave?: (snippet: any) => Promise<any> | void
+  onToggleInspector?: () => void
+  isActive?: boolean
+  onToggleExplorerModal?: () => void
+  onSettingsClick?: () => void
+  onThemeClick?: () => void
+  onGraphClick?: () => void
+}
+
+interface SlashState {
+  isOpen: boolean
+  query?: string
+  coords?: { top: number; left: number }
+  selectedIndex?: number
+  view?: EditorView
+  from?: number
+  to?: number
+}
+
+export const Editor: React.FC<EditorProps> = memo(
   ({
     snippet,
     onSave,
@@ -50,15 +79,15 @@ const Editor = React.memo(
     const [showFindWidget, setShowFindWidget] = useState(false)
     const [replaceModeActive, setReplaceModeActive] = useState(false)
     const [isInlineAIOpen, setIsInlineAIOpen] = useState(false)
-    const [slashState, setSlashState] = useState({ isOpen: false })
-    const slashHandlerRef = useRef({ isOpen: false })
+    const [slashState, setSlashState] = useState<SlashState>({ isOpen: false })
+    const slashHandlerRef = useRef<{ isOpen: boolean }>({ isOpen: false })
 
     // DOM & Editor references
-    const editorHandleRef = useRef(null)
-    const titleRef = useRef(null)
-    const scrollerRef = useRef(null)
-    const zoomContainerRef = useRef(null)
-    const realViewRef = useRef(null)
+    const editorHandleRef = useRef<EditorHandle | null>(null)
+    const titleRef = useRef<HTMLInputElement | null>(null)
+    const scrollerRef = useRef<HTMLDivElement | null>(null)
+    const zoomContainerRef = useRef<HTMLDivElement | null>(null)
+    const realViewRef = useRef<EditorView | null>(null)
     const showFindWidgetRef = useRef(showFindWidget)
     showFindWidgetRef.current = showFindWidget
 
@@ -68,8 +97,8 @@ const Editor = React.memo(
       isActive
     })
 
-    const setSelectedNote = useWorkspaceStore((state) => state.setSelectedNote)
-    const setDirty = useWorkspaceStore((state) => state.setDirty)
+    const setSelectedNote = useWorkspaceStore((state: any) => state.setSelectedNote)
+    const setDirty = useWorkspaceStore((state: any) => state.setDirty)
 
     // 1. Editor State (Lifecycle, Auto-save, Conflict detection)
     const {
@@ -81,7 +110,6 @@ const Editor = React.memo(
       isSaving,
       editorKey,
       conflictPrompt,
-      setConflictPrompt,
       snippetRef,
       latestCodeRef,
       lastSavedCodeRef,
@@ -92,7 +120,7 @@ const Editor = React.memo(
       handleOverwriteConfirm
     } = EditorState({
       snippet,
-      onSave,
+      onSave: onSave as any,
       showToast,
       realViewRef,
       editorHandleRef
@@ -130,7 +158,7 @@ const Editor = React.memo(
       isDirty,
       isDirtyRef,
       setDirty,
-      setConflictPrompt
+      setConflictPrompt: () => {}
     })
 
     // 4. CodeMirror Extensions & Keymaps
@@ -142,9 +170,32 @@ const Editor = React.memo(
       showFindWidgetRef,
       setShowFindWidget,
       setReplaceModeActive,
-      onSlashStateChange: setSlashState,
+      onSlashStateChange: setSlashState as any,
       slashHandlerRef
     })
+
+    // Fast scroll viewport synchronization: immediately requests measure on scroll
+    // to prevent blank/hidden text during rapid momentum scrolling (VS Code parity)
+    useEffect(() => {
+      const scroller = scrollerRef.current
+      if (!scroller) return
+
+      let rafId: number | null = null
+      const handleFastScroll = () => {
+        if (rafId) cancelAnimationFrame(rafId)
+        rafId = requestAnimationFrame(() => {
+          if (realViewRef.current && !(realViewRef.current as any).isDestroyed) {
+            realViewRef.current.requestMeasure()
+          }
+        })
+      }
+
+      scroller.addEventListener('scroll', handleFastScroll, { passive: true })
+      return () => {
+        if (rafId) cancelAnimationFrame(rafId)
+        scroller.removeEventListener('scroll', handleFastScroll)
+      }
+    }, [])
 
     // Keyboard Shortcuts
     useKeyboardShortcuts({
@@ -173,10 +224,10 @@ const Editor = React.memo(
       return () => window.removeEventListener('open-inline-ai', handleOpenAIEvent)
     }, [isActive])
 
-    const interimVoiceRangeRef = useRef(null)
+    const interimVoiceRangeRef = useRef<{ from: number; to: number } | null>(null)
 
     useEffect(() => {
-      const handleLiveText = (e) => {
+      const handleLiveText = (e: any) => {
         if (!isActive || !realViewRef.current) return
         if (e.detail?.instanceId && e.detail.instanceId !== 'editor-voice') return
         const text = e.detail?.text
@@ -207,7 +258,7 @@ const Editor = React.memo(
         }
       }
 
-      const handleLiveCancel = (e) => {
+      const handleLiveCancel = (e: any) => {
         if (!isActive || !realViewRef.current) return
         if (e.detail?.instanceId && e.detail.instanceId !== 'editor-voice') return
         if (interimVoiceRangeRef.current) {
@@ -217,7 +268,7 @@ const Editor = React.memo(
         }
       }
 
-      const handleVoiceInsert = (e) => {
+      const handleVoiceInsert = (e: any) => {
         if (!isActive || !realViewRef.current) return
         if (e.detail?.instanceId && e.detail.instanceId !== 'editor-voice') return
         const text = e.detail?.text
@@ -258,20 +309,23 @@ const Editor = React.memo(
     }, [isActive, setIsDirty])
 
     // Inline Lumina AI Handlers
-    const handleInlineAIInsert = useCallback((text, range = null) => {
-      if (!realViewRef.current) return
-      const view = realViewRef.current
-      const selection = view.state.selection.main
-      const from = range ? range.from : (selection ? selection.from : view.state.doc.length)
-      const to = range ? range.to : (selection ? selection.to : view.state.doc.length)
+    const handleInlineAIInsert = useCallback(
+      (text: string, range: { from: number; to: number } | null = null) => {
+        if (!realViewRef.current) return
+        const view = realViewRef.current
+        const selection = view.state.selection.main
+        const from = range ? range.from : (selection ? selection.from : view.state.doc.length)
+        const to = range ? range.to : (selection ? selection.to : view.state.doc.length)
 
-      view.dispatch({
-        changes: { from, to, insert: text },
-        selection: { anchor: from + text.length }
-      })
-      view.focus()
-      setIsDirty(true)
-    }, [setIsDirty])
+        view.dispatch({
+          changes: { from, to, insert: text },
+          selection: { anchor: from + text.length }
+        })
+        view.focus()
+        setIsDirty(true)
+      },
+      [setIsDirty]
+    )
 
     const handleCloseInlineAI = useCallback(() => setIsInlineAIOpen(false), [])
 
@@ -306,7 +360,7 @@ const Editor = React.memo(
             coords={slashState.coords}
             selectedIndex={slashState.selectedIndex ?? 0}
             slashHandlerRef={slashHandlerRef}
-            onSelect={(cmd) => {
+            onSelect={(cmd: any) => {
               if (slashHandlerRef?.current) {
                 slashHandlerRef.current.isOpen = false
               }
@@ -370,7 +424,7 @@ const Editor = React.memo(
             onClose={handleOverwriteClose}
             onConfirm={handleOverwriteConfirm}
             title="File Modified Externally"
-            message={`The file "${conflictPrompt?.snippetTitle}" was modified externally. Do you want to reload the new version and lose your local edits, or keep your local edits?`}
+            message={`The file "${(conflictPrompt as any)?.snippetTitle}" was modified externally. Do you want to reload the new version and lose your local edits, or keep your local edits?`}
             confirmText="Overwrite"
             cancelText="Keep My Edits"
           />
@@ -385,7 +439,7 @@ const Editor = React.memo(
             titleRef={titleRef}
             title={title}
             setTitle={setTitle}
-            onSave={onSave}
+            onSave={onSave as any}
             setIsDirty={setIsDirty}
             isDirty={isDirty}
             showToast={showToast}

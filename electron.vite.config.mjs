@@ -1,4 +1,4 @@
-/* Force Restart Timestamp: 19 */
+/* Force Restart Timestamp: 20 */
 import fs from 'fs'
 import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
@@ -9,7 +9,7 @@ import { visualizer } from 'rollup-plugin-visualizer'
  * TypeScript Dev Server Fallback Plugin
  * 
  * Safely handles dev-server fallback resolution from .jsx -> .tsx and .js -> .ts
- * only for migrated renderer feature directories (Navigation, Explorer, AI, and useFontSettings).
+ * only when the target TypeScript file exists and the JavaScript file does not.
  */
 function tsDevServerPlugin() {
   const isMigratedModule = (str) => {
@@ -30,6 +30,8 @@ function tsDevServerPlugin() {
       str.includes('features\\commandpalette') ||
       str.includes('features/Layout') ||
       str.includes('features\\Layout') ||
+      str.includes('features/Editor') ||
+      str.includes('features\\Editor') ||
       str.includes('Welcome') ||
       str.includes('useFontSettings')
     )
@@ -39,13 +41,22 @@ function tsDevServerPlugin() {
     name: 'ts-dev-server-plugin',
     apply: 'serve',
     enforce: 'pre',
-    resolveId(source) {
-      if (isMigratedModule(source)) {
+    resolveId(source, importer) {
+      if (isMigratedModule(source) && importer) {
+        const dir = resolve(importer, '..')
         if (source.endsWith('.jsx')) {
-          return this.resolve(source.replace(/\.jsx$/, '.tsx'), undefined, { skipSelf: true })
+          const targetJsx = resolve(dir, source)
+          const targetTsx = resolve(dir, source.replace(/\.jsx$/, '.tsx'))
+          if (!fs.existsSync(targetJsx) && fs.existsSync(targetTsx)) {
+            return this.resolve(source.replace(/\.jsx$/, '.tsx'), importer, { skipSelf: true })
+          }
         }
         if (source.endsWith('.js')) {
-          return this.resolve(source.replace(/\.js$/, '.ts'), undefined, { skipSelf: true })
+          const targetJs = resolve(dir, source)
+          const targetTs = resolve(dir, source.replace(/\.js$/, '.ts'))
+          if (!fs.existsSync(targetJs) && fs.existsSync(targetTs)) {
+            return this.resolve(source.replace(/\.js$/, '.ts'), importer, { skipSelf: true })
+          }
         }
       }
       return null
@@ -53,13 +64,13 @@ function tsDevServerPlugin() {
     load(id) {
       const cleanId = id.split('?')[0]
       if (isMigratedModule(cleanId)) {
-        if (cleanId.endsWith('.jsx')) {
+        if (cleanId.endsWith('.jsx') && !fs.existsSync(cleanId)) {
           const tsxId = cleanId.replace(/\.jsx$/, '.tsx')
           if (fs.existsSync(tsxId)) {
             return fs.readFileSync(tsxId, 'utf-8')
           }
         }
-        if (cleanId.endsWith('.js')) {
+        if (cleanId.endsWith('.js') && !fs.existsSync(cleanId)) {
           const tsId = cleanId.replace(/\.js$/, '.ts')
           if (fs.existsSync(tsId)) {
             return fs.readFileSync(tsId, 'utf-8')
@@ -71,10 +82,21 @@ function tsDevServerPlugin() {
     configureServer(server) {
       server.middlewares.use((req, _res, next) => {
         if (req.url && isMigratedModule(req.url)) {
-          if (/\.jsx(\?.*)?$/.test(req.url)) {
-            req.url = req.url.replace(/\.jsx(\?.*)?$/, (_m, q) => `.tsx${q || ''}`)
-          } else if (/\.js(\?.*)?$/.test(req.url)) {
-            req.url = req.url.replace(/\.js(\?.*)?$/, (_m, q) => `.ts${q || ''}`)
+          const pathname = req.url.split('?')[0]
+          const rootDir = server.config.root || resolve(process.cwd(), 'src/renderer')
+          const cleanPath = pathname.startsWith('/') ? pathname.slice(1) : pathname
+          const diskPath = resolve(rootDir, cleanPath)
+
+          if (/\.jsx$/.test(pathname)) {
+            const diskTsx = diskPath.replace(/\.jsx$/, '.tsx')
+            if (!fs.existsSync(diskPath) && fs.existsSync(diskTsx)) {
+              req.url = req.url.replace(/\.jsx(\?.*)?$/, (_m, q) => `.tsx${q || ''}`)
+            }
+          } else if (/\.js$/.test(pathname)) {
+            const diskTs = diskPath.replace(/\.js$/, '.ts')
+            if (!fs.existsSync(diskPath) && fs.existsSync(diskTs)) {
+              req.url = req.url.replace(/\.js(\?.*)?$/, (_m, q) => `.ts${q || ''}`)
+            }
           }
         }
         next()

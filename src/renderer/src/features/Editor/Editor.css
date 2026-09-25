@@ -707,6 +707,8 @@
   -ms-overflow-style: none !important;
   padding: 0 16px;
   box-sizing: border-box;
+  will-change: scroll-position;
+  -webkit-overflow-scrolling: touch;
 }
 
 .editor-scroller::-webkit-scrollbar {
