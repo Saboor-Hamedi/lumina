@@ -278,6 +278,9 @@
   padding: 0 16px 14px 16px !important;
   box-sizing: border-box !important;
   flex-shrink: 0 !important;
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 9999 !important;
 }
 
 .ai-chat-docs-modal .inspector-footer-section.is-chat-composer.is-modal-composer,
@@ -303,7 +306,9 @@
   width: 100% !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
-  overflow: hidden !important;
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 9999 !important;
 }
 
 .ai-chat-docs-modal .is-modal-composer .composer-container,
@@ -318,6 +323,8 @@
   border-top: none !important;
   display: flex !important;
   flex-direction: column !important;
+  position: relative !important;
+  overflow: visible !important;
 }
 
 .ai-chat-docs-modal .is-modal-composer .composer-card,

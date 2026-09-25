@@ -179,6 +179,8 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
 
     const handleCycleLineStyle = (e: React.MouseEvent) => {
       e.stopPropagation()
+      setIsHovered(true)
+      onSelectEdge?.(e, edge.id)
       if (!onUpdateLineStyle) return
       const nextStyle: Record<CanvasEdgeLineStyle, CanvasEdgeLineStyle> = {
         curved: 'step',
@@ -190,6 +192,8 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
 
     const handleCycleEndpoints = (e: React.MouseEvent) => {
       e.stopPropagation()
+      setIsHovered(true)
+      onSelectEdge?.(e, edge.id)
       if (!onUpdateEndpoints) return
       if (endpointMode === 'directed') {
         // Switch to bidirectional
@@ -205,6 +209,8 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
 
     const handleCycleColor = (e: React.MouseEvent) => {
       e.stopPropagation()
+      setIsHovered(true)
+      onSelectEdge?.(e, edge.id)
       if (!onCycleColor) return
       onCycleColor(edge.id)
     }
@@ -226,6 +232,10 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
           strokeLinecap="round"
           strokeLinejoin="round"
           style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+          onMouseDown={(e) => {
+            e.stopPropagation()
+            onSelectEdge?.(e, edge.id)
+          }}
           onClick={(e) => {
             e.stopPropagation()
             onSelectEdge?.(e, edge.id)
@@ -258,13 +268,17 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
           markerStart={edge.fromEnd === 'arrow' ? `url(#arrow-start-${targetColor})` : undefined}
           markerEnd={edge.toEnd === 'none' ? undefined : `url(#arrow-${targetColor})`}
           style={{ cursor: 'pointer' }}
+          onMouseDown={(e) => {
+            e.stopPropagation()
+            onSelectEdge?.(e, edge.id)
+          }}
           onClick={(e) => {
             e.stopPropagation()
             onSelectEdge?.(e, edge.id)
           }}
         />
 
-        {/* Opaque Edge Text Label Badge (Never crossed by lines) */}
+        {/* Edge Text Label (No background across all themes) */}
         {edge.label && !isEditingLabel && (
           <g
             className="lumina-canvas-edge-label-badge"
@@ -274,31 +288,16 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
               setIsEditingLabel(true)
             }}
           >
-            {(() => {
-              const halfW = Math.max(18, edge.label.length * 3.4 + 9)
-              return (
-                <>
-                  <rect
-                    x={-halfW}
-                    y={-9}
-                    width={halfW * 2}
-                    height={18}
-                    rx={9}
-                    className={`lumina-canvas-edge-label-bg edge-${targetColor}`}
-                  />
-                  <text
-                    x={0}
-                    y={0}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    alignmentBaseline="central"
-                    className={`lumina-canvas-edge-label-text edge-${targetColor}`}
-                  >
-                    {edge.label}
-                  </text>
-                </>
-              )
-            })()}
+            <text
+              x={0}
+              y={0}
+              textAnchor="middle"
+              dominantBaseline="central"
+              alignmentBaseline="central"
+              className={`lumina-canvas-edge-label-text edge-${targetColor}`}
+            >
+              {edge.label}
+            </text>
           </g>
         )}
 
@@ -353,8 +352,14 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
           >
             <div
               className="lumina-canvas-edge-controls"
-              onClick={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                onSelectEdge?.(e, edge.id)
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation()
+                onSelectEdge?.(e, edge.id)
+              }}
             >
               {/* Line Style Toggle Button */}
               {onUpdateLineStyle && (

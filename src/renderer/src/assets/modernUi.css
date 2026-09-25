@@ -222,6 +222,8 @@
   overflow: visible !important;
   flex-shrink: 0 !important;
   width: 100% !important;
+  position: relative !important;
+  z-index: 9999 !important;
 }
 
 [data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-container {
@@ -231,6 +233,9 @@
   width: 100% !important;
   display: flex !important;
   flex-direction: column !important;
+  position: relative !important;
+  z-index: 9999 !important;
+  overflow: visible !important;
 }
 
 [data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-card,

@@ -1,5 +1,5 @@
 import React from 'react'
-import { FileText, Code } from 'lucide-react'
+import { FileText, Code, Brain } from 'lucide-react'
 import { MessageContent } from './LuminaMessageContent'
 import { ChatActions } from './LuminaChatActions'
 import { ThinkingIndicator } from './LuminaThinkingIndicator'
@@ -8,8 +8,37 @@ import { useAIStore } from '../tools/lumina'
 import type { ChatMessage } from '../types/ai.types'
 import '../css/chatMentions.css'
 
-const getMentionIcon = (target: string): React.ReactNode => {
+const BRAIN_DOC_KEYS = [
+  'purpose',
+  'shortcuts',
+  'shortcut',
+  'introduction',
+  'intro',
+  'lumina',
+  'syntax',
+  'code-and-syntax',
+  'tables',
+  'tasklists',
+  'mermaid',
+  'math',
+  'html',
+  'admonitions',
+  'best-practices',
+  'vision',
+  'vision-guide',
+  'scope',
+  'suggestions',
+  'error-reference'
+]
+
+export const getMentionIcon = (target: string): React.ReactNode => {
   const lower = (target || '').toLowerCase().trim()
+  const clean = lower.replace(/\.md$/, '').replace(/^brain\//, '')
+
+  if (BRAIN_DOC_KEYS.some((k) => clean === k || clean.endsWith(`/${k}`) || clean.includes(k))) {
+    return <Brain size={12.5} className="chat-mention-icon brain-icon" />
+  }
+
   if (lower.endsWith('.css') || lower.endsWith('.scss') || lower.endsWith('.less')) {
     return <span className="chat-mention-symbol css-symbol">{'{ }'}</span>
   }
@@ -108,25 +137,44 @@ export const ChatMessageRow: React.FC<ChatMessageRowProps> = React.memo(
                   const parts = content.split(userMentionRegex)
                   return parts.map((part, pIdx) => {
                     if (part.startsWith('@') && part.length > 1) {
-                      const cleanTarget = part
-                        .slice(1)
-                        .trim()
-                        .replace(/[.,!?:;)]+$/, '')
+                      let rawTarget = part.slice(1)
+                      if (rawTarget.startsWith('[') && rawTarget.endsWith(']')) {
+                        rawTarget = rawTarget.slice(1, -1)
+                      }
+                      const punctMatch = rawTarget.match(/[.,!?:;)]+$/)
+                      const trailingPunc = punctMatch ? punctMatch[0] : ''
+                      const cleanTarget = trailingPunc
+                        ? rawTarget.slice(0, -trailingPunc.length).trim()
+                        : rawTarget.trim()
+                      const displayName = cleanTarget.split(/[/\\]/).pop() || cleanTarget
+
                       return (
-                        <span
-                          key={pIdx}
-                          className="chat-user-mention-pill"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            openNoteInEditor(cleanTarget)
-                          }}
-                          title={`Click to open [[${cleanTarget}]] in editor`}
-                        >
-                          {getMentionIcon(cleanTarget)}
-                          <span className="chat-user-mention-text">
-                            {cleanTarget}
+                        <React.Fragment key={pIdx}>
+                          <span
+                            className="mention-chip chat-user-mention-pill"
+                            contentEditable={false}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openNoteInEditor(cleanTarget)
+                            }}
+                            title={`Click to open [[${displayName}]] in editor`}
+                          >
+                            <span
+                              className="chat-mention-icon-wrapper"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openNoteInEditor(cleanTarget)
+                              }}
+                              title={`Open ${displayName}`}
+                            >
+                              {getMentionIcon(cleanTarget)}
+                            </span>
+                            <span className="chat-user-mention-text">
+                              @{displayName}
+                            </span>
                           </span>
-                        </span>
+                          {trailingPunc}
+                        </React.Fragment>
                       )
                     }
                     return part

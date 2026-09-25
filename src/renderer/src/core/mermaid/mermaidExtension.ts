@@ -48,9 +48,21 @@ export const editingMermaidField = StateField.define<number | null>({
 })
 
 const mermaidSvgCache = new Map<string, string>()
+const activeEditorViews = new Set<EditorView>()
+let mermaidThemeVersion = 0
 
 export function clearMermaidCache(): void {
   mermaidSvgCache.clear()
+  mermaidThemeVersion++
+  // Immediately re-render all visible widgets with the new theme/accent
+  for (const view of activeEditorViews) {
+    if (!view.state) continue
+    try {
+      view.dispatch({ effects: refreshMermaidEffect.of(null) })
+    } catch {
+      // view may have been destroyed
+    }
+  }
 }
 
 if (typeof window !== 'undefined') {
@@ -70,14 +82,16 @@ if (typeof window !== 'undefined') {
 
 class MermaidWidget extends WidgetType {
   code: string
+  themeVersion: number
 
   constructor(code: string) {
     super()
     this.code = code
+    this.themeVersion = mermaidThemeVersion
   }
 
   eq(other: MermaidWidget): boolean {
-    return other.code === this.code
+    return other.code === this.code && other.themeVersion === this.themeVersion
   }
 
   updateDOM(_dom: HTMLElement): boolean {
@@ -148,18 +162,8 @@ class MermaidWidget extends WidgetType {
             await copyMermaidAsImage(svgEl)
             setCopiedImage(true)
             setTimeout(() => setCopiedImage(false), 1500)
-            window.dispatchEvent(
-              new CustomEvent('show-toast', {
-                detail: { message: 'Mermaid diagram copied as image', type: 'success' }
-              })
-            )
           } catch (err) {
             console.error('Failed to copy mermaid image', err)
-            window.dispatchEvent(
-              new CustomEvent('show-toast', {
-                detail: { message: 'Failed to copy diagram image', type: 'error' }
-              })
-            )
           }
         }
       }
@@ -434,29 +438,13 @@ export function renderMermaidToElement(
       if (!accent) accent = '#40bafa'
       if (!accent.startsWith('#') && !accent.startsWith('rgb')) accent = '#' + accent
 
-      let textFaint = computed.getPropertyValue('--text-faint').trim() || '#888888'
-      let textMain = computed.getPropertyValue('--text-main').trim() || '#e0e0e0'
-      let bgPrimary =
-        computed.getPropertyValue('--bg-app').trim() ||
-        computed.getPropertyValue('--bg-primary').trim() ||
-        '#121212'
-      let bgPanel =
-        computed.getPropertyValue('--bg-panel').trim() ||
-        computed.getPropertyValue('--bg-card').trim() ||
-        '#1e1e1e'
-      let bgCard = computed.getPropertyValue('--bg-card').trim() || bgPanel
-      let borderSubtle =
-        computed.getPropertyValue('--border-subtle').trim() ||
-        computed.getPropertyValue('--border-dim').trim() ||
-        'rgba(128, 128, 128, 0.2)'
-      let borderDim = computed.getPropertyValue('--border-dim').trim() || borderSubtle
       let fontEditor = computed.getPropertyValue('--font-editor').trim() || 'monospace'
 
       try {
         mermaid.initialize({
           startOnLoad: false,
           suppressErrorRendering: true,
-          theme: 'base',
+          theme: 'default',
           htmlLabels: false,
           flowchart: { htmlLabels: false, curve: 'basis' },
           sequence: {
@@ -475,113 +463,36 @@ export function renderMermaidToElement(
           class: { htmlLabels: false },
           themeVariables: {
             fontFamily: fontEditor,
-            primaryColor: bgCard,
-            primaryBorderColor: borderSubtle,
+            textColor: accent,
             primaryTextColor: accent,
-            lineColor: textFaint,
-            textColor: textMain,
-            mainBkg: bgPrimary,
-            nodeBkg: bgCard,
-            nodeBorder: borderSubtle,
             nodeTextColor: accent,
-            clusterBkg: bgPanel,
-            clusterBorder: borderDim,
-            edgeLabelBackground: bgCard,
-            actorBkg: bgCard,
-            actorBorder: borderSubtle,
             actorTextColor: accent,
-            actorLineColor: textFaint,
-            signalColor: textFaint,
-            signalTextColor: textMain,
-            noteBkg: accent,
-            noteTextColor: bgPrimary,
-            noteBorderColor: 'transparent',
-            labelBoxBkg: bgCard,
-            labelBoxBorderColor: borderSubtle,
-            labelTextColor: textMain,
-            loopTextColor: textMain,
-            activationBkgColor: accent,
-            activationBorderColor: 'transparent',
-            sequenceNumberColor: bgPrimary,
-            git0: accent,
-            gitBranchLabel0: bgPrimary,
-            cScale0: accent,
-            cScaleLabel0: bgPrimary,
-            cScale1: 'rgba(255, 255, 255, 0.06)',
-            cScaleLabel1: textMain,
-            cScale2: 'rgba(255, 255, 255, 0.04)',
-            cScaleLabel2: textMain,
-            cScale3: 'rgba(255, 255, 255, 0.04)',
-            cScaleLabel3: textMain,
-            cScale4: 'rgba(255, 255, 255, 0.04)',
-            cScaleLabel4: textMain,
-            cScale5: 'rgba(255, 255, 255, 0.04)',
-            cScaleLabel5: textMain
+            signalTextColor: accent,
+            labelTextColor: accent,
+            loopTextColor: accent,
+            noteTextColor: accent,
+            taskTextColor: accent,
+            titleColor: accent,
+            gitBranchLabel0: accent
           },
           themeCSS: `
-            .node rect, .node circle, .node ellipse, .node polygon, .node path {
-              stroke-width: 1px;
-            }
-            .node .label, .node .label text {
-              font-family: ${fontEditor};
-            }
-            /* Mindmap sleek nodes & lines styling */
-            .mindmap-node rect,
-            .mindmap-node circle,
-            .mindmap-node polygon,
-            .mindmap-node path {
-              rx: 6px !important;
-              ry: 6px !important;
-              stroke-width: 1px !important;
-              stroke: rgba(255, 255, 255, 0.12) !important;
-            }
-            .mindmap-node.section-root rect,
-            .mindmap-node.section-root circle,
-            .mindmap-node.section-root polygon {
+            .node .label, .node .label text, text, tspan {
+              font-family: ${fontEditor} !important;
               fill: ${accent} !important;
-              rx: 8px !important;
-              ry: 8px !important;
-              stroke: transparent !important;
-            }
-            .mindmap-node.section-root text,
-            .mindmap-node.section-root tspan {
-              fill: ${bgPrimary} !important;
-              font-weight: 600 !important;
-            }
-            .mindmap-node:not(.section-root) rect,
-            .mindmap-node:not(.section-root) circle,
-            .mindmap-node:not(.section-root) polygon {
-              fill: ${bgPanel} !important;
-              stroke: rgba(255, 255, 255, 0.12) !important;
-            }
-            .mindmap-node:not(.section-root) text,
-            .mindmap-node:not(.section-root) tspan {
-              fill: ${textMain} !important;
-              font-size: 13px !important;
-            }
-            .mindmap-edges path,
-            path.edge {
-              stroke: ${textFaint} !important;
-              stroke-width: 1.5px !important;
-              stroke-opacity: 0.7 !important;
-              fill: none !important;
-            }
-            /* Sequence diagram actor & figure styling */
-            rect.actor {
-              fill: ${bgPanel} !important;
-              stroke: rgba(255, 255, 255, 0.15) !important;
-              rx: 4px !important;
-              ry: 4px !important;
             }
             text.actor, text.actor > tspan {
               fill: ${accent} !important;
               font-family: ${fontEditor} !important;
             }
-            line.actor-line {
-              stroke: ${textFaint} !important;
-              stroke-width: 1px !important;
-              stroke-dasharray: 4, 4;
-              stroke-opacity: 0.6;
+            .mindmap-node text, .mindmap-node tspan {
+              fill: ${accent} !important;
+            }
+            text.messageText, .noteText, text.loopText {
+              fill: ${accent} !important;
+            }
+            .classTitle, .state-title, .entityBox text,
+            .commit-label, .branch-label {
+              fill: ${accent} !important;
             }
           `
         })
@@ -591,7 +502,20 @@ export function renderMermaidToElement(
           throw new Error('Invalid Mermaid syntax')
         }
 
-        const { svg } = await mermaid.render(uniqueId, code)
+        let { svg } = await mermaid.render(uniqueId, code)
+
+        // Force accent colour on every text element — Mermaid's 'default' theme sets inline
+        // fill attributes on some text nodes that CSS cannot override; stamping the attribute
+        // directly ensures a single uniform label colour.
+        svg = svg.replace(/<(text|tspan)(\s[^>]*)?>/g, (match, tag, attrs = '') => {
+          if (/fill\s*=/.test(attrs)) {
+            attrs = attrs.replace(/fill\s*=\s*["'][^"']*["']/, `fill="${accent}"`)
+          } else {
+            attrs = attrs + ` fill="${accent}"`
+          }
+          return `<${tag}${attrs}>`
+        })
+
         mermaidSvgCache.set(code, svg)
         container.innerHTML = svg
         classifyMermaidDiagram(container, code)
@@ -652,6 +576,7 @@ const mermaidTreeWatcher = ViewPlugin.fromClass(
       this.view = view
       this._idleHandle = null
       this._destroyed = false
+      activeEditorViews.add(view)
       this._check(view.state)
     }
 
@@ -663,6 +588,7 @@ const mermaidTreeWatcher = ViewPlugin.fromClass(
 
     destroy() {
       this._destroyed = true
+      activeEditorViews.delete(this.view)
       if (this._idleHandle !== null) {
         cancelAnimationFrame(this._idleHandle)
         this._idleHandle = null

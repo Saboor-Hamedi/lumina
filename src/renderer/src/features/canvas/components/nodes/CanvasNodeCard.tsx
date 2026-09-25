@@ -540,10 +540,10 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                   </span>
                 )}
               </div>
-            ) : node.type === 'image' ? (
+            ) : node.type === 'image' || (node.file && /\.(png|jpe?g|webp|gif|svg|bmp|ico)$/i.test(node.file)) ? (
               <CanvasImagePreview
                 url={node.url || node.imageUrl}
-                relativePath={node.text || node.file}
+                relativePath={node.file || node.text}
                 title={node.title}
               />
             ) : (

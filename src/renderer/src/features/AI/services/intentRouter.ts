@@ -30,21 +30,21 @@ export const detectUserIntent = (
   const clean = (message || '').trim().toLowerCase()
 
   const diagnosticPatterns =
-    /(?:^|\s)\/doctor\b|\b(check yourself|run diagnostics|test (?:your )?health|system health|diagnostics?|check health|health check)\b/i
+    /(?:^|\s)\/(?:doctor|docker)\b|\b(check yourself|run diagnostics|test (?:your )?health|system health|diagnostics?|check health|health check|tell me about (?:your|you|lumina) health|how is your health|what is your health|you run (?:the )?(?:\/)?(?:doctor|docker)|run (?:the )?(?:doctor|docker)|your health|status of (?:the )?system|system status|how are you performing|check (?:your )?status|docker|doctor|lumina health)\b/i
 
   if (diagnosticPatterns.test(clean)) {
     return IntentCategory.DIAGNOSTICS
   }
 
   const wikilinkAuditPatterns =
-    /(?:^|\s)\/audit\b|\b(audit(?:h)?\b|broken (?:wiki)?links?|dead (?:wiki)?links?|missing (?:notes?|links?)|orphan (?:notes?|files?)|orphans?(?: in workspace)?|audit (?:wiki)?links?|check (?:my )?(?:wiki)?links?|find broken (?:wiki)?links?|unlinked (?:notes?|files?)|how many files? (?:do not have|lack|without) (?:wiki)?links?|files? (?:do not have|without) (?:wiki)?links? or broken|link health|inspect (?:my )?links)\b/i
+    /(?:^|\s)\/audit\b|\b(audit(?:h)?\b|broken (?:wiki)?links?|dead (?:wiki)?links?|missing (?:notes?|links?)|orphan (?:notes?|files?)|orphans?(?: in workspace)?|audit (?:wiki)?links?|check (?:my )?(?:wiki)?links?|find (?:me )?(?:all )?(?:broken |the |workspace |my )?(?:wiki)?links?|can you find (?:the |all |me )?links?|find links|show (?:me )?(?:all )?(?:the )?links?|list (?:all )?(?:wiki)?links?|unlinked (?:notes?|files?)|how many files? (?:do not have|lack|without) (?:wiki)?links?|files? (?:do not have|without) (?:wiki)?links? or broken|link health|inspect (?:my )?links|connections between (?:notes|files)|lumina audit|tell me about lumina audit)\b/i
 
   if (wikilinkAuditPatterns.test(clean)) {
     return IntentCategory.AUDIT_WIKILINKS
   }
 
   const queryIndexPatterns =
-    /(?:^|\s)\/(?:index|query)\b|\b(query\s+index|search\s+index|workspace\s+index|show\s+(?:the\s+)?index|index\s+of\s+notes|notes?\s+index|list\s+all\s+notes|show\s+all\s+notes|notes?\s+with\s+tag|tagged\s+with|tag:\s*#?\w+|#\w+\s+notes?|which\s+notes?\s+have\s+tag|find\s+notes?\s+tagged|notes?\s+linking\s+to|notes?\s+that\s+link\s+to|backlinks\s+(?:for|to)|which\s+notes?\s+link|filter\s+notes?|notes?\s+in\s+folder|list\s+notes?\s+in\s+folder|notes?\s+with\s+frontmatter)\b/i
+    /(?:^|\s)\/(?:index|query)\b|\b(query\s+index|search\s+index|workspace\s+index|show\s+(?:the\s+)?index|index\s+of\s+notes|notes?\s+index|list\s+all\s+notes|show\s+all\s+notes|find\s+(?:me\s+)?(?:all\s+)?(?:the\s+)?(?:a\s+)?tags?|can\s+you\s+find\s+(?:me\s+)?(?:a\s+)?tags?|all\s+(?:the\s+)?tags|what\s+tags|tags?\s+in\s+(?:the\s+)?workspace|list\s+(?:all\s+)?tags|show\s+(?:me\s+)?(?:all\s+)?tags|notes?\s+with\s+tags?|tagged\s+with|tag:\s*#?\w+|#\w+\s+notes?|which\s+notes?\s+have\s+tags?|find\s+notes?\s+tagged|notes?\s+linking\s+to|notes?\s+that\s+link\s+to|backlinks\s+(?:for|to)|which\s+notes?\s+link|filter\s+notes?|notes?\s+in\s+folder|list\s+notes?\s+in\s+folder|notes?\s+with\s+frontmatter|find\s+(?:me\s+)?(?:a\s+)?tag\s+or\s+query|can\s+you\s+find\s+(?:me\s+)?(?:a\s+)?tag\s+or\s+query|tag\s+or\s+query|tags?\s+or\s+query|search\s+(?:for\s+)?tags?|query\s+tags?|tag\s+query|lumina\s+query\s+index|lumina\s+index|tell\s+me\s+about\s+(?:lumina\s+)?(?:query\s+)?index|what\s+is\s+(?:lumina\s+)?(?:query\s+)?index)\b/i
 
   if (queryIndexPatterns.test(clean)) {
     return IntentCategory.QUERY_INDEX
@@ -55,6 +55,13 @@ export const detectUserIntent = (
 
   if (memoryPatterns.test(clean)) {
     return IntentCategory.MEMORY_OP
+  }
+
+  const brainPatterns =
+    /(?:^|\s)\/brain\b|\b(lumina (?:docs|documentation|shortcuts|specs|guides?|badges?|capabilities|features)|what are (?:the )?(?:lumina )?badges|tell me about (?:lumina )?badges|lumina badges?|keyboard shortcuts|shortcut keys|how to use lumina|what are (?:the )?shortcuts|tell me about shortcuts|what is lumina|lumina's vision|lumina philosophy|what can you do|what are your capabilities|what tools do you have)\b/i
+
+  if (brainPatterns.test(clean)) {
+    return IntentCategory.CONVERSATIONAL_EXPLAIN
   }
 
   const conversationalOverridePatterns =
@@ -350,6 +357,15 @@ Execution: Immediately invoke the \`diagnoseSystem\` tool! Do NOT merely say you
 
     case IntentCategory.QUERY_INDEX:
       return `\n**EXEMPLAR FOR WORKSPACE INDEX QUERY**:
+User: "Can you find me a tag or query?"
+Execution:
+In chat: Warmly explain that you have the built-in Lumina Query Index to search across tags, folders, backlinks, outgoing links, and frontmatter. Invite the user to search for a specific tag (e.g. #research) or list all workspace tags right away.
+
+User: "Find me all the tags in the workspace" or "show all tags" or "what tags do I have?"
+Execution:
+1. Call \`luminaQueryIndex\` with query="all tags".
+2. Present the workspace tags overview table and summarize the tags.
+
 User: "Find all notes tagged with #research" or "which notes have tag research?"
 Execution:
 1. Call \`luminaQueryIndex\` with tag="research".
@@ -368,6 +384,9 @@ Execution:
     case IntentCategory.CONVERSATIONAL_EXPLAIN:
     default:
       return `\n**EXEMPLAR FOR CONVERSATIONAL / READ QUERY**:
+User: "What are Lumina badges?"
+Execution: DO NOT call file tools. Clearly and warmly explain the 5 interactive badges (Health Badge, Audit Badge, Index Badge, Memory Badge, Activity Card) and describe the live cards and visual diagnostics they render in the chat interface!
+
 User: "What do you see in @Types of RAG?"
 Execution: DO NOT call file tools. The note content is already in the prompt above. Immediately explain and summarize what is inside the note with clear headings and bullet points!`
   }

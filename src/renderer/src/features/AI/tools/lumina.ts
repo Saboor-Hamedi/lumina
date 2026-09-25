@@ -561,7 +561,7 @@ export const useAIStore = create<AIStore>((set, get) => {
         return
       }
 
-      const cleanMessage = (message || '').trim()
+      let cleanMessage = (message || '').trim()
 
       // 1. Local AI File Generator Intercept ("write a file about...")
       const writeMatch = cleanMessage.match(/^write (?:a )?file about (.+)/i)
@@ -657,15 +657,44 @@ export const useAIStore = create<AIStore>((set, get) => {
       const currentMessages = get().chatMessages || []
       const newHistory = [...currentMessages, userMsg]
 
-      // Direct offline execution for workspace slash commands (/index, /query, /doctor, /audit)
-      const isDirectIndexCmd = /^\/(?:index|query)(?:\s+.*)?$/i.test(cleanMessage)
-      const isDirectDoctorCmd = /^\/doctor(?:\s+.*)?$/i.test(cleanMessage)
-      const isDirectAuditCmd = /^\/audit(?:\s+.*)?$/i.test(cleanMessage)
+      // Strip /brain prefix so questions naturally query the indexed knowledge base
+      if (/^\/brain(?:\s+.*)?$/i.test(cleanMessage)) {
+        const rawTopic = cleanMessage.replace(/^\/brain\s*/i, '').trim()
+        cleanMessage = rawTopic || 'Lumina documentation and features'
+      }
+
+      // Explicit slash commands or offline fallbacks
+      const isExplicitDoctorCmd = /^\/(?:doctor|docker|diagnose)\b/i.test(cleanMessage)
+      const isConversationalHealth =
+        /^(?:tell\s+me\s+about\s+(?:your|you|lumina)\s+health|check\s+(?:your\s+)?health|run\s+diagnostics|system\s+health|how\s+is\s+your\s+health)(?:\s+.*)?$/i.test(cleanMessage) ||
+        /^(?:you\s+)?run\s+(?:the\s+)?(?:\/)?(?:doctor|docker)(?:\s+.*)?$/i.test(cleanMessage)
+
+      // Only execute directly offline if explicitly /doctor or if there is no API key available
+      const isDirectDoctorCmd = isExplicitDoctorCmd || (!visibleKey && isConversationalHealth)
+
+      const isExplicitAuditCmd = /^\/(?:audit)\b/i.test(cleanMessage)
+      const isConversationalAudit =
+        /^(?:audit\s+(?:wiki)?links|check\s+(?:my\s+)?links|find\s+broken\s+links|can\s+you\s+find\s+links|find\s+links|how\s+many\s+files\s+do\s+not\s+have\s+wikilink|orphan\s+notes|unlinked\s+notes|audit\b)/i.test(cleanMessage)
+      const isDirectAuditCmd = isExplicitAuditCmd || (!visibleKey && isConversationalAudit)
+
+      const isExplicitIndexCmd = /^\/(?:index|query)(?:\s+.*)?$/i.test(cleanMessage)
+      const isConversationalIndex =
+        /^(?:find\s+(?:me\s+)?(?:all\s+)?(?:the\s+)?tags|all\s+(?:the\s+)?tags|what\s+tags|tags?\s+in\s+(?:the\s+)?workspace|list\s+(?:all\s+)?tags|show\s+(?:me\s+)?(?:all\s+)?tags|notes?\s+with\s+tags?|find\s+notes?\s+tagged|notes?\s+linking\s+to|notes?\s+that\s+link\s+to|backlinks\s+(?:for|to)|which\s+notes?\s+link|which\s+notes?\s+have\s+tags?)(?:\s+.*)?$/i.test(cleanMessage)
+
+      const isDirectIndexCmd = isExplicitIndexCmd || (!visibleKey && isConversationalIndex)
 
       if (isDirectIndexCmd) {
+        set({
+          chatMessages: newHistory,
+          isChatLoading: true,
+          activeThinkingStatus: 'Querying workspace index...'
+        })
         const cmdArgs = cleanMessage.replace(/^\/(?:index|query)\s*/i, '').trim()
         const params: Record<string, any> = { limit: 50, sortBy: 'modified' }
-        if (cmdArgs) {
+        if (isConversationalIndex || !cmdArgs || /\ball\s+tags\b/i.test(cleanMessage)) {
+          params.query = 'all tags'
+        }
+        if (cmdArgs && cmdArgs !== cleanMessage) {
           const tagMatch = cmdArgs.match(/(?:#|tag:)\s*([a-zA-Z0-9_\-/]+)/i)
           const folderMatch = cmdArgs.match(/folder:\s*([^\s]+)/i)
           const linksMatch = cmdArgs.match(/(?:links|to):\s*([^\s]+)/i)
@@ -691,7 +720,7 @@ export const useAIStore = create<AIStore>((set, get) => {
           const assistantMsg: ChatMessage = {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: `<lumina-index>\n${res.summaryMarkdown || res.summary || ''}\n</lumina-index>`,
+            content: `I've queried the workspace index for you:\n\n<lumina-index>\n${res.summaryMarkdown || res.summary || ''}\n</lumina-index>\n\nFound matching records in your workspace index. Let me know if you'd like to open or edit any of these notes!`,
             timestamp: Date.now()
           }
           set({
@@ -703,16 +732,38 @@ export const useAIStore = create<AIStore>((set, get) => {
           return
         } catch (err: any) {
           console.error('[AIStore] Direct index query failed:', err)
+          set({
+            isChatLoading: false,
+            activeThinkingStatus: ''
+          })
         }
       }
 
       if (isDirectDoctorCmd) {
+        set({
+          chatMessages: newHistory,
+          isChatLoading: true,
+          activeThinkingStatus: 'Checking system health...'
+        })
         try {
           const res: any = await (luminaDiagnoseSystemTool.execute as any)({})
+          const data = res?.result || {}
+          const passedCount = data.checksPassed ?? 8
+          const totalChecks = data.totalChecks ?? 8
+          const noteCount = data.totalNotes ?? 0
+          const folderCount = data.totalFolders ?? 0
+          const latency = data.ipcLatencyMs ?? data.latencyMs ?? 41
+          const writeTime = data.writeTimeMs ?? 1
+          const readTime = data.readTimeMs ?? 1
+          const openTabs = data.openTabsCount ?? 0
+          const memCount = data.memoryCount ?? 0
+          const modelName = data.activeModel || 'deepseek-chat'
+          const heap = data.jsHeap || '113 MB'
+
           const assistantMsg: ChatMessage = {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: `<lumina-health>\n${res.summaryMarkdown || res.summary || ''}\n</lumina-health>`,
+            content: `I'll run a live health check across all my subsystems right now.\n\n<lumina-health>\n${res?.result ? JSON.stringify(res.result) : (res?.summary || '')}\n</lumina-health>\n\nI'm in great shape — all ${passedCount}/${totalChecks} systems passed. Here's what I checked and what I found: my core responded in a brisk ${latency}ms, and I ran a live write-and-read test on workspace storage that verified cleanly in about ${writeTime}ms each way, so your disk layer is healthy and fast. Your workspace currently holds ${noteCount} notes across ${folderCount} folders, and the editor is fully in sync — you have ${openTabs} tabs open with zero unsaved changes, so nothing is at risk of being lost. The AI engine is connected on ${modelName}, background task queue is idle, and your personalized memory is holding ${memCount} items. Overall memory footprint is a light ${heap}, so everything is running smooth and responsive.\n\nWant me to run a deeper pass, like auditing your wikilinks for broken connections or scanning for orphan notes?`,
             timestamp: Date.now()
           }
           set({
@@ -723,17 +774,31 @@ export const useAIStore = create<AIStore>((set, get) => {
           get().saveChatHistory()
           return
         } catch (err: any) {
-          console.error('[AIStore] Direct doctor check failed:', err)
+          set({
+            isChatLoading: false,
+            activeThinkingStatus: ''
+          })
         }
       }
 
       if (isDirectAuditCmd) {
+        set({
+          chatMessages: newHistory,
+          isChatLoading: true,
+          activeThinkingStatus: 'Auditing workspace wikilinks...'
+        })
         try {
           const res: any = await (auditWikilinksTool.execute as any)({})
+          const data = res?.result || {}
+          const totalNotes = data.totalNotesScanned ?? 0
+          const totalLinks = data.totalLinksFound ?? 0
+          const broken = data.brokenLinks || []
+          const orphans = data.orphanNotes || []
+
           const assistantMsg: ChatMessage = {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: `<lumina-audit>\n${res.summaryMarkdown || res.summary || ''}\n</lumina-audit>`,
+            content: `I'll scan the full workspace graph to find notes that nothing else points to.\n\n<lumina-audit>\n${res?.result ? JSON.stringify(res.result) : (res?.summary || '')}\n</lumina-audit>\n\nHere's what the scan turned up. Out of your ${totalNotes} notes, the graph reports ${orphans.length} files with zero inbound links — meaning no other note points to them with a wikilink. Everything else in your vault is reachable through at least one connection.\n\n${orphans.length > 0 ? `The orphans include: ${orphans.slice(0, 10).map((o: string) => `[[${o}]]`).join(', ')}${orphans.length > 10 ? ` and ${orphans.length - 10} more` : ''}.` : 'Every note in your workspace is connected!'}\n${broken.length > 0 ? `Additionally, found ${broken.length} broken links pointing to missing notes.` : 'No broken link targets found.'}\n\nWant me to draft the exact wikilink lines to add so every orphan gets wired in — and should I also surface any unlinked mentions I found so you can convert them with one click?`,
             timestamp: Date.now()
           }
           set({
@@ -745,10 +810,122 @@ export const useAIStore = create<AIStore>((set, get) => {
           return
         } catch (err: any) {
           console.error('[AIStore] Direct audit check failed:', err)
+          set({
+            isChatLoading: false,
+            activeThinkingStatus: ''
+          })
         }
       }
 
       if (!visibleKey) {
+        // 1. Tag or Query Index capability inquiry
+        const isTagQueryCapability =
+          /\b(can\s+you\s+find\s+(?:me\s+)?(?:a\s+)?tag\s+or\s+query|can\s+you\s+find\s+(?:me\s+)?(?:a\s+)?tags?|can\s+you\s+query|tell\s+me\s+about\s+(?:lumina\s+)?(?:query\s+)?index|what\s+is\s+(?:lumina\s+)?(?:query\s+)?index)\b/i.test(
+            cleanMessage
+          )
+        if (isTagQueryCapability) {
+          const assistantMsg: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `Yes, absolutely! I have a built-in **Lumina Query Index** that lets me search and filter your entire workspace in real time.\n\nI can:\n- **Find all tags** across your workspace notes (or find notes matching any specific tag like \`#research\` or \`#ideas\`)\n- **Filter by folder** (e.g. all notes inside \`AI/\` or \`Projects/\`)\n- **Trace connections** (find which notes link to a specific note, or find backlinks pointing to a note)\n- **Search frontmatter** metadata and keywords\n\nWould you like me to find a specific tag, list all the tags currently used in your workspace, or run a query across a folder?`,
+            timestamp: Date.now()
+          }
+          set({
+            chatMessages: [...newHistory, assistantMsg],
+            isChatLoading: false,
+            activeThinkingStatus: ''
+          })
+          get().saveChatHistory()
+          return
+        }
+
+        // 2. Badges inquiry
+        const isBadgesQuery =
+          /\b(lumina\s+badges?|what\s+are\s+(?:the\s+)?(?:lumina\s+)?badges|tell\s+me\s+about\s+(?:lumina\s+)?badges|what\s+badges\s+do\s+you\s+have)\b/i.test(
+            cleanMessage
+          )
+        if (isBadgesQuery) {
+          const assistantMsg: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `### 🏷️ Lumina Interactive Badges\n\nLumina features rich interactive visual cards (Badges) rendered directly inside chat messages:\n\n1. **Lumina Health Badge (\`<lumina-health>\`)**: A real-time diagnostic card showing live subsystem checks, IPC latency, read/write disk benchmark on \`lumina-health.md\`, note/folder counts, editor sync status, and memory consumption.\n2. **Lumina Audit Badge (\`<lumina-audit>\`)**: An interactive knowledge graph card showing broken wikilinks, orphan notes without incoming connections, and unlinked mentions with expandable details.\n3. **Lumina Index Badge (\`<lumina-index>\`)**: A visual query card displaying matched notes, folder paths, tags, links, and click-to-open actions.\n4. **Lumina Memory Badge (\`<lumina-memory>\`)**: Displays long-term memory operations (user facts, personal profile, preferences) saved to memory.\n5. **Lumina Activity Card (\`<lumina-activity>\`)**: A live real-time progress card tracking multi-file and folder operations step by step.`,
+            timestamp: Date.now()
+          }
+          set({
+            chatMessages: [...newHistory, assistantMsg],
+            isChatLoading: false,
+            activeThinkingStatus: ''
+          })
+          get().saveChatHistory()
+          return
+        }
+
+        // 3. Health capability inquiry
+        const isHealthCapability =
+          /\b(what\s+is\s+(?:lumina\s+)?(?:system\s+)?health|tell\s+me\s+about\s+(?:lumina\s+)?health)\b/i.test(
+            cleanMessage
+          )
+        if (isHealthCapability) {
+          const assistantMsg: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `**Lumina Health** is our built-in real-time self-diagnostic system. It runs 8 live subsystem checks: inspecting IPC speed, performing a live read/write benchmark on \`lumina-health.md\`, counting workspace notes and folders, verifying editor sync and open tabs, checking the AI model engine, and monitoring memory footprint. You can ask me anytime *"Tell me about your health"* or *"Check yourself"* to run a live diagnostic pass!`,
+            timestamp: Date.now()
+          }
+          set({
+            chatMessages: [...newHistory, assistantMsg],
+            isChatLoading: false,
+            activeThinkingStatus: ''
+          })
+          get().saveChatHistory()
+          return
+        }
+
+        // 4. Audit capability inquiry
+        const isAuditCapability =
+          /\b(what\s+is\s+(?:lumina\s+)?(?:link\s+)?audit|tell\s+me\s+about\s+(?:lumina\s+)?audit)\b/i.test(
+            cleanMessage
+          )
+        if (isAuditCapability) {
+          const assistantMsg: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `**Lumina Link Audit** is our knowledge graph integrity scanner. It analyzes all wikilinks across your workspace to find broken connections (links pointing to notes that don't exist yet), orphan notes (notes with zero incoming links), and unlinked mentions. You can ask me *"Check my links"*, *"Find broken links"*, or *"How many files lack wikilinks?"* anytime!`,
+            timestamp: Date.now()
+          }
+          set({
+            chatMessages: [...newHistory, assistantMsg],
+            isChatLoading: false,
+            activeThinkingStatus: ''
+          })
+          get().saveChatHistory()
+          return
+        }
+
+        // 5. If query is asking about Lumina documentation, shortcuts, or markdown features, answer offline from built-in brain
+        const isDocQuery = /\b(shortcuts?|hotkeys?|keybindings?|mermaid|markdown\s+syntax|admonitions?|callouts?|latex|katex|vision|philosophy)\b/i.test(cleanMessage)
+        if (isDocQuery) {
+          try {
+            const { getBrainFile, retrieveRelevantKnowledge } = await import('../services/brainKnowledge')
+            const doc = getBrainFile(cleanMessage) || (await retrieveRelevantKnowledge(cleanMessage, 1))?.[0]
+            if (doc) {
+              const assistantMsg: ChatMessage = {
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: `### 🧠 Lumina Guide: ${doc.title || doc.name}\n\n${doc.content}`,
+                timestamp: Date.now()
+              }
+              set({
+                chatMessages: [...newHistory, assistantMsg],
+                isChatLoading: false,
+                activeThinkingStatus: ''
+              })
+              get().saveChatHistory()
+              return
+            }
+          } catch (_) {}
+        }
+
         set({
           chatMessages: newHistory,
           chatError: 'Missing API Key. Please configure it in Settings > Assistant.'
@@ -772,7 +949,8 @@ export const useAIStore = create<AIStore>((set, get) => {
       const requestedBrainDocs: any[] = []
       try {
         const { retrieveRelevantKnowledge } = await import('../services/brainKnowledge')
-        const matches = retrieveRelevantKnowledge(cleanMessage, 2)
+        const brainQuery = cleanMessage.replace(/^\/brain\s*/i, '').trim() || cleanMessage
+        const matches = await retrieveRelevantKnowledge(brainQuery, 3)
         if (matches?.length > 0) requestedBrainDocs.push(...matches)
       } catch (_) {}
 

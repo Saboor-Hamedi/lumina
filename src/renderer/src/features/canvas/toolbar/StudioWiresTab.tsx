@@ -7,6 +7,9 @@ export interface StudioWiresTabProps {
   defaultEndpoints?: 'directed' | 'bidirectional' | 'none'
   onChangeDefaultEndpoints?: (mode: 'directed' | 'bidirectional' | 'none') => void
   selectedEdgeId?: string | null
+  selectedEdgeCount?: number
+  totalEdgesCount?: number
+  onApplyToAllEdges?: (style: CanvasEdgeLineStyle) => void
 }
 
 interface LineStyleItem {
@@ -141,14 +144,21 @@ export const StudioWiresTab: React.FC<StudioWiresTabProps> = React.memo(
     onChangeDefaultLineStyle,
     defaultEndpoints = 'directed',
     onChangeDefaultEndpoints,
-    selectedEdgeId
+    selectedEdgeId,
+    selectedEdgeCount = 0,
+    totalEdgesCount = 0,
+    onApplyToAllEdges
   }) => {
     return (
       <div className="lumina-canvas-studio-tab-pane">
         <div className="studio-section-banner">
           <span className="banner-title">Connectors</span>
           <span className="banner-sub">
-            {selectedEdgeId ? 'Selected connector style & direction' : 'Style & Direction'}
+            {selectedEdgeCount > 1
+              ? `${selectedEdgeCount} connectors selected`
+              : selectedEdgeId
+                ? 'Selected connector style & direction'
+                : 'Style & Direction'}
           </span>
         </div>
 
@@ -203,6 +213,20 @@ export const StudioWiresTab: React.FC<StudioWiresTabProps> = React.memo(
             })}
           </div>
         </div>
+
+        {/* Feature 3: Quick Batch Homogenize All Connectors */}
+        {onApplyToAllEdges && totalEdgesCount > 1 && (
+          <div className="lumina-canvas-studio-card-box" style={{ marginTop: '16px' }}>
+            <button
+              type="button"
+              className="lumina-canvas-studio-action-btn"
+              onClick={() => onApplyToAllEdges(defaultLineStyle)}
+            >
+              <span>Apply to all connectors</span>
+              <span className="studio-btn-count-badge" style={{ marginLeft: '4px', opacity: 0.85 }}>[{totalEdgesCount}]</span>
+            </button>
+          </div>
+        )}
       </div>
     )
   }

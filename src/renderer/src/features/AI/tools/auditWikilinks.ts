@@ -279,7 +279,8 @@ ${actionPrompt}`
       return {
         success: true,
         result: auditData,
-        summary
+        summary,
+        instruction_to_ai: `Audit completed successfully. Respond warmly and conversationally to the user like an expert knowledge graph assistant (as demonstrated in bugs.md). Start with an acknowledgment, render <lumina-audit>${JSON.stringify(auditData)}</lumina-audit> once, explain how many notes have zero inbound links, group and analyze orphan clusters, mention broken links, and proactively offer to draft wikilink lines or scaffold missing notes.`
       }
     } catch (err: any) {
       console.error('[auditWikilinksTool] Error auditing links:', err)

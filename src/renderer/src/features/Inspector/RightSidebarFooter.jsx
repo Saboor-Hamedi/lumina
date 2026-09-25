@@ -51,17 +51,7 @@ export const RightSidebarFooter = ({ selectedNote, selectedSnippet, rightSidebar
   }
 
   if (rightSidebarTab === 'chat') {
-    return (
-      <div className="inspector-footer-section is-chat-composer">
-        <Composer
-          isSidebar={true}
-          onSend={handleSendMessage}
-          isLoading={isChatLoading}
-          onStop={cancelChat}
-          onCancel={cancelChat}
-        />
-      </div>
-    )
+    return null
   }
 
   return (

@@ -25,27 +25,46 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   padding: 16px;
-  background-color: rgba(0, 0, 0, 0.25);
-  border-radius: 0 0 7px 7px;
+  background-color: var(--bg-secondary, rgba(0, 0, 0, 0.25));
+  border: 1px dashed var(--border-color, rgba(255, 255, 255, 0.15));
+  border-radius: 6px;
   text-align: center;
   user-select: none;
+  box-sizing: border-box;
+}
+
+[data-theme='porcelain'] .lumina-canvas-image-error,
+.theme-porcelain .lumina-canvas-image-error {
+  background-color: #f9f6f0 !important;
+  border: 1px dashed #d4cfc4 !important;
 }
 
 .lumina-canvas-image-error-title {
   font-size: 12px;
   font-weight: 500;
-  color: var(--text-main, #e2e8f0);
+  color: var(--text-muted, #6b6559);
   max-width: 85%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.lumina-canvas-image-error-hint {
-  font-size: 10.5px;
-  color: var(--text-muted, #94a3b8);
+.lumina-canvas-image-retry-btn {
+  background: none;
+  border: none;
+  color: var(--text-accent, #e879a8);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 2px 6px;
+  transition: opacity 0.15s ease;
+}
+
+.lumina-canvas-image-retry-btn:hover {
+  opacity: 0.8;
 }
 
 /* Canvas Node Card */
@@ -528,29 +547,20 @@
   color: #ef4444;
 }
 
-/* Edge Label Badge */
+/* Edge Label (No background across all 67 themes) */
 .lumina-canvas-edge-label-badge {
   cursor: pointer;
 }
 
 .lumina-canvas-edge-label-bg {
-  fill: var(--bg-card, var(--bg-app, #0c0d10));
-  stroke: var(--border-subtle, rgba(255, 255, 255, 0.15));
-  stroke-width: 1px;
-  opacity: 0.95;
-}
-
-[data-theme='porcelain'] .lumina-canvas-edge-label-bg {
-  fill: rgba(255, 250, 240, 0.95) !important;
-  stroke: rgba(156, 149, 133, 0.3) !important;
-}
-
-.lumina-canvas-edge-label-badge:hover .lumina-canvas-edge-label-bg {
-  opacity: 1;
+  display: none !important;
+  fill: transparent !important;
+  stroke: none !important;
+  opacity: 0 !important;
 }
 
 .lumina-canvas-edge-label-text {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 500;
   font-family: inherit;
   fill: var(--text-accent, #38bdf8);
@@ -571,16 +581,6 @@
 .lumina-canvas-edge-label-text.edge-orange { fill: #f97316; }
 .lumina-canvas-edge-label-text.edge-red { fill: #ef4444; }
 .lumina-canvas-edge-label-text.edge-default { fill: var(--text-accent, #38bdf8); }
-
-[data-theme='porcelain'] .lumina-canvas-edge-label-text {
-  fill: #2c2a25 !important;
-  font-weight: 500;
-}
-
-[data-theme='light'] .lumina-canvas-edge-label-text,
-.theme-light .lumina-canvas-edge-label-text {
-  fill: var(--text-accent, #3b82f6);
-}
 
 .lumina-canvas-edge-label-badge:hover .lumina-canvas-edge-label-text {
   filter: drop-shadow(0 0 4px currentColor);

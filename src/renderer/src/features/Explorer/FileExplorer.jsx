@@ -377,8 +377,22 @@ const FileExplorer = ({ isOpen, onClose, isEmbedded }) => {
         activeEl?.tagName === 'TEXTAREA' ||
         activeEl?.tagName === 'INPUT' ||
         activeEl?.closest('.cm-editor') ||
-        activeEl?.closest('.ai-chat-input')
+        activeEl?.closest('.ai-chat-input') ||
+        activeEl?.closest('.lumina-canvas-container') ||
+        activeEl?.closest('.lumina-canvas-toolbar')
       ) {
+        return
+      }
+
+      // If a canvas is currently active and focus is not inside the explorer sidebar,
+      // allow the canvas to handle the paste event
+      const isInsideExplorer = Boolean(
+        activeEl?.closest('.lumina-sidebar') ||
+        activeEl?.closest('.lumina-explorer-container') ||
+        activeEl?.closest('.explorer-modal')
+      )
+      const isCanvasPresent = Boolean(document.querySelector('.lumina-canvas-container'))
+      if (isCanvasPresent && !isInsideExplorer) {
         return
       }
 

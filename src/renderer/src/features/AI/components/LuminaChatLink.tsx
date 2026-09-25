@@ -39,6 +39,25 @@ export const openNoteInEditor = (rawTitle?: string | null): void => {
     if (target) {
       if (setSelectedNote) setSelectedNote(target)
       if (setActiveTabId) setActiveTabId(target.id)
+    } else {
+      // 4. Brain document fallback: open in Documentation modal
+      import('../services/brainKnowledge')
+        .then(({ getBrainFile }) => {
+          const bDoc = getBrainFile(clean)
+          if (bDoc) {
+            window.dispatchEvent(
+              new CustomEvent('open-documentation', {
+                detail: { doc: bDoc.path || bDoc.name }
+              })
+            )
+            window.dispatchEvent(
+              new CustomEvent('open-doc', {
+                detail: { doc: bDoc.path || bDoc.name }
+              })
+            )
+          }
+        })
+        .catch(() => {})
     }
   } catch (err) {
     console.error('Failed to open note in editor:', err)

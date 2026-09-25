@@ -23,6 +23,7 @@ export interface CanvasEdgesLayerProps {
   snappedTarget: SnappedPortTarget | null
   mouseCanvasPos: { x: number; y: number }
   selectedEdgeId?: string | null
+  selectedEdgeIds?: string[]
   isMultiSelectionActive?: boolean
   onSelectEdge?: (e: React.MouseEvent, edgeId: string) => void
   onDeleteEdge: (e: React.MouseEvent, edgeId: string) => void
@@ -41,6 +42,7 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
     snappedTarget,
     mouseCanvasPos,
     selectedEdgeId = null,
+    selectedEdgeIds = [],
     isMultiSelectionActive = false,
     onSelectEdge,
     onDeleteEdge,
@@ -206,7 +208,7 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
             fromNode={nodeMap.get(edge.fromNode)}
             toNode={nodeMap.get(edge.toNode)}
             snapToGrid={snapToGrid}
-            isSelected={selectedEdgeId === edge.id}
+            isSelected={selectedEdgeId === edge.id || (selectedEdgeIds && selectedEdgeIds.includes(edge.id))}
             isMultiSelectionActive={isMultiSelectionActive}
             onSelectEdge={onSelectEdge}
             parallelIndex={parallelEdgeMap.get(edge.id)?.index ?? 0}

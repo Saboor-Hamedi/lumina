@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { Zap, Brain, Palette, Code, Check, Search, Activity } from 'lucide-react'
+import React, { useEffect, useState, useRef } from 'react'
+import { Zap, Brain, Palette, Code, Check, Search } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import './css/luminSlash.css'
 
@@ -9,7 +9,9 @@ export interface SlashCommand {
   desc: string
   icon: React.ReactNode
   insertText?: string
-  action: (setMode: (mode: string) => void, context?: { setInput?: (text: string) => void }) => void
+  isAction?: boolean
+  aliases?: string[]
+  action?: (setMode: (mode: string) => void, context?: { setInput?: (text: string) => void }) => void
 }
 
 export const SLASH_COMMANDS: SlashCommand[] = [
@@ -47,16 +49,6 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     desc: 'Specialized for programming, scripts, and software engineering.',
     icon: <Code size={14} />,
     action: (setMode) => setMode('Code')
-  },
-  {
-    id: 'doctor',
-    label: 'Doctor',
-    desc: 'Self-diagnostics and system health check.',
-    icon: <Activity size={14} />,
-    insertText: '/doctor',
-    action: (_setMode, context) => {
-      context?.setInput?.('/doctor')
-    }
   }
 ]
 
@@ -80,6 +72,7 @@ export const LuminaSlash: React.FC<LuminaSlashProps> = ({
   onClose
 }) => {
   const [selectedIndex, setSelectedIndex] = useState<number>(0)
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([])
 
   useKeyboardShortcuts({
     onEscape: isOpen
@@ -98,16 +91,23 @@ export const LuminaSlash: React.FC<LuminaSlashProps> = ({
   const filteredCommands = SLASH_COMMANDS.filter(
     (cmd) =>
       cmd.id.includes(filterText.toLowerCase()) ||
-      cmd.label.toLowerCase().includes(filterText.toLowerCase())
+      cmd.label.toLowerCase().includes(filterText.toLowerCase()) ||
+      (cmd.aliases && cmd.aliases.some((a) => a.toLowerCase().includes(filterText.toLowerCase())))
   )
 
   useEffect(() => {
     // If opening without filter, default selected index to the current active mode
     const activeIdx = filteredCommands.findIndex(
-      (c) => c.label.toLowerCase() === (activeMode || '').toLowerCase()
+      (c) => !c.isAction && c.label.toLowerCase() === (activeMode || '').toLowerCase()
     )
     setSelectedIndex(activeIdx >= 0 ? activeIdx : 0)
   }, [filterText, isOpen, activeMode])
+
+  useEffect(() => {
+    if (itemRefs.current[selectedIndex]) {
+      itemRefs.current[selectedIndex]?.scrollIntoView({ block: 'nearest' })
+    }
+  }, [selectedIndex])
 
   useEffect(() => {
     if (!isOpen) return
@@ -149,12 +149,13 @@ export const LuminaSlash: React.FC<LuminaSlashProps> = ({
     <div className="slash-menu-container">
       {filteredCommands.map((cmd, index) => {
         const isCurrentActive =
-          cmd.label.toLowerCase() === (activeMode || '').toLowerCase()
+          !cmd.isAction && cmd.label.toLowerCase() === (activeMode || '').toLowerCase()
         const isKeyboardSelected = index === selectedIndex
 
         return (
           <div
             key={cmd.id}
+            ref={(el) => (itemRefs.current[index] = el)}
             className={`slash-menu-item ${isKeyboardSelected ? 'highlighted' : ''} ${
               isCurrentActive ? 'is-active-mode' : ''
             }`}

@@ -45,8 +45,14 @@ export const getReadFileTool = (blockReadFile?: boolean) => {
       }
 
       if (!target) {
-        const { getBrainFile } = await import('../services/brainKnowledge')
-        const brainDoc = getBrainFile(title)
+        const { getBrainFile, retrieveRelevantKnowledge } = await import('../services/brainKnowledge')
+        let brainDoc = getBrainFile(title)
+        if (!brainDoc) {
+          const results = await retrieveRelevantKnowledge(title, 1)
+          if (results.length > 0) {
+            brainDoc = results[0]
+          }
+        }
         if (brainDoc) {
           const rawCode = brainDoc.content || ''
           const MAX_READ_CHARS = 25000
@@ -56,9 +62,9 @@ export const getReadFileTool = (blockReadFile?: boolean) => {
             : rawCode
           return {
             success: true,
-            title: `brain/${brainDoc.path}`,
+            title: brainDoc.breadcrumb || `brain/${brainDoc.path}`,
             content: safeCode,
-            writtenContent: `### 🧠 brain/${brainDoc.path}\n\n${safeCode}`,
+            writtenContent: `### 🧠 ${brainDoc.breadcrumb || `brain/${brainDoc.path}`}\n\n${safeCode}`,
             instruction_to_ai:
               'Brain file read successfully. You MUST now respond to the user and answer based on this content.'
           }

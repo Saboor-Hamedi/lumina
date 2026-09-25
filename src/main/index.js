@@ -8,6 +8,7 @@ import SettingsManager from './settings'
 import AppUpdater from './AppUpdater'
 import WorkspaceIndexer from './workspace/workspaceIndexer'
 import WorkspaceSearch from './workspace/workspaceSearch'
+import BrainIndexer from './workspace/brainIndexer'
 const VaultManager = WorkspaceManager
 const VaultIndexer = WorkspaceIndexer
 const VaultSearch = WorkspaceSearch
@@ -710,6 +711,33 @@ app.whenReady().then(async () => {
     }
   })
 
+  // Brain Knowledge Base Search & Index IPC (silent, isolated)
+  ipcMain.handle('brain:search', async (_, query, options) => {
+    try {
+      return await BrainIndexer.search(query, options)
+    } catch (err) {
+      console.warn('[Main] brain:search notice:', err)
+      return []
+    }
+  })
+
+  ipcMain.handle('brain:stats', async () => {
+    try {
+      return BrainIndexer.getStats()
+    } catch (_) {
+      return { totalFiles: 0, totalChunks: 0, lastIndexTime: null, isLoaded: false }
+    }
+  })
+
+  ipcMain.handle('brain:reindex', async () => {
+    try {
+      return await BrainIndexer.indexBrain(true)
+    } catch (err) {
+      console.warn('[Main] brain:reindex notice:', err)
+      return { indexed: false, totalFiles: 0, totalChunks: 0 }
+    }
+  })
+
   ipcMain.handle('dialog:openDirectory', async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({ properties: ['openDirectory'] })
     return canceled ? null : filePaths[0]
@@ -836,6 +864,11 @@ app.whenReady().then(async () => {
     await WorkspaceIndexer.init(userDataPath)
     await WorkspaceSearch.init(userDataPath)
 
+    // Initialize Brain knowledge indexer (silent, isolated)
+    await BrainIndexer.init(userDataPath).catch((err) =>
+      console.warn('[Main] BrainIndexer init warning:', err)
+    )
+
     const workspaceInitPromise = WorkspaceManager.init(savedWorkspacePath, app.getPath('documents'))
 
     const startupWorkspacePath = savedWorkspacePath
@@ -847,6 +880,19 @@ app.whenReady().then(async () => {
 
     mainWindow.webContents.once('did-finish-load', () => {
       WorkspaceIndexer.warmWorker().catch((err) => console.error('[Main] Worker pre-warm failed:', err))
+
+      // Background indexing of Lumina Brain knowledge base (silent, non-blocking)
+      setTimeout(() => {
+        BrainIndexer.indexBrain()
+          .then((res) => {
+            if (res?.indexed) {
+              console.info(
+                `[Main] ✓ Brain Knowledge Base indexed: ${res.totalFiles} files, ${res.totalChunks} sections`
+              )
+            }
+          })
+          .catch((err) => console.warn('[Main] Brain indexing notice:', err))
+      }, 1500)
 
       if (startupWorkspacePath && typeof startupWorkspacePath === 'string') {
         hasIndexed = true

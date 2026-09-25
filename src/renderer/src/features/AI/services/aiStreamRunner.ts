@@ -759,14 +759,9 @@ export const runDeepSeekStream = async ({
         if (res && res.success === false) {
           targetSeg.content = JSON.stringify({ error: res.error, isScanning: false })
         } else {
+          const auditObj = res?.result || res || {}
           targetSeg.content = JSON.stringify({
-            totalNotesScanned: res?.totalNotesScanned,
-            totalLinksFound: res?.totalLinksFound,
-            healthyLinksCount: res?.healthyLinksCount,
-            brokenLinksCount: res?.brokenLinksCount,
-            orphanNotesCount: res?.orphanNotesCount,
-            brokenLinks: res?.brokenLinks,
-            orphanNotes: res?.orphanNotes,
+            ...(auditObj || {}),
             isScanning: false
           })
         }
@@ -1249,7 +1244,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent: string, workspaceSt
     try {
       const { luminaDiagnoseSystemTool } = await import('../tools/luminaDiagnoseSystem')
       const res: any = await (luminaDiagnoseSystemTool.execute as any)({})
-      const badgeBlock = `<lumina-health>\n${res.summaryMarkdown || res.summary || ''}\n</lumina-health>`
+      const badgeBlock = `<lumina-health>\n${res?.result ? JSON.stringify(res.result) : (res?.summary || '')}\n</lumina-health>`
       fullContent = fullContent.replace(match[0], badgeBlock)
     } catch (err) {
       console.warn('[StreamRunner] Fallback health execution failed:', err)
@@ -1266,7 +1261,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent: string, workspaceSt
     try {
       const { auditWikilinksTool } = await import('../tools/auditWikilinks')
       const res: any = await (auditWikilinksTool.execute as any)({})
-      const badgeBlock = `<lumina-audit>\n${res.summaryMarkdown || res.summary || ''}\n</lumina-audit>`
+      const badgeBlock = `<lumina-audit>\n${res?.result ? JSON.stringify(res.result) : (res?.summary || '')}\n</lumina-audit>`
       fullContent = fullContent.replace(match[0], badgeBlock)
     } catch (err) {
       console.warn('[StreamRunner] Fallback audit execution failed:', err)

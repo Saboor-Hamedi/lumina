@@ -169,6 +169,18 @@ export const LuminaSession: React.FC<LuminaSessionProps> = ({
             <X size={12} />
           </button>
         )}
+        {onClose && (
+          <ToolTip text="Close History" position="bottom">
+            <button
+              className="lumina-session-close-btn"
+              onClick={onClose}
+              aria-label="Close History"
+              type="button"
+            >
+              <X size={13} />
+            </button>
+          </ToolTip>
+        )}
       </div>
 
       {/* New Chat Button */}

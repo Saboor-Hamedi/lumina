@@ -297,6 +297,63 @@ describe('CanvasView (TypeScript)', () => {
       expect(document.querySelector('.toast-notification')).toBeInTheDocument()
     })
   })
+
+  it('pastes an image file onto canvas when paste event fires', async () => {
+    const { container } = render(<CanvasView initialData={initialData} />)
+
+    const blob = new Blob(['dummy-image-data'], { type: 'image/png' })
+    const file = new File([blob], 'my-diagram.png', { type: 'image/png' })
+
+    const pasteEvent = new Event('paste', { bubbles: true, cancelable: true }) as any
+    pasteEvent.clipboardData = {
+      items: [
+        {
+          kind: 'file',
+          type: 'image/png',
+          getAsFile: () => file
+        }
+      ],
+      files: [file]
+    }
+
+    const canvasEl = container.querySelector('.lumina-canvas-container')
+    expect(canvasEl).toBeInTheDocument()
+
+    act(() => {
+      canvasEl!.dispatchEvent(pasteEvent)
+    })
+
+    await waitFor(() => {
+      expect(screen.getByText('my-diagram')).toBeInTheDocument()
+    })
+  })
+
+  it('renders image preview card with fallback and image tag', () => {
+    const imageCanvasData: CanvasData = {
+      nodes: [
+        {
+          id: 'img-1',
+          type: 'image',
+          title: 'Architecture Diagram',
+          text: '',
+          url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+          x: 100,
+          y: 100,
+          width: 280,
+          height: 200,
+          color: 'cyan'
+        }
+      ],
+      edges: [],
+      viewport: { x: 0, y: 0, zoom: 1 }
+    }
+
+    render(<CanvasView initialData={imageCanvasData} />)
+    expect(screen.getByText('Architecture Diagram')).toBeInTheDocument()
+    const img = screen.getByRole('img')
+    expect(img).toBeInTheDocument()
+    expect(img).toHaveAttribute('src', expect.stringContaining('data:image/png;base64'))
+  })
 })
 
 describe('CanvasTabPane (TypeScript)', () => {

@@ -10,6 +10,7 @@ import { ChatEmptyState } from './LuminaChatEmptyState'
 import { LuminaWorkbench } from './LuminaWorkbench'
 import { useChatScroll } from '../hooks/useChatScroll'
 import { useScopedSelectAll } from '../hooks/useScopedSelectAll'
+import { getBrainDocuments } from '../services/brainKnowledge'
 
 export interface LuminaChatContentProps {
   isSidebar?: boolean
@@ -69,21 +70,23 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
       }))
     )
 
+    const brainDocs = useMemo(() => getBrainDocuments(), [])
+
     const userMentionRegex = useMemo(() => {
-      const list = notes || []
-      if (list.length === 0) return /(@[a-zA-Z0-9_\-./]+)/g
+      const list = [...(notes || []), ...brainDocs]
+      if (list.length === 0) return /(@\[[^\]]+\]|@[a-zA-Z0-9_\-./]+)/g
       const titles = list
-        .map((s: any) => s.title)
+        .map((s: any) => s.title || s.name)
         .filter(Boolean)
         .sort((a: string, b: string) => b.length - a.length)
-        .slice(0, 80)
+        .slice(0, 100)
         .map((t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
 
       if (titles.length > 0) {
-        return new RegExp(`(@(?:${titles.join('|')}|[a-zA-Z0-9_\\-./]+))`, 'gi')
+        return new RegExp(`(@\\[[^\\]]+\\]|@(?:${titles.join('|')}|[a-zA-Z0-9_\\-./]+))`, 'gi')
       }
-      return /(@[a-zA-Z0-9_\-./]+)/g
-    }, [notes])
+      return /(@\[[^\]]+\]|@[a-zA-Z0-9_\-./]+)/g
+    }, [notes, brainDocs])
 
     const [showSessions, setShowSessions] = useState<boolean>(false)
     const [isWorkbenchOpen, setIsWorkbenchOpen] = useState<boolean>(false)
@@ -235,8 +238,14 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
               onClose={() => setShowSessions(false)}
               sessions={sessions}
               activeSessionId={activeSessionId}
-              createNewSession={createNewSession}
-              switchSession={switchSession}
+              createNewSession={() => {
+                createNewSession()
+                if (isSidebar) setShowSessions(false)
+              }}
+              switchSession={(id) => {
+                switchSession(id)
+                if (isSidebar) setShowSessions(false)
+              }}
               deleteSession={deleteSession}
               renameSession={renameSession}
               togglePinSession={togglePinSession}
@@ -290,43 +299,45 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
                   )}
                 </div>
 
-                {!isSidebar && (
+                <div
+                  className={`modal-composer-dock-wrapper ${isSidebar ? 'is-sidebar-docked' : ''}`}
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    padding: isSidebar ? '0 8px 8px 8px' : '0 16px 14px 16px',
+                    boxSizing: 'border-box',
+                    flexShrink: 0,
+                    position: 'relative',
+                    overflow: 'visible',
+                    zIndex: 100
+                  }}
+                >
                   <div
-                    className="modal-composer-dock-wrapper"
+                    className={`inspector-footer-section is-chat-composer ${isSidebar ? 'is-docked-composer' : 'is-modal-composer'}`}
                     style={{
+                      maxWidth: isSidebar ? '100%' : '800px',
                       width: '100%',
-                      background: 'transparent',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      padding: '0 16px 14px 16px',
-                      boxSizing: 'border-box',
-                      flexShrink: 0
+                      margin: '0 auto',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-card, var(--border-dim))',
+                      background: 'var(--bg-card, var(--bg-panel))',
+                      overflow: 'visible',
+                      position: 'relative',
+                      boxShadow: 'var(--shadow-soft, 0 4px 16px rgba(0, 0, 0, 0.15))',
+                      boxSizing: 'border-box'
                     }}
                   >
-                    <div
-                      className="inspector-footer-section is-chat-composer is-modal-composer"
-                      style={{
-                        maxWidth: '800px',
-                        width: '100%',
-                        margin: '0 auto',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-card, var(--border-dim))',
-                        background: 'var(--bg-card, var(--bg-panel))',
-                        overflow: 'hidden',
-                        boxShadow: 'var(--shadow-soft, 0 4px 16px rgba(0, 0, 0, 0.15))',
-                        boxSizing: 'border-box'
-                      }}
-                    >
-                      <Composer
-                        isSidebar={true}
-                        onSend={handleSendMessage}
-                        isLoading={isChatLoading}
-                        onStop={cancelChat}
-                        onCancel={cancelChat}
-                      />
-                    </div>
+                    <Composer
+                      isSidebar={isSidebar}
+                      onSend={handleSendMessage}
+                      isLoading={isChatLoading}
+                      onStop={cancelChat}
+                      onCancel={cancelChat}
+                    />
                   </div>
-                )}
+                </div>
               </>
             )}
           </div>

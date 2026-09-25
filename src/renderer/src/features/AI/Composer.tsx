@@ -52,7 +52,14 @@ export const Composer: React.FC<ComposerProps> = ({
     handleInputChange,
     handleCommandSelect,
     handleMentionSelect
-  } = useComposerAutocomplete({ input, setInput, textareaRef, setMode })
+  } = useComposerAutocomplete({
+    input,
+    setInput,
+    textareaRef,
+    setMode,
+    mode,
+    onSend
+  })
 
   const handleSend = useCallback(() => {
     if (!input.trim() || isLoading) return

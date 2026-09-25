@@ -240,6 +240,8 @@ export const AccentColor = ({
     }
   }, [isOpen, variant, onClose])
 
+  const themeChangedTimerRef = useRef(null)
+
   const applyColor = useCallback(
     (hex, persist = false) => {
       setLocalColor(hex)
@@ -259,6 +261,11 @@ export const AccentColor = ({
             const b = parseInt(clean[2] + clean[2], 16)
             document.documentElement.style.setProperty('--text-accent-rgb', `${r}, ${g}, ${b}`)
           }
+          // Debounce: notify mermaid once after the user stops picking colors
+          if (themeChangedTimerRef.current) clearTimeout(themeChangedTimerRef.current)
+          themeChangedTimerRef.current = setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('theme-changed'))
+          }, 300)
         }
       }
       if (persist) {

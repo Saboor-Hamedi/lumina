@@ -294,6 +294,31 @@ export const luminaQueryIndexTool = aiSdk.tool({
       const cleanBacklinksFor = backlinksFor?.toLowerCase().trim()
       const cleanHeading = hasHeadings?.toLowerCase().trim()
 
+      const isTagsOverview =
+        Boolean(
+          cleanQuery &&
+            /\b(?:all\s+(?:the\s+)?tags?|tags?\s+list|list\s+(?:all\s+)?tags?|what\s+tags?(?:\s+do\s+i\s+have)?|show\s+(?:all\s+)?tags?|find\s+(?:me\s+)?(?:all\s+)?(?:the\s+)?tags?|tags?\s+in\s+(?:the\s+)?workspace|tags?\s+overview)\b/i.test(
+              cleanQuery
+            )
+        ) ||
+        cleanTag === '*' ||
+        cleanTag === 'all'
+
+      // Collect all tags and their frequency
+      const allTagCounts = new Map<string, { count: number; sampleNotes: string[] }>()
+      for (const rec of allRecords) {
+        for (const t of rec.tags) {
+          if (!allTagCounts.has(t)) {
+            allTagCounts.set(t, { count: 0, sampleNotes: [] })
+          }
+          const item = allTagCounts.get(t)!
+          item.count++
+          if (item.sampleNotes.length < 3) {
+            item.sampleNotes.push(rec.title)
+          }
+        }
+      }
+
       let frontmatterKey = ''
       let frontmatterVal = ''
       if (hasFrontmatter) {
@@ -308,7 +333,7 @@ export const luminaQueryIndexTool = aiSdk.tool({
           if (!lowerFolder.includes(cleanFolder)) return false
         }
 
-        if (cleanTag) {
+        if (cleanTag && !isTagsOverview) {
           const hasTag = rec.tags.some((t) => t.includes(cleanTag))
           if (!hasTag) return false
         }
@@ -337,7 +362,7 @@ export const luminaQueryIndexTool = aiSdk.tool({
           if (!hasMatchedHeading) return false
         }
 
-        if (cleanQuery) {
+        if (cleanQuery && !isTagsOverview) {
           const matchTitle = rec.title.toLowerCase().includes(cleanQuery)
           const matchTag = rec.tags.some((t) => t.includes(cleanQuery))
           const matchHeading = rec.headings.some((h) => h.toLowerCase().includes(cleanQuery))
@@ -370,43 +395,67 @@ export const luminaQueryIndexTool = aiSdk.tool({
       const folderSet = new Set<string>()
       paginated.forEach((r) => folderSet.add(r.folder))
 
-      const indexResult: IndexQueryResult = {
+      const indexResult: IndexQueryResult & { allTags?: Array<{ tag: string; count: number }> } = {
         totalWorkspaceNotes: allRecords.length,
         totalMatched: matched.length,
         filters: { query, tag, folder, linksTo, backlinksFor, hasFrontmatter, hasHeadings, sortBy, limit: cleanLimit },
         notes: paginated,
         foldersRepresented: Array.from(folderSet),
+        allTags: Array.from(allTagCounts.entries()).map(([t, d]) => ({ tag: `#${t}`, count: d.count })),
         isQuerying: false
       }
 
       // Generate a markdown table summary
       const filterDescriptions: string[] = []
       if (cleanFolder) filterDescriptions.push(`folder: "${cleanFolder}"`)
-      if (cleanTag) filterDescriptions.push(`tag: #${cleanTag}`)
+      if (cleanTag && !isTagsOverview) filterDescriptions.push(`tag: #${cleanTag}`)
       if (cleanLinksTo) filterDescriptions.push(`linksTo: [[${cleanLinksTo}]]`)
       if (cleanBacklinksFor) filterDescriptions.push(`backlinksFor: [[${cleanBacklinksFor}]]`)
-      if (cleanQuery) filterDescriptions.push(`keyword: "${cleanQuery}"`)
+      if (cleanQuery && !isTagsOverview) filterDescriptions.push(`keyword: "${cleanQuery}"`)
       if (frontmatterKey) filterDescriptions.push(`frontmatter: ${frontmatterKey}${frontmatterVal ? `="${frontmatterVal}"` : ''}`)
 
       const filterSummary = filterDescriptions.length > 0 ? ` [${filterDescriptions.join(', ')}]` : ''
 
-      const summaryLines: string[] = [
-        `### 🔍 Workspace Index Query Results${filterSummary}`,
-        `*Found **${matched.length}** matching notes (out of ${allRecords.length} total indexed in workspace).*`,
-        '',
-        '| Note Title | Folder | Tags | Outgoing Links | Backlinks | Size |',
-        '| :--- | :--- | :--- | :---: | :---: | :---: |'
-      ]
+      let summaryLines: string[] = []
+      if (isTagsOverview) {
+        const sortedTags = Array.from(allTagCounts.entries()).sort((a, b) => b[1].count - a[1].count)
+        summaryLines = [
+          `### 🏷️ Workspace Tags Overview`,
+          `*Found **${sortedTags.length}** unique tags across **${allRecords.length}** notes in the workspace:*`,
+          '',
+          '| Tag | Notes Count | Sample Notes |',
+          '| :--- | :---: | :--- |'
+        ]
+        if (sortedTags.length === 0) {
+          summaryLines.push('| *(No tags found in workspace)* | 0 | None |')
+        } else {
+          sortedTags.slice(0, 30).forEach(([t, data]) => {
+            const examples = data.sampleNotes.map((n) => `[[${n}]]`).join(', ')
+            summaryLines.push(`| \`#${t}\` | **${data.count}** | ${examples} |`)
+          })
+          if (sortedTags.length > 30) {
+            summaryLines.push(`| *... and ${sortedTags.length - 30} more tags* | | |`)
+          }
+        }
+      } else {
+        summaryLines = [
+          `### 🔍 Workspace Index Query Results${filterSummary}`,
+          `*Found **${matched.length}** matching notes (out of ${allRecords.length} total indexed in workspace).*`,
+          '',
+          '| Note Title | Folder | Tags | Outgoing Links | Backlinks | Size |',
+          '| :--- | :--- | :--- | :---: | :---: | :---: |'
+        ]
 
-      paginated.slice(0, 15).forEach((rec) => {
-        const tagsFormatted = rec.tags.length > 0 ? rec.tags.map((t) => `#${t}`).slice(0, 3).join(' ') : '—'
-        summaryLines.push(
-          `| [[${rec.title}]] | \`${rec.folder}\` | ${tagsFormatted} | ${rec.outgoingLinks.length} | ${rec.backlinksCount} | ${rec.wordCount}w |`
-        )
-      })
+        paginated.slice(0, 15).forEach((rec) => {
+          const tagsFormatted = rec.tags.length > 0 ? rec.tags.map((t) => `#${t}`).slice(0, 3).join(' ') : '—'
+          summaryLines.push(
+            `| [[${rec.title}]] | \`${rec.folder}\` | ${tagsFormatted} | ${rec.outgoingLinks.length} | ${rec.backlinksCount} | ${rec.wordCount}w |`
+          )
+        })
 
-      if (matched.length > 15) {
-        summaryLines.push(`| *... and ${matched.length - 15} more matching notes* | | | | | |`)
+        if (matched.length > 15) {
+          summaryLines.push(`| *... and ${matched.length - 15} more matching notes* | | | | | |`)
+        }
       }
 
       const markerPrefix = `<<<LUMINA_INDEX_QUERY:${JSON.stringify(indexResult)}>>>\n`

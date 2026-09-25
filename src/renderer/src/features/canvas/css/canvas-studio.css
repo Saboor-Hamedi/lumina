@@ -54,7 +54,7 @@
 .lumina-canvas-studio-title {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-main, #ffffff);
+  color: var(--text-accent, #38bdf8) !important;
   letter-spacing: -0.01em;
 }
 

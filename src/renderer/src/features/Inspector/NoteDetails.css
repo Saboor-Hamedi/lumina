@@ -385,9 +385,12 @@
   flex-shrink: 0 !important;
   width: 100% !important;
   box-sizing: border-box !important;
+  position: relative !important;
+  z-index: 9999 !important;
 }
 
-.inspector-footer-section.is-chat-composer.is-modal-composer {
+.inspector-footer-section.is-chat-composer.is-modal-composer,
+.inspector-footer-section.is-chat-composer.is-docked-composer {
   background: var(--bg-card, var(--bg-panel)) !important;
   border: 1px solid var(--border-card, var(--border-dim)) !important;
   border-radius: 8px !important;
@@ -400,11 +403,18 @@
   width: 100% !important;
   margin: 0 auto !important;
   box-sizing: border-box !important;
-  overflow: hidden !important;
+  overflow: visible !important;
+  position: relative !important;
+  z-index: 9999 !important;
   padding: 0 !important;
 }
 
-.inspector-footer-section.is-chat-composer.is-modal-composer .composer-container {
+.inspector-footer-section.is-chat-composer.is-docked-composer {
+  max-width: 100% !important;
+}
+
+.inspector-footer-section.is-chat-composer.is-modal-composer .composer-container,
+.inspector-footer-section.is-chat-composer.is-docked-composer .composer-container {
   max-width: 100% !important;
   width: 100% !important;
   margin: 0 auto !important;
@@ -419,6 +429,9 @@
   width: 100% !important;
   display: flex !important;
   flex-direction: column !important;
+  position: relative !important;
+  z-index: 9999 !important;
+  overflow: visible !important;
 }
 
 .inspector-footer-section.is-chat-composer .composer-card,

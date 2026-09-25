@@ -146,6 +146,11 @@ const api = {
   findSimilar: (chunkId, limit) =>
     electronAPI.ipcRenderer.invoke('workspace:find-similar', chunkId, limit),
 
+  // Brain Knowledge Base Search & Stats (silent, isolated)
+  searchBrain: (query, options) => electronAPI.ipcRenderer.invoke('brain:search', query, options),
+  getBrainStats: () => electronAPI.ipcRenderer.invoke('brain:stats'),
+  reindexBrain: () => electronAPI.ipcRenderer.invoke('brain:reindex'),
+
   // Error Logging
   logError: (errorData) => electronAPI.ipcRenderer.invoke('error:log', errorData),
 

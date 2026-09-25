@@ -213,18 +213,8 @@ export function openMermaidLightbox(svgEl: SVGSVGElement | HTMLElement | null): 
         await copyMermaidAsImage(clone)
         btn.style.color = '#4ade80'
         setTimeout(() => (btn.style.color = ''), 1500)
-        window.dispatchEvent(
-          new CustomEvent('show-toast', {
-            detail: { message: 'Mermaid diagram copied as image', type: 'success' }
-          })
-        )
       } catch (err) {
         console.error('Failed to copy mermaid diagram', err)
-        window.dispatchEvent(
-          new CustomEvent('show-toast', {
-            detail: { message: 'Failed to copy diagram image', type: 'error' }
-          })
-        )
       }
     }
   })

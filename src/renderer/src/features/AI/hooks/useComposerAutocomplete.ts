@@ -1,4 +1,5 @@
 import { useState, useCallback, RefObject, ChangeEvent } from 'react'
+import { SLASH_COMMANDS } from '../LuminaSlash'
 
 /**
  * Command item representation for slash commands (e.g., /plan, /code, /web).
@@ -11,6 +12,8 @@ export interface SlashCommandItem {
   desc?: string
   icon?: React.ReactNode
   insertText?: string
+  isAction?: boolean
+  aliases?: string[]
   action?: (setMode?: any, context?: any) => void
   [key: string]: unknown
 }
@@ -31,6 +34,8 @@ export interface UseComposerAutocompleteProps {
   setInput: (value: string | ((prev: string) => string)) => void
   textareaRef: RefObject<HTMLTextAreaElement | null>
   setMode?: (mode: string) => void
+  mode?: string
+  onSend?: (text: string, mode: string, attachedMentions: any[]) => void
 }
 
 export interface UseComposerAutocompleteReturn {
@@ -56,7 +61,9 @@ export const useComposerAutocomplete = ({
   input,
   setInput,
   textareaRef,
-  setMode
+  setMode,
+  mode,
+  onSend
 }: UseComposerAutocompleteProps): UseComposerAutocompleteReturn => {
   const [showSlashMenu, setShowSlashMenu] = useState<boolean>(false)
   const [slashFilter, setSlashFilter] = useState<string>('')
@@ -75,8 +82,15 @@ export const useComposerAutocomplete = ({
       // Detect /command trigger at start of text or following whitespace
       const slashMatch = newVal.match(/(?:^|\s)\/([a-zA-Z0-9_-]*)$/)
       if (slashMatch) {
-        setSlashFilter(slashMatch[1])
-        setShowSlashMenu(true)
+        const filter = slashMatch[1].toLowerCase()
+        setSlashFilter(filter)
+        const hasMatches = SLASH_COMMANDS.some(
+          (cmd) =>
+            cmd.id.toLowerCase().includes(filter) ||
+            cmd.label.toLowerCase().includes(filter) ||
+            (cmd.aliases && cmd.aliases.some((a) => a.toLowerCase().includes(filter)))
+        )
+        setShowSlashMenu(hasMatches)
       } else {
         setShowSlashMenu(false)
       }
@@ -98,6 +112,15 @@ export const useComposerAutocomplete = ({
    */
   const handleCommandSelect = useCallback(
     (cmd: SlashCommandItem) => {
+      setShowSlashMenu(false)
+
+      if (cmd?.isAction && onSend) {
+        setInput('')
+        setAttachedMentions([])
+        onSend(cmd.insertText || `/${cmd.id}`, mode || 'Code', attachedMentions)
+        return
+      }
+
       if (cmd && cmd.action && setMode) {
         cmd.action(setMode, { setInput })
       }
@@ -146,9 +169,8 @@ export const useComposerAutocomplete = ({
           }, 0)
         }
       }
-      setShowSlashMenu(false)
     },
-    [input, setInput, textareaRef, setMode]
+    [input, setInput, textareaRef, setMode, mode, onSend, attachedMentions, setAttachedMentions]
   )
 
   /**

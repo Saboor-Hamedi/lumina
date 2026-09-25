@@ -176,13 +176,15 @@ export function useCanvasShortcuts({
         (e.key === 'v' || e.key === 'V') &&
         !isInputActive &&
         !e.shiftKey &&
-        !e.altKey &&
-        hasCopiedNodes()
+        !e.altKey
       ) {
-        // Safe canvas paste: only when not typing in any editor/input and canvas clipboard has items
-        e.preventDefault()
-        e.stopPropagation()
-        pasteNodes()
+        if (hasCopiedNodes()) {
+          // Safe canvas paste: only when not typing in any editor/input and canvas clipboard has items
+          e.preventDefault()
+          e.stopPropagation()
+          pasteNodes()
+        }
+        // When hasCopiedNodes() is false, allow browser paste event to fire so useCanvasPaste handles external images
       } else if (
         ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) &&
         !isInputActive &&

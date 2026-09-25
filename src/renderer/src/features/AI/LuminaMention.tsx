@@ -3,6 +3,7 @@ import { FileText, Brain } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { getBrainDocuments } from './services/brainKnowledge'
+import { getMentionIcon } from './components/LuminaChatMessageRow'
 import './css/luminSlash.css'
 
 export interface LuminaMentionProps {
@@ -104,39 +105,44 @@ export const LuminaMention: React.FC<LuminaMentionProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
   }, [isOpen, filteredSnippets, selectedIndex, onSelect, onClose])
 
+  const getItemIcon = (snippet: any) => {
+    if (snippet.isBrain) {
+      return <Brain size={13} style={{ color: 'var(--text-accent)' }} />
+    }
+    return getMentionIcon(snippet.title || snippet.name || '')
+  }
+
+  const getItemBadge = (snippet: any) => {
+    if (snippet.isBrain) return 'Doc'
+    const title = (snippet.title || snippet.name || '').toLowerCase()
+    if (/\.(jsx?|tsx?|css|scss|py|json|html|sh|sql)$/i.test(title)) return 'Code'
+    return 'Note'
+  }
+
   if (!isOpen || filteredSnippets.length === 0) return null
 
   return (
-    <div className="slash-menu-container">
-      <div
-        style={{
-          padding: '4px 10px',
-          fontSize: '10px',
-          color: 'var(--text-faint)',
-          textTransform: 'uppercase',
-          fontWeight: 600
-        }}
-      >
-        Attach File Context
+    <div className="mention-menu-container">
+      <div className="mention-menu-header">
+        <span>Attach Context (@)</span>
+        <span>{filteredSnippets.length} matches</span>
       </div>
       {filteredSnippets.map((snippet: any, index: number) => (
         <div
           key={snippet.id}
-          className={`slash-menu-item ${index === selectedIndex ? 'highlighted' : ''}`}
+          className={`mention-menu-item ${index === selectedIndex ? 'highlighted' : ''}`}
           onClick={() => onSelect(snippet)}
           onMouseEnter={() => setSelectedIndex(index)}
         >
-          <div className="slash-icon">
-            {snippet.isBrain ? (
-              <Brain size={14} style={{ color: 'var(--text-accent)' }} />
-            ) : (
-              <FileText size={14} />
-            )}
+          <div className="mention-icon">
+            {getItemIcon(snippet)}
           </div>
-          <div className="slash-content">
-            <span className="slash-label">{snippet.title}</span>
-            <span className="slash-desc">
-              {snippet.isBrain ? 'Lumina Documentation' : 'Includes full file content'}
+          <div className="mention-content">
+            <span className="mention-title" title={snippet.title}>
+              {snippet.title}
+            </span>
+            <span className={`mention-badge ${snippet.isBrain ? 'is-brain' : ''}`}>
+              {getItemBadge(snippet)}
             </span>
           </div>
         </div>

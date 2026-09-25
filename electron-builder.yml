@@ -25,6 +25,10 @@ extraResources:
     to: .
     filter:
       - "**/*"
+  - from: brain
+    to: brain
+    filter:
+      - "**/*"
 win:
   icon: resources/icon.ico
   executableName: Lumina

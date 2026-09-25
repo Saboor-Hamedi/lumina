@@ -71,7 +71,7 @@
   bottom: 14px;
   height: calc(100% - 24px);
   min-height: 180px;
-  z-index: 50;
+  z-index: 10005 !important;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   user-select: none;
@@ -91,6 +91,7 @@
   min-height: 180px;
   width: calc(100% - 16px);
   max-width: 280px;
+  z-index: 10005 !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
@@ -175,6 +176,26 @@
 }
 
 .lumina-session-search-clear:hover {
+  color: var(--text-main, #ffffff);
+}
+
+.lumina-session-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #888899);
+  cursor: pointer;
+  padding: 4px;
+  margin-left: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.lumina-session-close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
   color: var(--text-main, #ffffff);
 }
 

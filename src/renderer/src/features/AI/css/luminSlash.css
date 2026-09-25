@@ -1,19 +1,23 @@
 /* luminSlash.css */
 .slash-menu-container {
   position: absolute;
-  bottom: 100%; /* Shows above the input */
-  left: 10px;
-  width: 220px;
-  background: var(--bg-app); /* Solid opaque background */
+  bottom: calc(100% + 6px) !important;
+  left: 8px !important;
+  right: auto !important;
+  width: 240px !important;
+  max-width: calc(100% - 16px) !important;
+  max-height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-app);
   border: 1px solid var(--border-dim);
   border-radius: 6px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-  z-index: 1000;
-  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16) !important;
+  z-index: 999999 !important;
   display: flex;
   flex-direction: column;
   padding: 4px;
-  margin-bottom: 8px;
+  margin: 0 !important;
   animation: slideUp 0.15s ease-out;
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
 }
@@ -96,3 +100,134 @@
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ─── Mention Menu Container (@) ─── */
+.mention-menu-container {
+  position: absolute;
+  bottom: calc(100% + 6px) !important;
+  left: 8px !important;
+  right: auto !important;
+  width: 240px !important;
+  max-width: calc(100% - 16px) !important;
+  background: var(--bg-app);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16) !important;
+  z-index: 999999 !important;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  margin: 0 !important;
+  animation: slideUp 0.15s ease-out;
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
+}
+
+/* Unified bounds & positioning for both sidebar and docked/modal modes */
+.is-modal-composer .mention-menu-container,
+.is-modal-composer .slash-menu-container,
+.is-docked-composer .mention-menu-container,
+.is-docked-composer .slash-menu-container,
+.composer-container.is-sidebar-docked .mention-menu-container,
+.composer-container.is-sidebar-docked .slash-menu-container,
+.is-sidebar-docked .mention-menu-container,
+.is-sidebar-docked .slash-menu-container {
+  left: 8px !important;
+  right: auto !important;
+  width: 240px !important;
+  max-width: calc(100% - 16px) !important;
+  bottom: calc(100% + 6px) !important;
+  margin: 0 !important;
+  z-index: 999999 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16) !important;
+}
+
+.mention-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px 4px;
+  font-size: 10px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border-dim, rgba(255, 255, 255, 0.06));
+  margin-bottom: 3px;
+}
+
+.mention-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  color: var(--text-main);
+  position: relative;
+}
+
+.mention-menu-item:hover,
+.mention-menu-item.highlighted {
+  background: rgba(var(--text-accent-rgb, 168, 85, 247), 0.14);
+  color: var(--text-accent);
+}
+
+.mention-menu-item:hover .mention-icon,
+.mention-menu-item.highlighted .mention-icon {
+  color: var(--text-accent);
+  transform: scale(1.1);
+}
+
+.mention-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-panel, rgba(255, 255, 255, 0.05));
+  border-radius: 4px;
+  flex-shrink: 0;
+  color: var(--text-faint);
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.mention-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  gap: 6px;
+}
+
+.mention-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  max-width: 155px;
+}
+
+.mention-badge {
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-muted);
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.mention-badge.is-brain {
+  background: rgba(var(--text-accent-rgb, 168, 85, 247), 0.18);
+  color: var(--text-accent);
+}
+

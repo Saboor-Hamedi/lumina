@@ -66,6 +66,7 @@ export interface UseCanvasGesturesOptions {
   setSelectedNodeIds: React.Dispatch<React.SetStateAction<string[]>>
   selectedEdgeId?: string | null
   setSelectedEdgeId?: React.Dispatch<React.SetStateAction<string | null>>
+  setSelectedEdgeIds?: React.Dispatch<React.SetStateAction<string[]>>
   updateNodePosition: (id: string, x: number, y: number) => void
   updateNodesPositions: (updates: { id: string; x: number; y: number }[]) => void
   updateNodeSize: (id: string, width: number, height: number) => void
@@ -90,6 +91,7 @@ export function useCanvasGestures({
   setSelectedNodeIds,
   selectedEdgeId,
   setSelectedEdgeId,
+  setSelectedEdgeIds,
   updateNodePosition,
   updateNodesPositions,
   updateNodeSize,
@@ -185,12 +187,13 @@ export function useCanvasGestures({
           }
           setSelectedNodeIds([])
           setSelectedEdgeId?.(null)
+          setSelectedEdgeIds?.([])
           setEditingNodeId(null)
           setEditingField(null)
         }
       }
     },
-    [toolMode, isSpacePressed, setSelectedNodeIds, setSelectedEdgeId, setEditingNodeId, setEditingField]
+    [toolMode, isSpacePressed, setSelectedNodeIds, setSelectedEdgeId, setSelectedEdgeIds, setEditingNodeId, setEditingField]
   )
 
   /**
@@ -225,6 +228,7 @@ export function useCanvasGestures({
       e.preventDefault()
 
       setSelectedEdgeId?.(null)
+      setSelectedEdgeIds?.([])
 
       const isMulti = e.shiftKey || e.ctrlKey || e.metaKey
       const isAlreadySelected = selectedNodeIds.includes(node.id)

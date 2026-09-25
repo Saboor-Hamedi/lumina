@@ -37,8 +37,20 @@ export interface LuminaChatProps {
  * Lumina AI Chat Modal
  * Matches Documentation.jsx modal container, header, and clean flex sidebar architecture.
  */
-const LuminaChat: React.FC<LuminaChatProps> = ({ isOpen, onClose, onDock, onUnfloat }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true)
+export const LuminaChat: React.FC<LuminaChatProps> = ({
+  isOpen,
+  onClose,
+  onDock,
+  onUnfloat
+}) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('lumina_ai_sessions_sidebar_open')
+      return saved === 'true'
+    } catch {
+      return false
+    }
+  })
   const [viewMode, setViewMode] = useState<'chat' | 'workbench'>('chat')
   const isMaximized = useSettingsStore((s: any) => s.settings?.aiModalMaximized ?? false)
   const [isDraggingModal, setIsDraggingModal] = useState<boolean>(false)
@@ -162,7 +174,24 @@ const LuminaChat: React.FC<LuminaChatProps> = ({ isOpen, onClose, onDock, onUnfl
   }, [])
 
   const handleToggleSidebar = useCallback(() => {
-    setIsSidebarOpen((prev) => !prev)
+    setIsSidebarOpen((prev) => {
+      const next = !prev
+      try {
+        localStorage.setItem('lumina_ai_sessions_sidebar_open', String(next))
+      } catch {
+        // ignore
+      }
+      return next
+    })
+  }, [])
+
+  const handleCloseSidebar = useCallback(() => {
+    setIsSidebarOpen(false)
+    try {
+      localStorage.setItem('lumina_ai_sessions_sidebar_open', 'false')
+    } catch {
+      // ignore
+    }
   }, [])
 
   const handleNewChat = useCallback(() => {
@@ -346,6 +375,7 @@ const LuminaChat: React.FC<LuminaChatProps> = ({ isOpen, onClose, onDock, onUnfl
         >
           <LuminaSession
             isOpen={isSidebarOpen}
+            onClose={handleCloseSidebar}
             sessions={sessions}
             activeSessionId={activeSessionId}
             createNewSession={createNewSession}

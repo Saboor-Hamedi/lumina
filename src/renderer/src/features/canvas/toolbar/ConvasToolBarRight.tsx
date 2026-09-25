@@ -62,10 +62,12 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     nodes = [],
     edges = [],
     selectedEdgeId,
+    selectedEdgeIds = [],
     defaultLineStyle = 'curved',
     onChangeDefaultLineStyle,
     defaultEndpoints = 'directed',
     onChangeDefaultEndpoints,
+    onApplyToAllEdges,
     onAlignSelection,
     onDistributeSelection,
     onUndo,
@@ -163,6 +165,9 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
                 defaultEndpoints={defaultEndpoints}
                 onChangeDefaultEndpoints={onChangeDefaultEndpoints}
                 selectedEdgeId={selectedEdgeId}
+                selectedEdgeCount={selectedEdgeIds.length || (selectedEdgeId ? 1 : 0)}
+                totalEdgesCount={edges.length}
+                onApplyToAllEdges={onApplyToAllEdges}
               />
             )}
 

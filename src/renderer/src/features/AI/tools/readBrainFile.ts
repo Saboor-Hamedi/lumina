@@ -25,7 +25,7 @@ export const readBrainFileTool = aiSdk.tool({
     const query = topic || path || ''
     let doc: any = getBrainFile(query)
     if (!doc) {
-      const results = retrieveRelevantKnowledge(query, 1)
+      const results = await retrieveRelevantKnowledge(query, 1)
       if (results.length > 0) {
         doc = results[0]
       }

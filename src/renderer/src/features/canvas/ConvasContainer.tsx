@@ -17,7 +17,7 @@
  */
 
 import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react'
-import { useCanvas, useCanvasGestures, useCanvasDrop, useCanvasShortcuts } from './hooks'
+import { useCanvas, useCanvasGestures, useCanvasDrop, useCanvasShortcuts, useCanvasPaste } from './hooks'
 import { CanvasData, CanvasNode, CanvasEdgeSide, CanvasEdgeEnd, CanvasShapeType, CanvasNodeColor, CanvasEdgeLineStyle } from './types'
 import {
   COLOR_CYCLE,
@@ -74,6 +74,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   const [isMiniMapOpen, setIsMiniMapOpen] = useState(false)
   const [defaultLineStyle, setDefaultLineStyle] = useState<CanvasEdgeLineStyle>('curved')
   const [defaultEndpoints, setDefaultEndpoints] = useState<'directed' | 'bidirectional' | 'none'>('directed')
+  const [selectedEdgeIds, setSelectedEdgeIds] = useState<string[]>([])
 
   // Central Canvas State Hook
   const {
@@ -211,8 +212,20 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   const handleSelectEdge = useCallback(
     (e: React.MouseEvent, edgeId: string) => {
       e.stopPropagation()
-      setSelectedEdgeId(edgeId)
-      setSelectedNodeIds([])
+      const isMulti = e.shiftKey || e.ctrlKey || e.metaKey
+      if (isMulti) {
+        setSelectedEdgeIds((prev) => {
+          const next = prev.includes(edgeId)
+            ? prev.filter((id) => id !== edgeId)
+            : [...prev, edgeId]
+          setSelectedEdgeId(next[next.length - 1] || null)
+          return next
+        })
+      } else {
+        setSelectedEdgeIds([edgeId])
+        setSelectedEdgeId(edgeId)
+        setSelectedNodeIds([])
+      }
     },
     [setSelectedEdgeId, setSelectedNodeIds]
   )
@@ -221,6 +234,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     (e: React.MouseEvent, edgeId: string) => {
       e.stopPropagation()
       deleteEdge(edgeId)
+      setSelectedEdgeIds((prev) => prev.filter((id) => id !== edgeId))
       if (selectedEdgeId === edgeId) {
         setSelectedEdgeId(null)
       }
@@ -253,6 +267,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     selectedNodeIds,
     selectedEdgeId,
     setSelectedEdgeId,
+    setSelectedEdgeIds,
     toolMode,
     isSpacePressed,
     snapToGrid,
@@ -280,6 +295,21 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     snapToGrid,
     setEditingNodeId,
     setEditingField,
+    onToast: showToast
+  })
+
+  /**
+   * Clipboard Paste Engine (Image and Node Ingestion)
+   */
+  useCanvasPaste({
+    containerRef,
+    screenToCanvas,
+    viewport,
+    mouseCanvasPos,
+    snapToGrid,
+    addNode,
+    hasCopiedNodes,
+    pasteNodes,
     onToast: showToast
   })
 
@@ -554,12 +584,13 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     if (selectedNodes.length > 0) {
       return (selectedNodes[0].color || 'default') as CanvasNodeColor
     }
-    if (selectedEdgeId) {
-      const edge = edges.find((e) => e.id === selectedEdgeId)
+    const edgeId = selectedEdgeIds[0] || selectedEdgeId
+    if (edgeId) {
+      const edge = edges.find((e) => e.id === edgeId)
       if (edge) return (edge.color || 'default') as CanvasNodeColor
     }
     return undefined
-  }, [selectedNodes, selectedEdgeId, edges])
+  }, [selectedNodes, selectedEdgeIds, selectedEdgeId, edges])
 
   const handleUpdateSelectionColor = useCallback(
     (color: CanvasNodeColor) => {
@@ -574,12 +605,18 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
               : e
           )
         )
+      } else if (selectedEdgeIds.length > 0) {
+        pushHistory()
+        const edgeSet = new Set(selectedEdgeIds)
+        setEdges((prev) =>
+          prev.map((e) => (edgeSet.has(e.id) ? { ...e, color } : e))
+        )
       } else if (selectedEdgeId) {
         pushHistory()
         updateEdgeColor(selectedEdgeId, color)
       }
     },
-    [selectedNodes, selectedEdgeId, updateNodeColor, updateEdgeColor, setEdges, pushHistory]
+    [selectedNodes, selectedEdgeIds, selectedEdgeId, updateNodeColor, updateEdgeColor, setEdges, pushHistory]
   )
 
   const handleCycleColor = useCallback(
@@ -693,16 +730,18 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   }, [nodes, updateNodesPositions])
 
   const activeLineStyle = useMemo(() => {
-    if (selectedEdgeId) {
-      const edge = edges.find((e) => e.id === selectedEdgeId)
+    const edgeId = selectedEdgeIds[0] || selectedEdgeId
+    if (edgeId) {
+      const edge = edges.find((e) => e.id === edgeId)
       if (edge?.lineStyle) return edge.lineStyle
     }
     return defaultLineStyle
-  }, [selectedEdgeId, edges, defaultLineStyle])
+  }, [selectedEdgeIds, selectedEdgeId, edges, defaultLineStyle])
 
   const activeEndpoints = useMemo(() => {
-    if (selectedEdgeId) {
-      const edge = edges.find((e) => e.id === selectedEdgeId)
+    const edgeId = selectedEdgeIds[0] || selectedEdgeId
+    if (edgeId) {
+      const edge = edges.find((e) => e.id === edgeId)
       if (edge) {
         if (edge.fromEnd === 'arrow' && edge.toEnd === 'arrow') return 'bidirectional'
         if (edge.toEnd === 'none' && edge.fromEnd !== 'arrow') return 'none'
@@ -710,13 +749,18 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
       }
     }
     return defaultEndpoints
-  }, [selectedEdgeId, edges, defaultEndpoints])
+  }, [selectedEdgeIds, selectedEdgeId, edges, defaultEndpoints])
 
   const handleChangeLineStyle = useCallback(
     (style: CanvasEdgeLineStyle) => {
       setDefaultLineStyle(style)
       pushHistory()
-      if (selectedEdgeId) {
+      if (selectedEdgeIds.length > 0) {
+        const edgeSet = new Set(selectedEdgeIds)
+        setEdges((prev) =>
+          prev.map((e) => (edgeSet.has(e.id) ? { ...e, lineStyle: style } : e))
+        )
+      } else if (selectedEdgeId) {
         updateEdgeLineStyle(selectedEdgeId, style)
       } else if (selectedNodeIds.length > 0) {
         const nodeSet = new Set(selectedNodeIds)
@@ -733,7 +777,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         )
       }
     },
-    [selectedEdgeId, selectedNodeIds, edges.length, updateEdgeLineStyle, setEdges, pushHistory]
+    [selectedEdgeIds, selectedEdgeId, selectedNodeIds, edges.length, updateEdgeLineStyle, setEdges, pushHistory]
   )
 
   const handleChangeEndpoints = useCallback(
@@ -742,7 +786,14 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
       const fromEnd: CanvasEdgeEnd = endpoints === 'bidirectional' ? 'arrow' : 'none'
       const toEnd: CanvasEdgeEnd = endpoints === 'none' ? 'none' : 'arrow'
       pushHistory()
-      if (selectedEdgeId) {
+      if (selectedEdgeIds.length > 0) {
+        const edgeSet = new Set(selectedEdgeIds)
+        setEdges((prev) =>
+          prev.map((e) =>
+            edgeSet.has(e.id) ? { ...e, fromEnd, toEnd } : e
+          )
+        )
+      } else if (selectedEdgeId) {
         updateEdgeEndpoints(selectedEdgeId, fromEnd, toEnd)
       } else if (selectedNodeIds.length > 0) {
         const nodeSet = new Set(selectedNodeIds)
@@ -759,8 +810,34 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         )
       }
     },
-    [selectedEdgeId, selectedNodeIds, edges.length, updateEdgeEndpoints, setEdges, pushHistory]
+    [selectedEdgeIds, selectedEdgeId, selectedNodeIds, edges.length, updateEdgeEndpoints, setEdges, pushHistory]
   )
+
+  const handleApplyToAllEdges = useCallback(
+    (style: CanvasEdgeLineStyle) => {
+      if (edges.length === 0) return
+      pushHistory()
+      setDefaultLineStyle(style)
+      setEdges((prev) => prev.map((e) => ({ ...e, lineStyle: style })))
+    },
+    [edges.length, pushHistory, setEdges]
+  )
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedNodeIds.length > 0) {
+      deleteSelected()
+      setSelectedEdgeIds([])
+    } else if (selectedEdgeIds.length > 0) {
+      pushHistory()
+      const toDelete = new Set(selectedEdgeIds)
+      setEdges((prev) => prev.filter((e) => !toDelete.has(e.id)))
+      setSelectedEdgeIds([])
+      setSelectedEdgeId(null)
+    } else if (selectedEdgeId) {
+      deleteSelected()
+      setSelectedEdgeIds([])
+    }
+  }, [selectedNodeIds.length, selectedEdgeIds, selectedEdgeId, deleteSelected, pushHistory, setEdges, setSelectedEdgeId])
 
   const cursorStyle = isPanningState
     ? 'grabbing'
@@ -800,6 +877,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           snappedTarget={snappedTarget}
           mouseCanvasPos={mouseCanvasPos}
           selectedEdgeId={selectedEdgeId}
+          selectedEdgeIds={selectedEdgeIds}
           isMultiSelectionActive={selectedNodeIds.length > 1}
           onSelectEdge={handleSelectEdge}
           onDeleteEdge={handleDeleteEdge}
@@ -878,15 +956,15 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         onResetViewport={resetViewport}
         onZoomToFit={() => zoomToFit(containerRef.current?.getBoundingClientRect())}
         onSetZoom={handleSetZoom}
-        onDeleteSelected={deleteSelected}
-        canDelete={selectedNodeIds.length > 0 || !!selectedEdgeId}
+        onDeleteSelected={handleDeleteSelected}
+        canDelete={selectedNodeIds.length > 0 || !!selectedEdgeId || selectedEdgeIds.length > 0}
         onAddShape={handleAddShape}
         onCopyImage={handleCopyImage}
         onExportPNG={handleExportPNG}
         onExportSVG={handleExportSVG}
         onOpenDrawer={onOpenDrawer}
         hasSelectedNodes={selectedNodeIds.length > 0}
-        selectedCount={selectedNodeIds.length + (selectedEdgeId ? 1 : 0)}
+        selectedCount={selectedNodeIds.length + Math.max(selectedEdgeIds.length, selectedEdgeId ? 1 : 0)}
         selectedColor={selectedColor}
         onUpdateSelectedColor={handleUpdateSelectionColor}
         snapToGrid={snapToGrid}
@@ -897,10 +975,12 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         nodes={nodes}
         edges={edges}
         selectedEdgeId={selectedEdgeId}
+        selectedEdgeIds={selectedEdgeIds}
         defaultLineStyle={activeLineStyle}
         onChangeDefaultLineStyle={handleChangeLineStyle}
         defaultEndpoints={activeEndpoints}
         onChangeDefaultEndpoints={handleChangeEndpoints}
+        onApplyToAllEdges={handleApplyToAllEdges}
         onAlignSelection={handleAlignSelection}
         onDistributeSelection={handleDistributeSelection}
         onUndo={undo}

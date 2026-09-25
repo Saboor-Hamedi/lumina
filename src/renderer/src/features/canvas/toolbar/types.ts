@@ -50,10 +50,12 @@ export interface ConvasToolBarRightProps {
   nodes?: CanvasNode[]
   edges?: CanvasEdge[]
   selectedEdgeId?: string | null
+  selectedEdgeIds?: string[]
   defaultLineStyle?: CanvasEdgeLineStyle
   onChangeDefaultLineStyle?: (style: CanvasEdgeLineStyle) => void
   defaultEndpoints?: 'directed' | 'bidirectional' | 'none'
   onChangeDefaultEndpoints?: (mode: 'directed' | 'bidirectional' | 'none') => void
+  onApplyToAllEdges?: (style: CanvasEdgeLineStyle) => void
   onAlignSelection?: (alignment: CanvasAlignmentType) => void
   onDistributeSelection?: (direction: CanvasDistributionType) => void
   onUndo?: () => void

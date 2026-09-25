@@ -44,11 +44,15 @@ export function useCanvasDrop({
   const buildNodeFromSnippet = useCallback(
     (snippet: any, pt: { x: number; y: number }, offset: number = 0): Partial<CanvasNode> => {
       let resolved = snippet
-      const storeSnippets = (useWorkspaceStore as any)?.getState?.()?.snippets || []
-      const foundInStore = storeSnippets.find(
+      const storeNotes =
+        (useWorkspaceStore as any)?.getState?.()?.notes ||
+        (useWorkspaceStore as any)?.getState?.()?.snippets ||
+        []
+      const foundInStore = storeNotes.find(
         (s: any) =>
           (snippet.id && String(s.id) === String(snippet.id)) ||
-          (snippet.path && s.path === snippet.path) ||
+          (snippet.relativePath && (s.relativePath === snippet.relativePath || s.path === snippet.relativePath)) ||
+          (snippet.path && (s.path === snippet.path || s.relativePath === snippet.path)) ||
           (snippet.fileName && s.fileName === snippet.fileName)
       )
       if (foundInStore) {
@@ -62,37 +66,41 @@ export function useCanvasDrop({
         resolved.body ||
         resolved.text ||
         ''
-      // Ensure file identifier is never empty for a vault note
-      const file = resolved.id || resolved.path || resolved.file || resolved.fileName || ''
+      const relPath = (resolved.relativePath || resolved.path || resolved.file || '').replace(/\\/g, '/')
       const fileName = resolved.fileName || resolved.name || title || ''
       const isPdf = resolved.type === 'pdf' || /\.pdf$/i.test(fileName)
       const isImg = resolved.type === 'image' || /\.(png|jpe?g|svg|webp|gif|bmp|ico)$/i.test(fileName)
 
       let type: any = 'note'
-      let imageUrl = resolved.imageUrl || resolved.src
+      let imageUrl = resolved.imageUrl || resolved.url || resolved.src
       if (isPdf) {
         type = 'pdf'
       } else if (isImg) {
         type = 'image'
-        if (!imageUrl) {
-          imageUrl = resolved.path ? `asset://local/${resolved.path}` : `asset://local/${fileName}`
+        const finalRel = relPath || fileName
+        if (!imageUrl && finalRel) {
+          const cleanRel = finalRel.replace(/^[/\\]+/, '')
+          imageUrl = `asset://local/${encodeURI(cleanRel)}`
         }
       } else {
         // Vault notes dragged from FileExplorer are note cards, not sticky notes
         type = 'note'
       }
 
+      const fileIdentifier = relPath || resolved.id || resolved.fileName || ''
+
       return normalizeNode({
         type,
         title,
-        text: content,
-        file: file || undefined,
+        text: isImg ? relPath : content,
+        file: fileIdentifier || undefined,
         imageUrl,
+        url: imageUrl,
         x: Math.round(pt.x + offset - 130),
         y: Math.round(pt.y + offset - 70),
         width: isImg ? 280 : 260,
         height: isImg ? 200 : 160,
-        color: isPdf ? 'blue' : 'default'
+        color: isPdf ? 'blue' : isImg ? 'cyan' : 'default'
       })
     },
     []
