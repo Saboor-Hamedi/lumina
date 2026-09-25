@@ -1,0 +1,10 @@
+/* ============================================================
+ * LUMINA MODERN UI (AstroNvim Theme Layer)
+ * Master orchestrator importing modular Neovim-grade styling
+ * ============================================================ */
+
+@import './shell.css';
+@import './sidebar.css';
+@import './inspector.css';
+@import './tabs.css';
+@import './statusbar.css';

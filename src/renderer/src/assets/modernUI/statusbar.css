@@ -1,0 +1,153 @@
+/* ============================================================
+ * AstroNvim Modern UI: Status Bar (lualine.nvim style)
+ * Flush bottom strip, segmented mode blocks, monospaced coordinates
+ * ============================================================ */
+
+/* Status Bar Container: Docked flush edge-to-edge at bottom */
+.status-bar,
+[data-modern-ui='true'] .status-bar {
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-top: 1px solid var(--border-dim) !important;
+  background: var(--bg-sidebar) !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+  width: 100% !important;
+  box-sizing: border-box;
+  box-shadow: none !important;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 !important;
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace) !important;
+  font-size: 11px !important;
+  user-select: none;
+  z-index: 100;
+  overflow: hidden;
+}
+
+/* Lualine Section A: Mode Badge (NORMAL / VISUAL) */
+.lualine-mode-badge,
+[data-modern-ui='true'] .lualine-mode-badge {
+  height: 100% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 12px 0 10px !important;
+  background: var(--text-accent, #8b5cf6) !important;
+  color: #0b0c10 !important;
+  font-weight: 800 !important;
+  font-size: 10px !important;
+  letter-spacing: 0.8px !important;
+  text-transform: uppercase !important;
+  flex-shrink: 0 !important;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%) !important;
+  line-height: 24px !important;
+}
+
+.lualine-mode-badge[data-mode='visual'],
+[data-modern-ui='true'] .lualine-mode-badge[data-mode='visual'] {
+  background: #f59e0b !important;
+  color: #0b0c10 !important;
+}
+
+.status-bar-left {
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+  gap: 0 !important;
+}
+
+/* Lualine Section B: Buttons */
+.status-bar-btn,
+[data-modern-ui='true'] .status-bar-btn {
+  height: 100% !important;
+  border-radius: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  font-size: 11px !important;
+  padding: 0 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  cursor: pointer !important;
+  transition: background 0.12s ease, color 0.12s ease !important;
+  font-family: inherit !important;
+  line-height: 1 !important;
+}
+
+.status-bar-btn:hover,
+.status-bar-btn.active,
+[data-modern-ui='true'] .status-bar-btn:hover,
+[data-modern-ui='true'] .status-bar-btn.active {
+  background: var(--bg-active) !important;
+  color: var(--text-main) !important;
+}
+
+.status-bar-profile-btn {
+  padding-left: 10px !important;
+}
+
+/* Dividers: Crisp hairline separators */
+.status-bar-divider,
+[data-modern-ui='true'] .status-bar-divider {
+  width: 1px !important;
+  height: 14px !important;
+  background: var(--border-dim) !important;
+  margin: 0 !important;
+  opacity: 0.8 !important;
+  flex-shrink: 0 !important;
+}
+
+/* Center Section */
+.status-bar-center,
+[data-modern-ui='true'] .status-bar-center {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100% !important;
+}
+
+/* Right Section: Lualine Metrics */
+.status-bar-right,
+[data-modern-ui='true'] .status-bar-right {
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+  gap: 0 !important;
+}
+
+.status-bar-item,
+[data-modern-ui='true'] .status-bar-item {
+  height: 100% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 0 10px !important;
+  color: var(--text-muted) !important;
+  font-size: 11px !important;
+  font-family: inherit !important;
+  transition: background 0.12s ease, color 0.12s ease !important;
+}
+
+.status-bar-item.interactive:hover,
+[data-modern-ui='true'] .status-bar-item.interactive:hover {
+  background: var(--bg-active) !important;
+  color: var(--text-main) !important;
+  cursor: pointer !important;
+}
+
+/* Lualine Section Z: Terminal Coordinates */
+.lualine-pos-badge,
+[data-modern-ui='true'] .lualine-pos-badge {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--text-main) !important;
+  font-weight: 600 !important;
+  clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%) !important;
+  padding-left: 14px !important;
+  padding-right: 12px !important;
+}

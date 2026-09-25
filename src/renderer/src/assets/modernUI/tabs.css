@@ -1,0 +1,134 @@
+/* ============================================================
+ * AstroNvim Modern UI: Tabs (bufferline.nvim style)
+ * Crisp buffer tabs, hairline vertical dividers, accent indicators
+ * ============================================================ */
+
+/* Tab Bar Outer Wrapper: Flush edge-to-edge across workspace */
+[data-modern-ui='true'] .tabbar-outer-wrapper {
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  box-sizing: border-box;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-dim) !important;
+  background: var(--bg-sidebar) !important;
+}
+
+[data-modern-ui='true'] .workspace-tabbar {
+  height: 30px !important;
+  border-radius: 0 !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+[data-modern-ui='true'] .workspace-tabbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+[data-modern-ui='true'] .tabs-container {
+  display: flex;
+  height: 100%;
+  align-items: stretch;
+  border-radius: 0 !important;
+}
+
+/* Individual Buffer Tabs: Neovim Bufferline items */
+[data-modern-ui='true'] .workspace-tab {
+  height: 30px !important;
+  min-width: 80px;
+  max-width: 190px;
+  padding: 0 10px 0 12px !important;
+  border-radius: 0 !important;
+  border-right: 1px solid var(--border-dim) !important;
+  border-top: none !important;
+  border-bottom: 2px solid transparent !important;
+  background: transparent !important;
+  color: var(--text-muted);
+  font-size: 12px;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .tabs-container > :first-child .workspace-tab,
+[data-modern-ui='true'] .tabs-container > .workspace-tab:first-child,
+[data-modern-ui='true'] .workspace-tab:first-child,
+[data-modern-ui='true'] .tabs-container > :last-child .workspace-tab,
+[data-modern-ui='true'] .tabs-container > .workspace-tab:last-child {
+  border-radius: 0 !important;
+}
+
+/* Hover: Subtle background tint */
+[data-modern-ui='true'] .workspace-tab:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: var(--text-main);
+}
+
+/* Active Buffer: Clean contrast background + 2px accent bottom border */
+[data-modern-ui='true'] .workspace-tab.active {
+  background: var(--bg-editor, var(--bg-app)) !important;
+  color: var(--text-main) !important;
+  font-weight: 500;
+  border-bottom: 2px solid var(--text-accent) !important;
+  box-shadow: none !important;
+}
+
+[data-modern-ui='true'] .workspace-tab.active:hover {
+  background: var(--bg-editor, var(--bg-app)) !important;
+}
+
+[data-modern-ui='true'] .workspace-tab.active::before,
+[data-modern-ui='true'] .workspace-tab.active::after {
+  display: none !important;
+}
+
+/* Pinned Tabs: Compact buffer block */
+[data-modern-ui='true'] .workspace-tab.pinned {
+  min-width: 36px;
+  max-width: 140px;
+  padding: 0 8px !important;
+}
+
+/* Dirty State (Unsaved Blob): Single clean 7px amber dot */
+[data-modern-ui='true'] .tab-dirty {
+  width: 7px !important;
+  height: 7px !important;
+  background: #eab308 !important;
+  border-radius: 50% !important;
+  box-shadow: none !important;
+  animation: none !important;
+  display: inline-block !important;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+[data-modern-ui='true'] .tab-dirty:hover {
+  background: #f59e0b !important;
+  transform: scale(1.15);
+}
+
+/* Close Button: Muted, crisp */
+[data-modern-ui='true'] .tab-close-btn {
+  border-radius: 3px !important;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+[data-modern-ui='true'] .tab-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-main) !important;
+}
+
+/* Breadcrumbs Bar: Clean path line */
+[data-modern-ui='true'] .editor-breadcrumbs-bar {
+  height: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border-dim) !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
+  padding: 0 14px;
+}

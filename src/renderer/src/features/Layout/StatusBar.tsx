@@ -129,6 +129,12 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     <div className="status-bar" ref={statusBarRef} data-testid="status-bar">
       {/* Left utility buttons */}
       <div className="status-bar-left">
+        <div
+          className="lualine-mode-badge"
+          data-mode={cursorPos.selectedChars > 0 ? 'visual' : 'normal'}
+        >
+          {cursorPos.selectedChars > 0 ? 'VISUAL' : 'NORMAL'}
+        </div>
         <ToolTip
           text={
             isLoggedIn && user
@@ -237,7 +243,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <>
             <ToolTip text="Scroll to Cursor" position="top">
               <span
-                className="status-bar-item interactive"
+                className="status-bar-item interactive lualine-pos-badge"
                 onClick={() => window.dispatchEvent(new CustomEvent('editor-scroll-to-cursor'))}
               >
                 <Navigation size={11} />

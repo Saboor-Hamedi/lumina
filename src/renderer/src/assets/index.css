@@ -9,6 +9,7 @@
 @import './screenLoader.css';
 @import '../core/i18n/css/lumina-i18n.css';
 @import '../features/profile/profile.css';
+@import './modernUI/modernUi.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

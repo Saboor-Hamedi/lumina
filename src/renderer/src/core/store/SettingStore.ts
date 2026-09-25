@@ -178,8 +178,8 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
 
     modernUi:
       (typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_modern_ui') === 'true') ||
-      false,
+        localStorage.getItem('lumina_modern_ui') !== 'false') ||
+      true,
 
     // Favorites & Ordering
     pinnedFolders: [],

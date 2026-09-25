@@ -1,0 +1,184 @@
+/* ============================================================
+ * AstroNvim Modern UI: Right Sidebar & Inspector Panel
+ * Flush docked right panel, crisp 1px left border, unified chrome
+ * ============================================================ */
+
+/* Right Sidebar Container */
+[data-modern-ui='true'] .app-shell.right-open .shell-sidebar-right {
+  background: var(--bg-sidebar) !important;
+  border: none !important;
+  border-left: 1px solid var(--border-dim) !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 5;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-panel {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 0 !important;
+  min-width: 0;
+}
+
+/* Header Tabs: Docked top with 1px bottom border */
+[data-modern-ui='true'] .shell-sidebar-right .panel-header-tabs {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-dim) !important;
+  background: var(--bg-sidebar) !important;
+  box-shadow: none !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+}
+
+/* Inspector Tabs: Neovim bufferline tab feel */
+[data-modern-ui='true'] .shell-sidebar-right .inspector-tab {
+  height: 100% !important;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-tab:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-tab.active {
+  color: var(--text-main) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 2px solid var(--text-accent) !important;
+}
+
+/* Inspector Body Card: Continuous seamless panel */
+[data-modern-ui='true'] .shell-sidebar-right .inspector-body-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0 !important;
+  border: none !important;
+  background: var(--bg-sidebar) !important;
+  box-shadow: none !important;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-height: 0;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-sub-header {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border-dim);
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+}
+
+/* Inspector Footer Utility Strip */
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-top: 1px solid var(--border-dim) !important;
+  background: var(--bg-sidebar) !important;
+  box-shadow: none !important;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+/* Chat Composer: Neovim command prompt dock */
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer {
+  height: auto !important;
+  min-height: 110px !important;
+  max-height: 300px !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-top: 1px solid var(--border-dim) !important;
+  background: var(--bg-sidebar) !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: visible !important;
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  position: relative !important;
+  transition: border-color 0.12s ease;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer:focus-within {
+  border-top-color: var(--text-accent) !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-container {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-card,
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-card:focus-within {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}

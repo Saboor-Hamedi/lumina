@@ -1,0 +1,187 @@
+/* ============================================================
+ * AstroNvim Modern UI: Left Sidebar (neo-tree style)
+ * Continuous vertical panel, crisp borders, high-density tree
+ * ============================================================ */
+
+/* Left Sidebar Container */
+.app-shell.left-open .shell-sidebar-left,
+[data-modern-ui='true'] .app-shell.left-open .shell-sidebar-left {
+  background: var(--bg-sidebar) !important;
+  border: none !important;
+  border-right: 1px solid var(--border-dim) !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 5;
+}
+
+.shell-sidebar-left .unified-sidebar,
+[data-modern-ui='true'] .shell-sidebar-left .unified-sidebar {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 0 !important;
+  min-width: 0;
+}
+
+/* Sidebar Header Section */
+.shell-sidebar-left .sidebar-header-section,
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-header-section {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-dim) !important;
+  background: var(--bg-sidebar) !important;
+  box-shadow: none !important;
+  box-sizing: border-box;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  gap: 6px;
+}
+
+/* AstroNvim neo-tree Action / New Note Button */
+.new-note-btn,
+[data-modern-ui='true'] .new-note-btn {
+  height: 22px !important;
+  border-radius: 3px !important;
+  border: 1px solid var(--border-dim) !important;
+  background: var(--bg-panel) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+  transition: background 0.12s ease, border-color 0.12s ease !important;
+}
+
+.new-note-btn:hover,
+[data-modern-ui='true'] .new-note-btn:hover {
+  background: var(--bg-active) !important;
+  border-color: var(--text-accent) !important;
+  color: var(--text-main) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Sidebar Scrollable Content */
+.shell-sidebar-left .sidebar-scrollable-content,
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-scrollable-content {
+  flex: 1;
+  border-radius: 0 !important;
+  border: none !important;
+  background: var(--bg-sidebar) !important;
+  box-shadow: none !important;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Neo-Tree Items: Compact vertical row height, clean AstroNvim feel */
+.tree-item,
+.start-section .tree-item,
+[data-modern-ui='true'] .tree-item,
+[data-modern-ui='true'] .start-section .tree-item {
+  height: 24px !important;
+  min-height: 24px !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 8px !important;
+  gap: 6px !important;
+  font-size: 12px !important;
+  transition: background 0.1s ease, color 0.1s ease !important;
+}
+
+.tree-item:hover,
+.start-section .tree-item:hover,
+[data-modern-ui='true'] .tree-item:hover,
+[data-modern-ui='true'] .start-section .tree-item:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.tree-item.active,
+.start-section .tree-item.active,
+[data-modern-ui='true'] .tree-item.active,
+[data-modern-ui='true'] .start-section .tree-item.active {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-main) !important;
+  font-weight: 500 !important;
+  border-left: 2px solid var(--text-accent) !important;
+}
+
+/* Neo-Tree Indent lines */
+.tree-indent-guide,
+[data-modern-ui='true'] .tree-indent-guide {
+  border-left: 1px solid var(--border-dim) !important;
+  opacity: 0.6;
+}
+
+/* Neo-Tree Search input */
+.start-menu-search input,
+[data-modern-ui='true'] .start-menu-search input {
+  height: 24px !important;
+  border-radius: 3px !important;
+  border: 1px solid var(--border-dim) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  font-size: 11px !important;
+  box-shadow: none !important;
+}
+
+.start-menu-search input:focus,
+[data-modern-ui='true'] .start-menu-search input:focus {
+  border-color: var(--text-accent) !important;
+  box-shadow: none !important;
+}
+
+/* Sidebar Footer Section: Docked bottom */
+.shell-sidebar-left .sidebar-footer-section,
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-footer-section {
+  margin: 0 !important;
+  width: 100% !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
+  padding: 0 8px !important;
+  box-sizing: border-box !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-top: 1px solid var(--border-dim) !important;
+  background: var(--bg-sidebar) !important;
+  box-shadow: none !important;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex !important;
+  align-items: center !important;
+  transition: background 0.12s ease;
+}
+
+.shell-sidebar-left .sidebar-footer-section:hover,
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-footer-section:hover {
+  background: var(--bg-active) !important;
+}
+
+/* AstroNvim / neo-tree Scrollbar */
+.shell-sidebar-left .sidebar-scrollable-content::-webkit-scrollbar,
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-scrollable-content::-webkit-scrollbar {
+  width: 3px;
+}
+
+.shell-sidebar-left .sidebar-scrollable-content::-webkit-scrollbar-track,
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-scrollable-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.shell-sidebar-left .sidebar-scrollable-content::-webkit-scrollbar-thumb,
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-scrollable-content::-webkit-scrollbar-thumb {
+  background: var(--border-dim);
+  border-radius: 0;
+}

@@ -21,7 +21,7 @@
         const themeId = localStorage.getItem('theme-id') || 'dark'
         document.documentElement.setAttribute('data-theme', themeId)
 
-        const isModern = localStorage.getItem('lumina_modern_ui') === 'true'
+        const isModern = localStorage.getItem('lumina_modern_ui') !== 'false'
         document.documentElement.setAttribute('data-modern-ui', String(isModern))
 
         const activeColors = localStorage.getItem('lumina_active_theme_colors')

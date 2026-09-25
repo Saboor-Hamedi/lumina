@@ -4,15 +4,14 @@ import { applyTheme } from './features/theme/hooks/themeDefinitions'
 import GlobalErrorHandler from './components/GlobalErrorHandler'
 import { hideScreenLoader } from './components/screenLoader'
 import './assets/globalErrorHandler.css'
-import './assets/modernUi.css'
+import './assets/modernUI/modernUi.css'
 
 function App() {
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme-id') || 'dark'
     applyTheme(savedTheme)
-    const isModern = localStorage.getItem('lumina_modern_ui') === 'true'
-    document.documentElement.setAttribute('data-modern-ui', String(isModern))
+    document.documentElement.setAttribute('data-modern-ui', 'true')
 
     // Smoothly dissolve screen loader once React layout is ready
     hideScreenLoader({ minDuration: 50, fadeDuration: 150 })

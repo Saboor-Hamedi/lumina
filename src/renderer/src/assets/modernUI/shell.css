@@ -1,0 +1,97 @@
+/* ============================================================
+ * AstroNvim Modern UI: Shell & Global Chrome
+ * Edge-to-edge, flush panels, razor-sharp 1px hairline dividers
+ * ============================================================ */
+
+[data-modern-ui='true'] .app-shell {
+  display: flex;
+  flex-direction: column;
+  padding: 0 !important;
+  gap: 0 !important;
+  background: var(--bg-app);
+  box-sizing: border-box;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+[data-modern-ui='true'] .shell-body {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  gap: 0 !important;
+}
+
+/* Activity Bar: Docked flush to the left, 1px right border, zero shadows */
+[data-modern-ui='true'] .lumina-activity-bar {
+  border-radius: 0 !important;
+  border: none !important;
+  border-right: 1px solid var(--border-dim) !important;
+  background: var(--bg-sidebar) !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+  height: 100%;
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+/* Resizers: Crisp 1px active separator feel */
+[data-modern-ui='true'] .sidebar-resizer {
+  width: 3px !important;
+  background: transparent;
+  transition: background 0.15s ease;
+  z-index: 20;
+}
+
+[data-modern-ui='true'] .sidebar-resizer:hover,
+[data-modern-ui='true'] .sidebar-resizer:active {
+  background: var(--text-accent, #8b5cf6) !important;
+}
+
+/* Center Shell & Editor Workspace: Flush, edge-to-edge */
+[data-modern-ui='true'] .shell-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--bg-editor, var(--bg-app));
+  border: none !important;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .shell-center-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  border-radius: 0 !important;
+  border: none !important;
+  background: var(--bg-editor, var(--bg-app));
+  overflow: hidden;
+  box-sizing: border-box;
+  box-shadow: none !important;
+}
+
+[data-modern-ui='true'] .workspace-container,
+[data-modern-ui='true'] .welcome-page,
+[data-modern-ui='true'] .welcome-container {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .welcome-card {
+  border-radius: 6px;
+  box-shadow: none !important;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-card);
+}
