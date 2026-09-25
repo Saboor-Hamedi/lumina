@@ -45,7 +45,6 @@ import ToolTip from '../../components/atoms/ToolTip'
 import { useExternalFileDrop } from '../Explorer/drop'
 // AI note summarization
 import { summarizeNotes } from '../AI/services/summarizeNotes'
-import { UnsavedIndicator } from '../../core/hooks/unsave'
 
 interface SortableTabItemProps {
   id: string
@@ -105,10 +104,9 @@ const SortableTabItem = memo<SortableTabItemProps>(
               <div
                 onClick={(e: React.MouseEvent) => onClose(e, id)}
                 style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                title="Unsaved changes"
               >
-                <span className="tab-dirty">
-                  <UnsavedIndicator />
-                </span>
+                <span className="tab-dirty" />
               </div>
             ) : (
               !isPinned && (

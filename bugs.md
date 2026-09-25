@@ -1,446 +1,75 @@
-[data-modern-ui='true'] .app-shell {
-  display: flex;
-  flex-direction: column;
-  padding: 5px;
-  gap: 5px;
-  background: var(--bg-app);
-  box-sizing: border-box;
-}
+TASK: Redesign ModernUI.css from its current "glassy/layered" look to a clean,
+minimal aesthetic — closer to Simplenote or a plain native app, not a
+glossy/glowy design system.
 
-[data-modern-ui='true'] .shell-body {
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  overflow: hidden;
-  gap: 0;
-}
+CONTEXT
+This is the theming layer for a knowledge-hub app (Obsidian-style: activity
+bar, resizable sidebars, tabbed editor, status bar, inspector panel with a
+chat composer). The current file uses layered box-shadows, gradient glows on
+active tabs, and hover "lift" transforms. That direction was wrong — it reads
+as decorative rather than clean. Redesign it with restraint.
 
-[data-modern-ui='true'] .lumina-activity-bar {
-  border-radius: 5px;
-  border: 1px solid var(--border-dim);
-  background: var(--bg-sidebar) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
-  margin-right: 5px;
-  height: 100%;
-  box-sizing: border-box;
-}
+DESIGN PRINCIPLES (in priority order)
+1. Flat over dimensional. No box-shadow glows, no gradients, no colored
+   shadows, no drop shadows that intensify on hover, no translateY lift
+   effects on hover.
+2. Borders do the separating, not shadows. Panels are told apart by a single
+   faint 1px border (existing var(--border-dim)), not by shadow depth.
+3. Whitespace and alignment carry the "premium" feeling, not embellishment.
+   If a component looks unfinished, first try more padding/spacing before
+   adding any visual effect.
+4. One accent color, used sparingly and flatly — e.g. a solid background
+   change or a plain 1-2px solid border/indicator. Never a gradient, glow,
+   or animated highlight.
+5. Motion should be minimal and purely functional: width transitions when
+   resizing panels, and quick (120-150ms) color/background fades on
+   hover/focus. No scale, no lift, no shadow growth.
 
-[data-modern-ui='true'] .status-bar {
-  border-radius: 5px;
-  border: 1px solid var(--border-dim);
-  background: var(--bg-sidebar) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
-}
+CONCRETE CHANGES TO MAKE
 
-[data-modern-ui='true'] .sidebar-resizer {
-  width: 5px !important;
-  transition: background 0.15s ease;
-}
+Remove entirely:
+- The two-layer "ambient + contact" box-shadow tokens (--mu-shadow-panel,
+  --mu-shadow-panel-hover, --mu-shadow-accent-soft) and every place they're
+  applied (activity bar, sidebar header/content/footer, inspector panels,
+  status bar, workspace container, welcome card, session sidebar).
+- The .workspace-tab.active::before gradient/glow block and its box-shadow
+  glow — delete this rule completely.
+- All hover transform: translateY(...) rules on buttons, cards, and tabs.
+- The focus-within glow on the chat composer
+  (var(--mu-shadow-panel-hover), var(--mu-shadow-accent-soft)) — replace
+  with a plain border-color change to var(--text-accent), no shadow.
 
-[data-modern-ui='true'] .sidebar-resizer:hover {
-  background: var(--border-dim);
-}
+Replace with:
+- A single flat shadow token, used only where a panel truly floats above
+  content (if anywhere) — max value: 0 1px 2px rgba(0,0,0,0.12). Most
+  panels should have NO shadow at all, relying only on the 1px border.
+- Active tab state: flat background-color (keep the existing subtle
+  rgba(255,255,255,0.07)) plus a plain solid 2px border-top in
+  var(--text-accent). No pseudo-element, no gradient, no glow.
+- Hover states: background-color transition only, ~120-150ms ease.
+  No shadow, no transform.
+- Scrollbar thumb: keep as-is (already minimal), no changes needed.
 
-[data-modern-ui='true'] .app-shell.left-open .shell-sidebar-left {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  overflow: hidden !important;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-}
+Keep unchanged:
+- All layout/structural rules (flex, sizing, overflow, height/width
+  constraints, border-radius values, transition timing for sidebar
+  width changes).
+- Border-radius scale (5-8px) — this is fine and reads clean already.
 
-[data-modern-ui='true'] .shell-sidebar-left .unified-sidebar {
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0;
-  overflow: hidden !important;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  gap: 5px;
-  min-width: 0;
-}
+SPACING PASS
+While removing the shadow layers, check that padding/gaps still feel
+intentional without the shadows providing visual separation — if any area
+now feels cramped or ambiguous, increase padding/gap by 2-4px rather than
+reintroducing a shadow or border emphasis.
 
-[data-modern-ui='true'] .shell-sidebar-left .sidebar-header-section {
-  height: 32px !important;
-  min-height: 32px !important;
-  max-height: 32px !important;
-  border-radius: 5px;
-  border: 1px solid var(--border-dim);
-  background: var(--bg-sidebar) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
-  box-sizing: border-box;
-  min-width: 0;
-}
+ACCEPTANCE CHECK
+Before finalizing, verify against this test for every rule you touch:
+"Does this add a shadow, glow, gradient, or movement/scale effect?"
+If yes, remove it or replace with a flat equivalent. The end result should
+look calm and quiet — closer to a plain text editor's chrome than a modern
+SaaS dashboard.
 
-[data-modern-ui='true'] .shell-sidebar-left .sidebar-scrollable-content {
-  flex: 1;
-  border-radius: 5px;
-  border: 1px solid var(--border-dim);
-  background: var(--bg-sidebar) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
-  overflow: hidden;
-  box-sizing: border-box;
-  min-width: 0;
-  min-height: 0;
-}
-
-[data-modern-ui='true'] .shell-sidebar-left .sidebar-footer-section {
-  margin: 0 !important;
-  width: 100% !important;
-  height: 28px !important;
-  min-height: 28px !important;
-  max-height: 28px !important;
-  padding: 0 6px !important;
-  box-sizing: border-box !important;
-  border-radius: 5px;
-  border: 1px solid transparent !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  overflow: hidden;
-  flex-shrink: 0;
-  display: flex !important;
-  align-items: center !important;
-}
-
-[data-modern-ui='true'] .shell-sidebar-left .sidebar-footer-section:hover {
-  background: var(--bg-active) !important;
-  border-color: var(--border-dim) !important;
-}
-
-[data-modern-ui='true'] .shell-sidebar-left .profile-avatar-wrap {
-  border-color: var(--border-dim) !important;
-}
-
-[data-modern-ui='true'] .shell-sidebar-left .sidebar-scrollable-content::-webkit-scrollbar {
-  width: 3px;
-}
-
-[data-modern-ui='true'] .shell-sidebar-left .sidebar-scrollable-content::-webkit-scrollbar-track {
-  background: transparent;
-  margin: 4px;
-}
-
-[data-modern-ui='true'] .shell-sidebar-left .sidebar-scrollable-content::-webkit-scrollbar-thumb {
-  background: var(--border-dim);
-  border-radius: 99px;
-}
-
-[data-modern-ui='true'] .app-shell.right-open .shell-sidebar-right {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  overflow: hidden !important;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-[data-modern-ui='true'] .shell-sidebar-right .inspector-panel {
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0;
-  overflow: hidden !important;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  gap: 5px;
-  min-width: 0;
-}
-
-[data-modern-ui='true'] .shell-sidebar-right .panel-header-tabs {
-  height: 32px !important;
-  min-height: 32px !important;
-  max-height: 32px !important;
-  border-radius: 5px;
-  border: 1px solid var(--border-dim);
-  background: var(--bg-sidebar) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-[data-modern-ui='true'] .shell-sidebar-right .inspector-tab {
-  height: 32px !important;
-  box-sizing: border-box;
-}
-
-[data-modern-ui='true'] .shell-sidebar-right .inspector-body-card {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  border-radius: 5px;
-  border: 1px solid var(--border-dim);
-  background: var(--bg-sidebar) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
-  overflow: hidden;
-  box-sizing: border-box;
-  min-height: 0;
-}
-
-[data-modern-ui='true'] .shell-sidebar-right .inspector-sub-header {
-  height: 28px !important;
-  min-height: 28px !important;
-  max-height: 28px !important;
-  box-sizing: border-box;
-}
-
-[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section {
-  height: 28px !important;
-  min-height: 28px !important;
-  max-height: 28px !important;
-  border-radius: 5px;
-  border: 1px solid var(--border-dim);
-  background: var(--bg-panel) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 8px;
-  flex-shrink: 0;
-}
-
-[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer {
-  height: auto !important;
-  min-height: 116px !important;
-  max-height: 300px !important;
-  border-radius: 5px !important;
-  border: 1px solid var(--border-dim) !important;
-  background: var(--bg-sidebar) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18) !important;
-  box-sizing: border-box !important;
-  padding: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: visible !important;
-  flex-shrink: 0 !important;
-  width: 100% !important;
-  position: relative !important;
-  z-index: 9999 !important;
-}
-
-[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-container {
-  padding: 0 !important;
-  background: transparent !important;
-  border: none !important;
-  width: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  position: relative !important;
-  z-index: 9999 !important;
-  overflow: visible !important;
-}
-
-[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-card,
-[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-card:focus-within {
-  border: none !important;
-  border-radius: 5px !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  width: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 !important;
-}
-
-[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-input-area-wrapper {
-  width: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 !important;
-}
-
-[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-textarea {
-  width: 100% !important;
-  box-sizing: border-box !important;
-  flex: 1 !important;
-}
-
-[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer:focus-within {
-  outline: none !important;
-}
-
-[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-btn:hover {
-  background: var(--bg-active);
-  color: var(--text-main);
-}
-
-[data-modern-ui='true'] .shell-main {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  background: transparent;
-  border: none !important;
-  box-sizing: border-box;
-}
-
-[data-modern-ui='true'] .shell-center-workspace {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  min-width: 0;
-  border-radius: 5px;
-  border: 1px solid var(--border-dim);
-  background: var(--bg-editor, var(--bg-app));
-  overflow: hidden;
-  box-sizing: border-box;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
-}
-
-[data-modern-ui='true'] .tabbar-outer-wrapper {
-  height: 32px !important;
-  min-height: 32px !important;
-  max-height: 32px !important;
-  box-sizing: border-box;
-  padding-left: 2px;
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
-  overflow: hidden;
-}
-
-[data-modern-ui='true'] .workspace-tabbar {
-  height: 32px !important;
-  border-top-left-radius: 5px !important;
-  border-top-right-radius: 5px !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
-}
-
-[data-modern-ui='true'] .workspace-tabbar::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-}
-
-[data-modern-ui='true'] .workspace-tab {
-  height: 32px !important;
-}
-
-[data-modern-ui='true'] .tabs-container > :first-child .workspace-tab,
-[data-modern-ui='true'] .tabs-container > .workspace-tab:first-child,
-[data-modern-ui='true'] .workspace-tab:first-child {
-  border-top-left-radius: 5px;
-}
-
-[data-modern-ui='true'] .tabs-container > :last-child .workspace-tab,
-[data-modern-ui='true'] .tabs-container > .workspace-tab:last-child {
-  border-top-right-radius: 5px;
-}
-
-[data-modern-ui='true'] .workspace-tab:hover {
-  background: rgba(255, 255, 255, 0.04) !important;
-  color: var(--text-main);
-}
-
-[data-modern-ui='true'] .workspace-tab.active {
-  border-top: 2px solid var(--text-accent) !important;
-  border-bottom: none;
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: var(--text-main);
-  font-weight: 500;
-}
-
-[data-modern-ui='true'] .workspace-tab.active:hover {
-  background: rgba(255, 255, 255, 0.09) !important;
-}
-
-[data-modern-ui='true'] .workspace-tab.active::after {
-  display: none;
-}
-
-[data-modern-ui='true'] .editor-breadcrumbs-bar {
-  height: 28px !important;
-  min-height: 28px !important;
-  max-height: 28px !important;
-  box-sizing: border-box;
-  border-bottom: none !important;
-  background: transparent !important;
-}
-
-[data-modern-ui='true'] .workspace-container {
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  overflow: hidden;
-  flex: 1;
-  min-height: 0;
-  box-sizing: border-box;
-}
-
-[data-modern-ui='true'] .welcome-page,
-[data-modern-ui='true'] .welcome-container {
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  overflow: hidden;
-  flex: 1;
-  min-height: 0;
-  box-sizing: border-box;
-}
-
-[data-modern-ui='true'] .status-bar {
-  margin: 0 !important;
-  border-radius: 5px;
-  border: 1px solid var(--border-dim);
-  background: var(--bg-panel);
-  height: 28px;
-  min-height: 28px;
-  width: 100%;
-  box-sizing: border-box;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
-  flex-shrink: 0;
-  transition: border-color 0.15s ease;
-}
-
-[data-modern-ui='true'] .status-bar-btn {
-  border-radius: 4px;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-[data-modern-ui='true'] .status-bar-btn:hover,
-[data-modern-ui='true'] .status-bar-btn.active {
-  background: var(--bg-active);
-  color: var(--text-accent);
-}
-
-[data-modern-ui='true'] .welcome-card {
-  border-radius: 5px;
-  box-shadow: none !important;
-}
-
-[data-modern-ui='true'] .composer-card {
-  border-radius: 5px;
-  box-shadow: none !important;
-}
-
-[data-modern-ui='true'] .lumina-session-sidebar {
-  border-radius: 5px;
-  box-shadow: none !important;
-}
+DELIVERABLE
+Output the full updated ModernUI.css file, preserving all existing
+selectors and structural rules, with only the visual treatment (shadows,
+glows, gradients, hover motion) simplified per the rules above.
