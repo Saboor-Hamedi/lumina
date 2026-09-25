@@ -252,9 +252,9 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
               onExternalDrop={(e) => handleExternalDrop(e, item.id)}
               onToggle={(id, e) => {
                 if (e?.ctrlKey || e?.metaKey || e?.shiftKey) {
-                  handleFolderClick(id, index, e)
+                  if (e) handleFolderClick(id, index, e)
                 } else {
-                  handleFolderClick(id, index, e)
+                  if (e) handleFolderClick(id, index, e)
                   toggleFolder(id, e)
                 }
               }}
@@ -299,7 +299,9 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
             <SortableListItem
               key={item.snippet.id}
               snippet={item.snippet}
-              onClick={(snippet, e) => handleNoteClick(snippet, index, e)}
+              onClick={(snippet, e) => {
+                if (e) handleNoteClick(snippet, index, e)
+              }}
               onContextMenu={
                 totalSelectedCount > 1 &&
                 (selectedNoteIds.has(item.snippet.id) || selectedFolderIds.size > 0)
@@ -369,11 +371,17 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
             <Virtuoso
               ref={virtuosoRef}
               className="premimum-scrollbar"
-              style={{ flex: 1, height: '100%', contain: 'strict', transform: 'translateZ(0)' }}
+              style={{
+                flex: 1,
+                height: '100%',
+                contain: 'layout style',
+                transform: 'translateZ(0)',
+                willChange: 'scroll-position'
+              }}
               data={flatTree}
               defaultItemHeight={28}
-              overscan={{ main: 1500, reverse: 1500 }}
-              increaseViewportBy={{ top: 600, bottom: 600 }}
+              increaseViewportBy={{ top: 800, bottom: 600 }}
+              overscan={{ main: 400, reverse: 600 }}
               computeItemKey={(index, item) => {
                 if (item.type === 'file') return item.snippet.id
                 if (item.type === 'folder') return item.id

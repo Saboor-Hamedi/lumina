@@ -274,7 +274,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     handleFolderClick,
     handleBackgroundClick
   } = useExplorerSelection({
-    isOpen,
+    isOpen: Boolean(isOpen),
     modalRef,
     virtuosoRef,
     flatTree,
@@ -509,7 +509,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
           setCollapsedDuringSearch={setCollapsedDuringSearch}
           setSelectedIndex={setSelectedIndex}
           selectItemAtIndex={selectItemAtIndex}
-          setSidebarFocus={setSidebarFocus}
+          setSidebarFocus={(val: any) => setSidebarFocus(val)}
           virtuosoRef={virtuosoRef}
           flatTree={flatTree}
           selectedIndex={selectedIndex}
@@ -517,7 +517,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
           toggleFolder={toggleFolder}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          setCreating={setCreating}
+          setCreating={(val: any) => setCreating(val)}
           isQueryActive={isQueryActive}
           filteredSnippets={filteredSnippets}
           allSnippets={allSnippets}
@@ -599,8 +599,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                   selectedFolderIds={selectedFolderIds}
                   selectedSnippetId={selectedSnippetId}
                   selectedIndex={selectedIndex}
-                  sidebarFocus={sidebarFocus}
-                  lastClickedFolder={lastClickedFolder}
+                  sidebarFocus={sidebarFocus || ''}
+                  lastClickedFolder={lastClickedFolder || ''}
                   totalSelectedCount={totalSelectedCount}
                   query={query}
                   matchMetaMap={matchMetaMap}
@@ -608,8 +608,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                   handleFolderContextMenu={handleFolderContextMenu}
                   handleNoteClick={handleNoteClick}
                   handleFolderClick={handleFolderClick}
-                  setSidebarFocus={setSidebarFocus}
-                  setLastClickedFolder={setLastClickedFolder}
+                  setSidebarFocus={(val: any) => setSidebarFocus(val)}
+                  setLastClickedFolder={(val: any) => setLastClickedFolder(val)}
                   setSelectedIndex={setSelectedIndex}
                   handleBackgroundClick={handleBackgroundClick}
                   handleExternalDragEnter={handleExternalDragEnter}

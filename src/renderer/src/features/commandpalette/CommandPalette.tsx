@@ -42,8 +42,8 @@ import {
   GripVertical,
   Trash2
 } from 'lucide-react'
-import Fuse from 'fuse.js'
-import { rankSnippets, getHighlightRegex } from '../../core/utils/searchRanker'
+import { scoreFuzzy, FuzzyMatchRange } from '../../core/utils/fuzzyScorer'
+import { getHighlightRegex } from '../../core/utils/searchRanker'
 import { useTag } from '../../core/hooks/useTag'
 import { useMention } from '../../core/hooks/useMention'
 import { useShallow } from 'zustand/react/shallow'
@@ -70,6 +70,7 @@ export interface PaletteItem {
   folderId?: string
   folderPath?: string
   matchSnippet?: string
+  matchRanges?: FuzzyMatchRange[]
   language?: string
   type?: string
   relativePath?: string
@@ -81,10 +82,34 @@ export interface PaletteItem {
 interface HighlightTextProps {
   text?: string
   highlight?: string
+  ranges?: FuzzyMatchRange[]
 }
 
-const HighlightText: React.FC<HighlightTextProps> = React.memo(({ text, highlight }) => {
-  if (!highlight?.trim() || text === 'Semantic Match' || !text) return <span>{text || ''}</span>
+const HighlightText: React.FC<HighlightTextProps> = React.memo(({ text, highlight, ranges }) => {
+  if (!text) return <span></span>
+
+  if (ranges && ranges.length > 0) {
+    const nodes: React.ReactNode[] = []
+    let cursor = 0
+    for (let i = 0; i < ranges.length; i++) {
+      const { start, end } = ranges[i]
+      if (start > cursor) {
+        nodes.push(<span key={`t-${i}`}>{text.substring(cursor, start)}</span>)
+      }
+      nodes.push(
+        <mark key={`m-${i}`} className="palette-match">
+          {text.substring(start, end)}
+        </mark>
+      )
+      cursor = end
+    }
+    if (cursor < text.length) {
+      nodes.push(<span key="t-end">{text.substring(cursor)}</span>)
+    }
+    return <span>{nodes}</span>
+  }
+
+  if (!highlight?.trim() || text === 'Semantic Match') return <span>{text}</span>
   const regex = getHighlightRegex(highlight)
   if (!regex) return <span>{text}</span>
   const parts = text.split(regex)
@@ -252,7 +277,7 @@ const CommandPaletteRow = React.memo(
               {item.folderId && item.matchType !== 'folder' && (
                 <span className="folder-prefix">{item.folderId}/</span>
               )}
-              <HighlightText text={item.title || 'Untitled'} highlight={query} />
+              <HighlightText text={item.title || 'Untitled'} highlight={query} ranges={item.matchRanges} />
               {item.id && dirtySnippetIds.includes(item.id) && (
                 <div className="dirty-indicator" style={{ marginLeft: '8px' }} />
               )}
@@ -373,7 +398,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
         setQuery(initialQuery)
         setSelectedIndex(0)
         setAiResults([])
-        setMode(settings?.commandPaletteMode || 'search')
+        setMode((settings?.commandPaletteMode as 'ai' | 'search') || 'search')
         setTimeout(() => inputRef.current?.focus(), 50)
       } else {
         if (previousFocusRef.current && typeof (previousFocusRef.current as HTMLElement).focus === 'function') {
@@ -395,36 +420,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
       }
     }, [chatMessages, isChatLoading, isOpen, mode])
 
-    // AI Search Debounce (Skip if in AI Chat mode)
-    useEffect(() => {
-      if (mode === 'ai') return
-
-      const timer = setTimeout(async () => {
-        if (deferredQuery.trim().length > 2) {
-          const results = await searchNotes(deferredQuery, 0.45)
-          setAiResults(results || [])
-        } else {
-          setAiResults([])
-        }
-      }, 400)
-      return () => clearTimeout(timer)
-    }, [deferredQuery, mode, searchNotes])
-
-    const fuseIndex = useMemo(() => {
-      return new Fuse(items, {
-        keys: [
-          { name: 'title', weight: 3 },
-          { name: 'folderId', weight: 2 }
-        ],
-        threshold: 0.4,
-        includeMatches: true,
-        includeScore: true,
-        ignoreLocation: true
-      })
-    }, [items])
-
     const filtered: PaletteItem[] = useMemo(() => {
-      if (mode === 'ai') return [] // Skip all heavy searching if we are just chatting
+      if (mode === 'ai') return [] // Skip all heavy searching if we are chatting
 
       const lowerQuery = deferredQuery.toLowerCase().trim()
 
@@ -535,71 +532,107 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
           matchType: 'action',
           action: 'update'
         }
-      ].filter((a) => !actionQuery || (a.title && a.title.toLowerCase().includes(actionQuery)))
+      ]
 
       // If it's a command query (starts with >), return ONLY system actions (like VS Code)
       if (isActionQuery) {
-        return systemActions.slice(0, 10)
+        if (!actionQuery) return systemActions.slice(0, 15)
+        return systemActions
+          .map((action) => {
+            const res = scoreFuzzy(action.title || '', actionQuery)
+            if (!res) return null
+            return { ...action, score: res.score, matchRanges: res.ranges }
+          })
+          .filter(Boolean)
+          .sort((a, b) => (b!.score || 0) - (a!.score || 0))
+          .slice(0, 15) as PaletteItem[]
       }
 
       // If it's empty, return recent/all files
-      if (!lowerQuery) return items.slice(0, 5)
+      if (!lowerQuery) return items.slice(0, 10)
 
-      // 1. Text Matches (Title & Folder via Fuse, Content via shared rankSnippets)
-      const { results: textMatches } = rankSnippets(items, actionQuery, fuseIndex)
-
-      // 2. Semantic Matches
-      const existingIds = new Set(textMatches.map((i: any) => i.id))
-      const semanticMatches: PaletteItem[] = aiResults
-        .filter((r) => !existingIds.has(r.id))
-        .map((r) => {
-          const item = items.find((i) => i.id === r.id)
-          if (!item) return null
-          return {
+      // 1. In-memory Fuzzy Subsequence Note Matches (VS Code speed < 0.1ms)
+      const noteMatches: PaletteItem[] = []
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]
+        const title = item.title || item.fileName || ''
+        const titleRes = scoreFuzzy(title, actionQuery)
+        if (titleRes) {
+          noteMatches.push({
             ...item,
-            matchType: 'semantic',
-            score: (r.score || 0) * 4,
-            matchSnippet: 'Semantic Match'
+            score: titleRes.score + 50,
+            matchRanges: titleRes.ranges
+          })
+          continue
+        }
+
+        // Fallback: match folder path if title didn't match
+        const folder = item.folderId || item.relativePath || ''
+        if (folder) {
+          const folderRes = scoreFuzzy(folder, actionQuery)
+          if (folderRes) {
+            noteMatches.push({
+              ...item,
+              score: folderRes.score,
+              matchRanges: []
+            })
+          }
+        }
+      }
+
+      // 2. Action matches matching action titles
+      const actionMatches: PaletteItem[] = systemActions
+        .map((action) => {
+          const res = scoreFuzzy(action.title || '', actionQuery)
+          if (!res) return null
+          return { ...action, score: res.score - 10, matchRanges: res.ranges }
+        })
+        .filter(Boolean) as PaletteItem[]
+
+      // 3. Tags matches
+      const tagMatches: PaletteItem[] = (tags || [])
+        .map((t) => {
+          const cleanQuery = lowerQuery.startsWith('#') ? lowerQuery.slice(1) : lowerQuery
+          const res = scoreFuzzy(t, cleanQuery)
+          if (!res) return null
+          return {
+            id: `tag-${t}`,
+            title: `Tag: ${t}`,
+            matchType: 'tag',
+            action: 'filter',
+            value: t,
+            score: res.score + (lowerQuery.startsWith('#') ? 100 : 0),
+            matchRanges: res.ranges
           }
         })
         .filter(Boolean) as PaletteItem[]
 
-      const results = [...textMatches, ...semanticMatches]
-
-      // 3. Tags and Mentions matches
-      const tagMatches: PaletteItem[] = (tags || [])
-        .filter((t) => t.toLowerCase().includes(lowerQuery))
-        .map((t) => ({
-          id: `tag-${t}`,
-          title: `Tag: ${t}`,
-          matchType: 'tag',
-          action: 'filter',
-          value: t,
-          score: lowerQuery.startsWith('#') ? 100 : 8
-        }))
-
+      // 4. Mentions matches
       const mentionMatches: PaletteItem[] = (mentions || [])
-        .filter((m) => m.toLowerCase().includes(lowerQuery))
-        .map((m) => ({
-          id: `mention-${m}`,
-          title: `Mention: ${m}`,
-          matchType: 'mention',
-          action: 'filter',
-          value: m,
-          score: lowerQuery.startsWith('@') ? 100 : 8
-        }))
-
-      const folderMatches: PaletteItem[] = (folders || [])
-        .filter((f) => {
-          const folderName = f.split('/').pop() || f
-          return (
-            folderName.toLowerCase().includes(lowerQuery) || f.toLowerCase().includes(lowerQuery)
-          )
+        .map((m) => {
+          const cleanQuery = lowerQuery.startsWith('@') ? lowerQuery.slice(1) : lowerQuery
+          const res = scoreFuzzy(m, cleanQuery)
+          if (!res) return null
+          return {
+            id: `mention-${m}`,
+            title: `Mention: ${m}`,
+            matchType: 'mention',
+            action: 'filter',
+            value: m,
+            score: res.score + (lowerQuery.startsWith('@') ? 100 : 0),
+            matchRanges: res.ranges
+          }
         })
+        .filter(Boolean) as PaletteItem[]
+
+      // 5. Folder matches
+      const folderMatches: PaletteItem[] = (folders || [])
         .map((f) => {
+          const folderName = f.split('/').pop() || f
+          const res = scoreFuzzy(folderName, lowerQuery)
+          if (!res) return null
           const parts = f.split('/')
-          const folderName = parts.pop() || f
-          const parentPath = parts.join('/')
+          const parentPath = parts.slice(0, -1).join('/')
           return {
             id: `folder-${f}`,
             title: folderName,
@@ -607,16 +640,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
             matchType: 'folder',
             action: 'filter',
             value: f,
-            score: 7
+            score: res.score - 15,
+            matchRanges: res.ranges
           }
         })
+        .filter(Boolean) as PaletteItem[]
 
-      const finalResults = [...results, ...tagMatches, ...mentionMatches, ...folderMatches].sort(
-        (a, b) => (b.score || 0) - (a.score || 0)
-      )
+      const finalResults = [
+        ...noteMatches,
+        ...actionMatches,
+        ...tagMatches,
+        ...mentionMatches,
+        ...folderMatches
+      ].sort((a, b) => (b.score || 0) - (a.score || 0))
 
-      return finalResults.slice(0, 10)
-    }, [deferredQuery, items, tags, mentions, folders, fuseIndex, aiResults, settings?.typeSound, mode])
+      return finalResults.slice(0, 15)
+    }, [deferredQuery, items, tags, mentions, folders, settings?.typeSound, mode])
 
     useEffect(() => {
       if (selectedIndex >= filtered.length && filtered.length > 0) {
@@ -778,6 +817,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
 
       return item.code || item.matchSnippet || ''
     }, [filtered, selectedIndex])
+
+    const [previewContent, setPreviewContent] = useState<string | null>(null)
+    useEffect(() => {
+      if (!selectedItemContent) {
+        setPreviewContent(null)
+        return
+      }
+      const timer = setTimeout(() => {
+        setPreviewContent(selectedItemContent)
+      }, 70)
+      return () => clearTimeout(timer)
+    }, [selectedItemContent])
 
     const handleCopy = useCallback((text: string): void => {
       navigator.clipboard.writeText(text)
@@ -962,10 +1013,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
                 </div>
 
                 <div className="palette-preview-col" style={{ width: `${100 - splitRatio}%` }}>
-                  {selectedItemContent ? (
+                  {previewContent ? (
                     <PreviewCommandPalette
-                      key={filtered[selectedIndex]?.id || 'preview'}
-                      content={selectedItemContent}
+                      content={previewContent}
                       onClose={onClose}
                     />
                   ) : (

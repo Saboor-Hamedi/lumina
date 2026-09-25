@@ -104,7 +104,7 @@ export const ExplorerHeader: React.FC<ExplorerHeaderProps> = ({
             debounceTimerRef.current = setTimeout(() => {
               setQuery(v)
               setCollapsedDuringSearch(new Set())
-            }, 60)
+            }, 120)
           }}
           onKeyDown={(e) => {
             if (e.key === 'ArrowDown') {

@@ -117,7 +117,11 @@ export const PreviewCommandPalette: React.FC<PreviewCommandPaletteProps> = React
                 (s.title.toLowerCase() === targetLower ||
                   s.title.toLowerCase() === `${targetLower}.md`)
             )
-            return { label: target, status: exists ? 'resolved' : 'missing' }
+            return {
+              target,
+              label: target,
+              status: (exists ? 'resolved' : 'missing') as 'resolved' | 'missing'
+            }
           },
           onOpen: handleLinkClick
         }) as Extension

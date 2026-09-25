@@ -1,19 +1,446 @@
-VS Code's file explorer uses a **virtualized tree renderer** (its own List/Tree widget, not the DOM holding every node). Key mechanisms:
+[data-modern-ui='true'] .app-shell {
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  gap: 5px;
+  background: var(--bg-app);
+  box-sizing: border-box;
+}
 
-- **Virtual rendering**: Only visible rows get real DOM nodes. Collapsing a folder just removes its children from the *visible row list* — it doesn't destroy/recreate DOM for the whole subtree, so it's cheap regardless of how many files are inside.
-- **Lazy model**: The tree model keeps folder state (expanded/collapsed) as metadata, not by walking the filesystem again. Collapsing is an O(visible rows) UI operation, not an FS operation.
-- **Async/deferred children**: Subfolders aren't scanned until expanded (lazy loading), so a huge collapsed folder costs almost nothing until you open it.
-- **Diffing on refresh**: When the underlying data changes, VS Code diffes old vs. new tree state rather than re-rendering everything.
+[data-modern-ui='true'] .shell-body {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  gap: 0;
+}
 
-Net effect: collapse/expand feels O(1)-ish to the user because the heavy part (DOM size) is capped by viewport height, not total file count.
+[data-modern-ui='true'] .lumina-activity-bar {
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-sidebar) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  margin-right: 5px;
+  height: 100%;
+  box-sizing: border-box;
+}
 
+[data-modern-ui='true'] .status-bar {
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-sidebar) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
 
-Yes — confirmed, with the core points holding up:
+[data-modern-ui='true'] .sidebar-resizer {
+  width: 5px !important;
+  transition: background 0.15s ease;
+}
 
-VS Code's workbench uses tree widgets that extend base tree implementations with workbench-integrated functionality like context menus, focus handling, and theming, serving as the primary components for file explorers, debug views, and search results. This is the AsyncDataTree/ObjectTree machinery I mentioned. 
-boriel
-Lazy/async children loading is real and standard practice for this pattern: expanding a folder fires a listChildren call, and collapsing mid-load can abort the in-flight request via an AbortSignal — this is the general model VS Code's own explorer follows (children aren't fetched until you expand). 
-grida
-The broader principle — only rendering visible rows, loading children on demand rather than eagerly walking the whole tree — is the standard "virtual treeview" approach used to keep UI threads from locking up on large trees, which is exactly the pattern VS Code's explorer is built on.
+[data-modern-ui='true'] .sidebar-resizer:hover {
+  background: var(--border-dim);
+}
 
-So my original explanation was directionally accurate. The one thing I'd flag as slightly hand-wavy: I can't independently verify the exact internal class names (ObjectTree, diffing implementation details) from these sources — that part I'm relying on general knowledge of VS Code's open-source codebase rather than a freshly-verified source just now. If you want, I can dig into the actual vscode/src/vs/base/browser/ui/tree source on GitHub to confirm specifics.
+[data-modern-ui='true'] .app-shell.left-open .shell-sidebar-left {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-modern-ui='true'] .shell-sidebar-left .unified-sidebar {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 5px;
+  min-width: 0;
+}
+
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-header-section {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-sidebar) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-scrollable-content {
+  flex: 1;
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-sidebar) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+}
+
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-footer-section {
+  margin: 0 !important;
+  width: 100% !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  padding: 0 6px !important;
+  box-sizing: border-box !important;
+  border-radius: 5px;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex !important;
+  align-items: center !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-footer-section:hover {
+  background: var(--bg-active) !important;
+  border-color: var(--border-dim) !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-left .profile-avatar-wrap {
+  border-color: var(--border-dim) !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-scrollable-content::-webkit-scrollbar {
+  width: 3px;
+}
+
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-scrollable-content::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px;
+}
+
+[data-modern-ui='true'] .shell-sidebar-left .sidebar-scrollable-content::-webkit-scrollbar-thumb {
+  background: var(--border-dim);
+  border-radius: 99px;
+}
+
+[data-modern-ui='true'] .app-shell.right-open .shell-sidebar-right {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-panel {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 5px;
+  min-width: 0;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .panel-header-tabs {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-sidebar) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-tab {
+  height: 32px !important;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-body-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-sidebar) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  box-sizing: border-box;
+  min-height: 0;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-sub-header {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-panel) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  flex-shrink: 0;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer {
+  height: auto !important;
+  min-height: 116px !important;
+  max-height: 300px !important;
+  border-radius: 5px !important;
+  border: 1px solid var(--border-dim) !important;
+  background: var(--bg-sidebar) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18) !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: visible !important;
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  position: relative !important;
+  z-index: 9999 !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-container {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative !important;
+  z-index: 9999 !important;
+  overflow: visible !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-card,
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-card:focus-within {
+  border: none !important;
+  border-radius: 5px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-input-area-wrapper {
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-textarea {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  flex: 1 !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer:focus-within {
+  outline: none !important;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+[data-modern-ui='true'] .shell-sidebar-right .inspector-footer-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+}
+
+[data-modern-ui='true'] .shell-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  background: transparent;
+  border: none !important;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .shell-center-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-editor, var(--bg-app));
+  overflow: hidden;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+[data-modern-ui='true'] .tabbar-outer-wrapper {
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
+  box-sizing: border-box;
+  padding-left: 2px;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  overflow: hidden;
+}
+
+[data-modern-ui='true'] .workspace-tabbar {
+  height: 32px !important;
+  border-top-left-radius: 5px !important;
+  border-top-right-radius: 5px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+[data-modern-ui='true'] .workspace-tabbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+[data-modern-ui='true'] .workspace-tab {
+  height: 32px !important;
+}
+
+[data-modern-ui='true'] .tabs-container > :first-child .workspace-tab,
+[data-modern-ui='true'] .tabs-container > .workspace-tab:first-child,
+[data-modern-ui='true'] .workspace-tab:first-child {
+  border-top-left-radius: 5px;
+}
+
+[data-modern-ui='true'] .tabs-container > :last-child .workspace-tab,
+[data-modern-ui='true'] .tabs-container > .workspace-tab:last-child {
+  border-top-right-radius: 5px;
+}
+
+[data-modern-ui='true'] .workspace-tab:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: var(--text-main);
+}
+
+[data-modern-ui='true'] .workspace-tab.active {
+  border-top: 2px solid var(--text-accent) !important;
+  border-bottom: none;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+[data-modern-ui='true'] .workspace-tab.active:hover {
+  background: rgba(255, 255, 255, 0.09) !important;
+}
+
+[data-modern-ui='true'] .workspace-tab.active::after {
+  display: none;
+}
+
+[data-modern-ui='true'] .editor-breadcrumbs-bar {
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
+  box-sizing: border-box;
+  border-bottom: none !important;
+  background: transparent !important;
+}
+
+[data-modern-ui='true'] .workspace-container {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .welcome-page,
+[data-modern-ui='true'] .welcome-container {
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .status-bar {
+  margin: 0 !important;
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-panel);
+  height: 28px;
+  min-height: 28px;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+  flex-shrink: 0;
+  transition: border-color 0.15s ease;
+}
+
+[data-modern-ui='true'] .status-bar-btn {
+  border-radius: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+[data-modern-ui='true'] .status-bar-btn:hover,
+[data-modern-ui='true'] .status-bar-btn.active {
+  background: var(--bg-active);
+  color: var(--text-accent);
+}
+
+[data-modern-ui='true'] .welcome-card {
+  border-radius: 5px;
+  box-shadow: none !important;
+}
+
+[data-modern-ui='true'] .composer-card {
+  border-radius: 5px;
+  box-shadow: none !important;
+}
+
+[data-modern-ui='true'] .lumina-session-sidebar {
+  border-radius: 5px;
+  box-shadow: none !important;
+}

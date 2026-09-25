@@ -340,40 +340,46 @@ export function rankSnippets<T extends SearchableNote>(
     if (!snippet) return
 
     const title = (snippet.title || snippet.fileName || '').toLowerCase()
-    const body = (snippet.code || snippet.content || snippet.body || '').toLowerCase()
     const folderId = (snippet.folderId || snippet.relativePath || '').toLowerCase()
-    const fullText = `${title} ${folderId} ${body}`
-
     const fuseScore = fuseScoreMap.get(snippet.id) ?? 1
     const hasFuseMatch = fuseScore < 1
-    const hasExactPhrase = Boolean(raw && fullText.indexOf(raw) !== -1)
-    const matchingTokensCount = significantTokens.filter(
-      (token) => fullText.indexOf(token) !== -1
-    ).length
-    const hasKeywordMatch = matchingTokensCount > 0
 
-    if (!hasFuseMatch && !hasExactPhrase && !hasKeywordMatch) {
+    const titleHasExact = Boolean(raw && title.indexOf(raw) !== -1)
+    const folderHasExact = Boolean(raw && folderId.indexOf(raw) !== -1)
+    const titleTokenMatch = significantTokens.some((token) => title.indexOf(token) !== -1)
+    const folderTokenMatch = significantTokens.some((token) => folderId.indexOf(token) !== -1)
+
+    let body = ''
+    let hasBodyMatch = false
+
+    // Only scan heavy body string if query is at least 2 chars and title/folder did not match
+    if (!titleHasExact && !folderHasExact && !titleTokenMatch && !folderTokenMatch && !hasFuseMatch && raw.length >= 2) {
+      const rawBody = snippet.code || snippet.content || snippet.body || ''
+      if (rawBody) {
+        body = rawBody.toLowerCase()
+        hasBodyMatch = body.indexOf(raw) !== -1 || (significantTokens.length > 0 && significantTokens.some((token) => body.indexOf(token) !== -1))
+      }
+    }
+
+    if (!hasFuseMatch && !titleHasExact && !folderHasExact && !titleTokenMatch && !folderTokenMatch && !hasBodyMatch) {
       return
     }
 
     const score = scoreSnippet(snippet, searchInfo, fuseScore)
     if (score <= 0 && !hasFuseMatch) return
 
-    const matchSnippet = extractContentSnippet(
-      snippet.code || snippet.content || snippet.body || '',
-      raw,
-      significantTokens
-    )
+    let matchType: MatchType = 'title'
+    let matchSnippet = ''
 
-    let matchType: MatchType = 'content'
-    if (hasExactPhrase && title.indexOf(raw) !== -1) {
+    if (titleHasExact || titleTokenMatch || hasFuseMatch) {
       matchType = 'title'
-    } else if (
-      hasFuseMatch &&
-      (!hasExactPhrase || body.indexOf(raw) === -1) &&
-      matchingTokensCount === 0
-    ) {
-      matchType = 'title'
+    } else {
+      matchType = 'content'
+      matchSnippet = extractContentSnippet(
+        snippet.code || snippet.content || snippet.body || '',
+        raw,
+        significantTokens
+      )
     }
 
     const enriched: ScoredNote<T> = {
