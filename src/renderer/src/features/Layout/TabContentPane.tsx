@@ -89,7 +89,8 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          zIndex: isSelected ? 10 : 1
+          zIndex: isSelected ? 10 : 1,
+          transition: 'opacity 0.08s ease-out'
         }}
       >
         <GlobalErrorHandler>

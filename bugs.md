@@ -1,257 +1,496 @@
-Here is the complete package to transform your MindForge settings into that sleek, premium VS Code/Lumina aesthetic.
+VS Code feels **ridiculously snappy when switching tabs** because it does _not_ treat every tab switch as “open this file from scratch.” It uses a layered architecture optimized around **keeping editor state alive, avoiding unnecessary work, and rendering only what changed**.
 
-### 1. The Prompt for Your Agent
-*Copy and paste this directly to your agent. It focuses purely on UI/UX architecture and styling logic.*
+For something like your Lumina Electron app, the important ideas are:
 
-***
+### 1. Tabs are mostly references, not full reloads
 
-**Prompt: Refactor Settings UI to "Sleek Modal" Aesthetic**
+When you click between tabs, VS Code generally doesn't:
 
-**Context:**
-Our current settings UI feels too much like a traditional desktop application window. We need to refactor it to match the "Sleek Modal" aesthetic seen in modern tools like VS Code or Lumina. The goal is a floating, borderless, highly organized interface that feels like a native extension of the editor, not a separate system dialog.
+```text
+tab click
+ → read file from disk
+ → parse file
+ → create editor
+ → syntax highlight everything
+ → calculate layout
+ → render everything
+```
 
-**Visual & Architectural Requirements:**
+Instead, it maintains editor models and state in memory:
 
-1.  **The "Floating Modal" Container:**
-    *   **No OS Title Bar:** Remove the native Windows/macOS title bar completely. Implement a custom, sleek header strip (approx. 40-48px height) inside the modal content area.
-    *   **Window Controls:** Place Minimize, Maximize, and Close icons in the top-right corner of this custom header. They should be minimal, monochrome icons that turn white/accent color on hover.
-    *   **Borders & Shadows:** Remove all hard borders around the main window. Use a deep, soft drop shadow (`box-shadow: 0 20px 50px rgba(0,0,0,0.5)`) to create depth against the dimmed background.
-    *   **Rounded Corners:** Apply a generous border-radius (8px–12px) to the entire modal container.
+```text
+File A ──┐
+File B ──┤
+File C ──┼──> Editor Models
+File D ──┤
+File E ──┘
+             ↓
+       Active Editor
+             ↓
+          Render
+```
 
-2.  **Sidebar Navigation (Left Pane):**
-    *   **Layout:** Fixed width (approx. 220px), full height of the modal minus header.
-    *   **Typography:** Use uppercase, tracked-out labels for section headers ("GENERAL", "FEATURES") in a muted gray (`#8b949e`).
-    *   **Active State:** The active item ("Look & Feel") should have a distinct left-border accent (2px–3px wide) and a subtle background tint (e.g., `rgba(accent, 0.1)`). Text should be bright white/accent color.
-    *   **Hover State:** Items should have a subtle background highlight on hover, but NO layout shift.
-    *   **Icons:** Add small, consistent icons to the left of each menu item for faster visual scanning.
+Switching:
 
-3.  **Content Area (Right Pane):**
-    *   **Header:** Large, bold title ("APPEARANCE") at the top, followed by a subtle divider line.
-    *   **Setting Rows:** Each setting (e.g., "Base Theme", "Font Size") should be a distinct block with generous vertical padding (16px–24px).
-    *   **Controls Alignment:** All interactive elements (dropdowns, sliders, color pickers) must be right-aligned or consistently spaced from the description text.
-    *   **Input Styling:**
-        *   **Dropdowns:** Dark background, subtle border, rounded corners (4px–6px). No default browser arrow—use a custom SVG chevron.
-        *   **Sliders:** Custom track (thin, dark gray) and thumb (accent color circle, slightly larger than track). Show current value in a small badge next to the slider.
-        *   **Color Pickers:** Display as a rounded square swatch. Clicking it opens a popover picker.
-    *   **Descriptions:** Helper text below titles should be muted gray and slightly smaller than the title.
+```text
+A → B
+```
 
-4.  **Global Polish:**
-    *   **Scrollbars:** Custom thin scrollbars (6px width) with transparent tracks and rounded thumbs. Hide scrollbars when not scrolling if possible.
-    *   **Transitions:** All hover states and focus rings should have smooth transitions (`0.2s ease`).
-    *   **Focus Rings:** Use a subtle accent-colored glow (`box-shadow: 0 0 0 2px rgba(accent, 0.3)`) instead of default browser outlines.
+is therefore closer to:
 
-**Goal:**
-Transform the settings from a "system dialog" into a "premium control panel." It should feel lightweight, fast, and visually integrated with the rest of the app's dark theme.
+```text
+activeEditor = editorB
+render()
+```
 
-**Constraints:**
-*   Do not change the underlying settings logic or data structure—only the rendering/UI layer.
-*   Ensure the modal is draggable via the custom header bar.
-*   Maintain accessibility: sufficient contrast for text, visible focus states for keyboard navigation.
-*   Test with both light and dark themes to ensure the modal adapts correctly.
+rather than reopening B.
 
-***
+---
 
-### 2. The CSS Blueprint (For Reference/Implementation)
-*While you are using Egui (which uses Rust code for styling, not CSS), this CSS blueprint serves as the exact visual specification your agent needs to translate into Egui `Style` structs and painting logic.*
+### 2. It separates the document model from the UI
 
-```css
-/* === MODAL CONTAINER === */
-.settings-modal {
-  background: #1e1e2e; /* Deep slate background */
-  border-radius: 12px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  width: 900px;
-  height: 600px;
-}
+This is **one of the biggest architectural lessons**.
 
-/* === CUSTOM HEADER === */
-.modal-header {
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  -webkit-app-region: drag; /* Makes header draggable */
-}
+VS Code has a model representing the document:
 
-.window-controls {
-  display: flex;
-  gap: 12px;
-  -webkit-app-region: no-drag;
-}
+```text
+TextModel
+   ↓
+Editor
+   ↓
+DOM / rendering
+```
 
-.control-icon {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-.control-icon:hover { opacity: 1; }
-.control-close { background: #ff5f56; }
-.control-minimize { background: #ffbd2e; }
-.control-maximize { background: #27c93f; }
+The document can remain alive even when it isn't currently visible.
 
-/* === LAYOUT === */
-.modal-body {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-}
+So if you switch:
 
-/* === SIDEBAR === */
-.sidebar {
-  width: 220px;
-  background: rgba(0, 0, 0, 0.1);
-  padding: 20px 0;
-  overflow-y: auto;
-}
+```text
+A → B → C → A
+```
 
-.section-title {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  color: #8b949e;
-  padding: 8px 20px;
-  text-transform: uppercase;
-}
+A's document state hasn't disappeared.
 
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 20px;
-  color: #c9d1d9;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border-left: 3px solid transparent;
-}
+Cursor position, selection, undo history, scroll position, etc. can be retained.
 
-.nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
-}
+For Lumina, you want something conceptually similar:
 
-.nav-item.active {
-  background: rgba(99, 102, 241, 0.1); /* Accent tint */
-  color: #818cf8; /* Accent color */
-  border-left-color: #818cf8;
-  font-weight: 500;
-}
+```ts
+interface DocumentModel {
+  id: string
+  uri: string
 
-/* === CONTENT AREA === */
-.content {
-  flex: 1;
-  padding: 30px 40px;
-  overflow-y: auto;
-}
+  content: string
 
-.content-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 24px;
-  letter-spacing: -0.02em;
-}
+  cursor: CursorState
+  selection: SelectionState
+  scrollTop: number
 
-.setting-block {
-  margin-bottom: 24px;
-  padding-bottom: 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
+  dirty: boolean
 
-.setting-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #e6edf3;
-  margin-bottom: 6px;
-}
-
-.setting-desc {
-  font-size: 12px;
-  color: #8b949e;
-  margin-bottom: 12px;
-  line-height: 1.5;
-}
-
-/* === CONTROLS === */
-.dropdown {
-  background: #2d2d3f;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 8px 12px;
-  color: #fff;
-  font-size: 13px;
-  min-width: 200px;
-  cursor: pointer;
-}
-
-.slider-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.slider-track {
-  flex: 1;
-  height: 4px;
-  background: #3d3d50;
-  border-radius: 2px;
-  position: relative;
-}
-
-.slider-thumb {
-  width: 16px;
-  height: 16px;
-  background: #f97316; /* Accent orange */
-  border-radius: 50%;
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  cursor: grab;
-  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
-}
-
-.value-badge {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-family: monospace;
-  color: #fff;
-  min-width: 40px;
-  text-align: center;
-}
-
-/* === SCROLLBARS === */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  parsed?: ParsedDocument
 }
 ```
 
-### Key Implementation Notes for Egui
-Since you are using Egui, your agent will need to translate these CSS concepts into Egui primitives:
+Then your tab should **reference** that model rather than own/recreate it.
 
-1.  **Custom Header:** Use `egui::TopBottomPanel::top("header")` with `frame.inner_margin` set to create the 48px height. Draw window controls manually using `ui.add(Button::new(...))` with custom icons.
-2.  **Sidebar Active State:** Use `ui.visuals().selection.bg_fill` with low alpha for the active background tint. Draw the left border accent using `ui.painter().line_segment()`.
-3.  **Slider Thumb:** Egui's default slider is basic. You'll need to use `egui::Slider::new(...).custom_formatter(...)` and potentially override the painting logic to get the glowing thumb effect. Alternatively, use a third-party crate like `egui_extras` or custom paint callbacks.
-4.  **Rounded Corners:** Set `visuals.window_rounding` to `12.0` globally for the modal window.
-5.  **Drop Shadow:** Egui doesn't have native drop shadows for windows. You'll need to draw a semi-transparent black rectangle behind the modal window with a blur effect (if supported) or use a pre-rendered shadow texture.
+---
 
-This combination of prompt and CSS blueprint gives your agent everything needed to replicate that sleek, modern settings UI while respecting Egui's immediate-mode constraints.
+### 3. Only one editor needs expensive visual work
+
+Suppose you have:
+
+```text
+50 tabs
+```
+
+You absolutely don't want:
+
+```text
+50 React editors
+50 syntax highlighters
+50 layouts
+50 DOM trees
+50 expensive observers
+```
+
+You want something closer to:
+
+```text
+                    ┌── Document A
+                    ├── Document B
+Workspace ──────────┼── Document C
+                    ├── Document D
+                    └── Document E
+
+                         ↓
+
+                  Active Editor
+                         ↓
+                  Rendering Layer
+```
+
+The inactive documents can exist as **cheap models**.
+
+---
+
+### 4. VS Code heavily virtualizes rendering
+
+A text editor can contain:
+
+```text
+10,000 lines
+```
+
+but the screen may only display:
+
+```text
+30–60 lines
+```
+
+There is no reason to render all 10,000 lines as DOM nodes.
+
+Conceptually:
+
+```text
+Document
+────────────────────────────
+1
+2
+3
+...
+5000
+5001  ← viewport
+5002
+5003
+...
+5035  ← viewport
+...
+10000
+────────────────────────────
+```
+
+Only the visible region needs expensive rendering.
+
+This is critical if Lumina's editor is currently rendering large documents through React.
+
+---
+
+### 5. React isn't driving every keystroke
+
+This is another huge architectural point.
+
+You don't want:
+
+```text
+keypress
+   ↓
+setState()
+   ↓
+React reconciliation
+   ↓
+Editor component tree
+   ↓
+DOM updates
+```
+
+for every character.
+
+Instead:
+
+```text
+Keyboard
+   ↓
+Editor engine
+   ↓
+Text model mutation
+   ↓
+Targeted rendering
+```
+
+React can manage the **application shell**, while the editor itself behaves more like an imperative rendering system.
+
+This is basically the same philosophy you're already applying to Lumina's graph performance.
+
+---
+
+### 6. Tab switching should be O(1)
+
+Your tab lookup should ideally be:
+
+```ts
+Map<string, DocumentModel>
+```
+
+rather than:
+
+```ts
+documents.find(...)
+```
+
+for every operation.
+
+For example:
+
+```ts
+const documents = new Map<string, DocumentModel>()
+
+documents.set(fileId, document)
+
+const document = documents.get(fileId)
+```
+
+Then switching is effectively:
+
+```ts
+function activateTab(id: string) {
+  const document = documents.get(id)
+
+  if (!document) return
+
+  activeDocument = document
+}
+```
+
+Very little work happens.
+
+---
+
+### 7. VS Code doesn't synchronously do everything on activation
+
+This is an underrated trick.
+
+When you activate a tab, the critical path should be tiny:
+
+```text
+CLICK
+ ↓
+set active tab
+ ↓
+paint editor
+ ↓
+USER SEES IT
+```
+
+Then secondary work can happen afterward:
+
+```text
+            ┌─ syntax services
+            ├─ diagnostics
+            ├─ indexing
+            ├─ semantic analysis
+            ├─ autocomplete preparation
+            └─ background parsing
+```
+
+In other words:
+
+> **Make the user-visible transition synchronous and push non-critical work off the critical path.**
+
+---
+
+## 8. It preserves editor state aggressively
+
+Imagine:
+
+```text
+README.md
+main.ts
+Graph.tsx
+database.sql
+```
+
+You open `Graph.tsx`, scroll to line 3,500, then switch tabs.
+
+When you return, VS Code doesn't make you start over.
+
+It has retained state such as:
+
+```ts
+{
+  ;(cursor, selection, scrollPosition, folds, undoStack, viewState)
+}
+```
+
+For Lumina, I'd explicitly maintain:
+
+```ts
+interface EditorViewState {
+  cursor: number
+  selection: Selection | null
+
+  scrollTop: number
+  scrollLeft: number
+
+  foldedRanges: Range[]
+
+  focusedBlock?: string
+}
+```
+
+Then:
+
+```text
+Document Model
+      +
+Editor View State
+      +
+Editor Renderer
+```
+
+are separate concerns.
+
+---
+
+# The architecture I'd use for Lumina
+
+Given you're building an Electron + TypeScript knowledge-management app, I'd structure the editor roughly like this:
+
+```text
+                    LUMINA
+                       │
+             ┌─────────┴─────────┐
+             │                   │
+        Application          Document Store
+           Shell                  │
+             │              Map<id, Model>
+             │                   │
+       React UI             ┌────┼────┐
+             │              │    │    │
+          Tabs            Doc A Doc B Doc C
+             │
+             ↓
+      Active Document ID
+             │
+             ↓
+       Editor Controller
+             │
+       ┌─────┴─────┐
+       │           │
+   View State   Renderer
+       │           │
+       └─────┬─────┘
+             ↓
+          Canvas/
+           DOM
+```
+
+And your React state should ideally contain something tiny:
+
+```ts
+interface WorkspaceState {
+  activeTabId: string
+  openTabIds: string[]
+}
+```
+
+**Not:**
+
+```ts
+interface WorkspaceState {
+    activeTabId: string;
+    openTabs: {
+        id: string;
+        content: string;
+        parsedMarkdown: ...
+        syntaxTree: ...
+        renderedHtml: ...
+        ...
+    }[];
+}
+```
+
+That second design makes every state update potentially expensive.
+
+---
+
+# The killer optimization
+
+For an app like Lumina, I'd go even further.
+
+Use **three levels of state**:
+
+```text
+LEVEL 1 — UI STATE
+────────────────────────
+activeTab
+sidebar
+zoom
+panels
+selection
+
+
+LEVEL 2 — DOCUMENT STATE
+────────────────────────
+content
+cursor
+undo
+metadata
+view state
+
+
+LEVEL 3 — HEAVY COMPUTATION
+────────────────────────
+Markdown AST
+backlinks
+graph relationships
+search index
+embeddings
+syntax analysis
+```
+
+Only Level 1 should be constantly reactive.
+
+Level 3 should live outside React and update asynchronously.
+
+That means clicking:
+
+```text
+Tab A → Tab B
+```
+
+doesn't accidentally trigger:
+
+```text
+Markdown parsing
+Graph calculation
+Backlink calculation
+Search indexing
+React tree reconciliation
+Canvas redraw
+```
+
+That's the kind of architectural separation that makes an app **feel** instantaneous.
+
+---
+
+### One mental model to keep
+
+The secret isn't simply "VS Code is optimized."
+
+It's this:
+
+> **VS Code minimizes the amount of work required to make the next frame visible.**
+
+For Lumina, I'd measure tab switching as:
+
+```text
+pointerdown
+   ↓
+activeTab mutation
+   ↓
+editor state restoration
+   ↓
+first visual frame
+```
+
+and target roughly:
+
+```text
+< 16 ms  → feels instant
+16–32 ms → generally good
+32–50 ms → noticeable
+> 50 ms  → user starts feeling the UI
+```
+
+If you want **Obsidian/VS-Code-level snappiness in Lumina**, the next thing I'd investigate isn't the graph renderer—it is the **tab → document model → editor renderer pipeline**. That's where a seemingly tiny tab click can accidentally trigger a massive React/Electron workload.

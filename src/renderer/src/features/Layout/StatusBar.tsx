@@ -103,7 +103,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       words: words.toLocaleString(),
       readTime: `${readMinutes} min read`
     }
-  }, [selectedSnippet?.code])
+  }, [selectedSnippet?.id, selectedSnippet?.code])
 
   const statusBarRef = useRef<HTMLDivElement | null>(null)
   const scrollableRef = useRef<HTMLDivElement | null>(null)

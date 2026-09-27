@@ -1,24 +1,51 @@
-import React, { useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
 import './NoteDetails.css'
 
-export const NoteOutline = ({ note: propNote, snippet }) => {
+export interface HeadingItem {
+  level: number
+  text: string
+  line: number
+}
+
+export interface NoteOutlineProps {
+  note?: {
+    id?: string
+    title?: string
+    code?: string
+    [key: string]: any
+  } | null
+  snippet?: any
+}
+
+export const NoteOutline: React.FC<NoteOutlineProps> = React.memo(({ note: propNote, snippet }) => {
   const note = propNote || snippet
-  const headings = useMemo(() => {
-    if (!note || !note.code) return []
-    const lines = note.code.split('\n')
-    const extracted = []
-    lines.forEach((line, index) => {
-      const match = line.match(/^(#{1,6})\s+(.*)/)
-      if (match) {
-        extracted.push({
-          level: match[1].length,
-          text: match[2],
-          line: index + 1
-        })
-      }
-    })
-    return extracted
-  }, [note?.code])
+  const [headings, setHeadings] = useState<HeadingItem[]>([])
+
+  // Defer outline extraction off the immediate tab-switch frame (VS Code style Level 3 computation)
+  useEffect(() => {
+    if (!note || !note.code) {
+      setHeadings([])
+      return
+    }
+
+    const timer = setTimeout(() => {
+      const lines = note.code.split('\n')
+      const extracted: HeadingItem[] = []
+      lines.forEach((line: string, index: number) => {
+        const match = line.match(/^(#{1,6})\s+(.*)/)
+        if (match) {
+          extracted.push({
+            level: match[1].length,
+            text: match[2],
+            line: index + 1
+          })
+        }
+      })
+      setHeadings(extracted)
+    }, 16) // Yields to let the active tab paint in < 16ms
+
+    return () => clearTimeout(timer)
+  }, [note?.id, note?.code])
 
   if (!note) {
     return (
@@ -89,6 +116,7 @@ export const NoteOutline = ({ note: propNote, snippet }) => {
       </ul>
     </div>
   )
-}
+})
 
+NoteOutline.displayName = 'NoteOutline'
 export default NoteOutline

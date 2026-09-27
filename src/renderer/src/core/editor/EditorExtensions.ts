@@ -481,6 +481,8 @@ export function useEditorExtensions({
     ]
   )
 
+  const noteId = snippetRef.current?.id
+
   const finalExtensions = useMemo(
     () => [
       ...editorExtensions,
@@ -493,7 +495,8 @@ export function useEditorExtensions({
       highlightExtension,
       Prec.highest(tables({ onLinkClick: handleTableLinkClick }))
     ],
-    [editorExtensions, dropExtension, handleTableLinkClick]
+    // Stable per note instance: CodeMirror should NEVER reconfigure on tab switch
+    [noteId]
   )
 
   return {

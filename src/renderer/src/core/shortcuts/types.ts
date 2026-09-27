@@ -32,6 +32,7 @@ export interface KeyboardShortcutHandlers {
   onEscape?: ((e?: KeyboardEvent) => boolean | void) | null
   onNextTab?: () => void
   onPreviousTab?: () => void
+  onSelectTabByIndex?: (index: number) => void
   onGlobalSearch?: () => void
   onFocusBreadcrumbs?: () => void
   onChangeIcon?: () => void

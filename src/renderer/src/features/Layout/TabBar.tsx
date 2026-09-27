@@ -91,11 +91,16 @@ const SortableTabItem = memo<SortableTabItemProps>(
           className={`workspace-tab ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${isDragging ? 'dragging' : ''} ${isPinned ? 'pinned' : ''}`}
           style={{
             transform: transform ? `translate3d(${transform.x}px, 0, 0)` : undefined,
-            transition: transition || undefined,
+            transition: isDragging ? transition : undefined,
             opacity: isDragging ? 0.4 : 1
           }}
           {...attributes}
           {...listeners}
+          onMouseDown={(e: React.MouseEvent) => {
+            if (e.button === 0 && !isActive) {
+              onOpen(id)
+            }
+          }}
           onClick={() => onOpen(id)}
           onAuxClick={(e: React.MouseEvent) => e.button === 1 && onClose(e, id)}
           onContextMenu={(e: React.MouseEvent) => onContextMenu(e, id)}
@@ -213,13 +218,13 @@ export const TabBar: React.FC<TabBarProps> = () => {
         const containerRect = tabbarRef.current.getBoundingClientRect()
         const tabRect = activeTabElement.getBoundingClientRect()
 
-        if (tabRect.left < containerRect.left || tabRect.right > containerRect.right) {
-          const scrollLeftTarget =
-            tabbarRef.current.scrollLeft +
-            (tabRect.left - containerRect.left) -
-            containerRect.width / 2 +
-            tabRect.width / 2
-          tabbarRef.current.scrollTo({ left: scrollLeftTarget, behavior: 'smooth' })
+        const padding = 16
+        if (tabRect.left < containerRect.left) {
+          const scrollDiff = tabRect.left - containerRect.left - padding
+          tabbarRef.current.scrollBy({ left: scrollDiff, behavior: 'smooth' })
+        } else if (tabRect.right > containerRect.right) {
+          const scrollDiff = tabRect.right - containerRect.right + padding
+          tabbarRef.current.scrollBy({ left: scrollDiff, behavior: 'smooth' })
         }
       }
     })

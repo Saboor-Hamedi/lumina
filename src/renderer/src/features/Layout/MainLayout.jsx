@@ -448,6 +448,59 @@ export const MainLayout = () => {
     return () => window.removeEventListener('keydown', handleCanvasDrawerKey, true)
   }, [])
 
+  // Dedicated capture-phase shortcut listener for Tab Navigation (Ctrl+Tab, Ctrl+Shift+Tab, Ctrl+1..9)
+  useEffect(() => {
+    const handleTabNavCapture = (e) => {
+      if (
+        window.__isRecordingShortcut ||
+        document.querySelector('.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay') ||
+        (document.activeElement && document.activeElement.closest && document.activeElement.closest('.shortcut-inline-container, .shortcut-modal'))
+      ) {
+        return
+      }
+
+      const isPrimary = e.ctrlKey || e.metaKey
+
+      // Ctrl + 1..9 (Direct Tab Switching)
+      if (isPrimary && !e.altKey && !e.shiftKey && e.key >= '1' && e.key <= '9') {
+        const targetIdx = parseInt(e.key, 10) - 1
+        const tabs = useWorkspaceStore.getState().openTabs || []
+        if (targetIdx >= 0 && targetIdx < tabs.length) {
+          e.preventDefault()
+          e.stopPropagation()
+          e.stopImmediatePropagation()
+          useWorkspaceStore.getState().setActiveTabId(tabs[targetIdx])
+          return
+        }
+      }
+
+      // Ctrl + Tab / Ctrl + Shift + Tab (Tab Cycling)
+      if (isPrimary && !e.altKey && (e.key === 'Tab' || e.code === 'Tab')) {
+        const tabs = useWorkspaceStore.getState().openTabs || []
+        if (tabs.length > 0) {
+          e.preventDefault()
+          e.stopPropagation()
+          e.stopImmediatePropagation()
+          const currentId = useWorkspaceStore.getState().activeTabId
+          const currentIdx = currentId ? tabs.indexOf(currentId) : -1
+          if (e.shiftKey) {
+            // Previous tab (Ctrl + Shift + Tab)
+            const prevIdx = currentIdx <= 0 ? tabs.length - 1 : currentIdx - 1
+            useWorkspaceStore.getState().setActiveTabId(tabs[prevIdx])
+          } else {
+            // Next tab (Ctrl + Tab)
+            const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % tabs.length
+            useWorkspaceStore.getState().setActiveTabId(tabs[nextIdx])
+          }
+          return
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleTabNavCapture, true)
+    return () => window.removeEventListener('keydown', handleTabNavCapture, true)
+  }, [])
+
   useEffect(() => {
     let wasLarge = window.innerWidth > 700
     const handleResize = () => {
@@ -599,25 +652,26 @@ export const MainLayout = () => {
       }
     },
     onNextTab: () => {
-      if (openTabs.length === 0) return
-      const currentIdx = activeTabId ? openTabs.indexOf(activeTabId) : -1
-      const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % openTabs.length
-      const nextId = openTabs[nextIdx]
-      const nextSnippet = snippets.find((s) => s.id === nextId)
-      if (nextSnippet) setSelectedSnippet(nextSnippet)
+      const tabs = useWorkspaceStore.getState().openTabs || []
+      if (tabs.length === 0) return
+      const currentId = useWorkspaceStore.getState().activeTabId
+      const currentIdx = currentId ? tabs.indexOf(currentId) : -1
+      const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % tabs.length
+      useWorkspaceStore.getState().setActiveTabId(tabs[nextIdx])
     },
     onPreviousTab: () => {
-      if (openTabs.length === 0) return
-      const currentIdx = activeTabId ? openTabs.indexOf(activeTabId) : -1
-      const prevIdx =
-        currentIdx === -1
-          ? openTabs.length - 1
-          : currentIdx === 0
-            ? openTabs.length - 1
-            : currentIdx - 1
-      const prevId = openTabs[prevIdx]
-      const prevSnippet = snippets.find((s) => s.id === prevId)
-      if (prevSnippet) setSelectedSnippet(prevSnippet)
+      const tabs = useWorkspaceStore.getState().openTabs || []
+      if (tabs.length === 0) return
+      const currentId = useWorkspaceStore.getState().activeTabId
+      const currentIdx = currentId ? tabs.indexOf(currentId) : -1
+      const prevIdx = currentIdx <= 0 ? tabs.length - 1 : currentIdx - 1
+      useWorkspaceStore.getState().setActiveTabId(tabs[prevIdx])
+    },
+    onSelectTabByIndex: (index) => {
+      const tabs = useWorkspaceStore.getState().openTabs || []
+      if (index >= 0 && index < tabs.length) {
+        useWorkspaceStore.getState().setActiveTabId(tabs[index])
+      }
     }
   })
 

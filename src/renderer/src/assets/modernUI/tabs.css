@@ -51,6 +51,7 @@
   background: transparent !important;
   color: var(--text-muted);
   font-size: 12px;
+  font-weight: 500;
   transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
   box-sizing: border-box;
 }

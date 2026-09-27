@@ -1,5 +1,4 @@
-import React, { useState } from 'react'
-import { useSettingsStore } from '../../core/store/SettingStore'
+import React, { useState, useEffect } from 'react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import {
   Clock,
@@ -16,12 +15,22 @@ import {
   Fingerprint,
   Users,
   Copy,
-  Check
+  Check,
+  type LucideIcon
 } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import './NoteDetails.css'
 
-const PropertyRow = ({
+export interface PropertyRowProps {
+  icon: LucideIcon
+  name: string
+  value: string | number
+  rawCopyValue?: string
+  iconColor?: string
+  copyable?: boolean
+}
+
+const PropertyRow: React.FC<PropertyRowProps> = ({
   icon: Icon,
   name,
   value,
@@ -32,7 +41,7 @@ const PropertyRow = ({
   const [copied, setCopied] = useState(false)
   const isDimmed = value === 'none' || value === 0 || value === '0' || value === 'false' || value === 'null'
 
-  const handleCopy = (e) => {
+  const handleCopy = (e: React.MouseEvent) => {
     if (!copyable) return
     e.stopPropagation()
     const textToCopy = rawCopyValue || String(value)
@@ -72,9 +81,80 @@ const PropertyRow = ({
   return content
 }
 
-export const NoteDetails = ({ note: propNote, snippet, isLoading = false }) => {
+export interface NoteDetailsProps {
+  note?: {
+    id?: string
+    title?: string
+    code?: string
+    folderId?: string
+    timestamp?: number
+    language?: string
+    tags?: string[] | string
+    customIcon?: string
+    [key: string]: any
+  } | null
+  snippet?: any
+  isLoading?: boolean
+}
+
+export const NoteDetails: React.FC<NoteDetailsProps> = React.memo(({
+  note: propNote,
+  snippet,
+  isLoading = false
+}) => {
   const note = propNote || snippet
-  const pinnedTabIds = useWorkspaceStore((state) => state.pinnedTabIds)
+  const pinnedTabIds = useWorkspaceStore((state: any) => state.pinnedTabIds || [])
+
+  const computedStats = React.useMemo(() => {
+    if (!note?.code) {
+      return {
+        wordCount: 0,
+        readTime: '1m',
+        tagCount: 0,
+        mentionCount: 0
+      }
+    }
+
+    const code = note.code
+    const wordCount = code.trim() ? code.trim().split(/\s+/).filter(Boolean).length : 0
+    const readTime = Math.max(1, Math.ceil(wordCount / 200)) + 'm'
+
+    const tagSet = new Set<string>()
+    if (note.tags) {
+      const rawTags = Array.isArray(note.tags)
+        ? note.tags
+        : typeof note.tags === 'string' && note.tags.trim() !== ''
+          ? note.tags.split(',')
+          : []
+      rawTags.forEach((t: string) => {
+        const trimmed = String(t).trim()
+        if (trimmed) tagSet.add(trimmed.startsWith('#') ? trimmed : `#${trimmed}`)
+      })
+    }
+
+    const codeWithoutBlocks = code
+      .replace(/```[\s\S]*?```/g, '')
+      .replace(/`[^`]+`/g, '')
+    const tagRegex = /(?:^|\s)(#[\w-]+)/g
+    const mentionRegex = /(?:^|\s)(@[\w-]+)/g
+    let match: RegExpExecArray | null = null
+
+    while ((match = tagRegex.exec(codeWithoutBlocks)) !== null) {
+      tagSet.add(match[1])
+    }
+
+    let mentionCount = 0
+    while ((match = mentionRegex.exec(codeWithoutBlocks)) !== null) {
+      mentionCount++
+    }
+
+    return {
+      wordCount,
+      readTime,
+      tagCount: tagSet.size,
+      mentionCount
+    }
+  }, [note?.id, note?.code, note?.tags])
 
   if (isLoading) {
     return (
@@ -107,44 +187,7 @@ export const NoteDetails = ({ note: propNote, snippet, isLoading = false }) => {
     )
   }
 
-  // Calculate statistics
   const charCount = note.code?.length || 0
-  const wordCount = note.code?.trim() ? note.code.trim().split(/\s+/).length : 0
-  const readTime = Math.max(1, Math.ceil(wordCount / 200)) + 'm'
-
-  // Calculate true tag count (Frontmatter + Inline Tags, ignoring headings)
-  const tagSet = new Set()
-
-  if (note.tags) {
-    const rawTags = Array.isArray(note.tags)
-      ? note.tags
-      : typeof note.tags === 'string' && note.tags.trim() !== ''
-        ? note.tags.split(',')
-        : []
-    rawTags.forEach((t) => {
-      const trimmed = String(t).trim()
-      if (trimmed) tagSet.add(trimmed.startsWith('#') ? trimmed : `#${trimmed}`)
-    })
-  }
-
-  let codeWithoutBlocks = (note.code || '')
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/`[^`]+`/g, '')
-  const tagRegex = /(?:^|\s)(#[\w-]+)/g
-  const mentionRegex = /(?:^|\s)(@[\w-]+)/g
-  let match
-
-  while ((match = tagRegex.exec(codeWithoutBlocks)) !== null) {
-    tagSet.add(match[1])
-  }
-
-  const mentionSet = new Set()
-  while ((match = mentionRegex.exec(codeWithoutBlocks)) !== null) {
-    mentionSet.add(match[1])
-  }
-
-  const tagCount = tagSet.size
-  const mentionCount = mentionSet.size
 
   return (
     <div className="details-modal-body" style={{ height: '100%', overflowY: 'auto' }}>
@@ -154,9 +197,9 @@ export const NoteDetails = ({ note: propNote, snippet, isLoading = false }) => {
           <PropertyRow
             icon={Fingerprint}
             name="id"
-            value={note.id}
+            value={note.id || 'none'}
             rawCopyValue={note.id}
-            copyable={true}
+            copyable={Boolean(note.id)}
             iconColor="#8b5cf6"
           />
           <PropertyRow icon={Type} name="title" value={note.title || 'Untitled'} iconColor="#ec4899" />
@@ -173,12 +216,12 @@ export const NoteDetails = ({ note: propNote, snippet, isLoading = false }) => {
             iconColor="#14b8a6"
           />
           <PropertyRow icon={Code} name="language" value={note.language || 'markdown'} iconColor="#3b82f6" />
-          <PropertyRow icon={Tag} name="tags" value={tagCount} iconColor="#10b981" />
-          <PropertyRow icon={Users} name="mentions" value={mentionCount} iconColor="#8b5cf6" />
+          <PropertyRow icon={Tag} name="tags" value={computedStats.tagCount} iconColor="#10b981" />
+          <PropertyRow icon={Users} name="mentions" value={computedStats.mentionCount} iconColor="#8b5cf6" />
           <PropertyRow
             icon={Pin}
             name="isPinned"
-            value={pinnedTabIds.includes(note.id) ? 'true' : 'false'}
+            value={note.id && pinnedTabIds.includes(note.id) ? 'true' : 'false'}
             iconColor="#f97316"
           />
           <PropertyRow
@@ -196,12 +239,13 @@ export const NoteDetails = ({ note: propNote, snippet, isLoading = false }) => {
         </div>
         <div className="properties-list">
           <PropertyRow icon={Hash} name="characters" value={charCount.toLocaleString()} iconColor="#a855f7" />
-          <PropertyRow icon={Type} name="words" value={wordCount.toLocaleString()} iconColor="#ef4444" />
-          <PropertyRow icon={Eye} name="readTime" value={readTime} iconColor="#22c55e" />
+          <PropertyRow icon={Type} name="words" value={computedStats.wordCount.toLocaleString()} iconColor="#ef4444" />
+          <PropertyRow icon={Eye} name="readTime" value={computedStats.readTime} iconColor="#22c55e" />
         </div>
       </div>
     </div>
   )
-}
+})
 
+NoteDetails.displayName = 'NoteDetails'
 export default NoteDetails

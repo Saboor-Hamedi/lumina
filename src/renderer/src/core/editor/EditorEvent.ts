@@ -69,12 +69,16 @@ export function useEditorEvents({
     if (!isActive) return
 
     if (realViewRef.current) {
+      try {
+        if (realViewRef.current.contentDOM) {
+          realViewRef.current.contentDOM.focus({ preventScroll: true })
+        } else {
+          realViewRef.current.focus()
+        }
+      } catch {}
       requestAnimationFrame(() => {
-        if (realViewRef.current) {
+        if (realViewRef.current && !(realViewRef.current as any).isDestroyed) {
           realViewRef.current.requestMeasure()
-          setTimeout(() => {
-            if (realViewRef.current) realViewRef.current.requestMeasure()
-          }, 50)
         }
       })
     }

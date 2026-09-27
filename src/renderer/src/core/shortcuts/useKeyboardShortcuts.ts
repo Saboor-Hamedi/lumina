@@ -229,6 +229,16 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
         return
       }
 
+      // Direct Tab Navigation (Ctrl+1 through Ctrl+9)
+      const isPrimary = (e.ctrlKey || e.metaKey) && !e.altKey
+      if (isPrimary && !e.shiftKey && e.key >= '1' && e.key <= '9' && shortcutsRef.current.onSelectTabByIndex) {
+        const tabIndex = parseInt(e.key, 10) - 1
+        e.preventDefault()
+        e.stopPropagation()
+        shortcutsRef.current.onSelectTabByIndex(tabIndex)
+        return
+      }
+
       // Global Search
       if (matchesShortcut(e, getKey('globalSearch')) && shortcutsRef.current.onGlobalSearch) {
         e.preventDefault()

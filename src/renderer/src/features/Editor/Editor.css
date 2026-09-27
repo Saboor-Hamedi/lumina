@@ -368,6 +368,7 @@
   background: transparent;
   color: var(--text-muted);
   font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
   position: relative;
   transition: background 0.2s, color 0.2s, box-shadow 0.2s;
@@ -698,6 +699,7 @@
 
 .markdown-editor {
   background: var(--bg-editor, var(--bg-app));
+  cursor: text;
 }
 
 .editor-scroller {
@@ -713,6 +715,7 @@
   -ms-overflow-style: none !important;
   padding: 0 16px;
   box-sizing: border-box;
+  cursor: text;
   will-change: scroll-position;
   -webkit-overflow-scrolling: touch;
 }

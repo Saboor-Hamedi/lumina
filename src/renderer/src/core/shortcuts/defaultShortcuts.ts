@@ -29,6 +29,15 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
   { id: 'togglePreview', label: 'Toggle Preview', defaultKey: 'Ctrl + \\', category: 'Navigation' },
   { id: 'nextTab', label: 'Next Tab', defaultKey: 'Ctrl + Tab', category: 'Navigation' },
   { id: 'previousTab', label: 'Previous Tab', defaultKey: 'Ctrl + Shift + Tab', category: 'Navigation' },
+  { id: 'tab1', label: 'Switch to Tab 1', defaultKey: 'Ctrl + 1', category: 'Navigation' },
+  { id: 'tab2', label: 'Switch to Tab 2', defaultKey: 'Ctrl + 2', category: 'Navigation' },
+  { id: 'tab3', label: 'Switch to Tab 3', defaultKey: 'Ctrl + 3', category: 'Navigation' },
+  { id: 'tab4', label: 'Switch to Tab 4', defaultKey: 'Ctrl + 4', category: 'Navigation' },
+  { id: 'tab5', label: 'Switch to Tab 5', defaultKey: 'Ctrl + 5', category: 'Navigation' },
+  { id: 'tab6', label: 'Switch to Tab 6', defaultKey: 'Ctrl + 6', category: 'Navigation' },
+  { id: 'tab7', label: 'Switch to Tab 7', defaultKey: 'Ctrl + 7', category: 'Navigation' },
+  { id: 'tab8', label: 'Switch to Tab 8', defaultKey: 'Ctrl + 8', category: 'Navigation' },
+  { id: 'tab9', label: 'Switch to Tab 9', defaultKey: 'Ctrl + 9', category: 'Navigation' },
 
   // Editor
   { id: 'inlineAI', label: 'Inline AI', defaultKey: 'Ctrl + K', category: 'Editor' },

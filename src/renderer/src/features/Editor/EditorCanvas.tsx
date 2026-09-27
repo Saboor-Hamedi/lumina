@@ -145,7 +145,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
 
     const inlineTitle = useSettingsStore((state: any) => state.settings?.inlineTitle !== false)
     const inlineMetadata = useSettingsStore((state: any) => Boolean(state.settings?.inlineMetadata))
-    const notes = useWorkspaceStore((state: any) => state.notes) || []
 
     useEffect(() => {
       const wrapper = editorWrapperRef.current
@@ -227,7 +226,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
               titleRef,
               snippet,
               onSave,
-              notes,
               title,
               setTitle,
               setIsDirty,
@@ -269,6 +267,16 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
           />
         </EditorCanvasErrorBoundary>
       </div>
+    )
+  },
+  (prev, next) => {
+    return (
+      prev.snippet?.id === next.snippet?.id &&
+      prev.editorKey === next.editorKey &&
+      prev.snippet?.code === next.snippet?.code &&
+      prev.title === next.title &&
+      prev.isDirty === next.isDirty &&
+      prev.finalExtensions === next.finalExtensions
     )
   }
 )

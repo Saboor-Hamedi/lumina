@@ -8,11 +8,25 @@ import ToolTip from '../../components/atoms/ToolTip'
 import RightSidebarFooter from './RightSidebarFooter'
 import './NoteDetails.css'
 
-export const RightSidebar = React.memo(({
+export interface RightSidebarProps {
+  rightSidebarTab: string
+  setRightSidebarTab: (tab: string) => void
+  selectedNote?: any
+  isLoading?: boolean
+  isRightSidebarOpen: boolean
+  setIsRightSidebarOpen: (open: boolean) => void
+  setSettingsInitialTab?: (tab: string) => void
+  setShowSettings?: (show: boolean) => void
+  setSavedRightSidebarState?: (state: any) => void
+  rightWidth?: number
+  setShowAIChatModal?: (show: boolean) => void
+}
+
+export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
   rightSidebarTab,
   setRightSidebarTab,
   selectedNote,
-  isLoading,
+  isLoading = false,
   isRightSidebarOpen,
   setIsRightSidebarOpen
 }) => {
@@ -27,6 +41,11 @@ export const RightSidebar = React.memo(({
         }
       : null
   })
+
+  // Do not execute or render anything when right sidebar is closed
+  if (!isRightSidebarOpen) {
+    return null
+  }
 
   return (
     <div className="inspector-panel">
@@ -105,6 +124,7 @@ export const RightSidebar = React.memo(({
 
       <RightSidebarFooter
         selectedNote={selectedNote}
+        selectedSnippet={selectedNote}
         rightSidebarTab={rightSidebarTab}
         onClose={() => setIsRightSidebarOpen?.(false)}
       />
@@ -113,5 +133,4 @@ export const RightSidebar = React.memo(({
 })
 
 RightSidebar.displayName = 'RightSidebar'
-
 export default RightSidebar

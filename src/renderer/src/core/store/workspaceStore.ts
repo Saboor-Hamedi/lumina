@@ -833,6 +833,34 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
 let isStoreInitialized = false
 let lastWorkspaceState = useWorkspaceStore.getState()
+let saveLastNoteTimeout: any = null
+let saveOpenTabsTimeout: any = null
+let savePinnedTabsTimeout: any = null
+
+const flushPendingWorkspaceSaves = () => {
+  if (saveLastNoteTimeout) {
+    clearTimeout(saveLastNoteTimeout)
+    saveLastNoteTimeout = null
+    const activeTabId = useWorkspaceStore.getState().activeTabId
+    ;(window as any).api?.saveSetting('lastNoteId', activeTabId)?.catch?.(() => {})
+  }
+  if (saveOpenTabsTimeout) {
+    clearTimeout(saveOpenTabsTimeout)
+    saveOpenTabsTimeout = null
+    const openTabs = useWorkspaceStore.getState().openTabs
+    ;(window as any).api?.saveSetting('openTabs', openTabs)?.catch?.(() => {})
+  }
+  if (savePinnedTabsTimeout) {
+    clearTimeout(savePinnedTabsTimeout)
+    savePinnedTabsTimeout = null
+    const pinnedTabIds = useWorkspaceStore.getState().pinnedTabIds
+    ;(window as any).api?.saveSetting('pinnedTabIds', pinnedTabIds)?.catch?.(() => {})
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', flushPendingWorkspaceSaves)
+}
 
 useWorkspaceStore.subscribe((state) => {
   if (state.isLoading) return
@@ -846,21 +874,41 @@ useWorkspaceStore.subscribe((state) => {
     }
     return
   }
+
+  // 1. Open tabs persistence: instant in-memory localStorage, debounced IPC
   if (state.openTabs !== lastWorkspaceState.openTabs) {
-    useSettingsStore.getState().updateSetting?.('openTabs', state.openTabs)
-    ;(window as any).api?.saveSetting('openTabs', state.openTabs)?.catch?.(() => {})
     try { localStorage.setItem('lumina_session_openTabs', JSON.stringify(state.openTabs)) } catch {}
+    if (saveOpenTabsTimeout) clearTimeout(saveOpenTabsTimeout)
+    saveOpenTabsTimeout = setTimeout(() => {
+      saveOpenTabsTimeout = null
+      useSettingsStore.getState().updateSetting?.('openTabs', state.openTabs)
+    }, 800)
   }
+
+  // 2. Pinned tabs persistence: instant in-memory localStorage, debounced IPC
   if (state.pinnedTabIds !== lastWorkspaceState.pinnedTabIds) {
-    useSettingsStore.getState().updateSetting?.('pinnedTabIds', state.pinnedTabIds)
-    ;(window as any).api?.saveSetting('pinnedTabIds', state.pinnedTabIds)?.catch?.(() => {})
     try { localStorage.setItem('lumina_session_pinnedTabIds', JSON.stringify(state.pinnedTabIds)) } catch {}
+    if (savePinnedTabsTimeout) clearTimeout(savePinnedTabsTimeout)
+    savePinnedTabsTimeout = setTimeout(() => {
+      savePinnedTabsTimeout = null
+      useSettingsStore.getState().updateSetting?.('pinnedTabIds', state.pinnedTabIds)
+    }, 800)
   }
+
+  // 3. Active tab persistence: 0ms in-memory update without triggering heavy settings re-render broadcast
   if (state.activeTabId !== lastWorkspaceState.activeTabId) {
-    useSettingsStore.getState().updateSetting?.('lastNoteId', state.activeTabId)
-    ;(window as any).api?.saveSetting('lastNoteId', state.activeTabId)?.catch?.(() => {})
     try { localStorage.setItem('lumina_session_lastNoteId', state.activeTabId ?? '') } catch {}
+    const settingsObj = useSettingsStore.getState().settings
+    if (settingsObj) {
+      settingsObj.lastNoteId = state.activeTabId
+    }
+    if (saveLastNoteTimeout) clearTimeout(saveLastNoteTimeout)
+    saveLastNoteTimeout = setTimeout(() => {
+      saveLastNoteTimeout = null
+      ;(window as any).api?.saveSetting('lastNoteId', state.activeTabId)?.catch?.(() => {})
+    }, 1200)
   }
+
   lastWorkspaceState = state
 })
 
