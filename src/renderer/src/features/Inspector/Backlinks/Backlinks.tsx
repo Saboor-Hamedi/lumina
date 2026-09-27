@@ -40,113 +40,125 @@ export const Backlinks: React.FC<BacklinksProps> = React.memo(({ note: propNote,
   const [showUnlinked, setShowUnlinked] = useState(true)
   const [collapsedNoteIds, setCollapsedNoteIds] = useState<Set<string>>(new Set())
 
-  // Parse linked and unlinked mentions across all notes in the vault
-  const { linkedBacklinks, unlinkedBacklinks } = useMemo(() => {
+  const [backlinksData, setBacklinksData] = useState<{
+    linkedBacklinks: BacklinkSource[]
+    unlinkedBacklinks: BacklinkSource[]
+  }>({ linkedBacklinks: [], unlinkedBacklinks: [] })
+
+  // Parse linked and unlinked mentions across all notes in the vault (debounced to avoid blocking UI)
+  useEffect(() => {
     if (!currentNote || !currentNote.id || !currentNote.title) {
-      return { linkedBacklinks: [], unlinkedBacklinks: [] }
+      setBacklinksData({ linkedBacklinks: [], unlinkedBacklinks: [] })
+      return
     }
 
-    const linked: BacklinkSource[] = []
-    const unlinked: BacklinkSource[] = []
+    const timer = setTimeout(() => {
+      const linked: BacklinkSource[] = []
+      const unlinked: BacklinkSource[] = []
 
-    const targetTitle = (currentNote.title || '').trim().toLowerCase()
-    const targetId = currentNote.id
-    const targetFileName = (currentNote.fileName || '').trim().toLowerCase()
-    const targetFileBase = targetFileName.replace(/\.md$/i, '')
+      const targetTitle = (currentNote.title || '').trim().toLowerCase()
+      const targetId = currentNote.id
+      const targetFileName = (currentNote.fileName || '').trim().toLowerCase()
+      const targetFileBase = targetFileName.replace(/\.md$/i, '')
 
-    // Wikilink regex: [[Target]] or [[Target#Heading]] or [[Target|Alias]]
-    const wikilinkRegex = /\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|([^\]]+))?\]\]/g
-    // Markdown link regex: [Label](Target)
-    const mdLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+      // Wikilink regex: [[Target]] or [[Target#Heading]] or [[Target|Alias]]
+      const wikilinkRegex = /\[\[([^\]|#]+)(?:#[^\]|]+)?(?:\|([^\]]+))?\]\]/g
+      // Markdown link regex: [Label](Target)
+      const mdLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
 
-    // Title match regex for unlinked mentions
-    const titleRegex =
-      targetTitle.length >= 2
-        ? new RegExp(`\\b${escapeRegExp(targetTitle)}\\b`, 'gi')
-        : null
+      // Title match regex for unlinked mentions
+      const titleRegex =
+        targetTitle.length >= 2
+          ? new RegExp(`\\b${escapeRegExp(targetTitle)}\\b`, 'gi')
+          : null
 
-    for (const sourceNote of notes) {
-      if (!sourceNote || sourceNote.id === currentNote.id) continue
+      for (const sourceNote of notes) {
+        if (!sourceNote || sourceNote.id === currentNote.id) continue
 
-      const content = sourceNote.code || (sourceNote as any).content || ''
-      if (!content) continue
+        const content = sourceNote.code || (sourceNote as any).content || ''
+        if (!content) continue
 
-      const lines = content.split('\n')
-      const noteLinkedMentions: MentionItem[] = []
-      const noteUnlinkedMentions: MentionItem[] = []
+        const lines = content.split('\n')
+        const noteLinkedMentions: MentionItem[] = []
+        const noteUnlinkedMentions: MentionItem[] = []
 
-      for (let idx = 0; idx < lines.length; idx++) {
-        const line = lines[idx]
-        const lineNum = idx + 1
-        let hasLinkedMatchOnLine = false
+        for (let idx = 0; idx < lines.length; idx++) {
+          const line = lines[idx]
+          const lineNum = idx + 1
+          let hasLinkedMatchOnLine = false
 
-        // 1. Check Wikilinks
-        let match: RegExpExecArray | null
-        wikilinkRegex.lastIndex = 0
-        while ((match = wikilinkRegex.exec(line)) !== null) {
-          const rawTarget = match[1].trim().toLowerCase()
-          const isTargetMatch =
-            rawTarget === targetTitle ||
-            rawTarget === targetId.toLowerCase() ||
-            rawTarget === targetFileName ||
-            rawTarget === targetFileBase
+          // 1. Check Wikilinks
+          let match: RegExpExecArray | null
+          wikilinkRegex.lastIndex = 0
+          while ((match = wikilinkRegex.exec(line)) !== null) {
+            const rawTarget = match[1].trim().toLowerCase()
+            const isTargetMatch =
+              rawTarget === targetTitle ||
+              rawTarget === targetId.toLowerCase() ||
+              rawTarget === targetFileName ||
+              rawTarget === targetFileBase
 
-          if (isTargetMatch) {
-            hasLinkedMatchOnLine = true
-            noteLinkedMentions.push({
-              line: lineNum,
-              lineText: line.trim(),
-              matchText: match[0]
-            })
+            if (isTargetMatch) {
+              hasLinkedMatchOnLine = true
+              noteLinkedMentions.push({
+                line: lineNum,
+                lineText: line.trim(),
+                matchText: match[0]
+              })
+            }
+          }
+
+          // 2. Check Standard Markdown Links
+          mdLinkRegex.lastIndex = 0
+          while ((match = mdLinkRegex.exec(line)) !== null) {
+            const rawTarget = match[2].trim().toLowerCase()
+            const isTargetMatch =
+              rawTarget === targetId.toLowerCase() ||
+              rawTarget === targetTitle ||
+              rawTarget === targetFileName ||
+              rawTarget === targetFileBase ||
+              rawTarget.endsWith(`/${targetFileName}`) ||
+              rawTarget.endsWith(`/${targetFileBase}`)
+
+            if (isTargetMatch) {
+              hasLinkedMatchOnLine = true
+              noteLinkedMentions.push({
+                line: lineNum,
+                lineText: line.trim(),
+                matchText: match[0]
+              })
+            }
+          }
+
+          // 3. Check Unlinked Mentions (only if line has no explicit link)
+          if (!hasLinkedMatchOnLine && titleRegex) {
+            titleRegex.lastIndex = 0
+            const titleMatch = titleRegex.exec(line)
+            if (titleMatch) {
+              noteUnlinkedMentions.push({
+                line: lineNum,
+                lineText: line.trim(),
+                matchText: titleMatch[0]
+              })
+            }
           }
         }
 
-        // 2. Check Standard Markdown Links
-        mdLinkRegex.lastIndex = 0
-        while ((match = mdLinkRegex.exec(line)) !== null) {
-          const rawTarget = match[2].trim().toLowerCase()
-          const isTargetMatch =
-            rawTarget === targetId.toLowerCase() ||
-            rawTarget === targetTitle ||
-            rawTarget === targetFileName ||
-            rawTarget === targetFileBase ||
-            rawTarget.endsWith(`/${targetFileName}`) ||
-            rawTarget.endsWith(`/${targetFileBase}`)
-
-          if (isTargetMatch) {
-            hasLinkedMatchOnLine = true
-            noteLinkedMentions.push({
-              line: lineNum,
-              lineText: line.trim(),
-              matchText: match[0]
-            })
-          }
+        if (noteLinkedMentions.length > 0) {
+          linked.push({ sourceNote, mentions: noteLinkedMentions })
         }
-
-        // 3. Check Unlinked Mentions (only if line has no explicit link)
-        if (!hasLinkedMatchOnLine && titleRegex) {
-          titleRegex.lastIndex = 0
-          const titleMatch = titleRegex.exec(line)
-          if (titleMatch) {
-            noteUnlinkedMentions.push({
-              line: lineNum,
-              lineText: line.trim(),
-              matchText: titleMatch[0]
-            })
-          }
+        if (noteUnlinkedMentions.length > 0) {
+          unlinked.push({ sourceNote, mentions: noteUnlinkedMentions })
         }
       }
 
-      if (noteLinkedMentions.length > 0) {
-        linked.push({ sourceNote, mentions: noteLinkedMentions })
-      }
-      if (noteUnlinkedMentions.length > 0) {
-        unlinked.push({ sourceNote, mentions: noteUnlinkedMentions })
-      }
-    }
+      setBacklinksData({ linkedBacklinks: linked, unlinkedBacklinks: unlinked })
+    }, 150)
 
-    return { linkedBacklinks: linked, unlinkedBacklinks: unlinked }
-  }, [currentNote, notes])
+    return () => clearTimeout(timer)
+  }, [currentNote?.id, currentNote?.title, currentNote?.fileName, notes])
+
+  const { linkedBacklinks, unlinkedBacklinks } = backlinksData
 
   // Filter backlinks by search query
   const filterList = useCallback(

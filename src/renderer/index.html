@@ -42,10 +42,69 @@
           }
         }
       } catch (e) {}
+
+      // Instant early progress animation while main.jsx bundles download & parse
+      (function () {
+        let p = 18
+        const timer = setInterval(function () {
+          const bar = document.getElementById('screen-loader-bar-fill')
+          const pct = document.getElementById('screen-loader-percent')
+          if (p < 85) {
+            p += Math.min(3, Math.max(1, Math.floor((85 - p) / 10)))
+            if (bar) bar.style.width = p + '%'
+            if (pct) pct.textContent = p + '%'
+          } else {
+            clearInterval(timer)
+          }
+        }, 80)
+        window.__LUMINA_SCREEN_LOADER__ = {
+          stopSimulation: function () {
+            clearInterval(timer)
+          }
+        }
+      })()
     </script>
   </head>
 
   <body>
+    <div id="screen-loader" class="screen-loader-overlay" role="status" aria-live="polite">
+      <div class="screen-loader-ambient"></div>
+      <div class="screen-loader-emblem-wrap">
+        <div class="screen-loader-pulse-ring ring-1"></div>
+        <div class="screen-loader-pulse-ring ring-2"></div>
+        <div class="screen-loader-spinner-ring"></div>
+        <div class="screen-loader-emblem">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M24 4L42 16V32L24 44L6 32V16L24 4Z" stroke="url(#loader-emblem-grad)" stroke-width="2.5" stroke-linejoin="round"/>
+            <path d="M24 4V44M6 16L42 32M6 32L42 16" stroke="url(#loader-emblem-inner)" stroke-width="1.2" stroke-opacity="0.45"/>
+            <circle cx="24" cy="24" r="4.5" fill="url(#loader-core-grad)"/>
+            <defs>
+              <linearGradient id="loader-emblem-grad" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#a855f7"/>
+                <stop offset="1" stop-color="#6366f1"/>
+              </linearGradient>
+              <linearGradient id="loader-emblem-inner" x1="6" y1="16" x2="42" y2="32" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#c084fc"/>
+                <stop offset="1" stop-color="#818cf8"/>
+              </linearGradient>
+              <linearGradient id="loader-core-grad" x1="20" y1="20" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#ffffff"/>
+                <stop offset="1" stop-color="#c084fc"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+      </div>
+      <div class="screen-loader-title">Lumina</div>
+      <div class="screen-loader-bar-container">
+        <div class="screen-loader-bar-fill" id="screen-loader-bar-fill" style="width: 18%"></div>
+      </div>
+      <div class="screen-loader-footer">
+        <span class="screen-loader-status" id="screen-loader-status">Opening your workspace...</span>
+        <span class="screen-loader-percent" id="screen-loader-percent">18%</span>
+      </div>
+      <div class="screen-loader-substatus" id="screen-loader-substatus"></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

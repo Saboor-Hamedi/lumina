@@ -196,12 +196,15 @@
 
 /* Better Selection (Localized) - Handled in MarkdownEditor.css */
 
-body {
+html, body, #root {
   margin: 0;
   padding: 0;
-  height: 100vh;
-  width: 100vw;
-  
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+body {
   background: var(--bg-app);
   color: var(--text-main);
   font-family: 'Inter', system-ui, sans-serif;
@@ -209,6 +212,7 @@ body {
   -webkit-font-smoothing: antialiased;
   user-select: none;
 }
+
 
 /* Prevent Mermaid error SVGs or temporary DOM nodes from disrupting layout */
 body > [id^="dmermaid"],

@@ -57,7 +57,8 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
-  padding: 0 16px;
+  padding: 0 8px;
+  overflow: hidden;
 }
 
 .unified-search-bar {
@@ -70,13 +71,15 @@
   height: 25px;
   width: 100%;
   max-width: 320px;
-  min-width: 200px;
+  min-width: 0;
   padding: 0 6px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
   -webkit-app-region: no-drag;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  overflow: hidden;
 }
+
 
 .unified-search-bar:hover {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.08);

@@ -75,7 +75,7 @@
 .switch input:checked + .slider {
   background-color: var(--text-accent);
   border-color: var(--text-accent);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--text-accent) 45%, transparent);
+  box-shadow: none;
 }
 
 .lumina-switch input:checked + .lumina-slider::before,

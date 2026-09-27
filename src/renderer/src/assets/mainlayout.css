@@ -48,7 +48,7 @@
   justify-content: center;
   touch-action: none;
   align-self: stretch;
-  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
+  transition: opacity 0.15s ease;
 }
 
 .sidebar-resizer.closed,
@@ -139,8 +139,8 @@ body.is-global-resizing .cm-editor {
 .app-shell.is-resizing .sidebar-resizer {
   transition: none !important;
   animation: none !important;
-  will-change: width;
 }
+
 
 .app-shell.is-resizing .workspace-container {
   contain: layout paint;
@@ -186,15 +186,13 @@ body.is-global-resizing .cm-editor {
   box-shadow: none;
   pointer-events: none;
   visibility: hidden;
-  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.22s;
   overflow: hidden;
   flex-shrink: 0;
-  will-change: width;
-  transform: translateZ(0);
   display: flex;
   flex-direction: column;
   /* NO contain: inline-size — it breaks the inner width lock */
 }
+
 
 .app-shell.left-open .shell-sidebar-left {
   width: var(--left-sidebar-width, 260px);
@@ -202,7 +200,6 @@ body.is-global-resizing .cm-editor {
   box-shadow: none;
   pointer-events: auto;
   visibility: visible;
-  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .shell-sidebar-left .unified-sidebar,
@@ -255,7 +252,6 @@ body.is-global-resizing .cm-editor {
   flex: 1;
   background: var(--bg-app);
   min-width: 0;
-  width: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -263,6 +259,7 @@ body.is-global-resizing .cm-editor {
   border-radius: 0;
   border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.05));
 }
+
 
 .shell-center-workspace {
   flex: 1;
@@ -298,11 +295,10 @@ body.is-global-resizing .cm-editor {
   box-shadow: none;
   pointer-events: none;
   visibility: hidden;
-  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.22s;
   overflow: hidden;
   flex-shrink: 0;
-  will-change: width;
-  transform: translateZ(0);
+  display: flex;
+  flex-direction: column;
 }
 
 .app-shell.right-open .shell-sidebar-right {
@@ -311,17 +307,12 @@ body.is-global-resizing .cm-editor {
   box-shadow: none;
   pointer-events: auto;
   visibility: visible;
-  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .shell-sidebar-right .inspector-panel,
 .shell-sidebar-right .error-boundary {
-  position: absolute !important;
-  right: 0 !important;
-  top: 0 !important;
-  bottom: 0 !important;
   flex-shrink: 0 !important;
-  min-width: 200px !important;
+  min-width: var(--right-sidebar-content-width, 200px) !important;
   width: var(--right-sidebar-content-width, var(--right-sidebar-width, 300px)) !important;
   max-width: none !important;
   height: 100% !important;
@@ -330,6 +321,7 @@ body.is-global-resizing .cm-editor {
   display: flex !important;
   flex-direction: column !important;
 }
+
 
 .shell-sidebar-right .panel-header-tabs,
 .shell-sidebar-right .inspector-sub-header,

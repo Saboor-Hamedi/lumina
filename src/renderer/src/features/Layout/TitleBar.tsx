@@ -50,12 +50,22 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
     return true
   })
 
+  const [isMaximized, setIsMaximized] = useState<boolean>(false)
+
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
 
   useEffect(() => {
     if ((window as any).api?.getVersion) {
       (window as any).api.getVersion().then(setVersion)
     }
+
+    if ((window as any).api?.isMaximized) {
+      (window as any).api.isMaximized().then(setIsMaximized).catch(() => {})
+    }
+
+    const unsubMax = (window as any).api?.onMaximizedChange?.((max: boolean) => {
+      setIsMaximized(max)
+    })
 
     const handleLeftSidebarChange = (e: Event) => {
       const customEvent = e as CustomEvent<{ open?: boolean }>
@@ -66,6 +76,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
     window.addEventListener('left-sidebar-toggle', handleLeftSidebarChange)
     return () => {
       window.removeEventListener('left-sidebar-toggle', handleLeftSidebarChange)
+      if (typeof unsubMax === 'function') unsubMax()
     }
   }, [])
 
@@ -176,26 +187,38 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
                 </div>
               </button>
             </ToolTip>
-            <AccentColor
-              isOpen={isAccentOpen}
-              onClose={() => setIsAccentOpen(false)}
-              initialColor={themeAccentColor}
-              defaultColor="#40bafa"
-              onSelect={(color: string) => {
-                updateThemeAccentColor(color)
-              }}
-              {...({
-                previewProperty: '--text-accent',
-                title: 'Theme Accent',
-                variant: 'dropdown'
-              } as any)}
-            />
+            {isAccentOpen && (
+              <AccentColor
+                isOpen={isAccentOpen}
+                onClose={() => setIsAccentOpen(false)}
+                initialColor={themeAccentColor}
+                defaultColor="#40bafa"
+                onSelect={(color: string) => {
+                  updateThemeAccentColor(color)
+                }}
+                previewProperty="--text-accent"
+                title="Theme Accent"
+                variant="dropdown"
+              />
+            )}
           </div>
           <button type="button" onClick={handleMinimize} className="control-btn" aria-label="Minimize">
             <Minus size={14} strokeWidth={2} />
           </button>
-          <button type="button" onClick={handleToggleMaximize} className="control-btn" aria-label="Maximize">
-            <Square size={14} strokeWidth={2} />
+          <button
+            type="button"
+            onClick={handleToggleMaximize}
+            className="control-btn"
+            aria-label={isMaximized ? 'Restore' : 'Maximize'}
+          >
+            {isMaximized ? (
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="3.5" y="1.5" width="6" height="6" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M1.5 3.5V9.5H7.5" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+              </svg>
+            ) : (
+              <Square size={13} strokeWidth={1.8} />
+            )}
           </button>
           <button type="button" onClick={handleClose} className="control-btn close" aria-label="Close">
             <X size={14} strokeWidth={2} />

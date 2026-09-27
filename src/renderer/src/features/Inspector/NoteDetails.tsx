@@ -105,55 +105,67 @@ export const NoteDetails: React.FC<NoteDetailsProps> = React.memo(({
   const note = propNote || snippet
   const pinnedTabIds = useWorkspaceStore((state: any) => state.pinnedTabIds || [])
 
-  const computedStats = React.useMemo(() => {
+  const [computedStats, setComputedStats] = useState({
+    wordCount: 0,
+    readTime: '1m',
+    tagCount: 0,
+    mentionCount: 0
+  })
+
+  useEffect(() => {
     if (!note?.code) {
-      return {
+      setComputedStats({
         wordCount: 0,
         readTime: '1m',
         tagCount: 0,
         mentionCount: 0
-      }
-    }
-
-    const code = note.code
-    const wordCount = code.trim() ? code.trim().split(/\s+/).filter(Boolean).length : 0
-    const readTime = Math.max(1, Math.ceil(wordCount / 200)) + 'm'
-
-    const tagSet = new Set<string>()
-    if (note.tags) {
-      const rawTags = Array.isArray(note.tags)
-        ? note.tags
-        : typeof note.tags === 'string' && note.tags.trim() !== ''
-          ? note.tags.split(',')
-          : []
-      rawTags.forEach((t: string) => {
-        const trimmed = String(t).trim()
-        if (trimmed) tagSet.add(trimmed.startsWith('#') ? trimmed : `#${trimmed}`)
       })
+      return
     }
 
-    const codeWithoutBlocks = code
-      .replace(/```[\s\S]*?```/g, '')
-      .replace(/`[^`]+`/g, '')
-    const tagRegex = /(?:^|\s)(#[\w-]+)/g
-    const mentionRegex = /(?:^|\s)(@[\w-]+)/g
-    let match: RegExpExecArray | null = null
+    const timer = setTimeout(() => {
+      const code = note.code || ''
+      const wordCount = code.trim() ? code.trim().split(/\s+/).filter(Boolean).length : 0
+      const readTime = Math.max(1, Math.ceil(wordCount / 200)) + 'm'
 
-    while ((match = tagRegex.exec(codeWithoutBlocks)) !== null) {
-      tagSet.add(match[1])
-    }
+      const tagSet = new Set<string>()
+      if (note.tags) {
+        const rawTags = Array.isArray(note.tags)
+          ? note.tags
+          : typeof note.tags === 'string' && note.tags.trim() !== ''
+            ? note.tags.split(',')
+            : []
+        rawTags.forEach((t: string) => {
+          const trimmed = String(t).trim()
+          if (trimmed) tagSet.add(trimmed.startsWith('#') ? trimmed : `#${trimmed}`)
+        })
+      }
 
-    let mentionCount = 0
-    while ((match = mentionRegex.exec(codeWithoutBlocks)) !== null) {
-      mentionCount++
-    }
+      const codeWithoutBlocks = code
+        .replace(/```[\s\S]*?```/g, '')
+        .replace(/`[^`]+`/g, '')
+      const tagRegex = /(?:^|\s)(#[\w-]+)/g
+      const mentionRegex = /(?:^|\s)(@[\w-]+)/g
+      let match: RegExpExecArray | null = null
 
-    return {
-      wordCount,
-      readTime,
-      tagCount: tagSet.size,
-      mentionCount
-    }
+      while ((match = tagRegex.exec(codeWithoutBlocks)) !== null) {
+        tagSet.add(match[1])
+      }
+
+      let mentionCount = 0
+      while ((match = mentionRegex.exec(codeWithoutBlocks)) !== null) {
+        mentionCount++
+      }
+
+      setComputedStats({
+        wordCount,
+        readTime,
+        tagCount: tagSet.size,
+        mentionCount
+      })
+    }, 100)
+
+    return () => clearTimeout(timer)
   }, [note?.id, note?.code, note?.tags])
 
   if (isLoading) {

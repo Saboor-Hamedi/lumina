@@ -96,6 +96,12 @@ const api = {
   // Window controls
   minimize: () => electronAPI.ipcRenderer.invoke('window:minimize'),
   toggleMaximize: () => electronAPI.ipcRenderer.invoke('window:toggle-maximize'),
+  isMaximized: () => electronAPI.ipcRenderer.invoke('window:is-maximized'),
+  onMaximizedChange: (cb) => {
+    const listener = (_, isMax) => cb(isMax)
+    electronAPI.ipcRenderer.on('window:maximized-change', listener)
+    return () => electronAPI.ipcRenderer.removeListener('window:maximized-change', listener)
+  },
   closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
   setWindowOpacity: (opacity) => electronAPI.ipcRenderer.invoke('window:set-opacity', opacity),
   getWindowOpacity: () => electronAPI.ipcRenderer.invoke('window:get-opacity'),

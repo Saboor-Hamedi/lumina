@@ -55,8 +55,16 @@ export function useOpacity(): UseOpacityReturn {
   })
 
   const persistTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const rafIdRef = useRef<number | null>(null)
+  const lastIpcTimeRef = useRef<number>(0)
   const pendingIpcValRef = useRef<number | null>(null)
+  const ipcTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const flushNativeOpacity = useCallback((val: number) => {
+    if (window.api?.setWindowOpacity) {
+      window.api.setWindowOpacity(val).catch(() => {})
+      lastIpcTimeRef.current = performance.now()
+    }
+  }, [])
 
   const applyOpacityValue = useCallback((val: number | string, persist = true) => {
     let score: number
@@ -73,19 +81,30 @@ export function useOpacity(): UseOpacityReturn {
 
     setOpacityState(score)
 
+    // Synchronously set CSS variable for 0ms render response
     if (typeof document !== 'undefined') {
       document.documentElement.style.setProperty('--app-opacity', String(score))
     }
 
+    // Throttle native window opacity to ~35ms so Windows DWM never locks up
     if (window.api?.setWindowOpacity) {
       pendingIpcValRef.current = score
-      if (!rafIdRef.current) {
-        rafIdRef.current = requestAnimationFrame(() => {
-          rafIdRef.current = null
-          if (pendingIpcValRef.current !== null && window.api?.setWindowOpacity) {
-            window.api.setWindowOpacity(pendingIpcValRef.current).catch(() => {})
+      const now = performance.now()
+      const elapsed = now - lastIpcTimeRef.current
+
+      if (elapsed >= 35) {
+        if (ipcTimerRef.current) {
+          clearTimeout(ipcTimerRef.current)
+          ipcTimerRef.current = null
+        }
+        flushNativeOpacity(score)
+      } else if (!ipcTimerRef.current) {
+        ipcTimerRef.current = setTimeout(() => {
+          ipcTimerRef.current = null
+          if (pendingIpcValRef.current !== null) {
+            flushNativeOpacity(pendingIpcValRef.current)
           }
-        })
+        }, 35 - elapsed)
       }
     }
 
@@ -98,9 +117,9 @@ export function useOpacity(): UseOpacityReturn {
           localStorage.setItem(STORAGE_KEY, String(score))
         } catch {}
         updateSetting('windowOpacity', score)
-      }, 150)
+      }, 200)
     }
-  }, [updateSetting])
+  }, [flushNativeOpacity, updateSetting])
 
   useEffect(() => {
     if (typeof document !== 'undefined') {

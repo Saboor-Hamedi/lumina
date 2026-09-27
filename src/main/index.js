@@ -1,5 +1,5 @@
 import electron from 'electron'
-const { app, shell, BrowserWindow, ipcMain, dialog, protocol, net, clipboard, nativeImage } = electron.default || electron
+const { app, shell, BrowserWindow, ipcMain, dialog, protocol, net, clipboard, nativeImage, screen } = electron.default || electron
 import { join } from 'path'
 import path from 'path'
 import fs from 'fs/promises'
@@ -23,7 +23,7 @@ import { setupGoogleAuth } from './auth/googleAuth'
 import { setupGmailIpc } from './email/gmailService'
 import { backupToDrive, backupFileToDrive, cancelBackup } from './backup/googleDriveBackup'
 import { registerOpenNoteHandler } from './handlers/useOpenNote'
-import { useResizeWindowValue } from './handlers/useResizeWindowValue'
+import { useResizeWindow } from './handlers/useResizeWindow'
 import { useWindowOpacity } from './handlers/useWindowOpacity'
 import { useGlobalShortcut, pauseGlobalShortcut, resumeGlobalShortcut } from './shortcuts/useGlobalShortcut'
 import { useTrayIcon, isAppQuitting, setAppQuitting } from './handlers/useTrayIcon'
@@ -63,20 +63,32 @@ async function createWindow() {
   const iconPath = iconAsset
   const appIcon = electron.nativeImage.createFromPath(iconPath)
 
-  const windowBounds = (await SettingsManager.get('windowBounds')) || { width: 1000, height: 700 }
+  const primaryDisplay = screen.getPrimaryDisplay()
+  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
+
+  const isMaximized = (await SettingsManager.get('isMaximized').catch(() => true)) ?? true
+  const savedBounds = await SettingsManager.get('windowBounds').catch(() => null)
+  const windowBounds = savedBounds || { width: 1000, height: 700 }
+
+  const initialWidth = isMaximized ? screenWidth : windowBounds.width
+  const initialHeight = isMaximized ? screenHeight : windowBounds.height
+  const initialX = isMaximized ? undefined : windowBounds.x
+  const initialY = isMaximized ? undefined : windowBounds.y
+
   let allowDevTools = (await SettingsManager.get('enableDevTools')) === true
 
   mainWindow = new BrowserWindow({
-    width: windowBounds.width,
-    height: windowBounds.height,
-    x: windowBounds.x,
-    y: windowBounds.y,
+    width: initialWidth,
+    height: initialHeight,
+    x: initialX,
+    y: initialY,
     minWidth: 500,
     minHeight: 500,
     icon: appIcon,
     show: false,
     frame: false,
-    backgroundColor: '#000000',
+    thickFrame: true,
+    backgroundColor: '#121218',
     resizable: true,
     maximizable: true,
     minimizable: true,
@@ -97,14 +109,26 @@ async function createWindow() {
     }
   })
 
+  // Window creation: only maximize when visible to prevent Chromium viewport desync
   const showWindowSafely = async () => {
     if (!mainWindow || mainWindow.isDestroyed() || mainWindow.isVisible()) return
     const launchOnStartup = await SettingsManager.get('launchOnStartup').catch(() => false)
     const openAsHidden = process.argv.includes('--hidden')
     if (!(launchOnStartup && openAsHidden)) {
       mainWindow.show()
+      if (isMaximized) {
+        mainWindow.maximize()
+      }
+      // Force Chromium compositor to layout to full viewport dimensions
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.invalidate()
+          mainWindow.webContents.executeJavaScript('window.dispatchEvent(new Event("resize"));').catch(() => {})
+        }
+      }, 50)
     }
   }
+
 
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (!allowDevTools) {
@@ -172,7 +196,7 @@ async function createWindow() {
     return { action: 'deny' }
   })
 
-  useResizeWindowValue(mainWindow)
+  useResizeWindow(mainWindow)
   useWindowOpacity(mainWindow)
 
   const isDev = !app.isPackaged
@@ -332,6 +356,7 @@ app.whenReady().then(async () => {
 
 
   ipcMain.handle('window:minimize', () => mainWindow?.minimize())
+  ipcMain.handle('window:is-maximized', () => mainWindow?.isMaximized() ?? false)
   ipcMain.handle('window:open-devtools', () => {
     try {
       if (mainWindow && !mainWindow.isDestroyed())

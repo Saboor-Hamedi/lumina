@@ -562,18 +562,7 @@ export const MainLayout = () => {
     return () => window.removeEventListener('keydown', handleTabNavCapture, true)
   }, [])
 
-  useEffect(() => {
-    let wasLarge = window.innerWidth > 700
-    const handleResize = () => {
-      const isLarge = window.innerWidth > 700
-      if (wasLarge && !isLarge) {
-        updateLeftSidebarOpen(false)
-      }
-      wasLarge = isLarge
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [updateLeftSidebarOpen])
+
 
   useEffect(() => {
     if (activeTab === 'graph') {
@@ -1075,40 +1064,43 @@ export const MainLayout = () => {
           </div>
         </main>
 
-        <div
-          className={`sidebar-resizer right ${isRightSidebarOpen ? 'open' : 'closed'}`}
-          title="Double-click to reset default width (300px)"
-          onMouseDown={(e) => handleStartResize('right', e)}
-          onDoubleClick={(e) => {
-            if (!isRightSidebarOpen) return
-            e.preventDefault()
-            e.stopPropagation()
-            handleResetSidebar('right')
-          }}
-        >
-          <div className="resizer-knob">
-            <span className="knob-dot" />
-            <span className="knob-dot" />
-            <span className="knob-dot" />
+        {isRightSidebarOpen && (
+          <div
+            className="sidebar-resizer right open"
+            title="Double-click to reset default width (300px)"
+            onMouseDown={(e) => handleStartResize('right', e)}
+            onDoubleClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              handleResetSidebar('right')
+            }}
+          >
+            <div className="resizer-knob">
+              <span className="knob-dot" />
+              <span className="knob-dot" />
+              <span className="knob-dot" />
+            </div>
           </div>
-        </div>
-        <aside className="shell-sidebar-right">
-          <GlobalErrorHandler>
-            <RightSidebar
-              rightSidebarTab={rightSidebarTab}
-              setRightSidebarTab={setRightSidebarTab}
-              setSettingsInitialTab={setSettingsInitialTab}
-              setShowSettings={setShowSettings}
-              setSavedRightSidebarState={setSavedRightSidebarState}
-              isRightSidebarOpen={isRightSidebarOpen}
-              rightWidth={rightWidth}
-              setIsRightSidebarOpen={handleCloseRightSidebar}
-              setShowAIChatModal={setShowAIChatModal}
-              selectedNote={selectedSnippet}
-              isLoading={isLoading}
-            />
-          </GlobalErrorHandler>
-        </aside>
+        )}
+        {isRightSidebarOpen && (
+          <aside className="shell-sidebar-right">
+            <GlobalErrorHandler>
+              <RightSidebar
+                rightSidebarTab={rightSidebarTab}
+                setRightSidebarTab={setRightSidebarTab}
+                setSettingsInitialTab={setSettingsInitialTab}
+                setShowSettings={setShowSettings}
+                setSavedRightSidebarState={setSavedRightSidebarState}
+                isRightSidebarOpen={isRightSidebarOpen}
+                rightWidth={rightWidth}
+                setIsRightSidebarOpen={handleCloseRightSidebar}
+                setShowAIChatModal={setShowAIChatModal}
+                selectedNote={selectedSnippet}
+                isLoading={isLoading}
+              />
+            </GlobalErrorHandler>
+          </aside>
+        )}
       </div>
 
       <StatusBar
