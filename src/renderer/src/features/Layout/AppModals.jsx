@@ -86,7 +86,24 @@ export const AppModals = ({
   toast,
   clearToast
 }) => {
+  // Preload settings bundle during idle time to eliminate modal opening latency
+  React.useEffect(() => {
+    const idleId = typeof window !== 'undefined' && 'requestIdleCallback' in window
+      ? window.requestIdleCallback(() => {
+          import('../Settings/Settings').catch(() => {})
+        })
+      : setTimeout(() => {
+          import('../Settings/Settings').catch(() => {})
+        }, 800)
 
+    return () => {
+      if (typeof window !== 'undefined' && 'cancelIdleCallback' in window && typeof idleId === 'number') {
+        window.cancelIdleCallback(idleId)
+      } else {
+        clearTimeout(idleId)
+      }
+    }
+  }, [])
 
   return (
     <>

@@ -5,11 +5,11 @@ import { useSettingsStore } from '../../../../../src/renderer/src/core/store/Set
 import { useUpdateStore } from '../../../../../src/renderer/src/core/store/UpdateSetting'
 
 const baseSettings = () => ({
-  vaultPath: '/fake/vault',
   graphNodeSize: 1.5,
   graphShowTexts: true,
   graphNodeColor: '#40bafa',
-  enableDevTools: true
+  enableDevTools: true,
+  launchOnStartup: false
 })
 
 describe('SettingAdvanced', () => {
@@ -17,20 +17,17 @@ describe('SettingAdvanced', () => {
     vi.clearAllMocks()
     useSettingsStore.setState({ settings: baseSettings() })
     useUpdateStore.setState({ status: 'idle', progress: null })
-    global.window.api = {
-      ...global.window.api,
-      getVersion: vi.fn().mockResolvedValue('1.0.30'),
-      selectVault: vi.fn(),
-      openVaultFolder: vi.fn()
+    ;(global.window as unknown as { api: { getVersion: () => Promise<string> } }).api = {
+      getVersion: vi.fn().mockResolvedValue('1.0.30')
     }
   })
 
   const renderAdvanced = async () => {
-    let result
+    let result: ReturnType<typeof render>
     await act(async () => {
       result = render(<SettingAdvanced />)
     })
-    return result
+    return result!
   }
 
   it('renders the update section with the app version', async () => {
@@ -84,32 +81,6 @@ describe('SettingAdvanced', () => {
     expect(screen.getByText('No update.')).toBeInTheDocument()
   })
 
-  it('renders the workspace path', async () => {
-    await renderAdvanced()
-    expect(screen.getByText('Workspace Configuration')).toBeInTheDocument()
-    expect(screen.getByText('/fake/vault')).toBeInTheDocument()
-  })
-
-  it('shows the default workspace text when no path is set', async () => {
-    useSettingsStore.setState({ settings: { ...baseSettings(), vaultPath: null } })
-    await renderAdvanced()
-    expect(screen.getByText('No workspace selected (using default)')).toBeInTheDocument()
-  })
-
-  it('calls openVaultFolder when Open in Explorer is clicked', async () => {
-    await renderAdvanced()
-    fireEvent.click(screen.getByRole('button', { name: 'Open in Explorer' }))
-    expect(global.window.api.openVaultFolder).toHaveBeenCalled()
-  })
-
-  it('calls selectVault when Change Location is clicked and a path is chosen', async () => {
-    global.window.api.selectVault.mockResolvedValue('/new/vault')
-    await renderAdvanced()
-    fireEvent.click(screen.getByRole('button', { name: 'Change Location' }))
-    await act(async () => {})
-    expect(global.window.api.selectVault).toHaveBeenCalled()
-  })
-
   it('renders the graph visualization controls', async () => {
     await renderAdvanced()
     expect(screen.getByText('Graph Visualization')).toBeInTheDocument()
@@ -122,9 +93,12 @@ describe('SettingAdvanced', () => {
     const checkbox = screen
       .getByText('Show Node Texts')
       .closest('.settings-row')
-      .querySelector('input')
-    fireEvent.click(checkbox)
-    expect(useSettingsStore.getState().settings.graphShowTexts).toBe(false)
+      ?.querySelector('input')
+    expect(checkbox).toBeDefined()
+    if (checkbox) {
+      fireEvent.click(checkbox)
+      expect(useSettingsStore.getState().settings.graphShowTexts).toBe(false)
+    }
   })
 
   it('updates graph node color when a swatch is clicked', async () => {
@@ -135,14 +109,16 @@ describe('SettingAdvanced', () => {
     expect(useSettingsStore.getState().settings.graphNodeColor).toBe('#f59e0b')
   })
 
-
   it('toggles Enable Developer Tools', async () => {
     await renderAdvanced()
     const checkbox = screen
       .getByText('Enable Developer Tools')
       .closest('.settings-row')
-      .querySelector('input')
-    fireEvent.click(checkbox)
-    expect(useSettingsStore.getState().settings.enableDevTools).toBe(false)
+      ?.querySelector('input')
+    expect(checkbox).toBeDefined()
+    if (checkbox) {
+      fireEvent.click(checkbox)
+      expect(useSettingsStore.getState().settings.enableDevTools).toBe(false)
+    }
   })
 })

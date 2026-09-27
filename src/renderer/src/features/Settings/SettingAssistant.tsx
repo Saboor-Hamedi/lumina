@@ -2,11 +2,25 @@ import React from 'react'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import Toggle from '../../components/toggle'
 
-const SettingAssistant = () => {
+/**
+ * SettingAssistant Component
+ * Configures Lumina's active AI model provider (DeepSeek, OpenAI, Anthropic, or Ollama),
+ * API keys, endpoint URLs, Groq speech dictation, and local AI index preferences.
+ */
+export const SettingAssistant: React.FC = () => {
   const { settings, updateSetting } = useSettingsStore()
 
   return (
     <div className="settings-pane">
+      <div className="settings-pane-header">
+        <div className="settings-pane-header-info">
+          <h2 className="settings-pane-title">AI Assistant</h2>
+          <p className="settings-pane-subtitle">
+            Model providers, API credentials, and voice dictation.
+          </p>
+        </div>
+      </div>
+
       <section>
         <h3>Active Intelligence Provider</h3>
         <div className="settings-row">
@@ -178,6 +192,7 @@ const SettingAssistant = () => {
         </div>
       </section>
 
+      {/* Local Features */}
       <section style={{ marginTop: '32px' }}>
         <h3>Local Features</h3>
         <div className="settings-row">

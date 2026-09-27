@@ -4,7 +4,16 @@ import { useSettingsStore } from '../../core/store/SettingStore'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 import Toggle from '../../components/toggle'
 
-export const ColorPickerInput = ({
+export interface ColorPickerInputProps {
+  initialColor?: string
+  defaultColor: string
+  onColorChange: (color: string) => void
+  previewProperty: string
+  title: string
+  ariaLabel: string
+}
+
+export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
   initialColor,
   defaultColor,
   onColorChange,
@@ -65,7 +74,11 @@ export const ColorPickerInput = ({
   )
 }
 
-const SettingLookAndFeel = ({ onOpenTheme }) => {
+export interface SettingLookAndFeelProps {
+  onOpenTheme?: () => void
+}
+
+export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTheme }) => {
   const { settings, updateSetting } = useSettingsStore()
   const {
     caretWidth,
@@ -90,16 +103,29 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
     }
   }
 
+  const currentFontSize = parseInt(String(editorFontSize || settings.fontSize || 14), 10)
+  const currentCaretWidth = parseInt(String(caretWidth || 2), 10)
+
   return (
     <div className="settings-pane">
+      <div className="settings-pane-header">
+        <div className="settings-pane-header-info">
+          <h2 className="settings-pane-title">Look & Feel</h2>
+          <p className="settings-pane-subtitle">
+            Theme, typography, cursor, and sound preferences.
+          </p>
+        </div>
+      </div>
+
+      {/* Appearance Section */}
       <section>
         <h3>Appearance</h3>
         <div className="settings-row">
           <div className="row-info">
             <div className="row-label">Base Theme</div>
-            <div className="row-hint">Choose between light, dark, and rugged tones.</div>
+            <div className="row-hint">Color themes and palette gallery.</div>
           </div>
-          <button className="btn" onClick={handleOpenTheme}>
+          <button className="btn btn-secondary" onClick={handleOpenTheme} type="button">
             Theme Gallery
           </button>
         </div>
@@ -107,9 +133,7 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
         <div className="settings-row">
           <div className="row-info">
             <div className="row-label">Theme Accent Color</div>
-            <div className="row-hint">
-              Pick the app's accent color. Leave default for theme accent.
-            </div>
+            <div className="row-hint">Custom highlight color.</div>
           </div>
           <div className="caret-color-controls">
             <ColorPickerInput
@@ -121,6 +145,7 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
               ariaLabel="Theme accent color picker"
             />
             <button
+              type="button"
               onClick={() => updateThemeAccentColor('')}
               className="caret-color-reset"
               title="Reset to default theme color"
@@ -164,18 +189,19 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
               min="12"
               max="28"
               step="1"
-              value={parseInt(editorFontSize) || settings.fontSize || 14}
+              value={currentFontSize}
               onChange={(e) => {
-                const val = parseInt(e.target.value)
+                const val = parseInt(e.target.value, 10)
                 updateSetting('fontSize', val)
                 updateEditorFontSize(val)
               }}
             />
-            <span>{parseInt(editorFontSize) || settings.fontSize || 14}px</span>
+            <span>{currentFontSize}px</span>
           </div>
         </div>
       </section>
 
+      {/* Caret & Cursor Section */}
       <section style={{ marginTop: '32px' }}>
         <h3>Caret & Cursor</h3>
         <div className="settings-row">
@@ -207,7 +233,7 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
               min="1"
               max="10"
               step="1"
-              value={parseInt(caretWidth, 10) || 2}
+              value={currentCaretWidth}
               onChange={(e) => {
                 const value = parseInt(e.target.value, 10)
                 if (!isNaN(value) && value >= 1 && value <= 10) {
@@ -216,7 +242,7 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
               }}
               aria-label="Caret width slider"
             />
-            <span>{parseInt(caretWidth, 10) || 2}px</span>
+            <span>{currentCaretWidth}px</span>
           </div>
         </div>
 
@@ -235,6 +261,7 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
               ariaLabel="Caret color picker"
             />
             <button
+              type="button"
               onClick={() => updateCaretColor('')}
               className="caret-color-reset"
               title="Reset to theme accent color"
@@ -246,9 +273,9 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
         </div>
       </section>
 
+      {/* Interface & Behavior Section */}
       <section style={{ marginTop: '32px' }}>
         <h3>Interface & Behavior</h3>
-
 
         <div className="settings-row">
           <div className="row-info">

@@ -79,15 +79,15 @@ describe('SettingLookAndFeel', () => {
     expect(screen.getByText('Mechanical Keyboard Sound')).toBeInTheDocument()
   })
 
-  const switchInputFor = (labelText) =>
-    screen.getByText(labelText).closest('.settings-row').querySelector('input')
+  const switchInputFor = (labelText: string): HTMLInputElement =>
+    screen.getByText(labelText).closest('.settings-row')?.querySelector('input') as HTMLInputElement
 
   it('toggles Active Line Left Border in the store', () => {
     render(<SettingLookAndFeel />)
     const checkbox = switchInputFor('Active Line Left Border')
     expect(checkbox.checked).toBe(true)
     fireEvent.click(checkbox)
-    expect(useSettingsStore.getState().settings.cursor.useBorderLeft).toBe(false)
+    expect(useSettingsStore.getState().settings.cursor?.useBorderLeft).toBe(false)
   })
 
   it('toggles Mechanical Keyboard Sound in the store', () => {
@@ -123,6 +123,6 @@ describe('SettingLookAndFeel', () => {
     const checkbox = switchInputFor('Active Line Left Border')
     expect(checkbox.checked).toBe(true)
     fireEvent.click(checkbox)
-    expect(useSettingsStore.getState().settings.cursor.useBorderLeft).toBe(false)
+    expect(useSettingsStore.getState().settings.cursor?.useBorderLeft).toBe(false)
   })
 })

@@ -1,55 +1,37 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useUpdateStore } from '../../core/store/UpdateSetting'
-import { useToast } from '../../core/notification'
 import Toggle from '../../components/toggle'
+import { useAppVersion } from './hook/useAppVersion'
 
-const SettingAdvanced = () => {
+/**
+ * SettingAdvanced Component
+ * Displays system-level settings, application auto-updates,
+ * global desktop integration, interactive graph visualization tweaks, and developer tooling.
+ */
+export const SettingAdvanced: React.FC = () => {
   const { settings, updateSetting } = useSettingsStore()
   const { status, progress, download, install, check } = useUpdateStore()
-  const { showToast } = useToast()
-  const [appVersion, setAppVersion] = useState('')
+  const appVersion = useAppVersion()
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
 
-  const formatShortcutKey = (keyString) => {
+  const formatShortcutKey = (keyString: string) => {
     if (!isMac) return keyString
     return keyString.replace(/Ctrl/g, '⌘').replace(/Shift/g, '⇧').replace(/Alt/g, '⌥')
   }
 
-  useEffect(() => {
-    if (window.api?.getVersion) {
-      window.api.getVersion().then(setAppVersion).catch(console.error)
-    }
-  }, [])
-
-  const handleSwitchWorkspace = async () => {
-    try {
-      const selectFn = window.api?.selectWorkspace || window.api?.selectVault
-      if (!selectFn) {
-        showToast('❌ API Error: Restart App')
-        return
-      }
-      const newPath = await selectFn()
-      if (newPath) {
-        showToast(`✓ Switched to: ${newPath}`)
-        setTimeout(() => window.location.reload(), 1000)
-      }
-    } catch (e) {
-      showToast('❌ Failed to switch workspace')
-    }
-  }
-
-  const handleOpenFolder = () => {
-    const openFn = window.api?.openWorkspaceFolder || window.api?.openVaultFolder
-    if (openFn) {
-      openFn()
-    } else {
-      showToast('❌ API Error: Restart App')
-    }
-  }
-
   return (
     <div className="settings-pane">
+      <div className="settings-pane-header">
+        <div className="settings-pane-header-info">
+          <h2 className="settings-pane-title">Advanced</h2>
+          <p className="settings-pane-subtitle">
+            System updates, window behavior, graph engine, and devtools.
+          </p>
+        </div>
+      </div>
+
+      {/* App Updates Section */}
       <section>
         <h3>App Updates</h3>
         <div
@@ -95,6 +77,7 @@ const SettingAdvanced = () => {
           </div>
 
           <button
+            type="button"
             className={`btn btn-primary update-action-btn ${status === 'checking' || status === 'downloading' ? 'pulse-opacity' : ''}`}
             onClick={() => {
               if (status === 'available') download()
@@ -108,55 +91,7 @@ const SettingAdvanced = () => {
         </div>
       </section>
 
-      <section style={{ marginTop: '32px' }}>
-        <h3>Workspace Configuration</h3>
-        <div
-          className="settings-block"
-          style={{
-            padding: '16px',
-            background: 'var(--bg-primary)',
-            borderRadius: '6px'
-          }}
-        >
-          <div className="row-info" style={{ marginBottom: '16px' }}>
-            <div className="row-label">Workspace Location</div>
-            <div className="row-hint">
-              This is where all your markdown notes, assets, and AI indexes are stored securely on
-              your local device.
-            </div>
-          </div>
-
-          <div className="vault-path-display">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="vault-icon"
-            >
-              <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z" />
-            </svg>
-            <span className="path-text">
-              {settings.workspacePath || settings.vaultPath || 'No workspace selected (using default)'}
-            </span>
-          </div>
-
-          <div className="vault-actions">
-            <button className="btn btn-outline" onClick={handleOpenFolder}>
-              Open in Explorer
-            </button>
-            <button className="btn btn-primary" onClick={handleSwitchWorkspace}>
-              Change Location
-            </button>
-          </div>
-        </div>
-      </section>
-
+      {/* System Integration Section */}
       <section style={{ marginTop: '32px' }}>
         <h3>System Integration</h3>
 
@@ -187,6 +122,7 @@ const SettingAdvanced = () => {
         </div>
       </section>
 
+      {/* Graph Visualization Section */}
       <section style={{ marginTop: '32px' }}>
         <h3>Graph Visualization</h3>
         <div className="settings-row">
@@ -202,10 +138,10 @@ const SettingAdvanced = () => {
               step="0.1"
               defaultValue={settings.graphNodeSize || 1.5}
               onMouseUp={(e) => {
-                updateSetting('graphNodeSize', parseFloat(e.target.value))
+                updateSetting('graphNodeSize', parseFloat((e.target as HTMLInputElement).value))
               }}
               onTouchEnd={(e) => {
-                updateSetting('graphNodeSize', parseFloat(e.target.value))
+                updateSetting('graphNodeSize', parseFloat((e.target as HTMLInputElement).value))
               }}
             />
           </div>
@@ -217,7 +153,7 @@ const SettingAdvanced = () => {
             <div className="row-hint">Display titles on graph nodes.</div>
           </div>
           <Toggle
-            checked={settings.graphShowTexts !== false && settings.graphShowTexts !== 'false'}
+            checked={settings.graphShowTexts !== false && (settings.graphShowTexts as unknown) !== 'false'}
             onChange={(e) => updateSetting('graphShowTexts', e.target.checked)}
           />
         </div>
@@ -254,7 +190,7 @@ const SettingAdvanced = () => {
         </div>
       </section>
 
-
+      {/* Developer Options Section */}
       <section style={{ marginTop: '32px' }}>
         <h3>Developer Options</h3>
         <div className="settings-row">

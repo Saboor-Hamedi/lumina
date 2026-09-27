@@ -132,6 +132,13 @@ export const SettingDropdown: React.FC<SettingDropdownProps> = ({
   const [focusedIndex, setFocusedIndex] = useState(-1)
   const [coords, setCoords] = useState<{ bottom: number; left: number } | null>(null)
 
+  // Pre-warm Settings component bundle when dropdown is open or mounted for instant opening
+  useEffect(() => {
+    if (isOpen) {
+      import('../../Settings/Settings').catch(() => {})
+    }
+  }, [isOpen])
+
   useLayoutEffect(() => {
     if (!isOpen || !anchorRef?.current) return
 

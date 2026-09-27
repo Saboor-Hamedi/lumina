@@ -3,7 +3,7 @@
  * Bridges modernUI with Settings styling layer
  * ============================================================ */
 
-@import '../../features/Settings/Settings.css';
+@import '../../features/Settings/css/settings.css';
 
 /* Sleek modal enhancements under Modern UI */
 [data-modern-ui='true'] .settings-modal {

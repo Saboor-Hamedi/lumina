@@ -24,7 +24,7 @@ describe('SettingShortcuts', () => {
 
   it('clears search input when clear button is clicked', () => {
     render(<SettingShortcuts />)
-    const searchInput = screen.getByPlaceholderText(/Find a shortcut/i)
+    const searchInput = screen.getByPlaceholderText(/Find a shortcut/i) as HTMLInputElement
 
     fireEvent.change(searchInput, { target: { value: 'Settings' } })
     expect(searchInput.value).toBe('Settings')
