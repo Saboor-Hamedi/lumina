@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect } from 'react'
 import { Loader2 } from 'lucide-react'
 import { useVoice } from './hooks/Voice'
 import './css/voice.css'
@@ -13,6 +13,36 @@ export const VoiceCapsule: React.FC = () => {
   } = useVoice()
 
   const isVisible = isRecording || isTranscribing
+
+  // Stop recording transcript when user presses Escape key
+  useEffect(() => {
+    if (!isVisible) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        if (isRecording) {
+          stopRecording()
+            .then((text) => {
+              if (text && text.length > 0) {
+                window.dispatchEvent(
+                  new CustomEvent('voice-insert-text', {
+                    detail: { text, instanceId: activeInstanceId || 'editor-voice' }
+                  })
+                )
+              }
+            })
+            .catch((err) => {
+              console.error('[VoiceCapsule] Escape stop error:', err)
+            })
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown, true)
+    return () => window.removeEventListener('keydown', handleKeyDown, true)
+  }, [isVisible, isRecording, stopRecording, activeInstanceId])
 
   const handleStop = async (e: React.MouseEvent<HTMLDivElement>): Promise<void> => {
     e?.preventDefault?.()
@@ -52,7 +82,7 @@ export const VoiceCapsule: React.FC = () => {
               {bars.map((scale, i) => {
                 const levelBoost = Math.pow(audioLevel, 0.8) * 2.2
                 const currentScale = Math.max(0.2, Math.min(1.0, scale * (0.28 + levelBoost)))
-                const height = Math.max(5, Math.round(currentScale * 20))
+                const height = Math.max(4, Math.round(currentScale * 14))
                 return (
                   <span
                     key={i}

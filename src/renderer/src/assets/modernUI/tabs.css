@@ -43,7 +43,7 @@
   height: 30px !important;
   min-width: 80px;
   max-width: 190px;
-  padding: 0 10px 0 12px !important;
+  padding: 0 0 0 11px !important;
   border-radius: 0 !important;
   border-right: 1px solid var(--border-dim) !important;
   border-top: none !important;
@@ -111,9 +111,27 @@
   transform: scale(1.15);
 }
 
-/* Close Button: Muted, crisp */
+/* Tab Actions & Close Button: Flush to far right edge */
+[data-modern-ui='true'] .tab-actions {
+  margin-left: auto !important;
+  margin-right: 0 !important;
+  width: 22px !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
 [data-modern-ui='true'] .tab-close-btn {
-  border-radius: 3px !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
   transition: background 0.12s ease, color 0.12s ease;
 }
 
@@ -122,13 +140,15 @@
   color: var(--text-main) !important;
 }
 
-/* Breadcrumbs Bar: Clean path line */
+/* Breadcrumbs Bar: Clean borderless path line */
 [data-modern-ui='true'] .editor-breadcrumbs-bar {
   height: 26px !important;
   min-height: 26px !important;
   max-height: 26px !important;
   box-sizing: border-box;
-  border-bottom: 1px solid var(--border-dim) !important;
+  border: none !important;
+  border-bottom: none !important;
+  border-top: none !important;
   background: var(--bg-editor, var(--bg-app)) !important;
   padding: 0 14px;
 }

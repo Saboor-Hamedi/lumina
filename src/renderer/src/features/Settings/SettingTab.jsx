@@ -3,14 +3,14 @@ import { Palette, Sparkles, Keyboard, SlidersHorizontal, Brain } from 'lucide-re
 
 const SettingTab = ({ activeTab, setActiveTab, isOpen = true }) => {
   return (
-    <aside className={`settings-sidebar ${isOpen ? '' : 'closed'}`}>
+    <aside className={`sidebar settings-sidebar ${isOpen ? '' : 'closed'}`}>
       <div className="settings-sidebar-header">
         <span className="settings-sidebar-title">Preferences</span>
       </div>
 
       <div className="settings-sidebar-scrollable seamless-scrollbar">
         <div className="settings-sidebar-group">
-          <div className="settings-sidebar-group-title">GENERAL</div>
+          <div className="section-title settings-sidebar-group-title">GENERAL</div>
           <button
             className={`nav-item ${activeTab === 'look-and-feel' ? 'active' : ''}`}
             onClick={() => setActiveTab('look-and-feel')}
@@ -28,7 +28,7 @@ const SettingTab = ({ activeTab, setActiveTab, isOpen = true }) => {
         </div>
 
         <div className="settings-sidebar-group">
-          <div className="settings-sidebar-group-title">FEATURES</div>
+          <div className="section-title settings-sidebar-group-title">FEATURES</div>
           <button
             className={`nav-item ${activeTab === 'assistant' ? 'active' : ''}`}
             onClick={() => setActiveTab('assistant')}

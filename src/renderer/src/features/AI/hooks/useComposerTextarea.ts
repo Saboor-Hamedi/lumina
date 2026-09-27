@@ -24,7 +24,7 @@ export const useComposerTextarea = ({
     const el = textareaRef.current
     if (!el) return
 
-    const minH = isSidebar ? 84 : 52
+    const minH = isSidebar ? 64 : 48
     const maxH = isSidebar ? 260 : 220
 
     if (!input || !input.trim()) {

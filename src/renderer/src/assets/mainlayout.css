@@ -208,7 +208,7 @@ body.is-global-resizing .cm-editor {
 .shell-sidebar-left .unified-sidebar,
 .shell-sidebar-left .error-boundary {
   flex-shrink: 0 !important;
-  min-width: 260px !important;
+  min-width: var(--left-sidebar-content-width, 180px) !important;
   width: var(--left-sidebar-content-width, var(--left-sidebar-width, 260px)) !important;
   max-width: none !important;
   height: 100% !important;
@@ -225,7 +225,7 @@ body.is-global-resizing .cm-editor {
 .shell-sidebar-left .start-section,
 .shell-sidebar-left .start-menu-body {
   flex-shrink: 0 !important;
-  min-width: 260px !important;
+  min-width: var(--left-sidebar-content-width, 180px) !important;
   max-width: none !important;
   width: 100% !important;
   box-sizing: border-box !important;

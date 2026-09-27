@@ -1,38 +1,40 @@
 /* ============================================================
  * AstroNvim Modern UI: Status Bar (lualine.nvim style)
- * Flush bottom strip, segmented mode blocks, monospaced coordinates
+ * Fixed sticky mode badge, ultra-sleek micro badges, invisible scroll
  * ============================================================ */
 
-/* Status Bar Container: Docked flush edge-to-edge at bottom */
+/* Status Bar Container: Docked flush edge-to-edge at bottom matching Editor background */
 .status-bar,
 [data-modern-ui='true'] .status-bar {
   margin: 0 !important;
   border-radius: 0 !important;
   border: none !important;
-  border-top: 1px solid var(--border-dim) !important;
-  background: var(--bg-sidebar) !important;
+  border-top: none !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
   height: 24px !important;
   min-height: 24px !important;
   max-height: 24px !important;
   width: 100% !important;
   box-sizing: border-box;
   box-shadow: none !important;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
   padding: 0 !important;
   font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace) !important;
   font-size: 11px !important;
-  user-select: none;
-  z-index: 100;
-  overflow: hidden;
+  user-select: none !important;
+  z-index: 100 !important;
+  overflow: hidden !important;
+  position: relative !important;
 }
 
-/* Lualine Section A: Mode Badge (NORMAL / VISUAL) */
+/* Lualine Section A: Mode Badge (NORMAL / VISUAL) — Completely Static & Stationary (Zero Shake) */
 .lualine-mode-badge,
 [data-modern-ui='true'] .lualine-mode-badge {
-  height: 100% !important;
+  position: relative !important;
+  z-index: 10 !important;
+  height: 24px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -46,6 +48,8 @@
   flex-shrink: 0 !important;
   clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%) !important;
   line-height: 24px !important;
+  white-space: nowrap !important;
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.3) !important;
 }
 
 .lualine-mode-badge[data-mode='visual'],
@@ -54,52 +58,108 @@
   color: #0b0c10 !important;
 }
 
+/* Scrollable container for the rest of the status bar */
+.status-bar-body,
+[data-modern-ui='true'] .status-bar-body {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  white-space: nowrap !important;
+  padding: 0 4px 0 6px !important;
+}
+
+.status-bar-body::-webkit-scrollbar,
+[data-modern-ui='true'] .status-bar-body::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 .status-bar-left {
   display: flex !important;
   align-items: center !important;
   height: 100% !important;
-  gap: 0 !important;
+  gap: 2px !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
 }
 
-/* Lualine Section B: Buttons */
+/* Lualine Section B: Sleek Clean Tool Buttons (No background boxes) */
 .status-bar-btn,
 [data-modern-ui='true'] .status-bar-btn {
-  height: 100% !important;
-  border-radius: 0 !important;
+  height: 20px !important;
+  line-height: 20px !important;
+  border-radius: 3px !important;
   border: none !important;
   background: transparent !important;
+  box-shadow: none !important;
   color: var(--text-muted) !important;
-  font-size: 11px !important;
-  padding: 0 8px !important;
+  font-size: 10.5px !important;
+  font-weight: 500 !important;
+  padding: 0 5px !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 4px !important;
   cursor: pointer !important;
-  transition: background 0.12s ease, color 0.12s ease !important;
+  transition: color 0.12s ease, opacity 0.12s ease !important;
   font-family: inherit !important;
-  line-height: 1 !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  opacity: 0.8 !important;
+  box-sizing: border-box !important;
 }
 
 .status-bar-btn:hover,
-.status-bar-btn.active,
-[data-modern-ui='true'] .status-bar-btn:hover,
-[data-modern-ui='true'] .status-bar-btn.active {
-  background: var(--bg-active) !important;
+[data-modern-ui='true'] .status-bar-btn:hover {
+  opacity: 1 !important;
   color: var(--text-main) !important;
+  background: transparent !important;
 }
 
-.status-bar-profile-btn {
-  padding-left: 10px !important;
+.status-bar-btn.active,
+[data-modern-ui='true'] .status-bar-btn.active {
+  opacity: 1 !important;
+  color: var(--text-accent) !important;
+  background: transparent !important;
 }
 
-/* Dividers: Crisp hairline separators */
+.status-bar-btn svg {
+  flex-shrink: 0 !important;
+  opacity: 0.85 !important;
+}
+
+/* Profile / Settings Button: Clean without background */
+.status-bar-profile-btn,
+[data-modern-ui='true'] .status-bar-profile-btn {
+  padding: 0 5px !important;
+  background: transparent !important;
+  border: none !important;
+  opacity: 0.85 !important;
+}
+
+.status-bar-profile-btn img {
+  width: 13px !important;
+  height: 13px !important;
+  border-radius: 50% !important;
+  border: 1px solid var(--border-dim) !important;
+  flex-shrink: 0 !important;
+}
+
+/* Dividers: Crisp hairline micro-separators */
 .status-bar-divider,
 [data-modern-ui='true'] .status-bar-divider {
   width: 1px !important;
-  height: 14px !important;
+  height: 9px !important;
   background: var(--border-dim) !important;
-  margin: 0 !important;
-  opacity: 0.8 !important;
+  margin: 0 3px !important;
+  opacity: 0.6 !important;
   flex-shrink: 0 !important;
 }
 
@@ -110,6 +170,8 @@
   align-items: center !important;
   justify-content: center !important;
   height: 100% !important;
+  flex-shrink: 0 !important;
+  min-width: 20px !important;
 }
 
 /* Right Section: Lualine Metrics */
@@ -118,36 +180,69 @@
   display: flex !important;
   align-items: center !important;
   height: 100% !important;
-  gap: 0 !important;
+  gap: 2px !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  margin-left: auto !important;
+  padding-right: 4px !important;
 }
 
+/* Sleek Clean Metrics (No background boxes) */
 .status-bar-item,
 [data-modern-ui='true'] .status-bar-item {
-  height: 100% !important;
+  height: 20px !important;
+  line-height: 20px !important;
   display: inline-flex !important;
   align-items: center !important;
-  gap: 5px !important;
-  padding: 0 10px !important;
+  gap: 4px !important;
+  padding: 0 4px !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
   color: var(--text-muted) !important;
-  font-size: 11px !important;
+  font-size: 10.5px !important;
+  font-weight: 500 !important;
   font-family: inherit !important;
-  transition: background 0.12s ease, color 0.12s ease !important;
+  transition: color 0.12s ease, opacity 0.12s ease !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+  opacity: 0.8 !important;
+  box-sizing: border-box !important;
+}
+
+.status-bar-item.interactive {
+  cursor: pointer !important;
 }
 
 .status-bar-item.interactive:hover,
 [data-modern-ui='true'] .status-bar-item.interactive:hover {
-  background: var(--bg-active) !important;
+  opacity: 1 !important;
   color: var(--text-main) !important;
-  cursor: pointer !important;
+  background: transparent !important;
 }
 
-/* Lualine Section Z: Terminal Coordinates */
+.status-bar-item svg {
+  flex-shrink: 0 !important;
+  opacity: 0.85 !important;
+}
+
+/* Lualine Section Z: Terminal Coordinates (Clean Monospace Coordinates) */
 .lualine-pos-badge,
 [data-modern-ui='true'] .lualine-pos-badge {
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: var(--text-main) !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-muted) !important;
   font-weight: 600 !important;
-  clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%) !important;
-  padding-left: 14px !important;
-  padding-right: 12px !important;
+  font-size: 10.5px !important;
+  padding: 0 4px !important;
+  clip-path: none !important;
+  opacity: 0.9 !important;
+  letter-spacing: 0.2px !important;
+}
+
+.lualine-pos-badge:hover,
+[data-modern-ui='true'] .lualine-pos-badge:hover {
+  background: transparent !important;
+  color: var(--text-main) !important;
+  opacity: 1 !important;
 }

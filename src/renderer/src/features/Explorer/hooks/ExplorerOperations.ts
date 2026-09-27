@@ -104,12 +104,12 @@ export function useExplorerOperations({
       return nextSet
     })
     if (nextArr) {
+      try {
+        localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextArr))
+      } catch (_) {}
       if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
       persistTimerRef.current = setTimeout(() => {
         persistTimerRef.current = null
-        try {
-          localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextArr))
-        } catch (_) {}
         useSettingsStore.getState().updateSetting('expandedFolders', nextArr)
       }, 350)
     }

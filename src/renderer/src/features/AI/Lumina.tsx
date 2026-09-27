@@ -5,7 +5,6 @@ import {
   Copy,
   PanelLeftClose,
   PanelLeftOpen,
-  ArrowRightToLine,
   Plus,
   X,
   BarChart3,
@@ -29,8 +28,6 @@ import './css/lumina.css'
 export interface LuminaChatProps {
   isOpen: boolean
   onClose?: () => void
-  onDock?: () => void
-  onUnfloat?: () => void
 }
 
 /**
@@ -39,9 +36,7 @@ export interface LuminaChatProps {
  */
 export const LuminaChat: React.FC<LuminaChatProps> = ({
   isOpen,
-  onClose,
-  onDock,
-  onUnfloat
+  onClose
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
     try {
@@ -307,18 +302,6 @@ export const LuminaChat: React.FC<LuminaChatProps> = ({
                 aria-label="New Chat"
               >
                 <Plus size={14} strokeWidth={2} />
-              </button>
-            </ToolTip>
-            <ToolTip text="Dock to Tab Sidebar" position="bottom">
-              <button
-                className="docs-window-btn"
-                onClick={() => {
-                  if (onDock) onDock()
-                  else if (onUnfloat) onUnfloat()
-                }}
-                aria-label="Dock to Tab Sidebar"
-              >
-                <ArrowRightToLine size={13} strokeWidth={2} />
               </button>
             </ToolTip>
             <ToolTip

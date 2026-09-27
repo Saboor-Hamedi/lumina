@@ -3,9 +3,10 @@
  */
 
 .composer-container {
-  padding: 8px 10px;
-  background: var(--bg-panel);
-  border-top: 1px solid var(--border-dim);
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  width: 100%;
   position: relative;
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
 }
@@ -18,45 +19,49 @@
 .composer-card {
   display: flex;
   flex-direction: column;
-  background: var(--bg-app);
-  border: 1px solid var(--border-dim);
+  background: var(--bg-card, var(--bg-panel));
+  border: 1px solid var(--border-card, var(--border-dim));
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .composer-card:focus-within {
-  border-color: var(--border-hover, rgba(255, 255, 255, 0.16));
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  border-color: var(--border-card, var(--border-dim)) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+  outline: none !important;
 }
 
 /* ─── Input Area ─── */
 .composer-input-area-wrapper {
   position: relative;
   width: 100%;
-  min-height: 52px;
+  min-height: 48px;
 }
 
 .composer-container.is-sidebar-docked .composer-input-area-wrapper {
-  min-height: 84px;
+  min-height: 64px;
 }
 
 .composer-textarea {
   position: relative;
   width: 100%;
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: 13.5px !important;
+  font-size: 13px !important;
   font-weight: 400 !important;
   font-style: normal !important;
-  line-height: 21px !important;
+  line-height: 20px !important;
   letter-spacing: 0px !important;
   word-spacing: 0px !important;
   text-rendering: optimizeLegibility !important;
   font-variant-ligatures: normal !important;
   font-feature-settings: "liga" 1, "calt" 1 !important;
-  padding: 10px 12px 6px !important;
+  padding: 4px 10px 4px !important;
   margin: 0 !important;
-  border: 0 !important;
+  border: none !important;
   box-sizing: border-box !important;
   white-space: pre-wrap !important;
   word-break: break-word !important;
@@ -67,17 +72,23 @@
   -webkit-text-fill-color: var(--text-main) !important;
   caret-color: var(--text-accent, #40bafa) !important;
   resize: none;
-  height: 52px;
-  min-height: 52px;
+  height: 48px;
+  min-height: 48px;
   max-height: 220px;
   outline: none !important;
   overflow-y: hidden;
   display: block;
 }
 
+.composer-textarea:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
 .composer-container.is-sidebar-docked .composer-textarea {
-  height: 84px;
-  min-height: 84px;
+  height: 60px;
+  min-height: 60px;
   max-height: 260px;
 }
 
@@ -108,11 +119,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 8px 5px;
-  border-top: 1px solid var(--border-dim);
+  padding: 3px 8px 4px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
   gap: 6px;
   flex-wrap: nowrap;
-  min-height: 30px;
+  min-height: 28px;
 }
 
 /* Left cluster */

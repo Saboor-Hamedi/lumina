@@ -1,68 +1,90 @@
-.lumina-activity-bar {
-  width: 40px;
-  min-width: 40px;
-  max-width: 40px;
-  height: 100%;
-  background: var(--bg-activitybar, var(--bg-sidebar));
-  border-right: 1px solid var(--border-dim);
-  border-left: none !important;
-  border-top: none !important;
-  border-bottom: none !important;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 8px 0;
-  box-sizing: border-box;
-  flex-shrink: 0;
-  z-index: 20;
-  user-select: none;
+/* ==========================================================================
+   ActivityBar Component Styling - AstroNvim Sleek Precision Ribbon
+   ========================================================================== */
+
+.lumina-activity-bar,
+[data-modern-ui='true'] .lumina-activity-bar {
+  width: 42px !important;
+  min-width: 42px !important;
+  max-width: 42px !important;
+  height: 100% !important;
+  background: var(--bg-sidebar) !important;
+  border: none !important;
+  border-right: 1px solid var(--border-dim) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 6px 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+  z-index: 20 !important;
+  user-select: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
 }
 
 .activity-bar-top {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  gap: 6px;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+  gap: 2px !important;
 }
 
-.activity-bar-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--text-muted, #71717a);
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-  transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-              color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.1s ease;
-  outline: none;
-  box-sizing: border-box;
+.activity-bar-bottom {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+  gap: 2px !important;
+  margin-top: auto !important;
 }
 
-.activity-bar-btn:hover {
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
-  color: var(--text-main, #fafafa);
-  border-color: var(--border-subtle, rgba(255, 255, 255, 0.12));
+/* Activity Bar Button: Ultra-sleek vertical tab */
+.activity-bar-btn,
+[data-modern-ui='true'] .activity-bar-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 42px !important;
+  height: 38px !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-left: 2px solid transparent !important;
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  opacity: 0.55 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  transition: opacity 0.12s ease, color 0.12s ease, background-color 0.12s ease, border-color 0.12s ease !important;
+  outline: none !important;
+  position: relative !important;
 }
 
-.activity-bar-btn:active {
-  /* No scale transform to avoid visual shaking */
-  background: var(--bg-active, rgba(255, 255, 255, 0.12));
+.activity-bar-btn:hover,
+[data-modern-ui='true'] .activity-bar-btn:hover {
+  opacity: 0.9 !important;
+  color: var(--text-main) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
 }
 
-.activity-bar-btn.active {
-  color: var(--text-accent, #a78bfa);
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
-  border-color: var(--border-dim, rgba(255, 255, 255, 0.1));
+/* Active State: Razor-sharp solid accent indicator on left edge */
+.activity-bar-btn.active,
+[data-modern-ui='true'] .activity-bar-btn.active {
+  opacity: 1 !important;
+  color: var(--text-main) !important;
+  border-left: 2px solid var(--text-accent) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+
+.activity-bar-btn.active svg,
+[data-modern-ui='true'] .activity-bar-btn.active svg {
+  color: var(--text-main) !important;
+  filter: drop-shadow(0 0 6px rgba(var(--text-accent-rgb, 139, 92, 246), 0.35)) !important;
 }
 
 .activity-bar-btn svg {
@@ -75,11 +97,11 @@
 
 .activity-bar-btn .mail-unread-badge {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 7px;
-  height: 7px;
+  top: 6px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 9999px;
   background: #ef4444;
-  box-shadow: 0 0 0 1.5px var(--bg-activitybar, var(--bg-sidebar));
+  box-shadow: 0 0 0 1.5px var(--bg-sidebar);
 }

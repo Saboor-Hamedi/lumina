@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { useSettingsStore } from './SettingStore'
 
 export const GRAPH_TAB_ID = '__graph__'
+export const LUMINA_TAB_ID = '__lumina__'
 
 export interface WorkspaceNote {
   id: string
@@ -53,6 +54,7 @@ export interface WorkspaceStoreState {
   closeAllTabs: () => void
   togglePinTab: (id: string) => void
   openGraphTab: () => void
+  openLuminaTab: () => void
   setPinnedTabs: (pinnedTabIds: string[]) => void
   setLoading: (isLoading: boolean) => void
   setSearchQuery: (query: string) => void
@@ -131,12 +133,14 @@ const getCachedSession = () => {
     const openTabs: string[] = rawTabs ? JSON.parse(rawTabs) : []
     const pinnedTabIds: string[] = rawPinned ? JSON.parse(rawPinned) : []
     const noteIdSet = new Set(notes.map((n) => n.id))
-    const validTabs = openTabs.filter((id) => id === GRAPH_TAB_ID || noteIdSet.has(id))
+    const validTabs = openTabs.filter(
+      (id) => id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || noteIdSet.has(id)
+    )
     const validPinned = pinnedTabIds.filter((id) => validTabs.includes(id))
     const activeTabId =
       lastNoteId && validTabs.includes(lastNoteId) ? lastNoteId : validTabs[0] || null
     const selectedNote =
-      activeTabId && activeTabId !== GRAPH_TAB_ID
+      activeTabId && activeTabId !== GRAPH_TAB_ID && activeTabId !== LUMINA_TAB_ID
         ? notes.find((n) => n.id === activeTabId) || null
         : null
 
@@ -194,7 +198,10 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     set((state) => {
       const allNotes = state.notes || []
       const validTabs = tabs.filter(
-        (id) => id === GRAPH_TAB_ID || allNotes.some((idMatch) => idMatch.id === id)
+        (id) =>
+          id === GRAPH_TAB_ID ||
+          id === LUMINA_TAB_ID ||
+          allNotes.some((idMatch) => idMatch.id === id)
       )
       const validPinned = pinnedIds.filter((id) => validTabs.includes(id))
 
@@ -202,7 +209,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       const finalActiveId = validActiveId || (validTabs.length ? validTabs[0] : null)
 
       const activeNote =
-        finalActiveId === GRAPH_TAB_ID
+        finalActiveId === GRAPH_TAB_ID || finalActiveId === LUMINA_TAB_ID
           ? null
           : finalActiveId
             ? allNotes.find((n) => n.id === finalActiveId) || null
@@ -250,7 +257,13 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   setActiveTabId: (id: string | null) => {
     let selectedItem: WorkspaceNote | null = null
     set((state) => {
-      if (state.activeTabId === id && (!id || state.selectedNote?.id === id || id === GRAPH_TAB_ID)) {
+      if (
+        state.activeTabId === id &&
+        (!id ||
+          state.selectedNote?.id === id ||
+          id === GRAPH_TAB_ID ||
+          id === LUMINA_TAB_ID)
+      ) {
         return state
       }
       if (id === GRAPH_TAB_ID) {
@@ -258,6 +271,16 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, GRAPH_TAB_ID]
         return {
           activeTabId: GRAPH_TAB_ID,
+          selectedNote: null,
+          selectedSnippet: null,
+          openTabs: nextTabs
+        }
+      }
+      if (id === LUMINA_TAB_ID) {
+        const isAlreadyOpen = state.openTabs.includes(LUMINA_TAB_ID)
+        const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, LUMINA_TAB_ID]
+        return {
+          activeTabId: LUMINA_TAB_ID,
           selectedNote: null,
           selectedSnippet: null,
           openTabs: nextTabs
@@ -304,7 +327,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
       const allNotes = state.notes || []
       const nextSelected =
-        nextActiveId && nextActiveId !== GRAPH_TAB_ID
+        nextActiveId &&
+        nextActiveId !== GRAPH_TAB_ID &&
+        nextActiveId !== LUMINA_TAB_ID
           ? allNotes.find((n) => n.id === nextActiveId) || null
           : null
 
@@ -396,6 +421,18 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         openTabs: nextTabs,
         activeTabId: GRAPH_TAB_ID,
         selectedNote: null
+      }
+    }),
+
+  openLuminaTab: () =>
+    set((state) => {
+      const isAlreadyOpen = state.openTabs.includes(LUMINA_TAB_ID)
+      const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, LUMINA_TAB_ID]
+      return {
+        openTabs: nextTabs,
+        activeTabId: LUMINA_TAB_ID,
+        selectedNote: null,
+        selectedSnippet: null
       }
     }),
 
@@ -495,7 +532,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
           const noteIdSet = new Set(merged.map((n) => n.id))
           const validTabs = persistedOpenTabs.filter(
-            (id) => id === GRAPH_TAB_ID || noteIdSet.has(id)
+            (id) => id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || noteIdSet.has(id)
           )
           const validPinned = persistedPinnedTabs.filter((id) => validTabs.includes(id))
           const validActiveId =
@@ -503,7 +540,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
               ? persistedActiveId
               : validTabs[0] || null
           const activeNote =
-            validActiveId && validActiveId !== GRAPH_TAB_ID
+            validActiveId &&
+            validActiveId !== GRAPH_TAB_ID &&
+            validActiveId !== LUMINA_TAB_ID
               ? merged.find((n) => n.id === validActiveId) || null
               : null
 
@@ -717,7 +756,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       }
 
       const nextSelectedNote =
-        nextActiveId && nextActiveId !== GRAPH_TAB_ID
+        nextActiveId &&
+        nextActiveId !== GRAPH_TAB_ID &&
+        nextActiveId !== LUMINA_TAB_ID
           ? next.find((n) => n.id === nextActiveId) || null
           : null
 

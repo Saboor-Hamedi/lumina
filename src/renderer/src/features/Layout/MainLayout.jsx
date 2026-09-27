@@ -25,8 +25,11 @@ import AppModals from './AppModals'
 import { ExternalDropOverlay, useWorkspaceDrop } from '../Explorer/drop'
 import { FileText, FolderDown } from 'lucide-react'
 const Graph = React.lazy(() => import('../Graph/Graph'))
+const LuminaChatContent = React.lazy(() =>
+  import('../AI/components/LuminaChatContent').then((m) => ({ default: m.LuminaChatContent }))
+)
 import { useKeyboardShortcuts } from '../../core/shortcuts'
-import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
+import { useWorkspaceStore, GRAPH_TAB_ID, LUMINA_TAB_ID } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useUpdateStore } from '../../core/store/UpdateSetting'
 import { useToast } from '../../core/notification'
@@ -719,17 +722,12 @@ export const MainLayout = () => {
     if (currentMode === 'modal') {
       setShowAIChatModal((prev) => !prev)
     } else {
-      if (isRightSidebarOpenRef.current && rightSidebarTab === 'chat') {
-        updateRightSidebarOpen(false)
-      } else {
-        setRightSidebarTab('chat')
-        updateRightSidebarOpen(true)
-      }
+      useWorkspaceStore.getState().openLuminaTab()
     }
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent('focus-ai-composer'))
     }, 50)
-  }, [updateRightSidebarOpen, rightSidebarTab])
+  }, [])
 
   useEffect(() => {
     const handleAskAnything = (e) => {
@@ -798,6 +796,26 @@ export const MainLayout = () => {
           </div>
         )
       }
+      if (tabId === LUMINA_TAB_ID) {
+        return (
+          <div
+            key={tabId}
+            style={{
+              display: effectiveSelectedId === tabId ? 'flex' : 'none',
+              flex: 1,
+              width: '100%',
+              height: '100%',
+              position: 'relative',
+              overflow: 'hidden',
+              flexDirection: 'column'
+            }}
+          >
+            <React.Suspense fallback={null}>
+              <LuminaChatContent isSidebar={false} isModal={false} />
+            </React.Suspense>
+          </div>
+        )
+      }
       const snippet = snippetMap.get(tabId)
       if (!snippet) return null
       return (
@@ -843,6 +861,8 @@ export const MainLayout = () => {
         <ActivityBar
           onToggleGraph={handleToggleGraph}
           onOpenTheme={handleOpenTheme}
+          onOpenDocs={handleOpenDocs}
+          onOpenGuide={() => setShowGuideModal(true)}
         />
 
         <aside className="shell-sidebar-left">
@@ -882,6 +902,8 @@ export const MainLayout = () => {
                 />
                 {selectedSnippet &&
                   activeTabId !== GRAPH_TAB_ID &&
+                  activeTabId !== LUMINA_TAB_ID &&
+                  openTabs.includes(selectedSnippet.id) &&
                   snippets.some((s) => s.id === selectedSnippet.id) && (
                     <Breadcrumbs snippet={selectedSnippet} />
                   )}
@@ -899,8 +921,12 @@ export const MainLayout = () => {
                   position: 'relative'
                 }}
               />
-            ) : openTabs.filter((id) => id === GRAPH_TAB_ID || snippets.some((s) => s.id === id)).length >
-            0 ? (
+            ) : openTabs.filter(
+                (id) =>
+                  id === GRAPH_TAB_ID ||
+                  id === LUMINA_TAB_ID ||
+                  snippets.some((s) => s.id === id)
+              ).length > 0 ? (
               <div
                 className="workspace-container"
                 style={{

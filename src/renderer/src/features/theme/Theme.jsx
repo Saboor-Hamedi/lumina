@@ -344,9 +344,7 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
     (themeId) => {
       if (!themeId) return
       setSelectedId(themeId)
-      requestAnimationFrame(() => {
-        setTheme(themeId)
-      })
+      setTheme(themeId)
     },
     [setTheme]
   )
@@ -428,10 +426,10 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
   if (!isOpen) return null
 
   return createPortal(
-    <div className="guide-modal-overlay" onClick={onClose}>
+    <div className="nexus-overlay preview-overlay-glass settings-overlay guide-modal-overlay theme-modal-overlay" onClick={onClose}>
       <div
         ref={containerRef}
-        className={`template-modal-container modal-container${isMaximized ? ' maximized' : ''}`}
+        className={`settings-modal theme-modal-container template-modal-container modal-container${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
         style={{
           flexDirection: 'column',
@@ -442,17 +440,17 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
           maxHeight: isMaximized ? 'none' : '78vh',
           transform: isMaximized ? 'none' : 'translate3d(0px, 0px, 0px)',
           transition: '0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          boxShadow: 'rgba(0, 0, 0, 0.6) 0px 30px 60px',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
           overflow: 'hidden',
           borderRadius: isMaximized ? '0' : '12px'
         }}
       >
-        {/* Header matching DailyNotes / Template.jsx */}
-        <div className="template-modal-header" style={{ cursor: 'default' }}>
-          <div className="template-header-left">
+        {/* Sleek Header matching Settings modal */}
+        <div className="modal-header theme-modal-header template-modal-header settings-modal-header" style={{ cursor: 'default' }}>
+          <div className="settings-header-left template-header-left">
             <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
               <button
-                className="template-sidebar-toggle-btn"
+                className="control-icon settings-sidebar-toggle-btn template-sidebar-toggle-btn"
                 onClick={handleToggleSidebar}
                 aria-label={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
               >
@@ -463,12 +461,17 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
                 )}
               </button>
             </ToolTip>
+            <span className="settings-header-title">Theme Gallery</span>
+            <span className="settings-header-divider">/</span>
+            <span className="settings-header-subtitle">
+              {selectedTheme?.name || 'Themes'}
+            </span>
           </div>
 
-          <div className="template-header-right">
-            <ToolTip text={isMaximized ? 'Restore' : 'Maximize'} position="bottom">
+          <div className="window-controls settings-header-right template-header-right">
+            <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
               <button
-                className="template-window-btn"
+                className="control-icon control-maximize settings-window-btn template-window-btn"
                 onClick={handleToggleMaximize}
                 aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
               >
@@ -476,16 +479,20 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
               </button>
             </ToolTip>
             <ToolTip text="Close (Esc)" position="bottom">
-              <button className="template-window-btn" onClick={onClose} aria-label="Close">
-                <X size={15} />
+              <button
+                className="control-icon control-close settings-close-btn template-window-btn"
+                onClick={onClose}
+                aria-label="Close"
+              >
+                <X size={15} strokeWidth={2} />
               </button>
             </ToolTip>
           </div>
         </div>
 
         {/* Main Body: Collapsible Sidebar + Rich Preview Pane */}
-        <div className={`template-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-          <aside className={`template-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+        <div className={`modal-body settings-layout template-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+          <aside className={`sidebar settings-sidebar template-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
             <div className="template-sidebar-header">
               <div className="template-search-wrapper">
                 <Search size={13} className="template-search-icon" />
@@ -537,7 +544,7 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
           </aside>
 
           {/* Right Preview Pane shifted when sidebar is open */}
-          <div className="template-content" style={{ overflow: 'hidden', height: '100%', display: 'flex' }}>
+          <div className="content settings-body template-content" style={{ overflow: 'hidden', height: '100%', display: 'flex', padding: 0 }}>
             <ThemeContent
               themeData={selectedTheme}
               isActive={selectedTheme?.id === theme}

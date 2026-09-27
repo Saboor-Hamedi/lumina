@@ -192,8 +192,9 @@
   border-radius: 6px;
   color: var(--text-main);
   padding: 6px 26px 6px 28px;
-  font-size: 12px;
+  font-size: 11.5px;
   outline: none;
+  cursor: text !important;
   transition: all 0.2s ease;
 }
 

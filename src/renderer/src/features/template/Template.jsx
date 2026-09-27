@@ -130,13 +130,18 @@ const Template = ({
                 )}
               </button>
             </ToolTip>
+            <span className="template-header-title">Templates</span>
+            <span className="template-header-divider">/</span>
+            <span className="template-header-subtitle template-header-active-pill">
+              {selectedTemplate?.title?.replace(/\.md$/, '') || 'Blank Note'}
+            </span>
           </div>
 
           <div className="template-header-right">
             <button
               className="template-header-apply-btn"
               onClick={() => handleApply(selectedTemplate)}
-              aria-label="Apply template"
+              aria-label="Use selected template"
             >
               <Check size={12} strokeWidth={2.5} />
               <span>Apply</span>

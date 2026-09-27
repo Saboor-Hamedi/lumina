@@ -364,7 +364,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 0 0 14px;
-  gap: 8px;
+  gap: 0;
   background: transparent;
   color: var(--text-muted);
   font-size: 12px;
@@ -504,9 +504,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
+  width: 22px;
   height: 100%;
-  margin-left: 4px;
+  margin-left: auto;
+  margin-right: 0;
+  flex-shrink: 0;
 }
 
 .tab-close-btn {
@@ -524,8 +526,12 @@
   opacity: 0;
 }
 
+.workspace-tab.active .tab-close-btn {
+  opacity: 0.7;
+}
+
 .workspace-tab:hover .tab-close-btn {
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
 .tab-close-btn:hover {

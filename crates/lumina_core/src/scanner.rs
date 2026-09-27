@@ -354,6 +354,12 @@ pub fn scan_vault_impl(vault_path_str: &str, max_bytes: usize) -> ScanResult {
                 String::new()
             };
 
+            let ext_with_dot = if ext.is_empty() {
+                String::new()
+            } else {
+                format!(".{}", ext)
+            };
+
             // Non-text files return lightweight metadata
             if note_type != "snippet" && note_type != "canvas" {
                 let prefix = if note_type == "image" { "img" } else { "pdf" };
@@ -379,7 +385,7 @@ pub fn scan_vault_impl(vault_path_str: &str, max_bytes: usize) -> ScanResult {
                     relative_path: rel_path,
                     size: size as f64,
                     is_oversized,
-                    ext,
+                    ext: ext_with_dot,
                     wikilinks: Vec::new(),
                 });
             }
@@ -436,7 +442,7 @@ pub fn scan_vault_impl(vault_path_str: &str, max_bytes: usize) -> ScanResult {
                 relative_path: rel_path,
                 size: size as f64,
                 is_oversized,
-                ext,
+                ext: ext_with_dot,
                 wikilinks,
             })
         })

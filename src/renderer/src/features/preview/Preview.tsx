@@ -167,7 +167,14 @@ export const Preview: React.FC<PreviewProps> = ({
 
   if (!isOpen) return null
 
-  const wordCount = liveContent ? liveContent.split(/\s+/).filter(Boolean).length : 0
+  const wordCount = useMemo(() => {
+    if (!liveContent) return 0
+    const clean = liveContent
+      .replace(/<think>[\s\S]*?(?:<\/think>|$)/i, '')
+      .replace(/^\s*---\r?\n[\s\S]*?\r?\n---\r?\n?/, '')
+      .trim()
+    return clean ? clean.split(/\s+/).filter(Boolean).length : 0
+  }, [liveContent])
 
   return createPortal(
     <div className="preview-overlay-glass" onClick={onClose}>

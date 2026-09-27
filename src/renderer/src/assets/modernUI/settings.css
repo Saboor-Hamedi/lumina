@@ -1,0 +1,16 @@
+/* ============================================================
+ * AstroNvim Modern UI: Settings Modal (VS Code Aesthetic)
+ * Bridges modernUI with Settings styling layer
+ * ============================================================ */
+
+@import '../../features/Settings/Settings.css';
+
+/* Sleek modal enhancements under Modern UI */
+[data-modern-ui='true'] .settings-modal {
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08)) !important;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6) !important;
+}
+
+[data-modern-ui='true'] .settings-sidebar {
+  border-right: 1px solid var(--border-dim, rgba(255, 255, 255, 0.06)) !important;
+}

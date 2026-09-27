@@ -106,11 +106,13 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   }, [selectedSnippet?.code])
 
   const statusBarRef = useRef<HTMLDivElement | null>(null)
+  const scrollableRef = useRef<HTMLDivElement | null>(null)
 
   // Enable invisible horizontal mouse wheel scrolling when status bar content overflows
   useEffect(() => {
-    const el = statusBarRef.current
-    if (!el) return
+    const el = scrollableRef.current
+    const bar = statusBarRef.current
+    if (!el || !bar) return
 
     const handleWheel = (e: WheelEvent) => {
       if (el.scrollWidth > el.clientWidth) {
@@ -121,21 +123,25 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       }
     }
 
-    el.addEventListener('wheel', handleWheel, { passive: false })
-    return () => el.removeEventListener('wheel', handleWheel)
+    bar.addEventListener('wheel', handleWheel, { passive: false })
+    return () => bar.removeEventListener('wheel', handleWheel)
   }, [])
 
   return (
     <div className="status-bar" ref={statusBarRef} data-testid="status-bar">
-      {/* Left utility buttons */}
-      <div className="status-bar-left">
-        <div
-          className="lualine-mode-badge"
-          data-mode={cursorPos.selectedChars > 0 ? 'visual' : 'normal'}
-        >
-          {cursorPos.selectedChars > 0 ? 'VISUAL' : 'NORMAL'}
-        </div>
-        <ToolTip
+      {/* Lualine Mode Badge — Completely static on the left (never shakes or jitters) */}
+      <div
+        className="lualine-mode-badge"
+        data-mode={cursorPos.selectedChars > 0 ? 'visual' : 'normal'}
+      >
+        {cursorPos.selectedChars > 0 ? 'VISUAL' : 'NORMAL'}
+      </div>
+
+      {/* Scrollable Status Bar Body */}
+      <div className="status-bar-body" ref={scrollableRef}>
+        {/* Left utility buttons */}
+        <div className="status-bar-left">
+          <ToolTip
           text={
             isLoggedIn && user
               ? (user.name || user.email || 'Settings & Account')
@@ -301,6 +307,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             </ToolTip>
           </>
         )}
+      </div>
       </div>
     </div>
   )

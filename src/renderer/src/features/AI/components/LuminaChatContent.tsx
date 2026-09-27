@@ -1,16 +1,18 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { useAIStore } from '../tools/lumina'
-import { useWorkspaceStore } from '../../../core/store/workspaceStore'
+import { useWorkspaceStore, LUMINA_TAB_ID } from '../../../core/store/workspaceStore'
 import { Composer } from '../Composer'
 import { ChatMessageRow } from './LuminaChatMessageRow'
 import { LuminaSession } from './LuminaSession'
 import { ChatFooterStatus } from './LuminaChatFooterStatus'
 import { ChatEmptyState } from './LuminaChatEmptyState'
-import { LuminaWorkbench } from './LuminaWorkbench'
+import { LuminaAnalyticsDropdown } from './LuminaAnalyticsDropdown'
 import { useChatScroll } from '../hooks/useChatScroll'
 import { useScopedSelectAll } from '../hooks/useScopedSelectAll'
 import { getBrainDocuments } from '../services/brainKnowledge'
+import ToolTip from '../../../components/atoms/ToolTip'
+import { BarChart3, Plus, History, Trash2, Pin } from 'lucide-react'
 
 export interface LuminaChatContentProps {
   isSidebar?: boolean
@@ -63,12 +65,20 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
       }))
     )
 
-    const { selectedNote, notes } = useWorkspaceStore(
+    const { selectedNote, notes, activeTabId, openLuminaTab } = useWorkspaceStore(
       useShallow((state: any) => ({
         selectedNote: state.selectedNote,
-        notes: state.notes || []
+        notes: state.notes || [],
+        activeTabId: state.activeTabId,
+        openLuminaTab: state.openLuminaTab
       }))
     )
+
+    const isInTab = activeTabId === LUMINA_TAB_ID
+    const currentSession = useMemo(() => {
+      return (sessions || []).find((s: any) => s.id === activeSessionId)
+    }, [sessions, activeSessionId])
+    const currentSessionTitle = currentSession?.title || 'Lumina Chat'
 
     const brainDocs = useMemo(() => getBrainDocuments(), [])
 
@@ -270,76 +280,161 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
               if (showSessions) setShowSessions(false)
             }}
           >
-            {isWorkbenchOpen ? (
-              <LuminaWorkbench onClose={() => setIsWorkbenchOpen(false)} />
-            ) : (
-              <>
-                <div
-                  className="chat-messages"
-                  ref={listRef}
-                  onScroll={handleMessageScroll}
-                >
-                  {visibleMessages.length === 0 ? (
-                    <ChatEmptyState
-                      selectedNote={selectedNote}
-                      onSendSuggestion={(snip) =>
-                        sendChatMessage(`Explain the code in "${snip.title}"`, [snip])
-                      }
-                    />
-                  ) : (
-                    <div className="chat-msg-list">
-                      {renderedMessages}
-                      <ChatFooterStatus
-                        chatMessages={chatMessages}
-                        isChatLoading={isChatLoading}
-                        activeThinkingStatus={activeThinkingStatus}
-                        chatError={chatError}
-                      />
-                    </div>
+            {/* Sleek AI Session Header */}
+            <div className="lumina-session-header">
+              <div className="session-header-left">
+                <ToolTip text={showSessions ? 'Hide History' : 'Chat History'} position="bottom">
+                  <button
+                    type="button"
+                    className={`session-header-btn ${showSessions ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowSessions((prev) => !prev)
+                    }}
+                    aria-label="Toggle Chat History"
+                  >
+                    <History size={12} />
+                    <span>History</span>
+                  </button>
+                </ToolTip>
+
+                <div className="session-header-divider" />
+
+                <span className="session-header-title" title={currentSessionTitle}>
+                  {currentSessionTitle}
+                </span>
+              </div>
+
+              <div className="session-header-right">
+                <ToolTip text="New Chat" position="bottom">
+                  <button
+                    type="button"
+                    className="session-header-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      createNewSession()
+                    }}
+                    aria-label="New Chat"
+                  >
+                    <Plus size={12} />
+                    <span>New</span>
+                  </button>
+                </ToolTip>
+
+                <div style={{ position: 'relative' }}>
+                  <ToolTip text="AI Analytics & Telemetry" position="bottom">
+                    <button
+                      type="button"
+                      className={`session-header-btn ${isWorkbenchOpen ? 'active' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setIsWorkbenchOpen((prev) => !prev)
+                      }}
+                      aria-label="AI Analytics"
+                    >
+                      <BarChart3 size={12} />
+                      <span>Analytics</span>
+                    </button>
+                  </ToolTip>
+
+                  {isWorkbenchOpen && (
+                    <LuminaAnalyticsDropdown onClose={() => setIsWorkbenchOpen(false)} />
                   )}
                 </div>
 
-                <div
-                  className={`modal-composer-dock-wrapper ${isSidebar ? 'is-sidebar-docked' : ''}`}
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    padding: isSidebar ? '0 8px 8px 8px' : '0 16px 14px 16px',
-                    boxSizing: 'border-box',
-                    flexShrink: 0,
-                    position: 'relative',
-                    overflow: 'visible',
-                    zIndex: 100
-                  }}
-                >
-                  <div
-                    className={`inspector-footer-section is-chat-composer ${isSidebar ? 'is-docked-composer' : 'is-modal-composer'}`}
-                    style={{
-                      maxWidth: isSidebar ? '100%' : '800px',
-                      width: '100%',
-                      margin: '0 auto',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-card, var(--border-dim))',
-                      background: 'var(--bg-card, var(--bg-panel))',
-                      overflow: 'visible',
-                      position: 'relative',
-                      boxShadow: 'var(--shadow-soft, 0 4px 16px rgba(0, 0, 0, 0.15))',
-                      boxSizing: 'border-box'
-                    }}
-                  >
-                    <Composer
-                      isSidebar={isSidebar}
-                      onSend={handleSendMessage}
-                      isLoading={isChatLoading}
-                      onStop={cancelChat}
-                      onCancel={cancelChat}
-                    />
-                  </div>
+                {chatMessages.length > 0 && (
+                  <ToolTip text="Clear Messages" position="bottom">
+                    <button
+                      type="button"
+                      className="session-header-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        clearSessionMessages(activeSessionId)
+                      }}
+                      aria-label="Clear Messages"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </ToolTip>
+                )}
+
+                {!isInTab && !isSidebar && (
+                  <ToolTip text="Open Lumina as Tab" position="bottom">
+                    <button
+                      type="button"
+                      className="session-header-btn"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openLuminaTab()
+                      }}
+                      aria-label="Open Lumina as Tab"
+                    >
+                      <Pin size={12} />
+                      <span>Open as Tab</span>
+                    </button>
+                  </ToolTip>
+                )}
+              </div>
+            </div>
+
+            <div
+              className="chat-messages"
+              ref={listRef}
+              onScroll={handleMessageScroll}
+            >
+              {visibleMessages.length === 0 ? (
+                <ChatEmptyState
+                  selectedNote={selectedNote}
+                  onSendSuggestion={(snip) =>
+                    sendChatMessage(`Explain the code in "${snip.title}"`, [snip])
+                  }
+                  onSendPrompt={(p) => sendChatMessage(p)}
+                />
+              ) : (
+                <div className="chat-msg-list">
+                  {renderedMessages}
+                  <ChatFooterStatus
+                    chatMessages={chatMessages}
+                    isChatLoading={isChatLoading}
+                    activeThinkingStatus={activeThinkingStatus}
+                    chatError={chatError}
+                  />
                 </div>
-              </>
-            )}
+              )}
+            </div>
+
+            <div
+              className={`modal-composer-dock-wrapper ${isSidebar ? 'is-sidebar-docked' : ''}`}
+              style={{
+                width: '100%',
+                background: 'transparent',
+                display: 'flex',
+                justifyContent: 'center',
+                padding: isSidebar ? '0 8px 10px 8px' : '0 16px 14px 16px',
+                boxSizing: 'border-box',
+                flexShrink: 0,
+                position: 'relative',
+                overflow: 'visible',
+                zIndex: 100
+              }}
+            >
+              <div
+                style={{
+                  maxWidth: isSidebar ? '100%' : '760px',
+                  width: '100%',
+                  margin: '0 auto',
+                  position: 'relative'
+                }}
+              >
+                <Composer
+                  isSidebar={isSidebar}
+                  onSend={handleSendMessage}
+                  isLoading={isChatLoading}
+                  onStop={cancelChat}
+                  onCancel={cancelChat}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

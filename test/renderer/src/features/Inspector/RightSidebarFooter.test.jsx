@@ -30,15 +30,12 @@ describe('RightSidebarFooter Component', () => {
     vi.clearAllMocks()
   })
 
-  it('renders Composer inside is-chat-composer container when tab is chat', () => {
+  it('renders null when tab is chat (Lumina chat moved to welcome tab)', () => {
     const { container } = render(
       <RightSidebarFooter rightSidebarTab="chat" selectedNote={null} onClose={vi.fn()} />
     )
 
-    const section = container.querySelector('.inspector-footer-section.is-chat-composer')
-    expect(section).toBeDefined()
-    expect(screen.getByTestId('mock-composer')).toBeDefined()
-    expect(screen.getByTestId('mock-composer').getAttribute('data-sidebar')).toBe('true')
+    expect(container.firstChild).toBeNull()
   })
 
   it('renders word count when note has code in details tab', () => {

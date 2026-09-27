@@ -16,7 +16,9 @@ vi.mock('../../../../../src/renderer/src/core/hooks/useFontSettings', () => ({
     updateEditorFontFamily: vi.fn(),
     updateEditorFontSize: vi.fn(),
     themeAccentColor: '',
-    updateThemeAccentColor: vi.fn()
+    updateThemeAccentColor: vi.fn(),
+    useBorderLeft: true,
+    updateUseBorderLeft: vi.fn()
   })
 }))
 

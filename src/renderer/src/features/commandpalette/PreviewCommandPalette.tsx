@@ -138,6 +138,8 @@ export const PreviewCommandPalette: React.FC<PreviewCommandPaletteProps> = React
         think = thinkMatch[1].trim()
         remaining = remaining.replace(/<think>[\s\S]*?(?:<\/think>|$)/i, '').trim()
       }
+      // Cleanly strip YAML frontmatter / metadata (e.g. --- ... ---)
+      remaining = remaining.replace(/^\s*---\r?\n[\s\S]*?\r?\n---\r?\n?/, '').trim()
       return { thinkContent: think, cleanContent: remaining }
     }, [content])
 

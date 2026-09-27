@@ -1,14 +1,9 @@
 import React from 'react'
-import { Info, List as ListIcon, MessageSquare, ExternalLink, History, BarChart3 } from 'lucide-react'
+import { Info, List as ListIcon } from 'lucide-react'
 import NoteDetails from './NoteDetails'
 import NoteOutline from './NoteOutline'
-// Lumina AI Chat Content
-const LuminaChatContent = React.lazy(() =>
-  import('../AI/Lumina').then((m) => ({ default: m.LuminaChatContent }))
-)
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
-import { useSettingsStore } from '../../core/store/SettingStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import RightSidebarFooter from './RightSidebarFooter'
 import './NoteDetails.css'
@@ -19,8 +14,7 @@ export const RightSidebar = React.memo(({
   selectedNote,
   isLoading,
   isRightSidebarOpen,
-  setIsRightSidebarOpen,
-  setShowAIChatModal
+  setIsRightSidebarOpen
 }) => {
   useKeyboardShortcuts({
     onEscape: isRightSidebarOpen
@@ -33,22 +27,6 @@ export const RightSidebar = React.memo(({
         }
       : null
   })
-
-  const updateSetting = useSettingsStore((state) => state.updateSetting)
-  const aiChatDisplayMode = useSettingsStore(
-    (state) => state.settings.aiChatDisplayMode || 'sidebar'
-  )
-
-  const handlePopOut = () => {
-    updateSetting('aiChatDisplayMode', 'modal')
-    setRightSidebarTab('details')
-    if (setIsRightSidebarOpen) {
-      setIsRightSidebarOpen(false)
-    }
-    if (setShowAIChatModal) {
-      setShowAIChatModal(true)
-    }
-  }
 
   return (
     <div className="inspector-panel">
@@ -78,23 +56,6 @@ export const RightSidebar = React.memo(({
           </ToolTip>
         </div>
 
-        {aiChatDisplayMode === 'sidebar' && (
-          <div
-            className={`inspector-tab ${rightSidebarTab === 'chat' ? 'active' : ''}`}
-            onClick={() => {
-              setRightSidebarTab('chat')
-              updateSetting('aiChatDisplayMode', 'sidebar')
-            }}
-          >
-            <ToolTip text="AI Chat" position="bottom">
-              <div className="tab-context">
-                <MessageSquare size={13} className="tab-icon" />
-                <span className="tab-title">Chat</span>
-              </div>
-            </ToolTip>
-          </div>
-        )}
-
         <div className="flex-1" style={{ height: '100%', pointerEvents: 'none' }} />
       </div>
 
@@ -122,41 +83,6 @@ export const RightSidebar = React.memo(({
           </div>
         )}
 
-        {rightSidebarTab === 'chat' && (
-          <div className="inspector-sub-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <ToolTip text="Toggle History" position="bottom">
-                <button
-                  className="inspector-action-btn"
-                  onClick={() => window.dispatchEvent(new CustomEvent('ai-toggle-history'))}
-                  aria-label="Toggle History"
-                >
-                  <History size={13} />
-                </button>
-              </ToolTip>
-              <ToolTip text="AI Analytics & Usage" position="bottom">
-                <button
-                  className="inspector-action-btn"
-                  onClick={() => window.dispatchEvent(new CustomEvent('open-ai-workbench'))}
-                  aria-label="AI Analytics & Usage"
-                >
-                  <BarChart3 size={13} />
-                </button>
-              </ToolTip>
-              <span className="inspector-sub-title">Lumina AI Assistant</span>
-            </div>
-            <ToolTip text="Pop out to floating window" position="bottom-right">
-              <button
-                className="inspector-action-btn"
-                onClick={handlePopOut}
-                aria-label="Pop out to floating window"
-              >
-                <ExternalLink size={13} />
-              </button>
-            </ToolTip>
-          </div>
-        )}
-
         <div
           className="panel-content"
           style={{
@@ -170,25 +96,6 @@ export const RightSidebar = React.memo(({
           <GlobalErrorHandler>
             {rightSidebarTab === 'outline' ? (
               <NoteOutline note={selectedNote} />
-            ) : rightSidebarTab === 'chat' ? (
-              <React.Suspense
-                fallback={
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      height: '100%',
-                      color: 'var(--text-muted, #888)',
-                      fontSize: 12
-                    }}
-                  >
-                    Loading Lumina AI...
-                  </div>
-                }
-              >
-                <LuminaChatContent isSidebar={true} onPopOut={handlePopOut} />
-              </React.Suspense>
             ) : (
               <NoteDetails note={selectedNote} isLoading={isLoading} />
             )}

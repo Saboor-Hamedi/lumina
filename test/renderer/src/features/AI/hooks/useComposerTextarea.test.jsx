@@ -9,21 +9,21 @@ function TestComponent({ input, isSidebar, isLoading }) {
 }
 
 describe('useComposerTextarea hook', () => {
-  it('sets initial height to 84px when isSidebar is true', () => {
+  it('sets initial height to 64px when isSidebar is true', () => {
     const { getByTestId } = render(
       <TestComponent input="" isSidebar={true} isLoading={false} />
     )
     const el = getByTestId('composer-textarea')
-    expect(el.style.height).toBe('84px')
+    expect(el.style.height).toBe('64px')
     expect(el.style.overflowY).toBe('hidden')
   })
 
-  it('sets initial height to 52px when isSidebar is false', () => {
+  it('sets initial height to 48px when isSidebar is false', () => {
     const { getByTestId } = render(
       <TestComponent input="" isSidebar={false} isLoading={false} />
     )
     const el = getByTestId('composer-textarea')
-    expect(el.style.height).toBe('52px')
+    expect(el.style.height).toBe('48px')
     expect(el.style.overflowY).toBe('hidden')
   })
 
@@ -35,7 +35,7 @@ describe('useComposerTextarea hook', () => {
     Object.defineProperty(el, 'scrollHeight', { value: 37, configurable: true })
 
     rerender(<TestComponent input="Hello world" isSidebar={true} isLoading={false} />)
-    expect(el.style.height).toBe('84px')
+    expect(el.style.height).toBe('64px')
   })
 
   it('expands when scrollHeight exceeds min-height', () => {

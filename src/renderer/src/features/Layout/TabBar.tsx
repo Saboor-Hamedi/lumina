@@ -35,7 +35,7 @@ import {
   arrayMove
 } from '@dnd-kit/sortable'
 import { restrictToHorizontalAxis } from '@dnd-kit/modifiers'
-import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
+import { useWorkspaceStore, GRAPH_TAB_ID, LUMINA_TAB_ID } from '../../core/store/workspaceStore'
 import { useShallow } from 'zustand/react/shallow'
 import ContextMenu from '../modals/ContextMenu'
 import PromptModal from '../modals/PromptModal'
@@ -70,13 +70,19 @@ const SortableTabItem = memo<SortableTabItemProps>(
 
     const getIcon = () => {
       if (isPinned) return <Pin size={12} className="tab-icon pinned-icon" />
+      if (id === LUMINA_TAB_ID || snippet?.type === 'ai')
+        return <Sparkles size={12} className="tab-icon" />
       if (id === GRAPH_TAB_ID || snippet?.type === 'graph')
         return <Network size={12} className="tab-icon" />
       if (snippet) return getSnippetIcon(snippet, 12, 'tab-icon')
       return null
     }
 
-    const getTitle = () => snippet?.title || 'Untitled'
+    const getTitle = () => {
+      if (id === LUMINA_TAB_ID) return 'Lumina AI'
+      if (id === GRAPH_TAB_ID) return 'Knowledge Graph'
+      return snippet?.title || 'Untitled'
+    }
 
     return (
       <ToolTip text={getTitle()} position="bottom" delay={400}>
@@ -301,25 +307,7 @@ export const TabBar: React.FC<TabBarProps> = () => {
   } = useExternalFileDrop()
 
   if (openTabs.length === 0) {
-    return (
-      <div
-        className="tabbar-outer-wrapper"
-        onDragEnter={(e: React.DragEvent) => handleExternalDragEnter(e, '')}
-        onDragOver={(e: React.DragEvent) => handleExternalDragOver(e, '')}
-        onDragLeave={handleExternalDragLeave}
-        onDrop={(e: React.DragEvent) => handleExternalDrop(e, '')}
-        style={{
-          display: 'flex',
-          width: '100%',
-          height: '32px',
-          position: 'relative',
-          flexShrink: 0,
-          minWidth: 0,
-          borderBottom: '1px solid var(--border-dim)',
-          boxSizing: 'border-box'
-        }}
-      />
-    )
+    return null
   }
 
   return (
@@ -359,12 +347,14 @@ export const TabBar: React.FC<TabBarProps> = () => {
             >
               {openTabs.map((id) => {
                 const snippet = snippetMap.get(id)
-                if (!snippet && id !== GRAPH_TAB_ID) return null
+                if (!snippet && id !== GRAPH_TAB_ID && id !== LUMINA_TAB_ID) return null
                 const tabSnippet =
                   snippet ||
                   (id === GRAPH_TAB_ID
                     ? { id: GRAPH_TAB_ID, title: 'Knowledge Graph', type: 'graph' }
-                    : null)
+                    : id === LUMINA_TAB_ID
+                      ? { id: LUMINA_TAB_ID, title: 'Lumina AI', type: 'ai' }
+                      : null)
                 return (
                   <SortableTabItem
                     key={id}
@@ -395,13 +385,19 @@ export const TabBar: React.FC<TabBarProps> = () => {
               icon: <Pin size={14} />,
               onClick: () => togglePinTab(contextMenu.id)
             },
-            {
-              label: 'Change Icon',
-              shortcut: 'Win + Shift + .',
-              icon: <Image size={14} />,
-              onClick: () => setIconPickerId(contextMenu.id)
-            },
-            ...(snippetMap.get(contextMenu.id) && contextMenu.id !== GRAPH_TAB_ID
+            ...(contextMenu.id !== GRAPH_TAB_ID && contextMenu.id !== LUMINA_TAB_ID
+              ? [
+                  {
+                    label: 'Change Icon',
+                    shortcut: 'Win + Shift + .',
+                    icon: <Image size={14} />,
+                    onClick: () => setIconPickerId(contextMenu.id)
+                  }
+                ]
+              : []),
+            ...(snippetMap.get(contextMenu.id) &&
+            contextMenu.id !== GRAPH_TAB_ID &&
+            contextMenu.id !== LUMINA_TAB_ID
               ? [
                   {
                     label: 'Summarize with Lumina',

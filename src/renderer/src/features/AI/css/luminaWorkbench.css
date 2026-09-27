@@ -339,3 +339,274 @@
   color: #f87171;
   background: rgba(239, 68, 68, 0.12);
 }
+
+/* ==========================================================================
+   Sleek Analytics Dropdown & Lumina Session Header
+   ========================================================================== */
+
+.lumina-session-header {
+  height: 26px;
+  min-height: 26px;
+  max-height: 26px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-editor, var(--bg-app));
+  border: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  box-sizing: border-box;
+  user-select: none;
+  flex-shrink: 0;
+  z-index: 20;
+  font-family: var(--font-editor, inherit);
+  -webkit-font-smoothing: antialiased;
+}
+
+.is-sidebar-docked .lumina-session-header {
+  padding: 0 8px;
+}
+
+.session-header-left,
+.session-header-right {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.session-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  height: 20px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  font-size: 11px;
+  font-weight: 450;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease;
+  white-space: nowrap;
+}
+
+.session-header-btn svg {
+  width: 12px;
+  height: 12px;
+  opacity: 0.75;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  flex-shrink: 0;
+}
+
+.session-header-btn span {
+  line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.session-header-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main, #f8fafc);
+}
+
+.session-header-btn:hover svg {
+  opacity: 1;
+}
+
+.session-header-btn.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #f8fafc);
+}
+
+.session-header-btn.active svg {
+  opacity: 1;
+}
+
+.session-header-divider {
+  width: 1px;
+  height: 10px;
+  background: var(--border-dim);
+  opacity: 0.4;
+  margin: 0 4px;
+}
+
+.session-header-title {
+  font-size: 11px;
+  font-weight: 450;
+  color: var(--text-muted, #94a3b8);
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  padding: 0 2px;
+  transition: color 0.12s ease;
+}
+
+.session-header-title:hover {
+  color: var(--text-main, #f8fafc);
+}
+
+/* Sleek Analytics Dropdown Popover */
+.lumina-analytics-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: 290px;
+  background: var(--bg-card, var(--bg-panel));
+  border: 1px solid var(--border-card, var(--border-dim));
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1000;
+  font-family: var(--font-editor, inherit);
+  box-sizing: border-box;
+}
+
+.analytics-dropdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.analytics-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.analytics-header-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.analytics-model-pill {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--text-accent, #38bdf8);
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.analytics-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.analytics-close-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main);
+}
+
+.analytics-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.analytics-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--bg-app);
+  border: 1px solid var(--border-subtle, var(--border-dim));
+}
+
+.analytics-metric-label {
+  font-size: 9.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.analytics-metric-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+  font-family: var(--font-mono, monospace);
+}
+
+.analytics-bar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.analytics-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9.5px;
+  color: var(--text-muted);
+}
+
+.analytics-progress-bar {
+  display: flex;
+  height: 4px;
+  width: 100%;
+  border-radius: 2px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.analytics-progress-prompt {
+  background: #38bdf8;
+  height: 100%;
+}
+
+.analytics-progress-completion {
+  background: #a855f7;
+  height: 100%;
+}
+
+.analytics-dropdown-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-dim);
+}
+
+.analytics-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 10.5px;
+  border-radius: 4px;
+  border: 1px solid var(--border-dim);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.analytics-action-btn:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.06));
+  color: var(--text-main);
+}
+
+.analytics-action-btn.confirm-reset {
+  color: #ef4444;
+  border-color: #ef4444;
+}

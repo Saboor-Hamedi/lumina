@@ -208,13 +208,13 @@ export function useSidebarResize({
         if (activeSide === 'left') {
           const rawWidth = startWidth + deltaX
           widthRef.current.left = rawWidth
-          const outerWidth = Math.max(0, Math.min(MAX_LEFT_WIDTH, rawWidth))
+          const outerWidth = rawWidth < 70 ? 0 : Math.max(0, Math.min(MAX_LEFT_WIDTH, rawWidth))
           const contentWidth = Math.max(MIN_LEFT_WIDTH, Math.min(MAX_LEFT_WIDTH, rawWidth))
           applySidebarCssVars(shell, 'left', outerWidth, contentWidth)
         } else if (activeSide === 'right') {
           const rawWidth = startWidth - deltaX
           widthRef.current.right = rawWidth
-          const outerWidth = Math.max(0, Math.min(MAX_RIGHT_WIDTH, rawWidth))
+          const outerWidth = rawWidth < 70 ? 0 : Math.max(0, Math.min(MAX_RIGHT_WIDTH, rawWidth))
           const contentWidth = Math.max(MIN_RIGHT_WIDTH, Math.min(MAX_RIGHT_WIDTH, rawWidth))
           applySidebarCssVars(shell, 'right', outerWidth, contentWidth)
         }

@@ -16,8 +16,8 @@
  * - 100% TypeScript with strict memoization (`React.memo`) to avoid unneeded re-renders.
  */
 
-import React, { memo } from 'react'
-import { Plus, Network, LayoutDashboard, MessageSquare, Palette } from 'lucide-react'
+import React, { memo, useState, useEffect } from 'react'
+import { Files, Plus, Network, LayoutDashboard, Palette, Book, Compass } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import DailyNotes from './components/DailyNotes'
 import ActivityBarMail from './components/ActivityBarMail'
@@ -26,13 +26,42 @@ import './css/activitybar.css'
 export interface ActivityBarProps {
   onToggleGraph?: () => void
   onOpenTheme?: () => void
+  onOpenDocs?: () => void
+  onOpenGuide?: () => void
 }
 
 export const ActivityBar: React.FC<ActivityBarProps> = memo(({
   onToggleGraph,
-  onOpenTheme
+  onOpenTheme,
+  onOpenDocs,
+  onOpenGuide
 }) => {
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
+
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState<boolean>(() => {
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('lumina_left_sidebar_open')
+      if (saved !== null) return saved === 'true'
+    }
+    return true
+  })
+
+  useEffect(() => {
+    const handleLeftSidebarChange = (e: Event) => {
+      const customEvent = e as CustomEvent<{ open?: boolean }>
+      if (typeof customEvent.detail?.open === 'boolean') {
+        setIsLeftSidebarOpen(customEvent.detail.open)
+      }
+    }
+    window.addEventListener('left-sidebar-toggle', handleLeftSidebarChange)
+    return () => {
+      window.removeEventListener('left-sidebar-toggle', handleLeftSidebarChange)
+    }
+  }, [])
+
+  const handleToggleExplorer = () => {
+    window.dispatchEvent(new CustomEvent('toggle-left-sidebar'))
+  }
 
   const handleOpenTheme = () => {
     if (onOpenTheme) {
@@ -50,13 +79,37 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
     window.dispatchEvent(new CustomEvent('trigger-new-canvas'))
   }
 
-  const handleToggleAIChat = () => {
-    window.dispatchEvent(new CustomEvent('open-ai-chat'))
+  const handleOpenDocs = () => {
+    if (onOpenDocs) {
+      onOpenDocs()
+    } else {
+      window.dispatchEvent(new CustomEvent('open-docs-modal'))
+    }
+  }
+
+  const handleOpenGuide = () => {
+    if (onOpenGuide) {
+      onOpenGuide()
+    } else {
+      window.dispatchEvent(new CustomEvent('open-guide-modal'))
+    }
   }
 
   return (
     <aside className="lumina-activity-bar" data-testid="activity-bar" aria-label="Activity Bar">
       <div className="activity-bar-top">
+        {/* 0. Explorer / Files (Active indicator when sidebar is open) */}
+        <ToolTip text={`Explorer (${isMac ? '⌘B' : 'Ctrl+B'})`} position="right">
+          <button
+            type="button"
+            className={`activity-bar-btn ${isLeftSidebarOpen ? 'active' : ''}`}
+            onClick={handleToggleExplorer}
+            aria-label="Explorer"
+          >
+            <Files size={16} />
+          </button>
+        </ToolTip>
+
         {/* 1. New Note */}
         <ToolTip text="New Note" position="right">
           <button
@@ -96,19 +149,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
           </button>
         </ToolTip>
 
-        {/* 5. Lumina AI Assistant */}
-        <ToolTip text={`AI Chat (${isMac ? '⌘J' : 'Ctrl+J'})`} position="right">
-          <button
-            type="button"
-            className="activity-bar-btn"
-            onClick={handleToggleAIChat}
-            aria-label="AI Chat"
-          >
-            <MessageSquare size={16} />
-          </button>
-        </ToolTip>
-
-        {/* 6. Theme & Look-and-Feel Customizer */}
+        {/* 5. Theme & Look-and-Feel Customizer */}
         <ToolTip text="Theme Settings" position="right">
           <button
             type="button"
@@ -117,6 +158,30 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
             aria-label="Theme Settings"
           >
             <Palette size={16} />
+          </button>
+        </ToolTip>
+
+        {/* 7. Documentation */}
+        <ToolTip text={`Documentation (${isMac ? '⌘D' : 'Ctrl+D'})`} position="right">
+          <button
+            type="button"
+            className="activity-bar-btn"
+            onClick={handleOpenDocs}
+            aria-label="Documentation"
+          >
+            <Book size={16} />
+          </button>
+        </ToolTip>
+
+        {/* 8. Lumina Interactive Guide */}
+        <ToolTip text="Lumina Guide" position="right">
+          <button
+            type="button"
+            className="activity-bar-btn"
+            onClick={handleOpenGuide}
+            aria-label="Lumina Guide"
+          >
+            <Compass size={16} />
           </button>
         </ToolTip>
       </div>

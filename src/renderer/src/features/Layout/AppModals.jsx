@@ -124,18 +124,6 @@ export const AppModals = ({
                 setShowAIChatModal(false)
                 setSavedRightSidebarState(null)
               }}
-              onDock={() => {
-                setShowAIChatModal(false)
-                useSettingsStore.getState().updateSetting('aiChatDisplayMode', 'sidebar')
-                setRightSidebarTab('chat')
-                updateRightSidebarOpen(true)
-              }}
-              onUnfloat={() => {
-                setShowAIChatModal(false)
-                useSettingsStore.getState().updateSetting('aiChatDisplayMode', 'sidebar')
-                setRightSidebarTab('chat')
-                updateRightSidebarOpen(true)
-              }}
             />
           </React.Suspense>
         </GlobalErrorHandler>

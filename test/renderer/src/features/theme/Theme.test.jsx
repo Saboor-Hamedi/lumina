@@ -23,14 +23,13 @@ describe('Theme.jsx Modal', () => {
 
   it('renders theme modal header with breadcrumb and available count', () => {
     render(<Theme {...defaultProps()} />)
-    expect(screen.getByText('Theme & Appearance')).toBeInTheDocument()
-    expect(screen.getByText('Themes')).toBeInTheDocument()
-    expect(screen.getByText(new RegExp(`${Object.keys(THEMES).length} available`))).toBeInTheDocument()
+    expect(screen.getByText('Theme Gallery')).toBeInTheDocument()
+    expect(screen.getByText(new RegExp(`${Object.keys(THEMES).length} Themes`))).toBeInTheDocument()
   })
 
   it('renders search input and theme cards', () => {
     render(<Theme {...defaultProps()} />)
-    const searchInput = screen.getByPlaceholderText('Search or filter themes...')
+    const searchInput = screen.getByPlaceholderText('Search themes...')
     expect(searchInput).toBeInTheDocument()
 
     // Dracula theme name should be visible
@@ -40,18 +39,18 @@ describe('Theme.jsx Modal', () => {
 
   it('filters themes based on search query', () => {
     render(<Theme {...defaultProps()} />)
-    const searchInput = screen.getByPlaceholderText('Search or filter themes...')
+    const searchInput = screen.getByPlaceholderText('Search themes...')
     fireEvent.change(searchInput, { target: { value: 'dracula' } })
 
     expect(screen.getByText('Dracula')).toBeInTheDocument()
     expect(screen.queryByText('Gruvbox Dark')).not.toBeInTheDocument()
-    expect(screen.getByText(/Showing 1 of/)).toBeInTheDocument()
+    expect(screen.getByText(/1 Theme/)).toBeInTheDocument()
   })
 
   it('calls onClose when close button is clicked', () => {
     const props = defaultProps()
     render(<Theme {...props} />)
-    const closeBtn = screen.getByLabelText('Close Themes (Esc)')
+    const closeBtn = screen.getByLabelText('Close')
     fireEvent.click(closeBtn)
 
     expect(props.onClose).toHaveBeenCalled()
@@ -59,7 +58,7 @@ describe('Theme.jsx Modal', () => {
 
   it('selects a theme when card is clicked and updates document', () => {
     render(<Theme {...defaultProps()} />)
-    const draculaCard = screen.getByText('Dracula').closest('.theme-modal-card')
+    const draculaCard = screen.getByText('Dracula').closest('.template-modal-card')
     fireEvent.click(draculaCard)
 
     expect(localStorage.getItem('theme-id')).toBe('dracula')

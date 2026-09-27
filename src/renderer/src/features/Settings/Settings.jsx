@@ -129,7 +129,7 @@ const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
     <div className="nexus-overlay preview-overlay-glass settings-overlay" onClick={onClose}>
       <div
         ref={containerRef}
-        className={`modal-container settings-container${isMaximized ? ' maximized' : ''}`}
+        className={`settings-modal modal-container settings-container${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
         style={{
           flexDirection: 'column',
@@ -142,13 +142,13 @@ const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
             ? 'none'
             : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
           transition: '0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          boxShadow: '0 30px 60px rgba(0, 0, 0, 0.6)',
+          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
           overflow: 'hidden',
           borderRadius: isMaximized ? '0' : '12px'
         }}
       >
         <div
-          className="settings-modal-header"
+          className="modal-header settings-modal-header"
           onMouseDown={handleModalHeaderMouseDown}
           style={{ cursor: isMaximized ? 'default' : 'grab' }}
         >
@@ -175,10 +175,10 @@ const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
             </span>
           </div>
 
-          <div className="settings-header-right">
+          <div className="window-controls settings-header-right">
             <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
               <button
-                className="settings-window-btn"
+                className="control-icon control-maximize settings-window-btn"
                 onClick={handleToggleMaximize}
                 aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
               >
@@ -191,20 +191,20 @@ const Settings = ({ onClose, onOpenTheme, initialTab = 'look-and-feel' }) => {
             </ToolTip>
             <ToolTip text="Close (Esc)" position="bottom">
               <button
-                className="settings-close-btn"
+                className="control-icon control-close settings-close-btn"
                 onClick={onClose}
                 aria-label="Close"
               >
-                <X size={17} />
+                <X size={15} strokeWidth={2} />
               </button>
             </ToolTip>
           </div>
         </div>
 
-        <div className={`settings-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+        <div className={`modal-body settings-layout ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
           <SettingTab activeTab={activeTab} setActiveTab={setActiveTab} isOpen={isSidebarOpen} />
 
-          <main className="settings-body seamless-scrollbar">
+          <main className="content settings-body seamless-scrollbar">
             <div className="settings-content-wrap">
               {activeTab === 'look-and-feel' && <SettingLookAndFeel onOpenTheme={onOpenTheme} />}
               {activeTab === 'assistant' && <SettingAssistant />}

@@ -261,7 +261,9 @@ const SettingLookAndFeel = ({ onOpenTheme }) => {
             checked={useBorderLeft ?? ((settings.cursor && settings.cursor.useBorderLeft) ?? true)}
             onChange={(e) => {
               const checked = e.target.checked
-              updateUseBorderLeft(checked)
+              if (typeof updateUseBorderLeft === 'function') {
+                updateUseBorderLeft(checked)
+              }
               const next = {
                 ...(settings.cursor || {}),
                 useBorderLeft: checked
