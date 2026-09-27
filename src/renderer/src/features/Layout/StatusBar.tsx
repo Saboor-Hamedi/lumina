@@ -6,9 +6,9 @@
  * System bottom status bar for Lumina.
  *
  * Architecture & Features:
- * - Left utility tray: Settings & profile dropdown, inspector toggle, docs, guide, shortcuts, canvas drawer.
+ * - Left utility tray: Settings & profile dropdown, inspector toggle, and canvas drawer.
  * - Center status area: Minimalist glowing CapsLock blob.
- * - Right live metrics: Line/column cursor coordinates, word count, character count, estimated reading time, format.
+ * - Right live metrics: Line/column cursor coordinates, word count, character count, and format.
  * - Horizontal mouse wheel scrolling for overflow safety.
  * - Memoized and optimized for 120 FPS typing performance.
  * =========================================================================
@@ -16,14 +16,10 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import {
-  BookOpen,
   PanelRight,
-  Keyboard,
   FileText,
   Hash,
-  Clock,
   Navigation,
-  Compass,
   Settings,
   LayoutGrid
 } from 'lucide-react'
@@ -37,10 +33,6 @@ import '../../assets/statusbar.css'
 export interface StatusBarProps {
   /** Toggle right inspector sidebar */
   onToggleInspector?: () => void
-  /** Open documentation panel */
-  onDocsClick?: () => void
-  /** Open keyboard shortcuts dialog */
-  onShortcutsClick?: () => void
   /** Open application settings dialog */
   onSettingsClick?: () => void
   /** Open theme picker */
@@ -55,8 +47,6 @@ interface CursorPosition {
 
 export const StatusBar: React.FC<StatusBarProps> = ({
   onToggleInspector,
-  onDocsClick,
-  onShortcutsClick,
   onSettingsClick,
   onThemeClick
 }) => {
@@ -92,16 +82,14 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   // Calculate live document statistics
   const stats = useMemo(() => {
     if (!selectedSnippet || !selectedSnippet.code) {
-      return { chars: '0', words: '0', readTime: '0 min read' }
+      return { chars: '0', words: '0' }
     }
     const text = selectedSnippet.code.trim()
     const chars = selectedSnippet.code.length
     const words = text ? text.split(/\s+/).filter(Boolean).length : 0
-    const readMinutes = Math.max(1, Math.ceil(words / 200))
     return {
       chars: chars.toLocaleString(),
-      words: words.toLocaleString(),
-      readTime: `${readMinutes} min read`
+      words: words.toLocaleString()
     }
   }, [selectedSnippet?.id, selectedSnippet?.code])
 
@@ -195,37 +183,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
         <span className="status-bar-divider" />
 
-        <ToolTip text="Documentation (Ctrl + D)" position="top">
-          <button type="button" className="status-bar-btn" onClick={onDocsClick}>
-            <BookOpen size={11} />
-            <span>Docs</span>
-          </button>
-        </ToolTip>
-
-        <span className="status-bar-divider status-bar-hide-sm" />
-
-        <ToolTip text="Interactive Guide" position="top">
-          <button
-            type="button"
-            className="status-bar-btn"
-            onClick={() => window.dispatchEvent(new CustomEvent('open-guide'))}
-          >
-            <Compass size={11} />
-            <span className="status-bar-label-collapse">Guide</span>
-          </button>
-        </ToolTip>
-
-        <span className="status-bar-divider status-bar-hide-sm" />
-
-        <ToolTip text="Keyboard Shortcuts (Ctrl + /)" position="top">
-          <button type="button" className="status-bar-btn" onClick={onShortcutsClick}>
-            <Keyboard size={11} />
-            <span className="status-bar-label-collapse">Shortcuts</span>
-          </button>
-        </ToolTip>
-
-        <span className="status-bar-divider status-bar-hide-sm" />
-
         <ToolTip text="Canvas Drawer (Ctrl + Shift + /)" position="top">
           <button
             type="button"
@@ -281,18 +238,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
               >
                 <Hash size={11} />
                 <span>{stats.chars} chars</span>
-              </span>
-            </ToolTip>
-
-            <span className="status-bar-divider status-bar-hide-md" />
-
-            <ToolTip text="Estimated Reading Time • 200 WPM" position="top">
-              <span
-                className="status-bar-item interactive status-bar-hide-md"
-                onClick={onToggleInspector}
-              >
-                <Clock size={11} />
-                <span>{stats.readTime}</span>
               </span>
             </ToolTip>
 

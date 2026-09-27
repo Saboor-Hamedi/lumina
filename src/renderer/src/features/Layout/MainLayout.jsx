@@ -1112,11 +1112,6 @@ export const MainLayout = () => {
         onSettingsClick={handleOpenSettings}
         onThemeClick={handleOpenTheme}
         onGraphClick={handleToggleGraph}
-        onDocsClick={handleOpenDocs}
-        onShortcutsClick={() => {
-          setSettingsInitialTab('shortcuts')
-          setShowSettings(true)
-        }}
       />
 
       <AppModals

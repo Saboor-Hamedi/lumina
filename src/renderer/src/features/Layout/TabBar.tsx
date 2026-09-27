@@ -96,11 +96,6 @@ const SortableTabItem = memo<SortableTabItemProps>(
           }}
           {...attributes}
           {...listeners}
-          onMouseDown={(e: React.MouseEvent) => {
-            if (e.button === 0 && !isActive) {
-              onOpen(id)
-            }
-          }}
           onClick={() => onOpen(id)}
           onAuxClick={(e: React.MouseEvent) => e.button === 1 && onClose(e, id)}
           onContextMenu={(e: React.MouseEvent) => onContextMenu(e, id)}

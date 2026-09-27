@@ -365,12 +365,9 @@ export function useExplorerSelection({
         setSidebarFocus('multi')
         setLastClickedFolder(snippet.folderId || '')
       } else {
-        setSelectedNoteIds(new Set([snippet.id]))
-        setSelectedFolderIds(new Set())
         setAnchorIndex(itemIndex)
-        setLastClickedNoteId(snippet.id)
-        setSidebarFocus('note')
-        setLastClickedFolder(snippet.folderId || '')
+        // handleSelect owns the single-selection state and workspace activation.
+        // Avoid enqueueing the same selection updates twice for a normal click.
         handleSelect(snippet)
       }
     },
