@@ -9,6 +9,12 @@
  * - Deep overscan buffering (1500px main & reverse, ~50 items) ensures items are always pre-rendered in DOM.
  * - Hardware-accelerated GPU layout containment (`contain: layout style`, `transform: translateZ(0)`) for 120 FPS performance.
  * - Fully accessible row dispatching for Folder tree items, Note snippet items, and Inline Creation inputs.
+ *
+ * Performance note (tab switching):
+ * - selectedSnippetId and selectedNoteIds are received as REFS (selectedSnippetIdRef / selectedNoteIdsRef).
+ * - This means renderItemContent's useCallback does NOT include them as reactive deps.
+ * - Result: switching tabs does NOT re-render the Virtuoso list at all — zero wasted work.
+ * - The explorer only re-renders when the user explicitly clicks a file (handleNoteClick changes selectedNoteIds).
  */
 
 import React, { useCallback } from 'react'
@@ -102,8 +108,12 @@ export interface ExplorerVirtuosoListProps {
   isDraggingExternal: boolean
   hoveredFolderId: string | null
   selectedNoteIds: Set<string>
+  /** Ref for selectedNoteIds — used inside renderItemContent to avoid reactive dep */
+  selectedNoteIdsRef: React.RefObject<Set<string>>
   selectedFolderIds: Set<string>
   selectedSnippetId: string | null
+  /** Ref for selectedSnippetId — used inside renderItemContent to avoid reactive dep */
+  selectedSnippetIdRef: React.RefObject<string | null>
   selectedIndex: number
   sidebarFocus: string
   lastClickedFolder: string
@@ -138,8 +148,10 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
   isDraggingExternal,
   hoveredFolderId,
   selectedNoteIds,
+  selectedNoteIdsRef,
   selectedFolderIds,
   selectedSnippetId,
+  selectedSnippetIdRef,
   selectedIndex,
   sidebarFocus,
   lastClickedFolder,
@@ -160,6 +172,8 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
   handleExternalDrop
 }) => {
   // Memoized row content renderer
+  // IMPORTANT: selectedSnippetId and selectedNoteIds are read from REFS (not reactive deps)
+  // so that switching tabs does not invalidate this callback and re-render all Virtuoso rows.
   const renderItemContent = useCallback(
     (index: number, item: any, context: any) => {
       // 1. Inline creation input row (New Folder, New Canvas, or New Markdown Note)
@@ -259,7 +273,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
                 }
               }}
               onContextMenu={(id, e) => {
-                if (totalSelectedCount > 1 && (selectedFolderIds.has(id) || selectedNoteIds.size > 0)) {
+                if (totalSelectedCount > 1 && (selectedFolderIds.has(id) || (selectedNoteIdsRef.current?.size ?? 0) > 0)) {
                   handleFolderContextMenu(id, e)
                 } else {
                   setSidebarFocus('folder')
@@ -273,10 +287,13 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
         )
       } else {
         // 3. Note file row with selection highlight, unsaved state indicator, and DnD
+        // Use refs for selectedSnippetId and selectedNoteIds to avoid reactive deps
+        const currentSnippetId = selectedSnippetIdRef?.current ?? selectedSnippetId
+        const currentNoteIds = selectedNoteIdsRef?.current ?? selectedNoteIds
         const isNoteActive = isSnippetActive({
           snippetId: item.snippet.id,
-          activeSnippetId: selectedSnippetId,
-          selectedNoteIds,
+          activeSnippetId: currentSnippetId,
+          selectedNoteIds: currentNoteIds,
           selectedFolderIds,
           itemIndex: index,
           selectedIndex,
@@ -304,7 +321,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
               }}
               onContextMenu={
                 totalSelectedCount > 1 &&
-                (selectedNoteIds.has(item.snippet.id) || selectedFolderIds.size > 0)
+                (currentNoteIds.has(item.snippet.id) || selectedFolderIds.size > 0)
                   ? (snippet, e) => handleFolderContextMenu(snippet.id, e)
                   : undefined
               }
@@ -320,9 +337,8 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
     [
       sidebarFocus,
       lastClickedFolder,
-      selectedNoteIds,
+      // selectedNoteIds and selectedSnippetId intentionally omitted — read from refs
       selectedFolderIds,
-      selectedSnippetId,
       selectedIndex,
       totalSelectedCount,
       hoveredFolderId,
@@ -337,7 +353,9 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
       setSelectedIndex,
       handleExternalDragEnter,
       handleExternalDragOver,
-      handleExternalDrop
+      handleExternalDrop,
+      selectedSnippetIdRef,
+      selectedNoteIdsRef
     ]
   )
 
@@ -403,3 +421,4 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
 }
 
 export default React.memo(ExplorerVirtuosoList)
+

@@ -368,7 +368,19 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     return rectIntersection(args)
   }, [])
 
-  // Stable context object passed down to Virtuoso item content
+  // Stable ref for selectedSnippetId — allows renderItemContent to always see the current
+  // value without being a reactive dependency (prevents Virtuoso full re-render on tab switch)
+  const selectedSnippetIdRef = useRef(selectedSnippetId)
+  selectedSnippetIdRef.current = selectedSnippetId
+
+  // Stable ref for selectedNoteIds Set — same rationale: Set identity always changes
+  const selectedNoteIdsRef = useRef(selectedNoteIds)
+  selectedNoteIdsRef.current = selectedNoteIds
+
+  // Stable context object passed down to Virtuoso item content.
+  // IMPORTANT: selectedNoteIds and selectedSnippetId are intentionally excluded — they
+  // are read from refs (selectedNoteIdsRef / selectedSnippetIdRef) inside renderItemContent,
+  // so they don't cause this context to change on every note click or tab switch.
   const virtuosoContext = useMemo(
     () => ({
       creatingValue,
@@ -379,8 +391,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
       collapsedDuringSearch,
       expandedFolders,
       selectedIndex,
-      selectedSnippetId,
-      selectedNoteIds,
       lastClickedFolder,
       sidebarFocus,
       setSidebarFocus,
@@ -409,8 +419,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
       collapsedDuringSearch,
       expandedFolders,
       selectedIndex,
-      selectedSnippetId,
-      selectedNoteIds,
       lastClickedFolder,
       sidebarFocus,
       setSidebarFocus,
@@ -431,6 +439,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
       handleBackgroundClick
     ]
   )
+
 
   const handleSortDragEnd = (event: any) => {
     const { active, over } = event
@@ -596,8 +605,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                   isDraggingExternal={isDraggingExternal}
                   hoveredFolderId={hoveredFolderId}
                   selectedNoteIds={selectedNoteIds}
+                  selectedNoteIdsRef={selectedNoteIdsRef}
                   selectedFolderIds={selectedFolderIds}
                   selectedSnippetId={selectedSnippetId}
+                  selectedSnippetIdRef={selectedSnippetIdRef}
                   selectedIndex={selectedIndex}
                   sidebarFocus={sidebarFocus || ''}
                   lastClickedFolder={lastClickedFolder || ''}

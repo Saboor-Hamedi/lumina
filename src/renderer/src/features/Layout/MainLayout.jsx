@@ -47,6 +47,67 @@ import Breadcrumbs from '../Breadcrumbs/index'
 import StatusBar from './StatusBar'
 import { useSidebarResize } from './resizeSidebar'
 
+/**
+ * GraphTabPane — stable memoized wrapper for the embedded graph tab.
+ * Reads its own visibility from the store to avoid re-rendering peer tabs on switch.
+ */
+const GraphTabPane = React.memo(({ onNavigate }) => {
+  const isSelected = useWorkspaceStore((state) => state.activeTabId === GRAPH_TAB_ID)
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        opacity: isSelected ? 1 : 0,
+        pointerEvents: isSelected ? 'auto' : 'none',
+        visibility: isSelected ? 'visible' : 'hidden',
+        display: 'flex',
+        overflow: 'hidden',
+        zIndex: isSelected ? 10 : 1,
+        transition: 'opacity 0.08s ease-out'
+      }}
+    >
+      <React.Suspense fallback={null}>
+        <Graph
+          embedded={true}
+          isOpen={true}
+          onNavigate={onNavigate}
+        />
+      </React.Suspense>
+    </div>
+  )
+})
+GraphTabPane.displayName = 'GraphTabPane'
+
+/**
+ * LuminaTabPane — stable memoized wrapper for the embedded Lumina AI tab.
+ * Reads its own visibility from the store to avoid re-rendering peer tabs on switch.
+ */
+const LuminaTabPane = React.memo(() => {
+  const isSelected = useWorkspaceStore((state) => state.activeTabId === LUMINA_TAB_ID)
+  return (
+    <div
+      style={{
+        display: isSelected ? 'flex' : 'none',
+        flex: 1,
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        flexDirection: 'column'
+      }}
+    >
+      <React.Suspense fallback={null}>
+        <LuminaChatContent isSidebar={false} isModal={false} />
+      </React.Suspense>
+    </div>
+  )
+})
+LuminaTabPane.displayName = 'LuminaTabPane'
+
 export const MainLayout = () => {
   const {
     snippets,
@@ -841,6 +902,7 @@ export const MainLayout = () => {
   }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme])
 
 
+  // Stable snippet map — only re-computes when notes change (saves, renames), NOT on tab switch
   const snippetMap = useMemo(() => {
     const map = new Map()
     for (let i = 0; i < snippets.length; i++) {
@@ -849,57 +911,17 @@ export const MainLayout = () => {
     return map
   }, [snippets])
 
+  // Stable editor instances — only re-mounts when the set of open tabs changes or a snippet is saved.
+  // GraphTabPane and LuminaTabPane read their own isSelected from the store directly, so activeTabId
+  // does NOT need to be a dep here. TabContentPane also gets isSelected as a stable prop derived
+  // from activeTabId — React reconciles only the changed `isSelected` bool efficiently.
   const renderedEditors = useMemo(() => {
-    const effectiveSelectedId = activeTabId || selectedSnippet?.id || openTabs[0]
     return openTabs.map((tabId) => {
       if (tabId === GRAPH_TAB_ID) {
-        return (
-          <div
-            key={tabId}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              opacity: effectiveSelectedId === tabId ? 1 : 0,
-              pointerEvents: effectiveSelectedId === tabId ? 'auto' : 'none',
-              visibility: effectiveSelectedId === tabId ? 'visible' : 'hidden',
-              display: 'flex',
-              overflow: 'hidden',
-              zIndex: effectiveSelectedId === tabId ? 10 : 1,
-              transition: 'opacity 0.08s ease-out'
-            }}
-          >
-            <React.Suspense fallback={null}>
-              <Graph
-                embedded={true}
-                isOpen={true}
-                onNavigate={(sn) => setSelectedSnippet(sn)}
-              />
-            </React.Suspense>
-          </div>
-        )
+        return <GraphTabPane key={tabId} onNavigate={setSelectedSnippet} />
       }
       if (tabId === LUMINA_TAB_ID) {
-        return (
-          <div
-            key={tabId}
-            style={{
-              display: effectiveSelectedId === tabId ? 'flex' : 'none',
-              flex: 1,
-              width: '100%',
-              height: '100%',
-              position: 'relative',
-              overflow: 'hidden',
-              flexDirection: 'column'
-            }}
-          >
-            <React.Suspense fallback={null}>
-              <LuminaChatContent isSidebar={false} isModal={false} />
-            </React.Suspense>
-          </div>
-        )
+        return <LuminaTabPane key={tabId} />
       }
       const snippet = snippetMap.get(tabId)
       if (!snippet) return null
@@ -907,7 +929,7 @@ export const MainLayout = () => {
         <TabContentPane
           key={tabId}
           snippet={snippet}
-          isSelected={effectiveSelectedId === tabId}
+          isSelected={false}
           onSave={saveSnippet}
           onToggleInspector={handleToggleInspector}
           onToggleExplorerModal={handleToggleExplorerModal}
@@ -920,8 +942,6 @@ export const MainLayout = () => {
   }, [
     openTabs,
     snippetMap,
-    selectedSnippet?.id,
-    activeTabId,
     saveSnippet,
     handleToggleInspector,
     handleToggleExplorerModal,

@@ -25,6 +25,7 @@
 import React from 'react'
 import Editor from '../Editor/Editor'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 
 const ImageViewerTab = React.lazy(() => import('../media/ImageViewerTab'))
 const PDFViewerTab = React.lazy(() => import('../media/PDFViewerTab'))
@@ -45,8 +46,11 @@ export interface TabContentPaneProps {
     isLearned?: boolean
     [key: string]: any
   }
-  /** Whether this tab is currently the active, focused pane */
-  isSelected: boolean
+  /**
+   * @deprecated isSelected is now derived internally from the store.
+   * Kept in the interface for backward compatibility but ignored at runtime.
+   */
+  isSelected?: boolean
   /** Callback fired to persist note changes */
   onSave?: (snippet: any) => Promise<any> | void
   /** Action: toggle right inspector sidebar */
@@ -61,10 +65,17 @@ export interface TabContentPaneProps {
   onGraphClick?: () => void
 }
 
+/**
+ * Individual Tab Content Pane renderer for Lumina's multi-tab workspace.
+ *
+ * Performance note: isSelected is derived from the Zustand store, NOT passed as a prop.
+ * This ensures switching tabs only re-renders the two affected panes (old active + new active)
+ * instead of all open panes. The heavy custom memo comparator below is kept as a safety net
+ * but the store subscription alone is sufficient to isolate updates.
+ */
 export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
   ({
     snippet,
-    isSelected,
     onSave,
     onToggleInspector,
     onToggleExplorerModal,
@@ -72,6 +83,11 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
     onThemeClick,
     onGraphClick
   }) => {
+    // Each pane subscribes to only its own slice of state — O(1) check, zero cross-tab re-renders
+    const isSelected = useWorkspaceStore(
+      (state) => state.activeTabId === snippet.id || (!state.activeTabId && state.selectedNote?.id === snippet.id)
+    )
+
     if (!snippet) return null
 
     return (
@@ -121,8 +137,8 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
     )
   },
   (prev, next) => {
+    // isSelected is now derived from store — only re-render when the snippet itself changes
     return (
-      prev.isSelected === next.isSelected &&
       prev.snippet?.id === next.snippet?.id &&
       prev.snippet?.timestamp === next.snippet?.timestamp &&
       prev.snippet?.title === next.snippet?.title &&
@@ -138,3 +154,4 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
 TabContentPane.displayName = 'TabContentPane'
 
 export default TabContentPane
+

@@ -73,6 +73,9 @@ export function useExplorerSelection({
 
   const clickedInExplorerRef = useRef(0)
   const lastScrolledSnippetRef = useRef<string | null>(null)
+  // When set to true, the next scrollToIndex call is skipped (user clicked from
+  // inside the explorer — no need to scroll, they can already see what they clicked).
+  const skipNextScrollRef = useRef(false)
 
   useEffect(() => {
     setSidebarFocus(null)
@@ -177,6 +180,10 @@ export function useExplorerSelection({
     [clearSelection]
   )
 
+  // ─── Selection sync from external store (tab switching) ──────────────────────
+  // When the active tab changes externally (user clicks TabBar), sync the
+  // highlighted note in the explorer WITHOUT scrolling the list.
+  // Only called when selectedSnippetId changes — NOT when flatTree changes.
   useEffect(() => {
     if (!selectedSnippetId) {
       if (!query.trim()) {
@@ -187,9 +194,8 @@ export function useExplorerSelection({
     }
 
     setSelectedNoteIds((prev) => {
-      if (prev.size <= 1) {
-        return new Set([selectedSnippetId])
-      }
+      // Don't replace a multi-selection with a single item
+      if (prev.size <= 1) return new Set([selectedSnippetId])
       return prev
     })
     setSelectedFolderIds(new Set())
@@ -197,6 +203,7 @@ export function useExplorerSelection({
     setSidebarFocus('note')
   }, [selectedSnippetId, query])
 
+  // ─── Query/search active-item tracking ────────────────────────────────────
   useEffect(() => {
     if (query.trim() && flatTree.length > 0) {
       const q = query.toLowerCase().trim()
@@ -235,6 +242,16 @@ export function useExplorerSelection({
     }
   }, [query, flatTree, selectedSnippetId])
 
+  // ─── Auto-scroll to active note in the Virtuoso list ──────────────────────
+  // KEY FIX: We only scroll when the selection change came from OUTSIDE the
+  // explorer (e.g. tab switch, keyboard shortcut, backlink click).
+  // When the user clicks a note INSIDE the explorer, skipNextScrollRef is set
+  // synchronously in handleSelect (before this effect runs), so we skip the
+  // scroll and leave the list exactly where it is.
+  //
+  // This mirrors VS Code behavior: the file explorer never auto-scrolls when
+  // switching tabs. Use "Reveal in Explorer" (or we expose scrollToActive) if
+  // you want to jump to the active file.
   useEffect(() => {
     if (!selectedSnippetId || !flatTree || flatTree.length === 0) return
 
@@ -243,12 +260,18 @@ export function useExplorerSelection({
     )
 
     if (idx !== -1) {
-      setSelectedIndex(idx)
+      // Only update selectedIndex if it actually changed (avoids cascading re-renders)
+      setSelectedIndex((prev) => (prev === idx ? prev : idx))
+
       if (lastScrolledSnippetRef.current !== selectedSnippetId) {
         lastScrolledSnippetRef.current = selectedSnippetId
-        if (Date.now() - clickedInExplorerRef.current >= 200) {
+
+        // skipNextScrollRef is set synchronously by handleSelect when the user
+        // clicks a note in the explorer — no time-race, 100% reliable.
+        if (!skipNextScrollRef.current) {
           virtuosoRef.current?.scrollToIndex({ index: idx, align: 'nearest' })
         }
+        skipNextScrollRef.current = false
       }
     }
   }, [selectedSnippetId, flatTree, virtuosoRef])
@@ -279,6 +302,9 @@ export function useExplorerSelection({
     (snippet: Snippet) => {
       if (!snippet) return
       clickedInExplorerRef.current = Date.now()
+      // Mark that this selection came from an explorer click — effect will skip scrollToIndex
+      skipNextScrollRef.current = true
+      lastScrolledSnippetRef.current = snippet.id
       setLastClickedFolder(snippet.folderId || '')
       setSelectedFolder(null)
       setSelectedNoteIds(new Set([snippet.id]))
