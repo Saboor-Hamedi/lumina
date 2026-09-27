@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import UpdateDetails from '../../../../../src/renderer/src/components/update/UpdateDetails'
 import { useUpdateStore } from '../../../../../src/renderer/src/core/store/UpdateSetting'
@@ -12,8 +13,8 @@ describe('UpdateDetails', () => {
       progress: null,
       error: null
     })
-    global.window.api = global.window.api || {}
-    global.window.api.getVersion = vi.fn().mockResolvedValue('1.0.0')
+    ;(global as any).window.api = (global as any).window.api || {}
+    ;(global as any).window.api.getVersion = vi.fn().mockResolvedValue('1.0.0')
   })
 
   it('renders a trigger button that is not open by default', () => {
@@ -80,7 +81,7 @@ describe('UpdateDetails', () => {
   })
 
   it('fetches current version from window.api.getVersion', async () => {
-    global.window.api.getVersion = vi.fn().mockResolvedValue('0.9.9')
+    ;(global as any).window.api.getVersion = vi.fn().mockResolvedValue('0.9.9')
     render(<UpdateDetails />)
     fireEvent.click(screen.getByLabelText('Check for updates'))
 

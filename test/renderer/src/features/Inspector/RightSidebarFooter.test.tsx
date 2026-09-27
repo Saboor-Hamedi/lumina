@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { RightSidebarFooter } from '../../../../../src/renderer/src/features/Inspector/RightSidebarFooter'
 
 vi.mock('../../../../../src/renderer/src/features/AI/tools/lumina', () => ({
-  useAIStore: (selector) =>
+  useAIStore: (selector: any) =>
     selector({
       sendChatMessage: vi.fn(),
       isChatLoading: false,
@@ -13,12 +13,12 @@ vi.mock('../../../../../src/renderer/src/features/AI/tools/lumina', () => ({
 }))
 
 vi.mock('../../../../../src/renderer/src/features/AI/Composer', () => ({
-  Composer: ({ isSidebar }) => (
+  Composer: ({ isSidebar }: { isSidebar: boolean }) => (
     <div data-testid="mock-composer" data-sidebar={String(isSidebar)}>
       Composer Component
     </div>
   ),
-  default: ({ isSidebar }) => (
+  default: ({ isSidebar }: { isSidebar: boolean }) => (
     <div data-testid="mock-composer" data-sidebar={String(isSidebar)}>
       Composer Component
     </div>
@@ -70,7 +70,7 @@ describe('RightSidebarFooter Component', () => {
 
     const copyBtn = container.querySelector('.inspector-footer-btn')
     expect(copyBtn).toBeDefined()
-    fireEvent.click(copyBtn)
+    if (copyBtn) fireEvent.click(copyBtn)
 
     expect(writeTextMock).toHaveBeenCalledWith('console.log("hello world")')
   })

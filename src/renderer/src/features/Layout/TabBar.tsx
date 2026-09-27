@@ -110,10 +110,17 @@ const SortableTabItem = memo<SortableTabItemProps>(
             <span className="tab-title">{getTitle()}</span>
           </div>
 
-          <div className="tab-actions">
+          <div className="tab-actions" onMouseDown={(e) => e.stopPropagation()}>
             {isDirty ? (
               <div
-                onClick={(e: React.MouseEvent) => onClose(e, id)}
+                onMouseDown={(e: React.MouseEvent) => {
+                  e.stopPropagation()
+                  onClose(e, id)
+                }}
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation()
+                  onClose(e, id)
+                }}
                 style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                 title="Unsaved changes"
               >
@@ -124,7 +131,14 @@ const SortableTabItem = memo<SortableTabItemProps>(
                 <button
                   type="button"
                   className="tab-close-btn"
-                  onClick={(e: React.MouseEvent) => onClose(e, id)}
+                  onMouseDown={(e: React.MouseEvent) => {
+                    e.stopPropagation()
+                    onClose(e, id)
+                  }}
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation()
+                    onClose(e, id)
+                  }}
                 >
                   <X size={14} />
                 </button>

@@ -306,11 +306,11 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   closeTab: (id: string) =>
     set((state) => {
       const nextTabs = state.openTabs.filter((tid) => tid !== id)
+      const isClosingActive = state.activeTabId === id || state.selectedNote?.id === id
 
       let nextActiveId = state.activeTabId
       if (
-        state.activeTabId === id ||
-        state.selectedNote?.id === id ||
+        isClosingActive ||
         !nextTabs.includes(nextActiveId || '')
       ) {
         const idx = state.openTabs.indexOf(id)
@@ -326,17 +326,19 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       }
 
       const allNotes = state.notes || []
-      const nextSelected =
-        nextActiveId &&
-        nextActiveId !== GRAPH_TAB_ID &&
-        nextActiveId !== LUMINA_TAB_ID
-          ? allNotes.find((n) => n.id === nextActiveId) || null
-          : null
+      const nextSelected = isClosingActive
+        ? (nextActiveId &&
+           nextActiveId !== GRAPH_TAB_ID &&
+           nextActiveId !== LUMINA_TAB_ID
+            ? allNotes.find((n) => n.id === nextActiveId) || null
+            : null)
+        : state.selectedNote
 
       return {
         openTabs: nextTabs,
         activeTabId: nextActiveId,
-        selectedNote: nextSelected
+        selectedNote: nextSelected,
+        selectedSnippet: nextSelected
       }
     }),
 
@@ -358,7 +360,8 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       return {
         openTabs: [keepId],
         activeTabId: nextActiveId,
-        selectedNote: nextSelected
+        selectedNote: nextSelected,
+        selectedSnippet: nextSelected
       }
     })
   },
@@ -376,7 +379,8 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       return {
         openTabs: nextTabs,
         activeTabId: nextActiveId,
-        selectedNote: nextSelected
+        selectedNote: nextSelected,
+        selectedSnippet: nextSelected
       }
     })
   },
@@ -390,7 +394,8 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       return {
         openTabs: state.openTabs.filter((id) => state.pinnedTabIds.includes(id)),
         activeTabId: activeId,
-        selectedNote: activeNote
+        selectedNote: activeNote,
+        selectedSnippet: activeNote
       }
     })
   },

@@ -1,7 +1,8 @@
 import React from 'react'
-import { Info, List as ListIcon } from 'lucide-react'
+import { Info, List as ListIcon, Link2 } from 'lucide-react'
 import NoteDetails from './NoteDetails'
 import NoteOutline from './NoteOutline'
+import Backlinks from './Backlinks'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -75,6 +76,18 @@ export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
           </ToolTip>
         </div>
 
+        <div
+          className={`inspector-tab ${rightSidebarTab === 'backlinks' ? 'active' : ''}`}
+          onClick={() => setRightSidebarTab('backlinks')}
+        >
+          <ToolTip text="Backlinks" position="bottom">
+            <div className="tab-context">
+              <Link2 size={13} className="tab-icon" />
+              <span className="tab-title">Backlinks</span>
+            </div>
+          </ToolTip>
+        </div>
+
         <div className="flex-1" style={{ height: '100%', pointerEvents: 'none' }} />
       </div>
 
@@ -102,6 +115,17 @@ export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
           </div>
         )}
 
+        {rightSidebarTab === 'backlinks' && (
+          <div className="inspector-sub-header">
+            <span className="inspector-sub-title">Backlinks</span>
+            {selectedNote?.title && (
+              <span className="inspector-sub-badge" title={selectedNote.title}>
+                {selectedNote.title}
+              </span>
+            )}
+          </div>
+        )}
+
         <div
           className="panel-content"
           style={{
@@ -115,6 +139,8 @@ export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
           <GlobalErrorHandler>
             {rightSidebarTab === 'outline' ? (
               <NoteOutline note={selectedNote} />
+            ) : rightSidebarTab === 'backlinks' ? (
+              <Backlinks note={selectedNote} />
             ) : (
               <NoteDetails note={selectedNote} isLoading={isLoading} />
             )}

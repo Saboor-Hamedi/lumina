@@ -30,23 +30,32 @@ Fixed
 - LevelDB Dev Manifest Recovery: Automatically repairs and resets corrupted dev LevelDB manifests on startup.
 - Breadcrumbs Long-Title Truncation: Long note titles truncate gracefully with responsive clamping and full hover tooltips.`
 
+export interface ReleaseCategory {
+  title: string
+  items: string[]
+}
+
 /**
  * Simple, clean release notes parser for our Markdown release notes.
  */
-export const parseReleaseNotes = (notes) => {
+export const parseReleaseNotes = (notes?: unknown): ReleaseCategory[] => {
   if (!notes) return []
 
-  const text = typeof notes === 'string'
-    ? notes
-    : Array.isArray(notes)
-      ? notes.map((n) => (typeof n === 'string' ? n : n?.note || n?.version || '')).filter(Boolean).join('\n\n')
-      : ''
+  const text =
+    typeof notes === 'string'
+      ? notes
+      : Array.isArray(notes)
+        ? notes
+            .map((n) => (typeof n === 'string' ? n : (n as any)?.note || (n as any)?.version || ''))
+            .filter(Boolean)
+            .join('\n\n')
+        : ''
 
-  const categories = []
-  let currentCategory = null
+  const categories: ReleaseCategory[] = []
+  let currentCategory: ReleaseCategory | null = null
 
   const lines = text.split('\n')
-  for (let rawLine of lines) {
+  for (const rawLine of lines) {
     const trimmed = rawLine.trim()
     if (!trimmed) continue
 
@@ -100,11 +109,11 @@ export const parseReleaseNotes = (notes) => {
   return categories.length > 0 ? categories : [{ title: 'Notes', items: [text] }]
 }
 
-const UpdateDetails = () => {
+export const UpdateDetails: React.FC = () => {
   const { status, updateInfo, progress, download, install, check, lastChecked } = useUpdateStore()
-  const [currentVersion, setCurrentVersion] = useState('1.0.62')
-  const [isOpen, setIsOpen] = useState(false)
-  const dropdownRef = useRef(null)
+  const [currentVersion, setCurrentVersion] = useState<string>('1.0.62')
+  const [isOpen, setIsOpen] = useState<boolean>(false)
+  const dropdownRef = useRef<HTMLDivElement | null>(null)
 
   useKeyboardShortcuts({
     onEscape: isOpen
@@ -116,10 +125,10 @@ const UpdateDetails = () => {
   })
 
   useEffect(() => {
-    if (window.api?.getVersion) {
-      window.api
+    if ((window as any).api?.getVersion) {
+      (window as any).api
         .getVersion()
-        .then((ver) => {
+        .then((ver: string) => {
           if (ver) setCurrentVersion(ver)
         })
         .catch(() => {})
@@ -127,13 +136,13 @@ const UpdateDetails = () => {
   }, [])
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+    const handleClickOutside = (e: PointerEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false)
       }
     }
 
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.key === 'Esc') {
         setIsOpen((open) => {
           if (open) {
@@ -165,8 +174,8 @@ const UpdateDetails = () => {
     const percentValue =
       typeof progress === 'number'
         ? progress
-        : typeof progress?.percent === 'number'
-          ? progress.percent
+        : typeof (progress as any)?.percent === 'number'
+          ? (progress as any).percent
           : 0
     const safePercent = isNaN(percentValue) ? 0 : Math.round(percentValue)
 
@@ -307,4 +316,3 @@ const UpdateDetails = () => {
 }
 
 export default UpdateDetails
-

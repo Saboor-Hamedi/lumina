@@ -14,6 +14,7 @@
   border-bottom: 1px solid var(--border-dim, rgba(255, 255, 255, 0.04));
   -webkit-app-region: drag;
   user-select: none;
+  cursor: default !important;
   flex-shrink: 0;
   z-index: 9999;
 }
@@ -24,6 +25,7 @@
   flex: 0 0 auto;
   flex-shrink: 0;
   height: 100%;
+  cursor: default !important;
 }
 
 .titlebar-sidebar-toggle-btn {
@@ -158,6 +160,7 @@
   flex: 0 0 auto;
   flex-shrink: 0;
   height: 100%;
+  cursor: default !important;
   -webkit-app-region: no-drag;
 }
 
@@ -166,6 +169,8 @@
   align-items: center;
   flex-shrink: 0;
   height: 100%;
+  cursor: default !important;
+  -webkit-app-region: no-drag;
 }
 
 .control-btn {
@@ -178,7 +183,8 @@
   background: transparent;
   border: none;
   color: var(--text-faint, #64748b);
-  cursor: pointer;
+  cursor: pointer !important;
+  -webkit-app-region: no-drag;
   transition: background 0.1s, color 0.1s;
   outline: none;
 }
