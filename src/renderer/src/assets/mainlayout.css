@@ -146,6 +146,12 @@ body.is-global-resizing .cm-editor {
   contain: layout paint;
 }
 
+.tab-content-pane.inactive {
+  content-visibility: hidden;
+  contain: strict;
+  pointer-events: none !important;
+}
+
 .app-shell.is-resizing .workspace-container,
 .app-shell.is-resizing .cm-editor,
 .app-shell.is-resizing .shell-main,

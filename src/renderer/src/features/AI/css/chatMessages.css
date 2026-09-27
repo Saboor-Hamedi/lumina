@@ -101,16 +101,18 @@
   display: flex;
   flex-direction: column;
   margin: 0 auto;
-  width: 100%;
-  max-width: 800px;
+  width: calc(100% - 10px);
+  max-width: 750px;
+  padding: 0 5px;
   min-height: min-content;
   box-sizing: border-box;
 }
 
 .is-sidebar-docked .chat-msg-list {
-  max-width: 100%;
-  width: 100%;
-  margin: 0;
+  max-width: calc(100% - 10px);
+  width: calc(100% - 10px);
+  margin: 0 auto;
+  padding: 0 5px;
 }
 
 .chat-row {

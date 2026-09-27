@@ -396,7 +396,7 @@ export const Editor: React.FC<EditorProps> = memo(
         )}
 
         <ToastNotification toast={toast} onClose={clearToast} />
-        <RulerScrollbar scrollerRef={scrollerRef} />
+        <RulerScrollbar scrollerRef={scrollerRef} isActive={isActive} />
 
         <div className="editor-scroller" ref={scrollerRef}>
           <Preview

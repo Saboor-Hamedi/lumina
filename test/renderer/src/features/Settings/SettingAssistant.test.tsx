@@ -109,4 +109,71 @@ describe('SettingAssistant', () => {
     fireEvent.click(checkbox)
     expect(useSettingsStore.getState().settings.enableLocalAI).toBe(false)
   })
+
+  it('fetches Ollama models and auto-selects 3.5 by default if available', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        models: [
+          { name: 'phi:latest', model: 'phi:latest' },
+          { name: 'llama3.5:latest', model: 'llama3.5:latest' },
+          { name: 'mistral:latest', model: 'mistral:latest' }
+        ]
+      })
+    })
+    vi.stubGlobal('fetch', mockFetch)
+
+    useSettingsStore.setState({
+      settings: { ...baseSettings(), activeProvider: 'ollama', ollamaModel: null }
+    })
+
+    render(<SettingAssistant />)
+
+    // Wait for the dropdown with auto-selected 3.5 model
+    const select = await screen.findByDisplayValue('llama3.5:latest')
+    expect(select).toBeInTheDocument()
+    expect(useSettingsStore.getState().settings.ollamaModel).toBe('llama3.5:latest')
+    expect(useSettingsStore.getState().settings.activeModel).toBe('llama3.5:latest')
+
+    vi.unstubAllGlobals()
+  })
+
+  it('auto-selects phi when 3.5 is not present', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        models: [
+          { name: 'phi:latest', model: 'phi:latest' },
+          { name: 'qwen2.5:latest', model: 'qwen2.5:latest' }
+        ]
+      })
+    })
+    vi.stubGlobal('fetch', mockFetch)
+
+    useSettingsStore.setState({
+      settings: { ...baseSettings(), activeProvider: 'ollama', ollamaModel: null }
+    })
+
+    render(<SettingAssistant />)
+
+    const select = await screen.findByDisplayValue('phi:latest')
+    expect(select).toBeInTheDocument()
+    expect(useSettingsStore.getState().settings.ollamaModel).toBe('phi:latest')
+
+    vi.unstubAllGlobals()
+  })
+
+  it('allows the user to switch Ollama models in the dropdown', () => {
+    useSettingsStore.setState({
+      settings: { ...baseSettings(), activeProvider: 'ollama', ollamaModel: 'llama3.5:latest' }
+    })
+
+    render(<SettingAssistant />)
+
+    const select = screen.getByDisplayValue('llama3.5:latest')
+    fireEvent.change(select, { target: { value: 'phi:latest' } })
+
+    expect(useSettingsStore.getState().settings.ollamaModel).toBe('phi:latest')
+    expect(useSettingsStore.getState().settings.activeModel).toBe('phi:latest')
+  })
 })

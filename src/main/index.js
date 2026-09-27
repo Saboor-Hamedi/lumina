@@ -1,5 +1,5 @@
 import electron from 'electron'
-const { app, shell, BrowserWindow, ipcMain, dialog, protocol, net, clipboard, nativeImage, screen } = electron.default || electron
+const { app, shell, BrowserWindow, ipcMain, dialog, protocol, net, clipboard, nativeImage, screen, session } = electron.default || electron
 import { join } from 'path'
 import path from 'path'
 import fs from 'fs/promises'
@@ -255,6 +255,21 @@ app.whenReady().then(async () => {
     app.setAppUserModelId(app.isPackaged ? 'io.lumina.app' : process.execPath)
   }
 
+  // Allow renderer process to communicate directly with local Ollama (:11434) without CORS issues
+  if (session && session.defaultSession && session.defaultSession.webRequest) {
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      if (details.url && details.url.includes(':11434')) {
+        const responseHeaders = { ...details.responseHeaders }
+        responseHeaders['access-control-allow-origin'] = ['*']
+        responseHeaders['access-control-allow-methods'] = ['GET, POST, OPTIONS, PUT, DELETE']
+        responseHeaders['access-control-allow-headers'] = ['*']
+        callback({ responseHeaders })
+        return
+      }
+      callback({ responseHeaders: details.responseHeaders })
+    })
+  }
+
   // Suppress console errors for harmless cache/quota warnings (dev only)
   if (!app.isPackaged) {
     const originalConsoleError = console.error
@@ -326,6 +341,118 @@ app.whenReady().then(async () => {
   ipcMain.handle('db:saveSettings', (_, settings) => SettingsManager.setMultiple(settings))
   ipcMain.handle('db:getTheme', () => SettingsManager.get('theme'))
   ipcMain.handle('db:saveTheme', (_, theme) => SettingsManager.set('theme', theme))
+
+  // Ollama Model Detection (IPC avoids browser CORS and IPv6/IPv4 mismatch)
+  ipcMain.handle('ollama:getModels', async (_, rawUrl) => {
+    try {
+      let baseUrl = 'http://127.0.0.1:11434'
+      try {
+        const parsed = new URL(rawUrl || 'http://127.0.0.1:11434')
+        const port = parsed.port || '11434'
+        const proto = parsed.protocol || 'http:'
+        const host = parsed.hostname || '127.0.0.1'
+        baseUrl = `${proto}//${host}:${port}`
+      } catch {}
+
+      const parsedUrl = new URL(baseUrl)
+      const port = parsedUrl.port || '11434'
+      const proto = parsedUrl.protocol || 'http:'
+
+      const endpoints = [
+        `${baseUrl}/api/tags`,
+        `${proto}//127.0.0.1:${port}/api/tags`,
+        `${proto}//localhost:${port}/api/tags`
+      ]
+      const uniqueEndpoints = [...new Set(endpoints)]
+
+      for (const endpoint of uniqueEndpoints) {
+        try {
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 2500)
+          const res = await fetch(endpoint, {
+            method: 'GET',
+            headers: { Accept: 'application/json' },
+            signal: controller.signal
+          })
+          clearTimeout(timeoutId)
+          if (res.ok) {
+            const data = await res.json()
+            const models = Array.isArray(data?.models) ? data.models : []
+            const names = models
+              .map((m) => (typeof m === 'string' ? m : m.name || m.model))
+              .filter(Boolean)
+            return { ok: true, models: names }
+          }
+        } catch (_) {}
+      }
+      return { ok: false, error: 'Ollama is offline or unreachable', models: [] }
+    } catch (err) {
+      return { ok: false, error: err?.message || 'Failed to query Ollama', models: [] }
+    }
+  })
+
+  // Direct IPC Ollama Chat (Zero-CORS, reliable localhost/127.0.0.1 fallback)
+  ipcMain.handle('ollama:chat', async (_, payload) => {
+    try {
+      const { url: rawUrl, model, messages, options } = payload || {}
+      let baseUrl = 'http://127.0.0.1:11434'
+      try {
+        const parsed = new URL(rawUrl || 'http://127.0.0.1:11434')
+        const port = parsed.port || '11434'
+        const proto = parsed.protocol || 'http:'
+        const host = parsed.hostname || '127.0.0.1'
+        baseUrl = `${proto}//${host}:${port}`
+      } catch {}
+
+      const parsedUrl = new URL(baseUrl)
+      const port = parsedUrl.port || '11434'
+      const proto = parsedUrl.protocol || 'http:'
+
+      const endpoints = [
+        `${baseUrl}/api/chat`,
+        `${proto}//127.0.0.1:${port}/api/chat`,
+        `${proto}//localhost:${port}/api/chat`
+      ]
+      const uniqueEndpoints = [...new Set(endpoints)]
+
+      for (const endpoint of uniqueEndpoints) {
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json'
+            },
+            body: JSON.stringify({
+              model: model || 'llama3',
+              messages: messages || [],
+              stream: false,
+              options: options || {}
+            })
+          })
+          if (res.ok) {
+            const data = await res.json()
+            return {
+              ok: true,
+              content: data?.message?.content || ''
+            }
+          }
+          if (res.status === 404) {
+            return {
+              ok: false,
+              error: `Model "${model}" was not found in Ollama. Pull it in terminal with "ollama pull ${model}" or select an installed model in Settings.`
+            }
+          }
+        } catch (_) {}
+      }
+      return {
+        ok: false,
+        error: 'Ollama server is not running. Please start Ollama on your computer to chat.'
+      }
+    } catch (err) {
+      return { ok: false, error: err?.message || 'Failed to communicate with Ollama' }
+    }
+  })
   ipcMain.handle('backup:start', (event, mode) =>
     backupToDrive(VaultManager.vaultPath, mode, event.sender)
   )

@@ -1158,6 +1158,17 @@ export const useAIStore = create<AIStore>((set, get) => {
           console.error('[AIStore] Chat Error:', error)
         }
 
+        const isAbort = error.name === 'AbortError'
+        let errorMsg = error?.message || 'An unexpected error occurred.'
+        if (/failed to fetch|fetch failed|econnrefused/i.test(errorMsg)) {
+          const activeProv = settingsObj?.activeProvider || 'deepseek'
+          if (activeProv === 'ollama') {
+            errorMsg = 'Ollama server is not running. Please start Ollama on your computer to chat.'
+          } else {
+            errorMsg = 'Cannot connect to AI service. Please check your internet connection or server status.'
+          }
+        }
+
         set((state) => {
           const msgs = [...state.chatMessages]
           if (msgs.length > 0) {
@@ -1170,7 +1181,7 @@ export const useAIStore = create<AIStore>((set, get) => {
             chatMessages: msgs,
             isChatLoading: false,
             activeThinkingStatus: '',
-            chatError: error.name === 'AbortError' ? null : error.message,
+            chatError: isAbort ? null : errorMsg,
             chatController: null
           }
         })

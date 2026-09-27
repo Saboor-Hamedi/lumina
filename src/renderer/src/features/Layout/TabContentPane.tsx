@@ -92,7 +92,7 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
 
     return (
       <div
-        className="tab-content-pane"
+        className={`tab-content-pane ${isSelected ? 'active' : 'inactive'}`}
         style={{
           position: 'absolute',
           top: 0,
@@ -102,6 +102,8 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
           opacity: isSelected ? 1 : 0,
           pointerEvents: isSelected ? 'auto' : 'none',
           visibility: isSelected ? 'visible' : 'hidden',
+          contentVisibility: isSelected ? 'visible' : 'hidden',
+          contain: isSelected ? 'none' : 'strict',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',

@@ -64,7 +64,9 @@ const GraphTabPane = React.memo(({ onNavigate }) => {
         opacity: isSelected ? 1 : 0,
         pointerEvents: isSelected ? 'auto' : 'none',
         visibility: isSelected ? 'visible' : 'hidden',
-        display: 'flex',
+        contentVisibility: isSelected ? 'visible' : 'hidden',
+        contain: isSelected ? 'none' : 'strict',
+        display: isSelected ? 'flex' : 'none',
         overflow: 'hidden',
         zIndex: isSelected ? 10 : 1,
         transition: 'opacity 0.08s ease-out'
@@ -73,7 +75,7 @@ const GraphTabPane = React.memo(({ onNavigate }) => {
       <React.Suspense fallback={null}>
         <Graph
           embedded={true}
-          isOpen={true}
+          isOpen={isSelected}
           onNavigate={onNavigate}
         />
       </React.Suspense>

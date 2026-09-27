@@ -174,6 +174,13 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
       [selectedNote, sendChatMessage, autoScrollRef]
     )
 
+    const handleRetry = useCallback(() => {
+      const lastUser = [...chatMessages].reverse().find((m) => m.role === 'user')
+      if (lastUser && lastUser.content) {
+        handleSendMessage(lastUser.content)
+      }
+    }, [chatMessages, handleSendMessage])
+
     const visibleMessages = useMemo(() => {
       return chatMessages.filter((msg, index) => {
         const isEmptyAssistant =
@@ -398,6 +405,7 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
                     isChatLoading={isChatLoading}
                     activeThinkingStatus={activeThinkingStatus}
                     chatError={chatError}
+                    onRetry={handleRetry}
                   />
                 </div>
               )}

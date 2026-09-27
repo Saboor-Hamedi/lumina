@@ -59,6 +59,7 @@ export function resolveProviderConfig(settingsObj: Record<string, any> = {}): Re
     if (!activeModel) activeModel = 'claude-3-5-sonnet-20241022'
   } else if (providerType === 'ollama') {
     apiKey = 'unused'
+    if (!activeModel) activeModel = settingsObj.ollamaModel || settingsObj.activeModel || 'llama3'
   } else if (providerType === 'deepseek') {
     if (!activeModel) activeModel = settingsObj.deepSeekModel || 'deepseek-chat'
   }
@@ -67,7 +68,7 @@ export function resolveProviderConfig(settingsObj: Record<string, any> = {}): Re
     providerType,
     activeModel,
     apiKey,
-    baseUrl: settingsObj.ollamaUrl || 'http://localhost:11434/api/chat'
+    baseUrl: settingsObj.ollamaUrl || 'http://127.0.0.1:11434/api/chat'
   }
 }
 

@@ -60,6 +60,7 @@ export interface Settings {
   anthropicKey: string | null
   groqKey: string | null
   ollamaUrl: string
+  ollamaModel: string | null
 
   // Command Palette
   commandPaletteMode: string
@@ -166,6 +167,10 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     groqKey:
       (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_groq_key')) || null,
     ollamaUrl: 'http://localhost:11434/api/chat',
+    ollamaModel:
+      (typeof localStorage !== 'undefined' &&
+        localStorage.getItem('lumina_ollama_model')) ||
+      null,
 
     // Command Palette
     commandPaletteMode: 'search',
@@ -395,6 +400,12 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
           else localStorage.removeItem('lumina_groq_key')
         } else if (key === 'activeProvider') {
           if (value) localStorage.setItem('lumina_active_provider', value)
+        } else if (key === 'ollamaModel') {
+          if (value) localStorage.setItem('lumina_ollama_model', value)
+          else localStorage.removeItem('lumina_ollama_model')
+        } else if (key === 'activeModel') {
+          if (value) localStorage.setItem('lumina_active_model', value)
+          else localStorage.removeItem('lumina_active_model')
         }
       }
 

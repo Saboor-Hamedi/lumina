@@ -83,6 +83,8 @@ const api = {
     electronAPI.ipcRenderer.on('settings:changed', listener)
     return () => electronAPI.ipcRenderer.removeListener('settings:changed', listener)
   },
+  getOllamaModels: (rawUrl) => electronAPI.ipcRenderer.invoke('ollama:getModels', rawUrl),
+  chatOllama: (payload) => electronAPI.ipcRenderer.invoke('ollama:chat', payload),
 
   loadMemory: () => electronAPI.ipcRenderer.invoke('memory:load'),
   saveMemory: (memory) => electronAPI.ipcRenderer.invoke('memory:save', memory),

@@ -17,18 +17,20 @@ import './RulerScrollbar.css'
 
 export interface RulerScrollbarProps {
   scrollerRef: React.RefObject<HTMLDivElement | null>
+  isActive?: boolean
 }
 
 const NUM_TICKS = 150
 const TICK_SPACING = 8
 const TAPE_HEIGHT = (NUM_TICKS - 1) * TICK_SPACING
 
-export const RulerScrollbar: React.FC<RulerScrollbarProps> = memo(({ scrollerRef }) => {
+export const RulerScrollbar: React.FC<RulerScrollbarProps> = memo(({ scrollerRef, isActive = true }) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const tapeRef = useRef<HTMLDivElement | null>(null)
   const containerHeightRef = useRef<number>(0)
 
   useEffect(() => {
+    if (!isActive) return
     const scroller = scrollerRef.current
     if (!scroller) return
 
@@ -67,9 +69,10 @@ export const RulerScrollbar: React.FC<RulerScrollbarProps> = memo(({ scrollerRef
       scroller.removeEventListener('scroll', handleScroll)
       resizeObserver.disconnect()
     }
-  }, [scrollerRef])
+  }, [scrollerRef, isActive])
 
   useEffect(() => {
+    if (!isActive) return
     if (containerRef.current) {
       containerHeightRef.current = containerRef.current.clientHeight
     }
@@ -88,7 +91,7 @@ export const RulerScrollbar: React.FC<RulerScrollbarProps> = memo(({ scrollerRef
     })
     if (containerRef.current) resizeObserver.observe(containerRef.current)
     return () => resizeObserver.disconnect()
-  }, [scrollerRef])
+  }, [scrollerRef, isActive])
 
   // Drag to scroll
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
