@@ -745,3 +745,107 @@ input.settings-select:focus,
 .settings-sidebar-scrollable::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* === SEGMENTED SUB-TABS === */
+.settings-subtabs {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-card, rgba(255, 255, 255, 0.04));
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
+  margin-bottom: 20px;
+  gap: 2px;
+}
+
+.settings-subtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-muted, #94a3b8);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.settings-subtab:hover {
+  color: var(--text-main, #fff);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.settings-subtab.active {
+  color: var(--text-main, #fff);
+  background: var(--bg-panel, #2d2d3f);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  font-weight: 600;
+}
+
+/* === STICKY BOTTOM UPDATE BAR === */
+.settings-pane-with-sticky-footer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  position: relative;
+}
+
+.settings-pane-content-grow {
+  flex: 1;
+}
+
+.settings-sticky-update-bar {
+  position: sticky;
+  bottom: -48px;
+  margin: 32px -32px -48px -32px;
+  padding: 12px 28px;
+  background: var(--bg-panel, #181825);
+  border-top: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  z-index: 10;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+}
+
+.settings-sticky-update-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  user-select: text;
+}
+
+.settings-update-header-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-main, #fff);
+  letter-spacing: -0.01em;
+}
+
+.settings-update-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: var(--text-muted, #94a3b8);
+}
+
+.settings-update-version {
+  font-weight: 500;
+}
+
+.settings-update-dot {
+  opacity: 0.4;
+}
+
+.settings-update-status {
+  color: var(--text-accent, #818cf8);
+}
