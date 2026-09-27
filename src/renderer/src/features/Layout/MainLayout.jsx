@@ -768,7 +768,20 @@ export const MainLayout = () => {
 
   const handleOpenSettings = useCallback(() => setShowSettings(true), [])
   const handleOpenTheme = useCallback(() => setShowThemeModal(true), [])
-  const handleToggleGraph = useCallback(() => setShowGraph(true), [])
+  const handleToggleGraph = useCallback(() => {
+    let mode = 'modal'
+    if (typeof localStorage !== 'undefined') {
+      const saved = localStorage.getItem('lumina_graph_display_mode')
+      if (saved === 'tab' || saved === 'modal') {
+        mode = saved
+      }
+    }
+    if (mode === 'tab') {
+      useWorkspaceStore.getState().openGraphTab()
+    } else {
+      setShowGraph(true)
+    }
+  }, [])
   const handleOpenDocs = useCallback(() => setShowDocsModal(true), [])
   const handleToggleExplorerModal = useCallback(() => setShowExplorerModal((prev) => !prev), [])
   const handleToggleAIChat = useCallback(() => {
@@ -801,17 +814,29 @@ export const MainLayout = () => {
     const handleOpenThemeEvent = () => {
       handleOpenTheme()
     }
+    const handleOpenGraphModalEvent = () => {
+      setShowGraph(true)
+    }
     window.addEventListener('open-ask-anything', handleAskAnything)
     window.addEventListener('open-ai-chat', handleAIChatEvent)
     window.addEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
     window.addEventListener('trigger-new-canvas', handleNewCanvasEvent)
     window.addEventListener('open-theme-modal', handleOpenThemeEvent)
+    window.addEventListener('open-graph-modal', handleOpenGraphModalEvent)
+
+    // Preload Graph component in background after app mount
+    const preloadTimer = setTimeout(() => {
+      import('../Graph/Graph')
+    }, 1200)
+
     return () => {
       window.removeEventListener('open-ask-anything', handleAskAnything)
       window.removeEventListener('open-ai-chat', handleAIChatEvent)
       window.removeEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
       window.removeEventListener('trigger-new-canvas', handleNewCanvasEvent)
       window.removeEventListener('open-theme-modal', handleOpenThemeEvent)
+      window.removeEventListener('open-graph-modal', handleOpenGraphModalEvent)
+      clearTimeout(preloadTimer)
     }
   }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme])
 
@@ -832,12 +857,18 @@ export const MainLayout = () => {
           <div
             key={tabId}
             style={{
-              display: effectiveSelectedId === tabId ? 'flex' : 'none',
-              flex: 1,
-              width: '100%',
-              height: '100%',
-              position: 'relative',
-              overflow: 'hidden'
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              opacity: effectiveSelectedId === tabId ? 1 : 0,
+              pointerEvents: effectiveSelectedId === tabId ? 'auto' : 'none',
+              visibility: effectiveSelectedId === tabId ? 'visible' : 'hidden',
+              display: 'flex',
+              overflow: 'hidden',
+              zIndex: effectiveSelectedId === tabId ? 10 : 1,
+              transition: 'opacity 0.08s ease-out'
             }}
           >
             <React.Suspense fallback={null}>

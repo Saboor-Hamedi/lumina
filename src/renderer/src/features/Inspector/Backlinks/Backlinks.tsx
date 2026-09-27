@@ -261,7 +261,7 @@ export const Backlinks: React.FC<BacklinksProps> = React.memo(({ note: propNote,
         </div>
       </div>
 
-      <div className="backlinks-scroll-area premimum-scrollbar">
+      <div className="backlinks-scroll-area">
         {/* Linked Mentions Section */}
         <div className="backlinks-section">
           <div
@@ -284,8 +284,8 @@ export const Backlinks: React.FC<BacklinksProps> = React.memo(({ note: propNote,
           {showLinked && (
             <div className="backlinks-groups-list">
               {filteredLinked.length === 0 ? (
-                <div className="backlinks-empty-state" style={{ padding: '16px 8px' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                <div className="backlinks-empty-state">
+                  <span>
                     {filterQuery ? 'No matching linked mentions' : 'No linked mentions for this note'}
                   </span>
                 </div>
@@ -356,7 +356,7 @@ export const Backlinks: React.FC<BacklinksProps> = React.memo(({ note: propNote,
         </div>
 
         {/* Unlinked Mentions Section */}
-        <div className="backlinks-section" style={{ marginTop: '8px' }}>
+        <div className="backlinks-section">
           <div
             className="backlinks-section-header"
             onClick={() => setShowUnlinked((prev) => !prev)}
@@ -366,7 +366,7 @@ export const Backlinks: React.FC<BacklinksProps> = React.memo(({ note: propNote,
                 size={13}
                 className={`backlinks-section-toggle-icon ${showUnlinked ? 'expanded' : ''}`}
               />
-              <Link2Off size={13} style={{ color: 'var(--text-muted)' }} />
+              <Link2Off size={13} style={{ color: '#6B7280' }} />
               <span>Unlinked Mentions</span>
             </div>
             <span className="backlinks-count-badge">
@@ -377,8 +377,8 @@ export const Backlinks: React.FC<BacklinksProps> = React.memo(({ note: propNote,
           {showUnlinked && (
             <div className="backlinks-groups-list">
               {filteredUnlinked.length === 0 ? (
-                <div className="backlinks-empty-state" style={{ padding: '16px 8px' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                <div className="backlinks-empty-state">
+                  <span>
                     {filterQuery ? 'No matching unlinked mentions' : 'No unlinked mentions found'}
                   </span>
                 </div>

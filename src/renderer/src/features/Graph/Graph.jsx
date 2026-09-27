@@ -156,10 +156,28 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     }
   }, [])
 
-  const handleOpenAsTab = useCallback(() => {
+  const handleClose = useCallback(() => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('lumina_graph_display_mode', 'modal')
+    }
     onClose?.()
-    useWorkspaceStore.getState().setActiveTabId(GRAPH_TAB_ID)
   }, [onClose])
+
+  const handleOpenAsTab = useCallback(() => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('lumina_graph_display_mode', 'tab')
+    }
+    onClose?.()
+    useWorkspaceStore.getState().openGraphTab()
+  }, [onClose])
+
+  const handleSwitchToModal = useCallback(() => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('lumina_graph_display_mode', 'modal')
+    }
+    useWorkspaceStore.getState().closeTab(GRAPH_TAB_ID)
+    window.dispatchEvent(new CustomEvent('open-graph-modal'))
+  }, [])
 
   useEffect(() => {
     if (embedded || !isOpen) return
@@ -167,12 +185,12 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       if (e.key === 'Escape') {
         e.preventDefault()
         e.stopPropagation()
-        onClose?.()
+        handleClose()
       }
     }
     window.addEventListener('keydown', handleKeyDown, true)
     return () => window.removeEventListener('keydown', handleKeyDown, true)
-  }, [embedded, isOpen, onClose])
+  }, [embedded, isOpen, handleClose])
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -309,10 +327,10 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       })
 
       setIsBuildingGraph(false)
-    }, 250) // Wait 250ms to allow the modal CSS open animation to finish perfectly smoothly
+    }, embedded ? 0 : 20) // Immediate in tab, minimal 20ms in modal for ultra snappy opening
 
     return () => clearTimeout(timer)
-  }, [snippets, selectedSnippet, embeddingsCache])
+  }, [snippets, selectedSnippet, embeddingsCache, embedded])
 
   const graphData = useMemo(() => {
     let { nodes, links } = rawGraphData
@@ -352,7 +370,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   useEffect(() => {
     if (graphRef.current && !isBuildingGraph && graphData.nodes.length > 0) {
       const isFirstRender = !hasInitialRender.current
-      const didSnippetChange = prevSelectedId.current !== selectedSnippet?.id
+      const didSnippetChange = !embedded && prevSelectedId.current !== selectedSnippet?.id
 
       if (isFirstRender || didSnippetChange) {
         hasInitialRender.current = true
@@ -623,6 +641,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           onRecenter={handleRecenter}
           is3DMode={is3DMode}
           onToggle3D={handleToggle3D}
+          onSwitchToModal={handleSwitchToModal}
         />
       </div>
     )
@@ -630,7 +649,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
   // Modal mode - Slide-up Drawer matching CanvasDrawerModal exactly
   return (
-    <div className="canvas-drawer-overlay graph-drawer-overlay" onClick={onClose}>
+    <div className="canvas-drawer-overlay graph-drawer-overlay" onClick={handleClose}>
       <div
         ref={containerRef}
         className="canvas-drawer-container graph-drawer-container"
@@ -684,7 +703,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               <button
                 type="button"
                 className="canvas-drawer-action-btn close-btn"
-                onClick={onClose}
+                onClick={handleClose}
                 aria-label="Close"
               >
                 <span className="sr-only" style={{ display: 'none' }}>Close</span>

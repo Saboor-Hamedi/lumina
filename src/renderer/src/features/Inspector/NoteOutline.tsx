@@ -27,8 +27,23 @@ export const NoteOutline: React.FC<NoteOutlineProps> = React.memo(({ note: propN
   const note = propNote || snippet
   const [headings, setHeadings] = useState<HeadingItem[]>([])
   const [filterQuery, setFilterQuery] = useState('')
+  const [cursorLine, setCursorLine] = useState<number | null>(null)
 
-  // Defer outline extraction off the immediate tab-switch frame (VS Code style Level 3 computation)
+  // Listen to cursor movement events from the active editor
+  useEffect(() => {
+    const handleCursorPos = (e: any) => {
+      if (!note?.id || e.detail?.snippetId === note.id) {
+        if (typeof e.detail?.line === 'number') {
+          setCursorLine(e.detail.line)
+        }
+      }
+    }
+
+    window.addEventListener('editor-cursor-pos', handleCursorPos)
+    return () => window.removeEventListener('editor-cursor-pos', handleCursorPos)
+  }, [note?.id])
+
+  // Extract headings from note code
   useEffect(() => {
     if (!note || !note.code) {
       setHeadings([])
@@ -49,7 +64,7 @@ export const NoteOutline: React.FC<NoteOutlineProps> = React.memo(({ note: propN
         }
       })
       setHeadings(extracted)
-    }, 16) // Yields to let the active tab paint in < 16ms
+    }, 16)
 
     return () => clearTimeout(timer)
   }, [note?.id, note?.code])
@@ -59,6 +74,20 @@ export const NoteOutline: React.FC<NoteOutlineProps> = React.memo(({ note: propN
     if (!q) return headings
     return headings.filter((h) => h.text.toLowerCase().includes(q))
   }, [headings, filterQuery])
+
+  // Determine active heading based on current cursor line
+  const activeHeadingIndex = useMemo(() => {
+    if (cursorLine === null || filteredHeadings.length === 0) return -1
+    let activeIdx = -1
+    for (let i = 0; i < filteredHeadings.length; i++) {
+      if (filteredHeadings[i].line <= cursorLine) {
+        activeIdx = i
+      } else {
+        break
+      }
+    }
+    return activeIdx
+  }, [cursorLine, filteredHeadings])
 
   const handleNavigateToHeading = useCallback((line: number) => {
     window.dispatchEvent(
@@ -96,7 +125,7 @@ export const NoteOutline: React.FC<NoteOutlineProps> = React.memo(({ note: propN
       {/* Search Filter Bar */}
       <div className="outline-filter-bar">
         <div className="outline-search-input-wrap">
-          <Search size={12} style={{ color: 'var(--text-muted)' }} />
+          <Search size={12} style={{ color: '#6B7280' }} />
           <input
             type="text"
             className="outline-search-input"
@@ -117,7 +146,7 @@ export const NoteOutline: React.FC<NoteOutlineProps> = React.memo(({ note: propN
         </div>
       </div>
 
-      <div className="outline-scroll-area premimum-scrollbar">
+      <div className="outline-scroll-area">
         <div className="outline-section">
           <div className="outline-section-header">
             <div className="outline-section-title-wrap">
@@ -131,34 +160,28 @@ export const NoteOutline: React.FC<NoteOutlineProps> = React.memo(({ note: propN
 
           <div className="outline-items-list">
             {headings.length === 0 ? (
-              <div className="outline-empty-state" style={{ padding: '16px 8px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  No headings found in this note
-                </span>
+              <div className="outline-empty-state">
+                <span>No headings found in this note</span>
               </div>
             ) : filteredHeadings.length === 0 ? (
-              <div className="outline-empty-state" style={{ padding: '16px 8px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  No matching headings found
-                </span>
+              <div className="outline-empty-state">
+                <span>No matching headings found</span>
               </div>
             ) : (
               filteredHeadings.map((h, i) => {
-                const indentPadding = `${(h.level - 1) * 10}px`
+                const indentPadding = `${(h.level - 1) * 16}px`
+                const isActive = i === activeHeadingIndex
 
                 return (
                   <div
-                    key={i}
-                    className="outline-item-card"
+                    key={`${h.line}-${i}`}
+                    className={`outline-item-card level-${h.level} ${isActive ? 'active' : ''}`}
                     onClick={() => handleNavigateToHeading(h.line)}
                     title={`Jump to line ${h.line}: "${h.text}"`}
+                    style={{ paddingLeft: `calc(8px + ${indentPadding})` }}
                   >
-                    <div
-                      className="outline-card-header"
-                      style={{ paddingLeft: `calc(8px + ${indentPadding})` }}
-                    >
+                    <div className="outline-card-header">
                       <div className="outline-title-wrap">
-                        <span className="outline-level-badge">H{h.level}</span>
                         <ToolTip text={h.text} position="top" delay={400}>
                           <span className="outline-heading-title">
                             {renderHighlightedText(h.text, filterQuery.trim())}

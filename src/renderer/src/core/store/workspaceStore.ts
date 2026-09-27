@@ -305,6 +305,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
   closeTab: (id: string) =>
     set((state) => {
+      if (id === GRAPH_TAB_ID && typeof localStorage !== 'undefined') {
+        localStorage.setItem('lumina_graph_display_mode', 'tab')
+      }
       const nextTabs = state.openTabs.filter((tid) => tid !== id)
       const isClosingActive = state.activeTabId === id || state.selectedNote?.id === id
 
@@ -418,7 +421,10 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     })
   },
 
-  openGraphTab: () =>
+  openGraphTab: () => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('lumina_graph_display_mode', 'tab')
+    }
     set((state) => {
       const isAlreadyOpen = state.openTabs.includes(GRAPH_TAB_ID)
       const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, GRAPH_TAB_ID]
@@ -427,7 +433,8 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         activeTabId: GRAPH_TAB_ID,
         selectedNote: null
       }
-    }),
+    })
+  },
 
   openLuminaTab: () =>
     set((state) => {

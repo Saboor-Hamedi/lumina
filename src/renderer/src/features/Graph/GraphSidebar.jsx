@@ -5,7 +5,8 @@ import {
   Layers,
   SlidersHorizontal,
   PanelRight,
-  PanelRightClose
+  PanelRightClose,
+  ExternalLink
 } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -24,7 +25,8 @@ const GraphSidebar = ({
   nodeCount,
   onRecenter,
   is3DMode,
-  onToggle3D
+  onToggle3D,
+  onSwitchToModal
 }) => {
   const toggleHandler = onToggleExpand || onClose
   const { settings, updateSetting } = useSettingsStore()
@@ -100,6 +102,19 @@ const GraphSidebar = ({
             </button>
           </ToolTip>
         )}
+
+        {onSwitchToModal && (
+          <ToolTip text="Pop out to Modal" position="left">
+            <button
+              type="button"
+              className="lumina-canvas-tool-btn"
+              onClick={onSwitchToModal}
+              aria-label="Open as Modal"
+            >
+              <ExternalLink size={14} />
+            </button>
+          </ToolTip>
+        )}
       </div>
     )
   }
@@ -123,6 +138,19 @@ const GraphSidebar = ({
         </div>
 
         <div className="lumina-canvas-studio-actions">
+          {onSwitchToModal && (
+            <ToolTip text="Pop out to Modal" position="bottom">
+              <button
+                type="button"
+                className="lumina-canvas-studio-header-btn"
+                onClick={onSwitchToModal}
+                aria-label="Open as Modal"
+              >
+                <ExternalLink size={13} />
+              </button>
+            </ToolTip>
+          )}
+
           <ToolTip text="Collapse Controls" position="bottom">
             <button
               type="button"

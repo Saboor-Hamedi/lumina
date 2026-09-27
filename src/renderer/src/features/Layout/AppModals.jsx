@@ -160,7 +160,12 @@ export const AppModals = ({
           <React.Suspense fallback={null}>
             <Graph
               isOpen={showGraph}
-              onClose={() => setShowGraph(false)}
+              onClose={() => {
+                if (typeof localStorage !== 'undefined') {
+                  localStorage.setItem('lumina_graph_display_mode', 'modal')
+                }
+                setShowGraph(false)
+              }}
               onNavigate={(snippet) => {
                 setSelectedSnippet(snippet)
                 setActiveTab('files')
