@@ -151,19 +151,18 @@
   align-items: center;
   justify-content: space-between;
   gap: 6px;
+  min-width: 0;
 }
 
 .tooltip-card-title {
   font-weight: 600;
   font-size: 11.5px;
   color: var(--text-main, #f8fafc);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  word-break: break-word;
-  overflow-wrap: break-word;
+  white-space: nowrap;
   line-height: 1.3;
 }
 
@@ -193,21 +192,57 @@
   font-weight: 500;
 }
 
-.tooltip-card-tags {
+.tooltip-card-tags,
+.tooltip-card-links,
+.tooltip-card-mentions {
   display: flex;
   align-items: center;
   gap: 4px;
   flex-wrap: wrap;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .tooltip-tag {
   font-size: 9.5px;
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  background: rgba(139, 92, 246, 0.12);
   color: var(--text-accent, #c4b5fd);
-  padding: 1px 4px;
+  border: 1px solid rgba(139, 92, 246, 0.22);
+  padding: 1px 5px;
   border-radius: 3px;
-  line-height: 1.2;
+  line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tooltip-link-pill {
+  font-size: 9.5px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  padding: 1px 5px;
+  border-radius: 3px;
+  line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tooltip-mention-pill {
+  font-size: 9.5px;
+  background: rgba(245, 158, 11, 0.14);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  padding: 1px 5px;
+  border-radius: 3px;
+  line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .tooltip-card-empty {
@@ -215,6 +250,16 @@
   font-style: italic;
   color: var(--text-faint, #64748b);
   opacity: 0.7;
+}
+
+.tooltip-loading-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--text-muted, #94a3b8);
+  font-size: 10px;
+  font-style: italic;
+  padding: 4px 0;
 }
 
 /* Folder Tooltip Note List */
@@ -259,3 +304,112 @@
   margin-top: 2px;
   padding-left: 15px;
 }
+
+/* =========================================================================
+   MEDIA & CANVAS PREVIEWS
+   ========================================================================= */
+
+.tooltip-media-card {
+  max-width: 260px;
+  min-width: 190px;
+}
+
+
+.tooltip-image-frame {
+  margin: 4px 0;
+  border-radius: 5px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.06));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 160px;
+  min-height: 80px;
+  box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.4);
+}
+
+.tooltip-preview-img {
+  max-width: 100%;
+  max-height: 155px;
+  object-fit: contain;
+  display: block;
+  border-radius: 4px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.tooltip-media-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px 12px;
+  color: var(--text-faint, #64748b);
+  font-size: 10px;
+}
+
+/* Canvas Mini-Map Viewport */
+.tooltip-canvas-card {
+  max-width: 270px;
+  min-width: 220px;
+}
+
+.tooltip-canvas-viewport {
+  margin: 4px 0;
+  height: 135px;
+  width: 100%;
+  border-radius: 6px;
+  background: #0f1015;
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.07));
+  overflow: hidden;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tooltip-canvas-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Markdown formatting inside tooltips */
+.tooltip-md-heading {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-accent, #a78bfa);
+  margin-top: 3px;
+  margin-bottom: 2px;
+}
+
+.tooltip-md-bullet {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  font-size: 10px;
+  color: var(--text-muted, #94a3b8);
+  line-height: 1.35;
+}
+
+.tooltip-md-bullet .bullet-dot {
+  color: var(--text-accent, #a78bfa);
+  font-weight: bold;
+}
+
+.tooltip-md-quote {
+  border-left: 2px solid var(--text-accent, #a78bfa);
+  padding-left: 6px;
+  font-style: italic;
+  font-size: 10px;
+  color: var(--text-faint, #64748b);
+  margin: 2px 0;
+}
+
+.tooltip-md-p {
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--text-muted, #94a3b8);
+}
+

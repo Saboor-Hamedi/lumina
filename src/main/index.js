@@ -75,7 +75,7 @@ async function createWindow() {
   const initialX = isMaximized ? undefined : windowBounds.x
   const initialY = isMaximized ? undefined : windowBounds.y
 
-  let allowDevTools = (await SettingsManager.get('enableDevTools')) === true
+  let allowDevTools = !app.isPackaged || (await SettingsManager.get('enableDevTools')) === true
 
   mainWindow = new BrowserWindow({
     width: initialWidth,
@@ -131,11 +131,16 @@ async function createWindow() {
 
 
   mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (!allowDevTools) {
-      if (
-        (input.control && input.shift && input.key.toLowerCase() === 'i') ||
-        input.key === 'F12'
-      ) {
+    const isDevToolsShortcut =
+      (input.control && input.shift && input.key.toLowerCase() === 'i') ||
+      input.key === 'F12'
+    if (isDevToolsShortcut) {
+      if (allowDevTools) {
+        if (input.type === 'keyDown') {
+          mainWindow.webContents.toggleDevTools()
+        }
+        event.preventDefault()
+      } else {
         event.preventDefault()
       }
     }
@@ -147,7 +152,7 @@ async function createWindow() {
     new AppUpdater(mainWindow)
 
     SettingsManager.onChange((settings) => {
-      allowDevTools = settings.enableDevTools === true
+      allowDevTools = !app.isPackaged || settings.enableDevTools === true
       if (!allowDevTools && mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents.isDevToolsOpened()) {
         mainWindow.webContents.closeDevTools()
       }
@@ -156,6 +161,7 @@ async function createWindow() {
     })
 
     SettingsManager.get().then((settings) => {
+      allowDevTools = !app.isPackaged || settings.enableDevTools === true
       useGlobalShortcut(mainWindow, settings)
       updateAutoLauncher(settings.launchOnStartup)
     })

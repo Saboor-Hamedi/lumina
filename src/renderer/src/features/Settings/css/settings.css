@@ -160,7 +160,9 @@
   padding: 14px 0;
   overflow-y: auto;
   overflow-x: hidden;
-  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  transition:
+    width 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.2s ease;
   box-sizing: border-box;
   position: relative;
   left: 0;
@@ -341,7 +343,7 @@
   border-radius: 6px;
   padding: 8px 12px;
   margin-bottom: 14px;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .vault-path-display .vault-icon {
@@ -377,7 +379,9 @@
   font-size: 11.5px;
   min-width: 210px;
   box-sizing: border-box;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   color-scheme: dark;
   outline: none;
 }
@@ -390,15 +394,15 @@ select.settings-select {
 
 /* Text and password inputs explicitly have text cursor always (never pointer/hand) */
 input.settings-select,
-.settings-container input[type="text"],
-.settings-container input[type="password"],
-.settings-container input[type="search"],
-.settings-container input[type="number"],
+.settings-container input[type='text'],
+.settings-container input[type='password'],
+.settings-container input[type='search'],
+.settings-container input[type='number'],
 .settings-container textarea,
-.settings-modal input[type="text"],
-.settings-modal input[type="password"],
-.settings-modal input[type="search"],
-.settings-modal input[type="number"],
+.settings-modal input[type='text'],
+.settings-modal input[type='password'],
+.settings-modal input[type='search'],
+.settings-modal input[type='number'],
 .settings-modal textarea,
 .caret-color-input {
   cursor: text !important;
@@ -444,7 +448,7 @@ input.settings-select:focus,
 }
 
 .slider-track,
-.range-wrap input[type=range] {
+.range-wrap input[type='range'] {
   width: 120px;
   height: 4px;
   background: var(--border-dim, #3d3d50);
@@ -455,14 +459,14 @@ input.settings-select:focus,
   appearance: none;
 }
 
-.range-wrap input[type=range]::-webkit-slider-runnable-track {
+.range-wrap input[type='range']::-webkit-slider-runnable-track {
   height: 4px;
   background: var(--border-dim, #3d3d50);
   border-radius: 2px;
 }
 
 .slider-thumb,
-.range-wrap input[type=range]::-webkit-slider-thumb {
+.range-wrap input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 13px;
@@ -476,18 +480,18 @@ input.settings-select:focus,
   transition: transform 0.15s ease;
 }
 
-.range-wrap input[type=range]::-webkit-slider-thumb:hover {
+.range-wrap input[type='range']::-webkit-slider-thumb:hover {
   transform: scale(1.2);
 }
 
-.range-wrap input[type=range]::-moz-range-track {
+.range-wrap input[type='range']::-moz-range-track {
   height: 4px;
   background: var(--border-dim, #3d3d50);
   border-radius: 2px;
   border: none;
 }
 
-.range-wrap input[type=range]::-moz-range-thumb {
+.range-wrap input[type='range']::-moz-range-thumb {
   width: 13px;
   height: 13px;
   border-radius: 50%;
@@ -629,10 +633,18 @@ input.settings-select:focus,
   text-align: center;
 }
 
-
-
-@keyframes pulse-opacity { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-.pulse-opacity { animation: pulse-opacity 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+@keyframes pulse-opacity {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+.pulse-opacity {
+  animation: pulse-opacity 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
 
 .update-action-btn {
   background: var(--text-accent);

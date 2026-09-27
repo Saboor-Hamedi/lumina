@@ -9,6 +9,7 @@ import ContextMenu from '../../modals/ContextMenu'
 import Confirm from '../../modals/Confirm'
 import IconPicker from '../../Icons/IconPicker'
 import ToolTip from '../../../components/atoms/ToolTip'
+import FileHoverPreview from '../../Explorer/components/FileHoverPreview'
 import { getSnippetIcon } from '../../Icons/FileIcon'
 import { useShallow } from 'zustand/react/shallow'
 import { getHighlightRegex } from '../../../core/utils/searchRanker'
@@ -282,97 +283,9 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
     if (item.itemType === 'folder') {
       return item.title || 'Folder'
     }
-    if (item.type === 'image') {
-      const formatSize = (bytes: number) => {
-        if (!bytes) return ''
-        if (bytes < 1024) return `${bytes} B`
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-      }
-      return (
-        <div className="tooltip-card-preview">
-          <div className="tooltip-card-header">
-            <span className="tooltip-card-title">{item.title || 'Image'}</span>
-          </div>
-          <div className="tooltip-card-meta">
-            <span className="tooltip-badge-folder">🖼️ Image</span>
-            {item.size ? <span>· {formatSize(item.size)}</span> : null}
-            {item.ext ? <span className="uppercase">· {item.ext.replace('.', '')}</span> : null}
-          </div>
-        </div>
-      )
-    }
-    if (item.type === 'pdf') {
-      const formatSize = (bytes: number) => {
-        if (!bytes) return ''
-        if (bytes < 1024) return `${bytes} B`
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-      }
-      return (
-        <div className="tooltip-card-preview">
-          <div className="tooltip-card-header">
-            <span className="tooltip-card-title">{item.title || 'PDF Document'}</span>
-          </div>
-          <div className="tooltip-card-meta">
-            <span className="tooltip-badge-folder">📄 PDF</span>
-            {item.size ? <span>· {formatSize(item.size)}</span> : null}
-          </div>
-        </div>
-      )
-    }
-    const title = item.title || 'Untitled Note'
-    const rawContent = item.code || item.content || item.body || ''
-    const cleanBody = rawContent
-      .replace(/^#+\s+/gm, '')
-      .replace(/```[\s\S]*?```/g, '')
-      .replace(/\[\[(.*?)\]\]/g, '$1')
-      .replace(/\[(.*?)\]\(.*?\)/g, '$1')
-      .replace(/!\[.*?\]\(.*?\)/g, '')
-      .replace(/[`*_\~>#]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-
-    const wordCount = rawContent.trim() ? rawContent.trim().split(/\s+/).length : 0
-    const readTime = Math.max(1, Math.ceil(wordCount / 200)) + 'm'
-    const folderText = item.folderId && item.folderId !== 'root' ? item.folderId : null
-
-    let tagsList: string[] = []
-    if (item.tags) {
-      if (Array.isArray(item.tags)) tagsList = item.tags
-      else if (typeof item.tags === 'string') {
-        tagsList = item.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
-      }
-    }
-
-    return (
-      <div className="tooltip-card-preview">
-        <div className="tooltip-card-header">
-          <span className="tooltip-card-title">{title}</span>
-        </div>
-        <div className="tooltip-card-meta">
-          {folderText && <span className="tooltip-badge-folder">📁 {folderText}</span>}
-          <span>{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
-          <span>·</span>
-          <span>{readTime} read</span>
-        </div>
-        {tagsList.length > 0 && (
-          <div className="tooltip-card-tags">
-            {tagsList.slice(0, 3).map((t, idx) => (
-              <span key={idx} className="tooltip-tag">
-                #{String(t).replace(/^#/, '')}
-              </span>
-            ))}
-          </div>
-        )}
-        {cleanBody ? (
-          <div className="tooltip-card-body">{cleanBody.slice(0, 180)}</div>
-        ) : (
-          <div className="tooltip-card-empty">Empty note</div>
-        )}
-      </div>
-    )
+    return <FileHoverPreview item={item} />
   }
+
 
   const modals = (
     <>

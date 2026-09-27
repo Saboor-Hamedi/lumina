@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Link2, Link2Off, ChevronRight, Search, X, FileText } from 'lucide-react'
 import { useWorkspaceStore, WorkspaceNote } from '../../../core/store/workspaceStore'
 import ToolTip from '../../../components/atoms/ToolTip'

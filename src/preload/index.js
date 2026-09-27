@@ -102,6 +102,7 @@ const api = {
     electronAPI.ipcRenderer.on('window:maximized-change', listener)
     return () => electronAPI.ipcRenderer.removeListener('window:maximized-change', listener)
   },
+  openDevTools: () => electronAPI.ipcRenderer.invoke('window:open-devtools'),
   closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
   setWindowOpacity: (opacity) => electronAPI.ipcRenderer.invoke('window:set-opacity', opacity),
   getWindowOpacity: () => electronAPI.ipcRenderer.invoke('window:get-opacity'),

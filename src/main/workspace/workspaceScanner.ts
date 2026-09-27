@@ -31,6 +31,32 @@ export const MAX_WORKSPACE_TEXT_BYTES = 5 * 1024 * 1024
  */
 const TEXT_EXTS = new Set(['.md', '.markdown', '.txt', '.canvas'])
 
+/**
+ * Known frontmatter / metadata keys supported when parsing loose note headers.
+ */
+const KNOWN_METADATA_KEYS = new Set([
+  'title',
+  'tags',
+  'language',
+  'ispinned',
+  'is_pinned',
+  'pinned',
+  'customicon',
+  'custom_icon',
+  'color',
+  'timestamp',
+  'createdat',
+  'created_at',
+  'updatedat',
+  'updated_at',
+  'id',
+  'type',
+  'isdraft',
+  'is_draft',
+  'folderid',
+  'folder_id'
+])
+
 export interface WorkspaceSnippet {
   id: string
   title: string
@@ -64,29 +90,6 @@ export interface WorkspaceScanResult {
   snippets: WorkspaceSnippet[]
   folders: string[]
 }
-
-/**
- * Safely parses YAML frontmatter from raw markdown content without throwing fatal errors.
-const KNOWN_METADATA_KEYS = new Set([
-  'id',
-  'title',
-  'language',
-  'tags',
-  'selection',
-  'ispinned',
-  'pinned',
-  'islearned',
-  'learned',
-  'customicon',
-  'icon',
-  'createdat',
-  'created_at',
-  'timestamp',
-  'color',
-  'type',
-  'folderid',
-  'folder_id'
-])
 
 /**
  * Safely parses YAML frontmatter from raw markdown content without throwing fatal errors.

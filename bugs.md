@@ -1,586 +1,593 @@
-# Lumina RightSidebar — Maximize/Restore Layout Synchronization Fix
+# Lumina — 10+ Open Notes Resize Performance Investigation
 
-## Context
+## NEW BREAKTHROUGH
 
-There is currently a specific layout bug involving:
+The RightSidebar/MainLayout problem has now been reproduced under a very specific condition:
 
-`src/renderer/src/features/Inspector/RightSidebar.tsx`
+> The layout behaves correctly with a small number of open notes, but the problem appears when approximately **10 or more notes are open**.
 
-### Reproduction
+This changes the investigation completely.
 
-1. Launch Lumina.
-2. Maximize the window.
-3. Minimize the application.
-4. Restore/maximize the application again.
-5. Observe the RightSidebar.
+The RightSidebar is probably NOT the root cause.
 
-### Current behavior
+The likely root cause is:
 
-When the application is restored/maximized:
+> **Window resize causes work to scale with the number of open notes/editors, blocking or delaying the renderer's ability to update the MainLayout.**
 
-- The main application appears.
-- The RightSidebar initially renders in an incorrect horizontal position / appears displaced.
-- After a short moment, another layout/resize/render pass occurs.
-- The RightSidebar then moves/snaps into its correct position.
-
-This is visually noticeable.
-
-## Objective
-
-Fix the underlying layout synchronization problem so that:
-
-> **When Lumina is restored/maximized, the RightSidebar is positioned correctly on its first visible layout frame.**
-
-Do NOT simply add an arbitrary `setTimeout()` such as 100ms/200ms to hide the problem.
-
-Do NOT introduce animation to disguise the issue.
-
-Do NOT continuously poll the sidebar position.
-
-We need to identify why the sidebar is initially using stale geometry.
+The visible symptom is the RightSidebar covering/pushing the editor/titlebar, but that may simply be because the browser cannot complete the layout/paint quickly enough.
 
 ---
 
-# Phase 1 — Inspect the Architecture
+# PRIMARY MISSION
 
-First inspect the complete layout chain around:
+Do NOT modify `RightSidebar.tsx` yet.
 
-- `RightSidebar.tsx`
-- its parent component
-- `MainLayout`
-- the central editor/content area
-- any left sidebar
-- any resizable panel implementation
-- window resize handling
-- Electron BrowserWindow resize/maximize/restore events
-- Zustand stores involved in layout/sidebar state
-- CSS containing:
-  - `position`
-  - `absolute`
-  - `fixed`
-  - `sticky`
-  - `width`
-  - `right`
-  - `left`
-  - `transform`
-  - `calc()`
-  - viewport units
-  - flex/grid sizing
-  - `ResizeObserver`
-  - `window.innerWidth`
-  - `window.innerHeight`
-  - `clientWidth`
-  - `offsetWidth`
-  - `getBoundingClientRect()`
+Do NOT modify CSS positioning yet.
 
-Determine exactly how RightSidebar decides:
+Find out:
 
-- its x position
-- its width
-- its parent/container dimensions
-- its vertical position
-- whether it is inside or outside the main layout flow
-- whether its geometry comes from React state
-- whether its geometry comes directly from CSS
-- whether geometry is cached
+> **What happens to the renderer when the window is resized with 1, 5, 10, 20, and 50 open notes?**
 
-Do not modify code yet.
+We need a measurable answer.
 
 ---
 
-# Phase 2 — Identify the Stale Geometry
+# TEST MATRIX
 
-We need to determine whether the problem is caused by:
+Run the same resize operation with:
 
-### Possibility A — stale `window.innerWidth`
+| Open notes | Result    |
+| ---------: | --------- |
+|          1 | baseline  |
+|          5 | baseline  |
+|         10 | reproduce |
+|         20 | reproduce |
+|         50 | stress    |
 
-For example:
+For each case measure:
 
-```ts
-const right = window.innerWidth - something
-```
+- resize event frequency
+- MainLayout renders
+- TabContentPane renders
+- editor renders
+- editor layout/update calls
+- React commits
+- long tasks
+- frame time
+- FPS
+- main-thread blocking time
 
-being calculated before the restored window has reached its final dimensions.
+---
 
-### Possibility B — stale parent dimensions
+# STEP 1 — FIND EVERY RESIZE LISTENER
 
-For example:
-
-```ts
-const rect = container.getBoundingClientRect()
-```
-
-being measured during an intermediate layout state.
-
-### Possibility C — React state lag
-
-For example:
+Search the entire renderer codebase for:
 
 ```text
-Electron resize
-    ↓
-window dimensions change
-    ↓
-layout state updates
-    ↓
-RightSidebar renders
+window.addEventListener('resize'
 ```
 
-where the sidebar temporarily renders using the previous dimensions.
+```text
+ResizeObserver
+```
 
-### Possibility D — CSS transform/layout transition
+```text
+visualViewport
+```
+
+```text
+resize
+```
+
+Also search for:
+
+```text
+getBoundingClientRect
+```
+
+```text
+offsetWidth
+```
+
+```text
+clientWidth
+```
+
+```text
+scrollWidth
+```
+
+```text
+innerWidth
+```
+
+```text
+innerHeight
+```
+
+Determine which components react to window/container size changes.
+
+Especially inspect:
+
+- TabContentPane
+- editor component
+- Markdown editor
+- preview
+- CodeMirror/Monaco if present
+- MainLayout
+- RightSidebar
+- Graph
+- FileExplorer
+- tab bar
+
+---
+
+# STEP 2 — DETERMINE HOW MANY EDITORS ARE ACTUALLY ALIVE
+
+Do not assume that 50 tabs means 50 expensive editors.
+
+Verify.
+
+Instrument the editor component:
+
+```tsx
+console.count('[EDITOR RENDER]')
+```
+
+Also log mount/unmount:
+
+```tsx
+useEffect(() => {
+  console.log('[EDITOR MOUNT]', id)
+
+  return () => {
+    console.log('[EDITOR UNMOUNT]', id)
+  }
+}, [id])
+```
+
+Then open:
+
+1 note
+2 notes
+5 notes
+10 notes
+20 notes
+50 notes
+
+Determine:
+
+> How many actual editor instances exist simultaneously?
+
+---
+
+# STEP 3 — TEST RESIZE WITH ONLY ONE ACTIVE EDITOR
+
+This is critical.
+
+If there are 20 open notes but only one editor should actually be actively responding to layout changes, determine whether the inactive editors are still receiving resize work.
+
+During resize log:
+
+```text
+noteId
+active/inactive
+resize callback
+layout/update call
+```
+
+We want to detect something like:
+
+```text
+Resize
+├── Editor A
+├── Editor B
+├── Editor C
+├── Editor D
+├── Editor E
+├── ...
+└── Editor T
+```
+
+If inactive editors are all responding, we found a major source of scaling.
+
+---
+
+# STEP 4 — PROFILE THE MAIN THREAD
+
+Use Chrome DevTools Performance.
+
+Record:
+
+```text
+1 note → resize
+10 notes → resize
+20 notes → resize
+50 notes → resize
+```
 
 Look specifically for:
 
-```css
-transform: translateX(...);
-```
+- Long Task
+- React commit
+- scripting
+- layout
+- style recalculation
+- forced synchronous layout
+- paint
+- composite
 
-or transitions that can cause the sidebar to visually remain in its previous geometry before settling.
+The critical question:
 
-### Possibility E — flex/grid reflow
+> Does the renderer spend hundreds of milliseconds or seconds doing JavaScript/layout work during resize?
 
-The sidebar may be correctly participating in a flex/grid layout, but some parent is temporarily using stale width/height constraints during maximize restoration.
-
-### Possibility F — ResizeObserver timing
-
-If ResizeObserver is involved, verify whether:
-
-- it observes the correct element
-- it updates state
-- the sidebar renders once before observer geometry arrives
-- observer callbacks cause the second corrective movement
-
-### Possibility G — Electron restore/maximize lifecycle
-
-Investigate whether Lumina is reacting to:
-
-- `resize`
-- `maximize`
-- `unmaximize`
-- BrowserWindow bounds changes
-
-and whether multiple events occur during restoration.
+If yes, RightSidebar is merely the visible victim.
 
 ---
 
-# Phase 3 — Instrument the Geometry
+# STEP 5 — CHECK TABCONTENTPANE
 
-Before fixing it, temporarily add development-only instrumentation.
-
-Capture the following whenever the RightSidebar calculates or receives its geometry:
-
-```ts
-{
-  timestamp: performance.now(),
-  windowWidth: window.innerWidth,
-  windowHeight: window.innerHeight,
-  devicePixelRatio: window.devicePixelRatio,
-  sidebarRect: sidebarElement?.getBoundingClientRect(),
-  parentRect: parentElement?.getBoundingClientRect(),
-}
-```
-
-Also log:
-
-```ts
-window.visualViewport?.width
-window.visualViewport?.height
-```
-
-if available.
-
-The goal is to answer:
-
-> **What dimensions does Lumina think the window/container has on the first render after restore, and what dimensions does it have when the sidebar finally snaps into place?**
-
-Do not leave noisy logging permanently enabled.
-
----
-
-# Phase 4 — Prefer Layout-Driven Positioning
-
-If RightSidebar is currently calculating its own absolute position from JavaScript, determine whether that calculation is actually necessary.
-
-Prefer:
+We previously optimized:
 
 ```text
-Application Layout
-├── Main Content
-└── Right Sidebar
+TabContentPane
+MainLayout
+renderedEditors
+FileExplorer
+Virtuoso
 ```
 
-with CSS controlling the relationship where possible.
+Do not assume that optimization solved all editor work.
 
-For example, if the sidebar naturally belongs to the right edge of the application, prefer a layout structure such as:
+Inspect whether `TabContentPane` still receives props that change during resize.
 
-```css
-.appLayout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.rightSidebar {
-  width: var(--sidebar-width);
-}
-```
-
-or an equivalent flex architecture.
-
-The goal is:
-
-> The browser should calculate the sidebar's position from the current layout geometry instead of React calculating an x-coordinate.
-
-Do NOT blindly convert the existing architecture to grid/flex. Only do this if the current implementation is unnecessarily geometry-driven.
-
----
-
-# Phase 5 — If JavaScript Measurement Is Required
-
-If the sidebar genuinely requires measurement, make the measurement lifecycle robust.
-
-Prefer observing the actual layout container:
-
-```ts
-const observer = new ResizeObserver((entries) => {
-  const entry = entries[0]
-
-  // derive geometry from the current element
-})
-```
-
-rather than assuming that a `window.resize` event alone represents the final layout.
-
-If a measurement must happen synchronously before paint, evaluate whether `useLayoutEffect` is appropriate.
-
-Example pattern:
-
-```ts
-useLayoutEffect(() => {
-  // measure DOM after React commits
-  // update geometry if required
-}, [dependencies])
-```
-
-However:
-
-**Do not blindly replace `useEffect` with `useLayoutEffect`.**
-
-First establish that the visual jump occurs because geometry is being measured after the first paint.
-
----
-
-# Phase 6 — Handle Resize/Restore as a Geometry Event
-
-If Electron/window resize events are being mirrored into Zustand or React state, inspect that pipeline.
-
-We want something conceptually like:
+Check:
 
 ```text
-OS window state changes
-        ↓
-Browser viewport changes
-        ↓
-DOM layout recalculates
-        ↓
-ResizeObserver / layout measurement
-        ↓
-Sidebar receives final geometry
-```
-
-Avoid architectures like:
-
-```text
-Electron maximize event
-        ↓
-guess new width
-        ↓
-store width
-        ↓
-render sidebar
-        ↓
-browser eventually recalculates actual viewport
-        ↓
-second render
-        ↓
-sidebar snaps
-```
-
-The browser's actual layout should be the source of truth whenever possible.
-
----
-
-# Phase 7 — Check for CSS Transitions
-
-Inspect the sidebar and all relevant parent containers for:
-
-```css
-transition: all...;
-```
-
-or transitions involving:
-
-```css
-left
-right
-top
-bottom
 width
 height
-transform
-margin
-padding
+container dimensions
+layout state
+window dimensions
+editor dimensions
+sidebar width
 ```
 
-A particularly suspicious pattern would be:
+If inactive panes receive new props during every resize event, that can cause:
 
-```css
-transition: all 0.2s ease;
+```text
+resize
+↓
+50 TabContentPane updates
+↓
+50 editor checks
+↓
+React reconciliation
+↓
+layout
+↓
+paint
 ```
-
-on a layout container.
-
-If the sidebar is simply correcting its geometry, we should NOT animate that correction.
-
-Replace broad layout transitions with explicit transitions only where animation is genuinely intended.
 
 ---
 
-# Phase 8 — Check ResizeObserver / Effect Loops
+# STEP 6 — CHECK EDITOR INTERNAL RESIZE HANDLERS
 
-Make sure the fix does not create:
+If using CodeMirror, Monaco, or another editor, inspect whether every editor instance receives a resize notification.
+
+The goal should generally be:
 
 ```text
-ResizeObserver
-    ↓
-setState
-    ↓
-render
-    ↓
-ResizeObserver
-    ↓
-setState
-    ↓
-render
+Window resize
+        ↓
+active/visible editor
+        ↓
+update its layout
 ```
 
-The observer should only update state when the relevant geometry actually changed.
+not:
 
-Use equality checks where necessary.
-
-For example:
-
-```ts
-if (
-  previousWidth !== width ||
-  previousHeight !== height
-) {
-  updateLayout(...)
-}
+```text
+Window resize
+        ↓
+all 50 editors
+        ↓
+all 50 perform layout calculations
 ```
 
-Do not create a continuously updating geometry loop.
+If inactive editors are hidden, determine whether their editor engines genuinely need resize processing.
 
 ---
 
-# Phase 9 — Preserve Performance
+# STEP 7 — CHECK HIDDEN TAB STRATEGY
 
-This is important.
+Inspect how inactive tabs are rendered.
 
-Lumina already handles large numbers of tabs smoothly, so do NOT solve this by introducing a global resize state that causes the entire application to re-render.
+We need to distinguish:
 
-Avoid:
-
-```ts
-useWorkspaceStore((state) => state.windowWidth)
-```
-
-inside many components unless those components genuinely need it.
-
-The resize/geometry update should be scoped to the components that actually depend on it.
-
-Prefer:
+### Strategy A
 
 ```text
-Window resize
-    ↓
-Layout container
-    ↓
-RightSidebar geometry
+All 50 editors mounted
+Only one visible
 ```
 
-rather than:
+versus:
+
+### Strategy B
 
 ```text
-Window resize
-    ↓
-global store
-    ↓
+Only active editor mounted
+Inactive documents retained as models/state
+```
+
+versus:
+
+### Strategy C
+
+```text
+All editors mounted
+Inactive editors remain alive but have their expensive view/layout work disabled
+```
+
+Do NOT automatically switch to Strategy B.
+
+The correct architecture depends on Lumina's tab/editor requirements.
+
+But determine which architecture currently exists.
+
+---
+
+# STEP 8 — LOOK FOR CASCADING WIDTH UPDATES
+
+Search for something like:
+
+```text
+window resize
+↓
+windowWidth state
+↓
 MainLayout
-    ↓
-FileExplorer
-    ↓
-Tabs
-    ↓
-Editors
-    ↓
-Graph
-    ↓
-RightSidebar
+↓
+activeTab
+↓
+all TabContentPanes
+↓
+editor width
+↓
+editor layout
 ```
 
-The maximize/restore fix must not regress the performance architecture we just established.
+Also look for Zustand selectors that subscribe to broad layout state.
+
+Bad:
+
+```ts
+useWorkspaceStore((state) => state.layout)
+```
+
+if `layout` changes during every resize.
+
+Prefer granular subscriptions where possible.
 
 ---
 
-# Phase 10 — Verify With a Stress Test
+# STEP 9 — DETERMINE IF THE MAIN THREAD IS ACTUALLY BLOCKED
 
-After implementing the fix, test all of these:
+This is essential.
 
-### Test 1 — Normal resize
+If the window is being resized and the RightSidebar appears visually wrong for 2–3 seconds, determine whether JavaScript is blocking the renderer.
 
-Drag the window edge repeatedly.
+Add a temporary heartbeat:
 
-Expected:
+```ts
+let last = performance.now()
 
-- sidebar remains correctly positioned
-- no visible jumping
-- no accumulating offset
+function heartbeat(now: number) {
+  const delta = now - last
 
-### Test 2 — Maximize
+  if (delta > 100) {
+    console.warn('[MAIN THREAD GAP]', delta)
+  }
 
-```text
-Normal
-→ Maximize
+  last = now
+  requestAnimationFrame(heartbeat)
+}
+
+requestAnimationFrame(heartbeat)
 ```
 
-Expected:
-
-- sidebar is correct immediately
-
-### Test 3 — Minimize → Restore
+If you see:
 
 ```text
-Maximized
-→ Minimize
-→ Restore
+[MAIN THREAD GAP] 2500
 ```
 
-Expected:
+then we have confirmed:
 
-- sidebar is correct on the first visible frame
-- no delayed snap
+> The renderer is blocked.
 
-### Test 4 — Maximize → Unmaximize
+At that point, stop changing sidebar positioning.
 
-```text
-Maximized
-→ Restore
-→ Maximize
-```
-
-Repeat 10–20 times.
-
-Expected:
-
-- no positional drift
-
-### Test 5 — With many tabs
-
-Keep approximately 50 tabs open.
-
-Repeat minimize/restore.
-
-Expected:
-
-- sidebar correct
-- tab performance unchanged
-
-### Test 6 — With large explorer
-
-Use a large workspace/file tree.
-
-Repeat minimize/restore.
-
-Expected:
-
-- sidebar correct
-- no explorer-wide rerender storm
-
-### Test 7 — Different sidebar widths
-
-If RightSidebar is resizable:
-
-1. Make it narrow.
-2. Make it wide.
-3. Minimize.
-4. Restore.
-5. Maximize/unmaximize repeatedly.
-
-Expected:
-
-- width preserved correctly
-- position remains correct
+Find the expensive task.
 
 ---
 
-# Acceptance Criteria
+# STEP 10 — CHECK WHETHER RESIZE TRIGGERS EDITOR CONTENT WORK
 
-The fix is complete only when:
+Look for resize-triggered operations such as:
 
-### Visual
+- Markdown parsing
+- syntax highlighting
+- document serialization
+- plugin execution
+- backlinks calculation
+- graph updates
+- search indexing
+- autosave
+- persistence
+- IPC
+- filesystem operations
 
-- RightSidebar appears in the correct position immediately after maximize/restore.
-- There is no visible "wrong position → snap into position" behavior.
-- No arbitrary timeout is required.
-- No animation is being used to hide the problem.
-- No positional drift occurs after repeated maximize/unmaximize cycles.
+A resize event should NOT cause any of those unless there is a very specific reason.
 
-### Architectural
+Resize should primarily affect:
 
-- Actual DOM/layout geometry is the source of truth where possible.
-- JavaScript measurements are only used where genuinely necessary.
-- ResizeObserver is used where appropriate for container geometry.
-- No unnecessary global resize state is introduced.
-- No polling loop is introduced.
+```text
+geometry
+layout
+paint
+```
 
-### Performance
+not:
 
-With ~50 tabs open:
+```text
+document processing
+indexing
+filesystem
+graph computation
+```
 
-- minimize/restore remains responsive
+---
+
+# STEP 11 — CHECK GRAPH
+
+Even though the graph is now very fast during normal use, determine whether it reacts to window resize.
+
+Test:
+
+```text
+10 notes
+graph closed
+
+10 notes
+graph open
+
+20 notes
+graph open
+```
+
+If the resize problem becomes significantly worse when graph/UI visualization is active, inspect its resize path.
+
+Do not assume because graph interaction is fast that its resize handler is cheap.
+
+---
+
+# STEP 12 — CHECK RIGHTSIDEBAR LAST
+
+Only after measuring the above should RightSidebar be investigated again.
+
+The sidebar may simply be doing:
+
+```text
+correct CSS layout
++
+renderer blocked
+=
+visually stale frame
+```
+
+The browser cannot paint the correct geometry while JavaScript is monopolizing the renderer.
+
+---
+
+# SUCCESS CRITERIA
+
+The fix should make resize cost approximately independent of the number of open notes.
+
+Conceptually:
+
+```text
+1 note   → cheap resize
+10 notes → nearly same resize cost
+50 notes → nearly same resize cost
+```
+
+It does NOT need to be mathematically identical.
+
+But we should NOT have:
+
+```text
+1 note   → 5ms
+10 notes → 300ms
+50 notes → 2000ms
+```
+
+That indicates resize work is scaling with editor count.
+
+---
+
+# IMPORTANT ARCHITECTURAL PRINCIPLE
+
+Opening more notes should increase:
+
+```text
+memory
+document/model count
+```
+
+but should NOT make a basic window resize increasingly expensive.
+
+The user should be able to have:
+
+```text
+50 open notes
++
+large file explorer
++
+graph
++
+right sidebar
+```
+
+and still resize the application smoothly.
+
+---
+
+# FINAL REPORT
+
+Do not report a fix until you can provide:
+
+### 1. Number of live editors
+
+```text
+1 note  → X editors
+10 notes → X editors
+50 notes → X editors
+```
+
+### 2. Resize work
+
+```text
+1 note  → X ms
+10 notes → X ms
+50 notes → X ms
+```
+
+### 3. Main-thread blocking
+
+```text
+1 note  → X ms max gap
+10 notes → X ms max gap
+50 notes → X ms max gap
+```
+
+### 4. Root cause
+
+Identify the exact component/function responsible.
+
+### 5. Fix
+
+Explain exactly what changed.
+
+### 6. Regression test
+
+Confirm:
+
+- 50 tabs remain fast
 - tab switching remains fast
-- RightSidebar correction does not trigger a broad application rerender
-- FileExplorer does not rebuild unnecessarily
-- editor panes do not all rerender
-
----
-
-# Final Report
-
-After implementing the fix, report:
-
-1. Root cause.
-2. Exact files changed.
-3. What caused the initial incorrect sidebar position.
-4. Why the sidebar subsequently snapped into place.
-5. Exact architectural fix.
-6. Whether ResizeObserver/useLayoutEffect/CSS/layout changes were required.
-7. Confirmation that no timeout/polling hack was introduced.
-8. Performance impact.
-9. Results from:
-   - maximize
-   - minimize → restore
-   - maximize ↔ unmaximize
-   - 50 open tabs
-   - large file explorer
-
-Most importantly:
-
-**Do not stop at "it looks fixed."**
-
-Identify the actual source of the stale geometry and fix that source.
-
-The target behavior is:
-
-> **Window restored → browser lays out → RightSidebar is already exactly where it belongs. No second visual correction.**
+- editor editing remains fast
+- resize is smooth
+- minimize → restore is smooth
+- RightSidebar no longer visually lags
+- MainLayout no longer gets temporarily covered

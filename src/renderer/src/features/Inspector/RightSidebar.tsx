@@ -8,7 +8,6 @@ import { useKeyboardShortcuts } from '../../core/shortcuts'
 import ToolTip from '../../components/atoms/ToolTip'
 import RightSidebarFooter from './RightSidebarFooter'
 import './NoteDetails.css'
-
 export interface RightSidebarProps {
   rightSidebarTab: string
   setRightSidebarTab: (tab: string) => void
@@ -31,6 +30,8 @@ export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
   isRightSidebarOpen,
   setIsRightSidebarOpen
 }) => {
+  const panelRef = React.useRef<HTMLDivElement | null>(null)
+
   useKeyboardShortcuts({
     onEscape: isRightSidebarOpen
       ? () => {
@@ -49,7 +50,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
   }
 
   return (
-    <div className="inspector-panel">
+    <div className="inspector-panel" ref={panelRef}>
       {/* Tab-style header */}
       <div className="panel-header-tabs inspector-tabbar">
         <div

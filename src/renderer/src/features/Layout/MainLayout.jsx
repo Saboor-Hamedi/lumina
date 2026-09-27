@@ -208,6 +208,7 @@ export const MainLayout = () => {
     isRightSidebarOpenRef.current = isRightSidebarOpen
   }, [isRightSidebarOpen])
 
+
   const updateLeftSidebarOpen = useCallback((valOrFn) => {
     const next = typeof valOrFn === 'function' ? valOrFn(isLeftSidebarOpenRef.current) : valOrFn
     isLeftSidebarOpenRef.current = next

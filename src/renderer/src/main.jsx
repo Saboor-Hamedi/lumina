@@ -12,6 +12,12 @@ const App = lazy(() => import('./App'))
 initScreenLoader()
 initDomTooltips()
 
+window.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') || e.key === 'F12') {
+    window.api?.openDevTools?.()
+  }
+})
+
 /**
  * Robust Early Theme Loader (VS Code Standard)
  * Prevents FOUC (Flash of Unstyled Content) by checking localStorage before React boots.

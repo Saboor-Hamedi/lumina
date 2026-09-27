@@ -165,8 +165,6 @@ export const Preview: React.FC<PreviewProps> = ({
         : content || ''
   }, [activeSnippet, draft, content])
 
-  if (!isOpen) return null
-
   const wordCount = useMemo(() => {
     if (!liveContent) return 0
     const clean = liveContent
@@ -175,6 +173,8 @@ export const Preview: React.FC<PreviewProps> = ({
       .trim()
     return clean ? clean.split(/\s+/).filter(Boolean).length : 0
   }, [liveContent])
+
+  if (!isOpen) return null
 
   return createPortal(
     <div className="preview-overlay-glass" onClick={onClose}>
