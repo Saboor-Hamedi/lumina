@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { Zap, Brain, Palette, Code, Check, Search, Activity } from 'lucide-react'
+import { Zap, Brain, Palette, Code, Check, Search } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import './css/luminSlash.css'
 
@@ -50,17 +50,6 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     icon: <Code size={14} />,
     action: (setMode) => setMode('Code')
   },
-  {
-    id: 'doctor',
-    label: 'Doctor',
-    desc: 'Self-diagnostics and system health check.',
-    icon: <Activity size={14} />,
-    insertText: '/doctor',
-    isAction: true,
-    action: (_setMode, context) => {
-      context?.setInput?.('/doctor')
-    }
-  }
 ]
 
 export interface LuminaSlashProps {

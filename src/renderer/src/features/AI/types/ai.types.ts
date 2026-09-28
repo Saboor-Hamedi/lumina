@@ -33,7 +33,16 @@ export interface ChatMessage {
     completion?: number
     total?: number
   }
+  responseTimeMs?: number
+  reviewChanges?: WorkspaceReviewChange[]
   [key: string]: unknown
+}
+
+export interface WorkspaceReviewChange {
+  path: string
+  action: 'created' | 'updated' | 'deleted' | 'renamed' | 'moved' | 'folder'
+  addedWords: number
+  removedWords: number
 }
 
 export interface ChatSession {

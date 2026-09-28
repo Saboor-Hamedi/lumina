@@ -40,10 +40,81 @@ import type {
   ChatSession,
   MentionItem,
   ProviderRecordUsageParams,
-  SearchNoteResult
+  SearchNoteResult,
+  WorkspaceReviewChange
 } from '../types/ai.types'
 
 let loadSessionsPromise: Promise<void> | null = null
+
+const countWords = (value: unknown): number => {
+  const text = typeof value === 'string' ? value.trim() : ''
+  return text ? text.split(/\s+/).length : 0
+}
+
+function recordWorkspaceReviewChange(
+  changes: WorkspaceReviewChange[],
+  toolName: string,
+  args: Record<string, any>,
+  result: any,
+  snippets: any[]
+): void {
+  if (!result || typeof result !== 'object' || result.success === false) return
+
+  const tool = toolName.toLowerCase()
+  let action: WorkspaceReviewChange['action'] | null = null
+  if (tool.includes('createfolder') || tool.includes('renamefolder') || tool.includes('movefolder') || tool.includes('deletefolder')) {
+    action = 'folder'
+  } else if (tool.includes('createfile')) action = 'created'
+  else if (tool.includes('deletefile')) action = 'deleted'
+  else if (tool.includes('renamefile')) action = 'renamed'
+  else if (tool.includes('movefile')) action = 'moved'
+  else if (tool.includes('updatefile') || tool.includes('appendtofile') || tool.includes('clearfile')) action = 'updated'
+  if (!action) return
+
+  const title = String(result.title || result.newTitle || args.newTitle || args.title || args.oldTitle || '').trim()
+  const note = snippets.find((item) =>
+    (result.id && item.id === result.id) ||
+    (title && String(item.title || '').toLowerCase() === title.toLowerCase())
+  )
+  const previousChange = title
+    ? changes.find((change) => change.path.toLowerCase() === title.toLowerCase() || change.path.toLowerCase().endsWith(`/${title.toLowerCase()}`))
+    : undefined
+  const previousFolder = previousChange?.path.includes('/')
+    ? previousChange.path.slice(0, previousChange.path.lastIndexOf('/'))
+    : ''
+  const rawFolder = String(
+    result.folderId ?? result.folder ?? args.folder ?? args.folderId ?? note?.folderId ?? previousFolder
+  ).trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+  const folder = /^(?:root|workspace root|vault root|project root|workspace|vault|\.)$/i.test(rawFolder)
+    ? ''
+    : rawFolder
+  const path = action === 'folder'
+    ? String(result.path || args.path || title || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+    : [folder, title].filter(Boolean).join('/')
+  if (!path) return
+
+  const summary = String(result.summary || '')
+  const diff = summary.match(/\(\+([\d,]+)(?:\s*words?)?(?:,\s*-([\d,]+))?/i)
+  const removedOnly = summary.match(/\(-([\d,]+)\)/)
+  let addedWords = Number(result.addedWords) || (diff ? parseInt(diff[1].replace(/,/g, ''), 10) : 0)
+  let removedWords = Number(result.removedWords) ||
+    (diff?.[2] ? parseInt(diff[2].replace(/,/g, ''), 10) : removedOnly ? parseInt(removedOnly[1].replace(/,/g, ''), 10) : 0)
+
+  if (action === 'created' && addedWords === 0) {
+    addedWords = countWords(result.writtenContent ?? args.content)
+  } else if (action === 'deleted' && removedWords === 0) {
+    removedWords = countWords(note?.code)
+  }
+
+  const existing = changes.find((change) => change.path.toLowerCase() === path.toLowerCase())
+  if (existing) {
+    existing.addedWords += addedWords
+    existing.removedWords += removedWords
+    if (action === 'deleted' || action === 'renamed' || action === 'moved') existing.action = action
+  } else {
+    changes.push({ path, action, addedWords, removedWords })
+  }
+}
 
 /**
  * Loads stored AI token usage metrics from browser local storage.
@@ -555,6 +626,7 @@ export const useAIStore = create<AIStore>((set, get) => {
         set({ chatError: 'Message cannot be empty.' })
         return
       }
+      const requestStartedAt = Date.now()
 
       let cleanMessage = (message || '').trim()
 
@@ -606,7 +678,14 @@ export const useAIStore = create<AIStore>((set, get) => {
             id: crypto.randomUUID(),
             role: 'assistant',
             content: `I have generated and created the file: **${topic}**. You can find it in your workspace!`,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            responseTimeMs: Date.now() - requestStartedAt,
+            reviewChanges: [{
+              path: topic,
+              action: 'created',
+              addedWords: countWords(generatedContent),
+              removedWords: 0
+            }]
           }
           const current = get().chatMessages
           current[current.length - 1] = successMsg
@@ -619,7 +698,8 @@ export const useAIStore = create<AIStore>((set, get) => {
             id: crypto.randomUUID(),
             role: 'assistant',
             content: `Failed to generate file: ${err.message}`,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            responseTimeMs: Date.now() - requestStartedAt
           }
           set({ chatMessages: [...current], isChatLoading: false })
         }
@@ -948,9 +1028,20 @@ export const useAIStore = create<AIStore>((set, get) => {
         configuredProviderType === 'ollama' &&
         /\b(?:create|make|write|generate|scaffold|add)\b.{0,80}\b(?:file|folder|note|document|project|directory)\b/i.test(cleanMessage) &&
         !/\b(?:let'?s talk|just talk|talk first|don'?t write|do not write|don'?t create|do not create|no files?(?: yet)?|don'?t save|do not save|just discuss|discuss first|keep (?:it )?in chat|without (?:writing|creating|saving)|how (?:do i|can i|to)|explain|teach me)\b/i.test(cleanMessage)
+      const isOllamaProductQuestion =
+        configuredProviderType === 'ollama' &&
+        /\b(?:lumina|shortcut|documentation|guide|markdown|mermaid|latex|badge|callout|syntax|features|capabilities)\b/i.test(cleanMessage)
+      const isOllamaWorkspaceRequest =
+        configuredProviderType === 'ollama' &&
+        (isOllamaCreationRequest ||
+          attachedMentions.length > 0 ||
+          requestedFiles.length > 0 ||
+          /\b(?:workspace|vault|file|files|note|notes|folder|folders|directory|directories|tag|tags|wikilink|backlink|search|find|read|rename|move|update|append|delete|clear|open|save|write|create|doctor|docker|health|diagnostic|audit|index|memory|remember)\b/i.test(cleanMessage))
+      const isCompactOllamaConversation =
+        configuredProviderType === 'ollama' && !isOllamaWorkspaceRequest && !isOllamaProductQuestion
 
       const requestedBrainDocs: any[] = []
-      if (!isOllamaCreationRequest) {
+      if (!isOllamaCreationRequest && (!isCompactOllamaConversation || isOllamaProductQuestion)) {
         try {
           const { retrieveRelevantKnowledge } = await import('../services/brainKnowledge')
           const brainQuery = cleanMessage.replace(/^\/brain\s*/i, '').trim() || cleanMessage
@@ -968,7 +1059,8 @@ export const useAIStore = create<AIStore>((set, get) => {
 
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller?.abort(), 180000)
-      const startTime = Date.now()
+      const startTime = requestStartedAt
+      const reviewChanges: WorkspaceReviewChange[] = []
 
       set({
         chatMessages: [...newHistory, assistantMsg],
@@ -979,8 +1071,9 @@ export const useAIStore = create<AIStore>((set, get) => {
       })
 
       try {
-        const { vaultContext, vaultAccessNote } = isOllamaCreationRequest
-          ? { vaultContext: [], vaultAccessNote: 'Use workspace tools to complete the requested creation.' }
+        const { vaultContext, vaultAccessNote } =
+          isOllamaCreationRequest || isCompactOllamaConversation || isOllamaProductQuestion
+          ? { vaultContext: [], vaultAccessNote: 'No workspace retrieval is needed for this request.' }
           : await retrieveWorkspaceRAG(cleanMessage)
         const modeCfg = getAIMode(mode)
         const detectedIntent = detectUserIntent(
@@ -1047,6 +1140,8 @@ export const useAIStore = create<AIStore>((set, get) => {
         const provider = AIProviderFactory.createProvider(providerType, { apiKey, baseUrl })
         const providerSystemPrompt = isOllamaCreationRequest
           ? `You are Lumina, an assistant that can create items in this workspace using the provided tools. Follow the user's requested name and content. Create files at the workspace root unless the user explicitly names a destination folder. The workspace root is an empty folder value; never create a folder named "root" to mean the root. Invoke createFile for every requested file and createFolder only for folders the user explicitly requested. Confirm only after the tool succeeds. If native tools are unavailable, emit exact <createFile title="Name" folder="">content</createFile> or <createFolder path="Folder"></createFolder> blocks.`
+          : isCompactOllamaConversation
+            ? `You are Lumina, a helpful conversational assistant. Active mode: ${modeCfg.name}. ${modeCfg.systemAddon || ''}\nAnswer the user's actual question directly in plain language. Keep responses concise unless the user asks for detail. Never claim to change workspace files unless a workspace tool has actually succeeded. Never reveal credentials, API keys, or secrets.`
           : providerType === 'ollama'
           ? `${systemPrompt}\n\nLOCAL TOOL-CALL COMPATIBILITY:\nUse the provided native tools whenever available. If this Ollama model cannot issue native tool calls, you MUST still perform requested workspace creation by emitting exact fallback blocks: <createFolder path="Folder/Path"></createFolder> and <createFile title="Note Title" folder="Folder/Path">complete markdown content</createFile>. Omit the folder attribute for root-level notes. Emit one createFile block per requested note. Do not merely describe the files in chat.`
           : systemPrompt
@@ -1104,6 +1199,10 @@ export const useAIStore = create<AIStore>((set, get) => {
           sdkTools = Object.fromEntries(
             Object.entries(sdkTools).filter(([name]) => name === 'createFile' || name === 'createFolder')
           )
+        } else if (isCompactOllamaConversation) {
+          // Ordinary local conversation has no workspace actions; omit the
+          // large mutation-tool schema bundle to reduce Ollama prompt prefill.
+          sdkTools = getMemoryTools()
         }
 
         const handleContentUpdate = (content: string) => {
@@ -1119,6 +1218,9 @@ export const useAIStore = create<AIStore>((set, get) => {
         const handleThinkingStatusUpdate = (status: string) => {
           set({ activeThinkingStatus: status })
         }
+        const handleToolActivity = (toolName: string, args: Record<string, any>, result: any) => {
+          recordWorkspaceReviewChange(reviewChanges, toolName, args, result, allSnippets)
+        }
 
         let streamRes: any = null
         if (providerType === 'deepseek') {
@@ -1131,7 +1233,8 @@ export const useAIStore = create<AIStore>((set, get) => {
             controller,
             sdkTools,
             onContentUpdate: handleContentUpdate,
-            onThinkingStatusUpdate: handleThinkingStatusUpdate
+            onThinkingStatusUpdate: handleThinkingStatusUpdate,
+            onToolActivity: handleToolActivity
           })
         } else {
           const fullContent = await runFallbackProviderStream({
@@ -1143,10 +1246,11 @@ export const useAIStore = create<AIStore>((set, get) => {
             controller,
             sdkTools,
             onContentUpdate: handleContentUpdate,
-            onThinkingStatusUpdate: handleThinkingStatusUpdate
+            onThinkingStatusUpdate: handleThinkingStatusUpdate,
+            onToolActivity: handleToolActivity
           })
 
-          const cleanedContent = await applyLegacyMarkdownBlocks(fullContent, vs)
+          const cleanedContent = await applyLegacyMarkdownBlocks(fullContent, vs, handleToolActivity)
           handleContentUpdate(cleanedContent)
         }
 
@@ -1213,6 +1317,14 @@ export const useAIStore = create<AIStore>((set, get) => {
         if (timeoutId) clearTimeout(timeoutId)
         set((state) => {
           const msgs = [...state.chatMessages]
+          const responseIndex = msgs.findIndex((msg) => msg.id === assistantMsg.id)
+          if (responseIndex !== -1) {
+            msgs[responseIndex] = {
+              ...msgs[responseIndex],
+              responseTimeMs: Date.now() - startTime,
+              reviewChanges: reviewChanges.map((change) => ({ ...change }))
+            }
+          }
           if (msgs.length > 0) {
             const lastIdx = msgs.length - 1
             if (msgs[lastIdx].role === 'assistant') {
@@ -1231,6 +1343,7 @@ export const useAIStore = create<AIStore>((set, get) => {
             chatController: null
           }
         })
+        await get().saveChatHistory()
       }
     }
   }

@@ -42,6 +42,78 @@ function serializeToolResult(result: unknown): string {
   }
 }
 
+/** Turn the app's request-scoped IPC events into a renderer ReadableStream. */
+function createIpcOllamaResponse(api: any, payload: Record<string, any>, signal?: AbortSignal): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    const requestId = crypto.randomUUID()
+    const encoder = new TextEncoder()
+    let streamController: ReadableStreamDefaultController<Uint8Array> | null = null
+    let responseCreated = false
+    let unsubscribe = () => {}
+    let abortHandler: (() => void) | null = null
+
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        streamController = controller
+      },
+      cancel() {
+        unsubscribe()
+        api.cancelOllamaChat?.(requestId)
+      }
+    })
+
+    const cleanup = () => {
+      unsubscribe()
+      if (abortHandler) signal?.removeEventListener('abort', abortHandler)
+    }
+
+    unsubscribe = api.onOllamaChatEvent((event: any) => {
+      if (event?.requestId !== requestId) return
+
+      if (event.type === 'headers' && !responseCreated) {
+        responseCreated = true
+        resolve(new Response(stream, { status: event.status || 200 }))
+        return
+      }
+      if (event.type === 'chunk' && typeof event.chunk === 'string') {
+        try {
+          streamController?.enqueue(encoder.encode(event.chunk))
+        } catch (_) {}
+        return
+      }
+      if (event.type === 'done') {
+        cleanup()
+        try {
+          streamController?.close()
+        } catch (_) {}
+      }
+    })
+
+    abortHandler = () => {
+      cleanup()
+      api.cancelOllamaChat?.(requestId)
+      const error = new DOMException('The Ollama request was aborted.', 'AbortError')
+      if (!responseCreated) reject(error)
+      else {
+        try {
+          streamController?.error(error)
+        } catch (_) {}
+      }
+    }
+    if (signal?.aborted) {
+      abortHandler()
+      return
+    }
+    signal?.addEventListener('abort', abortHandler, { once: true })
+
+    Promise.resolve(api.startOllamaChat({ ...payload, requestId })).catch((error: any) => {
+      cleanup()
+      if (!responseCreated) reject(error)
+      else streamController?.error(error)
+    })
+  })
+}
+
 /**
  * Normalizes Ollama endpoint URLs to ensure they use IPv4 (127.0.0.1)
  * to avoid Windows IPv6 localhost ([::1]) binding issues, and targets the `/api/chat` endpoint.
@@ -131,6 +203,17 @@ export class OllamaProvider extends BaseProvider {
           if (err?.name === 'AbortError') throw err
           rendererConnectionError = err?.message || String(err)
         }
+      } else if (typeof api?.startOllamaChat === 'function' && typeof api?.onOllamaChatEvent === 'function') {
+        response = await createIpcOllamaResponse(api, {
+          url: chatUrl,
+          model: targetModel,
+          messages: conversation,
+          tools: ollamaTools.length ? ollamaTools : undefined,
+          options: {
+            temperature: options.temperature ?? 0.7,
+            num_predict: options.max_tokens || 4096
+          }
+        }, options.signal)
       }
 
       let assistantMessage: Record<string, any> = { role: 'assistant', content: '' }
@@ -173,20 +256,24 @@ export class OllamaProvider extends BaseProvider {
           const detail = (await response.text().catch(() => '')).slice(0, 800)
           const modelRejectsTools = /(?:does not support|doesn't support|unsupported|not supported)[^\n]*tools/i.test(detail)
           if (response.status === 400 && ollamaTools.length > 0 && modelRejectsTools) {
-            response = await fetch(chatUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                model: targetModel,
-                messages: conversation,
-                stream: true,
-                options: {
-                  temperature: options.temperature ?? 0.7,
-                  num_predict: options.max_tokens || 4096
-                }
-              }),
-              signal: options.signal
-            })
+            const retryPayload = {
+              url: chatUrl,
+              model: targetModel,
+              messages: conversation,
+              tools: undefined,
+              options: {
+                temperature: options.temperature ?? 0.7,
+                num_predict: options.max_tokens || 4096
+              }
+            }
+            response = useElectronBridge && typeof api?.startOllamaChat === 'function'
+              ? await createIpcOllamaResponse(api, retryPayload, options.signal)
+              : await fetch(chatUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ ...retryPayload, stream: true }),
+                  signal: options.signal
+                })
           } else if (response.status === 404) {
             throw new Error(
               `Model "${targetModel}" was not found in Ollama. Pull it in terminal with "ollama pull ${targetModel}" or select an installed model in Settings.`

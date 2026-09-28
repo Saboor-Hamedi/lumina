@@ -497,6 +497,7 @@ export interface RunDeepSeekStreamParams {
   sdkTools: Record<string, any>
   onContentUpdate: (content: string) => void
   onThinkingStatusUpdate: (status: string) => void
+  onToolActivity?: (toolName: string, args: Record<string, any>, result: any) => void
 }
 
 export const runDeepSeekStream = async ({
@@ -508,7 +509,8 @@ export const runDeepSeekStream = async ({
   controller,
   sdkTools,
   onContentUpdate,
-  onThinkingStatusUpdate
+  onThinkingStatusUpdate,
+  onToolActivity
 }: RunDeepSeekStreamParams): Promise<{ usage: any }> => {
   const { aiSdk: sdk, createDeepseekProvider: createDs } = await ensureAISdk()
 
@@ -898,6 +900,9 @@ export const runDeepSeekStream = async ({
     if (toolResults.length > 0) {
       toolResults.forEach((t: any) => {
         const res = t.output || t.result
+        const toolName = t.toolName || t.name || t.toolCall?.toolName || ''
+        const toolArgs = t.input || t.args || t.toolCall?.args || {}
+        if (toolName) onToolActivity?.(toolName, toolArgs, res)
         const sum = res?.summary
         if (sum && !timeline.some((s) => s.type === 'activity' && s.summary === sum)) {
           timeline.push({ type: 'activity', summary: sum, activeStatus: '', isExecuting: false })
@@ -1009,6 +1014,7 @@ export interface RunFallbackProviderStreamParams {
   sdkTools?: Record<string, any>
   onContentUpdate: (content: string) => void
   onThinkingStatusUpdate: (status: string) => void
+  onToolActivity?: (toolName: string, args: Record<string, any>, result: any) => void
 }
 
 export const runFallbackProviderStream = async ({
@@ -1020,7 +1026,8 @@ export const runFallbackProviderStream = async ({
   controller,
   sdkTools,
   onContentUpdate,
-  onThinkingStatusUpdate
+  onThinkingStatusUpdate,
+  onToolActivity
 }: RunFallbackProviderStreamParams): Promise<string> => {
   let fullContent = ''
   const providerMessages = systemPrompt
@@ -1033,6 +1040,7 @@ export const runFallbackProviderStream = async ({
     signal: controller.signal,
     tools: sdkTools,
     onToolActivity: (toolName: string, args: Record<string, any>, result: any) => {
+      if (result) onToolActivity?.(toolName, args, result)
       const target = args?.title || args?.path || args?.oldTitle || ''
       onThinkingStatusUpdate(
         result
@@ -1075,7 +1083,11 @@ export const runFallbackProviderStream = async ({
   return fullContent
 }
 
-export const applyLegacyMarkdownBlocks = async (fullContent: string, workspaceStore: any): Promise<string> => {
+export const applyLegacyMarkdownBlocks = async (
+  fullContent: string,
+  workspaceStore: any,
+  onWorkspaceChange?: (toolName: string, args: Record<string, any>, result: any) => void
+): Promise<string> => {
   const normalizeWorkspaceFolder = (value?: string): string => {
     const folder = (value || '').trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
     return /^(?:root|workspace root|vault root|project root|workspace|vault|\.)$/i.test(folder) ? '' : folder
@@ -1085,6 +1097,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent: string, workspaceSt
     .replace(/<think>[\s\S]*$/gi, '')
   const allNotes = workspaceStore.notes || []
   let appliedCreations = 0
+  let appliedFolders = 0
   let appliedUpdates = 0
   let appliedDeletions = 0
 
@@ -1149,6 +1162,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent: string, workspaceSt
     }
     await workspaceStore.saveNote(newNote)
     appliedCreations++
+    onWorkspaceChange?.('createFile', { title, content }, { success: true, ...newNote, writtenContent: content })
   }
 
   // 1b. Fallback XML pseudo tags: <createFile title="..." ...>content</createFile>
@@ -1179,6 +1193,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent: string, workspaceSt
       }
       await workspaceStore.saveNote(newNote)
       appliedCreations++
+      onWorkspaceChange?.('createFile', { title, folder: folderId, content }, { success: true, ...newNote, writtenContent: content })
     }
   }
 
@@ -1191,6 +1206,8 @@ export const applyLegacyMarkdownBlocks = async (fullContent: string, workspaceSt
     if (folderPath && (window as any).api?.createFolder) {
       try {
         await (window as any).api.createFolder(folderPath)
+        appliedFolders++
+        onWorkspaceChange?.('createFolder', { path: folderPath }, { success: true, path: folderPath })
       } catch (_) {}
     }
   }
@@ -1289,7 +1306,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent: string, workspaceSt
   }
 
   // Strip tool blocks from chat display if any were applied
-  if (appliedCreations > 0 || appliedUpdates > 0 || appliedDeletions > 0) {
+  if (appliedCreations > 0 || appliedFolders > 0 || appliedUpdates > 0 || appliedDeletions > 0) {
     const prefixes = ['```lumina-create ', '```lumina-update ']
     let text = fullContent
     for (const prefix of prefixes) {
@@ -1297,13 +1314,16 @@ export const applyLegacyMarkdownBlocks = async (fullContent: string, workspaceSt
       text = text.replace(new RegExp(escaped + '[^\\n]*\\n[\\s\\S]*?\\n```', 'g'), '')
     }
     text = text.replace(/<create(?:File|_file)[\s\S]*?<\/create(?:File|_file)>/gi, '')
-    text = text.replace(/<create(?:Folder|_folder)[^>]*>/gi, '')
+    // Remove both sides of XML-style fallback tool blocks. Previously the
+    // opening tag was stripped while a model's closing </createFolder> leaked.
+    text = text.replace(/<\/?create(?:Folder|_folder)[^>]*>/gi, '')
     text = text.replace(/```lumina-delete\s+[^\n]+```\n?/g, '')
     text = text.replace(/\n{4,}/g, '\n\n\n').trim()
 
     if (!text || text.length < 20) {
       const parts = []
       if (appliedCreations > 0) parts.push(`${appliedCreations} file(s) about your request`)
+      if (appliedFolders > 0) parts.push(`${appliedFolders} ${appliedFolders === 1 ? 'folder' : 'folders'}`)
       if (appliedUpdates > 0) parts.push(`${appliedUpdates} file(s) updated`)
       if (appliedDeletions > 0) parts.push(`Deleted`)
       return `I've ${parts.join(' and ')}. You can find them in your workspace!`

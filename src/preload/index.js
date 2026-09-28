@@ -1,4 +1,4 @@
-import { contextBridge, webUtils } from 'electron'
+import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 const api = {
@@ -85,6 +85,13 @@ const api = {
   },
   getOllamaModels: (rawUrl) => electronAPI.ipcRenderer.invoke('ollama:getModels', rawUrl),
   chatOllama: (payload) => electronAPI.ipcRenderer.invoke('ollama:chat', payload),
+  startOllamaChat: (payload) => ipcRenderer.send('ollama:chat-stream', payload),
+  cancelOllamaChat: (requestId) => ipcRenderer.send('ollama:chat-cancel', requestId),
+  onOllamaChatEvent: (callback) => {
+    const listener = (_, event) => callback(event)
+    ipcRenderer.on('ollama:chat-event', listener)
+    return () => ipcRenderer.removeListener('ollama:chat-event', listener)
+  },
 
   loadMemory: () => electronAPI.ipcRenderer.invoke('memory:load'),
   saveMemory: (memory) => electronAPI.ipcRenderer.invoke('memory:save', memory),

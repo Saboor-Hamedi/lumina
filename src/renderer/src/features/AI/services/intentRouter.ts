@@ -29,8 +29,14 @@ export const detectUserIntent = (
 ): IntentCategoryType => {
   const clean = (message || '').trim().toLowerCase()
 
+  const conversationalOverridePatterns =
+    /\b(let'?s talk|just talk|talk first|don'?t write|do not write|don'?t create|do not create|don'?t run|do not run|no files?(?: yet)?|don'?t save|do not save|just discuss|discuss first|in chat(?: only)?|brainstorm(?:ing)? (?:in|only in) chat|keep (?:it )?in chat|without (?:writing|creating|saving))\b/i
+  if (conversationalOverridePatterns.test(clean)) {
+    return IntentCategory.CONVERSATIONAL_EXPLAIN
+  }
+
   const diagnosticPatterns =
-    /(?:^|\s)\/(?:doctor|docker)\b|\b(check yourself|run diagnostics|test (?:your )?health|system health|diagnostics?|check health|health check|tell me about (?:your|you|lumina) health|how is your health|what is your health|you run (?:the )?(?:\/)?(?:doctor|docker)|run (?:the )?(?:doctor|docker)|your health|status of (?:the )?system|system status|how are you performing|check (?:your )?status|docker|doctor|lumina health)\b/i
+    /(?:^|\s)\/(?:doctor|docker)\b|\b(check yourself|run diagnostics|test (?:your )?health|system health|system check|diagnostics?|check health|health check|tell me about (?:your|you|lumina) health|how is your health|what is your health|you run (?:the )?(?:\/)?(?:doctor|docker)|run (?:the )?(?:doctor|docker)|your health|status of (?:the )?system|system status|how are you performing|check (?:your )?status|(?:check|inspect|diagnose) (?:lumina|the app|this app|the system)|is lumina (?:healthy|okay|ok|working|running)|docker|doctor|lumina health)\b/i
 
   if (diagnosticPatterns.test(clean)) {
     return IntentCategory.DIAGNOSTICS
@@ -61,13 +67,6 @@ export const detectUserIntent = (
     /(?:^|\s)\/brain\b|\b(lumina (?:docs|documentation|shortcuts|specs|guides?|badges?|capabilities|features)|what are (?:the )?(?:lumina )?badges|tell me about (?:lumina )?badges|lumina badges?|keyboard shortcuts|shortcut keys|how to use lumina|what are (?:the )?shortcuts|tell me about shortcuts|what is lumina|lumina's vision|lumina philosophy|what can you do|what are your capabilities|what tools do you have)\b/i
 
   if (brainPatterns.test(clean)) {
-    return IntentCategory.CONVERSATIONAL_EXPLAIN
-  }
-
-  const conversationalOverridePatterns =
-    /\b(let'?s talk|just talk|talk first|don'?t write|do not write|don'?t create|do not create|no files?( yet)?|don'?t save|do not save|just discuss|discuss first|in chat( only)?|brainstorm(ing)? (in|only in) chat|keep (it )?in chat|without (writing|creating|saving))\b/i
-
-  if (conversationalOverridePatterns.test(clean)) {
     return IntentCategory.CONVERSATIONAL_EXPLAIN
   }
 

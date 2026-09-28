@@ -5,6 +5,7 @@
 .lumina-memory-block-wrap {
   display: block;
   margin: 4px 0 8px;
+  width: 100%;
 }
 
 .lumina-memory-badge {
@@ -19,7 +20,8 @@
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
   user-select: none;
   animation: fadeInMemoryBadge 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  width: fit-content;
+  width: 100%;
+  box-sizing: border-box;
   cursor: default;
   transition: all 0.15s ease;
   vertical-align: middle;
