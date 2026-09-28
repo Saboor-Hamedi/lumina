@@ -390,6 +390,14 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
         return
       }
 
+      // Toggle the right sidebar directly to its outline pane.
+      if (matchesShortcut(e, getKey('toggleOutline')) && shortcutsRef.current.onToggleOutline) {
+        e.preventDefault()
+        e.stopPropagation()
+        shortcutsRef.current.onToggleOutline()
+        return
+      }
+
       // Graph View
       if (matchesShortcut(e, getKey('graphView')) && shortcutsRef.current.onToggleGraph) {
         e.preventDefault()

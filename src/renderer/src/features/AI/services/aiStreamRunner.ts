@@ -1076,6 +1076,10 @@ export const runFallbackProviderStream = async ({
 }
 
 export const applyLegacyMarkdownBlocks = async (fullContent: string, workspaceStore: any): Promise<string> => {
+  const normalizeWorkspaceFolder = (value?: string): string => {
+    const folder = (value || '').trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+    return /^(?:root|workspace root|vault root|project root|workspace|vault|\.)$/i.test(folder) ? '' : folder
+  }
   const contentOutsideThink = (fullContent || '')
     .replace(/<think>[\s\S]*?<\/think>/gi, '')
     .replace(/<think>[\s\S]*$/gi, '')
@@ -1155,7 +1159,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent: string, workspaceSt
   ]
   for (const match of xmlCreateMatches) {
     const title = match[1].trim()
-    const folderId = (match[2] || '').trim()
+    const folderId = normalizeWorkspaceFolder(match[2])
     const content = match[3].trim()
 
     if (title && !createMatches.some((c) => c.title === title)) {
@@ -1183,7 +1187,7 @@ export const applyLegacyMarkdownBlocks = async (fullContent: string, workspaceSt
     ...contentOutsideThink.matchAll(/<create(?:Folder|_folder)\s+path=["']([^"']+)["'][^>]*>/gi)
   ]
   for (const match of xmlFolderMatches) {
-    const folderPath = match[1].trim()
+    const folderPath = normalizeWorkspaceFolder(match[1])
     if (folderPath && (window as any).api?.createFolder) {
       try {
         await (window as any).api.createFolder(folderPath)

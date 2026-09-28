@@ -943,14 +943,21 @@ export const useAIStore = create<AIStore>((set, get) => {
 
       const mentionedSnippets = resolveMentions(cleanMessage, attachedMentions, allSnippets)
       const requestedFiles = resolveReferencedFiles(cleanMessage, allSnippets, mentionedSnippets)
+      const { providerType: configuredProviderType } = resolveProviderConfig(settingsObj)
+      const isOllamaCreationRequest =
+        configuredProviderType === 'ollama' &&
+        /\b(?:create|make|write|generate|scaffold|add)\b.{0,80}\b(?:file|folder|note|document|project|directory)\b/i.test(cleanMessage) &&
+        !/\b(?:let'?s talk|just talk|talk first|don'?t write|do not write|don'?t create|do not create|no files?(?: yet)?|don'?t save|do not save|just discuss|discuss first|keep (?:it )?in chat|without (?:writing|creating|saving)|how (?:do i|can i|to)|explain|teach me)\b/i.test(cleanMessage)
 
       const requestedBrainDocs: any[] = []
-      try {
-        const { retrieveRelevantKnowledge } = await import('../services/brainKnowledge')
-        const brainQuery = cleanMessage.replace(/^\/brain\s*/i, '').trim() || cleanMessage
-        const matches = await retrieveRelevantKnowledge(brainQuery, 3)
-        if (matches?.length > 0) requestedBrainDocs.push(...matches)
-      } catch (_) {}
+      if (!isOllamaCreationRequest) {
+        try {
+          const { retrieveRelevantKnowledge } = await import('../services/brainKnowledge')
+          const brainQuery = cleanMessage.replace(/^\/brain\s*/i, '').trim() || cleanMessage
+          const matches = await retrieveRelevantKnowledge(brainQuery, 3)
+          if (matches?.length > 0) requestedBrainDocs.push(...matches)
+        } catch (_) {}
+      }
 
       const assistantMsg: ChatMessage = {
         id: crypto.randomUUID(),
@@ -972,7 +979,9 @@ export const useAIStore = create<AIStore>((set, get) => {
       })
 
       try {
-        const { vaultContext, vaultAccessNote } = await retrieveWorkspaceRAG(cleanMessage)
+        const { vaultContext, vaultAccessNote } = isOllamaCreationRequest
+          ? { vaultContext: [], vaultAccessNote: 'Use workspace tools to complete the requested creation.' }
+          : await retrieveWorkspaceRAG(cleanMessage)
         const modeCfg = getAIMode(mode)
         const detectedIntent = detectUserIntent(
           cleanMessage,
@@ -1036,7 +1045,9 @@ export const useAIStore = create<AIStore>((set, get) => {
         const { providerType, activeModel, apiKey, baseUrl } =
           resolveProviderConfig(settingsObj)
         const provider = AIProviderFactory.createProvider(providerType, { apiKey, baseUrl })
-        const providerSystemPrompt = providerType === 'ollama'
+        const providerSystemPrompt = isOllamaCreationRequest
+          ? `You are Lumina, an assistant that can create items in this workspace using the provided tools. Follow the user's requested name and content. Create files at the workspace root unless the user explicitly names a destination folder. The workspace root is an empty folder value; never create a folder named "root" to mean the root. Invoke createFile for every requested file and createFolder only for folders the user explicitly requested. Confirm only after the tool succeeds. If native tools are unavailable, emit exact <createFile title="Name" folder="">content</createFile> or <createFolder path="Folder"></createFolder> blocks.`
+          : providerType === 'ollama'
           ? `${systemPrompt}\n\nLOCAL TOOL-CALL COMPATIBILITY:\nUse the provided native tools whenever available. If this Ollama model cannot issue native tool calls, you MUST still perform requested workspace creation by emitting exact fallback blocks: <createFolder path="Folder/Path"></createFolder> and <createFile title="Note Title" folder="Folder/Path">complete markdown content</createFile>. Omit the folder attribute for root-level notes. Emit one createFile block per requested note. Do not merely describe the files in chat.`
           : systemPrompt
 
@@ -1085,6 +1096,14 @@ export const useAIStore = create<AIStore>((set, get) => {
           !isConversationalOverride
         ) {
           sdkTools = getAITools(blockReadFile, isOpenIntent)
+        }
+        if (isOllamaCreationRequest) {
+          // Reduce local model prefill to the small set of schemas needed for
+          // creation requests. Other Ollama tasks and all other providers keep
+          // the full tool set.
+          sdkTools = Object.fromEntries(
+            Object.entries(sdkTools).filter(([name]) => name === 'createFile' || name === 'createFolder')
+          )
         }
 
         const handleContentUpdate = (content: string) => {

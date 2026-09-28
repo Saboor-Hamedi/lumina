@@ -677,6 +677,14 @@ export const MainLayout = () => {
     onToggleAIChat: () => handleToggleAIChat(),
     onToggleSidebar: () => updateLeftSidebarOpen((prev) => !prev),
     onToggleInspector: handleToggleInspector,
+    onToggleOutline: () => {
+      if (isRightSidebarOpenRef.current && rightSidebarTabRef.current === 'outline') {
+        updateRightSidebarOpen(false)
+      } else {
+        setRightSidebarTab('outline')
+        updateRightSidebarOpen(true)
+      }
+    },
     onToggleCanvasDrawer: () => {
       window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))
     },

@@ -50,6 +50,7 @@ export interface KeyboardShortcutHandlers {
   onRevealInExplorer?: () => void
   onRename?: () => void
   onToggleInspector?: () => void
+  onToggleOutline?: () => void
   onToggleGraph?: () => void
   onCloseTab?: () => void
   onCloseWindow?: () => void

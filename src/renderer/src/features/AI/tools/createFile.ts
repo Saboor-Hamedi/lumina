@@ -21,7 +21,7 @@ export const createFileTool = aiSdk.tool({
       folder: {
         type: 'string',
         description:
-          'Optional. The destination folder name or path to create the file in (e.g., "Science", "Projects/Frontend", "Mathematics"). If root level, leave empty or undefined.'
+          'Optional workspace-relative destination folder (e.g. "Science" or "Projects/Frontend"). For the workspace root, leave empty or omit this field; do not use "root" as a folder name.'
       }
     },
     required: ['title', 'content']
@@ -38,6 +38,11 @@ export const createFileTool = aiSdk.tool({
         .replace(/\\/g, '/')
         .replace(/^\/+|\/+$/g, '')
 
+      // Treat common model-generated root aliases as the workspace root.
+      if (/^(?:root|workspace root|vault root|project root|workspace|vault|\.)$/i.test(rawFolder)) {
+        rawFolder = ''
+      }
+
       let cleanTitle = rawTitle
       // If title itself has a folder path (e.g. "Database/Schema/Introduction" or "Database/Schema")
       if (rawTitle.includes('/')) {
@@ -49,7 +54,9 @@ export const createFileTool = aiSdk.tool({
       }
 
       cleanTitle = cleanTitle.trim() || 'Untitled'
-      const cleanFolder = rawFolder.replace(/^\/+|\/+$/g, '')
+      const cleanFolder = /^(?:root|workspace root|vault root|project root|workspace|vault|\.)$/i.test(rawFolder)
+        ? ''
+        : rawFolder.replace(/^\/+|\/+$/g, '')
 
       const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
       const vs = (useWorkspaceStore as any).getState()
