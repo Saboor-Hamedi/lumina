@@ -1003,8 +1003,10 @@ export interface RunFallbackProviderStreamParams {
   provider: any
   activeModel?: string | null
   finalMessages: any[]
+  systemPrompt?: string
   modeCfg: AIModeConfig
   controller: AbortController
+  sdkTools?: Record<string, any>
   onContentUpdate: (content: string) => void
   onThinkingStatusUpdate: (status: string) => void
 }
@@ -1013,17 +1015,31 @@ export const runFallbackProviderStream = async ({
   provider,
   activeModel,
   finalMessages,
+  systemPrompt,
   modeCfg,
   controller,
+  sdkTools,
   onContentUpdate,
   onThinkingStatusUpdate
 }: RunFallbackProviderStreamParams): Promise<string> => {
   let fullContent = ''
-  const stream = provider.chatStream(finalMessages, {
+  const providerMessages = systemPrompt
+    ? [{ role: 'system', content: systemPrompt }, ...finalMessages]
+    : finalMessages
+  const stream = provider.chatStream(providerMessages, {
     model: activeModel,
     temperature: modeCfg.temperature,
     max_tokens: modeCfg.max_tokens,
-    signal: controller.signal
+    signal: controller.signal,
+    tools: sdkTools,
+    onToolActivity: (toolName: string, args: Record<string, any>, result: any) => {
+      const target = args?.title || args?.path || args?.oldTitle || ''
+      onThinkingStatusUpdate(
+        result
+          ? getToolResultThought(toolName, result, target)
+          : getToolStatusDescription(toolName, args)
+      )
+    }
   })
 
   let rafId: number | null = null

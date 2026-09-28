@@ -136,7 +136,7 @@ const getCachedSession = () => {
     const validTabs = openTabs.filter(
       (id) => id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || noteIdSet.has(id)
     )
-    const validPinned = pinnedTabIds.filter((id) => validTabs.includes(id))
+    const validPinned = pinnedTabIds.filter((id) => validTabs.includes(id)).slice(0, 1)
     const activeTabId =
       lastNoteId && validTabs.includes(lastNoteId) ? lastNoteId : validTabs[0] || null
     const selectedNote =
@@ -203,7 +203,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
           id === LUMINA_TAB_ID ||
           allNotes.some((idMatch) => idMatch.id === id)
       )
-      const validPinned = pinnedIds.filter((id) => validTabs.includes(id))
+      const validPinned = pinnedIds.filter((id) => validTabs.includes(id)).slice(0, 1)
 
       const validActiveId = activeId && validTabs.includes(activeId) ? activeId : null
       const finalActiveId = validActiveId || (validTabs.length ? validTabs[0] : null)
@@ -339,6 +339,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
       return {
         openTabs: nextTabs,
+        pinnedTabIds: state.pinnedTabIds.filter((tabId) => nextTabs.includes(tabId)),
         activeTabId: nextActiveId,
         selectedNote: nextSelected,
         selectedSnippet: nextSelected
@@ -362,6 +363,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       const nextSelected = allNotes.find((n) => n.id === keepId) || null
       return {
         openTabs: [keepId],
+        pinnedTabIds: state.pinnedTabIds.includes(keepId) ? [keepId] : [],
         activeTabId: nextActiveId,
         selectedNote: nextSelected,
         selectedSnippet: nextSelected
@@ -381,6 +383,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       const nextSelected = allNotes.find((n) => n.id === nextActiveId) || null
       return {
         openTabs: nextTabs,
+        pinnedTabIds: state.pinnedTabIds.filter((tabId) => nextTabs.includes(tabId)),
         activeTabId: nextActiveId,
         selectedNote: nextSelected,
         selectedSnippet: nextSelected
@@ -406,9 +409,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   togglePinTab: (id: string) => {
     set((state) => {
       const isPinned = state.pinnedTabIds.includes(id)
-      const nextPinned = isPinned
-        ? state.pinnedTabIds.filter((pid) => pid !== id)
-        : [...state.pinnedTabIds, id]
+      // Tabs use a single pinned slot. Pinning another tab replaces the
+      // previous one; unpinning the current tab leaves the slot empty.
+      const nextPinned = isPinned ? [] : [id]
 
       const pinnedSet = new Set(nextPinned)
       const pTabs = state.openTabs.filter((tid) => pinnedSet.has(tid))
@@ -448,7 +451,10 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       }
     }),
 
-  setPinnedTabs: (pinnedTabIds: string[]) => set({ pinnedTabIds }),
+  setPinnedTabs: (pinnedTabIds: string[]) =>
+    set((state) => ({
+      pinnedTabIds: pinnedTabIds.filter((id) => state.openTabs.includes(id)).slice(0, 1)
+    })),
 
   setLoading: (isLoading: boolean) => set({ isLoading }),
   setSearchQuery: (query: string) => set({ searchQuery: query }),
@@ -546,7 +552,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
           const validTabs = persistedOpenTabs.filter(
             (id) => id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || noteIdSet.has(id)
           )
-          const validPinned = persistedPinnedTabs.filter((id) => validTabs.includes(id))
+          const validPinned = persistedPinnedTabs.filter((id) => validTabs.includes(id)).slice(0, 1)
           const validActiveId =
             persistedActiveId && validTabs.includes(persistedActiveId)
               ? persistedActiveId

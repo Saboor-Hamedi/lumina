@@ -345,6 +345,7 @@ app.whenReady().then(async () => {
   // Ollama Model Detection (IPC avoids browser CORS and IPv6/IPv4 mismatch)
   ipcMain.handle('ollama:getModels', async (_, rawUrl) => {
     try {
+      const ollamaFetch = typeof net?.fetch === 'function' ? net.fetch.bind(net) : fetch
       let baseUrl = 'http://127.0.0.1:11434'
       try {
         const parsed = new URL(rawUrl || 'http://127.0.0.1:11434')
@@ -369,7 +370,7 @@ app.whenReady().then(async () => {
         try {
           const controller = new AbortController()
           const timeoutId = setTimeout(() => controller.abort(), 2500)
-          const res = await fetch(endpoint, {
+          const res = await ollamaFetch(endpoint, {
             method: 'GET',
             headers: { Accept: 'application/json' },
             signal: controller.signal
@@ -394,7 +395,8 @@ app.whenReady().then(async () => {
   // Direct IPC Ollama Chat (Zero-CORS, reliable localhost/127.0.0.1 fallback)
   ipcMain.handle('ollama:chat', async (_, payload) => {
     try {
-      const { url: rawUrl, model, messages, options } = payload || {}
+      const ollamaFetch = typeof net?.fetch === 'function' ? net.fetch.bind(net) : fetch
+      const { url: rawUrl, model, messages, tools, options } = payload || {}
       let baseUrl = 'http://127.0.0.1:11434'
       try {
         const parsed = new URL(rawUrl || 'http://127.0.0.1:11434')
@@ -415,9 +417,10 @@ app.whenReady().then(async () => {
       ]
       const uniqueEndpoints = [...new Set(endpoints)]
 
+      let lastConnectionError = ''
       for (const endpoint of uniqueEndpoints) {
         try {
-          const res = await fetch(endpoint, {
+          const res = await ollamaFetch(endpoint, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -426,6 +429,7 @@ app.whenReady().then(async () => {
             body: JSON.stringify({
               model: model || 'llama3',
               messages: messages || [],
+              tools: Array.isArray(tools) && tools.length ? tools : undefined,
               stream: false,
               options: options || {}
             })
@@ -434,20 +438,28 @@ app.whenReady().then(async () => {
             const data = await res.json()
             return {
               ok: true,
-              content: data?.message?.content || ''
+              content: data?.message?.content || '',
+              message: data?.message || { role: 'assistant', content: '' }
             }
           }
-          if (res.status === 404) {
+          const responseText = (await res.text().catch(() => '')).slice(0, 1200)
+          if (res.status === 404 && /model/i.test(responseText)) {
             return {
               ok: false,
               error: `Model "${model}" was not found in Ollama. Pull it in terminal with "ollama pull ${model}" or select an installed model in Settings.`
             }
           }
-        } catch (_) {}
+          return {
+            ok: false,
+            error: `Ollama returned HTTP ${res.status}${responseText ? `: ${responseText}` : ''}`
+          }
+        } catch (error) {
+          lastConnectionError = error?.message || String(error)
+        }
       }
       return {
         ok: false,
-        error: 'Ollama server is not running. Please start Ollama on your computer to chat.'
+        error: `Unable to connect to Ollama at ${baseUrl}. ${lastConnectionError || 'Check that Ollama is running and the server URL is correct.'}`
       }
     } catch (err) {
       return { ok: false, error: err?.message || 'Failed to communicate with Ollama' }

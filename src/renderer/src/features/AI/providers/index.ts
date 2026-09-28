@@ -59,7 +59,9 @@ export function resolveProviderConfig(settingsObj: Record<string, any> = {}): Re
     if (!activeModel) activeModel = 'claude-3-5-sonnet-20241022'
   } else if (providerType === 'ollama') {
     apiKey = 'unused'
-    if (!activeModel) activeModel = settingsObj.ollamaModel || settingsObj.activeModel || 'llama3'
+    // activeModel is shared across providers and can contain a stale cloud
+    // model after switching providers. Ollama has its own explicit selection.
+    activeModel = settingsObj.ollamaModel || 'llama3'
   } else if (providerType === 'deepseek') {
     if (!activeModel) activeModel = settingsObj.deepSeekModel || 'deepseek-chat'
   }

@@ -94,16 +94,10 @@ export const SettingAssistant: React.FC = () => {
         setOllamaModels(names)
 
         const latestSettings = useSettingsStore.getState().settings
-        const current = latestSettings.ollamaModel || latestSettings.activeModel
-        const isCurrentInstalled =
-          current &&
-          names.some(
-            (n) =>
-              n.toLowerCase() === current.toLowerCase() ||
-              n.split(':')[0].toLowerCase() === current.toLowerCase()
-          )
-
-        if (!isCurrentInstalled) {
+        // Keep the user's explicit/custom choice even when it isn't in /api/tags
+        // (for example, a model hosted on a custom Ollama endpoint).
+        const current = latestSettings.ollamaModel
+        if (!current?.trim()) {
           // Prioritize: 3.5 (e.g. llama3.5) -> phi (e.g. phi:latest) -> llama -> first available
           const preferred =
             names.find((n) => /3\.5/i.test(n)) ||
@@ -278,8 +272,7 @@ export const SettingAssistant: React.FC = () => {
 
       {/* Ollama Configuration */}
       {settings.activeProvider === 'ollama' && (() => {
-        const currentOllamaModel =
-          settings.ollamaModel || settings.activeModel || (ollamaModels[0] || 'phi:latest')
+        const currentOllamaModel = settings.ollamaModel || ollamaModels[0] || 'phi:latest'
         const isPresetOrInstalled =
           ollamaModels.includes(currentOllamaModel) ||
           POPULAR_OLLAMA_MODELS.includes(currentOllamaModel)

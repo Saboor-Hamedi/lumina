@@ -69,7 +69,6 @@ const SortableTabItem = memo<SortableTabItemProps>(
     })
 
     const getIcon = () => {
-      if (isPinned) return <Pin size={12} className="tab-icon pinned-icon" />
       if (id === LUMINA_TAB_ID || snippet?.type === 'ai')
         return <Sparkles size={12} className="tab-icon" />
       if (id === GRAPH_TAB_ID || snippet?.type === 'graph')
@@ -106,7 +105,17 @@ const SortableTabItem = memo<SortableTabItemProps>(
           </div>
 
           <div className="tab-actions" onMouseDown={(e) => e.stopPropagation()}>
-            {isDirty ? (
+            {isPinned && (
+              <span
+                className="tab-pin-indicator"
+                title={isDirty ? 'Pinned tab with unsaved changes' : 'Pinned tab'}
+                aria-label={isDirty ? 'Pinned tab with unsaved changes' : 'Pinned tab'}
+              >
+                <Pin size={12} className="tab-pin-action" />
+                {isDirty && <span className="tab-pin-dirty" />}
+              </span>
+            )}
+            {!isPinned && isDirty ? (
               <div
                 onMouseDown={(e: React.MouseEvent) => {
                   e.stopPropagation()
@@ -121,8 +130,7 @@ const SortableTabItem = memo<SortableTabItemProps>(
               >
                 <span className="tab-dirty" />
               </div>
-            ) : (
-              !isPinned && (
+            ) : !isPinned ? (
                 <button
                   type="button"
                   className="tab-close-btn"
@@ -137,8 +145,7 @@ const SortableTabItem = memo<SortableTabItemProps>(
                 >
                   <X size={14} />
                 </button>
-              )
-            )}
+              ) : null}
           </div>
         </div>
       </ToolTip>
@@ -237,7 +244,7 @@ export const TabBar: React.FC<TabBarProps> = () => {
         }
       }
     })
-  }, [activeTabId, openTabs])
+  }, [activeTabId, openTabs, pinnedTabIds])
 
   // O(1) Snippet Lookup Map for Performance
   const snippetMap = useMemo(() => {
@@ -268,6 +275,40 @@ export const TabBar: React.FC<TabBarProps> = () => {
     },
     [pinnedTabIds, dirtySnippetIds, snippetMap, closeTab]
   )
+
+  const pinnedTabs = useMemo(
+    () => openTabs.filter((id) => pinnedTabIds.includes(id)),
+    [openTabs, pinnedTabIds]
+  )
+  const scrollableTabs = useMemo(
+    () => openTabs.filter((id) => !pinnedTabIds.includes(id)),
+    [openTabs, pinnedTabIds]
+  )
+
+  const renderTab = (id: string) => {
+    const snippet = snippetMap.get(id)
+    if (!snippet && id !== GRAPH_TAB_ID && id !== LUMINA_TAB_ID) return null
+    const tabSnippet =
+      snippet ||
+      (id === GRAPH_TAB_ID
+        ? { id: GRAPH_TAB_ID, title: 'Knowledge Graph', type: 'graph' }
+        : id === LUMINA_TAB_ID
+          ? { id: LUMINA_TAB_ID, title: 'Lumina AI', type: 'ai' }
+          : null)
+    return (
+      <SortableTabItem
+        key={id}
+        id={id}
+        snippet={tabSnippet}
+        isActive={activeTabId === id || selectedSnippet?.id === id}
+        isDirty={dirtySnippetIds.includes(id)}
+        isPinned={pinnedTabIds.includes(id)}
+        onOpen={handleTabClick}
+        onClose={handleCloseTrigger}
+        onContextMenu={handleContextMenu}
+      />
+    )
+  }
 
   // --- Dirty Prompt Handlers ---
   const handleConfirmSave = async (): Promise<void> => {
@@ -348,44 +389,25 @@ export const TabBar: React.FC<TabBarProps> = () => {
           boxSizing: 'border-box'
         }}
       >
-        <div
-          className="workspace-tabbar"
-          ref={tabbarRef}
-          onWheel={handleWheel}
-          style={{ flex: 1, minWidth: 0 }}
-        >
-          <SortableContext items={openTabs} strategy={horizontalListSortingStrategy}>
+        <SortableContext items={openTabs} strategy={horizontalListSortingStrategy}>
+          <div className="tabbar-layout">
+            {pinnedTabs.length > 0 && (
+              <div className="pinned-tabs-container" aria-label="Pinned tabs">
+                {pinnedTabs.map(renderTab)}
+              </div>
+            )}
             <div
-              className="tabs-container"
-              style={{ display: 'flex', height: '100%', alignItems: 'stretch' }}
+              className="workspace-tabbar"
+              ref={tabbarRef}
+              onWheel={handleWheel}
+              style={{ flex: 1, minWidth: 0 }}
             >
-              {openTabs.map((id) => {
-                const snippet = snippetMap.get(id)
-                if (!snippet && id !== GRAPH_TAB_ID && id !== LUMINA_TAB_ID) return null
-                const tabSnippet =
-                  snippet ||
-                  (id === GRAPH_TAB_ID
-                    ? { id: GRAPH_TAB_ID, title: 'Knowledge Graph', type: 'graph' }
-                    : id === LUMINA_TAB_ID
-                      ? { id: LUMINA_TAB_ID, title: 'Lumina AI', type: 'ai' }
-                      : null)
-                return (
-                  <SortableTabItem
-                    key={id}
-                    id={id}
-                    snippet={tabSnippet}
-                    isActive={activeTabId === id || selectedSnippet?.id === id}
-                    isDirty={dirtySnippetIds.includes(id)}
-                    isPinned={pinnedTabIds.includes(id)}
-                    onOpen={handleTabClick}
-                    onClose={handleCloseTrigger}
-                    onContextMenu={handleContextMenu}
-                  />
-                )
-              })}
+              <div className="tabs-container">
+                {scrollableTabs.map(renderTab)}
+              </div>
             </div>
-          </SortableContext>
-        </div>
+          </div>
+        </SortableContext>
       </div>
 
       {contextMenu && (

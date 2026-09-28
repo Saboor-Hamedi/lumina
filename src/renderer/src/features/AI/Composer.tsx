@@ -1,7 +1,5 @@
-import React, { useState, useCallback, KeyboardEvent } from 'react'
+import React, { Suspense, lazy, useState, useCallback, KeyboardEvent } from 'react'
 import { Send, Square, ChevronDown, Plus } from 'lucide-react'
-import { LuminaSlash } from './LuminaSlash'
-import LuminaMention from './LuminaMention'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import VoiceButton from '../voice'
@@ -9,6 +7,9 @@ import { useComposerTextarea } from './hooks/useComposerTextarea'
 import { useComposerVoice } from './hooks/useComposerVoice'
 import { useComposerAutocomplete } from './hooks/useComposerAutocomplete'
 import './css/composer.css'
+
+const LuminaSlash = lazy(() => import('./LuminaSlash'))
+const LuminaMention = lazy(() => import('./LuminaMention'))
 
 export interface ComposerProps {
   onSend: (text: string, mode: string, attachedMentions: any[]) => void
@@ -99,20 +100,28 @@ export const Composer: React.FC<ComposerProps> = ({
 
   return (
     <div className={`composer-container ${isSidebar ? 'is-sidebar-docked' : ''}`}>
-      <LuminaSlash
-        isOpen={showSlashMenu}
-        filterText={slashFilter}
-        activeMode={mode}
-        onSelect={handleCommandSelect}
-        onClose={() => setShowSlashMenu(false)}
-      />
+      {showSlashMenu && (
+        <Suspense fallback={null}>
+          <LuminaSlash
+            isOpen={showSlashMenu}
+            filterText={slashFilter}
+            activeMode={mode}
+            onSelect={handleCommandSelect}
+            onClose={() => setShowSlashMenu(false)}
+          />
+        </Suspense>
+      )}
 
-      <LuminaMention
-        isOpen={showMentionMenu}
-        filterText={mentionFilter}
-        onSelect={handleMentionSelect}
-        onClose={() => setShowMentionMenu(false)}
-      />
+      {showMentionMenu && (
+        <Suspense fallback={null}>
+          <LuminaMention
+            isOpen={showMentionMenu}
+            filterText={mentionFilter}
+            onSelect={handleMentionSelect}
+            onClose={() => setShowMentionMenu(false)}
+          />
+        </Suspense>
+      )}
 
       <div className="composer-card" onClick={() => textareaRef.current?.focus()}>
         <div className="composer-input-area-wrapper">

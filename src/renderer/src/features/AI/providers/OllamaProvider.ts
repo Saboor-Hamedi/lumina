@@ -2,6 +2,46 @@ import { BaseProvider } from './BaseProvider'
 import type { ProviderConfig } from '../types/ai.types'
 import type { ChatMessageParam, ChatStreamOptions } from './BaseProvider'
 
+interface OllamaToolDefinition {
+  type: 'function'
+  function: {
+    name: string
+    description: string
+    parameters: Record<string, unknown>
+  }
+}
+
+function toOllamaTools(tools: Record<string, any> = {}): OllamaToolDefinition[] {
+  return Object.entries(tools).flatMap(([name, tool]) => {
+    const schema = tool?.inputSchema?.jsonSchema || tool?.inputSchema
+    if (!tool?.execute || !schema || typeof schema !== 'object') return []
+    return [{
+      type: 'function' as const,
+      function: {
+        name,
+        description: tool.description || name,
+        parameters: schema as Record<string, unknown>
+      }
+    }]
+  })
+}
+
+function serializeToolResult(result: unknown): string {
+  try {
+    if (typeof result === 'string') return result.slice(0, 12000)
+    if (result && typeof result === 'object') {
+      const compact = { ...(result as Record<string, unknown>) }
+      // The model already authored the file body; returning it in the tool result
+      // wastes local context and can make subsequent Ollama calls very slow.
+      delete compact.writtenContent
+      return JSON.stringify(compact).slice(0, 12000)
+    }
+    return JSON.stringify(result) || String(result)
+  } catch {
+    return String(result)
+  }
+}
+
 /**
  * Normalizes Ollama endpoint URLs to ensure they use IPv4 (127.0.0.1)
  * to avoid Windows IPv6 localhost ([::1]) binding issues, and targets the `/api/chat` endpoint.
@@ -55,115 +95,219 @@ export class OllamaProvider extends BaseProvider {
   ): AsyncGenerator<string, void, unknown> {
     const targetModel = options.model || this.defaultModel
     const chatUrl = normalizeOllamaUrl(this.baseUrl)
+    const toolMap = (options.tools || {}) as Record<string, any>
+    const ollamaTools = toOllamaTools(toolMap)
+    const conversation = messages.map((message) => ({ ...message })) as Array<Record<string, any>>
+    const maxToolRounds = ollamaTools.length > 0 ? 12 : 0
 
-    let response: Response | null = null
-    let directFetchFailed = false
+    for (let round = 0; round <= maxToolRounds; round++) {
+      if (options.signal?.aborted) return
 
-    try {
-      response = await fetch(chatUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: targetModel,
-          messages: messages,
-          stream: true,
-          options: {
-            num_predict: options.max_tokens || 4096
-          }
-        }),
-        signal: options.signal
-      })
-    } catch (err: any) {
-      if (err?.name === 'AbortError') throw err
-      directFetchFailed = true
-    }
-
-    // Fallback: If direct renderer fetch fails (e.g. CORS restrictions or socket errors),
-    // query Ollama via the Electron Main Process IPC bridge which runs in Node.js
-    if (directFetchFailed || !response) {
+      let response: Response | null = null
       const api = (window as any)?.api
-      if (api && typeof api.chatOllama === 'function') {
-        const ipcRes = await api.chatOllama({
+      const useElectronBridge = typeof api?.chatOllama === 'function'
+      let rendererConnectionError = ''
+
+      // Electron's document CSP deliberately excludes localhost. Use IPC in
+      // desktop builds and keep renderer streaming for browser/dev contexts.
+      if (!useElectronBridge) {
+        try {
+          response = await fetch(chatUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: targetModel,
+              messages: conversation,
+              tools: ollamaTools.length ? ollamaTools : undefined,
+              stream: true,
+              options: {
+                temperature: options.temperature ?? 0.7,
+                num_predict: options.max_tokens || 4096
+              }
+            }),
+            signal: options.signal
+          })
+        } catch (err: any) {
+          if (err?.name === 'AbortError') throw err
+          rendererConnectionError = err?.message || String(err)
+        }
+      }
+
+      let assistantMessage: Record<string, any> = { role: 'assistant', content: '' }
+
+      // Electron IPC bypasses Ollama's renderer CORS restrictions. It returns the
+      // final message, including tool_calls, so the same agent loop works there.
+      if (!response && useElectronBridge) {
+        const request = {
           url: chatUrl,
           model: targetModel,
-          messages: messages,
+          messages: conversation,
+          tools: ollamaTools.length ? ollamaTools : undefined,
           options: {
+            temperature: options.temperature ?? 0.7,
             num_predict: options.max_tokens || 4096
           }
-        })
-
+        }
+        let ipcRes = await api.chatOllama(request)
         if (options.signal?.aborted) return
-
-        if (ipcRes?.ok && typeof ipcRes.content === 'string') {
-          yield ipcRes.content
-          return
-        }
-
-        if (ipcRes?.error) {
-          throw new Error(ipcRes.error)
-        }
-      }
-
-      throw new Error(
-        'Ollama server is not running. Please start Ollama on your computer to chat.'
-      )
-    }
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error(
-          `Model "${targetModel}" was not found in Ollama. Pull it in terminal with "ollama pull ${targetModel}" or select an installed model in Settings.`
+        const toolSupportError = /(?:does not support|doesn't support|unsupported|not supported)[^\n]*tools/i.test(
+          ipcRes?.error || ''
         )
-      }
-      throw new Error(`Ollama Error (${response.status})`)
-    }
+        if (!ipcRes?.ok && ollamaTools.length > 0 && toolSupportError) {
+          // Older/smaller Ollama models reject the tools field at the API layer.
+          // Retry as plain chat; the system prompt supplies an equivalent
+          // createFile/createFolder text format that the caller already parses.
+          ipcRes = await api.chatOllama({ ...request, tools: undefined })
+          if (options.signal?.aborted) return
+        }
+        if (!ipcRes?.ok) {
+          throw new Error(ipcRes?.error || 'Unable to connect to the Ollama server.')
+        }
+        assistantMessage = ipcRes.message || { role: 'assistant', content: ipcRes.content || '' }
+        if (assistantMessage.content) yield assistantMessage.content
+      } else {
+        if (!response) {
+          throw new Error(`Unable to connect to Ollama at ${chatUrl}. ${rendererConnectionError || 'Check that Ollama is running and the server URL is correct.'}`)
+        }
+        if (!response.ok) {
+          const detail = (await response.text().catch(() => '')).slice(0, 800)
+          const modelRejectsTools = /(?:does not support|doesn't support|unsupported|not supported)[^\n]*tools/i.test(detail)
+          if (response.status === 400 && ollamaTools.length > 0 && modelRejectsTools) {
+            response = await fetch(chatUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                model: targetModel,
+                messages: conversation,
+                stream: true,
+                options: {
+                  temperature: options.temperature ?? 0.7,
+                  num_predict: options.max_tokens || 4096
+                }
+              }),
+              signal: options.signal
+            })
+          } else if (response.status === 404) {
+            throw new Error(
+              `Model "${targetModel}" was not found in Ollama. Pull it in terminal with "ollama pull ${targetModel}" or select an installed model in Settings.`
+            )
+          } else {
+            throw new Error(`Ollama request failed (${response.status})${detail ? `: ${detail}` : ''}`)
+          }
+          if (!response.ok) {
+            const retryDetail = (await response.text().catch(() => '')).slice(0, 800)
+            throw new Error(`Ollama request failed (${response.status})${retryDetail ? `: ${retryDetail}` : ''}`)
+          }
+        }
+        if (!response.body) throw new Error('Response body is null')
 
-    if (!response.body) {
-      throw new Error('Response body is null')
-    }
-
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
+        const reader = response.body.getReader()
+        const decoder = new TextDecoder()
+        let buffer = ''
+        const consumeLine = (line: string): { done: boolean; content: string } => {
           const trimmed = line.trim()
-          if (!trimmed) continue
+          if (!trimmed) return { done: false, content: '' }
           try {
             const parsed = JSON.parse(trimmed)
-            if (parsed.message?.content) {
-              yield parsed.message.content
+            const message = parsed.message || {}
+            if (message.content) {
+              assistantMessage.content += message.content
             }
-            if (parsed.done) return
-          } catch (e) {
-            console.warn('Ollama parse error:', e)
+            if (message.tool_calls) {
+              const accumulated = assistantMessage.tool_calls || []
+              message.tool_calls.forEach((call: any, index: number) => {
+                const previous = accumulated[index] || {}
+                const previousArgs = previous.function?.arguments
+                const nextArgs = call.function?.arguments
+                const mergedArgs =
+                  typeof previousArgs === 'string' && typeof nextArgs === 'string'
+                    ? previousArgs + nextArgs
+                    : nextArgs ?? previousArgs
+                accumulated[index] = {
+                  ...previous,
+                  ...call,
+                  function: {
+                    ...previous.function,
+                    ...call.function,
+                    arguments: mergedArgs
+                  }
+                }
+              })
+              assistantMessage.tool_calls = accumulated
+            }
+            return { done: Boolean(parsed.done), content: message.content || '' }
+          } catch (error) {
+            console.warn('Ollama parse error:', error)
+            return { done: false, content: '' }
           }
+        }
+
+        try {
+          let done = false
+          while (!done) {
+            const { done: streamDone, value } = await reader.read()
+            if (streamDone) break
+            buffer += decoder.decode(value, { stream: true })
+            const lines = buffer.split('\n')
+            buffer = lines.pop() || ''
+            for (const line of lines) {
+              const event = consumeLine(line)
+              if (event.content) yield event.content
+              if (event.done) {
+                done = true
+                break
+              }
+            }
+          }
+          if (buffer.trim()) {
+            const event = consumeLine(buffer)
+            if (event.content) yield event.content
+          }
+        } finally {
+          reader.releaseLock()
         }
       }
 
-      if (buffer.trim()) {
-        try {
-          const parsed = JSON.parse(buffer.trim())
-          if (parsed.message?.content) {
-            yield parsed.message.content
-          }
-        } catch {
-          // ignore
-        }
+      const toolCalls = Array.isArray(assistantMessage.tool_calls) ? assistantMessage.tool_calls : []
+      if (toolCalls.length === 0) return
+      if (round === maxToolRounds) {
+        throw new Error('Ollama reached the workspace tool-call limit for this response.')
       }
-    } finally {
-      reader.releaseLock()
+
+      conversation.push({
+        role: 'assistant',
+        content: assistantMessage.content || '',
+        tool_calls: toolCalls
+      })
+
+      for (const call of toolCalls) {
+        if (options.signal?.aborted) return
+        const functionCall = call?.function || {}
+        const toolName = functionCall.name
+        const tool = toolMap[toolName]
+        let result: unknown
+
+        try {
+          let args = functionCall.arguments || {}
+          if (typeof args === 'string') args = JSON.parse(args)
+          if (!tool?.execute) {
+            result = { success: false, error: `Tool "${toolName}" is unavailable.` }
+          } else {
+            ;(options as any).onToolActivity?.(toolName, args, null)
+            result = await tool.execute(args)
+            ;(options as any).onToolActivity?.(toolName, args, result)
+          }
+        } catch (error: any) {
+          result = { success: false, error: error?.message || 'Tool execution failed.' }
+          ;(options as any).onToolActivity?.(toolName, functionCall.arguments || {}, result)
+        }
+
+        conversation.push({
+          role: 'tool',
+          tool_name: toolName,
+          content: serializeToolResult(result)
+        })
+      }
     }
   }
 }

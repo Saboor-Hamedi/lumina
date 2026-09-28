@@ -25,6 +25,20 @@
   -ms-overflow-style: none !important;
 }
 
+[data-modern-ui='true'] .tabbar-layout {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+[data-modern-ui='true'] .pinned-tabs-container {
+  display: flex;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-right: 1px solid var(--border-dim);
+}
+
 [data-modern-ui='true'] .workspace-tabbar::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;

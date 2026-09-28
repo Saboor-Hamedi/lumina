@@ -26,17 +26,12 @@ import { getTheme } from '../../theme/hooks/themeDefinitions'
 import {
   runDeepSeekStream,
   runFallbackProviderStream,
-  applyLegacyMarkdownBlocks
+  applyLegacyMarkdownBlocks,
+  getToolResultThought,
+  getToolStatusDescription
 } from '../services/aiStreamRunner'
 import { detectUserIntent, IntentCategory } from '../services/intentRouter'
 import { getAIMode } from '../modes/index'
-import {
-  getAITools,
-  getMemoryTools,
-  luminaQueryIndexTool,
-  luminaDiagnoseSystemTool,
-  auditWikilinksTool
-} from './index'
 import { AIProviderFactory, resolveProviderConfig } from '../providers/index'
 import type {
   AIStore,
@@ -716,6 +711,7 @@ export const useAIStore = create<AIStore>((set, get) => {
         }
 
         try {
+          const { luminaQueryIndexTool } = await import('./index')
           const res: any = await (luminaQueryIndexTool.execute as any)(params)
           const assistantMsg: ChatMessage = {
             id: crypto.randomUUID(),
@@ -746,6 +742,7 @@ export const useAIStore = create<AIStore>((set, get) => {
           activeThinkingStatus: 'Checking system health...'
         })
         try {
+          const { luminaDiagnoseSystemTool } = await import('./index')
           const res: any = await (luminaDiagnoseSystemTool.execute as any)({})
           const data = res?.result || {}
           const passedCount = data.checksPassed ?? 8
@@ -788,6 +785,7 @@ export const useAIStore = create<AIStore>((set, get) => {
           activeThinkingStatus: 'Auditing workspace wikilinks...'
         })
         try {
+          const { auditWikilinksTool } = await import('./index')
           const res: any = await (auditWikilinksTool.execute as any)({})
           const data = res?.result || {}
           const totalNotes = data.totalNotesScanned ?? 0
@@ -1038,6 +1036,9 @@ export const useAIStore = create<AIStore>((set, get) => {
         const { providerType, activeModel, apiKey, baseUrl } =
           resolveProviderConfig(settingsObj)
         const provider = AIProviderFactory.createProvider(providerType, { apiKey, baseUrl })
+        const providerSystemPrompt = providerType === 'ollama'
+          ? `${systemPrompt}\n\nLOCAL TOOL-CALL COMPATIBILITY:\nUse the provided native tools whenever available. If this Ollama model cannot issue native tool calls, you MUST still perform requested workspace creation by emitting exact fallback blocks: <createFolder path="Folder/Path"></createFolder> and <createFile title="Note Title" folder="Folder/Path">complete markdown content</createFile>. Omit the folder attribute for root-level notes. Emit one createFile block per requested note. Do not merely describe the files in chat.`
+          : systemPrompt
 
         const finalMessages = newHistory
           .filter((m) => m.role !== 'system' && (m.content || m.role === 'user'))
@@ -1073,9 +1074,11 @@ export const useAIStore = create<AIStore>((set, get) => {
           /\b(open|open up|open the tab|show tab|switch to tab|show in editor|view in editor)\b/i
         const isOpenIntent = openIntentKeywords.test(cleanMessage)
 
+        const { getAITools, getMemoryTools } = await import('./index')
         let sdkTools = getMemoryTools()
         if (
           (modeCfg.enableTools !== false ||
+            providerType === 'ollama' ||
             detectedIntent === IntentCategory.DIAGNOSTICS ||
             detectedIntent === IntentCategory.AUDIT_WIKILINKS ||
             detectedIntent === IntentCategory.QUERY_INDEX) &&
@@ -1116,8 +1119,10 @@ export const useAIStore = create<AIStore>((set, get) => {
             provider,
             activeModel,
             finalMessages,
+            systemPrompt: providerSystemPrompt,
             modeCfg,
             controller,
+            sdkTools,
             onContentUpdate: handleContentUpdate,
             onThinkingStatusUpdate: handleThinkingStatusUpdate
           })
