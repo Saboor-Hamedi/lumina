@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
+import { beginExplorerPerf, countExplorerPerfRender, markExplorerPerf } from '../utils/explorerPerf'
 
 interface Snippet {
   id: string
@@ -61,6 +62,7 @@ export function useExplorerSelection({
   onClose,
   onRequestBulkDelete
 }: UseExplorerSelectionParams): ExplorerSelectionResult {
+  countExplorerPerfRender('ExplorerSelection')
   const setSelectedSnippet = useWorkspaceStore((state) => state.setSelectedNote)
   const setSelectedFolder = useWorkspaceStore((state) => state.setSelectedFolder)
 
@@ -301,6 +303,7 @@ export function useExplorerSelection({
   const handleSelect = useCallback(
     (snippet: Snippet) => {
       if (!snippet) return
+      markExplorerPerf('tab-open-start', { noteId: snippet.id })
       clickedInExplorerRef.current = Date.now()
       // Mark that this selection came from an explorer click — effect will skip scrollToIndex
       skipNextScrollRef.current = true
@@ -311,7 +314,13 @@ export function useExplorerSelection({
       setSelectedFolderIds(new Set())
       setLastClickedNoteId(snippet.id)
       setSidebarFocus('note')
+      const storeMutationStartedAt = performance.now()
+      markExplorerPerf('workspace-store-mutation-start', { noteId: snippet.id })
       setSelectedSnippet(snippet)
+      markExplorerPerf('tab-open-state-mutated', {
+        noteId: snippet.id,
+        synchronousDurationMs: Number((performance.now() - storeMutationStartedAt).toFixed(2))
+      })
       onClose?.()
     },
     [setSelectedSnippet, setSelectedFolder, onClose]
@@ -368,6 +377,7 @@ export function useExplorerSelection({
         setAnchorIndex(itemIndex)
         // handleSelect owns the single-selection state and workspace activation.
         // Avoid enqueueing the same selection updates twice for a normal click.
+        beginExplorerPerf('note', snippet.id)
         handleSelect(snippet)
       }
     },

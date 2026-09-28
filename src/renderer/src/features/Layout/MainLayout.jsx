@@ -23,6 +23,7 @@ import TabBar from './TabBar'
 import TabContentPane from './TabContentPane'
 import AppModals from './AppModals'
 import { ExternalDropOverlay, useWorkspaceDrop } from '../Explorer/drop'
+import { countExplorerPerfRender, markExplorerPerf } from '../Explorer/utils/explorerPerf'
 import { FileText, FolderDown } from 'lucide-react'
 const Graph = React.lazy(() => import('../Graph/Graph'))
 const LuminaChatContent = React.lazy(() =>
@@ -111,6 +112,7 @@ const LuminaTabPane = React.memo(() => {
 LuminaTabPane.displayName = 'LuminaTabPane'
 
 export const MainLayout = () => {
+  countExplorerPerfRender('MainLayout')
   const {
     snippets,
     selectedSnippet,
@@ -923,7 +925,9 @@ export const MainLayout = () => {
       if (tabId === LUMINA_TAB_ID) {
         return <LuminaTabPane key={tabId} />
       }
+      markExplorerPerf('document-lookup-start', { noteId: tabId })
       const snippet = snippetMap.get(tabId)
+      markExplorerPerf('document-lookup-end', { noteId: tabId, found: Boolean(snippet) })
       if (!snippet) return null
       return (
         <TabContentPane

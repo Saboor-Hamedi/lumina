@@ -25,6 +25,7 @@ import { getEditorContextMenuOptions } from './menu'
 import EditorMetadata from './components/EditorMetadata'
 import type { Snippet, EditorHandle } from '../../core/editor/types'
 import type { ToastType } from '../../core/notification'
+import { markExplorerPerf } from '../Explorer/utils/explorerPerf'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -157,8 +158,16 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
     }, [])
 
     const cleanMarkdownSource = useMemo(() => {
+      const sourceStartedAt = performance.now()
+      markExplorerPerf('document-source-clean-start', {
+        noteId: snippet?.id,
+        sourceLength: snippet?.code?.length || 0
+      })
       const raw = snippet?.code || ''
-      if (!raw) return ''
+      if (!raw) {
+        markExplorerPerf('document-source-clean-end', { noteId: snippet?.id, durationMs: 0, sourceLength: 0 })
+        return ''
+      }
       let text = raw.replace(/^\uFEFF/, '')
       while (/^\s*---\r?\n/.test(text)) {
         const match = text.match(/^\s*---\r?\n[\s\S]*?\r?\n---\r?\n?([\s\S]*)$/)
@@ -197,8 +206,23 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
       if (foundLoose) {
         text = lines.slice(lineIdx).join('\n')
       }
-      return text.replace(/^[\r\n]+/, '')
+      const cleaned = text.replace(/^[\r\n]+/, '')
+      markExplorerPerf('document-source-clean-end', {
+        noteId: snippet?.id,
+        durationMs: Number((performance.now() - sourceStartedAt).toFixed(2)),
+        sourceLength: raw.length,
+        cleanedLength: cleaned.length
+      })
+      return cleaned
     }, [snippet?.code])
+
+    useEffect(() => {
+      markExplorerPerf('editor-view-created', {
+        noteId: snippet?.id,
+        editorHandleReady: Boolean(editorHandleRef.current),
+        documentLength: cleanMarkdownSource.length
+      })
+    }, [snippet?.id, editorKey])
 
     return (
       <div

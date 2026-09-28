@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { startTransition, useState, useRef, useEffect, useCallback } from 'react'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/SettingStore'
 import { revealSnippetFolders } from '../utils/explorerSelectionHelper'
+import { markExplorerPerf } from '../utils/explorerPerf'
 
 interface Snippet {
   id: string
@@ -95,24 +96,24 @@ export function useExplorerOperations({
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const setExpandedFolders = useCallback((updater: Set<string> | ((prev: Set<string>) => Set<string>)) => {
-    let nextArr: string[] | null = null
-    setExpandedFoldersRaw((prev: Set<string>): Set<string> => {
-      const next = typeof updater === 'function' ? updater(prev) : updater
-      const nextSet: Set<string> = next instanceof Set ? (next as Set<string>) : new Set<string>(next || [])
-      expandedFoldersRef.current = nextSet
-      nextArr = Array.from(nextSet)
-      return nextSet
-    })
-    if (nextArr) {
-      try {
-        localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextArr))
-      } catch (_) {}
-      if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
-      persistTimerRef.current = setTimeout(() => {
-        persistTimerRef.current = null
-        useSettingsStore.getState().updateSetting('expandedFolders', nextArr)
-      }, 350)
-    }
+    const prev = expandedFoldersRef.current
+    const next = typeof updater === 'function' ? updater(prev) : updater
+    const nextSet = next instanceof Set ? next : new Set<string>(next || [])
+    const nextArr = Array.from(nextSet)
+
+    // Keep folder expansion state persistence immediate, but let React perform
+    // the potentially large virtual-tree projection at transition priority.
+    expandedFoldersRef.current = nextSet
+    startTransition(() => setExpandedFoldersRaw(nextSet))
+    try {
+      localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextArr))
+    } catch (_) {}
+    markExplorerPerf('folder-state-update', { expandedFolderCount: nextSet.size, scheduled: true })
+    if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
+    persistTimerRef.current = setTimeout(() => {
+      persistTimerRef.current = null
+      useSettingsStore.getState().updateSetting('expandedFolders', nextArr)
+    }, 350)
   }, [])
 
   useEffect(() => {
@@ -135,16 +136,14 @@ export function useExplorerOperations({
     }
   }, [])
 
-  const isInitialSettingsSyncRef = useRef(true)
-
   useEffect(() => {
     if (!Array.isArray(expandedFoldersSetting)) return
 
-    if (isInitialSettingsSyncRef.current) {
-      isInitialSettingsSyncRef.current = false
-      if (expandedFoldersSetting.length === 0 && expandedFoldersRef.current.size > 0) {
-        return
-      }
+    // Settings updates can arrive as a full snapshot while the debounced
+    // expandedFolders write is still pending. A stale empty value must not
+    // erase the live tree when an unrelated setting (such as openTabs) changes.
+    if (expandedFoldersSetting.length === 0 && expandedFoldersRef.current.size > 0) {
+      return
     }
 
     const incomingSet = new Set<string>(expandedFoldersSetting)
@@ -287,7 +286,12 @@ export function useExplorerOperations({
   const toggleFolder = useCallback(
     (folderId: string, e?: React.MouseEvent | null) => {
       if (e) e.stopPropagation()
+      const selectionStartedAt = performance.now()
       useWorkspaceStore.getState().setSelectedFolder(folderId)
+      markExplorerPerf('folder-selection-mutated', {
+        folderId,
+        durationMs: Number((performance.now() - selectionStartedAt).toFixed(2))
+      })
       if (query.trim()) {
         setCollapsedDuringSearch((prev) => {
           const next = new Set(prev)
@@ -303,6 +307,7 @@ export function useExplorerOperations({
           return next
         })
       }
+      markExplorerPerf('folder-state-update-scheduled', { folderId, searching: Boolean(query.trim()) })
     },
     [setExpandedFolders, query]
   )

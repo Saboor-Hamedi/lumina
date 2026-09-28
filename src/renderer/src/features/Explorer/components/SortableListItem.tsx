@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useCallback } from 'react'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import SidebarItem from '../../Navigation/components/SidebarItem'
+import { countExplorerPerfRender } from '../utils/explorerPerf'
 
 export interface SortableListItemProps {
   snippet: any
@@ -21,6 +22,7 @@ const SortableListItemComponent: React.FC<SortableListItemProps> = ({
   matchSnippet,
   depth
 }) => {
+  countExplorerPerfRender('FileRow', snippet?.id)
   const {
     attributes,
     listeners,

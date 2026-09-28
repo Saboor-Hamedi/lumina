@@ -3,6 +3,7 @@ import { useDroppable, useDraggable } from '@dnd-kit/core'
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
+import { countExplorerPerfRender } from '../utils/explorerPerf'
 
 export interface DroppableFolderItemProps {
   item: {
@@ -47,6 +48,7 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
   onExternalDragOver,
   onExternalDrop
 }) => {
+  countExplorerPerfRender('FolderRow', item?.id)
   const { isOver, setNodeRef: setDroppableRef } = useDroppable({ id: `folder-${item.id}` })
   const [isHovered, setIsHovered] = useState(false)
 

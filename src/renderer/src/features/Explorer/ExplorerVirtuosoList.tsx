@@ -24,6 +24,7 @@ import { useDroppable } from '@dnd-kit/core'
 import { SortableListItem } from './components'
 import { DroppableFolderItem, ExternalDropOverlay } from './drop'
 import { isSnippetActive } from './utils/explorerSelectionHelper'
+import { beginExplorerPerf, countExplorerPerfRender } from './utils/explorerPerf'
 
 export interface DroppableVirtuosoWrapperProps {
   children: React.ReactNode | ((props: { showDropHighlight: boolean }) => React.ReactNode)
@@ -171,6 +172,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
   handleExternalDragLeave,
   handleExternalDrop
 }) => {
+  countExplorerPerfRender('ExplorerVirtuosoList')
   // Memoized row content renderer
   // IMPORTANT: selectedSnippetId and selectedNoteIds are read from REFS (not reactive deps)
   // so that switching tabs does not invalidate this callback and re-render all Virtuoso rows.
@@ -268,6 +270,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
                 if (e?.ctrlKey || e?.metaKey || e?.shiftKey) {
                   if (e) handleFolderClick(id, index, e)
                 } else {
+                  beginExplorerPerf('folder', id)
                   if (e) handleFolderClick(id, index, e)
                   toggleFolder(id, e)
                 }

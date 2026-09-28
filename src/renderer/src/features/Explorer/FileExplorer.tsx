@@ -17,7 +17,7 @@
  * - Hardware-accelerated GPU transforms and composite layer containment.
  */
 
-import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react'
+import React, { useEffect, useLayoutEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { DndContext, pointerWithin, rectIntersection } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
@@ -38,6 +38,7 @@ import { useExplorerSelection } from './hooks/ExplorerSelection'
 import { useExplorerDnd } from './hooks/ExplorerDnd'
 import { useExplorerOperations } from './hooks/ExplorerOperations'
 import { useFolderContextMenu } from './hooks/FolderMenu'
+import { countExplorerPerfRender, finishExplorerPerfPaint, markExplorerPerf } from './utils/explorerPerf'
 
 import { useExplorerPaste } from './useExplorerPaste'
 import { ExplorerVirtuosoList } from './ExplorerVirtuosoList'
@@ -57,6 +58,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   onClose = () => {},
   isEmbedded
 }) => {
+  markExplorerPerf('render-start', { component: 'FileExplorer' })
+  countExplorerPerfRender('FileExplorer')
   // Search state with debounced indexing
   const [query, setQuery] = useState('')
   const [displayQuery, setDisplayQuery] = useState('')
@@ -231,6 +234,17 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     collapsedDuringSearch,
     folderOrder: settings.folderOrder
   })
+
+  const previousFlatTreeRef = useRef(flatTree)
+  useLayoutEffect(() => {
+    if (previousFlatTreeRef.current === flatTree) return
+    previousFlatTreeRef.current = flatTree
+    markExplorerPerf('render-end', { visibleRows: flatTree.length })
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      markExplorerPerf('visible-rows-frame', { visibleRows: flatTree.length })
+      finishExplorerPerfPaint({ visibleRows: flatTree.length })
+    }))
+  }, [flatTree])
 
   // Keyboard Shortcuts: Reveal active file in system explorer / file manager
   useKeyboardShortcuts({
@@ -440,6 +454,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     ]
   )
 
+  const handleExplorerProfiler = useCallback(
+    (id: string, phase: string, actualDuration: number, baseDuration: number, startTime: number, commitTime: number) => {
+      markExplorerPerf('render-end', { id, phase, actualDuration, baseDuration, startTime, commitTime })
+    },
+    []
+  )
+
 
   const handleSortDragEnd = (event: any) => {
     const { active, over } = event
@@ -597,6 +618,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                 onDragStart={handleListDragStart}
                 onDragEnd={handleListDragEnd}
               >
+                <React.Profiler id="ExplorerVirtuosoList" onRender={handleExplorerProfiler}>
                 <ExplorerVirtuosoList
                   virtuosoRef={virtuosoRef}
                   flatTree={flatTree}
@@ -628,6 +650,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                   handleExternalDragLeave={handleExternalDragLeave}
                   handleExternalDrop={handleExternalDrop}
                 />
+                </React.Profiler>
               </DndContext>
             </div>
           )}

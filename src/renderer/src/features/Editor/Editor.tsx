@@ -27,6 +27,7 @@ import { EditorCanvas } from './EditorCanvas'
 import { useToast } from '../../core/notification'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
+import { countExplorerPerfRender, finishExplorerPerfPaint, markExplorerPerf } from '../Explorer/utils/explorerPerf'
 import {
   useZoom,
   EditorState,
@@ -74,6 +75,7 @@ export const Editor: React.FC<EditorProps> = memo(
     onToggleInspector,
     isActive = true
   }) => {
+    countExplorerPerfRender('Editor', snippet?.id)
     const { toast, showToast, clearToast } = useToast()
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
     const [showFindWidget, setShowFindWidget] = useState(false)
@@ -84,6 +86,12 @@ export const Editor: React.FC<EditorProps> = memo(
 
     // DOM & Editor references
     const editorHandleRef = useRef<EditorHandle | null>(null)
+    const editorInitStartedRef = useRef(false)
+    const hasInitializedEditorRef = useRef(false)
+    if (!editorInitStartedRef.current) {
+      editorInitStartedRef.current = true
+      markExplorerPerf('editor-init-start', { noteId: snippet?.id })
+    }
     const titleRef = useRef<HTMLInputElement | null>(null)
     const scrollerRef = useRef<HTMLDivElement | null>(null)
     const zoomContainerRef = useRef<HTMLDivElement | null>(null)
@@ -162,6 +170,8 @@ export const Editor: React.FC<EditorProps> = memo(
     })
 
     // 4. CodeMirror Extensions & Keymaps
+    const extensionsStartedAt = performance.now()
+    markExplorerPerf('editor-extensions-start', { noteId: snippet?.id })
     const { finalExtensions } = EditorExtensions({
       snippetRef,
       realViewRef,
@@ -173,6 +183,24 @@ export const Editor: React.FC<EditorProps> = memo(
       onSlashStateChange: setSlashState as any,
       slashHandlerRef
     })
+    markExplorerPerf('editor-extensions-end', {
+      noteId: snippet?.id,
+      durationMs: Number((performance.now() - extensionsStartedAt).toFixed(2))
+    })
+
+    useEffect(() => {
+      if (!isActive) return
+      const isFirstActivation = !hasInitializedEditorRef.current
+      hasInitializedEditorRef.current = true
+      markExplorerPerf(isFirstActivation ? 'editor-init-end' : 'editor-activation-ready', {
+        noteId: snippet?.id,
+        editorViewReady: Boolean(editorHandleRef.current)
+      })
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        markExplorerPerf('first-visible-paint', { noteId: snippet?.id })
+        finishExplorerPerfPaint({ noteId: snippet?.id })
+      }))
+    }, [isActive, snippet?.id])
 
     // Fast scroll viewport synchronization: immediately requests measure on scroll
     // to prevent blank/hidden text during rapid momentum scrolling (VS Code parity)

@@ -22,6 +22,7 @@
  */
 
 import { useMemo } from 'react'
+import { isExplorerPerfEnabled, markExplorerPerf } from '../utils/explorerPerf'
 
 export interface Snippet {
   id: string
@@ -151,6 +152,8 @@ export function useFileTree({
 
   // STAGE 1: Build & cache the tree hierarchy (only runs when files/folders or search query change)
   const treeHierarchy = useMemo((): RootNode => {
+    const buildStartedAt = isExplorerPerfEnabled() ? performance.now() : 0
+    if (isExplorerPerfEnabled()) markExplorerPerf('tree-build-start', { totalNotes: allSnippets.length, folderRecords: folders.length })
     const root: RootNode = {
       children: {},
       sortedChildren: [],
@@ -241,13 +244,30 @@ export function useFileTree({
     calculateCounts(root)
     finalizeTree(root)
 
+    if (isExplorerPerfEnabled()) {
+      markExplorerPerf('tree-build-end', {
+        totalNotes: allSnippets.length,
+        folderRecords: folders.length,
+        durationMs: Number((performance.now() - buildStartedAt).toFixed(2))
+      })
+    }
+
     return root
   }, [allSnippets, folders, folderOrder])
 
   // STAGE 2: Instant O(visible rows) projection on folder toggle or query
   // Zero string splitting, zero regex, zero sorting, zero count calculations.
   const flatTree = useMemo((): FlatTreeItem[] => {
-    if (activeTab !== 'all') return []
+    const flattenStartedAt = isExplorerPerfEnabled() ? performance.now() : 0
+    if (isExplorerPerfEnabled()) markExplorerPerf('tree-flatten-start', {
+      totalNotes: allSnippets.length,
+      folderRecords: folders.length,
+      previousVisibleRows: -1
+    })
+    if (activeTab !== 'all') {
+      if (isExplorerPerfEnabled()) markExplorerPerf('tree-flatten-end', { visibleRows: 0, durationMs: 0 })
+      return []
+    }
 
     const flat: FlatTreeItem[] = []
 
@@ -311,6 +331,12 @@ export function useFileTree({
     }
 
     traverse(treeHierarchy, 0)
+    if (isExplorerPerfEnabled()) markExplorerPerf('tree-flatten-end', {
+      visibleRows: flat.length,
+      totalNotes: allSnippets.length,
+      folderRecords: folders.length,
+      durationMs: Number((performance.now() - flattenStartedAt).toFixed(2))
+    })
     return flat
   }, [
     treeHierarchy,

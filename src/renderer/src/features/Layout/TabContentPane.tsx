@@ -22,11 +22,13 @@
  * =========================================================================
  */
 
-import React from 'react'
-import Editor from '../Editor/Editor'
+import React, { useLayoutEffect } from 'react'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
+import { countExplorerPerfRender, markExplorerPerf } from '../Explorer/utils/explorerPerf'
 
+// Keep editor initialization off the explorer click's synchronous render path.
+const Editor = React.lazy(() => import('../Editor/Editor'))
 const ImageViewerTab = React.lazy(() => import('../media/ImageViewerTab'))
 const PDFViewerTab = React.lazy(() => import('../media/PDFViewerTab'))
 const CanvasTabPane = React.lazy(() => import('../canvas/CanvasTabPane'))
@@ -83,9 +85,35 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
     onThemeClick,
     onGraphClick
   }) => {
+    countExplorerPerfRender('TabContentPane', snippet.id)
     // Each pane subscribes to only its own slice of state — O(1) check, zero cross-tab re-renders
     const isSelected = useWorkspaceStore(
       (state) => state.activeTabId === snippet.id || (!state.activeTabId && state.selectedNote?.id === snippet.id)
+    )
+
+    useLayoutEffect(() => {
+      markExplorerPerf('TabContentPane-mount', { noteId: snippet.id, isSelected })
+    }, [])
+
+    useLayoutEffect(() => {
+      if (!isSelected) return
+      markExplorerPerf('tab-pane-commit', { noteId: snippet.id })
+      requestAnimationFrame(() => markExplorerPerf('tab-visible-frame', { noteId: snippet.id }))
+    }, [isSelected, snippet.id])
+
+    const onEditorRender = React.useCallback(
+      (id: string, phase: string, actualDuration: number, baseDuration: number, startTime: number, commitTime: number) => {
+        markExplorerPerf('editor-react-commit', {
+          paneId: snippet.id,
+          id,
+          phase,
+          actualDuration,
+          baseDuration,
+          startTime,
+          commitTime
+        })
+      },
+      [snippet.id]
     )
 
     if (!snippet) return null
@@ -114,7 +142,26 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
         }}
       >
         <GlobalErrorHandler>
-          <React.Suspense fallback={null}>
+          <React.Profiler id={`TabContentPane:${snippet.id}`} onRender={onEditorRender}>
+          <React.Suspense
+            fallback={
+              <div
+                role="status"
+                aria-label={`Opening ${snippet.title || 'note'}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '100%',
+                  height: '100%',
+                  color: 'var(--text-muted, var(--color-text-muted, #888))',
+                  fontSize: 13
+                }}
+              >
+                Opening {snippet.title || 'note'}…
+              </div>
+            }
+          >
             {snippet.type === 'image' ? (
               <ImageViewerTab snippet={snippet} />
             ) : snippet.type === 'pdf' ? (
@@ -136,6 +183,7 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
               />
             )}
           </React.Suspense>
+          </React.Profiler>
         </GlobalErrorHandler>
       </div>
     )
@@ -158,4 +206,3 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
 TabContentPane.displayName = 'TabContentPane'
 
 export default TabContentPane
-
