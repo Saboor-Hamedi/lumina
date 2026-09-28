@@ -84,8 +84,9 @@ export const resolveReferencedFiles = (
   if (!message || !vaultSnippets) return requestedFiles
 
   try {
+    const cleanMessage = message.toLowerCase().replace(/\\/g, '/')
     vaultSnippets.forEach((s) => {
-      const rawTitle = (s.title || '').trim()
+      const rawTitle = String(s.title || '').trim()
       if (!rawTitle || rawTitle.length < 3) return
       if (
         mentionedSnippets.some((m) => m.id === s.id) ||
@@ -94,9 +95,21 @@ export const resolveReferencedFiles = (
         return
       }
 
-      const escaped = rawTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      const pattern = new RegExp(`(^|[^a-zA-Z0-9_-])${escaped}([^a-zA-Z0-9_-]|$)`, 'i')
-      if (pattern.test(message)) {
+      const aliases = [
+        rawTitle,
+        rawTitle.replace(/\.[^.]+$/, ''),
+        s.fileName,
+        s.path,
+        s.folderId ? `${s.folderId}/${rawTitle}` : rawTitle
+      ]
+        .filter((alias): alias is string => typeof alias === 'string' && alias.trim().length >= 3)
+        .map((alias) => alias.trim().toLowerCase().replace(/\\/g, '/'))
+      const matched = aliases.some((alias) => {
+        const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const pattern = new RegExp(`(^|[^a-z0-9_-])${escaped}(?=$|[^a-z0-9_-])`, 'i')
+        return pattern.test(cleanMessage)
+      })
+      if (matched) {
         requestedFiles.push(s)
       }
     })

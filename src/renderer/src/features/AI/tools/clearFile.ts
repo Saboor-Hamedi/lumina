@@ -71,7 +71,8 @@ export const clearFileTool = aiSdk.tool({
       return {
         success: true,
         title: target.title,
-        summary: `🧹 Cleared [[${target.title}]] (-${oldWords || 1})`,
+        removedWords: oldWords,
+        summary: `🧹 Cleared [[${target.title}]] (-${oldWords})`,
         instruction_to_ai: `File "${target.title}" was completely cleared. Inform the user.`
       }
     } catch (err: any) {

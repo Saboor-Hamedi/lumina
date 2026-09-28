@@ -78,7 +78,8 @@ export const deleteFileTool = aiSdk.tool({
       return {
         success: true,
         title: deletedTitle,
-        summary: `🗑️ Deleted [[${deletedTitle}]] (-${removedWords || 1})`,
+        removedWords,
+        summary: `🗑️ Deleted [[${deletedTitle}]] (-${removedWords})`,
         instruction_to_ai: `Note "${deletedTitle}" was deleted successfully. Confirm to user.`
       }
     } catch (err: any) {

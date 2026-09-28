@@ -94,11 +94,16 @@ function recordWorkspaceReviewChange(
   if (!path) return
 
   const summary = String(result.summary || '')
-  const diff = summary.match(/\(\+([\d,]+)(?:\s*words?)?(?:,\s*-([\d,]+))?/i)
+  const diff = summary.match(/\(\+([\d,]+)(?:\s*words?)?(?:,\s*-([\d,]+))?\)/i)
   const removedOnly = summary.match(/\(-([\d,]+)\)/)
-  let addedWords = Number(result.addedWords) || (diff ? parseInt(diff[1].replace(/,/g, ''), 10) : 0)
-  let removedWords = Number(result.removedWords) ||
-    (diff?.[2] ? parseInt(diff[2].replace(/,/g, ''), 10) : removedOnly ? parseInt(removedOnly[1].replace(/,/g, ''), 10) : 0)
+  let addedWords = result.addedWords !== undefined
+    ? Math.max(0, Number(result.addedWords) || 0)
+    : diff ? parseInt(diff[1].replace(/,/g, ''), 10) : 0
+  let removedWords = result.removedWords !== undefined
+    ? Math.max(0, Number(result.removedWords) || 0)
+    : diff?.[2]
+      ? parseInt(diff[2].replace(/,/g, ''), 10)
+      : removedOnly ? parseInt(removedOnly[1].replace(/,/g, ''), 10) : 0
 
   if (action === 'created' && addedWords === 0) {
     addedWords = countWords(result.writtenContent ?? args.content)
@@ -1143,7 +1148,7 @@ export const useAIStore = create<AIStore>((set, get) => {
           : isCompactOllamaConversation
             ? `You are Lumina, a helpful conversational assistant. Active mode: ${modeCfg.name}. ${modeCfg.systemAddon || ''}\nAnswer the user's actual question directly in plain language. Keep responses concise unless the user asks for detail. Never claim to change workspace files unless a workspace tool has actually succeeded. Never reveal credentials, API keys, or secrets.`
           : providerType === 'ollama'
-          ? `${systemPrompt}\n\nLOCAL TOOL-CALL COMPATIBILITY:\nUse the provided native tools whenever available. If this Ollama model cannot issue native tool calls, you MUST still perform requested workspace creation by emitting exact fallback blocks: <createFolder path="Folder/Path"></createFolder> and <createFile title="Note Title" folder="Folder/Path">complete markdown content</createFile>. Omit the folder attribute for root-level notes. Emit one createFile block per requested note. Do not merely describe the files in chat.`
+          ? `${systemPrompt}\n\nLOCAL TOOL-CALL COMPATIBILITY:\nLumina provides workspace tools inside this chat. Never say you cannot access external tools, systems, files, or Ollama. If a requested file's content is included in this prompt, read and answer from it directly. Otherwise call readFile with the requested file title/path before answering. Use provided native tools whenever available. If this model cannot issue native tool calls, you MUST still perform requested workspace creation by emitting exact fallback blocks: <createFolder path="Folder/Path"></createFolder> and <createFile title="Note Title" folder="Folder/Path">complete markdown content</createFile>. Omit the folder attribute for root-level notes. Emit one createFile block per requested note. Do not merely describe the files in chat.`
           : systemPrompt
 
         const finalMessages = newHistory
@@ -1203,6 +1208,24 @@ export const useAIStore = create<AIStore>((set, get) => {
           // Ordinary local conversation has no workspace actions; omit the
           // large mutation-tool schema bundle to reduce Ollama prompt prefill.
           sdkTools = getMemoryTools()
+        }
+
+        // Some models retry a diagnostics call with slightly different
+        // arguments. Share one in-flight/completed result for this response so
+        // the health check itself never runs twice in the same turn.
+        if (sdkTools.diagnoseSystem?.execute) {
+          const diagnosticsTool = sdkTools.diagnoseSystem
+          let diagnosticsPromise: Promise<any> | null = null
+          sdkTools = {
+            ...sdkTools,
+            diagnoseSystem: {
+              ...diagnosticsTool,
+              execute: (args: Record<string, unknown>) => {
+                diagnosticsPromise ??= Promise.resolve(diagnosticsTool.execute(args))
+                return diagnosticsPromise
+              }
+            }
+          }
         }
 
         const handleContentUpdate = (content: string) => {

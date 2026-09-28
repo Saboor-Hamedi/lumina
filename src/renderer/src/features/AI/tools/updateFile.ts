@@ -138,8 +138,6 @@ export const updateFileTool = aiSdk.tool({
     let writtenText = effectiveReplace || content || ''
     let diffPreview = ''
     let summaryText = `Updated **${target.title}**`
-    const oldSectionContent = ''
-
     let changePos: number | null = null
     let changeLine: number | null = null
 
@@ -597,29 +595,25 @@ export const updateFileTool = aiSdk.tool({
       vs.setSelectedNote(updated || { ...target, code: newCode })
     }
 
-    const oldWords = currentCode.trim() ? currentCode.trim().split(/\s+/).length : 0
-    const newWords = newCode.trim() ? newCode.trim().split(/\s+/).length : 0
-
+    // Compare the full before/after documents so targeted edits report replaced
+    // words as both removals and additions, even when the total length is equal.
+    const getWordCounts = (value: string) => {
+      const counts = new Map<string, number>()
+      for (const word of value.match(/\S+/g) || []) {
+        const key = word.toLowerCase()
+        counts.set(key, (counts.get(key) || 0) + 1)
+      }
+      return counts
+    }
+    const oldWordCounts = getWordCounts(currentCode)
+    const newWordCounts = getWordCounts(newCode)
     let addedWords = 0
     let removedWords = 0
-    if (search !== undefined && replace !== undefined) {
-      removedWords = search.trim() ? search.trim().split(/\s+/).length : 0
-      addedWords = replace.trim() ? replace.trim().split(/\s+/).length : 0
-    } else if (sectionHeader && replace !== undefined) {
-      const oldSectionWords = oldSectionContent ? (oldSectionContent as string).trim().split(/\s+/).length : 0
-      removedWords = oldSectionWords
-      addedWords = replace.trim() ? replace.trim().split(/\s+/).length : 0
-    } else if (content !== undefined) {
-      removedWords = oldWords
-      addedWords = newWords
-    } else {
-      const diff = newWords - oldWords
-      if (diff >= 0) addedWords = diff
-      else removedWords = Math.abs(diff)
+    for (const [word, count] of newWordCounts) {
+      addedWords += Math.max(0, count - (oldWordCounts.get(word) || 0))
     }
-
-    if (addedWords === 0 && removedWords === 0 && newCode !== currentCode) {
-      addedWords = Math.max(1, Math.abs(newWords - oldWords))
+    for (const [word, count] of oldWordCounts) {
+      removedWords += Math.max(0, count - (newWordCounts.get(word) || 0))
     }
 
     const diffBadge = `(+${addedWords}${removedWords > 0 ? `, -${removedWords}` : ''})`
@@ -627,6 +621,8 @@ export const updateFileTool = aiSdk.tool({
     return {
       success: true,
       title: target.title,
+      addedWords,
+      removedWords,
       writtenContent: writtenText || newCode,
       diffPreview: diffPreview,
       summary: `✏️ Updated [[${target.title}]] ${diffBadge}`,

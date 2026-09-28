@@ -211,6 +211,16 @@ export const parseMessageBlocks = (content?: string): MessageBlock[] => {
     }
   }
 
+  // A provider can render the same diagnostic result once from the native tool
+  // stream and again from its final XML response. Keep the final badge only.
+  const healthIndexes = blocks.reduce<number[]>((indexes, block, index) => {
+    if (block.type === 'health') indexes.push(index)
+    return indexes
+  }, [])
+  if (healthIndexes.length > 1) {
+    for (const index of healthIndexes.slice(0, -1).reverse()) blocks.splice(index, 1)
+  }
+
   const thinkBlocks = blocks.filter((b) => b.type === 'think')
   if (thinkBlocks.length > 0) {
     const mergedThink = thinkBlocks.map((b) => b.content).filter(Boolean).join('\n\n')

@@ -520,7 +520,8 @@
 /* Chat Response Actions (Like/Dislike/Copy) */
 .chat-response-actions {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   justify-content: space-between;
   width: 100%;
   box-sizing: border-box;
@@ -539,6 +540,19 @@
   min-width: 0;
 }
 
+.chat-response-report {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--bg-panel, #191c24) 72%, transparent);
+  box-sizing: border-box;
+}
+
 .chat-response-duration {
   display: inline-flex;
   align-items: center;
@@ -549,11 +563,12 @@
 }
 
 .chat-review-dropdown {
-  position: relative;
+  position: static;
+  width: 100%;
 }
 
 .chat-review-trigger {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
   padding: 5px 8px;
@@ -610,18 +625,15 @@
 }
 
 .chat-review-panel {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 8px);
-  z-index: 40;
-  width: min(440px, calc(100vw - 40px));
+  position: static;
+  width: 100%;
   max-height: min(340px, 55vh);
   overflow: auto;
-  padding: 8px;
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
-  border-radius: 10px;
-  background: var(--bg-card, #191c24);
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.3);
+  padding: 6px 2px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
   box-sizing: border-box;
 }
 
@@ -643,7 +655,7 @@
   padding: 4px 7px;
   border-radius: 6px;
   color: var(--text-main, #e5e7eb);
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 .chat-review-row:hover {

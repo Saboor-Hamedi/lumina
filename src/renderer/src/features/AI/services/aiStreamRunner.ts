@@ -424,10 +424,11 @@ export const parseAndExecuteDSML = async (
   let didExecute = false
 
   const handleToolRun = async (toolName: string, rawParams: Record<string, any>) => {
-    if (!toolName || !sdkTools || !sdkTools[toolName]?.execute) return
+    const runnableName = toolName === 'luminaDiagnoseSystem' ? 'diagnoseSystem' : toolName
+    if (!runnableName || !sdkTools || !sdkTools[runnableName]?.execute) return
     try {
       console.log(`[StreamRunner] Intercepted leaked tool call: ${toolName}`, rawParams)
-      const res = await sdkTools[toolName].execute(rawParams)
+      const res = await sdkTools[runnableName].execute(rawParams)
       didExecute = true
       if (toolName === 'luminaQueryIndex' || toolName === 'queryIndex') {
         const payload = res?.result

@@ -25,8 +25,10 @@ export const getAITools = (blockReadFile?: boolean, allowOpenFile: boolean = fal
     createFile: createFileTool,
     readFile: getReadFileTool(blockReadFile),
     checkFile: checkFileTool,
+    // Expose one public tool name: advertising both aliases makes some models
+    // execute the same diagnostics twice. The legacy name remains understood
+    // by the stream parser for old model responses.
     diagnoseSystem: luminaDiagnoseSystemTool,
-    luminaDiagnoseSystem: luminaDiagnoseSystemTool,
     auditWikilinks: auditWikilinksTool,
     luminaQueryIndex: luminaQueryIndexTool,
     queryIndex: queryIndexTool,
