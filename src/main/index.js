@@ -200,6 +200,21 @@ async function createWindow() {
     return { action: 'deny' }
   })
 
+  mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
+    const devUrl = process.env['ELECTRON_RENDERER_URL']
+    const isLocalDev = devUrl && navigationUrl.startsWith(devUrl)
+    const isLocalFile = navigationUrl.startsWith('file://')
+    if (!isLocalDev && !isLocalFile) {
+      event.preventDefault()
+      try {
+        const url = new URL(navigationUrl)
+        if (url.protocol === 'http:' || url.protocol === 'https:') {
+          shell.openExternal(navigationUrl)
+        }
+      } catch {}
+    }
+  })
+
   useResizeWindow(mainWindow)
   useWindowOpacity(mainWindow)
 

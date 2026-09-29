@@ -1,5 +1,6 @@
 import { net } from 'electron'
 import SettingsManager from '../settings'
+import { getGoogleClientSecret } from '../auth/googleOAuthConstants'
 
 /**
  * Retrieves the currently authenticated Google user from settings.
@@ -26,7 +27,7 @@ export async function refreshAccessToken(user) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       client_id: user.clientId,
-      client_secret: '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',
+      client_secret: getGoogleClientSecret(),
       refresh_token: user.refreshToken,
       grant_type: 'refresh_token'
     }).toString()

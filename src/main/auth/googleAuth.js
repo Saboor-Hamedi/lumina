@@ -4,6 +4,7 @@ import url from 'url'
 import path from 'path'
 import fs from 'fs'
 import SettingsManager from '../settings'
+import { getGoogleClientSecret } from './googleOAuthConstants'
 
 let authServer = null
 
@@ -340,7 +341,7 @@ export function setupGoogleAuth(getMainWindow) {
                   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                   body: new URLSearchParams({
                     client_id: clientId,
-                    client_secret: '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',
+                    client_secret: getGoogleClientSecret(),
                     code: code,
                     grant_type: 'authorization_code',
                     redirect_uri: redirectUri

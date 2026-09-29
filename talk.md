@@ -308,9 +308,7 @@
 
 ## Critical Security Issues
 
-### 26. Hardcoded OAuth Client Secret
-
-**What:** `client_secret: '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'` appears in 3 files: `driveAuthHelper.js`, `googleAuth.js`, `gmailService.ts`.
+**What:** `client_secret` was previously hardcoded in `driveAuthHelper.js`, `googleAuth.js`, and `gmailService.ts`. [RESOLVED: moved to .env]
 
 **Why it matters:** Client secrets should never be in source code. Anyone with repo access can impersonate the app.
 

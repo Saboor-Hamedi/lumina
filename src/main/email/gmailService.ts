@@ -1,5 +1,6 @@
 import { net, ipcMain, dialog, Notification, BrowserWindow, app } from 'electron'
 import SettingsManager from '../settings'
+import { getGoogleClientSecret } from '../auth/googleOAuthConstants'
 import fs from 'fs/promises'
 import fsSync from 'fs'
 import path from 'path'
@@ -195,7 +196,7 @@ export async function refreshAccessToken(user: GmailUser): Promise<string> {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       client_id: user.clientId,
-      client_secret: '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',
+      client_secret: getGoogleClientSecret(),
       refresh_token: user.refreshToken,
       grant_type: 'refresh_token'
     }).toString()
