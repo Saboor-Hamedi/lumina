@@ -308,31 +308,27 @@
 
 ## Critical Security Issues
 
+### 26. OAuth Secrets in Source Code [COMPLETED]
+
 **What:** `client_secret` was previously hardcoded in `driveAuthHelper.js`, `googleAuth.js`, and `gmailService.ts`. [RESOLVED: moved to .env]
 
-**Why it matters:** Client secrets should never be in source code. Anyone with repo access can impersonate the app.
-
-**Suggestion:** Move to environment variables or Electron `safeStorage`. Use `process.env.GOOGLE_CLIENT_SECRET` and fail fast if not set.
+**Status:** **[COMPLETED]** - All OAuth credentials moved exclusively to environment variables via `.env` (`GOOGLE_CLIENT_SECRET`). Fails fast with clear warnings if missing.
 
 ---
 
-### 27. No `will-navigate` Handler
+### 27. No `will-navigate` Handler [COMPLETED]
 
 **What:** The main process doesn't prevent the renderer from navigating to external URLs.
 
-**Why it matters:** A compromised renderer could navigate to phishing sites or malicious content.
-
-**Suggestion:** Add `win.webContents.on('will-navigate', (event, url) => { ... })` that only allows same-origin navigations.
+**Status:** **[COMPLETED]** - Implemented in `src/main/app/windowManager.ts`. Prevents internal navigation away from the local bundle and opens external HTTP/HTTPS URLs securely in the OS default browser.
 
 ---
 
-### 28. No `setWindowOpenHandler`
+### 28. No `setWindowOpenHandler` [COMPLETED]
 
 **What:** `window.open()` calls from the renderer are uncontrolled.
 
-**Why it matters:** A compromised renderer could open arbitrary windows.
-
-**Suggestion:** Add `win.webContents.setWindowOpenHandler(({ url }) => { ... })` that validates URLs before opening.
+**Status:** **[COMPLETED]** - Implemented in `src/main/app/windowManager.ts`. Restricts arbitrary child window spawning, validates URLs, and routes valid HTTP/HTTPS links to OS default browser while denying internal child windows.
 
 ---
 
@@ -346,25 +342,26 @@
 
 ---
 
-### 30. No IPC Input Validation
+### 30. No IPC Input Validation [COMPLETED]
 
 **What:** IPC handlers accept raw payloads from renderer with no schema validation.
 
-**Why it matters:** Malformed data can crash the app or cause unexpected behavior.
-
-**Suggestion:** Add zod schemas for all IPC handler inputs. Validate before processing.
+**Status:** **[COMPLETED]** - Created `src/main/handlers/ipcValidation.ts` using Zod runtime schemas. All IPC handlers across Settings, Export, Workspace, Dialog, System, Memory, and AI now validate and sanitize input payloads before processing.
 
 ---
 
 ## Architecture Issues
 
-### 31. Monolithic `index.js` (1235 lines)
+### 31. Monolithic `index.js` (1235 lines) [COMPLETED]
 
 **What:** 40+ IPC handlers registered inline in the main entry file.
 
-**Why it matters:** Hard to maintain, test, and debug. Changes risk breaking unrelated handlers.
-
-**Suggestion:** Split into domain-specific handler modules: `workspaceHandlers`, `searchHandlers`, `exportHandlers`, `authHandlers`, etc.
+**Status:** **[COMPLETED]** - Completely refactored `src/main/index.js` down from 1,219 lines to 76 lines. Deconstructed into:
+- `src/main/handlers/` (10 modular TypeScript IPC handler domains with Zod validation)
+- `src/main/app/windowManager.ts` (Window creation & bounds)
+- `src/main/app/protocolManager.ts` (`asset://` custom protocol & dev network filters)
+- `src/main/app/lifecycleManager.ts` (Service bootstrap, LevelDB cache healer, shutdown)
+- `src/main/app/crashReporter.ts` (Global uncaught exception & crash diagnostics)
 
 ---
 
@@ -630,12 +627,12 @@
 
 ## Top 10 Priority Recommendations
 
-1. **Move OAuth secrets to environment variables** — critical security fix
+1. **Move OAuth secrets to environment variables** — **[COMPLETED]** (All secrets moved to `.env`)
 2. **Add CI/CD pipeline** — automated testing, building, publishing
-3. **Split `index.js` into domain-specific IPC handlers** — maintainability
+3. **Split `index.js` into domain-specific IPC handlers** — **[COMPLETED]** (1,219 lines -> 76 lines, modularized under `src/main/handlers/` and `src/main/app/`)
 4. **Split `aiStreamRunner.ts` and `aiPromptBuilder.ts`** — extract focused units
-5. **Add IPC payload validation with zod** — prevent crashes
-6. **Add `will-navigate` and `setWindowOpenHandler`** — security hardening
+5. **Add IPC payload validation with zod** — **[COMPLETED]** (`src/main/handlers/ipcValidation.ts` + Zod schemas on all handlers)
+6. **Add `will-navigate` and `setWindowOpenHandler`** — **[COMPLETED]** (Implemented in `src/main/app/windowManager.ts`)
 7. **Add error tracking service (Sentry)** — production error visibility
 8. **Add integration test layer** — test IPC handlers with mocked renderer
 9. **Add lazy loading for all feature components** — reduce bundle size
