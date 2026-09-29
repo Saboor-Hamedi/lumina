@@ -3,7 +3,7 @@
  * Case-insensitive substring match, highlights cells, hides non-matching rows.
  */
 
-import { hideDomTooltip } from '../../components/atoms/domTooltip.js'
+import { hideDomTooltip } from '../../components/atoms/domTooltip'
 
 const HIGHLIGHT_CLASS = 'cm-table-search-highlight'
 const MATCH_MARK      = 'cm-table-search-mark'

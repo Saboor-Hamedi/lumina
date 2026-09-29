@@ -1,6 +1,6 @@
-import { dispatchModel, placeCaretAtEnd } from './tableExtension.js'
-import { readModelFromDom } from './tableModel.js'
-import { redistributeColumnWidths } from './tableResize.js'
+import { dispatchModel, placeCaretAtEnd } from './tableExtension'
+import { readModelFromDom } from './tableModel'
+import { redistributeColumnWidths } from './tableResize'
 
 export function setupTableSelection(wrap, view) {
   let isDragging = false

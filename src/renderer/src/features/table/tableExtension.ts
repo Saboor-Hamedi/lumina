@@ -19,8 +19,8 @@ import { setupTableSelection } from './tableSelection'
 import { setupTableDragAndDrop } from './tableDragDrop'
 import { setupTableColResizing } from './tableResize'
 import { setupTableInsertion } from './tableInsert'
-import { createTableHeaderDOM } from './tableHeader.js'
-import { createTableFooterDOM, updateTableFooterCount } from './tableFooter.js'
+import { createTableHeaderDOM } from './tableHeader'
+import { createTableFooterDOM, updateTableFooterCount } from './tableFooter'
 
 import { parseTable, serializeTable, readModelFromDom, getCellSource } from './tableModel'
 import { renderCellSourceDecorated, makeCell } from './tableCell'
@@ -46,7 +46,11 @@ function getColumnWidths(model) {
 
 function tableStartFrom(doc, startLine) {
   let from = startLine.from
-  for (let lineNumber = startLine.number - 1; lineNumber >= Math.max(1, startLine.number - 6); lineNumber -= 1) {
+  for (
+    let lineNumber = startLine.number - 1;
+    lineNumber >= Math.max(1, startLine.number - 6);
+    lineNumber -= 1
+  ) {
     const text = doc.line(lineNumber).text.trim()
     if (
       text.match(/^<!--\s*table:\s*(.*?)\s*-->$/i) ||
@@ -85,7 +89,11 @@ function applyTableGeometry(table, model) {
     // per column so wide tables remain readable and scroll horizontally.
     const columnCount = model.header?.length || 1
     table.style.removeProperty('width')
-    table.style.setProperty('min-width', `max(100%, ${columnCount * TABLE_CONFIG.minGeneratedColumnWidth}px)`, 'important')
+    table.style.setProperty(
+      'min-width',
+      `max(100%, ${columnCount * TABLE_CONFIG.minGeneratedColumnWidth}px)`,
+      'important'
+    )
     Array.from(table.querySelectorAll('tr')).forEach((row) => {
       Array.from(row.children).forEach((cell) => {
         cell.style.removeProperty('width')
@@ -99,10 +107,12 @@ function applyTableGeometry(table, model) {
   }
 
   if (model.rowHeights?.length) {
-    Array.from(table.querySelectorAll('tbody tr:not(.cm-table-empty-row)')).forEach((row, index) => {
-      const height = model.rowHeights[index]
-      if (height) row.style.height = `${height}px`
-    })
+    Array.from(table.querySelectorAll('tbody tr:not(.cm-table-empty-row)')).forEach(
+      (row, index) => {
+        const height = model.rowHeights[index]
+        if (height) row.style.height = `${height}px`
+      }
+    )
   } else {
     Array.from(table.querySelectorAll('tbody tr:not(.cm-table-empty-row)')).forEach((row) => {
       row.style.removeProperty('height')
@@ -112,7 +122,7 @@ function applyTableGeometry(table, model) {
 
 export function findCurrentTableRange(view, dom) {
   if (!dom) return null
-  const wrap = dom.closest ? (dom.closest('.cm-atomic-table') || dom) : dom
+  const wrap = dom.closest ? dom.closest('.cm-atomic-table') || dom : dom
   if (!wrap) return null
 
   const doc = view.state.doc
@@ -224,19 +234,19 @@ export function scrollCellIntoView(scrollContainer, targetCell) {
 
   // Vertical scroll adjustment (ensure cell/cursor is completely above footer)
   if (cellRect.bottom > containerRect.bottom) {
-    const diff = (cellRect.bottom - containerRect.bottom) + TABLE_CONFIG.scrollOffset.vertical
+    const diff = cellRect.bottom - containerRect.bottom + TABLE_CONFIG.scrollOffset.vertical
     scrollContainer.scrollTop += diff
   } else if (cellRect.top < containerRect.top) {
-    const diff = (containerRect.top - cellRect.top) + TABLE_CONFIG.scrollOffset.vertical
+    const diff = containerRect.top - cellRect.top + TABLE_CONFIG.scrollOffset.vertical
     scrollContainer.scrollTop -= diff
   }
 
   // Horizontal scroll adjustment (ensure cell/cursor is within visible columns)
   if (cellRect.right > containerRect.right) {
-    const diff = (cellRect.right - containerRect.right) + TABLE_CONFIG.scrollOffset.horizontal
+    const diff = cellRect.right - containerRect.right + TABLE_CONFIG.scrollOffset.horizontal
     scrollContainer.scrollLeft += diff
   } else if (cellRect.left < containerRect.left) {
-    const diff = (containerRect.left - cellRect.left) + TABLE_CONFIG.scrollOffset.horizontal
+    const diff = containerRect.left - cellRect.left + TABLE_CONFIG.scrollOffset.horizontal
     scrollContainer.scrollLeft -= diff
   }
 }
@@ -269,9 +279,12 @@ export class TableWidget extends WidgetType {
     })
     this.signature = tableModelSignature(model)
   }
-  
+
   get estimatedHeight() {
-    return Math.min(TABLE_CONFIG.maxWidgetHeight, this.model.rows.length * TABLE_CONFIG.rowHeightEstimate + TABLE_CONFIG.widgetHeightPadding)
+    return Math.min(
+      TABLE_CONFIG.maxWidgetHeight,
+      this.model.rows.length * TABLE_CONFIG.rowHeightEstimate + TABLE_CONFIG.widgetHeightPadding
+    )
   }
 
   eq(other) {
@@ -400,7 +413,7 @@ export class TableWidget extends WidgetType {
         e.preventDefault()
         e.stopPropagation()
         const m = readModelFromDom(wrap)
-        const cols = m.header.length > 0 ? m.header.length : (colCount || 1)
+        const cols = m.header.length > 0 ? m.header.length : colCount || 1
         m.rows = [Array(cols).fill('')]
         dispatchModel(view, wrap, m, { isHeader: false, rowIdx: 0, colIdx: 0 })
       }
@@ -520,7 +533,7 @@ export class TableWidget extends WidgetType {
           e.preventDefault()
           e.stopPropagation()
           const m = readModelFromDom(dom)
-          const cols = m.header.length > 0 ? m.header.length : (colCount || 1)
+          const cols = m.header.length > 0 ? m.header.length : colCount || 1
           m.rows = [Array(cols).fill('')]
           dispatchModel(view, dom, m, { isHeader: false, rowIdx: 0, colIdx: 0 })
         }
@@ -639,17 +652,29 @@ export class TableWidget extends WidgetType {
 
     return true
   }
-  // All cell interactions are handled by the listeners we attach in
-  // `makeCell`; tell CM6 to stay out of events within the widget so
-  // its own selection/click logic doesn't compete with contenteditable.
-  ignoreEvent() {
-    return true
+  // Keep CM away from editable cells and controls that have their own
+  // focus, selection, and keyboard behavior. Passive areas of the widget
+  // remain visible to CM so it can preserve its native mouse behavior.
+  ignoreEvent(event: Event) {
+    const target = event.target
+    if (!(target instanceof Element)) return true
+    if (
+      target.closest(
+        '.cm-atomic-table-cell-source, button, input, textarea, select, [contenteditable="true"]'
+      )
+    ) {
+      return true
+    }
+    const cell = target.closest('td, th')
+    return Boolean(
+      cell && ['mousedown', 'pointerdown', 'keydown', 'contextmenu'].includes(event.type)
+    )
   }
 }
 
 export function cellRowIndex(cell) {
   if (!cell) return -1
-  const targetCell = cell.closest ? (cell.closest('th, td') || cell) : cell
+  const targetCell = cell.closest ? cell.closest('th, td') || cell : cell
   const tr = targetCell.closest ? targetCell.closest('tr') : null
   const tbody = tr?.closest ? tr.closest('tbody') : null
   if (!tr || !tbody) return -1
@@ -658,7 +683,7 @@ export function cellRowIndex(cell) {
 
 export function cellColIndex(cell) {
   if (!cell) return -1
-  const targetCell = cell.closest ? (cell.closest('th, td') || cell) : cell
+  const targetCell = cell.closest ? cell.closest('th, td') || cell : cell
   const tr = targetCell.closest ? targetCell.closest('tr') : null
   if (!tr) return -1
   return Array.from(tr.querySelectorAll('th, td')).indexOf(targetCell)
@@ -712,7 +737,8 @@ export function dispatchModel(view, wrap, nextModel, explicitFocusInfo = null) {
         const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
         const target = wrap?.isConnected
           ? wrap
-          : tables.find((table) => findCurrentTableRange(view, table)?.from === fromPos) || tables[0]
+          : tables.find((table) => findCurrentTableRange(view, table)?.from === fromPos) ||
+            tables[0]
         if (!target) return
         let targetTr = null
         if (cellInfo.isHeader) {
@@ -827,15 +853,19 @@ export function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }
       const thead = wrap.querySelector('thead tr')
       const colCount = thead ? thead.querySelectorAll('th').length : 1
       const currentCol = cellColIndex(cell)
-      const focusCol = (Math.abs(dir) === 1) ? 0 : Math.max(0, currentCol >= 0 ? currentCol : (idx % colCount))
+      const focusCol =
+        Math.abs(dir) === 1 ? 0 : Math.max(0, currentCol >= 0 ? currentCol : idx % colCount)
       appendRow(view, wrap, focusCol)
     } else {
       // jump out below safely
       const range = findCurrentTableRange(view, wrap)
       let targetPos = range ? range.to : view.posAtDOM(wrap) + 10 // fallback
-      
+
       if (range) {
-        if (targetPos < view.state.doc.length && view.state.sliceDoc(targetPos, targetPos + 1) === '\n') {
+        if (
+          targetPos < view.state.doc.length &&
+          view.state.sliceDoc(targetPos, targetPos + 1) === '\n'
+        ) {
           targetPos += 1
         } else if (targetPos === view.state.doc.length) {
           view.dispatch({ changes: { from: targetPos, insert: '\n' } })
@@ -982,11 +1012,13 @@ export function arrowUpIntoTable(view) {
 
   const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
   const startLine = state.doc.lineAt(tableNode.from)
-  const target = tables.find(t => {
+  const target = tables.find((t) => {
     try {
       const p = view.posAtDOM(t)
       return p === startLine.from || p === tableNode.from
-    } catch { return false }
+    } catch {
+      return false
+    }
   })
 
   if (target) {
@@ -1004,7 +1036,6 @@ export function arrowUpIntoTable(view) {
   return false
 }
 
-
 export function arrowDownIntoTable(view) {
   const { state } = view
   const sel = state.selection.main
@@ -1013,9 +1044,9 @@ export function arrowDownIntoTable(view) {
 
   const line = state.doc.lineAt(pos)
   if (line.number === state.doc.lines) return false
-  
+
   const nextLine = state.doc.line(line.number + 1)
-  
+
   const tree = syntaxTree(state)
   let tableNode = null
   tree.iterate({
@@ -1033,13 +1064,15 @@ export function arrowDownIntoTable(view) {
 
   const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
   const startLine = state.doc.lineAt(tableNode.from)
-  const target = tables.find(t => {
+  const target = tables.find((t) => {
     try {
       const pos = view.posAtDOM(t)
       return pos === startLine.from || pos === tableNode.from
-    } catch { return false }
+    } catch {
+      return false
+    }
   })
-  
+
   if (target) {
     const cell = target.querySelector('thead .cm-atomic-table-cell-source')
     if (cell) {
@@ -1203,11 +1236,10 @@ const tableSelectionSyncPlugin = ViewPlugin.fromClass(
   }
 )
 
-
 export function preventTableDeletion(view, event) {
   const sel = view.state.selection.main
   if (sel.empty) return false
-  
+
   // Check if the selection exactly matches a table
   const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
   for (const t of tables) {

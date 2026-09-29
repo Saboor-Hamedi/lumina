@@ -1,9 +1,9 @@
-import { icons } from './tableIcons.js'
-import { createTableTitleDOM } from './tableRename.js'
-import { createTableQuickActionsDOM } from './tableActions.js'
-import { createTableViewModeToggleDOM } from './tableSourceView.js'
-import { findCurrentTableRange } from './tableExtension.js'
-import { createTableSearchBar } from './tableSearch.js'
+import { icons } from './tableIcons'
+import { createTableTitleDOM } from './tableRename'
+import { createTableQuickActionsDOM } from './tableActions'
+import { createTableViewModeToggleDOM } from './tableSourceView'
+import { findCurrentTableRange } from './tableExtension'
+import { createTableSearchBar } from './tableSearch'
 
 /**
  * Builds the .cm-table-ui-header bar and attaches the floating search popover.

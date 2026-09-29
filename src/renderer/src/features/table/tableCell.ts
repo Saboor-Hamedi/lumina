@@ -4,8 +4,8 @@ import { TableAutocomplete } from './tableAutocomplete'
 import { openCellMenu, cellColIndex, cellRowIndex } from './tableMenu'
 import { readModelFromDom } from './tableModel'
 import { parseCellInline } from './tableParser'
-import { icons } from './tableIcons.js'
-import { applyColumnSort } from './tableSort.js'
+import { icons } from './tableIcons'
+import { applyColumnSort } from './tableSort'
 import {
   findCurrentTableRange,
   placeCaretAtEnd,
@@ -301,30 +301,30 @@ export function restoreFocusAfterHistory(view, cell, source, action) {
         scroller.scrollLeft = scrollLeft
       }
 
-    // Find the target table and cell
-    let targetWrap = wrap && document.body.contains(wrap) ? wrap : null
-    if (!targetWrap && view?.dom) {
-      const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
-      targetWrap = tables[0] || null
-    }
+      // Find the target table and cell
+      let targetWrap = wrap && document.body.contains(wrap) ? wrap : null
+      if (!targetWrap && view?.dom) {
+        const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
+        targetWrap = tables[0] || null
+      }
 
-    if (targetWrap) {
-      const trs = Array.from(targetWrap.querySelectorAll(isHeader ? 'thead tr' : 'tbody tr'))
-      const targetTr = trs[Math.max(0, Math.min(rowIdx, trs.length - 1))]
-      if (targetTr) {
-        const targetCells = Array.from(targetTr.querySelectorAll('th, td'))
-        const targetCell = targetCells[Math.max(0, Math.min(colIdx, targetCells.length - 1))]
-        if (targetCell) {
-          const newSource = targetCell.querySelector('.cm-atomic-table-cell-source')
-          if (newSource) {
-            newSource.focus({ preventScroll: true })
-            const len = (newSource.textContent || '').length
-            setCaretCharOffset(newSource, Math.min(offset, len))
-            updateActiveMarkForSource(newSource)
+      if (targetWrap) {
+        const trs = Array.from(targetWrap.querySelectorAll(isHeader ? 'thead tr' : 'tbody tr'))
+        const targetTr = trs[Math.max(0, Math.min(rowIdx, trs.length - 1))]
+        if (targetTr) {
+          const targetCells = Array.from(targetTr.querySelectorAll('th, td'))
+          const targetCell = targetCells[Math.max(0, Math.min(colIdx, targetCells.length - 1))]
+          if (targetCell) {
+            const newSource = targetCell.querySelector('.cm-atomic-table-cell-source')
+            if (newSource) {
+              newSource.focus({ preventScroll: true })
+              const len = (newSource.textContent || '').length
+              setCaretCharOffset(newSource, Math.min(offset, len))
+              updateActiveMarkForSource(newSource)
+            }
           }
         }
       }
-    }
     }
   })
 }
@@ -434,7 +434,12 @@ export function makeCell(tag, text, view) {
       cell.dataset.sortDir = nextDir
       sortBtn.classList.add('active')
       sortBtn.innerHTML = nextDir === 'asc' ? icons.sortAsc : icons.sortDesc
-      sortBtn.setAttribute('data-tooltip', nextDir === 'asc' ? 'Sorted Ascending (Click for Descending)' : 'Sorted Descending (Click for Ascending)')
+      sortBtn.setAttribute(
+        'data-tooltip',
+        nextDir === 'asc'
+          ? 'Sorted Ascending (Click for Descending)'
+          : 'Sorted Descending (Click for Ascending)'
+      )
 
       applyColumnSort(currentView, wrap, colIdx, nextDir)
     }
@@ -573,13 +578,7 @@ export function makeCell(tag, text, view) {
     clearActiveMarksInSource(source)
     autocomplete.close()
   })
-  const handleCellKeyDown = (event) => {
-    if (autocomplete.handleKeyDown(event)) {
-      event.preventDefault()
-      event.stopPropagation()
-      return
-    }
-
+  const handleBacktickKey = (event: KeyboardEvent) => {
     if (event.key === '`') {
       const doc = source.ownerDocument
       const win = doc?.defaultView
@@ -610,16 +609,16 @@ export function makeCell(tag, text, view) {
         }
       }
     }
-
-    // Enter mirrors Tab — advance to the next cell (appending a row past
-    // the last one) instead of inserting a line break a single-line cell
-    // can't represent. Shift reverses direction for both.
+  }
+  const handleTabKey = (event: KeyboardEvent) => {
     if (event.key === 'Tab') {
       event.preventDefault()
       event.stopPropagation()
       moveCellFocus(view, cell, event.shiftKey ? -1 : 1)
       return
     }
+  }
+  const handleEnterKey = (event: KeyboardEvent) => {
     if (event.key === 'Enter') {
       event.preventDefault()
       event.stopPropagation()
@@ -666,7 +665,8 @@ export function makeCell(tag, text, view) {
       moveCellFocus(view, cell, event.shiftKey ? -colCount : colCount)
       return
     }
-
+  }
+  const handleEscapeKey = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
       event.preventDefault()
       event.stopPropagation()
@@ -676,7 +676,8 @@ export function makeCell(tag, text, view) {
       }
       return
     }
-
+  }
+  const handleArrowUpKey = (event: KeyboardEvent) => {
     if (event.key === 'ArrowUp') {
       if (event.shiftKey) {
         event.preventDefault()
@@ -707,6 +708,8 @@ export function makeCell(tag, text, view) {
       }
       return
     }
+  }
+  const handleArrowDownKey = (event: KeyboardEvent) => {
     if (event.key === 'ArrowDown') {
       if (event.shiftKey) {
         event.preventDefault()
@@ -716,7 +719,9 @@ export function makeCell(tag, text, view) {
           const coords = wrap.__getCoords(cell)
           if (coords && coords.c !== -1) {
             const tbody = wrap.querySelector('tbody')
-            const rowCount = tbody ? tbody.querySelectorAll('tr:not(.cm-table-empty-row)').length : 0
+            const rowCount = tbody
+              ? tbody.querySelectorAll('tr:not(.cm-table-empty-row)').length
+              : 0
             const targetR = Math.min(rowCount - 1, coords.r + 1)
             const targetCell = wrap.__getCellAt(targetR, coords.c) || cell
             wrap.__setGridSelection(cell, targetCell)
@@ -742,7 +747,10 @@ export function makeCell(tag, text, view) {
           event.preventDefault()
           event.stopPropagation()
           let targetPos = range.to
-          if (targetPos < view.state.doc.length && view.state.sliceDoc(targetPos, targetPos + 1) === '\n') {
+          if (
+            targetPos < view.state.doc.length &&
+            view.state.sliceDoc(targetPos, targetPos + 1) === '\n'
+          ) {
             targetPos += 1
           } else if (targetPos === view.state.doc.length) {
             view.dispatch({ changes: { from: targetPos, insert: '\n' } })
@@ -754,6 +762,8 @@ export function makeCell(tag, text, view) {
       }
       return
     }
+  }
+  const handleArrowLeftKey = (event: KeyboardEvent) => {
     if (event.key === 'ArrowLeft') {
       if (event.shiftKey) {
         const offset = getCaretCharOffset(source) || 0
@@ -784,6 +794,8 @@ export function makeCell(tag, text, view) {
         return
       }
     }
+  }
+  const handleArrowRightKey = (event: KeyboardEvent) => {
     if (event.key === 'ArrowRight') {
       if (event.shiftKey) {
         const offset = getCaretCharOffset(source) || 0
@@ -816,7 +828,8 @@ export function makeCell(tag, text, view) {
         return
       }
     }
-
+  }
+  const handleBackspaceKey = (event: KeyboardEvent) => {
     if (event.key === 'Backspace') {
       const selection = source.ownerDocument?.defaultView?.getSelection()
       if (selection && !selection.isCollapsed && source.contains(selection.anchorNode)) {
@@ -924,7 +937,8 @@ export function makeCell(tag, text, view) {
         }
       }
     }
-
+  }
+  const handlePipeKey = (event: KeyboardEvent) => {
     if (event.key === '|') {
       const doc = source.ownerDocument
       const win = doc?.defaultView
@@ -997,6 +1011,62 @@ export function makeCell(tag, text, view) {
         })
         return
       }
+    }
+  }
+  const handleCellKeyDown = (event: KeyboardEvent) => {
+    if (autocomplete.handleKeyDown(event)) {
+      event.preventDefault()
+      event.stopPropagation()
+      return
+    }
+
+    if (event.key === '`') {
+      handleBacktickKey(event)
+      return
+    }
+
+    // Enter mirrors Tab — advance to the next cell (appending a row past
+    // the last one) instead of inserting a line break a single-line cell
+    // can't represent. Shift reverses direction for both.
+    if (event.key === 'Tab') {
+      handleTabKey(event)
+      return
+    }
+    if (event.key === 'Enter') {
+      handleEnterKey(event)
+      return
+    }
+
+    if (event.key === 'Escape') {
+      handleEscapeKey(event)
+      return
+    }
+
+    if (event.key === 'ArrowUp') {
+      handleArrowUpKey(event)
+      return
+    }
+    if (event.key === 'ArrowDown') {
+      handleArrowDownKey(event)
+      return
+    }
+    if (event.key === 'ArrowLeft') {
+      handleArrowLeftKey(event)
+      return
+    }
+    if (event.key === 'ArrowRight') {
+      handleArrowRightKey(event)
+      return
+    }
+
+    if (event.key === 'Backspace') {
+      handleBackspaceKey(event)
+      return
+    }
+
+    if (event.key === '|') {
+      handlePipeKey(event)
+      return
     }
 
     // Forward Undo/Redo commands to CodeMirror view safely
@@ -1094,7 +1164,9 @@ export function makeCell(tag, text, view) {
 export function applyTableSearchHighlight(root, pattern) {
   window.__lumina_active_search_pattern = pattern
   const container = root || document
-  const sources = container.querySelectorAll ? container.querySelectorAll('.cm-atomic-table-cell-source') : []
+  const sources = container.querySelectorAll
+    ? container.querySelectorAll('.cm-atomic-table-cell-source')
+    : []
   sources.forEach((source) => {
     renderCellSourceDecorated(source)
   })
@@ -1103,10 +1175,10 @@ export function applyTableSearchHighlight(root, pattern) {
 export function clearTableSearchHighlight(root) {
   window.__lumina_active_search_pattern = null
   const container = root || document
-  const sources = container.querySelectorAll ? container.querySelectorAll('.cm-atomic-table-cell-source') : []
+  const sources = container.querySelectorAll
+    ? container.querySelectorAll('.cm-atomic-table-cell-source')
+    : []
   sources.forEach((source) => {
     renderCellSourceDecorated(source)
   })
 }
-
-

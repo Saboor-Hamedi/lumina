@@ -10,8 +10,8 @@
  * ============================================================================
  */
 
-import { readModelFromDom } from './tableModel.js'
-import { dispatchModel } from './tableExtension.js'
+import { readModelFromDom } from './tableModel'
+import { dispatchModel } from './tableExtension'
 
 /**
  * Extracts clean plaintext from a markdown cell for accurate sorting comparisons.

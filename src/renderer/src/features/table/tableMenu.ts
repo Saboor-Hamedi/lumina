@@ -1,9 +1,9 @@
-import { dispatchModel } from './tableExtension.js'
-import { readModelFromDom } from './tableModel.js'
-import { icons } from './tableIcons.js'
-import { copyTableAs, exportTableAsCSV, duplicateTable } from './tableActions.js'
-import { applyColumnSort } from './tableSort.js'
-import { redistributeColumnWidths } from './tableResize.js'
+import { dispatchModel } from './tableExtension'
+import { readModelFromDom } from './tableModel'
+import { icons } from './tableIcons'
+import { copyTableAs, exportTableAsCSV, duplicateTable } from './tableActions'
+import { applyColumnSort } from './tableSort'
+import { redistributeColumnWidths } from './tableResize'
 
 export function cellRowIndex(cell) {
   if (!cell) return -1

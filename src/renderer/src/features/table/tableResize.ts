@@ -1,5 +1,5 @@
-import { readModelFromDom } from './tableModel.js'
-import { TABLE_CONFIG } from './tableConfig.js'
+import { readModelFromDom } from './tableModel'
+import { TABLE_CONFIG } from './tableConfig'
 
 const MIN_COLUMN_WIDTH = TABLE_CONFIG.minColumnWidth
 const MIN_ROW_HEIGHT = TABLE_CONFIG.minRowHeight
@@ -34,7 +34,7 @@ export function redistributeColumnWidths(widths, wrap, minColW = MIN_COLUMN_WIDT
   if (!containerWidth) return widths
 
   const total = widths.reduce((s, w) => s + w, 0)
-  if (total === containerWidth) return widths   // already perfect
+  if (total === containerWidth) return widths // already perfect
 
   const scale = containerWidth / (total || 1)
   const next = []
@@ -108,10 +108,7 @@ function computeWidthVector(initialWidths, columnIndex, delta) {
     }
 
     // Only-column or last-column edge — just clamp (graceful fallback).
-    next[columnIndex] = Math.max(
-      MIN_COLUMN_WIDTH,
-      Math.round(initialWidths[columnIndex] + delta)
-    )
+    next[columnIndex] = Math.max(MIN_COLUMN_WIDTH, Math.round(initialWidths[columnIndex] + delta))
     return next
   }
 
@@ -135,8 +132,8 @@ export function setupTableColResizing(wrap, onCommit = null) {
   let activeRow = null
 
   // ── Drag-session state (frozen at mousedown) ───────────────────────
-  let frozenInitialWidths = []   // column widths at drag start
-  let latestWidths = null        // last applied vector, for commit
+  let frozenInitialWidths = [] // column widths at drag start
+  let latestWidths = null // last applied vector, for commit
   let latestCoordinate = null
 
   const getResizeTarget = (event) => {
@@ -157,7 +154,10 @@ export function setupTableColResizing(wrap, onCommit = null) {
     const bodyRows = Array.from(table.querySelectorAll('tbody tr:not(.cm-table-empty-row)'))
     for (const row of bodyRows) {
       const rect = row.getBoundingClientRect()
-      if (Math.abs(event.clientY - rect.bottom) <= RESIZE_ZONE && event.clientX >= rect.left - RESIZE_ZONE) {
+      if (
+        Math.abs(event.clientY - rect.bottom) <= RESIZE_ZONE &&
+        event.clientX >= rect.left - RESIZE_ZONE
+      ) {
         return { type: 'row', row, size: rect.height }
       }
     }
@@ -168,7 +168,8 @@ export function setupTableColResizing(wrap, onCommit = null) {
     if (resizeType) return
     if (event.target.closest?.('.cm-table-resize-grip')) {
       wrap.style.cursor = event.target.closest('.cm-table-column-resize-grip')
-        ? 'col-resize' : 'row-resize'
+        ? 'col-resize'
+        : 'row-resize'
       return
     }
     const target = getResizeTarget(event)
@@ -205,16 +206,19 @@ export function setupTableColResizing(wrap, onCommit = null) {
     if (!target) return
 
     if (target.type === 'column') {
-      const cell = target.cell || columnGrip._cell
-        || table.querySelector(`thead th:nth-child(${target.index + 1})`)
+      const cell =
+        target.cell ||
+        columnGrip._cell ||
+        table.querySelector(`thead th:nth-child(${target.index + 1})`)
       if (!cell) return
       target.size = cell.getBoundingClientRect().width
 
       // Keep the rendered widths as the drag baseline. Scaling them to
       // the container here shifts the divider before the pointer moves
       // whenever the table is narrower than the editor pane.
-      frozenInitialWidths = Array.from(table.querySelectorAll('thead th'))
-        .map((th) => Math.round(th.getBoundingClientRect().width))
+      frozenInitialWidths = Array.from(table.querySelectorAll('thead th')).map((th) =>
+        Math.round(th.getBoundingClientRect().width)
+      )
       latestWidths = [...frozenInitialWidths]
     } else if (target.row) {
       target.size = target.row.getBoundingClientRect().height
@@ -242,11 +246,7 @@ export function setupTableColResizing(wrap, onCommit = null) {
     const delta = latestCoordinate - startCoordinate
 
     if (resizeType === 'column') {
-      const widths = computeWidthVector(
-        frozenInitialWidths,
-        resizeIndex,
-        delta
-      )
+      const widths = computeWidthVector(frozenInitialWidths, resizeIndex, delta)
       latestWidths = widths
       applyWidths(table, widths)
 

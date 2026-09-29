@@ -31,7 +31,14 @@ interface TableDocumentState {
 interface TableSyntaxNode {
   from: number
   to: number
-  cursor(): { firstChild(): boolean; nextSibling(): boolean; name: string; from: number; to: number; node: TableSyntaxNode }
+  cursor(): {
+    firstChild(): boolean
+    nextSibling(): boolean
+    name: string
+    from: number
+    to: number
+    node: TableSyntaxNode
+  }
 }
 
 export interface TableWidgetRange {
@@ -82,7 +89,10 @@ export function splitRowCells(line: string): string[] {
   cells.push(buf.trim())
   return cells
 }
-export function parseTable(state: TableDocumentState, tableNode: TableSyntaxNode): TableModel | null {
+export function parseTable(
+  state: TableDocumentState,
+  tableNode: TableSyntaxNode
+): TableModel | null {
   const header = []
   const rows = []
   let delimiterLine = ''
@@ -127,14 +137,27 @@ export function parseTable(state: TableDocumentState, tableNode: TableSyntaxNode
   let columnWidths: number[] = []
   let rowHeights: number[] = []
   const startLine = state.doc.lineAt(tableNode.from)
-  for (let lineNumber = startLine.number - 1; lineNumber >= Math.max(1, startLine.number - 6); lineNumber -= 1) {
+  for (
+    let lineNumber = startLine.number - 1;
+    lineNumber >= Math.max(1, startLine.number - 6);
+    lineNumber -= 1
+  ) {
     const prevLine = state.doc.line(lineNumber).text.trim()
-    const titleMatch = prevLine.match(/^<!--\s*table:\s*(.*?)\s*-->$/i) || prevLine.match(/^Table:\s*(.+)$/i)
+    const titleMatch =
+      prevLine.match(/^<!--\s*table:\s*(.*?)\s*-->$/i) || prevLine.match(/^Table:\s*(.+)$/i)
     if (titleMatch) caption = titleMatch[1].trim()
     const widthMatch = prevLine.match(/^<!--\s*table-widths:\s*([\d, ]+)\s*-->$/i)
-    if (widthMatch) columnWidths = widthMatch[1].split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
+    if (widthMatch)
+      columnWidths = widthMatch[1]
+        .split(',')
+        .map((value) => Number(value.trim()))
+        .filter(Number.isFinite)
     const heightMatch = prevLine.match(/^<!--\s*table-heights:\s*([\d, ]+)\s*-->$/i)
-    if (heightMatch) rowHeights = heightMatch[1].split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
+    if (heightMatch)
+      rowHeights = heightMatch[1]
+        .split(',')
+        .map((value) => Number(value.trim()))
+        .filter(Number.isFinite)
   }
 
   if (columnWidths.length > 0) {
@@ -177,10 +200,14 @@ export function serializeTable(model: TableModel): string {
     lines.push(`<!-- table: ${model.caption.trim()} -->`)
   }
   if (model.columnWidths?.length) {
-    lines.push(`<!-- table-widths: ${model.columnWidths.map((width) => Math.round(width)).join(', ')} -->`)
+    lines.push(
+      `<!-- table-widths: ${model.columnWidths.map((width) => Math.round(width)).join(', ')} -->`
+    )
   }
   if (model.rowHeights?.length) {
-    lines.push(`<!-- table-heights: ${model.rowHeights.map((height) => Math.round(height)).join(', ')} -->`)
+    lines.push(
+      `<!-- table-heights: ${model.rowHeights.map((height) => Math.round(height)).join(', ')} -->`
+    )
   }
 
   lines.push('| ' + model.header.map(escapeCell).join(' | ') + ' |')
@@ -202,21 +229,37 @@ export function serializeTable(model: TableModel): string {
   }
   return lines.join('\n')
 }
-export function reconcileColumnWidths(widths: number[] | undefined, colCount: number, defaultWidth = TABLE_CONFIG.reconciledColumnWidth): number[] {
+export function reconcileColumnWidths(
+  widths: number[] | undefined,
+  colCount: number,
+  defaultWidth = TABLE_CONFIG.reconciledColumnWidth
+): number[] {
   const out = Array.isArray(widths) ? [...widths] : []
   while (out.length < colCount) out.push(defaultWidth)
   if (out.length > colCount) out.length = colCount
   return out
 }
 
-export function reconcileRowHeights(heights: number[] | undefined, rowCount: number, defaultHeight = TABLE_CONFIG.defaultRowHeight): number[] {
+export function reconcileRowHeights(
+  heights: number[] | undefined,
+  rowCount: number,
+  defaultHeight = TABLE_CONFIG.defaultRowHeight
+): number[] {
   const out = Array.isArray(heights) ? [...heights] : []
   while (out.length < rowCount) out.push(defaultHeight)
   if (out.length > rowCount) out.length = rowCount
   return out
 }
 
-export function assertTableIntegrity(wrap: HTMLElement | null | undefined, operation = 'read table model'): { table: HTMLTableElement; thead: HTMLTableSectionElement; tbody: HTMLTableSectionElement; headerRow: HTMLTableRowElement } {
+export function assertTableIntegrity(
+  wrap: HTMLElement | null | undefined,
+  operation = 'read table model'
+): {
+  table: HTMLTableElement
+  thead: HTMLTableSectionElement
+  tbody: HTMLTableSectionElement
+  headerRow: HTMLTableRowElement
+} {
   const table = wrap?.querySelector?.('table')
   const thead = table?.querySelector('thead')
   const tbody = table?.querySelector('tbody')
@@ -242,12 +285,15 @@ export function readModelFromDom(wrap: HTMLElement): TableModel {
     Array.from(tr.querySelectorAll('td')).map(readCellSource)
   )
   const titleInput = wrap.querySelector<HTMLInputElement>('.cm-table-ui-title-input')
-  const caption = titleInput ? titleInput.value.trim() : (wrap.dataset.caption || '')
+  const caption = titleInput ? titleInput.value.trim() : wrap.dataset.caption || ''
 
   let columnWidths: number[] = []
   const widthData = wrap.dataset.columnWidths || ''
   if (widthData) {
-    const raw = widthData.split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
+    const raw = widthData
+      .split(',')
+      .map((value) => Number(value.trim()))
+      .filter(Number.isFinite)
     if (raw.length > 0) {
       columnWidths = reconcileColumnWidths(raw, header.length)
       wrap.dataset.columnWidths = columnWidths.join(',')
@@ -257,7 +303,10 @@ export function readModelFromDom(wrap: HTMLElement): TableModel {
   let rowHeights: number[] = []
   const heightData = wrap.dataset.rowHeights || ''
   if (heightData) {
-    const raw = heightData.split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
+    const raw = heightData
+      .split(',')
+      .map((value) => Number(value.trim()))
+      .filter(Number.isFinite)
     if (raw.length > 0) {
       rowHeights = reconcileRowHeights(raw, rows.length)
       wrap.dataset.rowHeights = rowHeights.join(',')
@@ -315,7 +364,10 @@ export function serializeTableOnly(model: TableModel): string {
 }
 
 export function parseMarkdownTableText(markdown: string, defaultCaption = ''): TableModel | null {
-  const lines = markdown.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0)
+  const lines = markdown
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
   if (lines.length === 0) return null
 
   let caption = defaultCaption || ''

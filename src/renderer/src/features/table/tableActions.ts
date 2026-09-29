@@ -1,5 +1,5 @@
-import { serializeTable, readModelFromDom } from './tableModel.js'
-import { findCurrentTableRange, dispatchModel } from './tableExtension.js'
+import { serializeTable, readModelFromDom } from './tableModel'
+import { findCurrentTableRange, dispatchModel } from './tableExtension'
 
 /**
  * Converts a table model into standard CSV string format.
