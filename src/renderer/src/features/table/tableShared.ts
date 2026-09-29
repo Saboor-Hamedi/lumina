@@ -20,6 +20,7 @@ interface TableOperations {
     direction: number,
     options?: { appendOnOverflow?: boolean }
   ): void
+  openTableLink(view: EditorView, url: string): void
 }
 
 const operations: Partial<TableOperations> = {}
@@ -62,3 +63,4 @@ export const moveCellFocus = (
   direction: number,
   options?: { appendOnOverflow?: boolean }
 ) => invoke('moveCellFocus', view, cell, direction, options)
+export const openTableLink = (view: EditorView, url: string) => invoke('openTableLink', view, url)

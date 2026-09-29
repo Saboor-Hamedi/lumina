@@ -3,8 +3,19 @@
  * Parses inline Markdown tokens (bold, italics, code, wikilinks, tags, mentions) inside table cells.
  */
 
-export function parseCellInline(raw) {
-  const tokens = []
+export type TableInlineToken =
+  | { type: 'text'; text: string }
+  | { type: 'tag' | 'mention'; text: string }
+  | { type: 'strong' | 'em' | 'strike'; delim?: string; children: TableInlineToken[] }
+  | { type: 'code'; text: string }
+  | { type: 'wikilink'; textChildren: TableInlineToken[]; url: string }
+  | { type: 'link'; textChildren: TableInlineToken[]; url: string }
+  | { type: 'image'; alt: string; url: string; raw: string }
+
+export type CellInlineMatch = { token: TableInlineToken; end: number }
+
+export function parseCellInline(raw: string): TableInlineToken[] {
+  const tokens: TableInlineToken[] = []
   let textBuf = ''
   let i = 0
   const flushText = () => {
@@ -34,7 +45,7 @@ export function parseCellInline(raw) {
   flushText()
   return tokens
 }
-export function matchCellMarkAt(raw, from) {
+export function matchCellMarkAt(raw: string, from: number): CellInlineMatch | null {
   const rest = raw.slice(from)
   // Bold with `**` or `__` — greedy on the outside, lazy on the
   // content so we catch the nearest closer.

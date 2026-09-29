@@ -193,6 +193,7 @@ export function escapeCell(text: string): string {
   return parts.join('')
 }
 export function serializeTable(model: TableModel): string {
+  assertTableModel(model, 'serialize table')
   const columnCount = model.header.length
   const lines = []
 
@@ -268,7 +269,33 @@ export function assertTableIntegrity(
   if (!wrap || !table || !thead || !tbody || !headerRow) {
     throw new Error(`Cannot ${operation}: table DOM is malformed (table position: ${position})`)
   }
+  const headerCount = headerRow.querySelectorAll('th').length
+  if (headerCount === 0) {
+    throw new Error(`Cannot ${operation}: table has no header cells (table position: ${position})`)
+  }
+  const malformedRow = Array.from(tbody.querySelectorAll('tr:not(.cm-table-empty-row)')).find(
+    (row) => row.querySelectorAll('td').length !== headerCount
+  )
+  if (malformedRow) {
+    const rowIndex = Array.from(tbody.querySelectorAll('tr:not(.cm-table-empty-row)')).indexOf(
+      malformedRow
+    )
+    throw new Error(
+      `Cannot ${operation}: row ${rowIndex} has ${malformedRow.querySelectorAll('td').length} cells; expected ${headerCount} (table position: ${position})`
+    )
+  }
   return { table, thead, tbody, headerRow }
+}
+
+export function assertTableModel(model: TableModel, operation = 'process table model'): void {
+  if (!model || !Array.isArray(model.header) || !Array.isArray(model.rows)) {
+    throw new Error(`Cannot ${operation}: header and rows must be arrays`)
+  }
+  for (let rowIndex = 0; rowIndex < model.rows.length; rowIndex += 1) {
+    if (!Array.isArray(model.rows[rowIndex])) {
+      throw new Error(`Cannot ${operation}: row ${rowIndex} is not an array`)
+    }
+  }
 }
 
 export function readModelFromDom(wrap: HTMLElement): TableModel {
@@ -340,6 +367,7 @@ export function getCellSource(cell: TableDOMCell): HTMLElement | null {
  * Robustly parses any raw markdown table string into a clean table model.
  */
 export function serializeTableOnly(model: TableModel): string {
+  assertTableModel(model, 'serialize table source')
   const columnCount = model.header.length
   const lines = []
 

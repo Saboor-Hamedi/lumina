@@ -23,7 +23,7 @@ import { createTableHeaderDOM } from './tableHeader'
 import { createTableFooterDOM, updateTableFooterCount } from './tableFooter'
 
 import { parseTable, serializeTable, readModelFromDom, getCellSource } from './tableModel'
-import { renderCellSourceDecorated, makeCell } from './tableCell'
+import { renderCellSourceDecorated, makeCell, disposeCellListeners } from './tableCell'
 import { TABLE_CONFIG } from './tableConfig'
 import { configureTableShared } from './tableShared'
 
@@ -33,7 +33,10 @@ configureTableShared({
   dispatchModel,
   dispatchModelFromDom,
   flushPendingTableDispatch,
-  moveCellFocus
+  moveCellFocus,
+  openTableLink(view, url) {
+    view.state.facet(tableLinkClickFacet)(url)
+  }
 })
 
 function getColumnWidths(model) {
@@ -171,23 +174,29 @@ export function findCurrentTableRange(view, dom) {
 
   if (tableNodes.length === 0) return null
 
-  let targetNode = null
+  const nodeAtPosition = (candidatePos) => {
+    if (candidatePos < 0) return null
+    return (
+      tableNodes.find((node) => {
+        const startLine = doc.lineAt(node.from)
+        const tableFrom = tableStartFrom(doc, startLine)
+        return (
+          candidatePos === tableFrom ||
+          candidatePos === node.from ||
+          (candidatePos >= node.from && candidatePos <= node.to)
+        )
+      }) || null
+    )
+  }
 
-  // 1. Match an exact table start or a syntax node that contains the saved
-  // position. A nearby table is not a safe match when documents are edited.
-  if (pos >= 0) {
-    // First check exact start line match (since pos is startLine.from)
-    for (const n of tableNodes) {
-      const sLine = doc.lineAt(n.from)
-      const tableFrom = tableStartFrom(doc, sLine)
-      if (pos === tableFrom || pos === n.from) {
-        targetNode = n
-        break
-      }
-    }
-
-    if (!targetNode) {
-      targetNode = tableNodes.find((n) => pos >= n.from && pos <= n.to) || null
+  // Prefer the saved widget position. If document edits made it stale,
+  // use CodeMirror's live DOM position and refresh the widget metadata.
+  let targetNode = nodeAtPosition(pos)
+  if (!targetNode) {
+    try {
+      targetNode = nodeAtPosition(view.posAtDOM(wrap))
+    } catch {
+      // Some detached widgets cannot be mapped back to a document position.
     }
   }
 
@@ -211,6 +220,8 @@ export function findCurrentTableRange(view, dom) {
         break
       }
     }
+    wrap.dataset.tableFrom = String(fromPos)
+    wrap.dataset.tableTo = String(lastTableLine.to)
     return { from: fromPos, to: lastTableLine.to }
   }
 
@@ -477,6 +488,7 @@ export class TableWidget extends WidgetType {
     }
     while (ths.length > colCount) {
       const extraTh = ths.pop()
+      disposeCellListeners(extraTh)
       extraTh.remove()
     }
 
@@ -508,7 +520,10 @@ export class TableWidget extends WidgetType {
     // 2. Sync body rows (trs and tds)
     const emptyRow = tbody.querySelector('.cm-table-empty-row')
     if (rowCount === 0) {
-      tbody.querySelectorAll('tr:not(.cm-table-empty-row)').forEach((tr) => tr.remove())
+      tbody.querySelectorAll('tr:not(.cm-table-empty-row)').forEach((tr) => {
+        disposeCellListeners(tr)
+        tr.remove()
+      })
       if (!emptyRow) {
         const emptyTr = document.createElement('tr')
         emptyTr.className = 'cm-table-empty-row'
@@ -568,7 +583,10 @@ export class TableWidget extends WidgetType {
       // Remove extra rows
       while (trs.length > rowCount) {
         const extraTr = trs.pop()
-        extraTr.remove()
+        if (extraTr) {
+          disposeCellListeners(extraTr)
+          extraTr.remove()
+        }
       }
 
       // Sync cells within each row
@@ -588,7 +606,10 @@ export class TableWidget extends WidgetType {
         }
         while (tds.length > colCount) {
           const extraTd = tds.pop()
-          extraTd.remove()
+          if (extraTd) {
+            disposeCellListeners(extraTd)
+            extraTd.remove()
+          }
         }
 
         for (let c = 0; c < colCount; c++) {
@@ -652,6 +673,10 @@ export class TableWidget extends WidgetType {
 
     return true
   }
+  destroy(dom) {
+    disposeCellListeners(dom)
+  }
+
   // Keep CM away from editable cells and controls that have their own
   // focus, selection, and keyboard behavior. Passive areas of the widget
   // remain visible to CM so it can preserve its native mouse behavior.
