@@ -1,10 +1,28 @@
 import { dispatchModel } from './tableShared'
 import { readModelFromDom } from './tableModel'
 import { icons } from './tableIcons'
+import type { EditorView } from '@codemirror/view'
+import type { CellAlignment, TableModel } from './tableModel'
 
-export function setupTableDragAndDrop(wrap, view) {
+type DragHandle = HTMLDivElement & { _rowIndex?: number; _colIndex?: number }
+type DragDimension = {
+  mid: number
+  top?: number
+  bottom?: number
+  left?: number
+  right?: number
+  height?: number
+  width?: number
+}
+type DraggedTableModel = TableModel & {
+  alignments: CellAlignment[]
+  columnWidths: number[]
+  rowHeights: number[]
+}
+
+export function setupTableDragAndDrop(wrap: HTMLElement, view: EditorView): void {
   let isDragging = false
-  let dragType = null // 'row' or 'col'
+  let dragType: 'row' | 'col' | null = null
   let dragStartIndex = -1
   let currentDropIndex = -1
 
@@ -13,7 +31,7 @@ export function setupTableDragAndDrop(wrap, view) {
   }
 
   // Row Handle
-  const rowHandle = document.createElement('div')
+  const rowHandle = document.createElement('div') as DragHandle
   rowHandle.className = 'cm-table-drag-handle cm-table-row-drag-handle'
   rowHandle.innerHTML = icons.grip
   rowHandle.style.position = 'absolute'
@@ -29,7 +47,7 @@ export function setupTableDragAndDrop(wrap, view) {
   rowHandle.style.color = 'var(--text-muted)'
 
   // Col Handle
-  const colHandle = document.createElement('div')
+  const colHandle = document.createElement('div') as DragHandle
   colHandle.className = 'cm-table-drag-handle cm-table-col-drag-handle'
   colHandle.innerHTML = icons.grip
   colHandle.style.position = 'absolute'
@@ -48,14 +66,16 @@ export function setupTableDragAndDrop(wrap, view) {
   wrap.appendChild(colHandle)
 
   // Hover detection logic to position handles
-  wrap.addEventListener('mousemove', (e) => {
+  wrap.addEventListener('mousemove', (e: MouseEvent) => {
     if (isDragging) return
+    const target = e.target
+    if (!(target instanceof Element)) return
 
-    if (e.target.closest('.cm-table-drag-handle')) {
+    if (target.closest('.cm-table-drag-handle')) {
       return
     }
 
-    const cell = e.target.closest('th, td')
+    const cell = target.closest('th, td')
     if (!cell || !wrap.contains(cell)) {
       hideHandles()
       return
@@ -76,7 +96,7 @@ export function setupTableDragAndDrop(wrap, view) {
 
     const wrapRect = wrap.getBoundingClientRect()
     const cellRect = cell.getBoundingClientRect()
-    const isHeader = cell.tagName === 'TH' || tr.parentElement.tagName === 'THEAD'
+    const isHeader = cell.tagName === 'TH' || tr.parentElement?.tagName === 'THEAD'
 
     let showRow = false
     let showCol = false
@@ -145,16 +165,18 @@ export function setupTableDragAndDrop(wrap, view) {
     colHandle.style.pointerEvents = 'none'
   }
 
-  let initialBounds = []
+  let initialBounds: DragDimension[] = []
 
-  function calculateDragDimensions(type) {
+  function calculateDragDimensions(type: 'row' | 'col'): void {
     const table = wrap.querySelector('table')
     if (!table) return
     initialBounds = []
 
     if (type === 'row') {
       const tbody = table.querySelector('tbody')
-      const rows = tbody ? Array.from(tbody.querySelectorAll('tr:not(.cm-table-empty-row)')) : []
+      const rows = tbody
+        ? Array.from(tbody.querySelectorAll<HTMLTableRowElement>('tr:not(.cm-table-empty-row)'))
+        : []
       if (rows.length <= 1) return
       rows.forEach((r) => {
         const rect = r.getBoundingClientRect()
@@ -166,7 +188,7 @@ export function setupTableDragAndDrop(wrap, view) {
         })
       })
     } else {
-      const headers = Array.from(table.querySelectorAll('thead th'))
+      const headers = Array.from(table.querySelectorAll<HTMLTableCellElement>('thead th'))
       if (headers.length <= 1) return
       headers.forEach((h) => {
         const rect = h.getBoundingClientRect()
@@ -183,7 +205,7 @@ export function setupTableDragAndDrop(wrap, view) {
   let dragStartX = 0
   let dragStartY = 0
 
-  function onDragStart(e, type, index) {
+  function onDragStart(e: MouseEvent, type: 'row' | 'col', index: number): void {
     if (isNaN(index) || index < 0) return
     const table = wrap.querySelector('table')
     if (!table) return
@@ -218,7 +240,9 @@ export function setupTableDragAndDrop(wrap, view) {
     if (type === 'row') {
       wrap.classList.add('is-dragging-rows')
       const tbody = table.querySelector('tbody')
-      const rows = tbody ? Array.from(tbody.querySelectorAll('tr:not(.cm-table-empty-row)')) : []
+      const rows = tbody
+        ? Array.from(tbody.querySelectorAll<HTMLTableRowElement>('tr:not(.cm-table-empty-row)'))
+        : []
       if (rows[index]) {
         rows[index].style.zIndex = '20'
         rows[index].style.position = 'relative'
@@ -226,9 +250,11 @@ export function setupTableDragAndDrop(wrap, view) {
       }
     } else {
       wrap.classList.add('is-dragging-cols')
-      const rows = Array.from(table.querySelectorAll('tr:not(.cm-table-empty-row)'))
+      const rows = Array.from(
+        table.querySelectorAll<HTMLTableRowElement>('tr:not(.cm-table-empty-row)')
+      )
       rows.forEach((row) => {
-        const cells = Array.from(row.querySelectorAll('th, td'))
+        const cells = Array.from(row.querySelectorAll<HTMLTableCellElement>('th, td'))
         cells.forEach((cell, i) => {
           cell.style.position = 'relative'
           if (i === index) {
@@ -245,18 +271,18 @@ export function setupTableDragAndDrop(wrap, view) {
   }
 
   rowHandle.addEventListener('mousedown', (e) => {
-    const idx = rowHandle._rowIndex !== undefined ? rowHandle._rowIndex : parseInt(rowHandle.dataset.index, 10)
+    const idx = rowHandle._rowIndex !== undefined ? rowHandle._rowIndex : parseInt(rowHandle.dataset.index ?? '-1', 10)
     onDragStart(e, 'row', idx)
   })
 
   colHandle.addEventListener('mousedown', (e) => {
-    const idx = colHandle._colIndex !== undefined ? colHandle._colIndex : parseInt(colHandle.dataset.index, 10)
+    const idx = colHandle._colIndex !== undefined ? colHandle._colIndex : parseInt(colHandle.dataset.index ?? '-1', 10)
     onDragStart(e, 'col', idx)
   })
 
-  let rafId = null
+  let rafId: number | null = null
 
-  function onDragMove(e) {
+  function onDragMove(e: MouseEvent): void {
     if (!isDragging || initialBounds.length === 0) return
 
     if (rafId) cancelAnimationFrame(rafId)
@@ -293,7 +319,9 @@ export function setupTableDragAndDrop(wrap, view) {
         currentDropIndex = proposed
 
         const tbody = table.querySelector('tbody')
-        const rows = tbody ? Array.from(tbody.querySelectorAll('tr:not(.cm-table-empty-row)')) : []
+        const rows = tbody
+          ? Array.from(tbody.querySelectorAll<HTMLTableRowElement>('tr:not(.cm-table-empty-row)'))
+          : []
         const draggedHeight = initialBounds[dragStartIndex]?.height || 28
 
         rows.forEach((row, i) => {
@@ -344,11 +372,13 @@ export function setupTableDragAndDrop(wrap, view) {
         proposed = Math.max(0, Math.min(initialBounds.length - 1, proposed))
         currentDropIndex = proposed
 
-        const rows = Array.from(table.querySelectorAll('tr:not(.cm-table-empty-row)'))
+        const rows = Array.from(
+          table.querySelectorAll<HTMLTableRowElement>('tr:not(.cm-table-empty-row)')
+        )
         const draggedWidth = initialBounds[dragStartIndex]?.width || 80
 
         rows.forEach((row) => {
-          const cells = Array.from(row.querySelectorAll('th, td'))
+          const cells = Array.from(row.querySelectorAll<HTMLTableCellElement>('th, td'))
           cells.forEach((cell, i) => {
             cell.style.position = 'relative'
             if (i === dragStartIndex) {
@@ -378,7 +408,7 @@ export function setupTableDragAndDrop(wrap, view) {
     })
   }
 
-  function onDragEnd() {
+  function onDragEnd(): void {
     isDragging = false
     document.body.style.cursor = ''
 
@@ -396,7 +426,7 @@ export function setupTableDragAndDrop(wrap, view) {
 
     const table = wrap.querySelector('table')
     if (table) {
-      const rows = Array.from(table.querySelectorAll('tr'))
+      const rows = Array.from(table.querySelectorAll<HTMLTableRowElement>('tr'))
       rows.forEach((row) => {
         row.style.transform = ''
         row.style.transition = ''
@@ -404,7 +434,7 @@ export function setupTableDragAndDrop(wrap, view) {
         row.style.position = ''
         row.style.zIndex = ''
         row.style.boxShadow = ''
-        Array.from(row.querySelectorAll('th, td')).forEach((cell) => {
+        Array.from(row.querySelectorAll<HTMLTableCellElement>('th, td')).forEach((cell) => {
           cell.style.transform = ''
           cell.style.transition = ''
           cell.style.opacity = ''
@@ -423,7 +453,7 @@ export function setupTableDragAndDrop(wrap, view) {
     }
 
     const model = readModelFromDom(wrap)
-    const nextModel = {
+    const nextModel: DraggedTableModel = {
       header: [...model.header],
       alignments: [...(model.alignments || [])],
       rows: model.rows.map((r) => [...r]),

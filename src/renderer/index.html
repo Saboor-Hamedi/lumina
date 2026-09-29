@@ -21,24 +21,13 @@
         const themeId = localStorage.getItem('theme-id') || 'dark'
         document.documentElement.setAttribute('data-theme', themeId)
 
-        const isModern = localStorage.getItem('lumina_modern_ui') !== 'false'
-        document.documentElement.setAttribute('data-modern-ui', String(isModern))
-
-        const activeColors = localStorage.getItem('lumina_active_theme_colors')
-        if (activeColors) {
-          const parsed = JSON.parse(activeColors)
-          for (const key in parsed) {
-            document.documentElement.style.setProperty(key, parsed[key])
-          }
-        } else {
-          const stored = localStorage.getItem('theme-colors')
-          if (stored) {
-            const colors = JSON.parse(stored)
-            if (colors.themeAccentColor) {
-              let accent = colors.themeAccentColor
-              if (!accent.startsWith('#')) accent = '#' + accent
-              document.documentElement.style.setProperty('--text-accent', accent)
-            }
+        const stored = localStorage.getItem('theme-colors')
+        if (stored) {
+          const colors = JSON.parse(stored)
+          if (colors.themeAccentColor) {
+            let accent = colors.themeAccentColor
+            if (!accent.startsWith('#')) accent = '#' + accent
+            document.documentElement.style.setProperty('--text-accent', accent)
           }
         }
       } catch (e) {}

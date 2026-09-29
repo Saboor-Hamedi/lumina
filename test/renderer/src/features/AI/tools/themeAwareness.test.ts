@@ -53,7 +53,6 @@ describe('AI Theme Awareness & Visual Theme Disambiguation', () => {
         lineHeight: 1.8,
         showLineNumbers: true,
         autoSave: true,
-        vimMode: true,
         cursorStyle: 'block',
         smoothScrolling: true
       }
@@ -63,7 +62,6 @@ describe('AI Theme Awareness & Visual Theme Disambiguation', () => {
     expect(prompt).toContain('Font Size: 18px')
     expect(prompt).toContain('Line Height: 1.8')
     expect(prompt).toContain('Line Numbers: Enabled')
-    expect(prompt).toContain('Vim Mode: Enabled')
     expect(prompt).toContain('Cursor Style: block')
     expect(prompt).toContain('what is my font?')
   })

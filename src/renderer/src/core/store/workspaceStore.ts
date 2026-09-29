@@ -80,93 +80,19 @@ export interface WorkspaceStoreState {
 let hasLoadedWorkspaceOnce = false
 const recentlyDeletedIds = new Set<string>()
 
-const persistNotesSnapshot = (notes: WorkspaceNote[], openTabs: string[] = []): void => {
-  try {
-    const openSet = new Set(openTabs)
-    const slim = (notes || []).map((n) => {
-      if (openSet.has(n.id)) return n
-      const { code, ...rest } = n
-      return rest
-    })
-    localStorage.setItem('lumina_session_notes', JSON.stringify(slim))
-  } catch (err) {
-    try {
-      const metadataOnly = (notes || []).map(({ code, ...rest }) => rest)
-      localStorage.setItem('lumina_session_notes', JSON.stringify(metadataOnly))
-    } catch (_) {}
-  }
-}
+const persistNotesSnapshot = (_notes: WorkspaceNote[], _openTabs: string[] = []): void => {}
 
-const persistFoldersSnapshot = (folders: string[]): void => {
-  try {
-    if (Array.isArray(folders)) {
-      localStorage.setItem('lumina_session_folders', JSON.stringify(folders))
-    }
-  } catch (_) {}
-}
+const persistFoldersSnapshot = (_folders: string[]): void => {}
 
 const getCachedSession = () => {
-  try {
-    const rawNotes = localStorage.getItem('lumina_session_notes')
-    const rawFolders = localStorage.getItem('lumina_session_folders')
-    const rawTabs = localStorage.getItem('lumina_session_openTabs')
-    const rawPinned = localStorage.getItem('lumina_session_pinnedTabIds')
-    const lastNoteId = localStorage.getItem('lumina_session_lastNoteId')
-
-    const notes: WorkspaceNote[] = rawNotes ? JSON.parse(rawNotes) : []
-    const parsedFolders: string[] = rawFolders ? JSON.parse(rawFolders) : []
-
-    // Always derive all folders from notes AND merge with cached folders
-    const folderSet = new Set<string>(Array.isArray(parsedFolders) ? parsedFolders : [])
-    notes.forEach((n) => {
-      if (n.folderId && typeof n.folderId === 'string') {
-        const clean = n.folderId.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
-        let current = ''
-        clean.split('/').filter(Boolean).forEach((part) => {
-          current = current ? `${current}/${part}` : part
-          folderSet.add(current)
-        })
-      }
-    })
-    const folders = Array.from(folderSet)
-
-    const openTabs: string[] = rawTabs ? JSON.parse(rawTabs) : []
-    const pinnedTabIds: string[] = rawPinned ? JSON.parse(rawPinned) : []
-    const noteIdSet = new Set(notes.map((n) => n.id))
-    const validTabs = openTabs.filter(
-      (id) => id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || noteIdSet.has(id)
-    )
-    const validPinned = pinnedTabIds.filter((id) => validTabs.includes(id)).slice(0, 1)
-    const activeTabId =
-      lastNoteId && validTabs.includes(lastNoteId) ? lastNoteId : validTabs[0] || null
-    const selectedNote =
-      activeTabId && activeTabId !== GRAPH_TAB_ID && activeTabId !== LUMINA_TAB_ID
-        ? notes.find((n) => n.id === activeTabId) || null
-        : null
-
-    if (folders.length > 0 && (!parsedFolders || parsedFolders.length < folders.length)) {
-      persistFoldersSnapshot(folders)
-    }
-
-    return {
-      notes,
-      folders,
-      openTabs: validTabs,
-      pinnedTabIds: validPinned,
-      activeTabId,
-      selectedNote,
-      isLoading: notes.length === 0
-    }
-  } catch {
-    return {
-      notes: [],
-      folders: [],
-      openTabs: [],
-      pinnedTabIds: [],
-      activeTabId: null,
-      selectedNote: null,
-      isLoading: true
-    }
+  return {
+    notes: [] as WorkspaceNote[],
+    folders: [] as string[],
+    openTabs: [] as string[],
+    pinnedTabIds: [] as string[],
+    activeTabId: null as string | null,
+    selectedNote: null as WorkspaceNote | null,
+    isLoading: true
   }
 }
 
@@ -305,9 +231,6 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
   closeTab: (id: string) =>
     set((state) => {
-      if (id === GRAPH_TAB_ID && typeof localStorage !== 'undefined') {
-        localStorage.setItem('lumina_graph_display_mode', 'tab')
-      }
       const nextTabs = state.openTabs.filter((tid) => tid !== id)
       const isClosingActive = state.activeTabId === id || state.selectedNote?.id === id
 
@@ -425,9 +348,6 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   },
 
   openGraphTab: () => {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('lumina_graph_display_mode', 'tab')
-    }
     set((state) => {
       const isAlreadyOpen = state.openTabs.includes(GRAPH_TAB_ID)
       const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, GRAPH_TAB_ID]
@@ -587,15 +507,6 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
             activeTabId: validActiveId,
             selectedNote: activeNote
           })
-
-          // Write fresh session keys for next cold start
-          persistNotesSnapshot(merged, validTabs)
-          persistFoldersSnapshot(allFolders)
-          try {
-            localStorage.setItem('lumina_session_openTabs', JSON.stringify(validTabs))
-            localStorage.setItem('lumina_session_pinnedTabIds', JSON.stringify(validPinned))
-            localStorage.setItem('lumina_session_lastNoteId', validActiveId ?? '')
-          } catch {}
         } else {
           console.warn('[WorkspaceStore] ✗ Received invalid data from sync.')
         }
@@ -797,12 +708,6 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       }
     })
 
-    persistNotesSnapshot(get().notes, get().openTabs)
-    persistFoldersSnapshot(get().folders)
-    try {
-      localStorage.setItem('lumina_session_openTabs', JSON.stringify(get().openTabs))
-    } catch {}
-
     try {
       await deleteApi(id)
     } catch (err) {
@@ -893,9 +798,8 @@ useWorkspaceStore.subscribe((state) => {
     return
   }
 
-  // 1. Open tabs persistence: instant in-memory localStorage, debounced IPC
+  // 1. Open tabs persistence: debounced IPC to settings
   if (state.openTabs !== lastWorkspaceState.openTabs) {
-    try { localStorage.setItem('lumina_session_openTabs', JSON.stringify(state.openTabs)) } catch {}
     if (saveOpenTabsTimeout) clearTimeout(saveOpenTabsTimeout)
     saveOpenTabsTimeout = setTimeout(() => {
       saveOpenTabsTimeout = null
@@ -903,9 +807,8 @@ useWorkspaceStore.subscribe((state) => {
     }, 800)
   }
 
-  // 2. Pinned tabs persistence: instant in-memory localStorage, debounced IPC
+  // 2. Pinned tabs persistence: debounced IPC to settings
   if (state.pinnedTabIds !== lastWorkspaceState.pinnedTabIds) {
-    try { localStorage.setItem('lumina_session_pinnedTabIds', JSON.stringify(state.pinnedTabIds)) } catch {}
     if (savePinnedTabsTimeout) clearTimeout(savePinnedTabsTimeout)
     savePinnedTabsTimeout = setTimeout(() => {
       savePinnedTabsTimeout = null
@@ -913,9 +816,8 @@ useWorkspaceStore.subscribe((state) => {
     }, 800)
   }
 
-  // 3. Active tab persistence: 0ms in-memory update without triggering heavy settings re-render broadcast
+  // 3. Active tab persistence: in-memory update with debounced IPC
   if (state.activeTabId !== lastWorkspaceState.activeTabId) {
-    try { localStorage.setItem('lumina_session_lastNoteId', state.activeTabId ?? '') } catch {}
     const settingsObj = useSettingsStore.getState().settings
     if (settingsObj) {
       settingsObj.lastNoteId = state.activeTabId

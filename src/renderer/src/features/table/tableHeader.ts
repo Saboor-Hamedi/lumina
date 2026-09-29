@@ -4,6 +4,10 @@ import { createTableQuickActionsDOM } from './tableActions'
 import { createTableViewModeToggleDOM } from './tableSourceView'
 import { findCurrentTableRange } from './tableShared'
 import { createTableSearchBar } from './tableSearch'
+import type { EditorView } from '@codemirror/view'
+import type { TableModel } from './tableModel'
+
+type TableHeaderWrapper = HTMLElement & { _tableSearch?: ReturnType<typeof createTableSearchBar> }
 
 /**
  * Builds the .cm-table-ui-header bar and attaches the floating search popover.
@@ -14,7 +18,11 @@ import { createTableSearchBar } from './tableSearch'
  * @param {HTMLElement} wrap  - .cm-atomic-table wrapper
  * @param {object} model
  */
-export function createTableHeaderDOM(view, wrap, model) {
+export function createTableHeaderDOM(
+  view: EditorView,
+  wrap: TableHeaderWrapper,
+  model: TableModel
+): HTMLDivElement {
   const header = document.createElement('div')
   header.className = 'cm-table-ui-header'
   header.contentEditable = 'false'
@@ -86,4 +94,5 @@ export function createTableHeaderDOM(view, wrap, model) {
   header.appendChild(rightGroup)
   wrap.appendChild(header)
   // Note: no search bar element appended here — it floats in document.body
+  return header
 }

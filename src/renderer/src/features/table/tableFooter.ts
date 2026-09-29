@@ -13,7 +13,7 @@
  * @param {object} model  - parsed table model
  * @returns {HTMLElement}
  */
-export function createTableFooterDOM(model) {
+export function createTableFooterDOM(model: TableModel): HTMLDivElement {
   const footer = document.createElement('div')
   footer.className = 'cm-table-ui-footer'
   footer.contentEditable = 'false'
@@ -45,7 +45,7 @@ export function createTableFooterDOM(model) {
  * @param {HTMLElement} dom   - the .cm-atomic-table wrapper
  * @param {object} model
  */
-export function updateTableFooterCount(dom, model) {
+export function updateTableFooterCount(dom: HTMLElement, model: TableModel): void {
   const rowCount = model.rows ? model.rows.length : 0
   const colCount = model.header ? model.header.length : 0
 
@@ -58,11 +58,11 @@ export function updateTableFooterCount(dom, model) {
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-function formatCount(rowCount, colCount) {
+function formatCount(rowCount: number, colCount: number): string {
   return `${rowCount} ${rowCount === 1 ? 'row' : 'rows'} · ${colCount} ${colCount === 1 ? 'col' : 'cols'}`
 }
 
-function formatWords(n) {
+function formatWords(n: number): string {
   return `${n} ${n === 1 ? 'word' : 'words'}`
 }
 
@@ -71,9 +71,9 @@ function formatWords(n) {
  * @param {object} model
  * @returns {number}
  */
-function countWords(model) {
+function countWords(model: TableModel): number {
   let n = 0
-  const count = (str) => {
+  const count = (str: string) => {
     if (!str) return
     const trimmed = str.trim()
     if (trimmed) n += trimmed.split(/\s+/).length
@@ -82,3 +82,4 @@ function countWords(model) {
   if (model.rows) model.rows.forEach((row) => row.forEach(count))
   return n
 }
+import type { TableModel } from './tableModel'

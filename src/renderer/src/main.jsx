@@ -42,6 +42,17 @@ const bootTheme = () => {
 
 bootTheme()
 
+// Purge any leaked or legacy keys from localStorage, leaving ONLY theme-id and theme-colors
+try {
+  const allowedKeys = new Set(['theme-id', 'theme-colors'])
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const key = localStorage.key(i)
+    if (key && !allowedKeys.has(key)) {
+      localStorage.removeItem(key)
+    }
+  }
+} catch (_) {}
+
 if (import.meta.env.PROD) {
   console.clear()
   console.log(

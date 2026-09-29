@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { Mic, X, Loader2, AlertCircle, Square } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import type { VoiceModalProps } from './types'
 
 export const VoiceModal: React.FC<VoiceModalProps> = ({
@@ -152,7 +153,7 @@ export const VoiceModal: React.FC<VoiceModalProps> = ({
 
       <div className="voice-popover-footer">
         <div className="voice-footer-row">
-          {typeof localStorage !== 'undefined' && localStorage.getItem('lumina_groq_key') ? (
+          {useSettingsStore.getState().settings?.groqKey ? (
             <span className="voice-footer-status" style={{ color: '#22c55e' }}>
               <span className="voice-footer-dot" style={{ background: '#22c55e', boxShadow: '0 0 6px #22c55e' }} />
               Groq Whisper Large

@@ -160,13 +160,8 @@ export const applyTheme = (themeId: string): void => {
   // Set data attribute
   root.setAttribute('data-theme', themeId)
 
-  // Persist to localStorage
+  // Persist to localStorage (strictly theme-id only)
   localStorage.setItem('theme-id', themeId)
-  try {
-    localStorage.setItem('lumina_active_theme_colors', JSON.stringify(computedColors))
-  } catch (e) {
-    // Ignore storage quota or disabled localStorage
-  }
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('theme-changed', { detail: { themeId, colors: computedColors } }))

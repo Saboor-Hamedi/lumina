@@ -26,7 +26,6 @@ describe('SettingStore', () => {
         lineHeight: 1.6,
         showLineNumbers: false,
         autoSave: true,
-        vimMode: false,
         cursorStyle: 'smooth',
         smoothScrolling: true,
         sidebarCollapsedSections: { pinned: false, recent: false, all: false },

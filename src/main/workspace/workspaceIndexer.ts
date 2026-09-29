@@ -737,11 +737,11 @@ export class WorkspaceIndexer {
     return true
   }
 
-  async indexWorkspace(workspacePath: string, options: any = {}): Promise<any> {
-    return await this.indexVault(workspacePath, options)
+  async indexVault(vaultPath: string, options: any = {}): Promise<any> {
+    return await this.indexWorkspace(vaultPath, options)
   }
 
-  async indexVault(vaultPath: string, options: any = {}): Promise<any> {
+  async indexWorkspace(workspacePath: string, options: any = {}): Promise<any> {
     if (this.isIndexing) {
       console.info('[WorkspaceIndexer] Indexing already in progress, queuing...')
       return { queued: true }
@@ -754,9 +754,9 @@ export class WorkspaceIndexer {
       await this.clearIndex()
     }
 
-    if (!vaultPath || typeof vaultPath !== 'string') {
-      console.error('[WorkspaceIndexer] Invalid vaultPath:', vaultPath)
-      throw new Error('Vault path must be a string')
+    if (!workspacePath || typeof workspacePath !== 'string') {
+      console.error('[WorkspaceIndexer] Invalid workspacePath:', workspacePath)
+      throw new Error('Workspace path must be a string')
     }
 
     this.isIndexing = true
@@ -782,7 +782,7 @@ export class WorkspaceIndexer {
         await new Promise((resolve) => setTimeout(resolve, 0))
       }
 
-      const files = await this.scanVaultFiles(vaultPath, onProgress)
+      const files = await this.scanWorkspaceFiles(workspacePath, onProgress)
       this.stats.totalFiles = files.length
       if (onProgress) {
         onProgress({
@@ -975,9 +975,9 @@ export class WorkspaceIndexer {
     }
   }
 
-  async scanVaultFiles(vaultPath: string, onProgress: any = null): Promise<string[]> {
-    if (!vaultPath || typeof vaultPath !== 'string') {
-      console.error('[WorkspaceIndexer] scanVaultFiles: Invalid path:', vaultPath)
+  async scanWorkspaceFiles(workspacePath: string, onProgress: any = null): Promise<string[]> {
+    if (!workspacePath || typeof workspacePath !== 'string') {
+      console.error('[WorkspaceIndexer] scanWorkspaceFiles: Invalid path:', workspacePath)
       return []
     }
 
@@ -1040,11 +1040,15 @@ export class WorkspaceIndexer {
       }
     }
 
-    await scanDir(vaultPath)
+    await scanDir(workspacePath)
     return files
   }
 
-  async rebuildIndex(vaultPath: string, options: any = {}): Promise<any> {
+  async scanVaultFiles(vaultPath: string, onProgress: any = null): Promise<string[]> {
+    return await this.scanWorkspaceFiles(vaultPath, onProgress)
+  }
+
+  async rebuildIndex(workspacePath: string, options: any = {}): Promise<any> {
     console.info('[WorkspaceIndexer] Rebuilding index from scratch...')
 
     await this.writeLock.lock()
@@ -1072,7 +1076,7 @@ export class WorkspaceIndexer {
       this.writeLock.unlock()
     }
 
-    return await this.indexVault(vaultPath, { force: true, ...options })
+    return await this.indexWorkspace(workspacePath, { force: true, ...options })
   }
 
   async getStats(): Promise<any> {

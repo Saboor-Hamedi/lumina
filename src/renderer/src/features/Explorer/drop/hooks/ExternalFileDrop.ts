@@ -120,9 +120,6 @@ export function useExternalFileDrop(): ExternalFileDropResult {
         if (result?.importedFolderIds && result.importedFolderIds.length > 0) {
           const currentExpanded = useSettingsStore.getState().settings.expandedFolders || []
           const nextExpanded = Array.from(new Set([...currentExpanded, ...result.importedFolderIds]))
-          try {
-            localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextExpanded))
-          } catch (_) {}
           useSettingsStore.getState().updateSetting('expandedFolders', nextExpanded)
         }
 

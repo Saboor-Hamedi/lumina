@@ -37,7 +37,7 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
     e.stopPropagation()
 
     // If API key does not exist, notify the user with Notification toast
-    const activeKey = groqKey || (typeof localStorage !== 'undefined' ? localStorage.getItem('lumina_groq_key') : null)
+    const activeKey = groqKey
     if (!activeKey || !activeKey.trim()) {
       window.dispatchEvent(
         new CustomEvent('show-toast', {

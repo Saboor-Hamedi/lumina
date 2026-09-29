@@ -24,11 +24,11 @@ export function cancelBackup() {
  * - 'zip': Compresses workspace into 'lumina-backup.zip' on Google Drive root.
  * - 'folder': Direct non-zip sync into 'lumina' folder on Google Drive root.
  *
- * @param {string} vaultPath - Local path to the workspace
+ * @param {string} workspacePath - Local path to the workspace
  * @param {'zip' | 'folder'} [mode='zip'] - Backup mode
  * @param {Electron.WebContents} [sender=null] - Sender for progress events
  */
-export async function backupToDrive(vaultPath, mode = 'zip', sender = null) {
+export async function backupToDrive(workspacePath, mode = 'zip', sender = null) {
   // Cancel previous if still running
   cancelBackup()
 
@@ -37,9 +37,9 @@ export async function backupToDrive(vaultPath, mode = 'zip', sender = null) {
 
   try {
     if (mode === 'folder') {
-      return await backupWorkspaceNonZip(vaultPath, sender, signal)
+      return await backupWorkspaceNonZip(workspacePath, sender, signal)
     }
-    return await backupWorkspaceZip(vaultPath, sender, signal)
+    return await backupWorkspaceZip(workspacePath, sender, signal)
   } finally {
     if (activeBackupAbortController?.signal === signal) {
       activeBackupAbortController = null
@@ -53,17 +53,17 @@ export async function backupToDrive(vaultPath, mode = 'zip', sender = null) {
  * Does NOT push other sibling notes.
  *
  * @param {string | object} fileInput - Absolute path, relative path, or snippet object
- * @param {string} vaultPath - Local path to the workspace
+ * @param {string} workspacePath - Local path to the workspace
  * @param {Electron.WebContents} [sender=null] - Sender for progress events
  */
-export async function backupFileToDrive(fileInput, vaultPath, sender = null) {
+export async function backupFileToDrive(fileInput, workspacePath, sender = null) {
   cancelBackup()
 
   activeBackupAbortController = new AbortController()
   const signal = activeBackupAbortController.signal
 
   try {
-    return await backupSingleFile(fileInput, vaultPath, sender, signal)
+    return await backupSingleFile(fileInput, workspacePath, sender, signal)
   } finally {
     if (activeBackupAbortController?.signal === signal) {
       activeBackupAbortController = null

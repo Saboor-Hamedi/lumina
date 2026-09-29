@@ -174,19 +174,11 @@ export const MainLayout = () => {
   const [showActiveIconPicker, setShowActiveIconPicker] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(() => {
-    if (typeof localStorage !== 'undefined') {
-      const saved = localStorage.getItem('lumina_left_sidebar_open')
-      if (saved !== null) return saved === 'true'
-    }
     const storeVal = useSettingsStore.getState().settings?.sidebar?.isLeftOpen
     if (typeof storeVal === 'boolean') return storeVal
     return true
   })
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(() => {
-    if (typeof localStorage !== 'undefined') {
-      const saved = localStorage.getItem('lumina_right_sidebar_open')
-      if (saved !== null) return saved === 'true'
-    }
     const storeVal = useSettingsStore.getState().settings?.rightSidebar?.isRightOpen
     if (typeof storeVal === 'boolean') return storeVal
     return false
@@ -217,9 +209,6 @@ export const MainLayout = () => {
     const next = typeof valOrFn === 'function' ? valOrFn(isLeftSidebarOpenRef.current) : valOrFn
     isLeftSidebarOpenRef.current = next
     setIsLeftSidebarOpen(next)
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('lumina_left_sidebar_open', String(next))
-    }
     window.dispatchEvent(new CustomEvent('left-sidebar-toggle', { detail: { open: next } }))
     const currentSidebar = useSettingsStore.getState().settings?.sidebar || {}
     if (currentSidebar.isLeftOpen !== next) {
@@ -236,9 +225,6 @@ export const MainLayout = () => {
     const next = typeof valOrFn === 'function' ? valOrFn(isRightSidebarOpenRef.current) : valOrFn
     isRightSidebarOpenRef.current = next
     setIsRightSidebarOpen(next)
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('lumina_right_sidebar_open', String(next))
-    }
     const currentRSidebar = useSettingsStore.getState().settings?.rightSidebar || {}
     if (currentRSidebar.isRightOpen !== next) {
       useSettingsStore.getState().updateSettings({
@@ -317,54 +303,19 @@ export const MainLayout = () => {
           if (last) setSelectedNote(last)
         }
 
-        let savedLeft = null
-        let savedRight = null
-        if (typeof localStorage !== 'undefined') {
-          savedLeft = localStorage.getItem('lumina_left_sidebar_open')
-          savedRight = localStorage.getItem('lumina_right_sidebar_open')
-        }
-
         const legacySidebar = actualSettings.sidebar || {}
         let finalLeftOpen = true
-        if (savedLeft !== null) {
-          finalLeftOpen = savedLeft === 'true'
-        } else if (typeof legacySidebar.isLeftOpen === 'boolean') {
+        if (typeof legacySidebar.isLeftOpen === 'boolean') {
           finalLeftOpen = legacySidebar.isLeftOpen
-          if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('lumina_left_sidebar_open', String(legacySidebar.isLeftOpen))
-          }
         } else if (typeof actualSettings.isLeftSidebarOpen === 'boolean') {
           finalLeftOpen = actualSettings.isLeftSidebarOpen
-          if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('lumina_left_sidebar_open', String(actualSettings.isLeftSidebarOpen))
-          }
         }
 
         setIsLeftSidebarOpen(finalLeftOpen)
         isLeftSidebarOpenRef.current = finalLeftOpen
         window.dispatchEvent(new CustomEvent('left-sidebar-toggle', { detail: { open: finalLeftOpen } }))
 
-        let savedLeftWidth = null
-        let savedRightWidth = null
-        if (typeof localStorage !== 'undefined') {
-          const rawL = localStorage.getItem('lumina_left_sidebar_width')
-          if (rawL) {
-            const parsedL = parseInt(rawL, 10)
-            if (!isNaN(parsedL) && parsedL >= 180 && parsedL <= 600) {
-              savedLeftWidth = parsedL
-            }
-          }
-          const rawR = localStorage.getItem('lumina_right_sidebar_width')
-          if (rawR) {
-            const parsedR = parseInt(rawR, 10)
-            if (!isNaN(parsedR) && parsedR >= 200 && parsedR <= 750) {
-              savedRightWidth = parsedR
-            }
-          }
-        }
-
-        const rawLeftWidth =
-          savedLeftWidth || legacySidebar.width || legacySidebar.leftWidth || actualSettings.leftWidth
+        const rawLeftWidth = legacySidebar.width || legacySidebar.leftWidth || actualSettings.leftWidth
         if (rawLeftWidth) {
           const clampedLeft = Math.min(600, Math.max(180, Number(rawLeftWidth)))
           setLeftWidth(clampedLeft)
@@ -372,25 +323,16 @@ export const MainLayout = () => {
 
         const legacyRSidebar = actualSettings.rightSidebar || {}
         let finalRightOpen = false
-        if (savedRight !== null) {
-          finalRightOpen = savedRight === 'true'
-        } else if (typeof legacyRSidebar.isRightOpen === 'boolean') {
+        if (typeof legacyRSidebar.isRightOpen === 'boolean') {
           finalRightOpen = legacyRSidebar.isRightOpen
-          if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('lumina_right_sidebar_open', String(legacyRSidebar.isRightOpen))
-          }
         } else if (typeof actualSettings.isRightSidebarOpen === 'boolean') {
           finalRightOpen = actualSettings.isRightSidebarOpen
-          if (typeof localStorage !== 'undefined') {
-            localStorage.setItem('lumina_right_sidebar_open', String(actualSettings.isRightSidebarOpen))
-          }
         }
 
         setIsRightSidebarOpen(finalRightOpen)
         isRightSidebarOpenRef.current = finalRightOpen
 
-        const rawRightWidth =
-          savedRightWidth || legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth
+        const rawRightWidth = legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth
         if (rawRightWidth) {
           const clampedRight = Math.min(750, Math.max(200, Number(rawRightWidth)))
           setRightWidth(clampedRight)
@@ -832,13 +774,7 @@ export const MainLayout = () => {
   const handleOpenSettings = useCallback(() => setShowSettings(true), [])
   const handleOpenTheme = useCallback(() => setShowThemeModal(true), [])
   const handleToggleGraph = useCallback(() => {
-    let mode = 'modal'
-    if (typeof localStorage !== 'undefined') {
-      const saved = localStorage.getItem('lumina_graph_display_mode')
-      if (saved === 'tab' || saved === 'modal') {
-        mode = saved
-      }
-    }
+    const mode = useSettingsStore.getState().settings?.graphDisplayMode || 'modal'
     if (mode === 'tab') {
       useWorkspaceStore.getState().openGraphTab()
     } else {

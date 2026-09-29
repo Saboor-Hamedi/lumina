@@ -21,6 +21,7 @@ import { Files, Plus, Network, LayoutDashboard, Palette, Book, Compass } from 'l
 import ToolTip from '../../components/atoms/ToolTip'
 import DailyNotes from './components/DailyNotes'
 import ActivityBarMail from './components/ActivityBarMail'
+import { useSettingStore } from '../../core/store/SettingStore'
 import './css/activitybar.css'
 
 export interface ActivityBarProps {
@@ -39,11 +40,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
 
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState<boolean>(() => {
-    if (typeof localStorage !== 'undefined') {
-      const saved = localStorage.getItem('lumina_left_sidebar_open')
-      if (saved !== null) return saved === 'true'
-    }
-    return true
+    return useSettingStore.getState().settings?.sidebar?.isLeftOpen ?? true
   })
 
   useEffect(() => {

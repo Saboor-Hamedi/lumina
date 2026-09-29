@@ -1,7 +1,20 @@
 import { dispatchModel } from './tableShared'
 import { readModelFromDom } from './tableModel'
+import type { EditorView } from '@codemirror/view'
+import type { CellAlignment, TableModel } from './tableModel'
 
-export function setupTableInsertion(wrap, view) {
+type TableInsertWrapper = HTMLElement & {
+  __view?: EditorView
+  __tableFrom?: number
+  __tableTo?: number
+}
+type InsertableTableModel = TableModel & {
+  alignments: CellAlignment[]
+  columnWidths: number[]
+  rowHeights: number[]
+}
+
+export function setupTableInsertion(wrap: TableInsertWrapper, view: EditorView): void {
   const plusIcon = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`
 
   // Row Insert Marker (Bottom handle for adding rows)
@@ -51,7 +64,7 @@ export function setupTableInsertion(wrap, view) {
   wrap.appendChild(rowInsertHandle)
   wrap.appendChild(colInsertHandle)
 
-  const getTableOffset = (table) => {
+  const getTableOffset = (table: HTMLTableElement) => {
     const tableRect = table.getBoundingClientRect()
     const wrapRect = wrap.getBoundingClientRect()
     return {
@@ -69,8 +82,10 @@ export function setupTableInsertion(wrap, view) {
     colInsertHandle.style.pointerEvents = 'none'
   }
 
-  wrap.addEventListener('mousemove', (e) => {
-    if (e.target.closest('.cm-table-insert-marker')) return
+  wrap.addEventListener('mousemove', (e: MouseEvent) => {
+    const target = e.target
+    if (!(target instanceof Element)) return
+    if (target.closest('.cm-table-insert-marker')) return
 
     const table = wrap.querySelector('table')
     if (!table) return
@@ -85,7 +100,7 @@ export function setupTableInsertion(wrap, view) {
     if (
       wrap.classList.contains('is-dragging-cols') ||
       wrap.classList.contains('is-dragging-rows') ||
-      e.target.closest('.cm-table-drag-handle')
+      target.closest('.cm-table-drag-handle')
     ) {
       hideHandles()
       return
@@ -147,16 +162,17 @@ export function setupTableInsertion(wrap, view) {
     hideHandles()
   })
 
-  wrap.addEventListener('mouseleave', (e) => {
+  wrap.addEventListener('mouseleave', (e: MouseEvent) => {
     // If mouse is moving into one of the insert handles, keep visible
-    if (e.relatedTarget && (e.relatedTarget === rowInsertHandle || e.relatedTarget === colInsertHandle || rowInsertHandle.contains(e.relatedTarget) || colInsertHandle.contains(e.relatedTarget))) {
+    const relatedTarget = e.relatedTarget
+    if (relatedTarget instanceof Node && (relatedTarget === rowInsertHandle || relatedTarget === colInsertHandle || rowInsertHandle.contains(relatedTarget) || colInsertHandle.contains(relatedTarget))) {
       return
     }
     if (rowInsertHandle.matches(':hover') || colInsertHandle.matches(':hover')) return
     hideHandles()
   })
 
-  const keepHandleVisible = (handle) => {
+  const keepHandleVisible = (handle: HTMLElement) => {
     handle.style.opacity = '1'
     handle.style.pointerEvents = 'auto'
   }
@@ -167,11 +183,11 @@ export function setupTableInsertion(wrap, view) {
   rowInsertHandle.addEventListener('mousedown', (e) => {
     e.preventDefault()
     e.stopPropagation()
-    const index = parseInt(rowInsertHandle.dataset.index, 10)
+    const index = parseInt(rowInsertHandle.dataset.index ?? '-1', 10)
     if (isNaN(index) || index < 1) return
 
     const model = readModelFromDom(wrap)
-    const nextModel = {
+    const nextModel: InsertableTableModel = {
       header: [...model.header],
       alignments: [...(model.alignments || [])],
       rows: model.rows.map((r) => [...r]),
@@ -198,11 +214,11 @@ export function setupTableInsertion(wrap, view) {
   colInsertHandle.addEventListener('mousedown', (e) => {
     e.preventDefault()
     e.stopPropagation()
-    const index = parseInt(colInsertHandle.dataset.index, 10)
+    const index = parseInt(colInsertHandle.dataset.index ?? '-1', 10)
     if (isNaN(index) || index < 1) return
 
     const model = readModelFromDom(wrap)
-    const nextModel = {
+    const nextModel: InsertableTableModel = {
       header: [...model.header],
       alignments: [...(model.alignments || [])],
       rows: model.rows.map((r) => [...r]),

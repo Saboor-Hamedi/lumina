@@ -51,12 +51,10 @@ const DailyNotes: React.FC<DailyNotesProps> = memo(({ isActivityBar = false }) =
     }
 
     try {
-      const cached = localStorage.getItem('lumina-expanded-folders')
-      let arr = cached ? JSON.parse(cached) : []
-      if (!Array.isArray(arr)) arr = []
+      const currentExpanded = useSettingsStore.getState().settings.expandedFolders || []
+      const arr = Array.isArray(currentExpanded) ? [...currentExpanded] : []
       if (!arr.includes('DailyNotes')) {
         arr.push('DailyNotes')
-        localStorage.setItem('lumina-expanded-folders', JSON.stringify(arr))
         useSettingsStore.getState().updateSetting('expandedFolders', arr)
       }
     } catch (e) {}

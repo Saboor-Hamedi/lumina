@@ -33,7 +33,6 @@ export interface Settings {
   lineHeight: number
   showLineNumbers: boolean
   autoSave: boolean
-  vimMode: boolean
   cursorStyle: string
   smoothScrolling: boolean
   sidebarCollapsedSections: SidebarSectionCollapsedState
@@ -124,7 +123,6 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     lineHeight: 1.6,
     showLineNumbers: false,
     autoSave: true,
-    vimMode: false,
     cursorStyle: 'smooth',
     smoothScrolling: true,
     sidebarCollapsedSections: {
@@ -143,34 +141,21 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     graphNodeColor: '#40bafa',
     graphSidebarOpen: true,
 
-    // AI Settings - preserve these during hot reload
-    deepSeekKey:
-      (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_deepseek_key')) || null,
+    // AI Settings - loaded from app_config via settings IPC
+    deepSeekKey: null,
     deepSeekModel: 'deepseek-chat',
     huggingFaceKey: null,
 
     // Multi-Provider Support
-    activeProvider:
-      (typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_active_provider')) ||
-      'deepseek',
+    activeProvider: 'deepseek',
     activeModel: null,
-    activeAIMode:
-      (typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_active_ai_mode')) ||
-      'Code',
+    activeAIMode: 'Code',
     aiChatDisplayMode: 'sidebar',
-    openaiKey:
-      (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_openai_key')) || null,
-    anthropicKey:
-      (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_anthropic_key')) || null,
-    groqKey:
-      (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_groq_key')) || null,
+    openaiKey: null,
+    anthropicKey: null,
+    groqKey: null,
     ollamaUrl: 'http://localhost:11434/api/chat',
-    ollamaModel:
-      (typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_ollama_model')) ||
-      null,
+    ollamaModel: null,
 
     // Command Palette
     commandPaletteMode: 'search',
@@ -181,83 +166,32 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     globalShortcut: 'Ctrl+Space',
     windowOpacity: 1.0,
 
-    modernUi:
-      (typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_modern_ui') !== 'false') ||
-      true,
+    modernUi: true,
 
     // Favorites & Ordering
     pinnedFolders: [],
     folderOrder: [],
-    expandedFolders:
-      (typeof localStorage !== 'undefined' &&
-        (() => {
-          try {
-            const cached = localStorage.getItem('lumina-expanded-folders')
-            return cached ? JSON.parse(cached) : []
-          } catch (e) {
-            return []
-          }
-        })()) ||
-      [],
+    expandedFolders: [],
 
     // Sidebars geometry & state
     sidebar: {
-      width:
-        (typeof localStorage !== 'undefined' &&
-          parseInt(localStorage.getItem('lumina_left_sidebar_width') || '260', 10)) ||
-        260,
-      isLeftOpen:
-        typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_left_sidebar_open') !== null
-          ? localStorage.getItem('lumina_left_sidebar_open') === 'true'
-          : true
+      width: 260,
+      isLeftOpen: true
     },
     rightSidebar: {
-      width:
-        (typeof localStorage !== 'undefined' &&
-          parseInt(localStorage.getItem('lumina_right_sidebar_width') || '300', 10)) ||
-        300,
-      isRightOpen:
-        typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_right_sidebar_open') !== null
-          ? localStorage.getItem('lumina_right_sidebar_open') === 'true'
-          : false
+      width: 300,
+      isRightOpen: false
     },
 
-    // Modal Window Persistence (remembers maximized state across opens)
-    previewModalMaximized:
-      (typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_modal_maximized_preview') === 'true') ||
-      false,
-    settingsModalMaximized:
-      (typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_modal_maximized_settings') === 'true') ||
-      false,
-    themeModalMaximized:
-      (typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_modal_maximized_theme') === 'true') ||
-      false,
-    graphModalMaximized:
-      (typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_modal_maximized_graph') === 'true') ||
-      false,
-    docsModalMaximized:
-      (typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_modal_maximized_docs') === 'true') ||
-      false,
-    guideModalMaximized:
-      (typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_modal_maximized_guide') === 'true') ||
-      false,
-    templateModalMaximized:
-      (typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_modal_maximized_template') === 'true') ||
-      false,
-    aiModalMaximized:
-      (typeof localStorage !== 'undefined' &&
-        localStorage.getItem('lumina_modal_maximized_ai') === 'true') ||
-      false,
+    // Modal Window Persistence
+    previewModalMaximized: false,
+    settingsModalMaximized: false,
+    themeModalMaximized: false,
+    graphModalMaximized: false,
+    docsModalMaximized: false,
+    guideModalMaximized: false,
+    templateModalMaximized: false,
+    aiModalMaximized: false,
 
     // Email Modal Geometry & State Persistence (settings.json)
     emailModalWidth: 840,
@@ -367,9 +301,6 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       if (key === 'theme') root.setAttribute('data-theme', value)
       if (key === 'modernUi') {
         root.setAttribute('data-modern-ui', String(Boolean(value)))
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem('lumina_modern_ui', String(Boolean(value)))
-        }
       }
       if (key === 'fontFamily') root.style.setProperty('--font-editor', value)
       if (key === 'fontSize') root.style.setProperty('--font-size-editor', `${value}px`)
@@ -383,32 +314,6 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     }
 
     try {
-      if (typeof localStorage !== 'undefined') {
-        if (key === 'activeAIMode') {
-          localStorage.setItem('lumina_active_ai_mode', value)
-        } else if (key === 'deepSeekKey') {
-          if (value) localStorage.setItem('lumina_deepseek_key', value)
-          else localStorage.removeItem('lumina_deepseek_key')
-        } else if (key === 'openaiKey') {
-          if (value) localStorage.setItem('lumina_openai_key', value)
-          else localStorage.removeItem('lumina_openai_key')
-        } else if (key === 'anthropicKey') {
-          if (value) localStorage.setItem('lumina_anthropic_key', value)
-          else localStorage.removeItem('lumina_anthropic_key')
-        } else if (key === 'groqKey') {
-          if (value) localStorage.setItem('lumina_groq_key', value)
-          else localStorage.removeItem('lumina_groq_key')
-        } else if (key === 'activeProvider') {
-          if (value) localStorage.setItem('lumina_active_provider', value)
-        } else if (key === 'ollamaModel') {
-          if (value) localStorage.setItem('lumina_ollama_model', value)
-          else localStorage.removeItem('lumina_ollama_model')
-        } else if (key === 'activeModel') {
-          if (value) localStorage.setItem('lumina_active_model', value)
-          else localStorage.removeItem('lumina_active_model')
-        }
-      }
-
       const api = (window as any).api
       if (api && typeof api.saveSetting === 'function') {
         await api.saveSetting(key, value)
@@ -444,27 +349,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       settings: { ...state.settings, ...newSettings }
     }))
 
-    // Save modal maximized states to localStorage as instant sync
-    if (typeof localStorage !== 'undefined') {
-      const modalKeys = [
-        'previewModalMaximized',
-        'settingsModalMaximized',
-        'themeModalMaximized',
-        'graphModalMaximized',
-        'docsModalMaximized',
-        'guideModalMaximized',
-        'templateModalMaximized',
-        'aiModalMaximized'
-      ]
-      modalKeys.forEach((key) => {
-        if (key in newSettings) {
-          const suffix = key.replace('ModalMaximized', '').toLowerCase()
-          localStorage.setItem(`lumina_modal_maximized_${suffix}`, String(Boolean((newSettings as any)[key])))
-        }
-      })
-    }
-
-    // Persist to settings.json
+    // Persist to settings.json via IPC
     try {
       const api = (window as any).api
       if (api && api.saveSettings) {

@@ -52,21 +52,11 @@ export interface UseSidebarResizeReturn {
  * Reads initial width from LocalStorage or SettingsStore with boundary validation.
  */
 function getInitialWidth(
-  storageKey: string,
   minWidth: number,
   maxWidth: number,
   defaultWidth: number,
   storeWidth?: number
 ): number {
-  if (typeof localStorage !== 'undefined') {
-    const saved = localStorage.getItem(storageKey)
-    if (saved) {
-      const parsed = parseInt(saved, 10)
-      if (!isNaN(parsed) && parsed >= minWidth && parsed <= maxWidth) {
-        return parsed
-      }
-    }
-  }
   if (typeof storeWidth === 'number' && storeWidth >= minWidth && storeWidth <= maxWidth) {
     return storeWidth
   }
@@ -109,7 +99,6 @@ export function useSidebarResize({
 }: UseSidebarResizeParams): UseSidebarResizeReturn {
   const [leftWidth, setLeftWidth] = useState<number>(() =>
     getInitialWidth(
-      'lumina_left_sidebar_width',
       MIN_LEFT_WIDTH,
       MAX_LEFT_WIDTH,
       DEFAULT_LEFT_WIDTH,
@@ -119,7 +108,6 @@ export function useSidebarResize({
 
   const [rightWidth, setRightWidth] = useState<number>(() =>
     getInitialWidth(
-      'lumina_right_sidebar_width',
       MIN_RIGHT_WIDTH,
       MAX_RIGHT_WIDTH,
       DEFAULT_RIGHT_WIDTH,
@@ -142,9 +130,6 @@ export function useSidebarResize({
     initialWidthRef.current.left = leftWidth
     const contentWidth = Math.max(MIN_LEFT_WIDTH, leftWidth)
     applySidebarCssVars(appShellRef.current, 'left', leftWidth, contentWidth)
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('lumina_left_sidebar_width', String(leftWidth))
-    }
   }, [leftWidth, appShellRef])
 
   // Synchronize CSS custom properties and storage when rightWidth state updates
@@ -153,9 +138,6 @@ export function useSidebarResize({
     initialWidthRef.current.right = rightWidth
     const contentWidth = Math.max(MIN_RIGHT_WIDTH, rightWidth)
     applySidebarCssVars(appShellRef.current, 'right', rightWidth, contentWidth)
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('lumina_right_sidebar_width', String(rightWidth))
-    }
   }, [rightWidth, appShellRef])
 
   /**
@@ -252,10 +234,6 @@ export function useSidebarResize({
             const finalWidth = Math.max(MIN_LEFT_WIDTH, Math.min(MAX_LEFT_WIDTH, Math.round(raw)))
             setLeftWidth(finalWidth)
             applySidebarCssVars(shell, 'left', finalWidth, finalWidth)
-            if (typeof localStorage !== 'undefined') {
-              localStorage.setItem('lumina_left_sidebar_open', 'true')
-              localStorage.setItem('lumina_left_sidebar_width', String(finalWidth))
-            }
             setTimeout(() => {
               const currentSidebar = useSettingsStore.getState().settings?.sidebar || {}
               useSettingsStore.getState().updateSettings({
@@ -289,10 +267,6 @@ export function useSidebarResize({
             const finalWidth = Math.max(MIN_RIGHT_WIDTH, Math.min(MAX_RIGHT_WIDTH, Math.round(raw)))
             setRightWidth(finalWidth)
             applySidebarCssVars(shell, 'right', finalWidth, finalWidth)
-            if (typeof localStorage !== 'undefined') {
-              localStorage.setItem('lumina_right_sidebar_open', 'true')
-              localStorage.setItem('lumina_right_sidebar_width', String(finalWidth))
-            }
             setTimeout(() => {
               const currentRSidebar = useSettingsStore.getState().settings?.rightSidebar || {}
               useSettingsStore.getState().updateSettings({
@@ -337,9 +311,6 @@ export function useSidebarResize({
         widthRef.current.left = defaultLeft
         initialWidthRef.current.left = defaultLeft
         setLeftWidth(defaultLeft)
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem('lumina_left_sidebar_width', String(defaultLeft))
-        }
         applySidebarCssVars(appShellRef.current, 'left', defaultLeft, defaultLeft)
         setTimeout(() => {
           const currentSidebar = useSettingsStore.getState().settings?.sidebar || {}
@@ -352,9 +323,6 @@ export function useSidebarResize({
         widthRef.current.right = defaultRight
         initialWidthRef.current.right = defaultRight
         setRightWidth(defaultRight)
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem('lumina_right_sidebar_width', String(defaultRight))
-        }
         applySidebarCssVars(appShellRef.current, 'right', defaultRight, defaultRight)
         setTimeout(() => {
           const currentRSidebar = useSettingsStore.getState().settings?.rightSidebar || {}

@@ -1,12 +1,18 @@
 import { serializeTable, readModelFromDom } from './tableModel'
 import { findCurrentTableRange, dispatchModel } from './tableShared'
 import { TABLE_CONFIG } from './tableConfig'
+import type { EditorView } from '@codemirror/view'
+import type { TableModel } from './tableModel'
+
+type QuickActionItem =
+  | { type: 'separator' }
+  | { type?: 'action'; label: string; icon: string; action: () => void | Promise<void> }
 
 /**
  * Converts a table model into standard CSV string format.
  */
-export function modelToCSV(model) {
-  const escapeCSV = (val) => {
+export function modelToCSV(model: TableModel): string {
+  const escapeCSV = (val: string): string => {
     const s = (val || '').toString().replace(/"/g, '""')
     return `"${s}"`
   }
@@ -25,9 +31,9 @@ export function modelToCSV(model) {
 /**
  * Converts a table model into JSON string format.
  */
-export function modelToJSON(model) {
+export function modelToJSON(model: TableModel): string {
   const result = model.rows.map((row) => {
-    const obj = {}
+    const obj: Record<string, string> = {}
     model.header.forEach((colName, idx) => {
       const key = colName.trim() || `column_${idx + 1}`
       obj[key] = row[idx] || ''
@@ -40,7 +46,7 @@ export function modelToJSON(model) {
 /**
  * Converts a table model into plain text format (tab-separated columns, newline rows).
  */
-export function modelToPlainText(model) {
+export function modelToPlainText(model: TableModel): string {
   const lines = []
   lines.push(model.header.map((h) => (h || '').trim()).join('\t'))
   for (const row of model.rows) {
@@ -56,7 +62,10 @@ export function modelToPlainText(model) {
 /**
  * Copies table data to clipboard in specified format.
  */
-export async function copyTableAs(model, format = 'plain') {
+export async function copyTableAs(
+  model: TableModel,
+  format: 'plain' | 'text' | 'markdown' | 'csv' | 'json' = 'plain'
+): Promise<boolean> {
   let text = ''
   if (format === 'plain' || format === 'text') {
     text = modelToPlainText(model)
@@ -80,7 +89,7 @@ export async function copyTableAs(model, format = 'plain') {
 /**
  * Exports table data as a downloadable .csv file.
  */
-export function exportTableAsCSV(model) {
+export function exportTableAsCSV(model: TableModel): void {
   const csvContent = modelToCSV(model)
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
@@ -97,7 +106,7 @@ export function exportTableAsCSV(model) {
 /**
  * Duplicates the current table at the current cursor position (or directly below if cursor is inside table).
  */
-export function duplicateTable(view, wrap, model) {
+export function duplicateTable(view: EditorView, wrap: HTMLElement, model: TableModel): void {
   // Strip the caption so the duplicate doesn't share the same "id" as the
   // original. Two tables with identical captions confuse the range-finder.
   const duplicateModel = { ...model, caption: '' }
@@ -143,7 +152,11 @@ export function duplicateTable(view, wrap, model) {
 /**
  * Creates the Quick Actions / Export Dropdown Button DOM for table header.
  */
-export function createTableQuickActionsDOM(view, wrap, model) {
+export function createTableQuickActionsDOM(
+  view: EditorView,
+  wrap: HTMLElement,
+  model: TableModel
+): HTMLDivElement {
   const container = document.createElement('div')
   container.className = 'cm-table-actions-container'
 
@@ -159,7 +172,7 @@ export function createTableQuickActionsDOM(view, wrap, model) {
     </svg>
   `
 
-  let dropdown = null
+  let dropdown: HTMLDivElement | null = null
 
   const closeDropdown = () => {
     if (dropdown) {
@@ -170,13 +183,14 @@ export function createTableQuickActionsDOM(view, wrap, model) {
     }
   }
 
-  const onOutsideClick = (e) => {
-    if (dropdown && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+  const onOutsideClick = (e: MouseEvent) => {
+    const target = e.target
+    if (target instanceof Node && dropdown && !dropdown.contains(target) && !btn.contains(target)) {
       closeDropdown()
     }
   }
 
-  const onKeyDown = (e) => {
+  const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault()
       e.stopPropagation()
@@ -221,7 +235,7 @@ export function createTableQuickActionsDOM(view, wrap, model) {
 
     const currentModel = readModelFromDom(wrap)
 
-    const items = [
+    const items: QuickActionItem[] = [
       {
         label: 'Copy as Plain Text',
         icon: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
@@ -271,11 +285,11 @@ export function createTableQuickActionsDOM(view, wrap, model) {
       }
     ]
 
-    items.forEach((item) => {
-      if (item.type === 'separator') {
+      items.forEach((item) => {
+      if (!('label' in item)) {
         const sep = document.createElement('div')
         sep.className = 'dropdown-divider'
-        dropdown.appendChild(sep)
+        dropdown?.appendChild(sep)
       } else {
         const itemBtn = document.createElement('div')
         itemBtn.className = 'dropdown-item'
@@ -283,12 +297,12 @@ export function createTableQuickActionsDOM(view, wrap, model) {
           <span class="menu-label">${item.label}</span>
           <span class="menu-icon-right">${item.icon}</span>
         `
-        itemBtn.addEventListener('click', (e) => {
+        itemBtn.addEventListener('click', (e: MouseEvent) => {
           e.stopPropagation()
           closeDropdown()
-          item.action()
+          void item.action()
         })
-        dropdown.appendChild(itemBtn)
+        dropdown?.appendChild(itemBtn)
       }
     })
 

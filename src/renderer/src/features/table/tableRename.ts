@@ -1,6 +1,8 @@
 import { serializeTable, readModelFromDom } from './tableModel'
 import { findCurrentTableRange, dispatchModel } from './tableShared'
 import { TABLE_CONFIG } from './tableConfig'
+import type { EditorView } from '@codemirror/view'
+import type { TableModel } from './tableModel'
 
 /**
  * Creates the Table Title display and interactive Rename Dropdown popover.
@@ -10,7 +12,11 @@ import { TABLE_CONFIG } from './tableConfig'
  * @param {object} model - The parsed table model
  * @returns {HTMLElement} The title trigger container DOM node
  */
-export function createTableTitleDOM(view, wrap, model) {
+export function createTableTitleDOM(
+  view: EditorView,
+  wrap: HTMLElement,
+  model: TableModel
+): HTMLDivElement {
   const container = document.createElement('div')
   container.className = 'cm-table-title-container'
 
@@ -36,7 +42,7 @@ export function createTableTitleDOM(view, wrap, model) {
   labelSpan.textContent = currentTitle || 'Table'
 
   // Keep data-tooltip in sync so the domTooltip engine shows the full name on hover
-  const syncTooltip = (text) => {
+  const syncTooltip = (text: string) => {
     titleBtn.setAttribute('data-tooltip', text || 'Table')
     // Remove native browser title so only our styled tooltip fires
     titleBtn.removeAttribute('title')
@@ -48,7 +54,7 @@ export function createTableTitleDOM(view, wrap, model) {
   titleBtn.appendChild(labelSpan)
   container.appendChild(titleBtn)
 
-  let dropdown = null
+  let dropdown: HTMLDivElement | null = null
 
   const closeDropdown = () => {
     if (dropdown) {
@@ -60,13 +66,14 @@ export function createTableTitleDOM(view, wrap, model) {
     }
   }
 
-  const onOutsideClick = (e) => {
-    if (dropdown && !dropdown.contains(e.target) && !titleBtn.contains(e.target)) {
+  const onOutsideClick = (e: MouseEvent) => {
+    const target = e.target
+    if (target instanceof Node && dropdown && !dropdown.contains(target) && !titleBtn.contains(target)) {
       closeDropdown()
     }
   }
 
-  const onKeyDown = (e) => {
+  const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault()
       e.stopPropagation()

@@ -121,14 +121,14 @@ async function uploadZipToGoogleDrive(filePath, user, existingFileId = null, sig
 /**
  * Executes a full workspace zip backup to Google Drive.
  */
-export async function backupWorkspaceZip(vaultPath, sender, signal = null) {
+export async function backupWorkspaceZip(workspacePath, sender, signal = null) {
   let backupFilePath = null
   try {
     if (signal?.aborted) throw new Error('Backup cancelled')
 
     const user = await getDriveUser()
 
-    if (!fs.existsSync(vaultPath)) {
+    if (!fs.existsSync(workspacePath)) {
       throw new Error('Workspace directory does not exist')
     }
 
@@ -141,7 +141,7 @@ export async function backupWorkspaceZip(vaultPath, sender, signal = null) {
     if (signal?.aborted) throw new Error('Backup cancelled')
 
     // 1. Zip the workspace
-    await zipDirectory(vaultPath, backupFilePath)
+    await zipDirectory(workspacePath, backupFilePath)
 
     if (signal?.aborted) throw new Error('Backup cancelled')
 

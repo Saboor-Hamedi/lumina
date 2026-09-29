@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useSettingsStore } from '../../../core/store/SettingStore'
 
-const STORAGE_KEY = 'lumina_window_opacity'
 const MIN_WINDOW_OPACITY = 0.0
 const MAX_WINDOW_OPACITY = 1.0
 
@@ -44,12 +43,6 @@ export function useOpacity(): UseOpacityReturn {
   const [opacity, setOpacityState] = useState<number>(() => {
     if (typeof storeOpacity === 'number') {
       return clampOpacity(storeOpacity)
-    }
-    if (typeof localStorage !== 'undefined') {
-      const saved = parseFloat(localStorage.getItem(STORAGE_KEY) || '')
-      if (!isNaN(saved)) {
-        return clampOpacity(saved)
-      }
     }
     return 1.0
   })
@@ -113,9 +106,6 @@ export function useOpacity(): UseOpacityReturn {
         clearTimeout(persistTimerRef.current)
       }
       persistTimerRef.current = setTimeout(() => {
-        try {
-          localStorage.setItem(STORAGE_KEY, String(score))
-        } catch {}
         updateSetting('windowOpacity', score)
       }, 200)
     }

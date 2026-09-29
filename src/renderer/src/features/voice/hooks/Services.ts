@@ -7,6 +7,7 @@
 
 import { AudioRecorder } from './Record'
 import { transcribeWithGroq } from './groqWhisper'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 import type { VoiceState, VoiceListener, GroqError } from '../types'
 
 declare global {
@@ -154,8 +155,11 @@ export class VoiceService {
   }
 
   private getStoredGroqKey(): string | null {
-    if (typeof localStorage === 'undefined') return null
-    return localStorage.getItem('lumina_groq_key') || null
+    try {
+      return useSettingsStore.getState().settings?.groqKey || null
+    } catch {
+      return null
+    }
   }
 
   async startRecording(): Promise<void> {

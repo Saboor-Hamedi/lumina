@@ -290,40 +290,40 @@ export async function uploadOrUpdateFile(
 /**
  * Resolves the absolute path and relative path of a file input.
  */
-function resolveFilePaths(fileInput, vaultPath) {
+function resolveFilePaths(fileInput, workspacePath) {
   let fullPath = null
   let relativePath = null
 
   if (typeof fileInput === 'string') {
     if (path.isAbsolute(fileInput)) {
       fullPath = fileInput
-      relativePath = path.relative(vaultPath, fullPath)
+      relativePath = path.relative(workspacePath, fullPath)
     } else {
       relativePath = fileInput
-      fullPath = path.resolve(vaultPath, relativePath)
+      fullPath = path.resolve(workspacePath, relativePath)
     }
   } else if (fileInput && typeof fileInput === 'object') {
     if (fileInput.filePath && fs.existsSync(fileInput.filePath)) {
       fullPath = fileInput.filePath
-      relativePath = path.relative(vaultPath, fullPath)
+      relativePath = path.relative(workspacePath, fullPath)
     } else if (fileInput.relativePath) {
       relativePath = fileInput.relativePath
-      fullPath = path.resolve(vaultPath, relativePath)
+      fullPath = path.resolve(workspacePath, relativePath)
     } else {
       const folder = (fileInput.folderId || '').replace(/\\/g, '/')
       const name = fileInput.fileName || `${fileInput.title || 'Untitled'}.md`
       relativePath = path.join(folder, name)
-      fullPath = path.resolve(vaultPath, relativePath)
+      fullPath = path.resolve(workspacePath, relativePath)
     }
 
     // Fallback: If fullPath doesn't exist on disk, check if file exists with the note title
     if ((!fullPath || !fs.existsSync(fullPath)) && fileInput.title) {
       const folder = (fileInput.folderId || '').replace(/\\/g, '/')
       const cleanTitle = String(fileInput.title).trim().replace(/[<>:"/\\|?*]/g, '')
-      const candidatePath = path.resolve(vaultPath, path.join(folder, `${cleanTitle}.md`))
+      const candidatePath = path.resolve(workspacePath, path.join(folder, `${cleanTitle}.md`))
       if (fs.existsSync(candidatePath)) {
         fullPath = candidatePath
-        relativePath = path.relative(vaultPath, fullPath)
+        relativePath = path.relative(workspacePath, fullPath)
       }
     }
   }
@@ -345,16 +345,16 @@ function resolveFilePaths(fileInput, vaultPath) {
  * - Only the selected note is pushed or updated into the target folder.
  *
  * @param {string | object} fileInput - Snippet object, absolute path, or relative path
- * @param {string} vaultPath - Workspace root path
+ * @param {string} workspacePath - Workspace root path
  * @param {Electron.WebContents} [sender=null] - Sender for progress IPC
  * @param {AbortSignal} [signal=null] - Optional abort signal
  */
-export async function backupSingleFile(fileInput, vaultPath, sender = null, signal = null) {
+export async function backupSingleFile(fileInput, workspacePath, sender = null, signal = null) {
   try {
     if (signal?.aborted) throw new Error('Backup cancelled')
 
     const user = await getDriveUser()
-    const { fullPath, relativePath } = resolveFilePaths(fileInput, vaultPath)
+    const { fullPath, relativePath } = resolveFilePaths(fileInput, workspacePath)
 
     if (sender) {
       sender.send('index:progress', {
@@ -488,17 +488,17 @@ function scanDirectoryFiles(dir, baseDir, fileList = []) {
  * Backs up the entire workspace as direct non-zip files under Google Drive's 'lumina' folder.
  * Supports clean cancellation via AbortSignal.
  *
- * @param {string} vaultPath - Workspace path
+ * @param {string} workspacePath - Workspace path
  * @param {Electron.WebContents} [sender=null] - Sender for progress IPC
  * @param {AbortSignal} [signal=null] - Optional abort signal
  */
-export async function backupWorkspaceNonZip(vaultPath, sender = null, signal = null) {
+export async function backupWorkspaceNonZip(workspacePath, sender = null, signal = null) {
   try {
     if (signal?.aborted) throw new Error('Backup cancelled')
 
     const user = await getDriveUser()
 
-    if (!fs.existsSync(vaultPath)) {
+    if (!fs.existsSync(workspacePath)) {
       throw new Error('Workspace directory does not exist')
     }
 
@@ -506,7 +506,7 @@ export async function backupWorkspaceNonZip(vaultPath, sender = null, signal = n
       sender.send('index:progress', { type: 'backup', stage: 'scanning', progress: 5 })
     }
 
-    const files = scanDirectoryFiles(vaultPath, vaultPath)
+    const files = scanDirectoryFiles(workspacePath, workspacePath)
     const totalFiles = files.length
 
     if (totalFiles === 0) {

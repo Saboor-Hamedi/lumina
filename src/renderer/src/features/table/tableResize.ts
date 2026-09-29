@@ -1,5 +1,18 @@
 import { readModelFromDom } from './tableModel'
 import { TABLE_CONFIG } from './tableConfig'
+import type { TableModel } from './tableModel'
+
+type ResizeGrip = HTMLDivElement & {
+  _cell?: HTMLTableCellElement
+  _row?: HTMLTableRowElement
+}
+type ResizeTarget = {
+  type: 'column' | 'row'
+  index?: number
+  size: number
+  cell?: HTMLTableCellElement
+  row?: HTMLTableRowElement
+}
 
 const MIN_COLUMN_WIDTH = TABLE_CONFIG.minColumnWidth
 const MIN_ROW_HEIGHT = TABLE_CONFIG.minRowHeight
@@ -10,7 +23,7 @@ const RESIZE_ZONE = TABLE_CONFIG.resizeGripZone
  * gutters. With `scrollbar-gutter: stable both-edges`, this value is
  * invariant across overflow transitions — safe to cache for a drag.
  */
-function getContainerContentWidth(scrollContainer) {
+function getContainerContentWidth(scrollContainer: HTMLElement | null): number {
   if (!scrollContainer) return 0
   const cs = getComputedStyle(scrollContainer)
   const padL = parseFloat(cs.paddingLeft) || 0
@@ -27,9 +40,13 @@ function getContainerContentWidth(scrollContainer) {
  * @param {number}   minColW - minimum per-column width (default MIN_COLUMN_WIDTH)
  * @returns {number[]} new widths that sum to containerWidth
  */
-export function redistributeColumnWidths(widths, wrap, minColW = MIN_COLUMN_WIDTH) {
+export function redistributeColumnWidths(
+  widths: number[],
+  wrap: HTMLElement,
+  minColW = MIN_COLUMN_WIDTH
+): number[] {
   if (!widths?.length) return widths
-  const scrollContainer = wrap?.querySelector('.cm-table-scroll-container')
+  const scrollContainer = wrap?.querySelector<HTMLElement>('.cm-table-scroll-container')
   const containerWidth = getContainerContentWidth(scrollContainer)
   if (!containerWidth) return widths
 
@@ -37,7 +54,7 @@ export function redistributeColumnWidths(widths, wrap, minColW = MIN_COLUMN_WIDT
   if (total === containerWidth) return widths // already perfect
 
   const scale = containerWidth / (total || 1)
-  const next = []
+  const next: number[] = []
   let distributed = 0
   for (let i = 0; i < widths.length - 1; i++) {
     const w = Math.max(minColW, Math.round(widths[i] * scale))
@@ -53,7 +70,7 @@ export function redistributeColumnWidths(widths, wrap, minColW = MIN_COLUMN_WIDT
  * Apply a width vector to a table and keep its outer width equal to the
  * sum of its columns.
  */
-function applyWidths(table, widths) {
+function applyWidths(table: HTMLTableElement, widths: number[]): void {
   const total = widths.reduce((s, w) => s + w, 0)
   table.style.setProperty('width', `${total}px`, 'important')
   table.style.setProperty('min-width', `${total}px`, 'important')
@@ -63,7 +80,7 @@ function applyWidths(table, widths) {
     for (let i = 0; i < cells.length; i++) {
       const w = widths[i]
       if (w == null) continue
-      const cell = cells[i]
+      const cell = cells[i] as HTMLElement
       cell.style.setProperty('width', `${w}px`, 'important')
       cell.style.setProperty('min-width', `${w}px`, 'important')
       cell.style.setProperty('max-width', `${w}px`, 'important')
@@ -83,7 +100,7 @@ function applyWidths(table, widths) {
  *   only the two adjacent columns change — no other column moves.
  *
  */
-function computeWidthVector(initialWidths, columnIndex, delta) {
+function computeWidthVector(initialWidths: number[], columnIndex: number, delta: number): number[] {
   const n = initialWidths.length
   const next = [...initialWidths]
 
@@ -115,33 +132,36 @@ function computeWidthVector(initialWidths, columnIndex, delta) {
   return next
 }
 
-export function setupTableColResizing(wrap, onCommit = null) {
+export function setupTableColResizing(
+  wrap: HTMLElement,
+  onCommit: ((model: TableModel) => void) | null = null
+) {
   const table = wrap?.querySelector('table')
   if (!table) return () => {}
 
-  const columnGrip = document.createElement('div')
+  const columnGrip = document.createElement('div') as ResizeGrip
   columnGrip.className = 'cm-table-resize-grip cm-table-column-resize-grip'
-  const rowGrip = document.createElement('div')
+  const rowGrip = document.createElement('div') as ResizeGrip
   rowGrip.className = 'cm-table-resize-grip cm-table-row-resize-grip'
   wrap.append(columnGrip, rowGrip)
 
-  let resizeType = null
+  let resizeType: 'column' | 'row' | null = null
   let resizeIndex = -1
   let startCoordinate = 0
   let startSize = 0
-  let activeRow = null
+  let activeRow: HTMLTableRowElement | null = null
 
   // ── Drag-session state (frozen at mousedown) ───────────────────────
-  let frozenInitialWidths = [] // column widths at drag start
-  let latestWidths = null // last applied vector, for commit
-  let latestCoordinate = null
+  let frozenInitialWidths: number[] = [] // column widths at drag start
+  let latestWidths: number[] | null = null // last applied vector, for commit
+  let latestCoordinate: number | null = null
 
-  const getResizeTarget = (event) => {
-    const rows = Array.from(table.querySelectorAll('tr:not(.cm-table-empty-row)'))
+  const getResizeTarget = (event: MouseEvent): ResizeTarget | null => {
+    const rows = Array.from(table.querySelectorAll<HTMLTableRowElement>('tr:not(.cm-table-empty-row)'))
     for (const row of rows) {
       const rr = row.getBoundingClientRect()
       if (event.clientY < rr.top - RESIZE_ZONE || event.clientY > rr.bottom + RESIZE_ZONE) continue
-      const cells = Array.from(row.children)
+      const cells = Array.from(row.querySelectorAll<HTMLTableCellElement>('th, td'))
       // Stop at cells.length - 1: the last cell's RIGHT edge is the
       // outer table wall (fixed frame) — it must never be a resize grip.
       for (let i = 0; i < cells.length - 1; i++) {
@@ -151,7 +171,9 @@ export function setupTableColResizing(wrap, onCommit = null) {
         }
       }
     }
-    const bodyRows = Array.from(table.querySelectorAll('tbody tr:not(.cm-table-empty-row)'))
+    const bodyRows = Array.from(
+      table.querySelectorAll<HTMLTableRowElement>('tbody tr:not(.cm-table-empty-row)')
+    )
     for (const row of bodyRows) {
       const rect = row.getBoundingClientRect()
       if (
@@ -164,10 +186,12 @@ export function setupTableColResizing(wrap, onCommit = null) {
     return null
   }
 
-  const onMouseMove = (event) => {
+  const onMouseMove = (event: MouseEvent): void => {
     if (resizeType) return
-    if (event.target.closest?.('.cm-table-resize-grip')) {
-      wrap.style.cursor = event.target.closest('.cm-table-column-resize-grip')
+    const eventTarget = event.target
+    if (!(eventTarget instanceof Element)) return
+    if (eventTarget.closest('.cm-table-resize-grip')) {
+      wrap.style.cursor = eventTarget.closest('.cm-table-column-resize-grip')
         ? 'col-resize'
         : 'row-resize'
       return
@@ -179,7 +203,8 @@ export function setupTableColResizing(wrap, onCommit = null) {
     rowGrip.classList.toggle('visible', target?.type === 'row')
 
     if (target?.type === 'column') {
-      const cell = target.cell || table.querySelector(`thead th:nth-child(${target.index + 1})`)
+      const targetIndex = target.index ?? -1
+      const cell = target.cell || table.querySelector<HTMLTableCellElement>(`thead th:nth-child(${targetIndex + 1})`)
       if (!cell) return
       const rect = cell.getBoundingClientRect()
       const wrapRect = wrap.getBoundingClientRect()
@@ -196,27 +221,30 @@ export function setupTableColResizing(wrap, onCommit = null) {
     }
   }
 
-  const onMouseDown = (event) => {
-    const grip = event.target.closest?.('.cm-table-resize-grip')
-    const target = grip?.classList.contains('cm-table-column-resize-grip')
-      ? { type: 'column', index: parseInt(columnGrip.dataset.index, 10), size: 0 }
+  const onMouseDown = (event: MouseEvent): void => {
+    const eventTarget = event.target
+    if (!(eventTarget instanceof Element)) return
+    const grip = eventTarget.closest('.cm-table-resize-grip')
+    const target: ResizeTarget | null = grip?.classList.contains('cm-table-column-resize-grip')
+      ? { type: 'column', index: parseInt(columnGrip.dataset.index ?? '-1', 10), size: 0 }
       : grip?.classList.contains('cm-table-row-resize-grip')
-        ? { type: 'row', row: rowGrip._row, size: 0 }
+        ? rowGrip._row ? { type: 'row', row: rowGrip._row, size: 0 } : null
         : getResizeTarget(event)
     if (!target) return
 
     if (target.type === 'column') {
+      const targetIndex = target.index ?? -1
       const cell =
         target.cell ||
         columnGrip._cell ||
-        table.querySelector(`thead th:nth-child(${target.index + 1})`)
+        table.querySelector<HTMLTableCellElement>(`thead th:nth-child(${targetIndex + 1})`)
       if (!cell) return
       target.size = cell.getBoundingClientRect().width
 
       // Keep the rendered widths as the drag baseline. Scaling them to
       // the container here shifts the divider before the pointer moves
       // whenever the table is narrower than the editor pane.
-      frozenInitialWidths = Array.from(table.querySelectorAll('thead th')).map((th) =>
+      frozenInitialWidths = Array.from(table.querySelectorAll<HTMLTableCellElement>('thead th')).map((th) =>
         Math.round(th.getBoundingClientRect().width)
       )
       latestWidths = [...frozenInitialWidths]
@@ -240,7 +268,7 @@ export function setupTableColResizing(wrap, onCommit = null) {
     document.body.style.cursor = resizeType === 'column' ? 'col-resize' : 'row-resize'
   }
 
-  let rafId = null
+  let rafId: number | null = null
   const applyPendingDrag = () => {
     if (!resizeType || latestCoordinate == null) return
     const delta = latestCoordinate - startCoordinate
@@ -260,7 +288,9 @@ export function setupTableColResizing(wrap, onCommit = null) {
     } else if (activeRow) {
       const nextSize = Math.max(MIN_ROW_HEIGHT, startSize + delta)
       activeRow.style.height = `${nextSize}px`
-      for (const cell of activeRow.children) cell.style.height = `${nextSize}px`
+      for (const cell of activeRow.children) {
+        if (cell instanceof HTMLElement) cell.style.height = `${nextSize}px`
+      }
 
       const rect = activeRow.getBoundingClientRect()
       const wrapRect = wrap.getBoundingClientRect()
@@ -269,7 +299,7 @@ export function setupTableColResizing(wrap, onCommit = null) {
     }
   }
 
-  const onDrag = (event) => {
+  const onDrag = (event: MouseEvent): void => {
     if (!resizeType) return
     latestCoordinate = resizeType === 'column' ? event.clientX : event.clientY
     if (rafId) return
@@ -323,8 +353,9 @@ export function setupTableColResizing(wrap, onCommit = null) {
 
   wrap.addEventListener('mousemove', onMouseMove)
   wrap.addEventListener('mousedown', onMouseDown)
-  wrap.addEventListener('dblclick', (event) => {
-    if (event.target.closest?.('.cm-table-resize-grip')) {
+  wrap.addEventListener('dblclick', (event: MouseEvent) => {
+    const target = event.target
+    if (target instanceof Element && target.closest('.cm-table-resize-grip')) {
       event.preventDefault()
       event.stopPropagation()
     }

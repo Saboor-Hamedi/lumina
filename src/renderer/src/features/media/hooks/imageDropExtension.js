@@ -61,9 +61,6 @@ export const imageDropExtension = () =>
             if (result?.importedFolderIds && result.importedFolderIds.length > 0) {
               const currentExpanded = useSettingsStore.getState().settings.expandedFolders || []
               const nextExpanded = Array.from(new Set([...currentExpanded, ...result.importedFolderIds]))
-              try {
-                localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextExpanded))
-              } catch (e) {}
               useSettingsStore.getState().updateSetting('expandedFolders', nextExpanded)
             }
             const importedIds = result?.importedNoteIds || result?.importedSnippetIds || []

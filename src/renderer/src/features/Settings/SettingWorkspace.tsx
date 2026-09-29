@@ -12,7 +12,7 @@ export const SettingWorkspace: React.FC = () => {
   const { handleSwitchWorkspace, handleOpenFolder } = useWorkspace()
 
   const currentWorkspacePath =
-    settings.workspacePath || settings.vaultPath || 'No workspace selected (using default)'
+    settings.workspacePath || 'No workspace selected (using default)'
 
   return (
     <div className="settings-pane">

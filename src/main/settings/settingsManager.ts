@@ -12,18 +12,20 @@ export interface Settings {
   lineHeight: number
   showLineNumbers: boolean
   autoSave: boolean
-  vimMode: boolean
   cursorStyle: string
   smoothScrolling: boolean
-  lastSnippetId: string | null
-  workspacePath: string | null
+  lastSnippetId?: string | null
+  lastNoteId?: string | null
+  openTabs?: string[]
+  pinnedTabIds?: string[]
+  workspacePath?: string | null
   translucency: boolean
   inlineMetadata: boolean
   sidebar: { width: number; isLeftOpen: boolean }
   rightSidebar: { width: number; isRightOpen: boolean }
-  pinnedFolders: string[]
-  folderOrder: string[]
-  expandedFolders: string[]
+  pinnedFolders?: string[]
+  folderOrder?: string[]
+  expandedFolders?: string[]
   enableDevTools: boolean
   launchOnStartup: boolean
   globalShortcut: string
@@ -74,18 +76,12 @@ export const DEFAULT_SETTINGS: Settings = {
   lineHeight: 1.6,
   showLineNumbers: false,
   autoSave: true,
-  vimMode: false,
   cursorStyle: 'smooth',
   smoothScrolling: true,
-  lastSnippetId: null,
-  workspacePath: null,
   translucency: false,
   inlineMetadata: true,
   sidebar: { width: 260, isLeftOpen: true },
   rightSidebar: { width: 300, isRightOpen: false },
-  pinnedFolders: [],
-  folderOrder: [],
-  expandedFolders: [],
   enableDevTools: true,
   launchOnStartup: false,
   globalShortcut: 'Ctrl+Space',
@@ -120,6 +116,145 @@ export const DEFAULT_SETTINGS: Settings = {
   emailDetailOpen: true
 }
 
+export function formatSettingsJson(settings: Record<string, any>): string {
+  const sections: { title: string; keys: string[] }[] = [
+    {
+      title: 'EDITOR',
+      keys: [
+        'fontFamily',
+        'fontSize',
+        'lineHeight',
+        'showLineNumbers',
+        'cursorStyle',
+        'smoothScrolling',
+        'autoSave',
+        'inlineMetadata'
+      ]
+    },
+    {
+      title: 'APPEARANCE',
+      keys: ['theme', 'translucency', 'windowOpacity', 'modernUi']
+    },
+    {
+      title: 'SIDEBARS',
+      keys: ['sidebar', 'rightSidebar', 'graphSidebarOpen']
+    },
+    {
+      title: 'AI',
+      keys: [
+        'activeProvider',
+        'activeModel',
+        'activeAIMode',
+        'aiChatDisplayMode',
+        'deepSeekModel',
+        'ollamaUrl',
+        'ollamaModel'
+      ]
+    },
+    {
+      title: 'GRAPH',
+      keys: [
+        'graphTheme',
+        'graphNodeSize',
+        'graphHideTags',
+        'graphHideGhosts',
+        'graphHideOrphans',
+        'graphCenterForce',
+        'graphRepelForce',
+        'graphLinkForce',
+        'graph3DMode',
+        'graphAnimate'
+      ]
+    },
+    {
+      title: 'EMAIL',
+      keys: [
+        'emailModalWidth',
+        'emailModalHeight',
+        'emailSidebarWidth',
+        'emailListWidth',
+        'emailSidebarOpen',
+        'emailDetailOpen'
+      ]
+    },
+    {
+      title: 'WINDOW',
+      keys: [
+        'windowBounds',
+        'isMaximized',
+        'settingsModalMaximized',
+        'launchOnStartup',
+        'globalShortcut'
+      ]
+    },
+    {
+      title: 'CURSOR',
+      keys: ['cursor']
+    },
+    {
+      title: 'ADVANCED',
+      keys: ['enableDevTools']
+    }
+  ]
+
+  const lines: string[] = ['{']
+  const allFormattedKeys = new Set<string>()
+  const allEntries: { sectionTitle?: string; key: string; valueString: string }[] = []
+
+  for (const sec of sections) {
+    let firstInSec = true
+    for (const key of sec.keys) {
+      if (key in settings && settings[key] !== undefined) {
+        allFormattedKeys.add(key)
+        allEntries.push({
+          sectionTitle: firstInSec ? sec.title : undefined,
+          key,
+          valueString: JSON.stringify(settings[key], null, 2)
+        })
+        firstInSec = false
+      }
+    }
+  }
+
+  let extraFirst = true
+  for (const [k, v] of Object.entries(settings)) {
+    if (!allFormattedKeys.has(k) && v !== undefined) {
+      allEntries.push({
+        sectionTitle: extraFirst ? 'OTHER' : undefined,
+        key: k,
+        valueString: JSON.stringify(v, null, 2)
+      })
+      extraFirst = false
+    }
+  }
+
+  for (let i = 0; i < allEntries.length; i++) {
+    const entry = allEntries[i]
+    const isLast = i === allEntries.length - 1
+    if (entry.sectionTitle) {
+      lines.push('  // ============================================================')
+      lines.push(`  // ${entry.sectionTitle}`)
+      lines.push('  // ============================================================')
+    }
+
+    const valLines = entry.valueString.split('\n')
+    if (valLines.length === 1) {
+      lines.push(`  "${entry.key}": ${entry.valueString}${isLast ? '' : ','}`)
+    } else {
+      const indentedVal = valLines.map((l, idx) => (idx === 0 ? l : '  ' + l)).join('\n')
+      lines.push(`  "${entry.key}": ${indentedVal}${isLast ? '' : ','}`)
+    }
+
+    const nextHasTitle = i + 1 < allEntries.length && allEntries[i + 1].sectionTitle
+    if (nextHasTitle) {
+      lines.push('')
+    }
+  }
+
+  lines.push('}')
+  return lines.join('\n') + '\n'
+}
+
 export class SettingsManager {
   public settingsPath: string | null = null
   public workspacePath: string | null = null
@@ -139,7 +274,7 @@ export class SettingsManager {
     this.appConfig.shortcuts = value || {}
   }
 
-  async init(workspacePath?: string): Promise<void> {
+  async init(workspacePath?: string | null): Promise<void> {
     try {
       this.appConfig.getAppConfigPath()
     } catch {}
@@ -150,10 +285,17 @@ export class SettingsManager {
       workspacePath = this.workspacePath
     }
     if (!workspacePath) {
+      workspacePath = this.appConfig.getLastWorkspacePath()
+    }
+    if (!workspacePath) {
       const parsed = await this.appConfig.readRaw()
-      if (parsed?.lastWorkspaceOpened || parsed?.lastVaultOpened) {
-        workspacePath = parsed.lastWorkspaceOpened || parsed.lastVaultOpened
-      }
+      workspacePath =
+        parsed?.lastWorkspacePath ||
+        parsed?.lastWorkspaceOpened ||
+        parsed?.lastworkspacePath ||
+        parsed?.lastVaultOpened ||
+        parsed?.workspacePath ||
+        null
     }
     if (!workspacePath) {
       workspacePath = path.join(
@@ -163,6 +305,7 @@ export class SettingsManager {
       )
     }
     this.workspacePath = workspacePath
+    this.appConfig.setLastWorkspacePath(workspacePath)
     const luminaDir = path.join(workspacePath, '.lumina')
     this.settingsPath = path.join(luminaDir, 'settings.json')
 
@@ -174,13 +317,96 @@ export class SettingsManager {
     try {
       await fs.access(this.settingsPath)
       const data = await fs.readFile(this.settingsPath, 'utf8')
-      workspaceSettings = JSON.parse(data)
+      const stripped = data.replace(/"(?:\\.|[^"\\])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, g) => (g ? '' : m))
+      workspaceSettings = JSON.parse(stripped)
     } catch {
       workspaceSettings = {}
     }
 
     let needsWorkspaceCleanup = false
     let needsAppConfigSave = false
+
+    // Clean up any machine-specific or legacy path keys mistakenly written into vault's settings.json
+    if ('workspacePath' in workspaceSettings) {
+      delete (workspaceSettings as any).workspacePath
+      needsWorkspaceCleanup = true
+    }
+    if ('vaultPath' in workspaceSettings) {
+      delete (workspaceSettings as any).vaultPath
+      needsWorkspaceCleanup = true
+    }
+
+    // Migrate folder states from vault's settings.json to app_config.json workspace
+    if (Array.isArray((workspaceSettings as any).pinnedFolders) && (workspaceSettings as any).pinnedFolders.length > 0) {
+      if (!this.appConfig.workspace.pinnedFolders || this.appConfig.workspace.pinnedFolders.length === 0) {
+        this.appConfig.workspace.pinnedFolders = (workspaceSettings as any).pinnedFolders
+        needsAppConfigSave = true
+      }
+      delete (workspaceSettings as any).pinnedFolders
+      needsWorkspaceCleanup = true
+    }
+    if (Array.isArray((workspaceSettings as any).folderOrder) && (workspaceSettings as any).folderOrder.length > 0) {
+      if (!this.appConfig.workspace.folderOrder || this.appConfig.workspace.folderOrder.length === 0) {
+        this.appConfig.workspace.folderOrder = (workspaceSettings as any).folderOrder
+        needsAppConfigSave = true
+      }
+      delete (workspaceSettings as any).folderOrder
+      needsWorkspaceCleanup = true
+    }
+    if (Array.isArray((workspaceSettings as any).expandedFolders) && (workspaceSettings as any).expandedFolders.length > 0) {
+      if (!this.appConfig.workspace.expandedFolders || this.appConfig.workspace.expandedFolders.length === 0) {
+        this.appConfig.workspace.expandedFolders = (workspaceSettings as any).expandedFolders
+        needsAppConfigSave = true
+      }
+      delete (workspaceSettings as any).expandedFolders
+      needsWorkspaceCleanup = true
+    }
+
+    // Migrate tab and note session states from vault's settings.json to app_config.json workspace
+    if (Array.isArray((workspaceSettings as any).openTabs) && (workspaceSettings as any).openTabs.length > 0) {
+      if (!this.appConfig.workspace.openTabs || this.appConfig.workspace.openTabs.length === 0) {
+        this.appConfig.workspace.openTabs = (workspaceSettings as any).openTabs
+        needsAppConfigSave = true
+      }
+      delete (workspaceSettings as any).openTabs
+      needsWorkspaceCleanup = true
+    }
+    if (Array.isArray((workspaceSettings as any).pinnedTabIds) && (workspaceSettings as any).pinnedTabIds.length > 0) {
+      if (!this.appConfig.workspace.pinnedTabIds || this.appConfig.workspace.pinnedTabIds.length === 0) {
+        this.appConfig.workspace.pinnedTabIds = (workspaceSettings as any).pinnedTabIds
+        needsAppConfigSave = true
+      }
+      delete (workspaceSettings as any).pinnedTabIds
+      needsWorkspaceCleanup = true
+    }
+    if ((workspaceSettings as any).lastNoteId) {
+      if (!this.appConfig.workspace.lastNoteId) {
+        this.appConfig.workspace.lastNoteId = (workspaceSettings as any).lastNoteId
+        this.appConfig.workspace.lastSnippetId = (workspaceSettings as any).lastNoteId
+        needsAppConfigSave = true
+      }
+      delete (workspaceSettings as any).lastNoteId
+      needsWorkspaceCleanup = true
+    }
+    if ((workspaceSettings as any).lastSnippetId) {
+      if (!this.appConfig.workspace.lastSnippetId) {
+        this.appConfig.workspace.lastSnippetId = (workspaceSettings as any).lastSnippetId
+        if (!this.appConfig.workspace.lastNoteId) {
+          this.appConfig.workspace.lastNoteId = (workspaceSettings as any).lastSnippetId
+        }
+        needsAppConfigSave = true
+      }
+      delete (workspaceSettings as any).lastSnippetId
+      needsWorkspaceCleanup = true
+    }
+
+    // Ensure stale empty keys and obsolete settings are also cleaned out
+    for (const key of ['openTabs', 'pinnedTabIds', 'lastNoteId', 'lastSnippetId', 'vimMode'] as const) {
+      if (key in workspaceSettings) {
+        delete (workspaceSettings as any)[key]
+        needsWorkspaceCleanup = true
+      }
+    }
 
     for (const key of GLOBAL_API_KEYS) {
       if ((workspaceSettings as any)[key] && !this.appConfig.globalApiKeys[key]) {
@@ -203,7 +429,7 @@ export class SettingsManager {
       ...this.appConfig.globalApiKeys,
       shortcuts: this.appConfig.shortcuts
     } as Settings
-    this.lastWrittenData = JSON.stringify(this.getWorkspaceSettingsToSave(), null, 2)
+    this.lastWrittenData = formatSettingsJson(this.getWorkspaceSettingsToSave())
 
     if (needsWorkspaceCleanup) {
       await this.save()
@@ -216,6 +442,17 @@ export class SettingsManager {
       delete current[key]
     }
     delete current.shortcuts
+    delete current.workspacePath
+    delete current.vaultPath
+    delete current.lastWorkspaceOpened
+    delete current.pinnedFolders
+    delete current.folderOrder
+    delete current.expandedFolders
+    delete current.openTabs
+    delete current.pinnedTabIds
+    delete current.lastNoteId
+    delete current.lastSnippetId
+    delete current.vimMode
     return current
   }
 
@@ -270,6 +507,13 @@ export class SettingsManager {
       return true
     }
 
+    if (this.appConfig.isWorkspaceKey(key as string)) {
+      this.appConfig.setWorkspaceValue(key as any, value)
+      await this.appConfig.save()
+      this.notifyChange()
+      return true
+    }
+
     if (this.appConfig.isGlobalKey(key as string)) {
       this.appConfig.setGlobalKey(key as string, value)
       await this.appConfig.save()
@@ -304,6 +548,10 @@ export class SettingsManager {
           this.appConfig.setGlobalKey(k, v)
           globalKeyChanged = true
         }
+        if (this.appConfig.isWorkspaceKey(k)) {
+          this.appConfig.setWorkspaceValue(k as any, v)
+          globalKeyChanged = true
+        }
         if (k === 'shortcuts') {
           this.appConfig.shortcuts = (v as Shortcuts) || {}
           globalKeyChanged = true
@@ -319,7 +567,12 @@ export class SettingsManager {
     }
 
     const hasWorkspaceSettingsChanged = Object.keys(settings).some(
-      (k) => !this.appConfig.isGlobalKey(k) && k !== 'shortcuts'
+      (k) =>
+        !this.appConfig.isGlobalKey(k) &&
+        !this.appConfig.isWorkspaceKey(k) &&
+        k !== 'shortcuts' &&
+        k !== 'workspacePath' &&
+        k !== 'vaultPath'
     )
 
     if (hasWorkspaceSettingsChanged) {
@@ -383,7 +636,7 @@ export class SettingsManager {
     try {
       this.isWriting = true
       const settingsToSave = this.getWorkspaceSettingsToSave()
-      const data = JSON.stringify(settingsToSave, null, 2)
+      const data = formatSettingsJson(settingsToSave)
 
       if (data === this.lastWrittenData) {
         return
@@ -404,6 +657,14 @@ export class SettingsManager {
   getAll(): Settings {
     return {
       ...(this.cache || DEFAULT_SETTINGS),
+      workspacePath: this.workspacePath,
+      pinnedFolders: this.appConfig.workspace.pinnedFolders || [],
+      folderOrder: this.appConfig.workspace.folderOrder || [],
+      expandedFolders: this.appConfig.workspace.expandedFolders || [],
+      openTabs: this.appConfig.workspace.openTabs || [],
+      pinnedTabIds: this.appConfig.workspace.pinnedTabIds || [],
+      lastNoteId: this.appConfig.workspace.lastNoteId,
+      lastSnippetId: this.appConfig.workspace.lastSnippetId,
       ...this.appConfig.globalApiKeys,
       shortcuts: this.appConfig.shortcuts || {}
     } as Settings

@@ -9,9 +9,6 @@ import AppUpdater from './AppUpdater'
 import WorkspaceIndexer from './workspace/workspaceIndexer'
 import WorkspaceSearch from './workspace/workspaceSearch'
 import BrainIndexer from './workspace/brainIndexer'
-const VaultManager = WorkspaceManager
-const VaultIndexer = WorkspaceIndexer
-const VaultSearch = WorkspaceSearch
 import iconAsset from '../../resources/icon.png?asset'
 import { handleExportDocs } from '../export/exportDocs'
 import { handleExportPDF } from '../export/exportPDF'
@@ -304,14 +301,14 @@ app.whenReady().then(async () => {
         relativePath = decodeURIComponent(fallbackUrl.replace(/^\/+/, ''))
       }
 
-      if (!VaultManager.vaultPath || !relativePath)
-        return new Response('Vault not open', { status: 404 })
+      if (!WorkspaceManager.workspacePath || !relativePath)
+        return new Response('Workspace not open', { status: 404 })
 
-      const vaultRoot = path.resolve(VaultManager.vaultPath)
-      const finalPath = path.resolve(vaultRoot, relativePath)
+      const workspaceRoot = path.resolve(WorkspaceManager.workspacePath)
+      const finalPath = path.resolve(workspaceRoot, relativePath)
 
       // Strict containment check: prevent path traversal attacks outside workspace
-      if (!finalPath.startsWith(vaultRoot + path.sep) && finalPath !== vaultRoot) {
+      if (!finalPath.startsWith(workspaceRoot + path.sep) && finalPath !== workspaceRoot) {
         console.warn('[Protocol] Blocked path traversal attempt:', relativePath)
         return new Response('Access Denied: Path Traversal Forbidden', { status: 403 })
       }
@@ -470,10 +467,10 @@ app.whenReady().then(async () => {
   // Keep NDJSON transport handlers in the Ollama module, separate from app setup.
   registerOllamaChatStream(ipcMain, net)
   ipcMain.handle('backup:start', (event, mode) =>
-    backupToDrive(VaultManager.vaultPath, mode, event.sender)
+    backupToDrive(WorkspaceManager.workspacePath, mode, event.sender)
   )
   ipcMain.handle('backup:file', (event, fileInput) =>
-    backupFileToDrive(fileInput, VaultManager.vaultPath, event.sender)
+    backupFileToDrive(fileInput, WorkspaceManager.workspacePath, event.sender)
   )
   ipcMain.handle('backup:cancel', () => cancelBackup())
 
@@ -756,23 +753,12 @@ app.whenReady().then(async () => {
     if (canceled) return null
     const newPath = filePaths[0]
 
-    const userDataPath = app.getPath('userData')
-    try {
-      const appConfigPath = join(userDataPath, 'app_config.json')
-      let existing = {}
-      try {
-        existing = JSON.parse(await fs.readFile(appConfigPath, 'utf8'))
-      } catch (_) {}
-      await fs.writeFile(
-        appConfigPath,
-        JSON.stringify({ ...existing, lastWorkspaceOpened: newPath, lastVaultOpened: newPath }, null, 2)
-      )
-    } catch (_) {}
+    // Update app_config.json so the workspace persists across app restarts
+    SettingsManager.appConfig.setLastWorkspacePath(newPath)
+    await SettingsManager.appConfig.save()
 
     await SettingsManager.init(newPath)
     await WorkspaceManager.init(newPath)
-    await SettingsManager.set('workspacePath', newPath)
-    await SettingsManager.set('vaultPath', newPath)
 
     // Index new workspace in background
     WorkspaceIndexer.indexWorkspace(newPath, {
@@ -998,15 +984,14 @@ app.whenReady().then(async () => {
       savedWorkspacePath = process.env.LUMINA_TEST_WORKSPACE || process.env.LUMINA_TEST_VAULT
     } else {
       try {
-        const configData = await fs.readFile(appConfigPath, 'utf8')
-        const cfg = JSON.parse(configData)
-        savedWorkspacePath = cfg.lastWorkspaceOpened || cfg.lastVaultOpened
+        await SettingsManager.appConfig.load()
+        savedWorkspacePath = SettingsManager.appConfig.getLastWorkspacePath()
       } catch (e) {
         // Fallback migration: read from old settings.json
         try {
           const oldSettings = await fs.readFile(join(userDataPath, 'settings.json'), 'utf8')
           const oldCfg = JSON.parse(oldSettings)
-          savedWorkspacePath = oldCfg.workspacePath || oldCfg.vaultPath
+          savedWorkspacePath = oldCfg.lastWorkspacePath || oldCfg.workspacePath || oldCfg.vaultPath
         } catch (err) {}
       }
     }
@@ -1017,22 +1002,12 @@ app.whenReady().then(async () => {
 
     if (!savedWorkspacePath || savedWorkspacePath === oldDefaultPath) {
       savedWorkspacePath = newDefaultPath
-      try {
-        let existing = {}
-        try {
-          existing = JSON.parse(await fs.readFile(appConfigPath, 'utf8'))
-        } catch (_) {}
-        await fs.writeFile(
-          appConfigPath,
-          JSON.stringify({ ...existing, lastWorkspaceOpened: savedWorkspacePath, lastVaultOpened: savedWorkspacePath }, null, 2)
-        )
-      } catch (_) {}
+      SettingsManager.appConfig.setLastWorkspacePath(savedWorkspacePath)
+      await SettingsManager.appConfig.save()
     }
 
     // Initialize SettingsManager inside the workspace
     await SettingsManager.init(savedWorkspacePath)
-    await SettingsManager.set('workspacePath', savedWorkspacePath)
-    await SettingsManager.set('vaultPath', savedWorkspacePath)
 
     // Initialize workspace indexer and search
     await WorkspaceIndexer.init(userDataPath)

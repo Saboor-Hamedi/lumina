@@ -41,21 +41,14 @@ export function resolveProviderConfig(settingsObj: Record<string, any> = {}): Re
   let activeModel: string | null = settingsObj.activeModel || null
   let apiKey: string | null =
     settingsObj.deepSeekKey ||
-    (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_deepseek_key')) ||
     (import.meta as any).env?.VITE_DEEPSEEK_KEY ||
     null
 
   if (providerType === 'openai') {
-    apiKey =
-      settingsObj.openaiKey ||
-      (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_openai_key')) ||
-      null
+    apiKey = settingsObj.openaiKey || null
     if (!activeModel) activeModel = 'gpt-4o'
   } else if (providerType === 'anthropic') {
-    apiKey =
-      settingsObj.anthropicKey ||
-      (typeof localStorage !== 'undefined' && localStorage.getItem('lumina_anthropic_key')) ||
-      null
+    apiKey = settingsObj.anthropicKey || null
     if (!activeModel) activeModel = 'claude-3-5-sonnet-20241022'
   } else if (providerType === 'ollama') {
     apiKey = 'unused'

@@ -1,6 +1,6 @@
 import './css/table.css'
 
-const WRAP_CLASSES = {
+const WRAP_CLASSES: Record<string, string> = {
   '**': 'cm-atomic-strong-wrap',
   '_':  'cm-atomic-em-wrap',
   '~~': 'cm-atomic-strike-wrap',
@@ -8,12 +8,13 @@ const WRAP_CLASSES = {
 }
 
 // Return the innermost mark-wrap the caret/selection sits in, plus its tag.
-function getActiveWrap(source) {
+function getActiveWrap(source: HTMLElement) {
   const sel = window.getSelection()
   if (!sel || sel.rangeCount === 0) return null
   const range = sel.getRangeAt(0)
-  let node = range.commonAncestorContainer
-  if (node.nodeType === Node.TEXT_NODE) node = node.parentElement
+  const anchor = range.commonAncestorContainer
+  const node = anchor.nodeType === Node.TEXT_NODE ? anchor.parentElement : anchor
+  if (!(node instanceof Element)) return null
   for (const [tag, cls] of Object.entries(WRAP_CLASSES)) {
     const wrap = node?.closest('.' + cls)
     if (wrap && source.contains(wrap)) return { tag, cls, wrap }
@@ -28,7 +29,7 @@ function getSourceFromSelection() {
   const range = sel.getRangeAt(0)
   const anchor = range.startContainer
   const el = anchor.nodeType === Node.TEXT_NODE ? anchor.parentElement : anchor
-  return el?.closest('.cm-atomic-table-cell-source') ?? null
+  return el instanceof Element ? el.closest('.cm-atomic-table-cell-source') as HTMLElement | null : null
 }
 
 export function setupTableFormattingToolbar() {
@@ -46,14 +47,14 @@ export function setupTableFormattingToolbar() {
     { icon: '<code>&lt;&gt;</code>', tag: '`',  label: 'Code' }
   ]
 
-  const buttons = {}
+  const buttons: Record<string, HTMLButtonElement> = {}
   actions.forEach(({ icon, tag, label }) => {
     const btn = document.createElement('button')
     btn.innerHTML = icon
     btn.setAttribute('data-tooltip', label)
     btn.setAttribute('data-tag', tag)
     btn.type = 'button'
-    btn.addEventListener('mousedown', (e) => {
+    btn.addEventListener('mousedown', (e: MouseEvent) => {
       e.preventDefault() // keep caret/selection alive
       applyFormatting(tag)
     })
@@ -71,10 +72,7 @@ export function setupTableFormattingToolbar() {
     }
 
     const range = sel.getRangeAt(0)
-    const source =
-      range.startContainer.parentElement?.closest('.cm-atomic-table-cell-source') ||
-      (range.startContainer.nodeType === Node.ELEMENT_NODE &&
-        range.startContainer.closest('.cm-atomic-table-cell-source'))
+    const source = getSourceFromSelection()
 
     if (!source || !document.activeElement || !source.contains(document.activeElement)) {
       toolbar.style.display = 'none'
@@ -91,15 +89,12 @@ export function setupTableFormattingToolbar() {
   })
 }
 
-function applyFormatting(tag) {
+function applyFormatting(tag: string): void {
   const sel = window.getSelection()
   if (!sel || sel.isCollapsed) return
 
   const range = sel.getRangeAt(0)
-  const source =
-    range.startContainer.parentElement?.closest('.cm-atomic-table-cell-source') ||
-    (range.startContainer.nodeType === Node.ELEMENT_NODE &&
-      range.startContainer.closest('.cm-atomic-table-cell-source'))
+  const source = getSourceFromSelection()
   if (!source) return
 
   // ── Toggle-off via rendered mark wrap ─────────────────────────────────────
@@ -113,9 +108,9 @@ function applyFormatting(tag) {
     : ''
 
   if (wrapClass) {
-    let node = range.commonAncestorContainer
-    if (node.nodeType === Node.TEXT_NODE) node = node.parentElement
-    const markWrap = node?.closest('.' + wrapClass)
+    const anchor = range.commonAncestorContainer
+    const node = anchor.nodeType === Node.TEXT_NODE ? anchor.parentElement : anchor
+    const markWrap = node instanceof Element ? node.closest('.' + wrapClass) : null
     if (markWrap && source.contains(markWrap)) {
       // The inner span (.cm-atomic-strong / .cm-atomic-inline-code etc.)
       // holds the visible text without delimiters.
@@ -129,7 +124,7 @@ function applyFormatting(tag) {
       sel.addRange(newRange)
       document.execCommand('insertText', false, innerContent)
       source.dispatchEvent(new Event('input', { bubbles: true }))
-      const cell = source.closest('th, td')
+      const cell = source.closest('th, td') as HTMLTableCellElement | null
       if (cell) {
         cell.dataset.raw = source.textContent || ''
       }
@@ -154,7 +149,7 @@ function applyFormatting(tag) {
   // ── Toggle-off via surrounding context ───────────────────────────────────
   // The source's full raw text lets us check if the selection is surrounded
   // by this tag even when the delimiters are hidden by the CSS.
-  const rawText = source.textContent
+  const rawText = source.textContent || ''
   const selStr = sel.toString()
   const idx = rawText.indexOf(tag + selStr + tag)
   if (idx !== -1) {
@@ -163,17 +158,21 @@ function applyFormatting(tag) {
     // Rebuild a range that covers the full wrap in the source textContent
     const docRange = document.createRange()
     let charCount = 0
-    let startNode = null, startOff = 0, endNode = null, endOff = 0
-    const walk = (node) => {
+    let startNode: Text | null = null
+    let startOff = 0
+    let endNode: Text | null = null
+    let endOff = 0
+    const walk = (node: Node): void => {
       if (startNode && endNode) return
       if (node.nodeType === Node.TEXT_NODE) {
-        const len = node.length
+        const textNode = node as Text
+        const len = textNode.length
         if (!startNode && charCount + len > idx) {
-          startNode = node
+          startNode = textNode
           startOff = idx - charCount
         }
         if (!endNode && charCount + len >= idx + fullWrapped.length) {
-          endNode = node
+          endNode = textNode
           endOff = idx + fullWrapped.length - charCount
         }
         charCount += len

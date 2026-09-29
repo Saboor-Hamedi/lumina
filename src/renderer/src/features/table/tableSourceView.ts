@@ -1,5 +1,7 @@
 import { serializeTable, serializeTableOnly, readModelFromDom, parseMarkdownTableText } from './tableModel'
 import { findCurrentTableRange, dispatchModel } from './tableShared'
+import type { EditorView } from '@codemirror/view'
+import type { TableModel } from './tableModel'
 
 /**
  * Creates the [ Table | Source ] segmented toggle button for the table header.
@@ -10,7 +12,11 @@ import { findCurrentTableRange, dispatchModel } from './tableShared'
  * @param {object} model - Parsed table model
  * @returns {HTMLElement} The segmented toggle container DOM element
  */
-export function createTableViewModeToggleDOM(view, wrap, model) {
+export function createTableViewModeToggleDOM(
+  view: EditorView,
+  wrap: HTMLElement,
+  model: TableModel
+): HTMLDivElement {
   const container = document.createElement('div')
   container.className = 'cm-table-view-toggle'
 
@@ -44,42 +50,46 @@ export function createTableViewModeToggleDOM(view, wrap, model) {
   container.appendChild(tableBtn)
   container.appendChild(sourceBtn)
 
-  let sourceContainer = null
-  let sourceTextarea = null
+  let sourceContainer: HTMLDivElement | null = null
+  let sourceTextarea: HTMLTextAreaElement | null = null
 
-  const getOrCreateSourceContainer = () => {
+  const getOrCreateSourceContainer = (): {
+    sourceContainer: HTMLDivElement
+    sourceTextarea: HTMLTextAreaElement
+  } => {
     if (!sourceContainer) {
       sourceContainer = document.createElement('div')
       sourceContainer.className = 'cm-table-source-container'
       sourceContainer.style.display = 'none'
 
-      sourceTextarea = document.createElement('textarea')
-      sourceTextarea.className = 'cm-table-source-textarea'
-      sourceTextarea.spellcheck = false
-      sourceTextarea.placeholder = '| Header 1 | Header 2 |\n| --- | --- |\n| Cell 1 | Cell 2 |'
+      const textarea = document.createElement('textarea')
+      sourceTextarea = textarea
+      textarea.className = 'cm-table-source-textarea'
+      textarea.spellcheck = false
+      textarea.placeholder = '| Header 1 | Header 2 |\n| --- | --- |\n| Cell 1 | Cell 2 |'
 
       const adjustHeight = () => {
-        sourceTextarea.style.height = 'auto'
-        sourceTextarea.style.height = `${sourceTextarea.scrollHeight}px`
+        textarea.style.height = 'auto'
+        textarea.style.height = `${textarea.scrollHeight}px`
       }
 
-      sourceTextarea.addEventListener('input', () => {
+      textarea.addEventListener('input', () => {
         adjustHeight()
       })
 
-      sourceTextarea.addEventListener('keydown', (e) => {
+      textarea.addEventListener('keydown', (e: KeyboardEvent) => {
         e.stopPropagation()
       })
 
-      sourceContainer.appendChild(sourceTextarea)
-      const footer = wrap.querySelector('.cm-table-ui-footer')
+      sourceContainer.appendChild(textarea)
+      const footer = wrap.querySelector<HTMLElement>('.cm-table-ui-footer')
       if (footer) {
         wrap.insertBefore(sourceContainer, footer)
       } else {
         wrap.appendChild(sourceContainer)
       }
     }
-    return { sourceContainer, sourceTextarea }
+    return { sourceContainer: sourceContainer!, sourceTextarea: sourceTextarea! }
   }
 
   tableBtn.addEventListener('click', (e) => {
@@ -87,7 +97,7 @@ export function createTableViewModeToggleDOM(view, wrap, model) {
     e.stopPropagation()
     if (tableBtn.classList.contains('active')) return
 
-    const scroller = wrap.closest('.editor-scroller') || view.dom.closest('.editor-scroller')
+    const scroller = (wrap.closest('.editor-scroller') || view.dom.closest('.editor-scroller')) as HTMLElement | null
     const savedScrollTop = scroller ? scroller.scrollTop : null
 
     tableBtn.classList.add('active')
@@ -96,7 +106,7 @@ export function createTableViewModeToggleDOM(view, wrap, model) {
     // Commit any edits made in source mode back to the visual model & document
     if (sourceTextarea) {
       const rawText = sourceTextarea.value.trim()
-      const titleInput = wrap.querySelector('.cm-table-ui-title-input')
+      const titleInput = wrap.querySelector<HTMLInputElement>('.cm-table-ui-title-input')
       const currentCaption = titleInput ? titleInput.value.trim() : (wrap.dataset.caption || '')
       if (rawText) {
         const parsed = parseMarkdownTableText(rawText, currentCaption)
@@ -113,14 +123,14 @@ export function createTableViewModeToggleDOM(view, wrap, model) {
     }
 
     // Hide any source container and reveal visual table
-    const sc = wrap.querySelector('.cm-table-source-container')
+    const sc = wrap.querySelector<HTMLElement>('.cm-table-source-container')
     if (sc) sc.style.display = 'none'
 
-    const scrollContainer = wrap.querySelector('.cm-table-scroll-container')
+    const scrollContainer = wrap.querySelector<HTMLElement>('.cm-table-scroll-container')
     if (scrollContainer) scrollContainer.style.display = 'block'
 
     // Seamlessly focus inside the table without scrolling or jumping
-    const firstCell = wrap.querySelector('.cm-atomic-table-cell-source')
+    const firstCell = wrap.querySelector<HTMLElement>('.cm-atomic-table-cell-source')
     if (firstCell) {
       firstCell.focus({ preventScroll: true })
     }
@@ -138,13 +148,13 @@ export function createTableViewModeToggleDOM(view, wrap, model) {
     e.stopPropagation()
     if (sourceBtn.classList.contains('active')) return
 
-    const scroller = wrap.closest('.editor-scroller') || view.dom.closest('.editor-scroller')
+    const scroller = (wrap.closest('.editor-scroller') || view.dom.closest('.editor-scroller')) as HTMLElement | null
     const savedScrollTop = scroller ? scroller.scrollTop : null
 
     sourceBtn.classList.add('active')
     tableBtn.classList.remove('active')
 
-    const scrollContainer = wrap.querySelector('.cm-table-scroll-container')
+    const scrollContainer = wrap.querySelector<HTMLElement>('.cm-table-scroll-container')
     const currentHeight = scrollContainer ? scrollContainer.offsetHeight : null
     if (scrollContainer) scrollContainer.style.display = 'none'
 

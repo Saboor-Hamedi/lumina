@@ -54,6 +54,8 @@ const searchHighlightField = StateField.define({
   provide: (f) => EditorView.decorations.from(f)
 })
 
+const inMemoryCursorMap = new Map<string, { anchor: number; head: number }>()
+
 export function useEditorExtensions({
   snippetRef,
   realViewRef,
@@ -76,24 +78,17 @@ export function useEditorExtensions({
             if (view && !(view as any).isDestroyed && snippetRef.current?.code === '') {
               view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: '' } })
             } else if (view && !(view as any).isDestroyed && snippetRef.current?.id) {
-              const savedSelection = localStorage.getItem(`cursor-${snippetRef.current.id}`)
+              const savedSelection = inMemoryCursorMap.get(snippetRef.current.id)
               if (savedSelection) {
-                try {
-                  const parsed = JSON.parse(savedSelection)
-                  const anchor = typeof parsed?.anchor === 'number' ? Math.max(0, Math.min(parsed.anchor, view.state.doc.length)) : null
-                  if (anchor !== null) {
-                    const line = view.state.doc.lineAt(anchor)
-                    const validPos = Math.min(anchor, line.to)
-                    view.dispatch({
-                      selection: { anchor: validPos, head: validPos },
-                      scrollIntoView: true
-                    })
-                    view.focus()
-                  }
-                } catch (e) {
-                  try {
-                    localStorage.removeItem(`cursor-${snippetRef.current.id}`)
-                  } catch {}
+                const anchor = typeof savedSelection?.anchor === 'number' ? Math.max(0, Math.min(savedSelection.anchor, view.state.doc.length)) : null
+                if (anchor !== null) {
+                  const line = view.state.doc.lineAt(anchor)
+                  const validPos = Math.min(anchor, line.to)
+                  view.dispatch({
+                    selection: { anchor: validPos, head: validPos },
+                    scrollIntoView: true
+                  })
+                  view.focus()
                 }
               }
             }
@@ -120,12 +115,9 @@ export function useEditorExtensions({
             clearTimeout(saveTimeout)
             saveTimeout = setTimeout(() => {
               if (snippetRef.current?.id) {
-                localStorage.setItem(
-                  `cursor-${snippetRef.current.id}`,
-                  JSON.stringify({ anchor, head })
-                )
+                inMemoryCursorMap.set(snippetRef.current.id, { anchor, head })
               }
-            }, 500)
+            }, 300)
 
             const hasExplicitScroll = update.transactions.some((tr: any) => tr.scrollIntoView)
             if (hasExplicitScroll) {

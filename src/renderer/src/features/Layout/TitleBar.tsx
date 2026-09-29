@@ -21,6 +21,7 @@ import ToolTip from '../../components/atoms/ToolTip'
 import UpdateDetails from '../../components/update/UpdateDetails'
 import AccentColor from '../theme/AccentColor'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
+import { useSettingStore } from '../../core/store/SettingStore'
 import '../../assets/titlebar.css'
 
 export interface TitleBarProps {
@@ -43,11 +44,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
   }, [user?.picture])
 
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState<boolean>(() => {
-    if (typeof localStorage !== 'undefined') {
-      const saved = localStorage.getItem('lumina_left_sidebar_open')
-      if (saved !== null) return saved === 'true'
-    }
-    return true
+    return useSettingStore.getState().settings?.sidebar?.isLeftOpen ?? true
   })
 
   const [isMaximized, setIsMaximized] = useState<boolean>(false)

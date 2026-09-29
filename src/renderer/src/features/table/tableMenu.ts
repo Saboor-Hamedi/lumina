@@ -1,12 +1,37 @@
 import { dispatchModel } from './tableShared'
-import { readModelFromDom } from './tableModel'
+import { readModelFromDom as readParsedModel } from './tableModel'
 import { icons } from './tableIcons'
 import { copyTableAs, exportTableAsCSV, duplicateTable } from './tableActions'
 import { applyColumnSort } from './tableSort'
 import { redistributeColumnWidths } from './tableResize'
 import { TABLE_CONFIG } from './tableConfig'
+import type { EditorView } from '@codemirror/view'
+import type { CellAlignment, TableModel } from './tableModel'
 
-export function cellRowIndex(cell) {
+type MenuEntry = {
+  type: 'item' | 'submenu' | 'separator'
+  label?: string
+  icon?: string
+  action?: () => void
+  danger?: boolean
+  disabled?: boolean
+  shortcut?: string | null
+  isActive?: boolean
+  items?: MenuEntry[]
+}
+type TableWrap = HTMLElement & {
+  __getGridSelection?: () => { minR: number; maxR: number; minC: number; maxC: number }
+  __selectAll?: () => void
+  __clearSelectionVisuals?: () => void
+}
+
+function readModelFromDom(wrap: HTMLElement): TableModel & { alignments: CellAlignment[] } {
+  const model = readParsedModel(wrap)
+  model.alignments ??= Array(model.header.length).fill('')
+  return model as TableModel & { alignments: CellAlignment[] }
+}
+
+export function cellRowIndex(cell: Element | null): number {
   if (!cell) return -1
   const targetCell = cell.closest ? (cell.closest('th, td') || cell) : cell
   const tr = targetCell.closest ? targetCell.closest('tr') : null
@@ -15,7 +40,7 @@ export function cellRowIndex(cell) {
   return Array.from(tbody.querySelectorAll('tr')).indexOf(tr)
 }
 
-export function cellColIndex(cell) {
+export function cellColIndex(cell: Element | null): number {
   if (!cell) return -1
   const targetCell = cell.closest ? (cell.closest('th, td') || cell) : cell
   const tr = targetCell.closest ? targetCell.closest('tr') : null
@@ -31,8 +56,8 @@ export function cellColIndex(cell) {
  * @param {number} x
  * @param {number} y
  */
-export function openCellMenu(view, cell, x, y) {
-  const wrap = cell.closest('.cm-atomic-table')
+export function openCellMenu(view: EditorView, cell: HTMLElement, x: number, y: number): void {
+  const wrap = cell.closest('.cm-atomic-table') as TableWrap | null
   if (!wrap) return
   const isHeader = cell.tagName === 'TH'
   const row = cellRowIndex(cell)
@@ -79,8 +104,13 @@ export function openCellMenu(view, cell, x, y) {
   const currentColAlign = (currentModel.alignments && currentModel.alignments[targetCol]) || 'left'
 
   // Item Factory Helpers
-  const createItem = (label, iconSVG, action, opts = {}) => ({
-    type: 'item',
+  const createItem = (
+    label: string,
+    iconSVG: string,
+    action: () => void,
+    opts: { danger?: boolean; disabled?: boolean; shortcut?: string; isActive?: boolean } = {}
+  ) => ({
+    type: 'item' as const,
     label,
     icon: iconSVG,
     action,
@@ -90,14 +120,14 @@ export function openCellMenu(view, cell, x, y) {
     isActive: Boolean(opts.isActive)
   })
 
-  const createSubmenu = (label, iconSVG, items) => ({
-    type: 'submenu',
+  const createSubmenu = (label: string, iconSVG: string, items: MenuEntry[]) => ({
+    type: 'submenu' as const,
     label,
     icon: iconSVG,
     items
   })
 
-  const createSeparator = () => ({ type: 'separator' })
+  const createSeparator = () => ({ type: 'separator' as const })
 
   // ── Row Submenu ──────────────────────────────────────────────────────────
   const rowSubmenu = []
@@ -408,7 +438,7 @@ export function openCellMenu(view, cell, x, y) {
   ]
 
   // ── Format Submenu ───────────────────────────────────────────────────────
-  const applyFormatToSelection = (formatFn) => {
+  const applyFormatToSelection = (formatFn: (value: string) => string) => {
     const m = readModelFromDom(wrap)
     for (let r = minR; r <= maxR; r++) {
       if (r === -1) {
@@ -422,7 +452,7 @@ export function openCellMenu(view, cell, x, y) {
     dispatchModel(view, wrap, m)
   }
 
-  const toggleTag = (text, tag) => {
+  const toggleTag = (text: string, tag: string): string => {
     let t = text.trim()
     if (t.startsWith(tag) && t.endsWith(tag) && t.length >= tag.length * 2) {
       return t.substring(tag.length, t.length - tag.length)
@@ -647,7 +677,7 @@ export function openCellMenu(view, cell, x, y) {
     document.removeEventListener('keydown', onDocKey, true)
   }
 
-  const onDocKey = (e) => {
+  const onDocKey = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault()
       e.stopPropagation()
@@ -655,34 +685,34 @@ export function openCellMenu(view, cell, x, y) {
     }
   }
 
-  backdrop.addEventListener('mousedown', (e) => {
+  backdrop.addEventListener('mousedown', (e: MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     dismiss()
   })
 
-  backdrop.addEventListener('contextmenu', (e) => {
+  backdrop.addEventListener('contextmenu', (e: MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     dismiss()
   })
 
-  let activeSubmenuEl = null
-  let activeSubmenuTimer = null
+  let activeSubmenuEl: HTMLDivElement | null = null
+  let activeSubmenuTimer: ReturnType<typeof setTimeout> | null = null
 
   function closeSubmenus() {
     if (activeSubmenuTimer) {
       clearTimeout(activeSubmenuTimer)
       activeSubmenuTimer = null
     }
-    document.querySelectorAll('.cm-atomic-table-submenu-instance').forEach((el) => {
+    document.querySelectorAll<HTMLElement>('.cm-atomic-table-submenu-instance').forEach((el) => {
       el.style.display = 'none'
       el.classList.remove('open')
     })
     activeSubmenuEl = null
   }
 
-  function buildMenuDom(menuItems, parentEl, isSubmenu = false) {
+  function buildMenuDom(menuItems: MenuEntry[], parentEl: HTMLElement, isSubmenu = false): void {
     for (const item of menuItems) {
       if (item.type === 'separator') {
         const sep = document.createElement('div')
@@ -722,7 +752,7 @@ export function openCellMenu(view, cell, x, y) {
       const labelSpan = document.createElement('span')
       labelSpan.className = 'menu-label'
       labelSpan.style.whiteSpace = 'nowrap'
-      labelSpan.textContent = item.label
+      labelSpan.textContent = item.label ?? ''
       leftWrap.appendChild(labelSpan)
       btn.appendChild(leftWrap)
 
@@ -740,7 +770,7 @@ export function openCellMenu(view, cell, x, y) {
         shortcutWrap.style.gap = '3px'
 
         const parts = item.shortcut.split('+')
-        parts.forEach((part, pIdx) => {
+        parts.forEach((part: string, pIdx: number) => {
           const kbd = document.createElement('kbd')
           kbd.className = 'menu-shortcut'
           kbd.style.fontSize = '10px'
@@ -788,7 +818,7 @@ export function openCellMenu(view, cell, x, y) {
         const submenuEl = document.createElement('div')
         submenuEl.className = 'context-menu cm-atomic-table-submenu-instance'
         submenuEl.style.zIndex = '10001'
-        buildMenuDom(item.items, submenuEl, true)
+        buildMenuDom(item.items ?? [], submenuEl, true)
         document.body.appendChild(submenuEl)
 
         const openThisSubmenu = () => {
@@ -799,7 +829,7 @@ export function openCellMenu(view, cell, x, y) {
           if (activeSubmenuEl === submenuEl) return
 
           // Close other open submenus
-          document.querySelectorAll('.cm-atomic-table-submenu-instance').forEach((el) => {
+          document.querySelectorAll<HTMLElement>('.cm-atomic-table-submenu-instance').forEach((el) => {
             if (el !== submenuEl) {
               el.style.display = 'none'
               el.classList.remove('open')

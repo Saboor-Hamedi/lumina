@@ -12,11 +12,14 @@
 
 import { readModelFromDom } from './tableModel'
 import { dispatchModel } from './tableShared'
+import type { EditorView } from '@codemirror/view'
+
+type SortDirection = 'asc' | 'desc'
 
 /**
  * Extracts clean plaintext from a markdown cell for accurate sorting comparisons.
  */
-export function extractSortKey(cellContent) {
+export function extractSortKey(cellContent: string | null | undefined): string {
   if (!cellContent) return ''
   let text = String(cellContent).trim()
 
@@ -35,7 +38,11 @@ export function extractSortKey(cellContent) {
 /**
  * Smart natural comparator that handles numbers, currency, and strings gracefully.
  */
-export function naturalCompare(valA, valB, direction = 'asc') {
+export function naturalCompare(
+  valA: string,
+  valB: string,
+  direction: SortDirection = 'asc'
+): number {
   const keyA = extractSortKey(valA)
   const keyB = extractSortKey(valB)
 
@@ -50,8 +57,8 @@ export function naturalCompare(valA, valB, direction = 'asc') {
   const numA = parseFloat(numAStr)
   const numB = parseFloat(numBStr)
 
-  const isNumA = !isNaN(numA) && isFinite(numAStr)
-  const isNumB = !isNaN(numB) && isFinite(numBStr)
+  const isNumA = Number.isFinite(numA)
+  const isNumB = Number.isFinite(numB)
 
   let result = 0
   if (isNumA && isNumB) {
@@ -72,7 +79,11 @@ export function naturalCompare(valA, valB, direction = 'asc') {
  * @param {'asc' | 'desc'} direction - Sort direction
  * @returns {Array<Array<string>>} New sorted rows array
  */
-export function sortTableRows(rows, colIndex, direction = 'asc') {
+export function sortTableRows(
+  rows: string[][],
+  colIndex: number,
+  direction: SortDirection = 'asc'
+): string[][] {
   if (!Array.isArray(rows) || rows.length <= 1) return [...rows]
 
   const indexedRows = rows.map((row, originalIndex) => ({
@@ -97,7 +108,12 @@ export function sortTableRows(rows, colIndex, direction = 'asc') {
  * @param {number} colIndex - Column index to sort
  * @param {'asc' | 'desc'} direction - Sort direction
  */
-export function applyColumnSort(view, wrap, colIndex, direction = 'asc') {
+export function applyColumnSort(
+  view: EditorView,
+  wrap: HTMLElement,
+  colIndex: number,
+  direction: SortDirection = 'asc'
+): void {
   const model = readModelFromDom(wrap)
   if (!model || model.rows.length <= 1) return
 
@@ -113,8 +129,8 @@ export function applyColumnSort(view, wrap, colIndex, direction = 'asc') {
  * @param {HTMLElement} wrap - .cm-atomic-table wrapper element
  * @param {EditorView} view - CodeMirror EditorView instance
  */
-export function setupTableHeaderSorting(wrap, view) {
-  const ths = Array.from(wrap.querySelectorAll('thead th'))
+export function setupTableHeaderSorting(wrap: HTMLElement, view: EditorView): void {
+  const ths = Array.from(wrap.querySelectorAll<HTMLTableCellElement>('thead th'))
   if (ths.length === 0) return
 
   ths.forEach((th, colIndex) => {
@@ -131,7 +147,7 @@ export function setupTableHeaderSorting(wrap, view) {
       </svg>
     `
 
-    trigger.addEventListener('mousedown', (e) => {
+    trigger.addEventListener('mousedown', (e: MouseEvent) => {
       e.preventDefault()
       e.stopPropagation()
       if (view.state.readOnly) return

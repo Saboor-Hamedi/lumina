@@ -11,14 +11,15 @@ const ROW_HIDDEN      = 'cm-table-row-filtered'
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-function escapeRegex(s) {
+function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-function highlightNodes(text, query) {
+function highlightNodes(text: string, query: string): Node[] {
   const re = new RegExp(escapeRegex(query), 'gi')
-  const nodes = []
-  let last = 0, m
+  const nodes: Node[] = []
+  let last = 0
+  let m: RegExpExecArray | null
   while ((m = re.exec(text)) !== null) {
     if (m.index > last) nodes.push(document.createTextNode(text.slice(last, m.index)))
     const mark = document.createElement('mark')
@@ -31,7 +32,7 @@ function highlightNodes(text, query) {
   return nodes
 }
 
-function clearSearch(wrap) {
+function clearSearch(wrap: HTMLElement): void {
   wrap.querySelectorAll('.' + HIGHLIGHT_CLASS).forEach((el) => {
     el.classList.remove(HIGHLIGHT_CLASS)
     el.textContent = el.textContent // strip <mark> nodes cleanly
@@ -39,14 +40,14 @@ function clearSearch(wrap) {
   wrap.querySelectorAll('.' + ROW_HIDDEN).forEach((el) => el.classList.remove(ROW_HIDDEN))
 }
 
-function applySearch(wrap, query) {
+function applySearch(wrap: HTMLElement, query: string): number {
   clearSearch(wrap)
   if (!query) return 0
 
   let total = 0
   const re = new RegExp(escapeRegex(query), 'gi')
 
-  const highlight = (source) => {
+  const highlight = (source: HTMLElement | null): number => {
     if (!source) return 0
     const text = source.textContent || ''
     const count = (text.match(re) || []).length
@@ -59,14 +60,14 @@ function applySearch(wrap, query) {
   }
 
   // Header
-  wrap.querySelectorAll('thead th .cm-atomic-table-cell-source').forEach((s) => {
+  wrap.querySelectorAll<HTMLElement>('thead th .cm-atomic-table-cell-source').forEach((s) => {
     total += highlight(s)
   })
 
   // Body rows
-  wrap.querySelectorAll('tbody tr:not(.cm-table-empty-row)').forEach((tr) => {
+  wrap.querySelectorAll<HTMLTableRowElement>('tbody tr:not(.cm-table-empty-row)').forEach((tr) => {
     let rowMatches = 0
-    tr.querySelectorAll('.cm-atomic-table-cell-source').forEach((s) => {
+    tr.querySelectorAll<HTMLElement>('.cm-atomic-table-cell-source').forEach((s) => {
       rowMatches += highlight(s)
     })
     if (!rowMatches) tr.classList.add(ROW_HIDDEN)
@@ -78,14 +79,25 @@ function applySearch(wrap, query) {
 
 // ─── public API ───────────────────────────────────────────────────────────────
 
-export function createTableSearchBar(wrap, anchorBtn) {
-  let open    = false
-  let popover = null
+export interface TableSearchApi {
+  open(): void
+  close(): void
+  toggle(): void
+  isOpen(): boolean
+}
 
-  const onOutside = (e) => {
-    if (!popover?.contains(e.target) && !anchorBtn?.contains(e.target)) api.close()
+export function createTableSearchBar(
+  wrap: HTMLElement,
+  anchorBtn: HTMLElement | null
+): TableSearchApi {
+  let open    = false
+  let popover: HTMLDivElement | null = null
+
+  const onOutside = (e: MouseEvent) => {
+    const target = e.target
+    if (target instanceof Node && !popover?.contains(target) && !anchorBtn?.contains(target)) api.close()
   }
-  const onKey = (e) => {
+  const onKey = (e: KeyboardEvent) => {
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); api.close() }
   }
 
@@ -112,7 +124,7 @@ export function createTableSearchBar(wrap, anchorBtn) {
         ? (n === 0 ? 'No results' : `${n}`)
         : ''
     })
-    input.addEventListener('keydown', (e) => {
+    input.addEventListener('keydown', (e: KeyboardEvent) => {
       e.stopPropagation()
       if (e.key === 'Escape') { e.preventDefault(); api.close() }
     })
@@ -129,7 +141,7 @@ export function createTableSearchBar(wrap, anchorBtn) {
     return { el, input }
   }
 
-  const api = {
+  const api: TableSearchApi = {
     open() {
       if (open) { popover?.querySelector('input')?.focus(); return }
       open = true

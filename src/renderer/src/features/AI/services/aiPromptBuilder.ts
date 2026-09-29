@@ -181,7 +181,6 @@ export interface SafeUserSettings {
   lineHeight?: number
   showLineNumbers?: boolean
   autoSave?: boolean
-  vimMode?: boolean
   cursorStyle?: string
   smoothScrolling?: boolean
   inlineTitle?: boolean
@@ -289,7 +288,6 @@ export const buildSystemPrompt = async ({
   const editorLineHeight = safeSettings.lineHeight || 1.6
   const lineNumbersText = safeSettings.showLineNumbers ? 'Enabled' : 'Disabled'
   const autoSaveText = safeSettings.autoSave !== false ? 'Enabled' : 'Disabled'
-  const vimModeText = safeSettings.vimMode ? 'Enabled' : 'Disabled'
   const cursorStyleText = safeSettings.cursorStyle || 'smooth'
   const smoothScrollText = safeSettings.smoothScrolling !== false ? 'Enabled' : 'Disabled'
 
@@ -301,7 +299,6 @@ export const buildSystemPrompt = async ({
     * Line Height: ${editorLineHeight}
     * Line Numbers: ${lineNumbersText}
     * Auto-save: ${autoSaveText}
-    * Vim Mode: ${vimModeText}
     * Cursor Style: ${cursorStyleText}
     * Smooth Scrolling: ${smoothScrollText}
   - If the user asks "what theme do i use?", "what theme am I on?", "what is my font?", "what font size do i have?", "what is my line height?", or asks about their editor settings, answer directly, accurately, and concisely based on the settings above!

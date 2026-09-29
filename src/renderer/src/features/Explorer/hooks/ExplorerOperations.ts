@@ -81,13 +81,6 @@ export function useExplorerOperations({
   const loadWorkspace = useWorkspaceStore((state) => state.loadWorkspace)
 
   const [expandedFolders, setExpandedFoldersRaw] = useState<Set<string>>(() => {
-    try {
-      const cached = localStorage.getItem('lumina-expanded-folders')
-      if (cached) {
-        const parsed = JSON.parse(cached)
-        if (Array.isArray(parsed)) return new Set(parsed)
-      }
-    } catch (_) {}
     return new Set(Array.isArray(expandedFoldersSetting) ? expandedFoldersSetting : [])
   })
   const [collapsedDuringSearch, setCollapsedDuringSearch] = useState<Set<string>>(() => new Set())
@@ -105,9 +98,6 @@ export function useExplorerOperations({
     // the potentially large virtual-tree projection at transition priority.
     expandedFoldersRef.current = nextSet
     startTransition(() => setExpandedFoldersRaw(nextSet))
-    try {
-      localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextArr))
-    } catch (_) {}
     markExplorerPerf('folder-state-update', { expandedFolderCount: nextSet.size, scheduled: true })
     if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
     persistTimerRef.current = setTimeout(() => {
@@ -123,9 +113,6 @@ export function useExplorerOperations({
         persistTimerRef.current = null
       }
       const current = Array.from(expandedFoldersRef.current || [])
-      try {
-        localStorage.setItem('lumina-expanded-folders', JSON.stringify(current))
-      } catch (_) {}
       useSettingsStore.getState().updateSetting('expandedFolders', current)
     }
 
@@ -159,9 +146,6 @@ export function useExplorerOperations({
         if (same) return prev
       }
       expandedFoldersRef.current = incomingSet
-      try {
-        localStorage.setItem('lumina-expanded-folders', JSON.stringify(expandedFoldersSetting))
-      } catch (_) {}
       return incomingSet
     })
   }, [expandedFoldersSetting])

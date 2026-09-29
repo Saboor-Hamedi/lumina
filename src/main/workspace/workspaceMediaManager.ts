@@ -11,11 +11,13 @@ export interface ReadAssetResult {
   size: number
 }
 
-export interface SaveVaultImageResult {
+export interface SaveWorkspaceImageResult {
   relativePath: string
   fileName: string
   folderId: string
 }
+
+export type SaveVaultImageResult = SaveWorkspaceImageResult
 
 /**
  * WorkspaceMediaManager
@@ -28,13 +30,13 @@ export class WorkspaceMediaManager {
    * Saves a media image buffer to the workspace's `.lumina/assets/` directory.
    */
   static async saveImage(
-    vaultPath: string,
+    workspacePath: string,
     buffer: Buffer | Uint8Array | ArrayBuffer,
     originalName: string
   ): Promise<string> {
-    if (!vaultPath) throw new Error('No vault open')
+    if (!workspacePath) throw new Error('No workspace open')
 
-    const assetsPath = path.join(vaultPath, '.lumina', 'assets')
+    const assetsPath = path.join(workspacePath, '.lumina', 'assets')
     try {
       await fs.mkdir(assetsPath, { recursive: true })
     } catch (e) {}
@@ -55,16 +57,16 @@ export class WorkspaceMediaManager {
     }
   }
 
-  static async saveVaultImage(
-    vaultPath: string,
+  static async saveWorkspaceImage(
+    workspacePath: string,
     buffer: Buffer | Uint8Array | ArrayBuffer,
     targetFolder: string = '',
     name: string = ''
-  ): Promise<SaveVaultImageResult> {
-    if (!vaultPath) throw new Error('No vault open')
+  ): Promise<SaveWorkspaceImageResult> {
+    if (!workspacePath) throw new Error('No workspace open')
 
     const normalizedFolder = (targetFolder || '').replace(/\\/g, '/')
-    const folderPath = normalizedFolder ? path.join(vaultPath, normalizedFolder) : vaultPath
+    const folderPath = normalizedFolder ? path.join(workspacePath, normalizedFolder) : workspacePath
     try {
       await fs.mkdir(folderPath, { recursive: true })
     } catch (e) {}
@@ -83,29 +85,38 @@ export class WorkspaceMediaManager {
     try {
       await fs.writeFile(targetPath, Buffer.from(buffer as any))
       const relPath = normalizedFolder ? `${normalizedFolder}/${fileName}` : fileName
-      console.info('[WorkspaceMediaManager] ✓ Vault image saved:', relPath)
+      console.info('[WorkspaceMediaManager] ✓ Workspace image saved:', relPath)
       return {
         relativePath: relPath.replace(/\\/g, '/'),
         fileName,
         folderId: normalizedFolder
       }
     } catch (err) {
-      console.error('[WorkspaceMediaManager] ✗ Failed to save vault image:', err)
+      console.error('[WorkspaceMediaManager] ✗ Failed to save workspace image:', err)
       throw err
     }
+  }
+
+  static async saveVaultImage(
+    workspacePath: string,
+    buffer: Buffer | Uint8Array | ArrayBuffer,
+    targetFolder: string = '',
+    name: string = ''
+  ): Promise<SaveWorkspaceImageResult> {
+    return this.saveWorkspaceImage(workspacePath, buffer, targetFolder, name)
   }
 
   /**
    * Reads an asset from disk and returns its binary buffer, base64 data, and MIME type.
    */
-  static async readAsset(vaultPath: string, relativePath: string): Promise<ReadAssetResult> {
-    if (!vaultPath) throw new Error('No vault open')
+  static async readAsset(workspacePath: string, relativePath: string): Promise<ReadAssetResult> {
+    if (!workspacePath) throw new Error('No workspace open')
     try {
       const cleanRel = decodeURIComponent(relativePath || '').replace(/^[/\\]+/, '')
-      const vaultRoot = path.resolve(vaultPath)
-      const finalPath = path.resolve(vaultRoot, cleanRel)
+      const workspaceRoot = path.resolve(workspacePath)
+      const finalPath = path.resolve(workspaceRoot, cleanRel)
 
-      if (!finalPath.startsWith(vaultRoot + path.sep) && finalPath !== vaultRoot) {
+      if (!finalPath.startsWith(workspaceRoot + path.sep) && finalPath !== workspaceRoot) {
         throw new Error('Access denied: path traversal detected')
       }
 
@@ -146,14 +157,14 @@ export class WorkspaceMediaManager {
   /**
    * Deletes an asset file from the workspace.
    */
-  static async deleteAsset(vaultPath: string, relativePath: string): Promise<boolean> {
-    if (!vaultPath) throw new Error('No vault open')
+  static async deleteAsset(workspacePath: string, relativePath: string): Promise<boolean> {
+    if (!workspacePath) throw new Error('No workspace open')
     try {
       const cleanRel = decodeURIComponent(relativePath || '').replace(/^[/\\]+/, '')
-      const vaultRoot = path.resolve(vaultPath)
-      const finalPath = path.resolve(vaultRoot, cleanRel)
+      const workspaceRoot = path.resolve(workspacePath)
+      const finalPath = path.resolve(workspaceRoot, cleanRel)
 
-      if (!finalPath.startsWith(vaultRoot + path.sep) && finalPath !== vaultRoot) {
+      if (!finalPath.startsWith(workspaceRoot + path.sep) && finalPath !== workspaceRoot) {
         throw new Error('Access denied: path traversal detected')
       }
       if (fsSync.existsSync(finalPath)) {
@@ -170,9 +181,9 @@ export class WorkspaceMediaManager {
   /**
    * Scans `.lumina/assets/` and deletes any media files no longer referenced in workspace notes.
    */
-  static async cleanOrphanedAssets(vaultPath: string, snippetsMap: Map<string, any>): Promise<void> {
-    if (!vaultPath) return
-    const assetsPath = path.join(vaultPath, '.lumina', 'assets')
+  static async cleanOrphanedAssets(workspacePath: string, snippetsMap: Map<string, any>): Promise<void> {
+    if (!workspacePath) return
+    const assetsPath = path.join(workspacePath, '.lumina', 'assets')
     try {
       if (!fsSync.existsSync(assetsPath)) return
       const entries = await fs.readdir(assetsPath, { withFileTypes: true })

@@ -1114,7 +1114,6 @@ export const useAIStore = create<AIStore>((set, get) => {
           lineHeight: settingsObj?.lineHeight ?? 1.6,
           showLineNumbers: Boolean(settingsObj?.showLineNumbers),
           autoSave: settingsObj?.autoSave !== false,
-          vimMode: Boolean(settingsObj?.vimMode),
           cursorStyle: settingsObj?.cursorStyle || 'smooth',
           smoothScrolling: settingsObj?.smoothScrolling !== false,
           inlineTitle: settingsObj?.inlineTitle !== false,
