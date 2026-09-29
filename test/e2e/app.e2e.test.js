@@ -18,7 +18,7 @@ test.beforeEach(async () => {
 })
 
 test.afterEach(async () => {
-  await cleanup()
+  if (typeof cleanup === 'function') await cleanup()
 })
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -58,7 +58,7 @@ test('app shell renders with sidebar or welcome page', async () => {
 })
 
 test('welcome page shortcuts are visible when no notes exist', async () => {
-  await expect(page.locator('text=Create a new note').first()).toBeVisible({ timeout: 20_000 })
-  await expect(page.locator('text=Quick Search').first()).toBeVisible({ timeout: 20_000 })
-  await expect(page.locator('text=AI Assistant').first()).toBeVisible({ timeout: 20_000 })
+  await expect(page.locator('text=Query Index').first()).toBeVisible({ timeout: 20_000 })
+  await expect(page.locator('text=Audit Wikilinks').first()).toBeVisible({ timeout: 20_000 })
+  await expect(page.locator('text=Draft Note Outline').first()).toBeVisible({ timeout: 20_000 })
 })

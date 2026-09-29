@@ -14,7 +14,7 @@ test.beforeEach(async () => {
 })
 
 test.afterEach(async () => {
-  await cleanup()
+  if (typeof cleanup === 'function') await cleanup()
 })
 
 function makeNote({ id, title, content = 'Test content' }) {

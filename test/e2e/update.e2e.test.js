@@ -11,7 +11,7 @@ test.beforeEach(async () => {
 })
 
 test.afterEach(async () => {
-  await cleanup()
+  if (typeof cleanup === 'function') await cleanup()
 })
 
 test('update check IPC responds in development mode', async () => {

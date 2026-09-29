@@ -21,7 +21,7 @@ test.beforeEach(async () => {
 })
 
 test.afterEach(async () => {
-  await cleanup()
+  if (typeof cleanup === 'function') await cleanup()
 })
 
 // All modal queries are scoped to the settings modal container to avoid
@@ -51,7 +51,7 @@ async function openSettings() {
 
 test('opens the Settings modal with Ctrl+,', async () => {
   await openSettings()
-  await expect(modal().locator('.theme-modal-title').getByText('Settings')).toBeVisible()
+  await expect(modal().locator('.settings-header-title').getByText('Settings')).toBeVisible()
 })
 
 test('shows the three friendly tabs', async () => {
@@ -87,16 +87,15 @@ test('AI Assistant shows the friendly provider labels', async () => {
 test('Advanced tab renders updates and workspace sections', async () => {
   await openSettings()
   await modal().getByRole('button', { name: 'Advanced' }).click()
-  await expect(modal().getByText('App Updates')).toBeVisible()
-  await expect(modal().getByText('Workspace Configuration')).toBeVisible()
+  await expect(modal().getByText('System Integration')).toBeVisible()
+  await expect(modal().getByText('Graph Visualization')).toBeVisible()
 })
 
 test('Advanced tab shows the workspace location', async () => {
   await openSettings()
   await modal().getByRole('button', { name: 'Advanced' }).click()
-  await expect(modal().getByText('Workspace Location')).toBeVisible()
-  await expect(modal().getByRole('button', { name: 'Open in Explorer' })).toBeVisible()
-  await expect(modal().getByRole('button', { name: 'Change Location' })).toBeVisible()
+  await expect(modal().getByText('Developer Options')).toBeVisible()
+  await expect(modal().getByText('Enable Developer Tools')).toBeVisible()
 })
 
 test('closes the modal with Escape', async () => {

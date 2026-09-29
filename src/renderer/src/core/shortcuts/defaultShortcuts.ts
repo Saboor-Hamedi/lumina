@@ -24,7 +24,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
   // Navigation
   { id: 'focusBreadcrumbs', label: 'Focus Breadcrumbs', defaultKey: 'Ctrl + Shift + .', category: 'Navigation' },
   { id: 'toggleSidebar', label: 'Toggle Left Sidebar', defaultKey: 'Ctrl + B', category: 'Navigation' },
-  { id: 'toggleInspector', label: 'Toggle Right Sidebar', defaultKey: 'Ctrl + Shift + B', category: 'Navigation' },
+  { id: 'toggleInspector', label: 'Toggle Right Sidebar', defaultKey: 'Ctrl + I', category: 'Navigation' },
   { id: 'toggleOutline', label: 'Toggle Outline', defaultKey: 'Ctrl + Shift + O', category: 'Navigation' },
   { id: 'graphView', label: 'Graph View', defaultKey: 'Ctrl + G', category: 'Navigation' },
   { id: 'togglePreview', label: 'Toggle Preview', defaultKey: 'Ctrl + \\', category: 'Navigation' },

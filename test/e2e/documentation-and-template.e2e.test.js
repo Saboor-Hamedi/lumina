@@ -21,7 +21,7 @@ test.beforeEach(async () => {
 })
 
 test.afterEach(async () => {
-  await cleanup()
+  if (typeof cleanup === 'function') await cleanup()
 })
 
 const docsModal = () => page.locator('.docs-modal-container')
@@ -128,7 +128,7 @@ test('opens Guide modal and displays step indicator badge with navigation', asyn
 
 test('opens Template modal and displays Theme-style cards with previews', async () => {
   await openTemplate()
-  await expect(templateModal().locator('.guide-header-title:has-text("Templates")')).toBeVisible()
+  await expect(templateModal().locator('.template-header-title:has-text("Templates")')).toBeVisible()
 
   // Theme-style cards
   const cards = templateModal().locator('.template-modal-card')

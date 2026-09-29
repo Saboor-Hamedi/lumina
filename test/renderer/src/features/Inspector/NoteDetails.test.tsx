@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import NoteDetails from '../../../../../src/renderer/src/features/Inspector/NoteDetails'
 
 vi.mock('../../../../../src/renderer/src/core/store/workspaceStore', () => ({
@@ -30,11 +30,13 @@ describe('NoteDetails Component', () => {
     tags: ['lumina', 'architecture']
   }
 
-  it('renders properties and statistics correctly', () => {
+  it('renders properties and statistics correctly', async () => {
     render(<NoteDetails note={mockNote} />)
     expect(screen.getByText('note-uuid-5678')).toBeDefined()
     expect(screen.getByText('Lumina Architecture')).toBeDefined()
-    expect(screen.getByText('9')).toBeDefined()
+    await waitFor(() => {
+      expect(screen.getByText('9')).toBeDefined()
+    })
   })
 
   it('copies note ID to clipboard on click', () => {

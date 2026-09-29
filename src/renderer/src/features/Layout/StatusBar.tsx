@@ -21,7 +21,10 @@ import {
   Hash,
   Navigation,
   Settings,
-  LayoutGrid
+  LayoutGrid,
+  BookOpen,
+  Keyboard,
+  Compass
 } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
@@ -37,6 +40,12 @@ export interface StatusBarProps {
   onSettingsClick?: () => void
   /** Open theme picker */
   onThemeClick?: () => void
+  /** Open documentation */
+  onDocsClick?: () => void
+  /** Open keyboard shortcuts dialog */
+  onShortcutsClick?: () => void
+  /** Open guide */
+  onGuideClick?: () => void
 }
 
 interface CursorPosition {
@@ -48,7 +57,10 @@ interface CursorPosition {
 export const StatusBar: React.FC<StatusBarProps> = ({
   onToggleInspector,
   onSettingsClick,
-  onThemeClick
+  onThemeClick,
+  onDocsClick,
+  onShortcutsClick,
+  onGuideClick
 }) => {
   const selectedSnippet = useWorkspaceStore((s) => s.selectedNote || (s as any).selectedSnippet)
   const [cursorPos, setCursorPos] = useState<CursorPosition>({ line: 1, col: 1, selectedChars: 0 })
@@ -82,14 +94,16 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   // Calculate live document statistics
   const stats = useMemo(() => {
     if (!selectedSnippet || !selectedSnippet.code) {
-      return { chars: '0', words: '0' }
+      return { chars: '0', words: '0', readTime: '0 min read' }
     }
     const text = selectedSnippet.code.trim()
     const chars = selectedSnippet.code.length
     const words = text ? text.split(/\s+/).filter(Boolean).length : 0
+    const readTime = Math.max(1, Math.ceil(words / 200)) + ' min read'
     return {
       chars: chars.toLocaleString(),
-      words: words.toLocaleString()
+      words: words.toLocaleString(),
+      readTime
     }
   }, [selectedSnippet?.id, selectedSnippet?.code])
 
@@ -193,6 +207,45 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             <span className="status-bar-label-collapse">Canvas</span>
           </button>
         </ToolTip>
+
+        <span className="status-bar-divider" />
+
+        <ToolTip text="Documentation" position="top">
+          <button
+            type="button"
+            className="status-bar-btn"
+            onClick={onDocsClick}
+          >
+            <BookOpen size={11} />
+            <span>Docs</span>
+          </button>
+        </ToolTip>
+
+        <span className="status-bar-divider" />
+
+        <ToolTip text="Keyboard Shortcuts" position="top">
+          <button
+            type="button"
+            className="status-bar-btn"
+            onClick={onShortcutsClick}
+          >
+            <Keyboard size={11} />
+            <span>Shortcuts</span>
+          </button>
+        </ToolTip>
+
+        <span className="status-bar-divider" />
+
+        <ToolTip text="Guide" position="top">
+          <button
+            type="button"
+            className="status-bar-btn"
+            onClick={onGuideClick}
+          >
+            <Compass size={11} />
+            <span>Guide</span>
+          </button>
+        </ToolTip>
       </div>
 
       {/* Guaranteed open & empty center */}
@@ -238,6 +291,14 @@ export const StatusBar: React.FC<StatusBarProps> = ({
               >
                 <Hash size={11} />
                 <span>{stats.chars} chars</span>
+              </span>
+            </ToolTip>
+
+            <span className="status-bar-divider status-bar-hide-xs" />
+
+            <ToolTip text="Reading Time" position="top">
+              <span className="status-bar-item status-bar-hide-xs">
+                <span>{stats.readTime}</span>
               </span>
             </ToolTip>
 

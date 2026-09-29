@@ -15,7 +15,7 @@ test.beforeEach(async () => {
 })
 
 test.afterEach(async () => {
-  await cleanup()
+  if (typeof cleanup === 'function') await cleanup()
 })
 
 test('external dot folder imports merge cleanly without creating numbered duplicates', async () => {

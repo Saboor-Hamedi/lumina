@@ -21,7 +21,7 @@ test.beforeEach(async () => {
 })
 
 test.afterEach(async () => {
-  await cleanup()
+  if (typeof cleanup === 'function') await cleanup()
 })
 
 test('IPC searchVault returns results for matching notes', async () => {

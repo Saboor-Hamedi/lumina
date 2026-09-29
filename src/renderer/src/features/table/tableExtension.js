@@ -25,6 +25,14 @@ import { createTableFooterDOM, updateTableFooterCount } from './tableFooter.js'
 import { parseTable, serializeTable, readModelFromDom, getCellSource } from './tableModel'
 import { renderCellSourceDecorated, makeCell } from './tableCell'
 
+function getColumnWidths(model) {
+  const count = model.header?.length || 0
+  return Array.from({ length: count }, (_, index) => {
+    const width = model.columnWidths?.[index]
+    return Number.isFinite(width) && width > 0 ? width : 144
+  })
+}
+
 function tableStartFrom(doc, startLine) {
   let from = startLine.from
   for (let lineNumber = startLine.number - 1; lineNumber >= Math.max(1, startLine.number - 6); lineNumber -= 1) {
@@ -44,13 +52,12 @@ function tableStartFrom(doc, startLine) {
 }
 
 function applyTableGeometry(table, model) {
-  const widths = model.columnWidths || []
-  if (widths.length) {
+  if (model.columnWidths?.length) {
+    const widths = getColumnWidths(model)
     const totalWidth = widths.reduce((sum, width) => sum + width, 0)
-    // NEVER write table.style.width — the stylesheet's `width: 100%`
-    // is the authority for "fill the container". `min-width` is the
-    // authority for "scroll when columns are too wide".
-    table.style.removeProperty('width')
+    // User-sized columns keep their exact total width and can scroll when
+    // wider than the available editor space.
+    table.style.setProperty('width', `${totalWidth}px`, 'important')
     table.style.setProperty('min-width', `${totalWidth}px`, 'important')
     Array.from(table.querySelectorAll('tr')).forEach((row) => {
       Array.from(row.children).forEach((cell, index) => {
@@ -63,14 +70,20 @@ function applyTableGeometry(table, model) {
       })
     })
   } else {
+    // New and generated tables fill the editor width, with a modest minimum
+    // per column so wide tables remain readable and scroll horizontally.
+    const columnCount = model.header?.length || 1
     table.style.removeProperty('width')
-    table.style.removeProperty('min-width')
+    table.style.setProperty('min-width', `max(100%, ${columnCount * 120}px)`, 'important')
     Array.from(table.querySelectorAll('tr')).forEach((row) => {
       Array.from(row.children).forEach((cell) => {
         cell.style.removeProperty('width')
         cell.style.removeProperty('min-width')
         cell.style.removeProperty('max-width')
       })
+    })
+    Array.from(table.querySelectorAll('thead th')).forEach((cell) => {
+      cell.style.width = `${100 / columnCount}%`
     })
   }
 
@@ -353,18 +366,11 @@ export class TableWidget extends WidgetType {
     const rowCount = this.model.rows ? this.model.rows.length : 0
     const colCount = this.model.header ? this.model.header.length : 0
 
-    if (colCount > 0 && !this.model.columnWidths?.length) {
-      table.style.minWidth = `${colCount * 110}px`
-    }
-
     const thead = document.createElement('thead')
 
     const headerRow = document.createElement('tr')
     for (let i = 0; i < colCount; i++) {
       const cell = makeCell('th', this.model.header[i], view)
-      if (!this.model.columnWidths?.length) {
-        cell.style.width = `${100 / colCount}%`
-      }
       if (this.model.alignments?.[i]) {
         cell.style.textAlign = this.model.alignments[i]
         const source = cell.querySelector('.cm-atomic-table-cell-source')
@@ -455,11 +461,6 @@ export class TableWidget extends WidgetType {
     const colCount = this.model.header.length
     const rowCount = this.model.rows.length
 
-    if (colCount > 0 && !this.model.columnWidths?.length) {
-      table.style.minWidth = `${colCount * 110}px`
-    }
-
-
     // 1. Sync header row (ths)
     let ths = Array.from(theadTr.querySelectorAll('th'))
     while (ths.length < colCount) {
@@ -475,10 +476,6 @@ export class TableWidget extends WidgetType {
 
     for (let i = 0; i < colCount; i++) {
       ths[i].__view = view
-      if (!this.model.columnWidths?.length) {
-        ths[i].style.width = `${100 / colCount}%`
-        ths[i].style.minWidth = ''
-      }
       const source = ths[i].querySelector('.cm-atomic-table-cell-source')
 
       // Sync alignments

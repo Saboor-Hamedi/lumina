@@ -10,7 +10,7 @@ test.beforeEach(async () => {
 })
 
 test.afterEach(async () => {
-  await cleanup()
+  if (typeof cleanup === 'function') await cleanup()
 })
 
 test('pressing Escape with CommandPalette open closes CommandPalette without closing RightSidebar', async () => {

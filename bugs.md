@@ -1,735 +1,137 @@
-# Lumina — Deep Performance Investigation: Explorer Clicks & 1.5s Delay
+# Table Extension — Improvement Suggestions
 
-The latest changes are:
+## 1. Break Up the Monolithic Keydown Handler
 
-* `TabContentPane.tsx`
+**File:** `tableCell.js` (~400 lines in a single `keydown` listener)
 
-  * Opening a note now shows an `Opening…` pane while editor initialization finishes.
-* `ExplorerOperations.ts`
+The `keydown` handler in `makeCell()` is a deeply nested conditional handling Tab, Enter, Arrow keys, Backspace, pipe character, undo/redo, and more. This is extremely difficult to maintain, test, and debug.
 
-  * Folder expand/collapse updates now use React lower-priority transitions.
+**Suggestion:** Extract each key handler into its own named function (e.g., `handleTab`, `handleEnter`, `handleArrowUp`, `handleBackspace`, `handlePipe`, `handleUndoRedo`). Then the main `keydown` becomes a simple dispatcher:
 
-These are useful UX improvements, but they do **not yet prove that the underlying 1.5-second delay has been reduced**.
-
-The next task is therefore NOT to add more transitions, memoization, or loading UI blindly.
-
-We need to identify exactly what consumes the ~1.5 seconds.
-
----
-
-## PRIMARY OBJECTIVE
-
-Investigate these two interactions separately:
-
-### A. Opening a note from the file explorer
-
-Measure:
-
-```text
-Explorer click
-    ↓
-click handler begins
-    ↓
-note/tab state mutation
-    ↓
-TabContentPane mounts/renders
-    ↓
-document lookup/load
-    ↓
-editor initialization
-    ↓
-editor first usable paint
-```
-
-### B. Expanding/collapsing a folder
-
-Measure:
-
-```text
-folder click
-    ↓
-click handler begins
-    ↓
-expanded-state mutation
-    ↓
-visible tree calculation
-    ↓
-React reconciliation
-    ↓
-Virtuoso/list update
-    ↓
-visible rows paint
-```
-
-Do not assume the expensive operation is React rendering.
-
-It could be:
-
-* synchronous JavaScript
-* filesystem work
-* document parsing
-* Markdown parsing
-* editor initialization
-* ProseMirror/CodeMirror/Lexical initialization
-* Zustand subscriptions
-* derived selectors
-* tree flattening
-* virtualization
-* layout/reflow
-* ResizeObserver callbacks
-* IPC
-* Electron main-process communication
-* garbage collection
-* multiple cascading renders
-
-We need evidence.
-
----
-
-# PHASE 1 — INSTRUMENT THE TWO USER ACTIONS
-
-Add temporary high-resolution instrumentation using:
-
-```ts
-performance.now()
-```
-
-Do NOT use `console.time()` as the primary measurement.
-
-Create a small helper if useful:
-
-```ts
-const mark = (label: string) => {
-  performance.mark(label);
-};
-
-const measure = (name: string, start: string, end: string) => {
-  try {
-    performance.measure(name, start, end);
-  } catch {}
-};
-```
-
-Or simply log elapsed milliseconds from a single starting timestamp.
-
-The instrumentation must identify:
-
-```text
-[ExplorerPerf] folder-click-start
-[ExplorerPerf] folder-state-update
-[ExplorerPerf] tree-flatten-start
-[ExplorerPerf] tree-flatten-end
-[ExplorerPerf] render-start
-[ExplorerPerf] render-end
-[ExplorerPerf] paint
-```
-
-and for notes:
-
-```text
-[ExplorerPerf] note-click-start
-[ExplorerPerf] tab-open-start
-[ExplorerPerf] document-load-start
-[ExplorerPerf] document-load-end
-[ExplorerPerf] TabContentPane-mount
-[ExplorerPerf] editor-init-start
-[ExplorerPerf] editor-init-end
-[ExplorerPerf] first-visible-paint
-```
-
-The goal is to produce an actual timeline.
-
----
-
-# PHASE 2 — FIND THE REAL NOTE-OPENING COST
-
-Trace the complete path beginning at the explorer click.
-
-Inspect:
-
-* `ExplorerOperations.ts`
-* the explorer row click handler
-* workspace/tab store actions
-* `openTab`
-* `activateTab`
-* document lookup/loading
-* `TabContentPane.tsx`
-* editor component initialization
-* Markdown parsing
-* editor state creation
-* plugin/extension initialization
-* backlinks/metadata/indexing triggers
-* any IPC involved
-* any filesystem reads
-* Zustand subscriptions triggered by opening the note
-
-Determine whether clicking a note causes unrelated work.
-
-Specifically investigate whether:
-
-```text
-open note
-```
-
-also causes:
-
-```text
-filesystem scan
-folder tree rebuild
-search index update
-backlinks calculation
-metadata extraction
-graph update
-workspace persistence
-recent-files update
-global store update
-all-tab rerender
-all-editor resize
-```
-
-If any of those happen synchronously on the critical path, identify them.
-
----
-
-# IMPORTANT — DISTINGUISH "OPEN TAB" FROM "INITIALIZE EDITOR"
-
-The tab itself should become active extremely quickly.
-
-Ideally:
-
-```text
-click
-  ↓
-activate tab
-  ↓
-paint active tab
-  ↓
-initialize editor
-```
-
-not:
-
-```text
-click
-  ↓
-load everything
-  ↓
-initialize editor
-  ↓
-calculate everything
-  ↓
-finally activate tab
-```
-
-The new `Opening…` pane is good for perceived responsiveness, but the architecture should still avoid blocking the main renderer thread.
-
-Determine whether the 1.5 seconds is:
-
-### Case 1 — JavaScript blocking
-
-Example:
-
-```text
-click
-████████████████████ 1500 ms
-                       ↓
-                     paint
-```
-
-If this is the case, `startTransition()` will not solve the underlying problem.
-
-### Case 2 — React rendering
-
-Example:
-
-```text
-click
-state update
-████████████ render/reconciliation
-paint
-```
-
-Then identify which components render and why.
-
-### Case 3 — editor initialization
-
-Example:
-
-```text
-click
-tab active
-paint
-editor initialization
-████████████████ 1500 ms
-```
-
-Then optimize editor creation/lifecycle.
-
-### Case 4 — asynchronous I/O
-
-Example:
-
-```text
-click
-tab active
-await document load
-████████████████ 1500 ms
-editor
-```
-
-Then investigate the actual I/O/document pipeline.
-
-### Case 5 — layout/compositor
-
-If JavaScript finishes quickly but the screen updates much later, investigate:
-
-* forced synchronous layout
-* ResizeObserver
-* editor measurements
-* DOM size calculations
-* CSS/layout thrashing
-* expensive painting
-
-Do not confuse this with React rendering.
-
----
-
-# PHASE 3 — FOLDER COLLAPSE
-
-Inspect `ExplorerOperations.ts` and everything called by folder expansion/collapse.
-
-We want to know the exact complexity.
-
-For example, determine whether this:
-
-```ts
-toggleFolder(folderId)
-```
-
-causes:
-
-```text
-toggle state
-→ flatten entire filesystem tree
-→ recreate every node
-→ recreate every object
-→ recreate every visible row
-→ update Virtuoso
-```
-
-If so, determine whether the flattening is actually necessary.
-
-Measure:
-
-```text
-number of total nodes
-number of visible nodes
-number of nodes whose visibility actually changed
-number of React rows rerendered
-time spent flattening
-time spent rendering
-time spent in Virtuoso
-```
-
-The ideal collapse operation should be approximately proportional to the affected visible subtree, not the entire vault.
-
-For example:
-
-```text
-Folder A
- ├─ file 1
- ├─ file 2
- ├─ folder B
- │   ├─ file 3
- │   └─ file 4
- └─ file 5
-```
-
-Collapsing `Folder A` should not require rebuilding unrelated branches.
-
----
-
-# PHASE 4 — RENDER COUNTERS
-
-Temporarily add render counters to the important components:
-
-```text
-FileExplorer
-ExplorerVirtuosoList
-ExplorerSelection
-SortableListItem
-TabContentPane
-editor component
-folder row
-file row
-```
-
-Log:
-
-```text
-component
-render count
-reason
-```
-
-Especially measure a single folder collapse.
-
-Example:
-
-```text
-Folder collapse:
-
-FileExplorer: +1
-ExplorerVirtuosoList: +1
-FolderRow: +1
-FileRow: +0
-UnrelatedFolderRow: +0
-```
-
-That would be healthy.
-
-If instead you see:
-
-```text
-FileExplorer: +1
-ExplorerVirtuosoList: +1
-500 rows: rerendered
-```
-
-we have found a major problem.
-
-Likewise for opening one note:
-
-```text
-click Note A
-
-TabContentPane(A): +1
-TabContentPane(B): +0
-TabContentPane(C): +0
-...
-```
-
-We should NOT be rendering every open editor merely because one note was activated.
-
----
-
-# PHASE 5 — INVESTIGATE THE 10-NOTE THRESHOLD
-
-There is another important clue:
-
-The application behaves well with a small number of open notes but becomes noticeably worse around ~10 notes.
-
-That strongly suggests some work is scaling with the number of mounted editors/tabs.
-
-Test exactly:
-
-```text
-1 note
-5 notes
-10 notes
-20 notes
-50 notes
-```
-
-For each configuration measure:
-
-### Opening a note
-
-```text
-click → active tab visible
-```
-
-### Folder collapse
-
-```text
-click → collapsed tree visible
-```
-
-### Window resize
-
-```text
-resize start → stable layout
-```
-
-Record:
-
-```text
-total duration
-React commit duration
-number of component renders
-number of editor renders
-number of ResizeObserver callbacks
-number of resize handlers
-number of DOM measurements
-number of IPC calls
-```
-
-We need to determine whether the cost scales approximately:
-
-```text
-O(1)
-O(number of visible rows)
-O(number of open tabs)
-O(number of mounted editors)
-O(number of files)
-O(number of total tree nodes)
-```
-
-This is extremely important.
-
----
-
-# PHASE 6 — CHECK HIDDEN EDITORS
-
-Inspect `TabContentPane.tsx` carefully.
-
-Determine whether inactive editors are:
-
-### Option A
-
-```text
-mounted but hidden
-```
-
-or
-
-### Option B
-
-```text
-unmounted
-```
-
-or
-
-### Option C
-
-```text
-mounted but effectively frozen/inactive
-```
-
-If 50 editors are mounted, determine whether each one still:
-
-* observes DOM size
-* listens to resize
-* recalculates layout
-* updates selection
-* runs effects
-* subscribes to Zustand
-* processes editor state
-* performs syntax highlighting
-* reacts to window resize
-* runs MutationObservers
-* runs ResizeObservers
-* schedules animation frames
-
-An inactive editor should ideally do almost no expensive work.
-
----
-
-# PHASE 7 — RESIZE OBSERVER AUDIT
-
-Because we have already observed the window resize problem when many notes are open, explicitly search the codebase for:
-
-```text
-ResizeObserver
-window.addEventListener("resize"
-addEventListener("resize"
-requestAnimationFrame
-requestIdleCallback
-MutationObserver
-getBoundingClientRect
-offsetWidth
-offsetHeight
-clientWidth
-clientHeight
-scrollHeight
-```
-
-For every occurrence determine:
-
-1. Which component owns it?
-2. Is it per editor?
-3. Is it cleaned up?
-4. Does it run when the editor is hidden?
-5. Does it trigger state updates?
-6. Can 10/20/50 editors trigger it simultaneously?
-
-This may reveal that the folder/open-note delay and the resize delay share the same underlying architecture problem.
-
----
-
-# PHASE 8 — CHECK FOR SYNCHRONOUS STORE CASCADES
-
-Audit Zustand subscriptions involved in:
-
-```text
-activeTabId
-openTabs
-selectedSnippetId
-selectedNoteIds
-expandedFolders
-documents
-editor state
-workspace state
-```
-
-Look for selectors that return fresh objects/arrays/sets:
-
-```ts
-state => ({
-  ...
+```js
+source.addEventListener('keydown', (event) => {
+  if (autocomplete.handleKeyDown(event)) { /* ... */ }
+  if (handleTab(view, cell, event)) return
+  if (handleEnter(view, cell, event)) return
+  if (handleArrowUp(view, cell, event)) return
+  // ...
 })
 ```
 
-or:
-
-```ts
-state => new Set(...)
-```
-
-or:
-
-```ts
-state => [...state.someArray]
-```
-
-or derived values that are recalculated for every store update.
-
-Determine whether opening one note causes unrelated components to receive new references.
-
-Pay particular attention to:
-
-```text
-FileExplorer
-MainLayout
-TabBar
-TabContentPane
-Editor
-RightSidebar
-Graph
-StatusBar
-```
+This makes each handler independently testable and the control flow obvious.
 
 ---
 
-# PHASE 9 — DO NOT ACCEPT "START TRANSITION" AS THE FINAL FIX
+## 2. Eliminate the Circular Dependency
 
-`startTransition()` is useful when the work is React scheduling work.
+**Files:** `tableExtension.js` ↔ `tableCell.js`
 
-But if the operation contains:
+`tableCell.js` imports `findCurrentTableRange`, `placeCaretAtEnd`, `dispatchModel`, `dispatchModelFromDom`, `flushPendingTableDispatch`, `moveCellFocus` from `tableExtension.js`. Meanwhile, `tableExtension.js` imports `renderCellSourceDecorated` and `makeCell` from `tableCell.js`. This circular dependency can cause subtle initialization bugs and makes the module graph hard to reason about.
 
-```text
-JSON parsing
-large array transformation
-filesystem operation
-synchronous editor construction
-large Markdown parse
-DOM measurement
-expensive JavaScript loop
-```
-
-then putting the state update inside:
-
-```ts
-startTransition(...)
-```
-
-does not make that synchronous work disappear.
-
-Likewise, rendering:
-
-```text
-Opening...
-```
-
-does not make a 1.5-second main-thread block disappear.
-
-We need to know whether the UI is genuinely yielding.
+**Suggestion:** Move shared utilities (`findCurrentTableRange`, `placeCaretAtEnd`, `dispatchModel`, `dispatchModelFromDom`, `flushPendingTableDispatch`, `moveCellFocus`, `renderCellSourceDecorated`, `makeCell`) into a new `tableShared.js` module. Both `tableExtension.js` and `tableCell.js` import from it, breaking the cycle.
 
 ---
 
-# PHASE 10 — ACCEPTANCE CRITERIA
+## 3. Replace `ignoreEvent()` with Granular Event Handling
 
-Do not report "improved" merely because the interaction feels better.
+**File:** `tableExtension.js` (line 652–654)
 
-Produce measured results.
+`TableWidget.ignoreEvent()` returns `true`, which tells CodeMirror to ignore ALL events within the widget. This completely bypasses CM6's native selection, click, and input handling, forcing every interaction to be manually reimplemented.
 
-Create a table like:
-
-| Operation       | Notes | Before | After | Main cost |
-| --------------- | ----: | -----: | ----: | --------- |
-| Open note       |     1 |      ? |     ? | ?         |
-| Open note       |    10 |      ? |     ? | ?         |
-| Open note       |    20 |      ? |     ? | ?         |
-| Open note       |    50 |      ? |     ? | ?         |
-| Collapse folder |     1 |      ? |     ? | ?         |
-| Collapse folder |    10 |      ? |     ? | ?         |
-| Collapse folder |    20 |      ? |     ? | ?         |
-| Collapse folder |    50 |      ? |     ? | ?         |
-| Window resize   |     1 |      ? |     ? | ?         |
-| Window resize   |    10 |      ? |     ? | ?         |
-| Window resize   |    20 |      ? |     ? | ?         |
-
-Use the same test procedure each time.
+**Suggestion:** Instead of ignoring all events, use `handleDOMEvents` in the EditorView extension to selectively intercept only the events you need (e.g., `keydown`, `mousedown` for cell selection). Let CodeMirror handle the rest natively. This reduces code and improves compatibility with CM6 features like drag-selection, touch handling, and accessibility.
 
 ---
 
-# FINAL DELIVERABLE
+## 4. Add TypeScript Types
 
-After investigation, report:
+**Files:** All 13 table files are `.js`
 
-## 1. Root cause
+The entire table extension is plain JavaScript while the rest of the codebase uses TypeScript. This loses type safety, IDE autocomplete, and compile-time error detection in the most complex part of the editor.
 
-State the specific operation responsible for the delay.
+**Suggestion:** Migrate the table extension to TypeScript. Start with `tableModel.js` (the data model — easiest to type), then `tableCell.js` and `tableExtension.js`. Define interfaces for `TableModel`, `CellPosition`, `TableRange`, etc. This will catch bugs like `model.rows[r]?.[c] ?? ''` where `r` or `c` could be out of bounds.
 
-Not:
+---
 
-> "React seems slow."
+## 5. Extract Hardcoded Constants to a Config Object
 
-Instead:
+**Files:** `tableExtension.js`, `tableModel.js`, `tableCell.js`
 
-> "Opening a note causes X, which synchronously performs Y, taking approximately Z ms."
+Magic numbers are scattered throughout:
+- Default column width: `144` (tableExtension.js:33)
+- Max widget height: `450` (tableExtension.js:281)
+- Debounce timers: `60ms`, `100ms`, `150ms` (tableExtension.js:772, tableCell.js:100)
+- Scroll offsets: `10px`, `16px` (tableExtension.js:234–247)
+- Resize debounce: `300ms` (tableExtension.js:334)
+- Default row height: `28` (tableModel.js)
+- Default column width in reconcile: `110` (tableModel.js)
 
-## 2. Scaling behavior
+**Suggestion:** Create a `tableConfig.js` with a single config object:
 
-State whether the cost scales with:
-
-```text
-open tabs
-mounted editors
-visible tree nodes
-total files
-folder depth
+```js
+export const TABLE_CONFIG = {
+  defaultColWidth: 144,
+  maxWidgetHeight: 450,
+  debounceMs: { dispatch: 60, resize: 300, parser: 150 },
+  scrollOffset: { vertical: 10, horizontal: 16 },
+  defaultRowHeight: 28,
+  minColWidth: 60,
+}
 ```
 
-## 3. Evidence
+This makes tuning easy and documents the magic numbers.
 
-Include actual measured timings and render counts.
+---
 
-## 4. Minimal fix
+## 6. Fix Memory Leaks from Uncleaned Event Listeners
 
-Identify the smallest architectural change that removes the bottleneck.
+**File:** `tableCell.js` — `makeCell()`
 
-## 5. Secondary optimizations
+Every cell attaches `keydown`, `input`, `paste`, `focus`, `blur`, `mouseup`, `keyup`, `compositionstart`, `compositionend`, `click`, `pointerdown`, and `contextmenu` listeners to its DOM elements. When the widget re-renders (e.g., `updateDOM`), old cell DOM is discarded but listeners are not explicitly removed. While GC usually handles this, the `view` reference captured in closures can keep entire editor state alive.
 
-Only after the primary bottleneck is identified.
+**Suggestion:** Use `ViewPlugin` with a proper `destroy()` method to clean up listeners. Alternatively, attach listeners to the widget wrapper (which persists) and use event delegation with `event.target.closest('td, th')` to find the relevant cell. This way listeners are attached once per table, not once per cell.
 
-## 6. Regression check
+---
 
-Verify:
+## 7. Simplify Focus Management
 
-* 1 note
-* 10 notes
-* 20 notes
-* 50 notes
-* folder expand
-* folder collapse
-* opening notes
-* rapid note switching
-* window resize/maximize
+**Files:** `tableExtension.js` — `dispatchModel()`, `tableCell.js` — `restoreFocusAfterHistory()`
 
-Do not make broad architectural changes until the measurements identify the bottleneck.
+Focus restoration uses double `requestAnimationFrame`, manual DOM traversal, and position calculations. The `dispatchModel` function has a `focusTarget` closure that queries the DOM, finds the right cell, scrolls it into view, and places the caret. This is fragile — any DOM structure change breaks it.
 
-The goal is not merely to make the UI *look* responsive.
+**Suggestion:** Use CodeMirror's `EditorView.requestMeasure()` or a `StateEffect` that stores the desired focus position in the editor state. Then a `ViewPlugin` reads that effect and focuses the correct cell after the widget rebuilds. This decouples focus logic from DOM timing.
 
-The goal is to make the underlying interaction genuinely fast.
+---
+
+## 8. Make `findCurrentTableRange` More Robust
+
+**File:** `tableExtension.js` (lines 102–215)
+
+This function tries multiple strategies to find a table's range: `dataset.tableFrom`, `lineBlockAtElement`, `posAtDOM`, syntax tree iteration, and DOM order matching. The fallback chain is complex and the DOM-order matching (line 188–196) can silently match the wrong table if tables are reordered.
+
+**Suggestion:** Store the table's `from` and `to` positions directly on the widget's DOM element as `data-table-from` and `data-table-to` (already partially done). On update, remap these positions through `tr.changes.mapPos()`. This eliminates the need for most fallback heuristics. Only use the syntax tree as a last resort.
+
+---
+
+## 9. Debounce `dispatchModelFromDom` More Aggressively
+
+**File:** `tableExtension.js` (lines 758–775)
+
+`dispatchModelFromDom` is called on every `input` event (via `commit()` in tableCell.js). It reads the entire table model from DOM, serializes it, and dispatches a transaction. The 60ms debounce helps, but for large tables (50+ cells), `readModelFromDom` + `serializeTable` can be expensive.
+
+**Suggestion:** Track which cell changed and only update that cell's content in the serialized output, rather than re-serializing the entire table. Alternatively, use a `requestAnimationFrame`-based debounce instead of `setTimeout` to align with the browser's render cycle.
+
+---
+
+## 10. Add Error Boundaries and Defensive Checks
+
+**Files:** `tableExtension.js`, `tableModel.js`, `tableCell.js`
+
+Many operations assume the DOM structure is correct:
+- `wrap.querySelector('thead tr')` could return `null` if the table is malformed
+- `cell.closest('.cm-atomic-table')` could return `null` if the cell is detached
+- `view.posAtDOM(wrap)` can throw if the DOM is not in the document
+- `model.rows[r]?.[c]` assumes `r` and `c` are valid indices
+
+When these assumptions fail, the errors are cryptic (e.g., "Cannot read properties of null") and hard to trace back to the root cause.
+
+**Suggestion:** Add a `assertTableIntegrity(wrap)` function that validates the DOM structure before operations. Use optional chaining consistently. Wrap risky operations in try-catch with descriptive error messages that include the table's `data-table-from` position and the operation being performed. This makes debugging much faster.
