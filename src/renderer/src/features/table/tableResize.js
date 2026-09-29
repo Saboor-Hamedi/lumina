@@ -1,8 +1,9 @@
 import { readModelFromDom } from './tableModel.js'
+import { TABLE_CONFIG } from './tableConfig.js'
 
-const MIN_COLUMN_WIDTH = 48
-const MIN_ROW_HEIGHT = 28
-const RESIZE_ZONE = 10
+const MIN_COLUMN_WIDTH = TABLE_CONFIG.minColumnWidth
+const MIN_ROW_HEIGHT = TABLE_CONFIG.minRowHeight
+const RESIZE_ZONE = TABLE_CONFIG.resizeGripZone
 
 /**
  * Read the scroll container's *content-box* width, excluding scrollbar

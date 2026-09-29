@@ -13,7 +13,7 @@ import {
   dispatchModelFromDom,
   flushPendingTableDispatch,
   moveCellFocus
-} from './tableExtension'
+} from './tableShared'
 
 function renderTextWithHighlight(text) {
   const pattern = window.__lumina_active_search_pattern
@@ -294,11 +294,12 @@ export function restoreFocusAfterHistory(view, cell, source, action) {
     scroller.scrollLeft = scrollLeft
   }
 
-  requestAnimationFrame(() => {
-    if (scroller) {
-      scroller.scrollTop = scrollTop
-      scroller.scrollLeft = scrollLeft
-    }
+  view.requestMeasure({
+    write: () => {
+      if (scroller) {
+        scroller.scrollTop = scrollTop
+        scroller.scrollLeft = scrollLeft
+      }
 
     // Find the target table and cell
     let targetWrap = wrap && document.body.contains(wrap) ? wrap : null
@@ -323,6 +324,7 @@ export function restoreFocusAfterHistory(view, cell, source, action) {
           }
         }
       }
+    }
     }
   })
 }
@@ -571,7 +573,7 @@ export function makeCell(tag, text, view) {
     clearActiveMarksInSource(source)
     autocomplete.close()
   })
-  source.addEventListener('keydown', (event) => {
+  const handleCellKeyDown = (event) => {
     if (autocomplete.handleKeyDown(event)) {
       event.preventDefault()
       event.stopPropagation()
@@ -1021,7 +1023,8 @@ export function makeCell(tag, text, view) {
       })
       return
     }
-  })
+  }
+  source.addEventListener('keydown', handleCellKeyDown)
   cell.addEventListener('contextmenu', (event) => {
     if (view.state.readOnly) return
     event.preventDefault()

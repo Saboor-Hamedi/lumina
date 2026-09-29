@@ -24,12 +24,23 @@ import { createTableFooterDOM, updateTableFooterCount } from './tableFooter.js'
 
 import { parseTable, serializeTable, readModelFromDom, getCellSource } from './tableModel'
 import { renderCellSourceDecorated, makeCell } from './tableCell'
+import { TABLE_CONFIG } from './tableConfig'
+import { configureTableShared } from './tableShared'
+
+configureTableShared({
+  findCurrentTableRange,
+  placeCaretAtEnd,
+  dispatchModel,
+  dispatchModelFromDom,
+  flushPendingTableDispatch,
+  moveCellFocus
+})
 
 function getColumnWidths(model) {
   const count = model.header?.length || 0
   return Array.from({ length: count }, (_, index) => {
     const width = model.columnWidths?.[index]
-    return Number.isFinite(width) && width > 0 ? width : 144
+    return Number.isFinite(width) && width > 0 ? width : TABLE_CONFIG.defaultColumnWidth
   })
 }
 
@@ -74,7 +85,7 @@ function applyTableGeometry(table, model) {
     // per column so wide tables remain readable and scroll horizontally.
     const columnCount = model.header?.length || 1
     table.style.removeProperty('width')
-    table.style.setProperty('min-width', `max(100%, ${columnCount * 120}px)`, 'important')
+    table.style.setProperty('min-width', `max(100%, ${columnCount * TABLE_CONFIG.minGeneratedColumnWidth}px)`, 'important')
     Array.from(table.querySelectorAll('tr')).forEach((row) => {
       Array.from(row.children).forEach((cell) => {
         cell.style.removeProperty('width')
@@ -152,7 +163,8 @@ export function findCurrentTableRange(view, dom) {
 
   let targetNode = null
 
-  // 1. If pos is valid, find the Table node that directly matches or contains/is closest to pos
+  // 1. Match an exact table start or a syntax node that contains the saved
+  // position. A nearby table is not a safe match when documents are edited.
   if (pos >= 0) {
     // First check exact start line match (since pos is startLine.from)
     for (const n of tableNodes) {
@@ -165,34 +177,15 @@ export function findCurrentTableRange(view, dom) {
     }
 
     if (!targetNode) {
-      let closest = null
-      let minDist = Infinity
-      for (const n of tableNodes) {
-        if (pos >= n.from && pos <= n.to) {
-          targetNode = n
-          break
-        }
-        const dist = Math.min(Math.abs(n.from - pos), Math.abs(n.to - pos))
-        if (dist < minDist) {
-          minDist = dist
-          closest = n
-        }
-      }
-      if (!targetNode && closest && minDist <= 500) {
-        targetNode = closest
-      }
+      targetNode = tableNodes.find((n) => pos >= n.from && pos <= n.to) || null
     }
   }
 
-  // 2. Fallback: match by exact DOM order among all rendered tables in document
+  // 2. DOM order is safe only when there is one possible table.
   if (!targetNode) {
     const allTables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
     const tableIdx = allTables.indexOf(wrap)
-    if (tableIdx >= 0 && tableIdx < tableNodes.length) {
-      targetNode = tableNodes[tableIdx]
-    } else {
-      targetNode = tableNodes[0]
-    }
+    if (tableNodes.length === 1 && tableIdx === 0) targetNode = tableNodes[0]
   }
 
   if (targetNode) {
@@ -231,19 +224,19 @@ export function scrollCellIntoView(scrollContainer, targetCell) {
 
   // Vertical scroll adjustment (ensure cell/cursor is completely above footer)
   if (cellRect.bottom > containerRect.bottom) {
-    const diff = (cellRect.bottom - containerRect.bottom) + 10
+    const diff = (cellRect.bottom - containerRect.bottom) + TABLE_CONFIG.scrollOffset.vertical
     scrollContainer.scrollTop += diff
   } else if (cellRect.top < containerRect.top) {
-    const diff = (containerRect.top - cellRect.top) + 10
+    const diff = (containerRect.top - cellRect.top) + TABLE_CONFIG.scrollOffset.vertical
     scrollContainer.scrollTop -= diff
   }
 
   // Horizontal scroll adjustment (ensure cell/cursor is within visible columns)
   if (cellRect.right > containerRect.right) {
-    const diff = (cellRect.right - containerRect.right) + 16
+    const diff = (cellRect.right - containerRect.right) + TABLE_CONFIG.scrollOffset.horizontal
     scrollContainer.scrollLeft += diff
   } else if (cellRect.left < containerRect.left) {
-    const diff = (containerRect.left - cellRect.left) + 16
+    const diff = (containerRect.left - cellRect.left) + TABLE_CONFIG.scrollOffset.horizontal
     scrollContainer.scrollLeft -= diff
   }
 }
@@ -278,7 +271,7 @@ export class TableWidget extends WidgetType {
   }
   
   get estimatedHeight() {
-    return Math.min(450, this.model.rows.length * 35 + 80)
+    return Math.min(TABLE_CONFIG.maxWidgetHeight, this.model.rows.length * TABLE_CONFIG.rowHeightEstimate + TABLE_CONFIG.widgetHeightPadding)
   }
 
   eq(other) {
@@ -675,8 +668,8 @@ let pendingTableDispatch = null
 
 export function flushPendingTableDispatch() {
   if (pendingTableDispatch) {
-    const { timer, view, cell } = pendingTableDispatch
-    clearTimeout(timer)
+    const { frame, view, cell } = pendingTableDispatch
+    cancelAnimationFrame(frame)
     pendingTableDispatch = null
     dispatchModelFromDomDirect(view, cell)
   }
@@ -714,43 +707,37 @@ export function dispatchModel(view, wrap, nextModel, explicitFocusInfo = null) {
   // Re-focus the cell if one was active or explicitly requested
   if (cellInfo) {
     const fromPos = range.from
-    const focusTarget = () => {
-      const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
-      const target = (wrap && wrap.isConnected) ? wrap : (tables.find((t) => {
-        const r = findCurrentTableRange(view, t)
-        return r && r.from === fromPos
-      }) || tables[0])
-      if (!target) return
-      let targetTr = null
-      if (cellInfo.isHeader) {
-        targetTr = target.querySelector('thead tr')
-      } else {
-        const bodyRows = target.querySelectorAll('tbody tr:not(.cm-table-empty-row)')
-        if (bodyRows.length > 0) {
-          const safeBodyIdx = Math.max(0, Math.min(cellInfo.rowIdx, bodyRows.length - 1))
-          targetTr = bodyRows[safeBodyIdx]
+    view.requestMeasure({
+      write: () => {
+        const tables = Array.from(view.dom.querySelectorAll('.cm-atomic-table'))
+        const target = wrap?.isConnected
+          ? wrap
+          : tables.find((table) => findCurrentTableRange(view, table)?.from === fromPos) || tables[0]
+        if (!target) return
+        let targetTr = null
+        if (cellInfo.isHeader) {
+          targetTr = target.querySelector('thead tr')
+        } else {
+          const bodyRows = target.querySelectorAll('tbody tr:not(.cm-table-empty-row)')
+          if (bodyRows.length > 0) {
+            const safeBodyIdx = Math.max(0, Math.min(cellInfo.rowIdx, bodyRows.length - 1))
+            targetTr = bodyRows[safeBodyIdx]
+          }
         }
-      }
-      if (targetTr) {
-        const cells = targetTr.querySelectorAll('.cm-atomic-table-cell-source')
-        if (cells.length > 0) {
-          const colIdx = Math.max(0, Math.min(cellInfo.colIdx, cells.length - 1))
-          const targetCell = cells[colIdx]
-          if (targetCell) {
-            const scrollContainer = target.querySelector('.cm-table-scroll-container')
-            if (scrollContainer) {
-              scrollCellIntoView(scrollContainer, targetCell)
+        if (targetTr) {
+          const cells = targetTr.querySelectorAll('.cm-atomic-table-cell-source')
+          if (cells.length > 0) {
+            const colIdx = Math.max(0, Math.min(cellInfo.colIdx, cells.length - 1))
+            const targetCell = cells[colIdx]
+            if (targetCell) {
+              const scrollContainer = target.querySelector('.cm-table-scroll-container')
+              if (scrollContainer) scrollCellIntoView(scrollContainer, targetCell)
+              targetCell.focus({ preventScroll: true })
+              placeCaretAtEnd(targetCell)
             }
-            targetCell.focus({ preventScroll: true })
-            placeCaretAtEnd(targetCell)
           }
         }
       }
-    }
-
-    focusTarget()
-    requestAnimationFrame(() => {
-      requestAnimationFrame(focusTarget)
     })
   }
 }
@@ -763,15 +750,16 @@ export function dispatchModelFromDom(view, cell, opts = {}) {
   }
 
   if (pendingTableDispatch) {
-    clearTimeout(pendingTableDispatch.timer)
+    cancelAnimationFrame(pendingTableDispatch.frame)
   }
 
-  const timer = setTimeout(() => {
+  const frame = requestAnimationFrame(() => {
+    if (pendingTableDispatch?.frame !== frame) return
     pendingTableDispatch = null
     dispatchModelFromDomDirect(view, cell)
-  }, 60)
+  })
 
-  pendingTableDispatch = { timer, view, cell }
+  pendingTableDispatch = { frame, view, cell }
 }
 
 function dispatchModelFromDomDirect(view, cell) {

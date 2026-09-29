@@ -1,8 +1,47 @@
 /**
  * Table Data Model & Serialization Utilities
  */
+import { TABLE_CONFIG } from './tableConfig'
 
-export function collectCells(state, rowNode) {
+export type CellAlignment = '' | 'left' | 'center' | 'right'
+
+export interface TableModel {
+  header: string[]
+  rows: string[][]
+  alignments?: CellAlignment[]
+  caption?: string
+  columnWidths?: number[]
+  rowHeights?: number[]
+}
+
+export interface TableCellPosition {
+  isHeader: boolean
+  rowIdx: number
+  colIdx: number
+}
+
+interface TableDocumentState {
+  doc: {
+    lineAt(position: number): { text: string; number: number; from: number }
+    line(number: number): { text: string }
+    lines: number
+  }
+}
+
+interface TableSyntaxNode {
+  from: number
+  to: number
+  cursor(): { firstChild(): boolean; nextSibling(): boolean; name: string; from: number; to: number; node: TableSyntaxNode }
+}
+
+export interface TableWidgetRange {
+  from: number
+  to: number
+}
+
+type TableDOMCell = HTMLElement & { dataset: DOMStringMap }
+
+export function collectCells(state: TableDocumentState, rowNode: TableSyntaxNode): string[] {
   // Split the row's raw line on unescaped `|` rather than collecting
   // lezer `TableCell` nodes. lezer emits NO `TableCell` for an empty
   // cell, so a node-based count silently drops blank columns — which
@@ -11,7 +50,7 @@ export function collectCells(state, rowNode) {
   // positions) intact through the parse → serialize round-trip.
   return splitRowCells(state.doc.lineAt(rowNode.from).text)
 }
-export function splitRowCells(line) {
+export function splitRowCells(line: string): string[] {
   let s = line.trim()
   // Strip the optional outer pipes so they don't yield phantom empty
   // leading/trailing cells.
@@ -43,7 +82,7 @@ export function splitRowCells(line) {
   cells.push(buf.trim())
   return cells
 }
-export function parseTable(state, tableNode) {
+export function parseTable(state: TableDocumentState, tableNode: TableSyntaxNode): TableModel | null {
   const header = []
   const rows = []
   let delimiterLine = ''
@@ -70,7 +109,7 @@ export function parseTable(state, tableNode) {
   } while (cursor.nextSibling())
   if (header.length === 0) return null
 
-  const alignments = []
+  const alignments: CellAlignment[] = []
   if (delimiterLine) {
     const delimiterCells = splitRowCells(delimiterLine)
     for (const cell of delimiterCells) {
@@ -85,8 +124,8 @@ export function parseTable(state, tableNode) {
   while (alignments.length < header.length) alignments.push('')
 
   let caption = ''
-  let columnWidths = []
-  let rowHeights = []
+  let columnWidths: number[] = []
+  let rowHeights: number[] = []
   const startLine = state.doc.lineAt(tableNode.from)
   for (let lineNumber = startLine.number - 1; lineNumber >= Math.max(1, startLine.number - 6); lineNumber -= 1) {
     const prevLine = state.doc.line(lineNumber).text.trim()
@@ -117,7 +156,7 @@ export function parseTable(state, tableNode) {
 // newline would terminate the table. A pipe that's already escaped
 // (`\|` — e.g. round-tripping content the parser handed us) is left
 // alone so serialize is idempotent.
-export function escapeCell(text) {
+export function escapeCell(text: string): string {
   // Escape pipes that are NOT inside inline code blocks
   // A simple heuristic: split by inline code segments, escape pipes in non-code segments.
   const parts = text.split(/(`[^`\n]+`)/)
@@ -130,7 +169,7 @@ export function escapeCell(text) {
   }
   return parts.join('')
 }
-export function serializeTable(model) {
+export function serializeTable(model: TableModel): string {
   const columnCount = model.header.length
   const lines = []
 
@@ -163,35 +202,49 @@ export function serializeTable(model) {
   }
   return lines.join('\n')
 }
-export function reconcileColumnWidths(widths, colCount, defaultWidth = 110) {
+export function reconcileColumnWidths(widths: number[] | undefined, colCount: number, defaultWidth = TABLE_CONFIG.reconciledColumnWidth): number[] {
   const out = Array.isArray(widths) ? [...widths] : []
   while (out.length < colCount) out.push(defaultWidth)
   if (out.length > colCount) out.length = colCount
   return out
 }
 
-export function reconcileRowHeights(heights, rowCount, defaultHeight = 28) {
+export function reconcileRowHeights(heights: number[] | undefined, rowCount: number, defaultHeight = TABLE_CONFIG.defaultRowHeight): number[] {
   const out = Array.isArray(heights) ? [...heights] : []
   while (out.length < rowCount) out.push(defaultHeight)
   if (out.length > rowCount) out.length = rowCount
   return out
 }
 
-export function readModelFromDom(wrap) {
-  const header = Array.from(wrap.querySelectorAll('thead th')).map(readCellSource)
-  const alignments = Array.from(wrap.querySelectorAll('thead th')).map((th) => {
+export function assertTableIntegrity(wrap: HTMLElement | null | undefined, operation = 'read table model'): { table: HTMLTableElement; thead: HTMLTableSectionElement; tbody: HTMLTableSectionElement; headerRow: HTMLTableRowElement } {
+  const table = wrap?.querySelector?.('table')
+  const thead = table?.querySelector('thead')
+  const tbody = table?.querySelector('tbody')
+  const headerRow = thead?.querySelector('tr')
+  const position = wrap?.dataset?.tableFrom ?? 'unknown'
+  if (!wrap || !table || !thead || !tbody || !headerRow) {
+    throw new Error(`Cannot ${operation}: table DOM is malformed (table position: ${position})`)
+  }
+  return { table, thead, tbody, headerRow }
+}
+
+export function readModelFromDom(wrap: HTMLElement): TableModel {
+  const { thead, tbody } = assertTableIntegrity(wrap)
+  const headerCells = Array.from(thead.querySelectorAll('th'))
+  const header = headerCells.map(readCellSource)
+  const alignments: CellAlignment[] = headerCells.map((th) => {
     if (th.style.textAlign === 'center') return 'center'
     if (th.style.textAlign === 'right') return 'right'
     if (th.style.textAlign === 'left') return 'left'
     return ''
   })
-  const rows = Array.from(wrap.querySelectorAll('tbody tr:not(.cm-table-empty-row)')).map((tr) =>
+  const rows = Array.from(tbody.querySelectorAll('tr:not(.cm-table-empty-row)')).map((tr) =>
     Array.from(tr.querySelectorAll('td')).map(readCellSource)
   )
-  const titleInput = wrap.querySelector('.cm-table-ui-title-input')
+  const titleInput = wrap.querySelector<HTMLInputElement>('.cm-table-ui-title-input')
   const caption = titleInput ? titleInput.value.trim() : (wrap.dataset.caption || '')
 
-  let columnWidths = []
+  let columnWidths: number[] = []
   const widthData = wrap.dataset.columnWidths || ''
   if (widthData) {
     const raw = widthData.split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
@@ -201,7 +254,7 @@ export function readModelFromDom(wrap) {
     }
   }
 
-  let rowHeights = []
+  let rowHeights: number[] = []
   const heightData = wrap.dataset.rowHeights || ''
   if (heightData) {
     const raw = heightData.split(',').map((value) => Number(value.trim())).filter(Number.isFinite)
@@ -223,21 +276,21 @@ export function readModelFromDom(wrap) {
 // but won't round-trip back through stripEscapes on re-render —
 // acceptable tradeoff because the escapes are typically ingestion
 // artifacts users don't want to preserve anyway).
-export function readCellSource(cell) {
+export function readCellSource(cell: TableDOMCell): string {
   if (cell.dataset.raw !== undefined && cell.dataset.raw !== null) {
     return cell.dataset.raw.trim()
   }
   const source = cell.querySelector('.cm-atomic-table-cell-source')
   return (source ? source.textContent : '').trim()
 }
-export function getCellSource(cell) {
+export function getCellSource(cell: TableDOMCell): HTMLElement | null {
   return cell.querySelector('.cm-atomic-table-cell-source')
 }
 
 /**
  * Robustly parses any raw markdown table string into a clean table model.
  */
-export function serializeTableOnly(model) {
+export function serializeTableOnly(model: TableModel): string {
   const columnCount = model.header.length
   const lines = []
 
@@ -261,7 +314,7 @@ export function serializeTableOnly(model) {
   return lines.join('\n')
 }
 
-export function parseMarkdownTableText(markdown, defaultCaption = '') {
+export function parseMarkdownTableText(markdown: string, defaultCaption = ''): TableModel | null {
   const lines = markdown.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0)
   if (lines.length === 0) return null
 
@@ -269,7 +322,7 @@ export function parseMarkdownTableText(markdown, defaultCaption = '') {
   let startIdx = 0
   if (lines[0].match(/^<!--\s*table:\s*(.*?)\s*-->$/i) || lines[0].match(/^Table:\s*(.+)$/i)) {
     const m = lines[0].match(/^<!--\s*table:\s*(.*?)\s*-->$/i) || lines[0].match(/^Table:\s*(.+)$/i)
-    caption = m[1].trim()
+    if (m) caption = m[1].trim()
     startIdx = 1
   }
 
@@ -279,7 +332,7 @@ export function parseMarkdownTableText(markdown, defaultCaption = '') {
   const header = splitRowCells(headerLine)
   if (header.length === 0) return null
 
-  let alignments = Array(header.length).fill('')
+  let alignments: CellAlignment[] = Array(header.length).fill('')
   let delimiterIdx = startIdx + 1
   if (delimiterIdx < lines.length && lines[delimiterIdx].includes('-')) {
     const delimCells = splitRowCells(lines[delimiterIdx])
