@@ -20,7 +20,8 @@
 
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
 import { StateEffect } from '@codemirror/state'
-import { ViewPlugin } from '@codemirror/view'
+import { ViewPlugin, type EditorView, type ViewUpdate } from '@codemirror/view'
+import { TABLE_CONFIG } from './tableConfig'
 
 // Broadcasts that lezer's incremental parser has advanced past where
 // it was last observed. Consumers (tables, images, inline-preview)
@@ -30,19 +31,23 @@ export const treeGrowthEffect = StateEffect.define()
 
 // How much must the parsed range grow before we dispatch a rebuild
 // effect. 8KB is roughly two viewport-heights of text.
-const GROWTH_THRESHOLD = 8192
+const GROWTH_THRESHOLD = TABLE_CONFIG.parser.growthThreshold
 
 // Budget per idle tick (30ms keeps UI smooth while making steady progress)
-const TICK_BUDGET_MS = 30
+const TICK_BUDGET_MS = TABLE_CONFIG.parser.tickBudgetMs
 
-function scheduleIdle(cb) {
+type IdleHandle =
+  | { kind: 'idle'; id: number }
+  | { kind: 'raf'; id: number }
+
+function scheduleIdle(cb: () => void): IdleHandle {
   if (typeof window.requestIdleCallback === 'function') {
     return { kind: 'idle', id: window.requestIdleCallback(() => cb()) }
   }
   return { kind: 'raf', id: window.requestAnimationFrame(() => cb()) }
 }
 
-function cancelIdle(handle) {
+function cancelIdle(handle: IdleHandle): void {
   if (handle.kind === 'idle' && typeof window.cancelIdleCallback === 'function') {
     window.cancelIdleCallback(handle.id)
   } else if (handle.kind === 'raf') {
@@ -57,7 +62,12 @@ function cancelIdle(handle) {
  */
 export const treeProgressPlugin = ViewPlugin.fromClass(
   class {
-    constructor(view) {
+    private view: EditorView
+    private _lastTreeLen: number
+    private _idleHandle: IdleHandle | null
+    private _destroyed: boolean
+
+    constructor(view: EditorView) {
       this.view = view
       this._lastTreeLen = syntaxTree(view.state).length
       this._idleHandle = null
@@ -65,14 +75,14 @@ export const treeProgressPlugin = ViewPlugin.fromClass(
       this._schedule()
     }
 
-    update(update) {
+    update(update: ViewUpdate): void {
       if (update.docChanged) {
         this._lastTreeLen = syntaxTree(update.state).length
         this._schedule()
       }
     }
 
-    destroy() {
+    destroy(): void {
       this._destroyed = true
       if (this._idleHandle !== null) {
         cancelIdle(this._idleHandle)
@@ -80,7 +90,7 @@ export const treeProgressPlugin = ViewPlugin.fromClass(
       }
     }
 
-    _schedule() {
+    private _schedule(): void {
       if (this._idleHandle !== null) return
       this._idleHandle = scheduleIdle(() => {
         this._idleHandle = null
@@ -88,7 +98,7 @@ export const treeProgressPlugin = ViewPlugin.fromClass(
       })
     }
 
-    _tick() {
+    private _tick(): void {
       const state = this.view.state
       const docLen = state.doc.length
       if (this._lastTreeLen >= docLen) return

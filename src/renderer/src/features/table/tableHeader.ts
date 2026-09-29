@@ -2,7 +2,7 @@ import { icons } from './tableIcons'
 import { createTableTitleDOM } from './tableRename'
 import { createTableQuickActionsDOM } from './tableActions'
 import { createTableViewModeToggleDOM } from './tableSourceView'
-import { findCurrentTableRange } from './tableExtension'
+import { findCurrentTableRange } from './tableShared'
 import { createTableSearchBar } from './tableSearch'
 
 /**

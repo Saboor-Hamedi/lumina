@@ -1,5 +1,6 @@
 import { serializeTable, readModelFromDom } from './tableModel'
-import { findCurrentTableRange, dispatchModel } from './tableExtension'
+import { findCurrentTableRange, dispatchModel } from './tableShared'
+import { TABLE_CONFIG } from './tableConfig'
 
 /**
  * Converts a table model into standard CSV string format.
@@ -197,7 +198,7 @@ export function createTableQuickActionsDOM(view, wrap, model) {
           <circle cx="5" cy="12" r="1"></circle>
         </svg>
       `
-    }, 1500)
+    }, TABLE_CONFIG.interactionDelayMs.copiedNotice)
   }
 
   const openDropdown = () => {

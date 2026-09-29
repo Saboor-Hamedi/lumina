@@ -884,7 +884,9 @@ export function moveCellFocus(view, cell, dir, opts = { appendOnOverflow: true }
     } else {
       // jump out below safely
       const range = findCurrentTableRange(view, wrap)
-      let targetPos = range ? range.to : view.posAtDOM(wrap) + 10 // fallback
+      let targetPos = range
+        ? range.to
+        : view.posAtDOM(wrap) + TABLE_CONFIG.fallbackTablePositionOffset
 
       if (range) {
         if (
@@ -1212,9 +1214,10 @@ const defaultLinkOpener = (url) => {
 // Per-view facet so `makeCell`'s pointerdown handler can look up the
 // current link-click callback. Avoids threading the config through the
 // widget constructor and toDOM args.
-export const tableLinkClickFacet = Facet.define({
-  combine: (values) => values[0] ?? defaultLinkOpener
-})
+export const tableLinkClickFacet = Facet.define<
+  (url: string) => void,
+  (url: string) => void
+>({ combine: (values) => values[0] ?? defaultLinkOpener })
 
 const tableSelectionSyncPlugin = ViewPlugin.fromClass(
   class {

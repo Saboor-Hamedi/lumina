@@ -1,4 +1,4 @@
-import { dispatchModel } from './tableExtension'
+import { dispatchModel } from './tableShared'
 import { readModelFromDom } from './tableModel'
 
 export function setupTableInsertion(wrap, view) {

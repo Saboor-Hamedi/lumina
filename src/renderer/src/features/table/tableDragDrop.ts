@@ -1,4 +1,4 @@
-import { dispatchModel } from './tableExtension'
+import { dispatchModel } from './tableShared'
 import { readModelFromDom } from './tableModel'
 import { icons } from './tableIcons'
 

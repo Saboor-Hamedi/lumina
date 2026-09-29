@@ -1,12 +1,12 @@
 # Table Extension — Improvement Suggestions
 
-## 1. Break Up the Monolithic Keydown Handler
+## 1. Break Up the Monolithic Keydown Handler — PARTIAL
 
-**File:** `tableCell.js` (~400 lines in a single `keydown` listener)
+**File:** `tableCell.ts`
 
-The `keydown` handler in `makeCell()` is a deeply nested conditional handling Tab, Enter, Arrow keys, Backspace, pipe character, undo/redo, and more. This is extremely difficult to maintain, test, and debug.
+The keydown handler in `makeCell()` dispatches Tab, Enter, arrows, Backspace, pipe, and related keys to named handlers.
 
-**Suggestion:** Extract each key handler into its own named function (e.g., `handleTab`, `handleEnter`, `handleArrowUp`, `handleBackspace`, `handlePipe`, `handleUndoRedo`). Then the main `keydown` becomes a simple dispatcher:
+**Suggestion:** Keep each key handler named and make the dispatcher straightforward:
 
 ```js
 source.addEventListener('keydown', (event) => {
@@ -18,93 +18,69 @@ source.addEventListener('keydown', (event) => {
 })
 ```
 
-This makes each handler independently testable and the control flow obvious.
+**Progress:** The dispatcher now routes to named handlers for Tab, Enter, arrows, Backspace, pipe, undo/redo, and related keys. The handlers still close over `makeCell()` state, so they are not independently testable yet.
 
 ---
 
-## 2. Eliminate the Circular Dependency
+## 2. Eliminate the Circular Dependency — COMPLETE
 
-**Files:** `tableExtension.js` ↔ `tableCell.js`
+**Files:** `tableExtension.ts` and `tableCell.ts`
 
-`tableCell.js` imports `findCurrentTableRange`, `placeCaretAtEnd`, `dispatchModel`, `dispatchModelFromDom`, `flushPendingTableDispatch`, `moveCellFocus` from `tableExtension.js`. Meanwhile, `tableExtension.js` imports `renderCellSourceDecorated` and `makeCell` from `tableCell.js`. This circular dependency can cause subtle initialization bugs and makes the module graph hard to reason about.
+The former imports between the extension and cell modules formed a cycle, making initialization order hard to reason about.
 
-**Suggestion:** Move shared utilities (`findCurrentTableRange`, `placeCaretAtEnd`, `dispatchModel`, `dispatchModelFromDom`, `flushPendingTableDispatch`, `moveCellFocus`, `renderCellSourceDecorated`, `makeCell`) into a new `tableShared.js` module. Both `tableExtension.js` and `tableCell.js` import from it, breaking the cycle.
-
----
-
-## 3. Replace `ignoreEvent()` with Granular Event Handling
-
-**File:** `tableExtension.js` (line 652–654)
-
-`TableWidget.ignoreEvent()` returns `true`, which tells CodeMirror to ignore ALL events within the widget. This completely bypasses CM6's native selection, click, and input handling, forcing every interaction to be manually reimplemented.
-
-**Suggestion:** Instead of ignoring all events, use `handleDOMEvents` in the EditorView extension to selectively intercept only the events you need (e.g., `keydown`, `mousedown` for cell selection). Let CodeMirror handle the rest natively. This reduces code and improves compatibility with CM6 features like drag-selection, touch handling, and accessibility.
+**Resolution:** Shared editor operations live behind `tableShared.ts`. Table UI modules now import those operations from the bridge instead of importing `tableExtension.ts`, removing the dependency cycle.
 
 ---
 
-## 4. Add TypeScript Types
+## 3. Replace `ignoreEvent()` with Granular Event Handling — COMPLETE (scoped widget handling)
 
-**Files:** All 13 table files are `.js`
+**File:** `tableExtension.ts`
 
-The entire table extension is plain JavaScript while the rest of the codebase uses TypeScript. This loses type safety, IDE autocomplete, and compile-time error detection in the most complex part of the editor.
+`TableWidget.ignoreEvent()` now ignores events only for editable controls and cell interactions handled by the table. Passive widget surfaces pass events through to CodeMirror, preserving native handling there.
 
-**Suggestion:** Migrate the table extension to TypeScript. Start with `tableModel.js` (the data model — easiest to type), then `tableCell.js` and `tableExtension.js`. Define interfaces for `TableModel`, `CellPosition`, `TableRange`, etc. This will catch bugs like `model.rows[r]?.[c] ?? ''` where `r` or `c` could be out of bounds.
-
----
-
-## 5. Extract Hardcoded Constants to a Config Object
-
-**Files:** `tableExtension.js`, `tableModel.js`, `tableCell.js`
-
-Magic numbers are scattered throughout:
-- Default column width: `144` (tableExtension.js:33)
-- Max widget height: `450` (tableExtension.js:281)
-- Debounce timers: `60ms`, `100ms`, `150ms` (tableExtension.js:772, tableCell.js:100)
-- Scroll offsets: `10px`, `16px` (tableExtension.js:234–247)
-- Resize debounce: `300ms` (tableExtension.js:334)
-- Default row height: `28` (tableModel.js)
-- Default column width in reconcile: `110` (tableModel.js)
-
-**Suggestion:** Create a `tableConfig.js` with a single config object:
-
-```js
-export const TABLE_CONFIG = {
-  defaultColWidth: 144,
-  maxWidgetHeight: 450,
-  debounceMs: { dispatch: 60, resize: 300, parser: 150 },
-  scrollOffset: { vertical: 10, horizontal: 16 },
-  defaultRowHeight: 28,
-  minColWidth: 60,
-}
-```
-
-This makes tuning easy and documents the magic numbers.
+**Resolution:** `ignoreEvent()` now returns true only for editable controls and cell interactions handled by the widget. Events on passive widget surfaces continue through CodeMirror's native handling.
 
 ---
 
-## 6. Fix Memory Leaks from Uncleaned Event Listeners
+## 4. Add TypeScript Types — PARTIAL
 
-**File:** `tableCell.js` — `makeCell()`
+**Files:** Table extension files
 
-Every cell attaches `keydown`, `input`, `paste`, `focus`, `blur`, `mouseup`, `keyup`, `compositionstart`, `compositionend`, `click`, `pointerdown`, and `contextmenu` listeners to its DOM elements. When the widget re-renders (e.g., `updateDOM`), old cell DOM is discarded but listeners are not explicitly removed. While GC usually handles this, the `view` reference captured in closures can keep entire editor state alive.
+The table extension has been migrated to TypeScript, but the migration still needs type cleanup in several modules.
 
-**Suggestion:** Use `ViewPlugin` with a proper `destroy()` method to clean up listeners. Alternatively, attach listeners to the widget wrapper (which persists) and use event delegation with `event.target.closest('td, th')` to find the relevant cell. This way listeners are attached once per table, not once per cell.
-
----
-
-## 7. Simplify Focus Management
-
-**Files:** `tableExtension.js` — `dispatchModel()`, `tableCell.js` — `restoreFocusAfterHistory()`
-
-Focus restoration uses double `requestAnimationFrame`, manual DOM traversal, and position calculations. The `dispatchModel` function has a `focusTarget` closure that queries the DOM, finds the right cell, scrolls it into view, and places the caret. This is fragile — any DOM structure change breaks it.
-
-**Suggestion:** Use CodeMirror's `EditorView.requestMeasure()` or a `StateEffect` that stores the desired focus position in the editor state. Then a `ViewPlugin` reads that effect and focuses the correct cell after the widget rebuilds. This decouples focus logic from DOM timing.
+**Progress:** The table files are TypeScript and core types/guards are defined for the model, parser, and shared operations. Remaining table modules still report TypeScript diagnostics; this item stays partial until those are resolved.
 
 ---
 
-## 8. Make `findCurrentTableRange` More Robust
+## 5. Extract Hardcoded Constants to a Config Object — COMPLETE
 
-**File:** `tableExtension.js` (lines 102–215)
+**Files:** `tableExtension.ts`, `tableModel.ts`, `tableCell.ts`
+
+**Resolution:** Geometry, scroll offsets, fallback positions, parser budgets, and table interaction delays are centralized in `tableConfig.ts`.
+
+---
+
+## 6. Fix Memory Leaks from Uncleaned Event Listeners — COMPLETE
+
+**File:** `tableCell.ts` — `makeCell()`
+
+Cell DOM gets multiple event listeners. When widget DOM is discarded, those listeners must be cleaned up to release closures that reference the editor view.
+
+**Resolution:** Cell listeners share an `AbortController`; row/cell removal and widget destruction dispose those listeners.
+
+---
+
+## 7. Simplify Focus Management — COMPLETE
+
+**Files:** `tableExtension.ts` — `dispatchModel()`, `tableCell.ts` — `restoreFocusAfterHistory()`
+
+Focus restoration now uses `EditorView.requestMeasure()` to wait for the widget rebuild before finding and focusing the cell.
+
+---
+
+## 8. Make `findCurrentTableRange` More Robust — COMPLETE
+
+**File:** `tableExtension.ts`
 
 This function tries multiple strategies to find a table's range: `dataset.tableFrom`, `lineBlockAtElement`, `posAtDOM`, syntax tree iteration, and DOM order matching. The fallback chain is complex and the DOM-order matching (line 188–196) can silently match the wrong table if tables are reordered.
 
@@ -112,19 +88,19 @@ This function tries multiple strategies to find a table's range: `dataset.tableF
 
 ---
 
-## 9. Debounce `dispatchModelFromDom` More Aggressively
+## 9. Debounce `dispatchModelFromDom` More Aggressively — COMPLETE
 
-**File:** `tableExtension.js` (lines 758–775)
+**File:** `tableExtension.ts`
 
-`dispatchModelFromDom` is called on every `input` event (via `commit()` in tableCell.js). It reads the entire table model from DOM, serializes it, and dispatches a transaction. The 60ms debounce helps, but for large tables (50+ cells), `readModelFromDom` + `serializeTable` can be expensive.
+`dispatchModelFromDom` reads and serializes the whole table. This can be expensive for large tables.
 
-**Suggestion:** Track which cell changed and only update that cell's content in the serialized output, rather than re-serializing the entire table. Alternatively, use a `requestAnimationFrame`-based debounce instead of `setTimeout` to align with the browser's render cycle.
+**Resolution:** DOM synchronization is coalesced with `requestAnimationFrame`; dispatch writes only the changed text range. Model reading and serialization still cover the whole table.
 
 ---
 
-## 10. Add Error Boundaries and Defensive Checks
+## 10. Add Error Boundaries and Defensive Checks — COMPLETE
 
-**Files:** `tableExtension.js`, `tableModel.js`, `tableCell.js`
+**Files:** `tableExtension.ts`, `tableModel.ts`, `tableCell.ts`
 
 Many operations assume the DOM structure is correct:
 - `wrap.querySelector('thead tr')` could return `null` if the table is malformed
@@ -134,4 +110,4 @@ Many operations assume the DOM structure is correct:
 
 When these assumptions fail, the errors are cryptic (e.g., "Cannot read properties of null") and hard to trace back to the root cause.
 
-**Suggestion:** Add a `assertTableIntegrity(wrap)` function that validates the DOM structure before operations. Use optional chaining consistently. Wrap risky operations in try-catch with descriptive error messages that include the table's `data-table-from` position and the operation being performed. This makes debugging much faster.
+**Resolution:** `assertTableIntegrity()` validates table DOM shape, and `assertTableModel()` checks the model before serialization. Detached elements and risky DOM lookups are guarded at their call sites.

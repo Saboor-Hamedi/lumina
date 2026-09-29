@@ -11,7 +11,7 @@
  */
 
 import { readModelFromDom } from './tableModel'
-import { dispatchModel } from './tableExtension'
+import { dispatchModel } from './tableShared'
 
 /**
  * Extracts clean plaintext from a markdown cell for accurate sorting comparisons.

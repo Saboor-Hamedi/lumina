@@ -1,4 +1,4 @@
-import { dispatchModel, placeCaretAtEnd } from './tableExtension'
+import { dispatchModel, placeCaretAtEnd } from './tableShared'
 import { readModelFromDom } from './tableModel'
 import { redistributeColumnWidths } from './tableResize'
 

@@ -301,3 +301,344 @@
 | 10 | Add Error Boundaries and Defensive Checks | **Not Done** |
 
 **Score: 2/10 done, 3/10 partial, 5/10 not started**
+
+---
+
+# App-Wide Investigation — Improvement Suggestions
+
+## Critical Security Issues
+
+### 26. Hardcoded OAuth Client Secret
+
+**What:** `client_secret: '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'` appears in 3 files: `driveAuthHelper.js`, `googleAuth.js`, `gmailService.ts`.
+
+**Why it matters:** Client secrets should never be in source code. Anyone with repo access can impersonate the app.
+
+**Suggestion:** Move to environment variables or Electron `safeStorage`. Use `process.env.GOOGLE_CLIENT_SECRET` and fail fast if not set.
+
+---
+
+### 27. No `will-navigate` Handler
+
+**What:** The main process doesn't prevent the renderer from navigating to external URLs.
+
+**Why it matters:** A compromised renderer could navigate to phishing sites or malicious content.
+
+**Suggestion:** Add `win.webContents.on('will-navigate', (event, url) => { ... })` that only allows same-origin navigations.
+
+---
+
+### 28. No `setWindowOpenHandler`
+
+**What:** `window.open()` calls from the renderer are uncontrolled.
+
+**Why it matters:** A compromised renderer could open arbitrary windows.
+
+**Suggestion:** Add `win.webContents.setWindowOpenHandler(({ url }) => { ... })` that validates URLs before opening.
+
+---
+
+### 29. API Keys in localStorage
+
+**What:** `resolveProviderConfig` falls back to `localStorage.getItem('lumina_deepseek_key')`.
+
+**Why it matters:** localStorage is accessible to any XSS attack. API keys should only be in `safeStorage`.
+
+**Suggestion:** Remove the localStorage fallback. Only use `safeStorage` for API key storage.
+
+---
+
+### 30. No IPC Input Validation
+
+**What:** IPC handlers accept raw payloads from renderer with no schema validation.
+
+**Why it matters:** Malformed data can crash the app or cause unexpected behavior.
+
+**Suggestion:** Add zod schemas for all IPC handler inputs. Validate before processing.
+
+---
+
+## Architecture Issues
+
+### 31. Monolithic `index.js` (1235 lines)
+
+**What:** 40+ IPC handlers registered inline in the main entry file.
+
+**Why it matters:** Hard to maintain, test, and debug. Changes risk breaking unrelated handlers.
+
+**Suggestion:** Split into domain-specific handler modules: `workspaceHandlers`, `searchHandlers`, `exportHandlers`, `authHandlers`, etc.
+
+---
+
+### 32. `aiStreamRunner.ts` is 1336 lines
+
+**What:** God file handling streaming, tool execution, display building, fallback parsing, and DSML interception.
+
+**Why it matters:** Extremely hard to maintain and test. Changes in one area can break others.
+
+**Suggestion:** Split into: `StreamDisplayBuilder`, `ToolCallInterceptor`, `FallbackBlockParser`, `StreamOrchestrator`.
+
+---
+
+### 33. `aiPromptBuilder.ts` is 667 lines
+
+**What:** Massive system prompt string concatenation with inline conditional logic.
+
+**Why it matters:** Hard to read, test, and modify. Prompt injection risk from unsanitized content.
+
+**Suggestion:** Use a builder pattern with composable prompt sections. Sanitize file contents before injecting.
+
+---
+
+### 34. `Graph.jsx` is 835 lines
+
+**What:** 3D rendering, force simulation, UI controls, and state management in one file.
+
+**Why it matters:** Hard to maintain and test. Performance issues hard to isolate.
+
+**Suggestion:** Split into `GraphScene`, `GraphControls`, `GraphSidebar`, `GraphMinimap`.
+
+---
+
+### 35. No Dependency Injection
+
+**What:** All managers are singletons (`export default new WorkspaceManager()`).
+
+**Why it matters:** Makes testing and mocking extremely difficult. Hard to swap implementations.
+
+**Suggestion:** Use a simple DI container or pass dependencies through constructor/factory functions.
+
+---
+
+### 36. Custom Events Instead of State Management
+
+**What:** Heavy reliance on `window.dispatchEvent(new CustomEvent(...))` for cross-component communication.
+
+**Why it matters:** Fragile, hard to trace, and not type-safe. Events can be missed or fired in wrong order.
+
+**Suggestion:** Use Zustand store or React context for cross-component state.
+
+---
+
+## Infrastructure Gaps
+
+### 37. No CI/CD Pipeline
+
+**What:** No GitHub Actions, no automated testing, no automated builds.
+
+**Why it matters:** No automated quality assurance. Cross-platform issues go undetected.
+
+**Suggestion:** Add GitHub Actions workflow: lint → typecheck → unit tests → e2e tests → build. Run on every PR.
+
+---
+
+### 38. Empty `index.d.ts` for Rust NAPI Module
+
+**What:** The TypeScript type definitions file is 0 bytes.
+
+**Why it matters:** TypeScript consumers have no type safety when calling Rust functions.
+
+**Suggestion:** Add proper type definitions for `scan_vault`, `fuzzy_search`, `build_graph_data`.
+
+---
+
+### 39. Committed `.node` Binaries
+
+**What:** `lumina-core-win32-x64-msvc.node` and `lumina-core-win32-x64-gnu.node` are committed to the repo.
+
+**Why it matters:** Platform-specific binaries should be built in CI, not version-controlled.
+
+**Suggestion:** Add to `.gitignore`. Build in CI for each target platform.
+
+---
+
+### 40. No Integration Test Layer
+
+**What:** Unit tests and E2E tests exist, but no middle ground.
+
+**Why it matters:** IPC handlers, workspace operations, and AI streaming lack automated testing.
+
+**Suggestion:** Add integration tests that test IPC handlers with a mocked renderer.
+
+---
+
+### 41. No Error Tracking Service
+
+**What:** Errors are logged to console and local files only.
+
+**Why it matters:** No production error visibility. Hard to debug issues reported by users.
+
+**Suggestion:** Add Sentry or Bugsnag integration. Capture errors with context (user, workspace, recent actions).
+
+---
+
+### 42. No Bundle Size Monitoring
+
+**What:** Three.js, d3-force, CodeMirror, and mermaid are all heavy dependencies.
+
+**Why it matters:** Bundle bloat affects startup time and memory usage.
+
+**Suggestion:** Add `size-limit` or similar tool. Set budgets and fail CI if exceeded.
+
+---
+
+## Feature Gaps
+
+### 43. No Vim Mode
+
+**What:** `vimMode` setting exists in settings but no Vim keymap extension found.
+
+**Why it matters:** Vim users can't use the app efficiently.
+
+**Suggestion:** Add CodeMirror Vim keymap extension. Toggle via the existing `vimMode` setting.
+
+---
+
+### 44. No Collaborative Editing
+
+**What:** No real-time collaboration support.
+
+**Why it matters:** Teams can't work on the same note simultaneously.
+
+**Suggestion:** Add CRDT-based collaboration (e.g., Yjs). Start with read-only sharing, then add full collaboration.
+
+---
+
+### 45. No Diff View
+
+**What:** No side-by-side or inline diff for reviewing changes.
+
+**Why it matters:** Users can't easily see what changed between versions.
+
+**Suggestion:** Add a diff view using a library like `diff-match-patch`. Show changes between current and previous versions.
+
+---
+
+### 46. No Video/Audio Playback
+
+**What:** Only images and PDFs are supported in media viewer.
+
+**Why it matters:** Users can't embed or play audio/video files.
+
+**Suggestion:** Add `<video>` and `<audio>` element support in the editor and media viewer.
+
+---
+
+### 47. No Graph Export
+
+**What:** Can't export the knowledge graph as an image.
+
+**Why it matters:** Users want to share their knowledge graph.
+
+**Suggestion:** Add "Export as PNG/SVG" option in the graph view toolbar.
+
+---
+
+### 48. No Graph Layout Persistence
+
+**What:** Graph layout is not saved; nodes reset to default positions on re-render.
+
+**Why it matters:** Users lose their custom layout every time they reopen the graph.
+
+**Suggestion:** Save node positions to localStorage or workspace settings. Restore on load.
+
+---
+
+### 49. No Conversation Branching
+
+**What:** Chat sessions are linear; no ability to branch from a specific message.
+
+**Why it matters:** Users can't explore alternative responses without losing context.
+
+**Suggestion:** Add a "Branch from here" button on each AI response. Create a new session starting from that point.
+
+---
+
+### 50. No AI Response Caching
+
+**What:** Identical queries re-hit the API.
+
+**Why it matters:** Wastes money and time. Same question gets different answers.
+
+**Suggestion:** Add a semantic cache. Hash the query + context and cache responses for 24 hours.
+
+---
+
+## Code Quality Issues
+
+### 51. Inconsistent File Extensions
+
+**What:** Mix of `.tsx`, `.jsx`, `.ts`, `.js` across features.
+
+**Why it matters:** Confusing and inconsistent. Hard to know which files are typed.
+
+**Suggestion:** Standardize on `.tsx` for React components and `.ts` for non-React. Migrate `.jsx` → `.tsx` and `.js` → `.ts`.
+
+---
+
+### 52. 40+ CSS Files in `assets/`
+
+**What:** Overlapping concerns, no clear organization.
+
+**Why it matters:** Hard to find styles. Risk of conflicting rules.
+
+**Suggestion:** Organize by feature. Use CSS modules or Tailwind for component-specific styles.
+
+---
+
+### 53. Console.log Everywhere
+
+**What:** Extensive use of `console.log`/`console.error` instead of a proper logging framework.
+
+**Why it matters:** No log levels, no filtering, no structured logging.
+
+**Suggestion:** Add a simple logging utility with levels (debug, info, warn, error). Filter by level in production.
+
+---
+
+### 54. `tsDevServerPlugin` is Fragile
+
+**What:** Hardcoded module paths in Vite config.
+
+**Why it matters:** Will break if modules are renamed or moved.
+
+**Suggestion:** Remove the plugin. Migrate all files to proper TypeScript.
+
+---
+
+### 55. README Version Badge Outdated
+
+**What:** Says 1.0.44, actual is 1.0.65.
+
+**Why it matters:** Confuses users and contributors.
+
+**Suggestion:** Automate version badge generation from `package.json`.
+
+---
+
+## Summary
+
+| Category | Count |
+|----------|-------|
+| Export System | 25 |
+| Security | 5 |
+| Architecture | 6 |
+| Infrastructure | 6 |
+| Feature Gaps | 8 |
+| Code Quality | 5 |
+| **Total** | **55** |
+
+---
+
+## Top 10 Priority Recommendations
+
+1. **Move OAuth secrets to environment variables** — critical security fix
+2. **Add CI/CD pipeline** — automated testing, building, publishing
+3. **Split `index.js` into domain-specific IPC handlers** — maintainability
+4. **Split `aiStreamRunner.ts` and `aiPromptBuilder.ts`** — extract focused units
+5. **Add IPC payload validation with zod** — prevent crashes
+6. **Add `will-navigate` and `setWindowOpenHandler`** — security hardening
+7. **Add error tracking service (Sentry)** — production error visibility
+8. **Add integration test layer** — test IPC handlers with mocked renderer
+9. **Add lazy loading for all feature components** — reduce bundle size
+10. **Add prompt injection sanitization** — sanitize file contents before AI prompts

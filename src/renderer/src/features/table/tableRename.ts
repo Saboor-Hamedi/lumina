@@ -1,5 +1,6 @@
 import { serializeTable, readModelFromDom } from './tableModel'
-import { findCurrentTableRange, dispatchModel } from './tableExtension'
+import { findCurrentTableRange, dispatchModel } from './tableShared'
+import { TABLE_CONFIG } from './tableConfig'
 
 /**
  * Creates the Table Title display and interactive Rename Dropdown popover.
@@ -161,7 +162,7 @@ export function createTableTitleDOM(view, wrap, model) {
     setTimeout(() => {
       input.focus({ preventScroll: true })
       input.select()
-    }, 10)
+    }, TABLE_CONFIG.interactionDelayMs.renameFocus)
 
     document.addEventListener('mousedown', onOutsideClick, true)
     document.addEventListener('keydown', onKeyDown, true)

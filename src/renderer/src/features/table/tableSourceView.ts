@@ -1,5 +1,5 @@
 import { serializeTable, serializeTableOnly, readModelFromDom, parseMarkdownTableText } from './tableModel'
-import { findCurrentTableRange, dispatchModel } from './tableExtension'
+import { findCurrentTableRange, dispatchModel } from './tableShared'
 
 /**
  * Creates the [ Table | Source ] segmented toggle button for the table header.

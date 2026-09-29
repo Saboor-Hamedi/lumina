@@ -1,9 +1,10 @@
-import { dispatchModel } from './tableExtension'
+import { dispatchModel } from './tableShared'
 import { readModelFromDom } from './tableModel'
 import { icons } from './tableIcons'
 import { copyTableAs, exportTableAsCSV, duplicateTable } from './tableActions'
 import { applyColumnSort } from './tableSort'
 import { redistributeColumnWidths } from './tableResize'
+import { TABLE_CONFIG } from './tableConfig'
 
 export function cellRowIndex(cell) {
   if (!cell) return -1
@@ -535,7 +536,7 @@ export function openCellMenu(view, cell, x, y) {
         // against the visible (unobstructed) table cells.
         setTimeout(() => {
           if (wrap.__selectAll) wrap.__selectAll()
-        }, 50)
+        }, TABLE_CONFIG.interactionDelayMs.selectAll)
       }
     )
   )
@@ -847,7 +848,7 @@ export function openCellMenu(view, cell, x, y) {
               submenuEl.classList.remove('open')
               activeSubmenuEl = null
             }
-          }, 150)
+          }, TABLE_CONFIG.interactionDelayMs.submenuClose)
         })
 
         submenuEl.addEventListener('pointerenter', () => {
@@ -862,7 +863,7 @@ export function openCellMenu(view, cell, x, y) {
             submenuEl.style.display = 'none'
             submenuEl.classList.remove('open')
             if (activeSubmenuEl === submenuEl) activeSubmenuEl = null
-          }, 150)
+          }, TABLE_CONFIG.interactionDelayMs.submenuClose)
         })
 
         btn.addEventListener('click', (e) => {

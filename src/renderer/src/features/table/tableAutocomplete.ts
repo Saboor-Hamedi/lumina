@@ -1,6 +1,9 @@
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
+import type { WorkspaceNote } from '../../core/store/workspaceStore'
 
-const fuzzyMatch = (str, query) => {
+type AutocompleteMatch = WorkspaceNote & { title: string }
+
+const fuzzyMatch = (str: string, query: string): boolean => {
   let i = 0,
     j = 0
   const lowerStr = str.toLowerCase()
@@ -12,18 +15,19 @@ const fuzzyMatch = (str, query) => {
 }
 
 export class TableAutocomplete {
-  constructor(source, cell, commit, getCaretCharOffset, setCaretCharOffset) {
-    this.source = source
-    this.cell = cell
-    this.commit = commit
-    this.getCaretCharOffset = getCaretCharOffset
-    this.setCaretCharOffset = setCaretCharOffset
+  private activeDropdown: HTMLDivElement | null = null
+  private autocompleteMatches: AutocompleteMatch[] = []
+  private autocompleteIndex = 0
+  private currentQuery = ''
+  private lastOffset: number | null = null
 
-    this.activeDropdown = null
-    this.autocompleteMatches = []
-    this.autocompleteIndex = 0
-    this.currentQuery = ''
-    this.lastOffset = null
+  constructor(
+    private source: HTMLElement,
+    private cell: HTMLElement,
+    private commit: () => void,
+    private getCaretCharOffset: (source: HTMLElement) => number | null,
+    private setCaretCharOffset: (source: HTMLElement, offset: number) => void
+  ) {
   }
 
   close() {
@@ -79,7 +83,7 @@ export class TableAutocomplete {
       li.appendChild(label)
       li.appendChild(detail)
 
-      li.addEventListener('mousedown', (e) => {
+      li.addEventListener('mousedown', (e: MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
         this.apply(m.title)
@@ -95,8 +99,8 @@ export class TableAutocomplete {
     }
   }
 
-  apply(title) {
-    const fullText = this.source.textContent
+  apply(title: string) {
+    const fullText = this.source.textContent || ''
     const offset = this.lastOffset !== null ? this.lastOffset : this.getCaretCharOffset(this.source)
     if (offset === null || offset === undefined) return
 
@@ -143,6 +147,7 @@ export class TableAutocomplete {
 
     this.autocompleteMatches = snippets
       .filter((s) => s.title && fuzzyMatch(s.title, query))
+      .map((note) => ({ ...note, title: note.title! }))
       .sort((a, b) => a.title.localeCompare(b.title))
       .slice(0, 8)
 
@@ -173,7 +178,7 @@ export class TableAutocomplete {
     this.render()
   }
 
-  handleKeyDown(event) {
+  handleKeyDown(event: KeyboardEvent): boolean {
     if (!this.activeDropdown) return false
 
     if (event.key === 'Escape') {
