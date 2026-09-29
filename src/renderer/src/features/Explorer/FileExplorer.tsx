@@ -43,6 +43,7 @@ import { countExplorerPerfRender, finishExplorerPerfPaint, markExplorerPerf } fr
 import { useExplorerPaste } from './useExplorerPaste'
 import { ExplorerVirtuosoList } from './ExplorerVirtuosoList'
 import { ExplorerModals } from './ExplorerModals'
+import { BatchExportDialog } from './components/BatchExportDialog'
 
 export interface FileExplorerProps {
   isOpen?: boolean
@@ -328,6 +329,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     return (allSnippets || snippets || []).filter((s: any) => selectedNoteIds.has(s.id))
   }, [allSnippets, snippets, selectedNoteIds])
 
+  const [batchExportNotes, setBatchExportNotes] = useState<any[] | null>(null)
+
   // Context menu actions for folders and multi-selections
   const {
     folderContext,
@@ -348,6 +351,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     selectedCount: totalSelectedCount,
     selectedNotes,
     onSummarizeSelected: (notes: any) => summarizeNotes(notes),
+    onExportSelected: (notes: any) => setBatchExportNotes(notes),
     onRequestBulkDelete: () => setBulkDeleteModalOpen(true),
     clearSelection
   })
@@ -672,6 +676,12 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
         totalSelectedCount={totalSelectedCount}
         selectedFolderIds={selectedFolderIds}
         selectedNoteIds={selectedNoteIds}
+      />
+
+      <BatchExportDialog
+        isOpen={!!batchExportNotes}
+        notes={batchExportNotes || []}
+        onClose={() => setBatchExportNotes(null)}
       />
     </>
   )

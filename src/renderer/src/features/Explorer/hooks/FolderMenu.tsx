@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react'
-import { Trash2, X, Sparkles } from 'lucide-react'
+import { Trash2, X, Sparkles, Download } from 'lucide-react'
 import { useContextMenu } from '../../Navigation/hooks/useContextMenu'
 
 interface Snippet {
@@ -33,6 +33,7 @@ interface UseFolderContextMenuParams {
   selectedCount?: number
   selectedNotes?: Snippet[]
   onSummarizeSelected?: (notes: Snippet[]) => void
+  onExportSelected?: (notes: Snippet[]) => void
   onRequestBulkDelete?: () => void
   clearSelection?: () => void
 }
@@ -58,6 +59,7 @@ export function useFolderContextMenu({
   selectedCount = 0,
   selectedNotes = [],
   onSummarizeSelected,
+  onExportSelected,
   onRequestBulkDelete,
   clearSelection
 }: UseFolderContextMenuParams): FolderContextMenuResult {
@@ -133,6 +135,14 @@ export function useFolderContextMenu({
             onSummarizeSelected?.(selectedNotes)
           }
         })
+        options.push({
+          label: `Export ${selectedNotes.length} Notes…`,
+          icon: React.createElement(Download, { size: 14 }),
+          onClick: () => {
+            setFolderContext(null)
+            onExportSelected?.(selectedNotes)
+          }
+        })
         options.push({ type: 'divider' })
       }
       options.push(
@@ -157,7 +167,7 @@ export function useFolderContextMenu({
       return options
     }
     return defaultMenuOptions as ContextMenuOption[]
-  }, [selectedCount, selectedNotes, onSummarizeSelected, defaultMenuOptions, onRequestBulkDelete, clearSelection])
+  }, [selectedCount, selectedNotes, onSummarizeSelected, onExportSelected, defaultMenuOptions, onRequestBulkDelete, clearSelection])
 
   const handleConfirmDeleteFolder = useCallback(async () => {
     if (!deleteConfirmFolder) return

@@ -1,6 +1,7 @@
 import * as aiSdk from 'ai'
 import type { AIToolExecutionResult } from '../types/ai.types'
 import { getPendingTasks } from '../services/aiWorkerManager'
+// @ts-ignore
 import { luminaMemory } from '../../../core/ai/memory'
 
 export interface DiagnoseSystemInput {

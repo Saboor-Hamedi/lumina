@@ -10,65 +10,23 @@
 
 import { dialog } from 'electron'
 import fs from 'fs/promises'
-import { Marked } from 'marked'
-import { markedHighlight } from 'marked-highlight'
-import hljs from 'highlight.js'
+import path from 'path'
+import { renderMarkdown, escapeHtml } from './exportUtils.js'
 import WorkspaceManager from '../main/workspace/workspaceManager.js'
 
 /**
  * Builds a self-contained, beautifully styled HTML document from markdown.
+ * @param {string} title
+ * @param {string} content Markdown source
+ * @param {object} [opts]
+ * @param {boolean} [opts.toc=true] Whether to prepend a table of contents
  */
-export async function generateCleanHTML(title, content) {
-  const marked = new Marked(
-    markedHighlight({
-      langPrefix: 'hljs language-',
-      highlight(code, lang) {
-        if (lang === 'mermaid') return code
-        const language = hljs.getLanguage(lang) ? lang : 'plaintext'
-        return hljs.highlight(code, { language }).value
-      }
-    })
-  )
-
-  let processedContent = content || ''
-
-  // Convert local images to base64 data URIs for 100% portable HTML
-  const imgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g
-  const matches = [...processedContent.matchAll(imgRegex)]
-
-  for (const match of matches) {
-    const fullMatch = match[0]
-    const alt = match[1]
-    const url = match[2]
-
-    if (!url.startsWith('http') && !url.startsWith('data:')) {
-      try {
-        let cleanUrl = url.startsWith('/') ? url.slice(1) : url
-        if (cleanUrl.startsWith('<') && cleanUrl.endsWith('>')) {
-          cleanUrl = cleanUrl.slice(1, -1)
-        }
-        cleanUrl = decodeURIComponent(cleanUrl)
-
-        const buffer = await WorkspaceManager.readAsset(cleanUrl)
-        let mimeType = 'image/png'
-        const lowerUrl = cleanUrl.toLowerCase()
-        if (lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg')) mimeType = 'image/jpeg'
-        else if (lowerUrl.endsWith('.gif')) mimeType = 'image/gif'
-        else if (lowerUrl.endsWith('.svg')) mimeType = 'image/svg+xml'
-        else if (lowerUrl.endsWith('.webp')) mimeType = 'image/webp'
-
-        const base64 = buffer.toString('base64')
-        const dataUri = `data:${mimeType};base64,${base64}`
-        processedContent = processedContent.replace(fullMatch, `![${alt}](${dataUri})`)
-      } catch (e) {
-        console.error('[ExportBundle] Failed to convert image to base64:', url, e)
-      }
-    }
-  }
-
-  // Convert wikilinks to clean HTML links
-  processedContent = processedContent.replace(/\[\[(.*?)\]\]/g, '<span class="wikilink">$1</span>')
-  const htmlBody = await marked.parse(processedContent)
+export async function generateCleanHTML(title, content, opts = {}) {
+  const { toc = true } = opts
+  const { html: htmlBody, tocHtml } = await renderMarkdown(content, {
+    wikilinkMode: 'span',
+    toc
+  })
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -98,18 +56,29 @@ export async function generateCleanHTML(title, content) {
       }
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+    ::-webkit-scrollbar { width: 11px; height: 11px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 999px;
+      border: 3px solid transparent;
+      background-clip: padding-box;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); background-clip: padding-box; }
+    ::-webkit-scrollbar-corner { background: transparent; }
     body {
       font-family: var(--font);
       background: var(--bg);
       color: var(--text);
       line-height: 1.7;
-      padding: 40px 20px;
+      padding: 48px 24px;
       display: flex;
       justify-content: center;
     }
     .container {
       width: 100%;
-      max-width: 820px;
+      max-width: 780px;
     }
     h1, h2, h3, h4, h5, h6 {
       color: var(--text);
@@ -189,13 +158,70 @@ export async function generateCleanHTML(title, content) {
     }
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
+    .toc {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin: 0 0 2em 0;
+    }
+    .toc-title {
+      font-size: 1.1em;
+      margin-top: 0;
+      margin-bottom: 0.6em;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .toc-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+    .toc-list li {
+      margin: 0.3em 0;
+    }
+    .toc-l2 { padding-left: 1.2em; }
+    .toc-l3 { padding-left: 2.4em; }
+    .toc-list a {
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+    .toc-list a:hover {
+      color: var(--accent);
+      text-decoration: underline;
+    }
     ul, ol { margin: 1.2em 0; padding-left: 24px; }
     li { margin-bottom: 0.4em; }
     hr { border: none; height: 1px; background: var(--border); margin: 2em 0; }
+    .doc-header {
+      margin-bottom: 2em;
+      padding-bottom: 1em;
+      border-bottom: 2px solid var(--accent);
+    }
+    .doc-title {
+      font-size: 2em;
+      font-weight: 800;
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+    .doc-meta {
+      margin-top: 0.4em;
+      font-size: 0.75em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
   </style>
 </head>
 <body>
   <div class="container">
+    <header class="doc-header">
+      <h1 class="doc-title">${escapeHtml(title || 'Untitled')}</h1>
+      <div class="doc-meta">Exported from Lumina</div>
+    </header>
+    ${tocHtml}
     ${htmlBody}
   </div>
 </body>

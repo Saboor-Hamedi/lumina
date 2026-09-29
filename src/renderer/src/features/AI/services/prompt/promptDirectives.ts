@@ -1,286 +1,36 @@
-import { extractGraphContext } from './graphContext'
-import { getDynamicExemplars } from './intentRouter'
-import type { IntentCategoryType } from './intentRouter'
-import { luminaMemory } from '../../../core/ai/memory'
-import type { AIModeConfig, MentionItem } from '../types/ai.types'
-
 /**
- * AI Prompt Builder Service
- * Assembles context, resolves @mentions, builds workspace knowledge, and generates system prompts.
+ * ============================================================================
+ * Lumina AI System Prompt Directives
+ * ============================================================================
+ * 
+ * Modular directive blocks and instructions for the Lumina AI Copilot:
+ * 
+ * 1. Settings & Theme Awareness (`buildSettingsAwarenessBlock`):
+ *    - Informs the model of active UI theme, editor font, and line height.
+ *    - Prevents confusing theme with operational mode.
+ *    - Enforces strict anti-leak directives on API credentials.
+ * 
+ * 2. Native Intelligence & Badges (`buildLuminaIntelligenceBlock`):
+ *    - Describes interactive badge cards (<lumina-health>, <lumina-audit>,
+ *      <lumina-index>, <lumina-memory>, <lumina-activity>) and natural text protocols.
+ * 
+ * 3. Execution vs Conversational Mode Directives:
+ *    - Preserves exact workflows: conversational override, opt-in folder creation,
+ *      structured <think> reasoning steps, and tool execution instructions.
+ * 
+ * 4. Intent-Specific Directives (`getIntentDirectives`):
+ *    - Specialized mandatory instructions for DIAGNOSTICS, AUDIT_WIKILINKS, and QUERY_INDEX.
  */
 
-const normalizeTitle = (str?: string): string =>
-  (str || '')
-    .toLowerCase()
-    .replace(/[-_ .]/g, '')
-    .replace(/\.md$/, '')
+import type { AIModeConfig } from '../../types/ai.types'
+import type { SafeUserSettings } from './contextRetriever'
+import { sanitizeSafeSettings } from './contextRetriever'
 
-export const resolveMentions = (
-  message?: string,
-  attachedMentions: MentionItem[] = [],
-  vaultSnippets: any[] = []
-): MentionItem[] => {
-  const mentionedSnippets: MentionItem[] = []
-
-  if (attachedMentions && attachedMentions.length > 0) {
-    attachedMentions.forEach((snip) => {
-      if (!mentionedSnippets.some((ms) => ms.id === snip.id)) {
-        mentionedSnippets.push(snip)
-      }
-    })
-  }
-
-  if (!message || !vaultSnippets || vaultSnippets.length === 0) {
-    return mentionedSnippets
-  }
-
-  try {
-    // Match longest multi-word titles first so "@Types of RAG" matches as one entity
-    const sortedSnippets = [...vaultSnippets].sort(
-      (a, b) => (b.title?.length || 0) - (a.title?.length || 0)
-    )
-
-    for (const snip of sortedSnippets) {
-      if (!snip.title) continue
-      const escaped = snip.title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      const pattern = new RegExp(`@${escaped}(?=[\\s,;.!?]|$)`, 'i')
-      if (pattern.test(message)) {
-        if (!mentionedSnippets.some((ms) => ms.id === snip.id)) {
-          mentionedSnippets.push(snip)
-        }
-      }
-    }
-
-    // Fallback single-word mention scan
-    const singleMentionRegex = /@([^\s,;.!?]+)/g
-    const singleMentions = [...message.matchAll(singleMentionRegex)].map((m) => m[1])
-    singleMentions.forEach((mentionTitle) => {
-      const normMention = normalizeTitle(mentionTitle)
-      const found = vaultSnippets.find((s) => {
-        const normTitle = normalizeTitle(s.title || '')
-        return (
-          normTitle === normMention ||
-          normTitle.includes(normMention) ||
-          normMention.includes(normTitle)
-        )
-      })
-      if (found && !mentionedSnippets.some((ms) => ms.id === found.id)) {
-        mentionedSnippets.push(found)
-      }
-    })
-  } catch (err) {
-    console.warn('[AIPromptBuilder] Mention scan failed:', err)
-  }
-
-  return mentionedSnippets
-}
-
-export const resolveReferencedFiles = (
-  message?: string,
-  vaultSnippets: any[] = [],
-  mentionedSnippets: MentionItem[] = []
-): any[] => {
-  const requestedFiles: any[] = []
-  if (!message || !vaultSnippets) return requestedFiles
-
-  try {
-    const cleanMessage = message.toLowerCase().replace(/\\/g, '/')
-    vaultSnippets.forEach((s) => {
-      const rawTitle = String(s.title || '').trim()
-      if (!rawTitle || rawTitle.length < 3) return
-      if (
-        mentionedSnippets.some((m) => m.id === s.id) ||
-        requestedFiles.some((f) => f.id === s.id)
-      ) {
-        return
-      }
-
-      const aliases = [
-        rawTitle,
-        rawTitle.replace(/\.[^.]+$/, ''),
-        s.fileName,
-        s.path,
-        s.folderId ? `${s.folderId}/${rawTitle}` : rawTitle
-      ]
-        .filter((alias): alias is string => typeof alias === 'string' && alias.trim().length >= 3)
-        .map((alias) => alias.trim().toLowerCase().replace(/\\/g, '/'))
-      const matched = aliases.some((alias) => {
-        const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-        const pattern = new RegExp(`(^|[^a-z0-9_-])${escaped}(?=$|[^a-z0-9_-])`, 'i')
-        return pattern.test(cleanMessage)
-      })
-      if (matched) {
-        requestedFiles.push(s)
-      }
-    })
-    if (requestedFiles.length > 5) requestedFiles.length = 5
-  } catch (err) {
-    console.warn('[AIPromptBuilder] File mention detection failed:', err)
-  }
-
-  return requestedFiles
-}
-
-export interface WorkspaceRAGResult {
-  vaultContext: Array<{ file: string; text: string; score: number }>
-  vaultAccessNote: string
-}
-
-export const retrieveWorkspaceRAG = async (message?: string): Promise<WorkspaceRAGResult> => {
-  let vaultContext: Array<{ file: string; text: string; score: number }> = []
-  let vaultAccessNote = 'Synthesizing from general knowledge and active context.'
-
-  try {
-    const searchFn = (window as any).api?.searchWorkspace || (window as any).api?.searchVault
-    if (searchFn && message && message.trim()) {
-      const queryLength = message.trim().length
-      const adaptiveThreshold = queryLength > 100 ? 0.35 : 0.3
-      const cleanQuery = queryLength > 250 ? message.trim().slice(0, 250) : message.trim()
-      const searchResults = await searchFn(cleanQuery, {
-        threshold: adaptiveThreshold,
-        limit: 6,
-        rerank: true
-      })
-
-      if (searchResults?.length > 0) {
-        vaultContext = searchResults
-          .filter((chunk: any) => (chunk?.finalScore || chunk?.score || 0) >= 0.32)
-          .map((chunk: any) => ({
-            file: chunk?.metadata?.fileName || 'Unknown',
-            text: String(chunk?.text || '').trim().slice(0, 1000),
-            score: chunk?.finalScore || 0
-          }))
-          .slice(0, 5)
-
-        if (vaultContext.length > 0) {
-          vaultAccessNote = `Retrieved relevant context from workspace.`
-        }
-      }
-    }
-  } catch (searchErr) {
-    console.warn('[AIPromptBuilder] Workspace search failed:', searchErr)
-  }
-
-  return { vaultContext, vaultAccessNote }
-}
-
-export const truncateForContext = (text?: string, limit: number = 25000): string => {
-  if (!text || typeof text !== 'string') return ''
-  if (text.length <= limit) return text
-  return (
-    text.slice(0, limit) +
-    `\n\n*(Content truncated for performance: showing first ${limit} of ${text.length} characters)*`
-  )
-}
-
-export interface SafeUserSettings {
-  theme?: string
-  themeId?: string
-  fontSize?: number
-  fontFamily?: string
-  lineHeight?: number
-  showLineNumbers?: boolean
-  autoSave?: boolean
-  cursorStyle?: string
-  smoothScrolling?: boolean
-  inlineTitle?: boolean
-  inlineMetadata?: boolean
-  modernUi?: boolean
-  activeAIMode?: string
-  activeProvider?: string
-  activeModel?: string | null
-  [key: string]: any
-}
-
-/**
- * Strips any sensitive credentials, secret hashes, API keys, tokens, or encryption strings.
- * Guarantees that no raw or hashed API secrets can ever leak into the prompt.
- */
-export const sanitizeSafeSettings = (settings?: Record<string, any>): SafeUserSettings => {
-  if (!settings || typeof settings !== 'object') return {}
-
-  const forbiddenKeyPatterns = [
-    /key/i,
-    /token/i,
-    /secret/i,
-    /hash/i,
-    /password/i,
-    /auth/i,
-    /credential/i,
-    /googleuser/i
-  ]
-
-  const safe: Record<string, any> = {}
-
-  for (const [k, v] of Object.entries(settings)) {
-    // 1. Bar forbidden property names
-    if (forbiddenKeyPatterns.some((pattern) => pattern.test(k))) {
-      continue
-    }
-
-    // 2. Bar any values that look like hashes, encryption strings, or secrets
-    if (typeof v === 'string') {
-      const trimmed = v.trim()
-      if (trimmed.startsWith('enc:') || trimmed.startsWith('Bearer ') || trimmed.startsWith('sk-')) {
-        continue
-      }
-      if (trimmed.length > 60 && /^[A-Za-z0-9+/=_-]+$/.test(trimmed)) {
-        continue
-      }
-    }
-
-    if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
-      safe[k] = v
-    }
-  }
-
-  return safe as SafeUserSettings
-}
-
-export interface BuildSystemPromptParams {
-  modeCfg: AIModeConfig
-  mentionedSnippets?: MentionItem[]
-  requestedFiles?: any[]
-  requestedBrainDocs?: any[]
-  vaultContext?: Array<{ file: string; text: string; score: number }>
-  vaultAccessNote?: string
-  allSnippets?: any[]
-  allFolders?: string[]
-  selectedSnippet?: any | null
-  drafts?: Record<string, string>
-  contextSnippets?: any[]
-  detectedIntent?: IntentCategoryType | null
-  message?: string
-  activeTheme?: string
-  userSettings?: SafeUserSettings
-}
-
-export const buildSystemPrompt = async ({
-  modeCfg,
-  mentionedSnippets = [],
-  requestedFiles = [],
-  requestedBrainDocs = [],
-  vaultContext = [],
-  vaultAccessNote = '',
-  allSnippets = [],
-  allFolders = [],
-  selectedSnippet = null,
-  drafts = {},
-  contextSnippets = [],
-  detectedIntent = null,
-  activeTheme = 'Porcelain',
-  userSettings
-}: BuildSystemPromptParams): Promise<string> => {
-  const isExecutionMode =
-    modeCfg.enableTools !== false ||
-    detectedIntent === 'DIAGNOSTICS' ||
-    detectedIntent === 'AUDIT_WIKILINKS' ||
-    detectedIntent === 'QUERY_INDEX'
-  let systemPrompt = ''
-
-  await (luminaMemory as any).loadMemory()
-  const userMemoryBlock = (luminaMemory as any).getPromptBlock()
-
+export function buildSettingsAwarenessBlock(
+  userSettings?: SafeUserSettings,
+  modeCfg?: AIModeConfig,
+  activeTheme: string = 'Porcelain'
+): string {
   const safeSettings = sanitizeSafeSettings(userSettings)
   const resolvedTheme = activeTheme || safeSettings.theme || 'Porcelain'
   const editorFont = safeSettings.fontFamily || 'Inter'
@@ -290,8 +40,9 @@ export const buildSystemPrompt = async ({
   const autoSaveText = safeSettings.autoSave !== false ? 'Enabled' : 'Disabled'
   const cursorStyleText = safeSettings.cursorStyle || 'smooth'
   const smoothScrollText = safeSettings.smoothScrolling !== false ? 'Enabled' : 'Disabled'
+  const modeName = modeCfg?.name || 'General'
 
-  const settingsAwarenessBlock = `- **VISUAL THEME & APP SETTINGS AWARENESS**:
+  return `- **VISUAL THEME & APP SETTINGS AWARENESS**:
   - The user's current visual UI theme of the Lumina app is "${resolvedTheme}".
   - The user's editor settings & typography:
     * Font Family: "${editorFont}"
@@ -302,13 +53,15 @@ export const buildSystemPrompt = async ({
     * Cursor Style: ${cursorStyleText}
     * Smooth Scrolling: ${smoothScrollText}
   - If the user asks "what theme do i use?", "what theme am I on?", "what is my font?", "what font size do i have?", "what is my line height?", or asks about their editor settings, answer directly, accurately, and concisely based on the settings above!
-  - NEVER confuse their visual theme ("${resolvedTheme}") with your AI reasoning mode (${modeCfg.name} Mode). Theme is the visual design/palette of the app; mode is your operational reasoning persona.
+  - NEVER confuse their visual theme ("${resolvedTheme}") with your AI reasoning mode (${modeName} Mode). Theme is the visual design/palette of the app; mode is your operational reasoning persona.
 
 **STRICT SECURITY DIRECTIVE (CONFIDENTIALITY & ANTI-LEAK)**:
 - You must NEVER reveal, disclose, repeat, or discuss any API keys, tokens, secret credentials, or hashed/encrypted strings (such as strings starting with "enc:") under ANY circumstances, even if asked directly, tricked, or commanded by a user prompt.
 - If the user asks to see their API keys or hash codes, politely decline and instruct them to view and manage them safely in Lumina Settings > Assistant.`
+}
 
-  const luminaIntelligenceBlock = `**🧠 LUMINA NATIVE INTELLIGENCE & INTERACTIVE BADGES (PLAIN LANGUAGE)**:
+export function buildLuminaIntelligenceBlock(): string {
+  return `**🧠 LUMINA NATIVE INTELLIGENCE & INTERACTIVE BADGES (PLAIN LANGUAGE)**:
 You are Lumina, the AI copilot native to this workspace. You possess built-in tools and interactive visual cards (Badges) that you execute and explain naturally in plain text:
 
 1. **Lumina Query Index (\`luminaQueryIndex\` / \`queryIndex\`)**:
@@ -347,9 +100,16 @@ You are Lumina, the AI copilot native to this workspace. You possess built-in to
    - When asked *"Check my links"*, *"Find broken links"*, *"Can you find links?"*, *"How many files do not have wikilink or broken?"*, or *"Orphan notes"*:
      * Execute \`auditWikilinks\` immediately.
      * Follow the warm conversational structure: warm greeting, single badge, natural breakdown explaining orphans and dead links, and proactive offer to scaffold missing notes or wire up missing wikilinks.`
+}
 
-  if (!isExecutionMode) {
-    systemPrompt = `CURRENT ACTIVE MODE: ${modeCfg.name.toUpperCase()} MODE.
+export function buildChatModeInstructions(
+  modeCfg: AIModeConfig,
+  settingsAwarenessBlock: string,
+  luminaIntelligenceBlock: string,
+  vaultAccessNote: string,
+  userMemoryBlock: string
+): string {
+  return `CURRENT ACTIVE MODE: ${modeCfg.name.toUpperCase()} MODE.
 ${modeCfg.systemAddon}
 
 You are Lumina, the intelligent and friendly AI assistant built directly into this AI-powered thinking environment. You are a highly capable intellectual thought partner.
@@ -382,13 +142,22 @@ ${luminaIntelligenceBlock}
 ${vaultAccessNote}
 
 ${userMemoryBlock}`
-  } else {
-    const modeNameUpper = (modeCfg?.name || 'CODE').toUpperCase()
-    const modeAddon = modeCfg?.systemAddon || ''
-    systemPrompt =
-      `CURRENT ACTIVE MODE: ${modeNameUpper} MODE.\n` +
-      `${modeAddon}\n\n` +
-      `CRITICAL MANDATORY EXECUTION DIRECTIVE:
+}
+
+export function buildExecutionModeInstructions(
+  modeCfg: AIModeConfig,
+  settingsAwarenessBlock: string,
+  luminaIntelligenceBlock: string,
+  vaultAccessNote: string,
+  userMemoryBlock: string
+): string {
+  const modeNameUpper = (modeCfg?.name || 'CODE').toUpperCase()
+  const modeAddon = modeCfg?.systemAddon || ''
+
+  return `CURRENT ACTIVE MODE: ${modeNameUpper} MODE.
+${modeAddon}
+
+CRITICAL MANDATORY EXECUTION DIRECTIVE:
 1. CONVERSATIONAL OVERRIDE:
    - If the user says "let's talk", "talk first", "just talk", "don't write", "do not write", "don't create yet", "no files", "just brainstorm", "in chat", or asks to discuss without saving to workspace, DO NOT call any workspace file tools. Respond purely in chat conversation.
 2. DIRECT WORKSPACE CREATION BY DEFAULT (NOT IN PLAN MODE):
@@ -515,129 +284,11 @@ ${luminaIntelligenceBlock}
 ${vaultAccessNote}
 
 ${userMemoryBlock}`
-  }
+}
 
-  if (mentionedSnippets.length > 0) {
-    systemPrompt +=
-      '\n\n**🎯 PRIMARY TARGET FILES (@-MENTIONED BY USER — YOUR HIGHEST FOCUS):**\n'
-    mentionedSnippets.forEach((snip: any) => {
-      const currentContent =
-        snip.isBrain
-          ? snip.code
-          : drafts?.[snip.id] !== undefined
-            ? drafts[snip.id]
-            : snip.code || ''
-      systemPrompt += `[Target Note: ${snip.title}]\n${truncateForContext(currentContent, 25000)}\n\n`
-    })
-    systemPrompt +=
-      'CRITICAL DIRECTIVE:\n' +
-      '1. The note content is ALREADY PROVIDED ABOVE in this prompt. Do NOT call readFile for this note.\n' +
-      '2. Answer the user\'s question immediately, accurately, and thoroughly using the content above.\n' +
-      '3. NEVER output conversational filler like "Let me check" or "Let me read what is in it". You ALREADY have the content right here, so give the actual answer immediately!\n'
-  }
-
-  if (requestedFiles.length > 0) {
-    systemPrompt +=
-      '\n\n**Workspace Files Referenced (content already provided below):**\n'
-    requestedFiles.forEach((f: any) => {
-      if (!mentionedSnippets.some((m) => m.id === f.id)) {
-        const currentContent =
-          drafts?.[f.id] !== undefined ? drafts[f.id] : f.code || ''
-        systemPrompt += `--- ${f.title} ---\n${truncateForContext(currentContent, 25000)}\n`
-      }
-    })
-    systemPrompt +=
-      'CRITICAL: The content of these files is ALREADY provided above. Answer questions about them directly right now without saying "let me read it".\n'
-  }
-
-  // Inject active open note if no explicit @-mentions were attached
-  if (mentionedSnippets.length === 0 && selectedSnippet) {
-    const activeCode =
-      drafts?.[selectedSnippet.id] !== undefined
-        ? drafts[selectedSnippet.id]
-        : selectedSnippet.code || ''
-    systemPrompt +=
-      `\n\n**🎯 CURRENTLY OPEN ACTIVE NOTE IN EDITOR: [Note: ${selectedSnippet.title}]**\n` +
-      `${truncateForContext(activeCode, 25000)}\n\n` +
-      `CRITICAL DIRECTIVE:\n` +
-      `1. The user is currently viewing this open note in their workspace editor (even if newly opened, empty, or an unsaved draft buffer).\n` +
-      `2. When they ask "what do you see", "what do you read", "what is this", or ask questions about their note or what tab they are on, acknowledge this active note directly. Never claim it does not exist or hasn't synced to disk.\n` +
-      `3. Answer and explain immediately based on this content without calling readFile or saying "let me read it"!\n`
-  }
-
-  // Only inject active tabs context if no explicit @-mentions were attached
-  if (mentionedSnippets.length === 0 && contextSnippets.length > 0) {
-    systemPrompt += '\n\n**Active Tabs Context:**\n'
-    contextSnippets.forEach((snip: any) => {
-      const currentCode =
-        drafts?.[snip.id] !== undefined ? drafts[snip.id] : snip.code || ''
-      systemPrompt += `[File: ${snip.title}]\n${truncateForContext(currentCode, 1500)}\n\n`
-    })
-  }
-
-  // Only inject generic workspace knowledge if no specific file is explicitly targeted
-  if (mentionedSnippets.length === 0 && vaultContext.length > 0) {
-    systemPrompt += `\n\n**Workspace Knowledge:**\n`
-    vaultContext.forEach((ctx, i) => {
-      systemPrompt += `[${i + 1}] source: ${ctx.file}\n${ctx.text}\n\n`
-    })
-  }
-
-  try {
-    const { getBrainSummaryList } = await import('./brainKnowledge')
-    const topics = getBrainSummaryList()
-    systemPrompt +=
-      `\n\n**LUMINA BUILT-IN KNOWLEDGE BASE (RAG)**:\n` +
-      `You have comprehensive built-in knowledge about Lumina (product vision, philosophy, keyboard shortcuts, markdown features like mermaid diagrams, LaTeX math, tables, callouts, and design specifications).\n` +
-      `Documented Topics Available in Knowledge Base:\n${topics}\n` +
-      `CRITICAL PRESENTATION RULES:\n` +
-      `- This is your native knowledge base. NEVER mention internal backend folders, paths like "brain/", "backend directory", or filesystem locations to the user.\n` +
-      `- When the user asks about Lumina (e.g., "tell me about lumina documentation", "how do shortcuts work?", "what is lumina's vision?"), synthesize the information directly, warmly, and authoritatively from a user perspective.\n`
-
-    if (requestedBrainDocs.length > 0) {
-      systemPrompt += '\n\n**Retrieved Documentation Context (ALREADY PROVIDED FOR IMMEDIATE USE):**\n'
-      requestedBrainDocs.forEach((b: any) => {
-        const topicHeader = b.breadcrumb
-          ? `[Topic: ${b.name || 'Guide'} > ${b.breadcrumb}]`
-          : `[Topic: ${b.name}]`
-        systemPrompt += `--- ${topicHeader} ---\n${truncateForContext(b.content, 15000)}\n\n`
-      })
-      systemPrompt +=
-        'CRITICAL: The reference documentation above is already provided. Answer the user\'s question immediately and naturally from a user perspective without mentioning file names, paths, or backend folders.\n'
-    }
-  } catch (_) {}
-
-  // Existing files list & Knowledge Graph Context
-  if (allSnippets.length > 0 || allFolders.length > 0) {
-    const filePaths = allSnippets
-      .map((s: any) => (s.folderId ? `${s.folderId}/${s.title}` : s.title))
-      .join(', ')
-    const folders = allFolders.join(', ')
-    systemPrompt += `\n\n**EXISTING FILES (WITH FOLDER PATHS)**: ${filePaths || 'None'}\n**EXISTING FOLDERS**: ${folders || 'None'}\nUse these exact paths and folders for targeted file operations. When asked to rename, move, update, or clear files in a folder, reference these exact files.`
-  }
-
-  // Knowledge Graph Topology (1-2 Hop Backlinks & Forward Links)
-  const targetSnippets =
-    mentionedSnippets.length > 0
-      ? mentionedSnippets
-      : selectedSnippet
-        ? [selectedSnippet]
-        : []
-  const graphTopology = extractGraphContext(targetSnippets, allSnippets, 2, 6)
-  if (graphTopology) {
-    systemPrompt += graphTopology
-  }
-
-  // Dynamic Intent Routing & Few-Shot Exemplars
-  if (detectedIntent) {
-    const exemplars = getDynamicExemplars(detectedIntent)
-    if (exemplars) {
-      systemPrompt += exemplars
-    }
-  }
-
+export function getIntentDirectives(detectedIntent: string | null): string {
   if (detectedIntent === 'DIAGNOSTICS') {
-    systemPrompt += `\n\n**CRITICAL MANDATORY HEALTH CHECK INSTRUCTION**:
+    return `\n\n**CRITICAL MANDATORY HEALTH CHECK INSTRUCTION**:
 The user requested a system health check or asked about your health or running doctor ("tell me about your health", "you run the doctor", "run diagnostics", "/doctor", "/docker").
 You MUST call the \`diagnoseSystem\` (or \`luminaDiagnoseSystem\`) tool immediately!
 NEVER tell the user you cannot check your own health or cannot run /doctor. You HAVE the \`diagnoseSystem\` tool right now to perform live diagnostics on system responsiveness, workspace storage, and AI readiness.
@@ -647,18 +298,18 @@ The clean in-app health badge will render directly in chat.`
   }
 
   if (detectedIntent === 'AUDIT_WIKILINKS') {
-    systemPrompt += `\n\n**CRITICAL MANDATORY WIKILINK AUDIT INSTRUCTION**:
+    return `\n\n**CRITICAL MANDATORY WIKILINK AUDIT INSTRUCTION**:
 The user asked about broken wikilinks, orphan notes, or link connectivity health across their workspace.
 You MUST call the \`auditWikilinks\` tool immediately! Do NOT claim that you cannot inspect files or cannot scan the workspace.
 Once \`auditWikilinks\` finishes executing, present the clear link health table, list any broken references and orphan notes, and warmly offer to create starter notes for missing targets.`
   }
 
   if (detectedIntent === 'QUERY_INDEX') {
-    systemPrompt += `\n\n**CRITICAL MANDATORY WORKSPACE INDEX QUERY INSTRUCTION**:
+    return `\n\n**CRITICAL MANDATORY WORKSPACE INDEX QUERY INSTRUCTION**:
 The user asked to query or filter workspace notes (e.g. by tag, folder, backlinks, outgoing links, frontmatter, or headings).
 You MUST call the \`luminaQueryIndex\` (or \`queryIndex\`) tool immediately to inspect structured index records!
 After calling the tool, synthesize your findings and explain relevant connections.`
   }
 
-  return systemPrompt
+  return ''
 }

@@ -1,19 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  Save,
-  Sidebar,
-  ChevronRight,
-  Hash,
-  FileCode,
-  FileJson,
-  FileType,
   MoreVertical,
   Copy,
-  Printer,
-  Zap,
   FileText,
-  Loader2
+  Download
 } from 'lucide-react'
 import { useToast } from '../../../core/notification'
 import ToastNotification from '../../../core/notification'
@@ -25,18 +16,11 @@ const EditorMenu = ({
   setSelectedSnippet,
   isDirty,
   isSaving = false,
-  viewMode,
-  setViewMode,
   onSave,
   onToggleInspector,
-  onExportHTML,
-  onExportPDF,
-  onExportMarkdown,
-  onExportMarkdownBundle,
-  onExportText,
-  onExportDocs,
   onInlineAI,
-  onPreview
+  onPreview,
+  onOpenExportDialog
 }) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false)
   const menuRef = useRef(null)
@@ -178,131 +162,13 @@ const EditorMenu = ({
                 </div>
                 <div
                   className="dropdown-item"
-                  onClick={async () => {
-                    try {
-                      if (onExportHTML && typeof onExportHTML === 'function') {
-                        const result = await onExportHTML()
-                        if (result?.success) {
-                          showToast('HTML file exported successfully', 'success')
-                        }
-                      }
-                    } catch (error) {
-                      console.error('Failed to export HTML:', error)
-                      showToast('Failed to export HTML', 'error')
-                    }
+                  onClick={() => {
                     setShowMoreMenu(false)
+                    if (onOpenExportDialog) onOpenExportDialog()
                   }}
                 >
-                  <span className="menu-label">Export to HTML (.html)</span>
-                  <FileCode size={12} className="menu-icon-right" />
-                </div>
-                <div
-                  className="dropdown-item"
-                  onClick={async () => {
-                    try {
-                      if (onExportPDF && typeof onExportPDF === 'function') {
-                        const result = await onExportPDF()
-                        if (result?.success) {
-                          showToast('PDF exported successfully', 'success')
-                        } else if (!result?.canceled) {
-                          showToast('Failed to export PDF', 'error')
-                        }
-                      }
-                    } catch (error) {
-                      console.error('Failed to export PDF:', error)
-                      showToast('Failed to export PDF', 'error')
-                    }
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <span className="menu-label">Export to PDF</span>
-                  <Printer size={12} className="menu-icon-right" />
-                </div>
-                <div
-                  className="dropdown-item"
-                  onClick={async () => {
-                    try {
-                      if (onExportMarkdown && typeof onExportMarkdown === 'function') {
-                        const result = await onExportMarkdown()
-                        if (result?.success) {
-                          showToast('Markdown file exported successfully', 'success')
-                        } else if (!result?.canceled) {
-                          showToast('Failed to export markdown file', 'error')
-                        }
-                      }
-                    } catch (error) {
-                      console.error('Failed to export markdown file:', error)
-                      showToast('Failed to export markdown file', 'error')
-                    }
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <span className="menu-label">Save as Markdown (.md)</span>
-                  <FileText size={12} className="menu-icon-right" />
-                </div>
-                <div
-                  className="dropdown-item"
-                  onClick={async () => {
-                    try {
-                      if (onExportMarkdownBundle && typeof onExportMarkdownBundle === 'function') {
-                        const result = await onExportMarkdownBundle()
-                        if (result?.success) {
-                          showToast('Markdown bundle exported successfully', 'success')
-                        }
-                      }
-                    } catch (error) {
-                      console.error('Failed to export markdown bundle:', error)
-                      showToast('Failed to export markdown bundle', 'error')
-                    }
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <span className="menu-label">Export Markdown Bundle</span>
-                  <FileJson size={12} className="menu-icon-right" />
-                </div>
-                <div
-                  className="dropdown-item"
-                  onClick={async () => {
-                    try {
-                      if (onExportText && typeof onExportText === 'function') {
-                        const result = await onExportText()
-                        if (result?.success) {
-                          showToast('Text file exported successfully', 'success')
-                        } else if (!result?.canceled) {
-                          showToast('Failed to export text file', 'error')
-                        }
-                      }
-                    } catch (error) {
-                      console.error('Failed to export text file:', error)
-                      showToast('Failed to export text file', 'error')
-                    }
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <span className="menu-label">Save as Text (.txt)</span>
-                  <FileType size={12} className="menu-icon-right" />
-                </div>
-                <div
-                  className="dropdown-item"
-                  onClick={async () => {
-                    try {
-                      if (onExportDocs && typeof onExportDocs === 'function') {
-                        const result = await onExportDocs()
-                        if (result?.success) {
-                          showToast('HTML Doc exported successfully', 'success')
-                        } else if (!result?.canceled) {
-                          showToast('Failed to export Docs', 'error')
-                        }
-                      }
-                    } catch (error) {
-                      console.error('Failed to export Docs:', error)
-                      showToast('Failed to export Docs', 'error')
-                    }
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <span className="menu-label">Save as Word Document</span>
-                  <FileCode size={12} className="menu-icon-right" />
+                  <span className="menu-label">Export with Preview…</span>
+                  <Download size={12} className="menu-icon-right" />
                 </div>
               </div>,
               document.body

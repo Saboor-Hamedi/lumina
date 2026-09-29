@@ -332,13 +332,11 @@
 
 ---
 
-### 29. API Keys in localStorage
+### 29. API Keys in localStorage [COMPLETED]
 
 **What:** `resolveProviderConfig` falls back to `localStorage.getItem('lumina_deepseek_key')`.
 
-**Why it matters:** localStorage is accessible to any XSS attack. API keys should only be in `safeStorage`.
-
-**Suggestion:** Remove the localStorage fallback. Only use `safeStorage` for API key storage.
+**Status:** **[COMPLETED]** - Verified zero occurrences in codebase. All AI provider keys are exclusively persisted in `app_config.json` via SettingsManager/safeStorage; no fallback to `localStorage` exists.
 
 ---
 
@@ -365,23 +363,34 @@
 
 ---
 
-### 32. `aiStreamRunner.ts` is 1336 lines
+### 32. `aiStreamRunner.ts` is 1336 lines — **[COMPLETED]**
 
 **What:** God file handling streaming, tool execution, display building, fallback parsing, and DSML interception.
 
 **Why it matters:** Extremely hard to maintain and test. Changes in one area can break others.
 
-**Suggestion:** Split into: `StreamDisplayBuilder`, `ToolCallInterceptor`, `FallbackBlockParser`, `StreamOrchestrator`.
+**Resolution:** Fully modularized under `src/renderer/src/features/AI/services/streaming/`:
+- `deepseekStreamer.ts` (Dynamic Vercel AI SDK loading, stream state machine, RAF throttler)
+- `fallbackStreamer.ts` (Alternative provider streaming & status narrator)
+- `luminaDisplayBuilder.ts` (Real-time formatting, activity badges, narrative thoughts)
+- `toolCallInterceptor.ts` (DSML & tool XML parsing and leak interception)
+- `legacyBlockParser.ts` (Markdown code block execution actions)
+- `aiStreamRunner.ts` (Reduced to a clean, 15-line backward-compatible facade)
 
 ---
 
-### 33. `aiPromptBuilder.ts` is 667 lines
+### 33. `aiPromptBuilder.ts` is 667 lines — **[COMPLETED]**
 
 **What:** Massive system prompt string concatenation with inline conditional logic.
 
 **Why it matters:** Hard to read, test, and modify. Prompt injection risk from unsanitized content.
 
-**Suggestion:** Use a builder pattern with composable prompt sections. Sanitize file contents before injecting.
+**Resolution:** Fully modularized under `src/renderer/src/features/AI/services/prompt/` and renamed facade:
+- `mentionResolver.ts` (Resolves `@Note` and referenced files with recursive normalization)
+- `contextRetriever.ts` (Workspace RAG context injection, safe truncation, credential stripping)
+- `promptDirectives.ts` (Theme awareness, Lumina intelligence badges, mode instructions, intent directives)
+- `promptOrchestrator.ts` (Clean multi-tier prompt composition)
+- `luminaPromptBuilder.ts` (Clean strongly-typed facade re-exporting prompt utilities)
 
 ---
 
@@ -630,10 +639,10 @@
 1. **Move OAuth secrets to environment variables** — **[COMPLETED]** (All secrets moved to `.env`)
 2. **Add CI/CD pipeline** — automated testing, building, publishing
 3. **Split `index.js` into domain-specific IPC handlers** — **[COMPLETED]** (1,219 lines -> 76 lines, modularized under `src/main/handlers/` and `src/main/app/`)
-4. **Split `aiStreamRunner.ts` and `aiPromptBuilder.ts`** — extract focused units
+4. **Split `aiStreamRunner.ts` and `aiPromptBuilder.ts`** — **[COMPLETED]** (Modularized into `streaming/` and `prompt/` + `luminaPromptBuilder.ts`)
 5. **Add IPC payload validation with zod** — **[COMPLETED]** (`src/main/handlers/ipcValidation.ts` + Zod schemas on all handlers)
 6. **Add `will-navigate` and `setWindowOpenHandler`** — **[COMPLETED]** (Implemented in `src/main/app/windowManager.ts`)
 7. **Add error tracking service (Sentry)** — production error visibility
 8. **Add integration test layer** — test IPC handlers with mocked renderer
 9. **Add lazy loading for all feature components** — reduce bundle size
-10. **Add prompt injection sanitization** — sanitize file contents before AI prompts
+10. **Add prompt injection sanitization** — **[COMPLETED]** (Implemented in `contextRetriever.ts` with safe sanitizers and token budgets)

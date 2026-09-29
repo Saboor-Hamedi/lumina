@@ -31,13 +31,13 @@ import { countExplorerPerfRender, finishExplorerPerfPaint, markExplorerPerf } fr
 import {
   useZoom,
   EditorState,
-  useEditorExports,
   EditorEvent,
   EditorExtensions
 } from '../../core/editor'
 import { EditorSlash } from '../slash'
 import EditorCreatedAt from './components/EditorCreatedAt'
 import EditorZoomHud from './components/EditorZoomHud'
+import ExportDialog from './components/ExportDialog'
 
 import type { Snippet, EditorHandle } from '../../core/editor/types'
 import type { EditorView } from '@codemirror/view'
@@ -81,6 +81,7 @@ export const Editor: React.FC<EditorProps> = memo(
     const [showFindWidget, setShowFindWidget] = useState(false)
     const [replaceModeActive, setReplaceModeActive] = useState(false)
     const [isInlineAIOpen, setIsInlineAIOpen] = useState(false)
+    const [isExportDialogOpen, setIsExportDialogOpen] = useState(false)
     const [slashState, setSlashState] = useState<SlashState>({ isOpen: false })
     const slashHandlerRef = useRef<{ isOpen: boolean }>({ isOpen: false })
 
@@ -134,20 +135,18 @@ export const Editor: React.FC<EditorProps> = memo(
       editorHandleRef
     })
 
-    // 2. Export Actions (HTML, PDF, Markdown, Text, Docs)
-    const {
-      handleExportHTML,
-      handleExportPDF,
-      handleExportText,
-      handleExportDocs,
-      handleExportMarkdown,
-      handleExportMarkdownBundle
-    } = useEditorExports({
-      snippet,
-      title,
-      editorHandleRef,
-      showToast
-    })
+    // 2. Export content resolver (all export formats flow through the preview dialog)
+    const getExportDialogContent = useCallback((): string => {
+      if (latestCodeRef.current !== undefined && latestCodeRef.current !== null) {
+        return latestCodeRef.current
+      }
+      try {
+        return editorHandleRef.current?.getMarkdown?.() ?? snippet?.code ?? ''
+      } catch (err) {
+        console.error('[Editor] Failed to read content for export dialog:', err)
+        return snippet?.code ?? ''
+      }
+    }, [snippet?.code])
 
     // 3. Global Window & AI Event Subscriptions
     const { isActiveRef } = EditorEvent({
@@ -481,18 +480,22 @@ export const Editor: React.FC<EditorProps> = memo(
                 isSaving={isSaving}
                 onSave={handleSave}
                 onToggleInspector={onToggleInspector}
-                onExportHTML={handleExportHTML}
-                onExportPDF={handleExportPDF}
-                onExportMarkdown={handleExportMarkdown}
-                onExportMarkdownBundle={handleExportMarkdownBundle}
-                onExportText={handleExportText}
-                onExportDocs={handleExportDocs}
                 onInlineAI={() => setIsInlineAIOpen(true)}
                 onPreview={() => setIsPreviewOpen(true)}
+                onOpenExportDialog={() => setIsExportDialogOpen(true)}
               />
             }
           />
         </div>
+
+        <ExportDialog
+          isOpen={isExportDialogOpen}
+          title={title}
+          content={isExportDialogOpen ? getExportDialogContent() : ''}
+          initialFormat="pdf"
+          onClose={() => setIsExportDialogOpen(false)}
+          showToast={showToast}
+        />
       </div>
     )
   },

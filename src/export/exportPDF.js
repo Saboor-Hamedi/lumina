@@ -1,96 +1,21 @@
 import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
-import { Marked } from 'marked'
-import { markedHighlight } from 'marked-highlight'
-import hljs from 'highlight.js'
-import WorkspaceManager from '../main/workspace/workspaceManager.js'
+import { renderMarkdown, escapeHtml } from './exportUtils.js'
 
-export const handleExportPDF = async (mainWindow, payload) => {
-  try {
-    const { title, content, language } = payload || {}
-    if (!content) throw new Error('No content provided')
-
-    // Show save dialog FIRST for immediate user feedback
-    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-      title: 'Save PDF',
-      defaultPath: `${title || 'Untitled'}.pdf`,
-      filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
-    })
-
-    if (canceled || !filePath) {
-      return { success: false, canceled: true }
-    }
-
-    const marked = new Marked(
-      markedHighlight({
-        langPrefix: 'hljs language-',
-        highlight(code, lang) {
-          if (lang === 'mermaid') return code
-          const language = hljs.getLanguage(lang) ? lang : 'plaintext'
-          return hljs.highlight(code, { language }).value
-        }
-      })
-    )
-
-    marked.use({
-      renderer: {
-        code(token) {
-          if (token.lang === 'mermaid') {
-            const escaped = token.text
-              .replace(/&/g, '&amp;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;')
-            return `<div class="mermaid">${escaped}</div>`
-          }
-          return false
-        }
-      }
-    })
-
-    // Convert local images to base64 data URIs so they render in the isolated BrowserWindow
-    let processedContent = content || ''
-    const imgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g
-    const matches = [...processedContent.matchAll(imgRegex)]
-
-    for (const match of matches) {
-      const fullMatch = match[0]
-      const alt = match[1]
-      const url = match[2]
-
-      if (!url.startsWith('http') && !url.startsWith('data:')) {
-        try {
-          let cleanUrl = url.startsWith('/') ? url.slice(1) : url
-          // Strip optional <> that markdown uses for URLs with spaces
-          if (cleanUrl.startsWith('<') && cleanUrl.endsWith('>')) {
-            cleanUrl = cleanUrl.slice(1, -1)
-          }
-          cleanUrl = decodeURIComponent(cleanUrl)
-
-          const buffer = await WorkspaceManager.readAsset(cleanUrl)
-
-          let mimeType = 'image/png'
-          const lowerUrl = cleanUrl.toLowerCase()
-          if (lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg')) mimeType = 'image/jpeg'
-          else if (lowerUrl.endsWith('.gif')) mimeType = 'image/gif'
-          else if (lowerUrl.endsWith('.svg')) mimeType = 'image/svg+xml'
-          else if (lowerUrl.endsWith('.webp')) mimeType = 'image/webp'
-
-          const base64 = buffer.toString('base64')
-          const dataUri = `data:${mimeType};base64,${base64}`
-
-          processedContent = processedContent.replace(fullMatch, `![${alt}](${dataUri})`)
-        } catch (e) {
-          console.error('[Export] Failed to convert image to base64:', url, e)
-        }
-      }
-    }
-
-    // Convert wikilinks to HTML before parsing
-    processedContent = processedContent.replace(/\[\[(.*?)\]\]/g, '<a href="#">$1</a>')
-    const htmlContent = await marked.parse(processedContent)
-
-    // Create HTML for PDF
-    const html = `<!DOCTYPE html>
+/**
+ * Wraps a rendered markdown body in a print-optimised, A4 PDF document with a
+ * table of contents and Mermaid rendering support.
+ *
+ * Exported separately so the export preview dialog can reuse the exact same
+ * markup without duplicating styles.
+ *
+ * @param {string} title
+ * @param {string} htmlBody Rendered HTML body (with TOC anchors injected)
+ * @param {string} tocHtml Table of contents markup (may be empty)
+ * @returns {string} Full HTML document
+ */
+export function buildPDFDocument(title, htmlBody, tocHtml = '') {
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -102,16 +27,74 @@ export const handleExportPDF = async (mainWindow, payload) => {
       margin: 20mm 20mm;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      background: #0b0d12;
+    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
+      line-height: 1.65;
       color: #1e293b;
-      background: #ffffff;
-      padding: 0;
-      margin: 0;
       font-size: 10.5pt;
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
+      padding: 40px 48px;
+      min-height: 100vh;
+    }
+    /* Premium scrollbars (iframe preview) */
+    html { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.18) transparent; }
+    ::-webkit-scrollbar { width: 11px; height: 11px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      border: 3px solid transparent;
+      background-clip: padding-box;
+    }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); background-clip: padding-box; }
+    ::-webkit-scrollbar-corner { background: transparent; }
+    /* Screen (preview) — a flat, crisp paper page on a dark desk */
+    .page {
+      max-width: 720px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 64px 76px;
+      border-radius: 2px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: none;
+    }
+    .doc-header {
+      margin-bottom: 24pt;
+      padding-bottom: 14pt;
+      border-bottom: 2px solid #6366f1;
+    }
+    .doc-title {
+      font-size: 24pt;
+      font-weight: 800;
+      line-height: 1.2;
+      color: #0f172a;
+      letter-spacing: -0.01em;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+    .doc-meta {
+      margin-top: 6pt;
+      font-size: 9pt;
+      color: #94a3b8;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    @media print {
+      html, body { background: #ffffff; }
+      body { padding: 0; }
+      .page {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+      }
     }
     h1, h2, h3, h4, h5, h6 {
       color: #0f172a;
@@ -120,17 +103,17 @@ export const handleExportPDF = async (mainWindow, payload) => {
       page-break-after: avoid;
       break-after: avoid;
     }
-    h1 { 
-      font-size: 20pt; 
+    h1 {
+      font-size: 20pt;
       margin-top: 0;
       margin-bottom: 12pt;
       padding-bottom: 6pt;
       border-bottom: 1.5px solid #e2e8f0;
       color: #0f172a;
     }
-    h2 { 
-      font-size: 15pt; 
-      margin-top: 18pt; 
+    h2 {
+      font-size: 15pt;
+      margin-top: 18pt;
       margin-bottom: 8pt;
       padding-bottom: 4pt;
       border-bottom: 1px solid #f1f5f9;
@@ -138,9 +121,9 @@ export const handleExportPDF = async (mainWindow, payload) => {
     }
     h3 { font-size: 12.5pt; margin-top: 14pt; margin-bottom: 6pt; color: #334155; }
     h4 { font-size: 11pt; margin-top: 12pt; margin-bottom: 4pt; color: #475569; }
-    p { 
-      margin-bottom: 10pt; 
-      color: #334155; 
+    p {
+      margin-bottom: 10pt;
+      color: #334155;
       text-align: left;
     }
     code {
@@ -235,22 +218,64 @@ export const handleExportPDF = async (mainWindow, payload) => {
       background: #e2e8f0;
       margin: 18pt 0;
     }
+    .toc {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 14pt 18pt;
+      margin: 0 0 18pt 0;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .toc-title {
+      font-size: 14pt;
+      margin-top: 0;
+      margin-bottom: 8pt;
+      padding-bottom: 0;
+      border-bottom: none;
+      color: #0f172a;
+    }
+    .toc-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+    .toc-list li {
+      margin: 2pt 0;
+    }
+    .toc-l2 { padding-left: 12pt; }
+    .toc-l3 { padding-left: 24pt; }
+    .toc-list a {
+      color: #475569;
+      text-decoration: none;
+    }
+    .toc-list a:hover {
+      color: #2563eb;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
-  ${htmlContent}
-  
+  <article class="page">
+    <header class="doc-header">
+      <h1 class="doc-title">${escapeHtml(title || 'Untitled')}</h1>
+      <div class="doc-meta">Exported from Lumina</div>
+    </header>
+    ${tocHtml}
+    ${htmlBody}
+  </article>
+
   <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.3/dist/mermaid.min.js"></script>
   <script>
     mermaid.initialize({ startOnLoad: false, theme: 'default' });
-    
+
     async function renderMermaid() {
       try {
         const elements = document.querySelectorAll('.mermaid');
         if (elements.length > 0) {
           mermaid.init(undefined, elements);
         }
-        
+
         const svgs = document.querySelectorAll('.mermaid svg');
         svgs.forEach(svgEl => {
            const shapes = svgEl.querySelectorAll('.node rect, .node circle, .node ellipse, .node polygon, .node path, .mindmap-node rect, .mindmap-node circle, .mindmap-node ellipse, .mindmap-node polygon, .mindmap-node path, .cluster rect, rect.actor, .actor, rect.note, .note, rect.task, .task, rect.labelBox, .labelBox, .pieTitleText, .pieSector, .rect, .labelBkg, .label-container, .activation0, .activation1, .activation2, rect');
@@ -287,9 +312,73 @@ export const handleExportPDF = async (mainWindow, payload) => {
   </script>
 </body>
 </html>`
+}
+
+/**
+ * Renders markdown to a full print-ready PDF HTML document (no file I/O).
+ * Shared by the exporter and the preview dialog.
+ *
+ * @param {string} title
+ * @param {string} content Markdown source
+ * @returns {Promise<string>} Full HTML document
+ */
+export async function generatePDFHTML(title, content) {
+  const { html, tocHtml } = await renderMarkdown(content, {
+    wikilinkMode: 'link',
+    mermaid: true,
+    toc: true
+  })
+  return buildPDFDocument(title, html, tocHtml)
+}
+
+/**
+ * Waits for Mermaid diagrams inside a BrowserWindow to finish rendering.
+ * Resolves via a MutationObserver watching for the `mermaid-done` body class,
+ * with a hard timeout so a stuck render can never hang the export.
+ *
+ * @param {BrowserWindow} win
+ * @param {number} [timeoutMs=3000]
+ */
+async function waitForMermaid(win, timeoutMs = 3000) {
+  await win.webContents.executeJavaScript(`
+    new Promise((resolve) => {
+      if (document.body.classList.contains('mermaid-done')) {
+        setTimeout(resolve, 500);
+      } else {
+        const observer = new MutationObserver(() => {
+          if (document.body.classList.contains('mermaid-done')) {
+            observer.disconnect();
+            setTimeout(resolve, 500);
+          }
+        });
+        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+        setTimeout(resolve, ${timeoutMs});
+      }
+    })
+  `)
+}
+
+export const handleExportPDF = async (mainWindow, payload) => {
+  let printWin = null
+  try {
+    const { title, content } = payload || {}
+    if (!content) throw new Error('No content provided')
+
+    // Show save dialog FIRST for immediate user feedback
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+      title: 'Save PDF',
+      defaultPath: `${title || 'Untitled'}.pdf`,
+      filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
+    })
+
+    if (canceled || !filePath) {
+      return { success: false, canceled: true }
+    }
+
+    const html = await generatePDFHTML(title, content)
 
     // Create a hidden browser window to print from
-    const printWin = new BrowserWindow({
+    printWin = new BrowserWindow({
       show: false,
       webPreferences: {
         nodeIntegration: false,
@@ -297,26 +386,8 @@ export const handleExportPDF = async (mainWindow, payload) => {
       }
     })
 
-    // Load the HTML
     await printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
-
-    // Wait for mermaid to finish rendering and fonts to apply
-    await printWin.webContents.executeJavaScript(`
-      new Promise((resolve) => {
-        if (document.body.classList.contains('mermaid-done')) {
-          setTimeout(resolve, 500);
-        } else {
-          const observer = new MutationObserver(() => {
-            if (document.body.classList.contains('mermaid-done')) {
-              observer.disconnect();
-              setTimeout(resolve, 500); // extra wait for fonts/styles
-            }
-          });
-          observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-          setTimeout(resolve, 3000); // 3 seconds timeout fallback
-        }
-      })
-    `)
+    await waitForMermaid(printWin)
 
     // Generate PDF relying on @page CSS for margins
     const pdfData = await printWin.webContents.printToPDF({
@@ -324,14 +395,14 @@ export const handleExportPDF = async (mainWindow, payload) => {
       pageSize: 'A4'
     })
 
-    // Close the window
-    printWin.close()
-
-    // Save PDF to the chosen path
     await fs.writeFile(filePath, pdfData)
     return { success: true, filePath }
   } catch (error) {
     console.error('[Main] Export PDF failed:', error)
     throw error
+  } finally {
+    if (printWin && printWin.isDestroyed?.() !== true) {
+      printWin.close()
+    }
   }
 }

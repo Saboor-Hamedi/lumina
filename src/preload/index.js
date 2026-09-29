@@ -141,6 +141,13 @@ const api = {
     electronAPI.ipcRenderer.invoke('window:export-markdown-bundle', payload),
   exportText: (payload) => electronAPI.ipcRenderer.invoke('window:export-text', payload),
   exportDocs: (payload) => electronAPI.ipcRenderer.invoke('window:export-docs', payload),
+  exportPreview: (payload) => electronAPI.ipcRenderer.invoke('window:export-preview', payload),
+  exportBatch: (payload) => electronAPI.ipcRenderer.invoke('window:export-batch', payload),
+  onBatchExportProgress: (cb) => {
+    const listener = (_, progress) => cb(progress)
+    electronAPI.ipcRenderer.on('export:batch-progress', listener)
+    return () => electronAPI.ipcRenderer.removeListener('export:batch-progress', listener)
+  },
 
   // Workspace Indexing
   indexWorkspace: (workspacePath, options) =>

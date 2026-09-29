@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   buildSystemPrompt,
   sanitizeSafeSettings
-} from '../../../../../../src/renderer/src/features/AI/services/aiPromptBuilder'
+} from '../../../../../../src/renderer/src/features/AI/services/luminaPromptBuilder'
 import { getAIMode } from '../../../../../../src/renderer/src/features/AI/modes/index'
 import { getTheme } from '../../../../../../src/renderer/src/features/theme/hooks/themeDefinitions'
 

@@ -7,7 +7,7 @@ import {
   detectUserIntent,
   IntentCategory
 } from '../../../../../../src/renderer/src/features/AI/services/intentRouter'
-import { buildSystemPrompt } from '../../../../../../src/renderer/src/features/AI/services/aiPromptBuilder'
+import { buildSystemPrompt } from '../../../../../../src/renderer/src/features/AI/services/luminaPromptBuilder'
 import { getAIMode } from '../../../../../../src/renderer/src/features/AI/modes/index'
 import { useWorkspaceStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
 

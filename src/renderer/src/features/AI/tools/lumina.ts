@@ -21,7 +21,7 @@ import {
   resolveReferencedFiles,
   retrieveWorkspaceRAG,
   buildSystemPrompt
-} from '../services/aiPromptBuilder'
+} from '../services/luminaPromptBuilder'
 import { getTheme } from '../../theme/hooks/themeDefinitions'
 import {
   runDeepSeekStream,

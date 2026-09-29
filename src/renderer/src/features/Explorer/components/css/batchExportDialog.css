@@ -1,0 +1,111 @@
+/* ===== Batch Export Dialog (extends Export Preview Dialog) ===== */
+
+.batch-export-dialog {
+  width: min(560px, 94vw);
+  height: auto;
+  min-height: auto;
+  max-height: min(640px, 78vh);
+}
+
+.batch-export-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.batch-export-hint {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-muted, #94a3b8);
+}
+
+.batch-export-tabs {
+  border: none;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.batch-export-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.batch-export-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+}
+
+.batch-export-progress-track {
+  height: 6px;
+  width: 100%;
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.batch-export-progress-fill {
+  height: 100%;
+  background: var(--text-accent, #6366f1);
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.batch-export-progress-note {
+  font-size: 11.5px;
+  color: var(--text-faint, #64748b);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.batch-export-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-card, #26293a);
+  border-radius: var(--radius-md, 8px);
+  background: var(--bg-active, rgba(255, 255, 255, 0.04));
+  font-size: 12.5px;
+  color: var(--text-main, #f1f5f9);
+}
+
+.batch-export-result-icon {
+  color: #22c55e;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.batch-export-result-text {
+  min-width: 0;
+}
+
+.batch-export-result-warn {
+  color: #f59e0b;
+}
+
+.batch-export-result-path {
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--text-faint, #64748b);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
+.batch-export-error {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.batch-export-error svg {
+  color: #ef4444;
+  flex-shrink: 0;
+}

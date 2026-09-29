@@ -1,85 +1,20 @@
 import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
-import { Marked } from 'marked'
-import { markedHighlight } from 'marked-highlight'
-import hljs from 'highlight.js'
-import WorkspaceManager from '../main/workspace/workspaceManager.js'
+import { renderMarkdown, escapeHtml } from './exportUtils.js'
 
-export const handleExportDocs = async (mainWindow, payload) => {
-  try {
-    const { title, content } = payload || {}
-    if (!content) throw new Error('No content provided')
-
-    const marked = new Marked(
-      markedHighlight({
-        langPrefix: 'hljs language-',
-        highlight(code, lang) {
-          if (lang === 'mermaid') return code
-          const language = hljs.getLanguage(lang) ? lang : 'plaintext'
-          return hljs.highlight(code, { language }).value
-        }
-      })
-    )
-
-    marked.use({
-      renderer: {
-        code(token) {
-          if (token.lang === 'mermaid') {
-            const escaped = token.text
-              .replace(/&/g, '&amp;')
-              .replace(/</g, '&lt;')
-              .replace(/>/g, '&gt;')
-            return `<div class="mermaid">${escaped}</div>`
-          }
-          return false
-        }
-      }
-    })
-
-    // Convert local images to base64 data URIs so they render correctly in Word
-    let processedContent = content || ''
-    const imgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g
-    const matches = [...processedContent.matchAll(imgRegex)]
-
-    for (const match of matches) {
-      const fullMatch = match[0]
-      const alt = match[1]
-      const url = match[2]
-
-      if (!url.startsWith('http') && !url.startsWith('data:')) {
-        try {
-          let cleanUrl = url.startsWith('/') ? url.slice(1) : url
-          // Strip optional <> that markdown uses for URLs with spaces
-          if (cleanUrl.startsWith('<') && cleanUrl.endsWith('>')) {
-            cleanUrl = cleanUrl.slice(1, -1)
-          }
-          cleanUrl = decodeURIComponent(cleanUrl)
-
-          const buffer = await WorkspaceManager.readAsset(cleanUrl)
-
-          let mimeType = 'image/png'
-          const lowerUrl = cleanUrl.toLowerCase()
-          if (lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg')) mimeType = 'image/jpeg'
-          else if (lowerUrl.endsWith('.gif')) mimeType = 'image/gif'
-          else if (lowerUrl.endsWith('.svg')) mimeType = 'image/svg+xml'
-          else if (lowerUrl.endsWith('.webp')) mimeType = 'image/webp'
-
-          const base64 = buffer.toString('base64')
-          const dataUri = `data:${mimeType};base64,${base64}`
-
-          processedContent = processedContent.replace(fullMatch, `![${alt}](${dataUri})`)
-        } catch (e) {
-          console.error('[Export] Failed to convert image to base64:', url, e)
-        }
-      }
-    }
-
-    // Convert wikilinks to HTML before parsing
-    processedContent = processedContent.replace(/\[\[(.*?)\]\]/g, '<a href="#">$1</a>')
-    const htmlContent = await marked.parse(processedContent)
-
-    // Wrap in MS-Word compatible HTML (matching PDF styling)
-    const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+/**
+ * Wraps a rendered markdown body in an MS-Word compatible HTML document with a
+ * table of contents and Mermaid rendering (converted to inline PNG for Word).
+ *
+ * Exported separately so batch export and preview can reuse the same markup.
+ *
+ * @param {string} title
+ * @param {string} htmlBody Rendered HTML body
+ * @param {string} tocHtml Table of contents markup (may be empty)
+ * @returns {string} Full HTML document
+ */
+export function buildDocsDocument(title, htmlBody, tocHtml = '') {
+  return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
   <meta charset="utf-8">
   <title>${title || 'Untitled'}</title>
@@ -103,15 +38,15 @@ export const handleExportDocs = async (mainWindow, payload) => {
       line-height: 1.25;
       text-align: left;
     }
-    h1 { 
+    h1 {
       margin-top: 2pt;
-      margin-bottom: 2pt; 
-      font-size: 16pt; 
+      margin-bottom: 2pt;
+      font-size: 16pt;
       color: #1e293b;
     }
-    h2 { 
-      margin-top: 1.5em; 
-      font-size: 14pt; 
+    h2 {
+      margin-top: 1.5em;
+      font-size: 14pt;
     }
     h3 { font-size: 13pt; margin-top: 1.2em; color: #334155; }
     h4 { font-size: 12pt; margin-top: 1.2em; color: #475569; }
@@ -191,27 +126,85 @@ export const handleExportDocs = async (mainWindow, payload) => {
       background: #e2e8f0;
       margin: 2em 0;
     }
+    .doc-header {
+      margin-bottom: 1.4em;
+      padding-bottom: 0.5em;
+      border-bottom: 2px solid #6366f1;
+    }
+    .doc-title {
+      font-size: 18pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+      padding: 0;
+      border: none;
+    }
+    .doc-meta {
+      margin-top: 4pt;
+      font-size: 9pt;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .toc {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin: 0 0 18px 0;
+    }
+    .toc-title {
+      font-size: 14pt;
+      margin-top: 0;
+      margin-bottom: 8pt;
+      padding-bottom: 0;
+      border-bottom: none;
+      color: #0f172a;
+    }
+    .toc-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+    .toc-list li {
+      margin: 2pt 0;
+    }
+    .toc-l2 { padding-left: 12pt; }
+    .toc-l3 { padding-left: 24pt; }
+    .toc-list a {
+      color: #475569;
+      text-decoration: none;
+    }
+    .toc-list a:hover {
+      color: #2563eb;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
-  ${htmlContent}
-  
+  <header class="doc-header">
+    <h1 class="doc-title">${escapeHtml(title || 'Untitled')}</h1>
+    <div class="doc-meta">Exported from Lumina</div>
+  </header>
+  ${tocHtml}
+  ${htmlBody}
+
   <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.3/dist/mermaid.min.js"></script>
   <script>
     mermaid.initialize({ startOnLoad: false, theme: 'default' });
-    
+
     async function renderMermaid() {
       try {
         const elements = document.querySelectorAll('.mermaid');
         if (elements.length > 0) {
           mermaid.init(undefined, elements);
         }
-        
+
         // Convert SVGs to Base64 PNGs for MS Word compatibility
         const svgs = document.querySelectorAll('.mermaid svg');
         for (let i = 0; i < svgs.length; i++) {
           const svgEl = svgs[i];
-          
+
           // Apply black strokes/text for word doc
           const shapes = svgEl.querySelectorAll('.node rect, .node circle, .node ellipse, .node polygon, .node path, .mindmap-node rect, .mindmap-node circle, .mindmap-node ellipse, .mindmap-node polygon, .mindmap-node path, .cluster rect, rect.actor, .actor, rect.note, .note, rect.task, .task, rect.labelBox, .labelBox, .pieTitleText, .pieSector, .rect, .labelBkg, .label-container, .activation0, .activation1, .activation2, rect');
           shapes.forEach(shape => {
@@ -231,7 +224,7 @@ export const handleExportDocs = async (mainWindow, payload) => {
               edge.style.setProperty('stroke-width', '1px', 'important');
               edge.style.setProperty('fill', 'none', 'important');
           });
-          
+
           // Rasterize to canvas
           const rect = svgEl.getBoundingClientRect();
           const canvas = document.createElement('canvas');
@@ -243,12 +236,12 @@ export const handleExportDocs = async (mainWindow, payload) => {
           ctx.scale(2, 2);
           ctx.fillStyle = 'white';
           ctx.fillRect(0, 0, rect.width, rect.height);
-          
+
           const svgData = new XMLSerializer().serializeToString(svgEl);
           const img = new Image();
           const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
           const url = URL.createObjectURL(blob);
-          
+
           await new Promise((resolve) => {
             img.onload = () => {
               ctx.drawImage(img, 0, 0);
@@ -256,7 +249,7 @@ export const handleExportDocs = async (mainWindow, payload) => {
               const newImg = document.createElement('img');
               newImg.src = pngUrl;
               newImg.style.width = rect.width + 'px';
-              
+
               const parent = svgEl.closest('.mermaid');
               if (parent) {
                 parent.innerHTML = '';
@@ -278,6 +271,28 @@ export const handleExportDocs = async (mainWindow, payload) => {
   </script>
 </body>
 </html>`
+}
+
+/**
+ * Renders markdown to a full Word-compatible HTML document (no file I/O).
+ * @param {string} title
+ * @param {string} content Markdown source
+ * @returns {Promise<string>}
+ */
+export async function generateDocsHTML(title, content) {
+  const { html, tocHtml } = await renderMarkdown(content, {
+    wikilinkMode: 'link',
+    mermaid: true,
+    toc: true
+  })
+  return buildDocsDocument(title, html, tocHtml)
+}
+
+export const handleExportDocs = async (mainWindow, payload) => {
+  let printWin = null
+  try {
+    const { title, content } = payload || {}
+    if (!content) throw new Error('No content provided')
 
     // Show save dialog FIRST for immediate user feedback
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
@@ -290,8 +305,10 @@ export const handleExportDocs = async (mainWindow, payload) => {
       return { success: false, canceled: true }
     }
 
+    const html = await generateDocsHTML(title, content)
+
     // Create a hidden browser window to execute scripts
-    const printWin = new BrowserWindow({
+    printWin = new BrowserWindow({
       show: false,
       webPreferences: {
         nodeIntegration: false,
@@ -319,9 +336,6 @@ export const handleExportDocs = async (mainWindow, payload) => {
       })
     `)
 
-    // Close window
-    printWin.close()
-
     // Strip out the script tags so MS word doesn't complain about them
     const cleanHtml = renderedHtml.replace(
       /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
@@ -333,5 +347,9 @@ export const handleExportDocs = async (mainWindow, payload) => {
   } catch (error) {
     console.error('[Main] Export Docs failed:', error)
     throw error
+  } finally {
+    if (printWin && printWin.isDestroyed?.() !== true) {
+      printWin.close()
+    }
   }
 }
