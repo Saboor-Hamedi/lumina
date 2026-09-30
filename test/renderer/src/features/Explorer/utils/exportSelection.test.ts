@@ -91,4 +91,14 @@ describe('exportSelection.resolveFolderExportNotes', () => {
   it('returns empty for a folder with no notes', () => {
     expect(resolveFolderExportNotes(notes, 'Empty')).toEqual([])
   })
+
+  it('preserves top-to-bottom order of notes in a folder (introduction first, install, docu)', () => {
+    const docNotes = [
+      { id: '1', title: 'introduction', code: '# Introduction', folderId: 'Docs' },
+      { id: '2', title: 'install', code: '# Install', folderId: 'Docs' },
+      { id: '3', title: 'docu', code: '# Docu', folderId: 'Docs' }
+    ]
+    const result = resolveFolderExportNotes(docNotes, 'Docs')
+    expect(result.map((n) => n.title)).toEqual(['introduction', 'install', 'docu'])
+  })
 })

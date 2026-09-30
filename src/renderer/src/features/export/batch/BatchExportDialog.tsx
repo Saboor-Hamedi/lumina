@@ -15,7 +15,8 @@ import {
   Minimize2,
   ChevronDown,
   FileText,
-  Check
+  Check,
+  ArrowLeft
 } from 'lucide-react'
 import { EXPORT_FORMATS, getFormat, type ExportFormat } from '../formats'
 import { PREVIEW_COMPONENTS } from '../previews'
@@ -148,7 +149,7 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
     return list
       .map((n) => (n.content ?? n.code ?? '').trim())
       .filter(Boolean)
-      .join('\n\n---\n\n')
+      .join('\n\n\n')
   }, [notes, mode, selectedNoteIndex])
 
   const previewCacheRef = useRef<Map<string, string>>(new Map())
@@ -456,9 +457,20 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
               </button>
             </div>
 
-            <button type="button" className="export-btn-primary" onClick={onClose}>
-              Done
-            </button>
+            <div className="export-success-footer-actions">
+              <button
+                type="button"
+                className="export-btn"
+                onClick={() => setResult(null)}
+                aria-label="Go back to options"
+              >
+                <ArrowLeft size={14} />
+                <span>Back</span>
+              </button>
+              <button type="button" className="export-btn-primary" onClick={onClose}>
+                Done
+              </button>
+            </div>
           </div>
         ) : (
           <>
@@ -489,7 +501,7 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                     disabled={exporting}
                   >
                     <Layers size={13} strokeWidth={2} />
-                    <span>Merged Document</span>
+                    <span>Merged File</span>
                   </button>
                   <button
                     type="button"

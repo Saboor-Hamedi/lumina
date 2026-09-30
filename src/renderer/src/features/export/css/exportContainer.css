@@ -622,12 +622,51 @@
   color: var(--text-main);
 }
 
+.export-header-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--border-card);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-right: 4px;
+}
+
+.export-header-back-btn:hover {
+  background: var(--bg-active);
+  color: var(--text-main);
+  border-color: var(--border-subtle);
+}
+
 .export-success-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
   margin-top: 4px;
+}
+
+.export-success-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.export-success-footer-actions .export-btn,
+.export-success-footer-actions .export-btn-primary {
+  flex: 1;
+  justify-content: center;
 }
 
 .export-btn {

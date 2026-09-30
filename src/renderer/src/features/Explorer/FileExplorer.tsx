@@ -340,16 +340,16 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   }, [allSnippets, snippets, selectedNoteIds])
 
   // Flat list of notes that should be exported for the current selection.
-  // Expands any selected folder into its full subtree and de-duplicates notes.
+  // Expands any selected folder into its full subtree and de-duplicates notes in visual order.
   const exportNotes = useMemo(
-    () => resolveExportNotes({ notes: snippets, selectedNoteIds, selectedFolderIds }),
-    [snippets, selectedNoteIds, selectedFolderIds]
+    () => resolveExportNotes({ notes: allSnippets || snippets, selectedNoteIds, selectedFolderIds }),
+    [allSnippets, snippets, selectedNoteIds, selectedFolderIds]
   )
 
   // Resolver used when a single folder is right-clicked (no multi-selection).
   const resolveFolderNotes = useCallback(
-    (folderId: string) => resolveFolderExportNotes(snippets, folderId),
-    [snippets]
+    (folderId: string) => resolveFolderExportNotes(allSnippets || snippets, folderId),
+    [allSnippets, snippets]
   )
 
   const [batchExportNotes, setBatchExportNotes] = useState<any[] | null>(null)

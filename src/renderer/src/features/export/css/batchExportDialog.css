@@ -20,22 +20,26 @@
 /* Sleek Segmented Mode Pills */
 .batch-mode-pills {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 4px;
   padding: 3px;
   background: var(--bg-panel);
   border: 1px solid var(--border-card);
   border-radius: 8px;
   margin-bottom: 6px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .batch-mode-pill {
+  min-width: 0;
+  width: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 8px;
+  gap: 5px;
+  height: 30px;
+  padding: 0 6px;
   border: 1px solid transparent;
   border-radius: 6px;
   background: transparent;
@@ -45,6 +49,20 @@
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.batch-mode-pill svg {
+  flex-shrink: 0;
+}
+
+.batch-mode-pill span {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 .batch-mode-pill:hover:not(:disabled) {

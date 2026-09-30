@@ -65,9 +65,32 @@ export function notesInFolder(
 ): ExportSourceNote[] {
   if (!folderId) return []
   const prefix = `${folderId}/`
-  return notes.filter((note) => {
+  const matching = notes.filter((note) => {
     const id = note.folderId || ''
     return id === folderId || id.startsWith(prefix)
+  })
+
+  // Stable sort:
+  // 1. Direct files inside `folderId` come first.
+  // 2. Subfolders ordered hierarchically.
+  // 3. Within the same folder/subfolder, preserve the input note order.
+  const noteIndex = new Map(notes.map((n, i) => [n.id, i]))
+
+  return matching.sort((a, b) => {
+    const aFolder = a.folderId || ''
+    const bFolder = b.folderId || ''
+
+    if (aFolder === bFolder) {
+      return (noteIndex.get(a.id) ?? 0) - (noteIndex.get(b.id) ?? 0)
+    }
+
+    if (aFolder === folderId) return -1
+    if (bFolder === folderId) return 1
+
+    const cmp = aFolder.localeCompare(bFolder, undefined, { numeric: true, sensitivity: 'base' })
+    if (cmp !== 0) return cmp
+
+    return (noteIndex.get(a.id) ?? 0) - (noteIndex.get(b.id) ?? 0)
   })
 }
 
@@ -88,10 +111,10 @@ function toExportTargets(notes: readonly ExportSourceNote[]): ExportTargetNote[]
 /**
  * Resolves the current multi-selection into exportable notes.
  *
- * @param params.notes All known notes.
+ * @param params.notes All known notes (sorted as displayed in the explorer).
  * @param params.selectedNoteIds Directly selected note ids.
  * @param params.selectedFolderIds Selected folder paths (expanded recursively).
- * @returns De-duplicated, normalised notes ready for batch export.
+ * @returns De-duplicated, normalised notes ready for batch export in tree order.
  */
 export function resolveExportNotes(params: {
   notes: readonly ExportSourceNote[]
@@ -101,23 +124,31 @@ export function resolveExportNotes(params: {
   const { notes, selectedNoteIds, selectedFolderIds } = params
   if (!notes || notes.length === 0) return []
 
-  const byId = new Map(notes.map((note) => [note.id, note]))
-  const chosen = new Map<string, ExportSourceNote>()
+  const result: ExportSourceNote[] = []
+  const addedIds = new Set<string>()
 
-  // 1. Directly selected notes win.
-  selectedNoteIds?.forEach((id) => {
-    const note = byId.get(id)
-    if (note) chosen.set(note.id, note)
-  })
-
-  // 2. Expand each selected folder into its full subtree.
+  // 1. If folders are selected, export their notes according to folder hierarchy
   selectedFolderIds?.forEach((folderId) => {
     for (const note of notesInFolder(notes, folderId)) {
-      chosen.set(note.id, note)
+      if (!addedIds.has(note.id)) {
+        addedIds.add(note.id)
+        result.push(note)
+      }
     }
   })
 
-  return toExportTargets(Array.from(chosen.values()))
+  // 2. Directly selected notes (if not already included from a selected folder)
+  // preserve the explorer display order from `notes`
+  if (selectedNoteIds && selectedNoteIds.size > 0) {
+    for (const note of notes) {
+      if (selectedNoteIds.has(note.id) && !addedIds.has(note.id)) {
+        addedIds.add(note.id)
+        result.push(note)
+      }
+    }
+  }
+
+  return toExportTargets(result)
 }
 
 /**

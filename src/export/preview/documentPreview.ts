@@ -40,7 +40,6 @@ const DOCUMENT_CSS = `
     pre {
       background: var(--bg-panel);
       border: 1px solid var(--border-card);
-      border-left: 3px solid var(--border-subtle);
       border-radius: 8px;
       padding: 16px 18px;
       white-space: pre-wrap;
@@ -68,21 +67,42 @@ const DOCUMENT_CSS = `
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 1.2em 0;
+      margin: 1.4em 0;
       font-size: 0.92em;
       table-layout: auto;
       word-break: break-word;
+      border-top: 1.5px solid var(--border-subtle);
+      border-bottom: 1.5px solid var(--border-subtle);
     }
+    thead { display: table-header-group; }
+    tr { break-inside: avoid; }
     th, td {
-      border: 1px solid var(--border-card);
-      padding: 8px 12px;
+      border: none;
+      padding: 9px 14px;
       text-align: left;
       word-break: break-word;
       overflow-wrap: anywhere;
       vertical-align: top;
+      line-height: 1.5;
     }
-    th { background: var(--bg-panel); color: var(--text-main); font-weight: 600; }
-    tr:nth-child(even) { background: color-mix(in srgb, var(--bg-panel) 60%, transparent); }
+    th {
+      background: transparent;
+      color: var(--text-main);
+      font-weight: 600;
+      font-size: 0.86em;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-card);
+    }
+    tbody tr {
+      border-bottom: 1px solid color-mix(in srgb, var(--border-dim) 50%, transparent);
+    }
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+    tbody tr:nth-child(even) {
+      background: color-mix(in srgb, var(--bg-panel) 40%, transparent);
+    }
     img {
       display: block;
       max-width: 100%;

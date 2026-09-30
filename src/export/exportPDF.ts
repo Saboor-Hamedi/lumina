@@ -123,8 +123,7 @@ export function buildPDFDocument(title?: string, htmlBody: string = '', tocHtml:
     }
     pre {
       background: #f8fafc;
-      border: 1px solid #e5eaf0;
-      border-left: 3px solid #cbd5e1;
+      border: 1px solid #e2e8f0;
       border-radius: 6px;
       padding: 12pt 14pt;
       white-space: pre-wrap;
@@ -165,33 +164,43 @@ export function buildPDFDocument(title?: string, htmlBody: string = '', tocHtml:
     }
     table {
       border-collapse: collapse;
-      margin: 14pt 0;
+      margin: 16pt 0;
       width: 100%;
       max-width: 100%;
       table-layout: auto;
-      font-size: 10pt;
+      font-size: 9.5pt;
       word-break: break-word;
       break-inside: auto;
+      border-top: 1.5pt solid #334155;
+      border-bottom: 1.5pt solid #334155;
     }
     thead { display: table-header-group; }
     tr { break-inside: avoid; page-break-inside: avoid; }
     th, td {
-      border: 1px solid #cbd5e1;
-      padding: 7px 12px;
+      border: none;
+      padding: 8pt 12pt;
       text-align: left;
       word-break: break-word;
       overflow-wrap: anywhere;
       vertical-align: top;
+      line-height: 1.5;
     }
     th {
-      background: #f1f5f9;
+      background: transparent;
       font-weight: 600;
       color: #0f172a;
-      font-size: 9.5pt;
+      font-size: 9pt;
       text-transform: uppercase;
-      letter-spacing: 0.03em;
+      letter-spacing: 0.05em;
+      border-bottom: 1pt solid #94a3b8;
     }
-    tr:nth-child(even) {
+    tbody tr {
+      border-bottom: 0.5pt solid #e2e8f0;
+    }
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+    tbody tr:nth-child(even) {
       background: #f8fafc;
     }
     img {

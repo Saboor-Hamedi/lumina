@@ -11,7 +11,8 @@ import {
   Copy,
   Maximize2,
   Minimize2,
-  FileText
+  FileText,
+  ArrowLeft
 } from 'lucide-react'
 import { EXPORT_FORMATS, getFormat, type ExportFormat } from './formats'
 import { PREVIEW_COMPONENTS } from './previews'
@@ -347,9 +348,20 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
               </button>
             </div>
 
-            <button type="button" className="export-btn-primary" onClick={onClose}>
-              Done
-            </button>
+            <div className="export-success-footer-actions">
+              <button
+                type="button"
+                className="export-btn"
+                onClick={handleExportAgain}
+                aria-label="Go back to options"
+              >
+                <ArrowLeft size={14} />
+                <span>Back</span>
+              </button>
+              <button type="button" className="export-btn-primary" onClick={onClose}>
+                Done
+              </button>
+            </div>
           </div>
         ) : (
           <>
