@@ -37,13 +37,46 @@ export function createMarked() {
 }
 
 /**
+ * Normalises whatever `WorkspaceManager.readAsset` returns into a data URI.
+ * The manager currently returns a `ReadAssetResult` object
+ * (`{ buffer, base64, dataUrl, mimeType }`), but older/alternate shapes
+ * (a raw Buffer, a base64 string, or an existing data URL) are handled too.
+ *
+ * @param {any} asset
+ * @param {string} fallbackMime
+ * @returns {string|null} data URI, or null when it cannot be resolved
+ */
+function assetToDataUri(asset, fallbackMime = 'image/png') {
+  if (!asset) return null
+  if (typeof asset === 'string') {
+    if (asset.startsWith('data:')) return asset
+    return `data:${fallbackMime};base64,${asset}`
+  }
+  if (typeof asset === 'object') {
+    if (typeof asset.dataUrl === 'string' && asset.dataUrl.startsWith('data:')) return asset.dataUrl
+    const mime = asset.mimeType || fallbackMime
+    if (typeof asset.base64 === 'string' && asset.base64.length > 0) {
+      return `data:${mime};base64,${asset.base64}`
+    }
+    if (asset.buffer) {
+      const buf = Buffer.isBuffer(asset.buffer) ? asset.buffer : Buffer.from(asset.buffer)
+      return `data:${mime};base64,${buf.toString('base64')}`
+    }
+  }
+  if (Buffer.isBuffer(asset)) {
+    return `data:${fallbackMime};base64,${asset.toString('base64')}`
+  }
+  return null
+}
+
+/**
  * Converts all local markdown images in `content` to base64 data URIs so the
  * exported document is fully self-contained.
  *
  * Robustness:
  *  - Skips remote (http/data:) images.
  *  - Strips optional angle-brackets and decodes URI components.
- *  - Infers MIME type from the file extension (defaults to image/png).
+ *  - Handles the object shape returned by WorkspaceManager.readAsset.
  *  - On failure, logs and continues (never throws) so one bad image does not
  *    abort the entire export.
  *
@@ -69,21 +102,21 @@ export async function convertImagesToBase64(content) {
       }
       cleanUrl = decodeURIComponent(cleanUrl)
 
-      const buffer = await WorkspaceManager.readAsset(cleanUrl)
-      if (!buffer) {
+      const asset = await WorkspaceManager.readAsset(cleanUrl)
+
+      let fallbackMime = 'image/png'
+      const lowerUrl = cleanUrl.toLowerCase()
+      if (lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg')) fallbackMime = 'image/jpeg'
+      else if (lowerUrl.endsWith('.gif')) fallbackMime = 'image/gif'
+      else if (lowerUrl.endsWith('.svg')) fallbackMime = 'image/svg+xml'
+      else if (lowerUrl.endsWith('.webp')) fallbackMime = 'image/webp'
+
+      const dataUri = assetToDataUri(asset, fallbackMime)
+      if (!dataUri) {
         console.warn('[exportUtils] Asset not found, skipping:', cleanUrl)
         continue
       }
 
-      let mimeType = 'image/png'
-      const lowerUrl = cleanUrl.toLowerCase()
-      if (lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg')) mimeType = 'image/jpeg'
-      else if (lowerUrl.endsWith('.gif')) mimeType = 'image/gif'
-      else if (lowerUrl.endsWith('.svg')) mimeType = 'image/svg+xml'
-      else if (lowerUrl.endsWith('.webp')) mimeType = 'image/webp'
-
-      const base64 = buffer.toString('base64')
-      const dataUri = `data:${mimeType};base64,${base64}`
       processedContent = processedContent.replace(fullMatch, `![${alt}](${dataUri})`)
     } catch (e) {
       console.error('[exportUtils] Failed to convert image to base64:', url, e)
@@ -147,7 +180,7 @@ export function convertWikilinks(content, mode = 'span') {
  *   - count: number of headings found
  */
 export function generateTOC(html, opts = {}) {
-  const { title = 'Table of Contents', maxLevel = 3 } = opts
+  const { maxLevel = 3 } = opts
   if (!html || typeof html !== 'string') {
     return { html: html || '', toc: '', count: 0 }
   }
@@ -180,7 +213,7 @@ export function generateTOC(html, opts = {}) {
     })
     .join('\n')
 
-  const toc = `<nav class="toc" aria-label="Table of Contents">\n<h2 class="toc-title">${escapeHtml(title)}</h2>\n<ul class="toc-list">\n${items}\n</ul>\n</nav>`
+  const toc = `<nav class="toc" aria-label="Contents">\n<ul class="toc-list">\n${items}\n</ul>\n</nav>`
 
   return { html: htmlWithAnchors, toc, count }
 }

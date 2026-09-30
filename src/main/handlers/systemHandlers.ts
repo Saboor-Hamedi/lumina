@@ -1,4 +1,4 @@
-import { app, ipcMain, clipboard, nativeImage, BrowserWindow } from 'electron'
+import { app, ipcMain, clipboard, nativeImage, BrowserWindow, shell } from 'electron'
 import electron from 'electron'
 import { join } from 'path'
 import fs from 'fs/promises'
@@ -9,7 +9,7 @@ import { validateIpc, z } from './ipcValidation'
  * ============================================================================
  * System & Window IPC Handlers
  * ============================================================================
- * 
+ *
  * Manages OS-level interactions, window control, clipboard, shortcuts, and logging:
  * - Window controls: minimize, maximize, toggle-maximize, close, open-devtools.
  * - Clipboard: writing data URLs as images, reading clipboard image buffers.
@@ -129,10 +129,13 @@ export function registerSystemHandlers(getMainWindow: () => BrowserWindow | null
     try {
       if (process.platform === 'win32') {
         const { execSync } = require('child_process')
-        const out = execSync('powershell.exe -NoProfile -NonInteractive -Command [Console]::CapsLock', {
-          windowsHide: true,
-          timeout: 1000
-        })
+        const out = execSync(
+          'powershell.exe -NoProfile -NonInteractive -Command [Console]::CapsLock',
+          {
+            windowsHide: true,
+            timeout: 1000
+          }
+        )
         return out.toString().trim().toLowerCase() === 'true'
       }
       if (typeof (electron as any).keyboard?.isModifierKeyActive === 'function') {
@@ -142,5 +145,18 @@ export function registerSystemHandlers(getMainWindow: () => BrowserWindow | null
     } catch {
       return false
     }
+  })
+
+  // Open a file at an absolute path with the OS default application
+  ipcMain.handle('shell:openPath', async (_, filePath) => {
+    const valid = validateIpc(z.string().min(1), filePath)
+    return shell.openPath(valid)
+  })
+
+  // Reveal a file/folder in the OS file manager (Explorer / Finder)
+  ipcMain.handle('shell:showItemInFolder', (_, filePath) => {
+    const valid = validateIpc(z.string().min(1), filePath)
+    shell.showItemInFolder(valid)
+    return true
   })
 }

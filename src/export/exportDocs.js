@@ -1,6 +1,6 @@
 import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
-import { renderMarkdown, escapeHtml } from './exportUtils.js'
+import { renderMarkdown } from './exportUtils.js'
 
 /**
  * Wraps a rendered markdown body in an MS-Word compatible HTML document with a
@@ -126,26 +126,6 @@ export function buildDocsDocument(title, htmlBody, tocHtml = '') {
       background: #e2e8f0;
       margin: 2em 0;
     }
-    .doc-header {
-      margin-bottom: 1.4em;
-      padding-bottom: 0.5em;
-      border-bottom: 2px solid #6366f1;
-    }
-    .doc-title {
-      font-size: 18pt;
-      font-weight: 700;
-      color: #0f172a;
-      margin: 0;
-      padding: 0;
-      border: none;
-    }
-    .doc-meta {
-      margin-top: 4pt;
-      font-size: 9pt;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-    }
     .toc {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
@@ -179,13 +159,35 @@ export function buildDocsDocument(title, htmlBody, tocHtml = '') {
       color: #2563eb;
       text-decoration: underline;
     }
+    /* Combined export: multiple notes merged into one Word document */
+    .note-title {
+      font-size: 16pt;
+      color: #0f172a;
+      margin: 0 0 8pt;
+    }
+    .combined-toc {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px 18px;
+      margin: 0 0 18px 0;
+    }
+    .combined-toc-title {
+      font-size: 13pt;
+      margin: 0 0 6pt;
+      padding: 0;
+      border: none;
+      color: #0f172a;
+    }
+    .combined-toc ol { margin: 0; padding-left: 18pt; }
+    .note[data-page-break='true'] {
+      page-break-before: always;
+      break-before: page;
+      margin-top: 2em;
+    }
   </style>
 </head>
 <body>
-  <header class="doc-header">
-    <h1 class="doc-title">${escapeHtml(title || 'Untitled')}</h1>
-    <div class="doc-meta">Exported from Lumina</div>
-  </header>
   ${tocHtml}
   ${htmlBody}
 

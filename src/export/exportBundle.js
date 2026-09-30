@@ -11,7 +11,7 @@
 import { dialog } from 'electron'
 import fs from 'fs/promises'
 import path from 'path'
-import { renderMarkdown, escapeHtml } from './exportUtils.js'
+import { renderMarkdown } from './exportUtils.js'
 import WorkspaceManager from '../main/workspace/workspaceManager.js'
 
 /**
@@ -87,8 +87,8 @@ export async function generateCleanHTML(title, content, opts = {}) {
       margin-bottom: 0.6em;
       line-height: 1.3;
     }
-    h1 { font-size: 2.2em; border-bottom: 1px solid var(--border); padding-bottom: 0.3em; margin-top: 0; }
-    h2 { font-size: 1.6em; border-bottom: 1px solid var(--border); padding-bottom: 0.2em; }
+    h1 { font-size: 2.2em; margin-top: 0; }
+    h2 { font-size: 1.6em; }
     h3 { font-size: 1.3em; }
     p { margin-bottom: 1.2em; }
     code {
@@ -193,34 +193,10 @@ export async function generateCleanHTML(title, content, opts = {}) {
     ul, ol { margin: 1.2em 0; padding-left: 24px; }
     li { margin-bottom: 0.4em; }
     hr { border: none; height: 1px; background: var(--border); margin: 2em 0; }
-    .doc-header {
-      margin-bottom: 2em;
-      padding-bottom: 1em;
-      border-bottom: 2px solid var(--accent);
-    }
-    .doc-title {
-      font-size: 2em;
-      font-weight: 800;
-      color: var(--text);
-      margin: 0;
-      padding: 0;
-      border: none;
-    }
-    .doc-meta {
-      margin-top: 0.4em;
-      font-size: 0.75em;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
   </style>
 </head>
 <body>
   <div class="container">
-    <header class="doc-header">
-      <h1 class="doc-title">${escapeHtml(title || 'Untitled')}</h1>
-      <div class="doc-meta">Exported from Lumina</div>
-    </header>
     ${tocHtml}
     ${htmlBody}
   </div>

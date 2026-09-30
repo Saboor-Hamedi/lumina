@@ -19,7 +19,7 @@ export function buildPDFDocument(title, htmlBody, tocHtml = '') {
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>${title || 'Untitled'}</title>
+  <title>${escapeHtml(title || 'Untitled')}</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github.min.css">
   <style>
     @page {
@@ -62,28 +62,6 @@ export function buildPDFDocument(title, htmlBody, tocHtml = '') {
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: none;
     }
-    .doc-header {
-      margin-bottom: 24pt;
-      padding-bottom: 14pt;
-      border-bottom: 2px solid #6366f1;
-    }
-    .doc-title {
-      font-size: 24pt;
-      font-weight: 800;
-      line-height: 1.2;
-      color: #0f172a;
-      letter-spacing: -0.01em;
-      margin: 0;
-      padding: 0;
-      border: none;
-    }
-    .doc-meta {
-      margin-top: 6pt;
-      font-size: 9pt;
-      color: #94a3b8;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
     @media print {
       html, body { background: #ffffff; }
       body { padding: 0; }
@@ -107,16 +85,12 @@ export function buildPDFDocument(title, htmlBody, tocHtml = '') {
       font-size: 20pt;
       margin-top: 0;
       margin-bottom: 12pt;
-      padding-bottom: 6pt;
-      border-bottom: 1.5px solid #e2e8f0;
       color: #0f172a;
     }
     h2 {
       font-size: 15pt;
       margin-top: 18pt;
       margin-bottom: 8pt;
-      padding-bottom: 4pt;
-      border-bottom: 1px solid #f1f5f9;
       color: #1e293b;
     }
     h3 { font-size: 12.5pt; margin-top: 14pt; margin-bottom: 6pt; color: #334155; }
@@ -124,27 +98,43 @@ export function buildPDFDocument(title, htmlBody, tocHtml = '') {
     p {
       margin-bottom: 10pt;
       color: #334155;
-      text-align: left;
+      text-align: justify;
+      hyphens: auto;
+      orphans: 3;
+      widows: 3;
     }
     code {
       font-family: 'Consolas', 'Fira Code', 'Courier New', monospace;
       font-size: 9.5pt;
-      background-color: #f1f5f9;
-      color: #e11d48;
+      background-color: #eef2f7;
+      color: #b91c4a;
       padding: 2px 5px;
       border-radius: 4px;
       border: 1px solid #e2e8f0;
+      word-break: break-word;
     }
     pre {
       background: #f8fafc;
-      padding: 14px 18px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid #e5eaf0;
+      border-left: 3px solid #cbd5e1;
       border-radius: 6px;
+      padding: 12pt 14pt;
       white-space: pre-wrap;
-      word-wrap: break-word;
+      word-break: break-word;
+      overflow-wrap: anywhere;
       margin: 12pt 0;
-      page-break-inside: avoid;
-      break-inside: avoid;
+      break-inside: auto;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+    }
+    /* Prevent the syntax-highlight theme from painting a second, nested block */
+    pre code,
+    pre code.hljs,
+    code.hljs,
+    .hljs {
+      background: transparent !important;
+      padding: 0;
+      border: none;
     }
     pre code {
       background: transparent;
@@ -169,14 +159,21 @@ export function buildPDFDocument(title, htmlBody, tocHtml = '') {
       border-collapse: collapse;
       margin: 14pt 0;
       width: 100%;
+      max-width: 100%;
+      table-layout: auto;
       font-size: 10pt;
-      page-break-inside: avoid;
-      break-inside: avoid;
+      word-break: break-word;
+      break-inside: auto;
     }
+    thead { display: table-header-group; }
+    tr { break-inside: avoid; page-break-inside: avoid; }
     th, td {
       border: 1px solid #cbd5e1;
       padding: 7px 12px;
       text-align: left;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      vertical-align: top;
     }
     th {
       background: #f1f5f9;
@@ -190,12 +187,56 @@ export function buildPDFDocument(title, htmlBody, tocHtml = '') {
       background: #f8fafc;
     }
     img {
+      display: block;
       max-width: 100%;
+      max-height: 9.5cm;
+      width: auto;
       height: auto;
+      margin: 12pt auto;
       border-radius: 6px;
-      margin: 10pt 0;
       page-break-inside: avoid;
       break-inside: avoid;
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 14pt 0;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .mermaid svg {
+      max-width: 100% !important;
+      max-height: 9.5cm !important;
+      width: auto !important;
+      height: auto !important;
+    }
+    .mermaid-error {
+      display: block;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 8px 10px;
+      font-size: 10pt;
+      line-height: 1.4;
+      color: #b91c4a;
+      background: #fff5f5;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      text-align: center;
+    }
+    /* Normalise figure sizing so every diagram/image prints at a consistent scale */
+    figure {
+      margin: 12pt auto;
+      text-align: center;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    figure img,
+    figure svg {
+      max-width: 100%;
+      max-height: 9.5cm;
+      height: auto;
+      margin: 0 auto;
     }
     a {
       color: #2563eb;
@@ -253,25 +294,88 @@ export function buildPDFDocument(title, htmlBody, tocHtml = '') {
       color: #2563eb;
       text-decoration: underline;
     }
+    /* Combined export: multiple notes merged into one document */
+    .note-title {
+      font-size: 17pt;
+      color: #0f172a;
+      margin: 0 0 10pt;
+    }
+    .note-error { color: #94a3b8; font-style: italic; }
+    .combined-toc {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12pt 18pt;
+      margin: 0 0 18pt 0;
+    }
+    .combined-toc-title {
+      font-size: 13pt;
+      margin: 0 0 6pt;
+      padding: 0;
+      border: none;
+      color: #0f172a;
+    }
+    .combined-toc ol { margin: 0; padding-left: 18pt; }
+    .combined-toc a { color: #2563eb; text-decoration: none; }
+    .note[data-page-break='true'] {
+      break-before: page;
+      page-break-before: always;
+    }
+    @media screen {
+      .note[data-page-break='true'] {
+        margin-top: 36pt;
+        padding-top: 24pt;
+        border-top: 1px dashed #cbd5e1;
+      }
+    }
   </style>
 </head>
 <body>
   <article class="page">
-    <header class="doc-header">
-      <h1 class="doc-title">${escapeHtml(title || 'Untitled')}</h1>
-      <div class="doc-meta">Exported from Lumina</div>
-    </header>
     ${tocHtml}
     ${htmlBody}
   </article>
 
   <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.3/dist/mermaid.min.js"></script>
   <script>
-    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'default',
+      themeVariables: { fontSize: '13px' },
+      flowchart: { useMaxWidth: true, htmlLabels: true },
+      sequence: { useMaxWidth: true },
+      gantt: { useMaxWidth: true }
+    });
+
+    // Clamp every diagram to a consistent, print-friendly size. We size from the
+    // SVG viewBox so oversized graphs shrink proportionally and never dominate
+    // the page (max ~14.8cm wide, ~9.5cm tall), while small ones are left alone.
+    function clampSvgSize(svgEl) {
+      try {
+        var vb = svgEl.viewBox && svgEl.viewBox.baseVal;
+        var w0 = vb && vb.width ? vb.width : 0;
+        var h0 = vb && vb.height ? vb.height : 0;
+        if (!w0 || !h0) {
+          // Some diagram types omit a viewBox — derive one from the geometry.
+          var bb = svgEl.getBBox();
+          if (!bb || !bb.width || !bb.height) return;
+          w0 = bb.width;
+          h0 = bb.height;
+          svgEl.setAttribute('viewBox', bb.x + ' ' + bb.y + ' ' + bb.width + ' ' + bb.height);
+        }
+        var MAX_W = 560, MAX_H = 360;
+        var scale = Math.min(MAX_W / w0, MAX_H / h0, 1);
+        svgEl.removeAttribute('style');
+        svgEl.setAttribute('width', Math.round(w0 * scale));
+        svgEl.setAttribute('height', Math.round(h0 * scale));
+        svgEl.style.maxWidth = '100%';
+        svgEl.style.height = 'auto';
+      } catch (e) {}
+    }
 
     async function renderMermaid() {
       try {
-        const elements = document.querySelectorAll('.mermaid');
+        var elements = document.querySelectorAll('.mermaid');
         if (elements.length > 0) {
           mermaid.init(undefined, elements);
         }
@@ -301,6 +405,18 @@ export function buildPDFDocument(title, htmlBody, tocHtml = '') {
                marker.style.setProperty('fill', '#000000', 'important');
                marker.style.setProperty('stroke', '#000000', 'important');
              });
+             clampSvgSize(svgEl);
+        });
+
+        // Any diagram that failed to produce an SVG (bad syntax) is swapped for
+        // a small, tidy notice instead of Mermaid's oversized error text.
+        document.querySelectorAll('.mermaid').forEach(function (el) {
+          if (el.querySelector('svg')) return;
+          var text = el.textContent || '';
+          if (text && /error|syntax|parse/i.test(text)) {
+            el.innerHTML =
+              '<div class="mermaid-error">Diagram could not be rendered (syntax error)</div>';
+          }
         });
       } catch (err) {
         console.error(err);
@@ -328,7 +444,12 @@ export async function generatePDFHTML(title, content) {
     mermaid: true,
     toc: true
   })
-  return buildPDFDocument(title, html, tocHtml)
+  // If the note doesn't begin with its own heading, add a clean title so the
+  // very top of the document is never blank. If it already starts with an <h1>
+  // we skip it, preventing a duplicated heading.
+  const startsWithHeading = /^\s*<h[12][\s>]/i.test(html)
+  const titleHeading = startsWithHeading ? '' : `<h1>${escapeHtml(title || 'Untitled')}</h1>\n`
+  return buildPDFDocument(title, titleHeading + html, tocHtml)
 }
 
 /**
@@ -356,6 +477,21 @@ async function waitForMermaid(win, timeoutMs = 3000) {
       }
     })
   `)
+}
+
+/**
+ * Shared Chromium print options for A4 PDF export.
+ * Adds consistent margins and a subtle page-number footer so exported
+ * documents are print-ready without further editing.
+ */
+export const PDF_PRINT_OPTIONS = {
+  printBackground: true,
+  pageSize: 'A4',
+  displayHeaderFooter: true,
+  headerTemplate: '<div></div>',
+  footerTemplate:
+    '<div style="width:100%;font-size:10px;color:#94a3b8;text-align:right;padding:0 6mm 6px 0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;"><span class="pageNumber"></span></div>',
+  margins: { top: 0.79, bottom: 0.85, left: 0.79, right: 0.79 }
 }
 
 export const handleExportPDF = async (mainWindow, payload) => {
@@ -389,11 +525,8 @@ export const handleExportPDF = async (mainWindow, payload) => {
     await printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
     await waitForMermaid(printWin)
 
-    // Generate PDF relying on @page CSS for margins
-    const pdfData = await printWin.webContents.printToPDF({
-      printBackground: true,
-      pageSize: 'A4'
-    })
+    // Generate PDF with consistent page margins and a page-number footer
+    const pdfData = await printWin.webContents.printToPDF(PDF_PRINT_OPTIONS)
 
     await fs.writeFile(filePath, pdfData)
     return { success: true, filePath }

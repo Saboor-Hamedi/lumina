@@ -26,6 +26,12 @@ describe('exportUtils.generateTOC', () => {
     expect(html).toBe('<p>just text</p>')
   })
 
+  it('does not emit a TOC title heading (avoids a duplicate title)', () => {
+    const { toc } = generateTOC('<h1>Intro</h1><h2>Details</h2>')
+    expect(toc).not.toContain('Table of Contents')
+    expect(toc).not.toContain('toc-title')
+  })
+
   it('respects maxLevel', () => {
     const html = '<h1>A</h1><h2>B</h2><h4>C</h4>'
     const { count } = generateTOC(html, { maxLevel: 2 })

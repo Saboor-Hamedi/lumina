@@ -37,7 +37,7 @@ import {
 import { EditorSlash } from '../slash'
 import EditorCreatedAt from './components/EditorCreatedAt'
 import EditorZoomHud from './components/EditorZoomHud'
-import ExportDialog from './components/ExportDialog'
+import { ExportContainer } from '../export'
 
 import type { Snippet, EditorHandle } from '../../core/editor/types'
 import type { EditorView } from '@codemirror/view'
@@ -488,7 +488,7 @@ export const Editor: React.FC<EditorProps> = memo(
           />
         </div>
 
-        <ExportDialog
+        <ExportContainer
           isOpen={isExportDialogOpen}
           title={title}
           content={isExportDialogOpen ? getExportDialogContent() : ''}

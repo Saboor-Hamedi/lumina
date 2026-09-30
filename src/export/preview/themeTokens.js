@@ -137,6 +137,24 @@ ${css}
 </head>
 <body>
 ${body}
+<script>
+  // Preview documents are rendered inside a sandboxed <iframe srcdoc>. Relative
+  // links (including wikilinks emitted as href="#") would otherwise resolve
+  // against the parent app URL and navigate the frame to the app itself. Block
+  // all in-preview navigation so clicking a link can never load the app.
+  (function () {
+    function block(e) {
+      var node = e.target;
+      while (node && node.tagName !== 'A') node = node.parentElement;
+      if (node && node.tagName === 'A') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }
+    document.addEventListener('click', block, true);
+    document.addEventListener('auxclick', block, true);
+  })();
+</script>
 </body>
 </html>`
 }

@@ -13,6 +13,8 @@ import { handleExportCleanHTML, handleExportMarkdownBundle } from '../../export/
 import { buildPreview, SUPPORTED_PREVIEW_FORMATS } from '../../export/preview'
 // @ts-ignore
 import { handleExportBatch, BATCH_FORMATS } from '../../export/exportBatch'
+// @ts-ignore
+import { handleExportCombined, COMBINED_FORMATS } from '../../export/exportCombined'
 import { validateIpc, z } from './ipcValidation'
 
 /**
@@ -50,6 +52,12 @@ const batchPayloadSchema = z.object({
   notes: z.array(batchNoteSchema).min(1),
   format: z.string(),
   outputDir: z.string().optional()
+})
+
+const combinedPayloadSchema = z.object({
+  notes: z.array(batchNoteSchema).min(1),
+  format: z.string(),
+  filePath: z.string().optional()
 })
 
 export function registerExportHandlers(getMainWindow: () => BrowserWindow | null): void {
@@ -113,5 +121,22 @@ export function registerExportHandlers(getMainWindow: () => BrowserWindow | null
     }
 
     return handleExportBatch(win, valid, send)
+  })
+
+  // Merge multiple notes into a SINGLE file (e.g. one PDF containing all notes)
+  ipcMain.handle('window:export-combined', async (_, payload) => {
+    const valid = validateIpc(combinedPayloadSchema, payload)
+    if (!COMBINED_FORMATS.includes(valid.format)) {
+      throw new Error(`Unsupported combined format: ${valid.format}`)
+    }
+
+    const win = getMainWindow()
+    const send = (progress: any) => {
+      if (win && !win.isDestroyed()) {
+        win.webContents.send('export:batch-progress', progress)
+      }
+    }
+
+    return handleExportCombined(win, valid, send)
   })
 }

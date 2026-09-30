@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import fs from 'fs/promises'
 import path from 'path'
 import os from 'os'
-import { handleExportPDF } from '../../src/export/exportPDF'
+import { handleExportPDF, generatePDFHTML } from '../../src/export/exportPDF'
 
 const showSaveDialog = vi.fn()
 const mockLoadURL = vi.fn()
@@ -81,6 +81,20 @@ describe('handleExportPDF', () => {
     )
   })
 
+  it('adds a page-number footer so exports are print-ready', async () => {
+    showSaveDialog.mockResolvedValue({ canceled: false, filePath })
+
+    await handleExportPDF(null, { title: 'Note', content: 'body' })
+
+    const options = mockPrintToPDF.mock.calls[0][0]
+    expect(options.displayHeaderFooter).toBe(true)
+    expect(options.footerTemplate).toContain('pageNumber')
+    expect(options.footerTemplate).toContain('text-align:right')
+    // Only the number should appear — no "Page"/"of" labels.
+    expect(options.footerTemplate).not.toContain('Page')
+    expect(options.footerTemplate).not.toContain('totalPages')
+  })
+
   it('converts wikilinks in the printed HTML', async () => {
     showSaveDialog.mockResolvedValue({ canceled: false, filePath })
 
@@ -111,5 +125,24 @@ describe('handleExportPDF', () => {
       null,
       expect.objectContaining({ defaultPath: 'Untitled.pdf' })
     )
+  })
+})
+
+describe('generatePDFHTML', () => {
+  it('adds a clean title heading when the note has no heading', async () => {
+    const html = await generatePDFHTML('My Note', 'just a paragraph')
+    expect(html).toMatch(/<h1>My Note<\/h1>/)
+  })
+
+  it('does not duplicate the title when the note already starts with a heading', async () => {
+    const html = await generatePDFHTML('My Note', '# Different Heading\n\nbody')
+    expect(html).not.toMatch(/<h1>My Note<\/h1>/)
+    expect(html).toMatch(/<h1[^>]*>Different Heading<\/h1>/)
+  })
+
+  it('does not include the old "Exported from Lumina" metadata band', async () => {
+    const html = await generatePDFHTML('My Note', 'body')
+    expect(html).not.toContain('Exported from Lumina')
+    expect(html).not.toContain('doc-header')
   })
 })

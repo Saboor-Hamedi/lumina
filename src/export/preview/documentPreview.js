@@ -20,8 +20,8 @@ const DOCUMENT_CSS = `
       line-height: 1.3;
       margin: 1.6em 0 0.6em;
     }
-    h1 { font-size: 1.9em; margin-top: 0; padding-bottom: 0.3em; border-bottom: 1px solid var(--border-card); }
-    h2 { font-size: 1.45em; padding-bottom: 0.25em; border-bottom: 1px solid var(--border-dim); }
+    h1 { font-size: 1.9em; margin-top: 0; }
+    h2 { font-size: 1.45em; }
     h3 { font-size: 1.2em; }
     h4 { font-size: 1.05em; color: var(--text-muted); }
     p { margin: 0 0 1em; color: var(--text-main); }
@@ -40,12 +40,23 @@ const DOCUMENT_CSS = `
     pre {
       background: var(--bg-panel);
       border: 1px solid var(--border-card);
+      border-left: 3px solid var(--border-subtle);
       border-radius: 8px;
       padding: 16px 18px;
-      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
       margin: 1.2em 0;
     }
-    pre code { background: transparent; border: none; padding: 0; color: var(--text-main); }
+    pre code,
+    pre code.hljs,
+    code.hljs,
+    .hljs {
+      background: transparent !important;
+      border: none;
+      padding: 0;
+      color: var(--text-main);
+    }
     blockquote {
       border-left: 3px solid var(--text-accent);
       background: var(--bg-panel);
@@ -54,15 +65,60 @@ const DOCUMENT_CSS = `
       margin: 1.2em 0;
       color: var(--text-muted);
     }
-    table { width: 100%; border-collapse: collapse; margin: 1.2em 0; font-size: 0.92em; }
-    th, td { border: 1px solid var(--border-card); padding: 8px 12px; text-align: left; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.2em 0;
+      font-size: 0.92em;
+      table-layout: auto;
+      word-break: break-word;
+    }
+    th, td {
+      border: 1px solid var(--border-card);
+      padding: 8px 12px;
+      text-align: left;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      vertical-align: top;
+    }
     th { background: var(--bg-panel); color: var(--text-main); font-weight: 600; }
     tr:nth-child(even) { background: color-mix(in srgb, var(--bg-panel) 60%, transparent); }
-    img { max-width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--border-card); margin: 0.6em 0; }
+    img {
+      display: block;
+      max-width: 100%;
+      max-height: 9.5cm;
+      width: auto;
+      height: auto;
+      margin: 0.8em auto;
+      border-radius: 8px;
+      border: 1px solid var(--border-card);
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 1em 0;
+    }
+    .mermaid svg {
+      max-width: 100% !important;
+      max-height: 9.5cm !important;
+      width: auto !important;
+      height: auto !important;
+    }
+    .mermaid-error {
+      display: block;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 8px 10px;
+      font-size: 0.85em;
+      line-height: 1.4;
+      color: #b91c4a;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: 6px;
+      text-align: center;
+    }
     .wikilink { color: var(--text-accent); font-weight: 500; }
-    .doc-header { margin-bottom: 1.6em; padding-bottom: 0.9em; border-bottom: 2px solid var(--text-accent); }
-    .doc-title { font-size: 1.9em; font-weight: 800; color: var(--text-main); margin: 0; }
-    .doc-meta { margin-top: 0.35em; font-size: 0.72em; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); }
     .toc {
       background: var(--bg-panel);
       border: 1px solid var(--border-card);
@@ -96,14 +152,11 @@ export async function buildDocumentPreview(format, title, content, theme) {
   })
 
   const safeTitle = title || 'Untitled'
-  const label = format === 'docs' ? 'Word' : format === 'html' ? 'HTML' : 'PDF'
+  const startsWithHeading = /^\s*<h[12][\s>]/i.test(html)
+  const titleHeading = startsWithHeading ? '' : `<h1>${escapeHtml(safeTitle)}</h1>\n`
 
   const body = `  <article class="doc">
-    <header class="doc-header">
-      <h1 class="doc-title">${escapeHtml(safeTitle)}</h1>
-      <div class="doc-meta">${escapeHtml(label)} preview · Exported from Lumina</div>
-    </header>
-    ${tocHtml}
+    ${titleHeading}${tocHtml}
     ${html}
   </article>`
 
@@ -111,12 +164,64 @@ export async function buildDocumentPreview(format, title, content, theme) {
   const mermaidScript = `
   <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.3/dist/mermaid.min.js"></script>
   <script>
+    function start() {
     try {
-      mermaid.initialize({ startOnLoad: false, theme: '${mermaidTheme}', securityLevel: 'strict' });
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: '${mermaidTheme}',
+        securityLevel: 'strict',
+        themeVariables: { fontSize: '13px' },
+        flowchart: { useMaxWidth: true, htmlLabels: true },
+        sequence: { useMaxWidth: true },
+        gantt: { useMaxWidth: true }
+      });
+      function clampSvgSize(svgEl) {
+        try {
+          var vb = svgEl.viewBox && svgEl.viewBox.baseVal;
+          var w0 = vb && vb.width ? vb.width : 0;
+          var h0 = vb && vb.height ? vb.height : 0;
+          if (!w0 || !h0) {
+            var bb = svgEl.getBBox();
+            if (!bb || !bb.width || !bb.height) return;
+            w0 = bb.width;
+            h0 = bb.height;
+            svgEl.setAttribute('viewBox', bb.x + ' ' + bb.y + ' ' + bb.width + ' ' + bb.height);
+          }
+          var MAX_W = 560, MAX_H = 360;
+          var scale = Math.min(MAX_W / w0, MAX_H / h0, 1);
+          svgEl.removeAttribute('style');
+          svgEl.setAttribute('width', Math.round(w0 * scale));
+          svgEl.setAttribute('height', Math.round(h0 * scale));
+          svgEl.style.maxWidth = '100%';
+          svgEl.style.height = 'auto';
+        } catch (e) {}
+      }
+      function finish() {
+        document.querySelectorAll('.mermaid svg').forEach(clampSvgSize);
+        // Swap any failed diagram for a small notice (not Mermaid's huge error).
+        document.querySelectorAll('.mermaid').forEach(function (el) {
+          if (el.querySelector('svg')) return;
+          var text = el.textContent || '';
+          if (text && /error|syntax|parse/i.test(text)) {
+            el.innerHTML = '<div class="mermaid-error">Diagram could not be rendered (syntax error)</div>';
+          }
+        });
+      }
       if (document.querySelectorAll('.mermaid').length > 0) {
-        mermaid.run({ querySelector: '.mermaid' }).catch(function () {});
+        mermaid
+          .run({ querySelector: '.mermaid', suppressErrors: true })
+          .then(finish)
+          .catch(function () {
+            finish();
+          });
       }
     } catch (e) {}
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', start);
+    } else {
+      start();
+    }
   </script>`
 
   return wrapPreviewDocument(

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import { Trash2, X, Sparkles, Download } from 'lucide-react'
 import { useContextMenu } from '../../Navigation/hooks/useContextMenu'
+import type { ExportTargetNote } from '../utils/exportSelection'
 
 interface Snippet {
   id: string
@@ -32,8 +33,12 @@ interface UseFolderContextMenuParams {
   loadWorkspace: () => Promise<void>
   selectedCount?: number
   selectedNotes?: Snippet[]
+  /** Fully resolved export targets for the current multi-selection. */
+  exportNotes?: ExportTargetNote[]
+  /** Resolves a single folder (and its subtree) to export targets. */
+  resolveFolderNotes?: (folderId: string) => ExportTargetNote[]
   onSummarizeSelected?: (notes: Snippet[]) => void
-  onExportSelected?: (notes: Snippet[]) => void
+  onExportSelected?: (notes: ExportTargetNote[]) => void
   onRequestBulkDelete?: () => void
   clearSelection?: () => void
 }
@@ -58,6 +63,8 @@ export function useFolderContextMenu({
   loadWorkspace,
   selectedCount = 0,
   selectedNotes = [],
+  exportNotes = [],
+  resolveFolderNotes,
   onSummarizeSelected,
   onExportSelected,
   onRequestBulkDelete,
@@ -122,12 +129,37 @@ export function useFolderContextMenu({
     }
   })
 
+  /** Builds the "Export as PDF…" menu entry for a resolved set of notes. */
+  const buildExportOption = useCallback(
+    (targets: ExportTargetNote[], label: string): ContextMenuOption => ({
+      label,
+      icon: React.createElement(Download, { size: 14 }),
+      onClick: () => {
+        setFolderContext(null)
+        onExportSelected?.(targets)
+      }
+    }),
+    [onExportSelected]
+  )
+
   const contextMenuOptions = useMemo((): ContextMenuOption[] => {
+    // ── Multi-selection (files and/or folders) ──────────────────────────────
     if (selectedCount > 1) {
       const options: ContextMenuOption[] = []
+
+      if (exportNotes.length > 0) {
+        options.push(
+          buildExportOption(
+            exportNotes,
+            `Export ${exportNotes.length} ${exportNotes.length === 1 ? 'Note' : 'Notes'} as PDF…`
+          )
+        )
+      }
+
       if (selectedNotes && selectedNotes.length > 0) {
         options.push({
-          label: selectedNotes.length > 1 ? `Summarize ${selectedNotes.length} Notes` : 'Summarize Note',
+          label:
+            selectedNotes.length > 1 ? `Summarize ${selectedNotes.length} Notes` : 'Summarize Note',
           icon: React.createElement(Sparkles, { size: 14, className: 'text-primary' }),
           onClick: () => {
             setFolderContext(null)
@@ -135,16 +167,10 @@ export function useFolderContextMenu({
             onSummarizeSelected?.(selectedNotes)
           }
         })
-        options.push({
-          label: `Export ${selectedNotes.length} Notes…`,
-          icon: React.createElement(Download, { size: 14 }),
-          onClick: () => {
-            setFolderContext(null)
-            onExportSelected?.(selectedNotes)
-          }
-        })
-        options.push({ type: 'divider' })
       }
+
+      if (options.length > 0) options.push({ type: 'divider' })
+
       options.push(
         {
           label: `Delete ${selectedCount} Items`,
@@ -166,8 +192,37 @@ export function useFolderContextMenu({
       )
       return options
     }
+
+    // ── Single folder right-click: offer to export the folder subtree ───────
+    if (folderContext?.folderId && resolveFolderNotes) {
+      const folderTargets = resolveFolderNotes(folderContext.folderId)
+      if (folderTargets.length > 0) {
+        return [
+          buildExportOption(
+            folderTargets,
+            `Export Folder as PDF (${folderTargets.length} ${
+              folderTargets.length === 1 ? 'Note' : 'Notes'
+            })…`
+          ),
+          { type: 'divider' },
+          ...(defaultMenuOptions as ContextMenuOption[])
+        ]
+      }
+    }
+
     return defaultMenuOptions as ContextMenuOption[]
-  }, [selectedCount, selectedNotes, onSummarizeSelected, onExportSelected, defaultMenuOptions, onRequestBulkDelete, clearSelection])
+  }, [
+    selectedCount,
+    selectedNotes,
+    exportNotes,
+    folderContext,
+    resolveFolderNotes,
+    buildExportOption,
+    onSummarizeSelected,
+    defaultMenuOptions,
+    onRequestBulkDelete,
+    clearSelection
+  ])
 
   const handleConfirmDeleteFolder = useCallback(async () => {
     if (!deleteConfirmFolder) return

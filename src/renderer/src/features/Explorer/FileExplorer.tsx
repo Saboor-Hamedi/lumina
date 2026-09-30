@@ -1,8 +1,8 @@
 /**
  * FileExplorer.tsx
- * 
+ *
  * Part 4 of the 4-Part Partitioned FileExplorer Architecture.
- * 
+ *
  * Master Orchestrator Component for Lumina's File Explorer:
  * - Coordinates:
  *   1. Part 1: `useExplorerPaste` (Clipboard vault paste & bulk deletion logic).
@@ -10,7 +10,7 @@
  *   3. Part 3: `ExplorerModals` (DragOverlay, folder context menus, and delete confirmation dialogs).
  *   4. ExplorerHeader (Search input, segmented tabs, collapse all, new folder/note actions).
  *   5. ExplorerFavorites (Quick access pinned items with custom drag reordering).
- * 
+ *
  * Performance & Design:
  * - Reduced from 1167 lines of monolithic code down to clean, modular components.
  * - 100% Type-Safe TypeScript with zero `any` leaks in core interfaces.
@@ -38,12 +38,17 @@ import { useExplorerSelection } from './hooks/ExplorerSelection'
 import { useExplorerDnd } from './hooks/ExplorerDnd'
 import { useExplorerOperations } from './hooks/ExplorerOperations'
 import { useFolderContextMenu } from './hooks/FolderMenu'
-import { countExplorerPerfRender, finishExplorerPerfPaint, markExplorerPerf } from './utils/explorerPerf'
+import {
+  countExplorerPerfRender,
+  finishExplorerPerfPaint,
+  markExplorerPerf
+} from './utils/explorerPerf'
 
 import { useExplorerPaste } from './useExplorerPaste'
 import { ExplorerVirtuosoList } from './ExplorerVirtuosoList'
 import { ExplorerModals } from './ExplorerModals'
-import { BatchExportDialog } from './components/BatchExportDialog'
+import { BatchExportDialog } from '../export'
+import { resolveExportNotes, resolveFolderExportNotes } from './utils/exportSelection'
 
 export interface FileExplorerProps {
   isOpen?: boolean
@@ -110,7 +115,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   // Workspace store subscriptions
   const snippets = (useWorkspaceStore((state: any) => state.notes) || []) as any[]
   const folders = (useWorkspaceStore((state: any) => state.folders) || []) as string[]
-  const folderColors = (useWorkspaceStore((state: any) => state.folderColors) || {}) as Record<string, string>
+  const folderColors = (useWorkspaceStore((state: any) => state.folderColors) || {}) as Record<
+    string,
+    string
+  >
   const selectedSnippetId = useWorkspaceStore(
     (state: any) =>
       state.selectedNote?.id ||
@@ -241,10 +249,12 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     if (previousFlatTreeRef.current === flatTree) return
     previousFlatTreeRef.current = flatTree
     markExplorerPerf('render-end', { visibleRows: flatTree.length })
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      markExplorerPerf('visible-rows-frame', { visibleRows: flatTree.length })
-      finishExplorerPerfPaint({ visibleRows: flatTree.length })
-    }))
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        markExplorerPerf('visible-rows-frame', { visibleRows: flatTree.length })
+        finishExplorerPerfPaint({ visibleRows: flatTree.length })
+      })
+    )
   }, [flatTree])
 
   // Keyboard Shortcuts: Reveal active file in system explorer / file manager
@@ -329,6 +339,19 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     return (allSnippets || snippets || []).filter((s: any) => selectedNoteIds.has(s.id))
   }, [allSnippets, snippets, selectedNoteIds])
 
+  // Flat list of notes that should be exported for the current selection.
+  // Expands any selected folder into its full subtree and de-duplicates notes.
+  const exportNotes = useMemo(
+    () => resolveExportNotes({ notes: snippets, selectedNoteIds, selectedFolderIds }),
+    [snippets, selectedNoteIds, selectedFolderIds]
+  )
+
+  // Resolver used when a single folder is right-clicked (no multi-selection).
+  const resolveFolderNotes = useCallback(
+    (folderId: string) => resolveFolderExportNotes(snippets, folderId),
+    [snippets]
+  )
+
   const [batchExportNotes, setBatchExportNotes] = useState<any[] | null>(null)
 
   // Context menu actions for folders and multi-selections
@@ -350,6 +373,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     loadWorkspace,
     selectedCount: totalSelectedCount,
     selectedNotes,
+    exportNotes,
+    resolveFolderNotes,
     onSummarizeSelected: (notes: any) => summarizeNotes(notes),
     onExportSelected: (notes: any) => setBatchExportNotes(notes),
     onRequestBulkDelete: () => setBulkDeleteModalOpen(true),
@@ -459,12 +484,25 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   )
 
   const handleExplorerProfiler = useCallback(
-    (id: string, phase: string, actualDuration: number, baseDuration: number, startTime: number, commitTime: number) => {
-      markExplorerPerf('render-end', { id, phase, actualDuration, baseDuration, startTime, commitTime })
+    (
+      id: string,
+      phase: string,
+      actualDuration: number,
+      baseDuration: number,
+      startTime: number,
+      commitTime: number
+    ) => {
+      markExplorerPerf('render-end', {
+        id,
+        phase,
+        actualDuration,
+        baseDuration,
+        startTime,
+        commitTime
+      })
     },
     []
   )
-
 
   const handleSortDragEnd = (event: any) => {
     const { active, over } = event
@@ -623,37 +661,37 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                 onDragEnd={handleListDragEnd}
               >
                 <React.Profiler id="ExplorerVirtuosoList" onRender={handleExplorerProfiler}>
-                <ExplorerVirtuosoList
-                  virtuosoRef={virtuosoRef}
-                  flatTree={flatTree}
-                  virtuosoContext={virtuosoContext}
-                  isDragging={!!activeListDragItem}
-                  isDraggingExternal={isDraggingExternal}
-                  hoveredFolderId={hoveredFolderId}
-                  selectedNoteIds={selectedNoteIds}
-                  selectedNoteIdsRef={selectedNoteIdsRef}
-                  selectedFolderIds={selectedFolderIds}
-                  selectedSnippetId={selectedSnippetId}
-                  selectedSnippetIdRef={selectedSnippetIdRef}
-                  selectedIndex={selectedIndex}
-                  sidebarFocus={sidebarFocus || ''}
-                  lastClickedFolder={lastClickedFolder || ''}
-                  totalSelectedCount={totalSelectedCount}
-                  query={query}
-                  matchMetaMap={matchMetaMap}
-                  toggleFolder={toggleFolder}
-                  handleFolderContextMenu={handleFolderContextMenu}
-                  handleNoteClick={handleNoteClick}
-                  handleFolderClick={handleFolderClick}
-                  setSidebarFocus={(val: any) => setSidebarFocus(val)}
-                  setLastClickedFolder={(val: any) => setLastClickedFolder(val)}
-                  setSelectedIndex={setSelectedIndex}
-                  handleBackgroundClick={handleBackgroundClick}
-                  handleExternalDragEnter={handleExternalDragEnter}
-                  handleExternalDragOver={handleExternalDragOver}
-                  handleExternalDragLeave={handleExternalDragLeave}
-                  handleExternalDrop={handleExternalDrop}
-                />
+                  <ExplorerVirtuosoList
+                    virtuosoRef={virtuosoRef}
+                    flatTree={flatTree}
+                    virtuosoContext={virtuosoContext}
+                    isDragging={!!activeListDragItem}
+                    isDraggingExternal={isDraggingExternal}
+                    hoveredFolderId={hoveredFolderId}
+                    selectedNoteIds={selectedNoteIds}
+                    selectedNoteIdsRef={selectedNoteIdsRef}
+                    selectedFolderIds={selectedFolderIds}
+                    selectedSnippetId={selectedSnippetId}
+                    selectedSnippetIdRef={selectedSnippetIdRef}
+                    selectedIndex={selectedIndex}
+                    sidebarFocus={sidebarFocus || ''}
+                    lastClickedFolder={lastClickedFolder || ''}
+                    totalSelectedCount={totalSelectedCount}
+                    query={query}
+                    matchMetaMap={matchMetaMap}
+                    toggleFolder={toggleFolder}
+                    handleFolderContextMenu={handleFolderContextMenu}
+                    handleNoteClick={handleNoteClick}
+                    handleFolderClick={handleFolderClick}
+                    setSidebarFocus={(val: any) => setSidebarFocus(val)}
+                    setLastClickedFolder={(val: any) => setLastClickedFolder(val)}
+                    setSelectedIndex={setSelectedIndex}
+                    handleBackgroundClick={handleBackgroundClick}
+                    handleExternalDragEnter={handleExternalDragEnter}
+                    handleExternalDragOver={handleExternalDragOver}
+                    handleExternalDragLeave={handleExternalDragLeave}
+                    handleExternalDrop={handleExternalDrop}
+                  />
                 </React.Profiler>
               </DndContext>
             </div>
@@ -681,6 +719,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
       <BatchExportDialog
         isOpen={!!batchExportNotes}
         notes={batchExportNotes || []}
+        initialFormat="pdf"
         onClose={() => setBatchExportNotes(null)}
       />
     </>
