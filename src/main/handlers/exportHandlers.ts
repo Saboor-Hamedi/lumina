@@ -1,23 +1,13 @@
 import { ipcMain, BrowserWindow } from 'electron'
-// @ts-ignore
 import { handleExportDocs } from '../../export/exportDocs'
-// @ts-ignore
 import { handleExportPDF } from '../../export/exportPDF'
-// @ts-ignore
 import { handleExportMarkdown } from '../../export/exportMarkdown'
-// @ts-ignore
 import { handleExportText } from '../../export/exportText'
-// @ts-ignore
 import { handleExportCleanHTML, handleExportMarkdownBundle } from '../../export/exportBundle'
-// @ts-ignore
 import { buildPreview, SUPPORTED_PREVIEW_FORMATS } from '../../export/preview'
-// @ts-ignore
 import { handleExportBatch, BATCH_FORMATS } from '../../export/exportBatch'
-// @ts-ignore
 import { handleExportCombined, COMBINED_FORMATS } from '../../export/exportCombined'
-// @ts-ignore
 import { withRenderedHtml } from '../../export/renderWindow'
-// @ts-ignore
 import { stripMermaidScripts } from '../../export/mermaidRuntime'
 import { validateIpc, z } from './ipcValidation'
 

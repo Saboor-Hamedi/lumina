@@ -1,20 +1,20 @@
 /**
  * ============================================================================
- * Export Preview (`preview/index.js`)
+ * Export Preview (`preview/index.ts`)
  * ============================================================================
  * Dispatch layer for export previews. Each format lives in its own module so
  * changes stay isolated and robust:
- *   - documentPreview.js → PDF / Word / HTML (rendered markdown, full-width)
- *   - markdownPreview.js → raw Markdown source
- *   - textPreview.js     → plain text
+ *   - documentPreview.ts → PDF / Word / HTML (rendered markdown, full-width)
+ *   - markdownPreview.ts → raw Markdown source
+ *   - textPreview.ts     → plain text
  *
  * All previews are full-width and themed (no card, no shadow).
  * ============================================================================
  */
 
-import { buildDocumentPreview } from './documentPreview.js'
-import { buildMarkdownPreview } from './markdownPreview.js'
-import { buildTextPreview } from './textPreview.js'
+import { buildDocumentPreview } from './documentPreview'
+import { buildMarkdownPreview } from './markdownPreview'
+import { buildTextPreview } from './textPreview'
 
 export const SUPPORTED_PREVIEW_FORMATS = [
   'html',
@@ -23,23 +23,36 @@ export const SUPPORTED_PREVIEW_FORMATS = [
   'markdown',
   'text',
   'markdown-bundle'
-]
+] as const
+
+export type SupportedPreviewFormat = (typeof SUPPORTED_PREVIEW_FORMATS)[number]
+
+export interface BuildPreviewResult {
+  html: string
+  format: string
+  truncated: boolean
+}
 
 /**
  * Builds a preview HTML document for the requested format.
  *
- * @param {string} format One of SUPPORTED_PREVIEW_FORMATS
- * @param {string} title Document title
- * @param {string} content Markdown source
- * @param {unknown} [theme] Resolved app theme tokens ({ 'bg-app': '#…', … })
- * @returns {Promise<{ html: string, format: string, truncated: boolean }>}
+ * @param format One of SUPPORTED_PREVIEW_FORMATS
+ * @param title Document title
+ * @param content Markdown source
+ * @param theme Resolved app theme tokens ({ 'bg-app': '#…', … })
+ * @returns Full HTML document and metadata
  */
-export async function buildPreview(format, title, content, theme) {
-  if (!SUPPORTED_PREVIEW_FORMATS.includes(format)) {
+export async function buildPreview(
+  format: string,
+  title?: string,
+  content?: string,
+  theme?: unknown
+): Promise<BuildPreviewResult> {
+  if (!SUPPORTED_PREVIEW_FORMATS.includes(format as SupportedPreviewFormat)) {
     throw new Error(`Unsupported preview format: ${format}`)
   }
 
-  let html
+  let html = ''
   switch (format) {
     case 'html':
     case 'pdf':
@@ -60,3 +73,8 @@ export async function buildPreview(format, title, content, theme) {
   const truncated = html.length > MAX
   return { html: truncated ? html.slice(0, MAX) : html, format, truncated }
 }
+
+export * from './themeTokens'
+export * from './documentPreview'
+export * from './markdownPreview'
+export * from './textPreview'

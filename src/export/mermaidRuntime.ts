@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * Mermaid Runtime Loader (`mermaidRuntime.js`)
+ * Mermaid Runtime Loader (`mermaidRuntime.ts`)
  * ============================================================================
  * Locates the app's bundled Mermaid build and produces a `<script src>` tag
  * pointing at a local file. This lets previews/PDFs render diagrams fully
@@ -20,10 +20,9 @@ const CDN_FALLBACK =
 
 /**
  * Resolves the on-disk path to the locally installed Mermaid build.
- * @returns {string|null}
  */
-export function resolveMermaidPath() {
-  const bases = []
+export function resolveMermaidPath(): string | null {
+  const bases: string[] = []
   try {
     bases.push(app.getAppPath())
   } catch {
@@ -43,7 +42,7 @@ export function resolveMermaidPath() {
 }
 
 /** The CDN `<script>` tag used when no local Mermaid build is available. */
-export function mermaidCdnFallback() {
+export function mermaidCdnFallback(): string {
   return CDN_FALLBACK
 }
 
@@ -52,11 +51,8 @@ const CDN_MERMAID_RE = /<script\b[^>]*src=["'][^"']*mermaid[^"']*["'][^>]*>\s*<\
 /**
  * Replaces the CDN Mermaid placeholder with the provided script tag, or appends
  * it before `</body>` when no placeholder exists.
- * @param {string} html
- * @param {string} scriptTag e.g. `<script src="mermaid.min.js"></script>`
- * @returns {string}
  */
-export function injectMermaidScript(html, scriptTag) {
+export function injectMermaidScript(html: string, scriptTag: string): string {
   if (CDN_MERMAID_RE.test(html)) return html.replace(CDN_MERMAID_RE, scriptTag)
   return html.replace(/<\/body>/i, `${scriptTag}\n</body>`)
 }
@@ -64,10 +60,8 @@ export function injectMermaidScript(html, scriptTag) {
 /**
  * Removes every `<script>` tag that references Mermaid (runtime + init) so the
  * rendered document sent to the preview iframe stays small.
- * @param {string} html
- * @returns {string}
  */
-export function stripMermaidScripts(html) {
+export function stripMermaidScripts(html: string): string {
   return html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, (tag) =>
     /mermaid/i.test(tag) ? '' : tag
   )

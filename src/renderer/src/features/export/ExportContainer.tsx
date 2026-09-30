@@ -8,7 +8,10 @@ import {
   FolderOpen,
   FileDown,
   RotateCcw,
-  Copy
+  Copy,
+  Maximize2,
+  Minimize2,
+  FileText
 } from 'lucide-react'
 import { EXPORT_FORMATS, getFormat, type ExportFormat } from './formats'
 import { PREVIEW_COMPONENTS } from './previews'
@@ -66,7 +69,7 @@ interface SuccessState {
  *
  * The single-note export studio. A left rail of rich format cards drives a live
  * preview on the right, with a polished post-export success panel offering
- * "Open file", "Open folder" and "Export again".
+ * "Open file", "Open folder" and "Export again". Supports window maximizing.
  */
 export const ExportContainer: React.FC<ExportContainerProps> = ({
   isOpen,
@@ -77,6 +80,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
   showToast
 }) => {
   const [format, setFormat] = useState<ExportFormat>(initialFormat)
+  const [isMaximized, setIsMaximized] = useState(false)
   const [previewHtml, setPreviewHtml] = useState('')
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState<string | null>(null)
@@ -84,18 +88,29 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
   const [success, setSuccess] = useState<SuccessState | null>(null)
   const [copied, setCopied] = useState(false)
   const requestIdRef = useRef(0)
+  const previewCacheRef = useRef<Map<string, string>>(new Map())
 
   const activeFormat = useMemo(() => getFormat(format), [format])
   const PreviewComponent = PREVIEW_COMPONENTS[format]
+
+  // Note statistics
+  const noteStats = useMemo(() => {
+    const text = content ? content.trim() : ''
+    const words = text ? text.split(/\s+/).filter(Boolean).length : 0
+    const chars = text.length
+    return { words, chars }
+  }, [content])
 
   // Reset everything each time the container opens.
   useEffect(() => {
     if (!isOpen) return
     setFormat(initialFormat)
+    setIsMaximized(false)
     setPreviewError(null)
     setSuccess(null)
     setExporting(false)
     setCopied(false)
+    previewCacheRef.current.clear()
   }, [isOpen, initialFormat])
 
   // Clear the previous result when the format changes so you can export again.
@@ -112,6 +127,14 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
       return
     }
 
+    const cacheKey = format
+    if (previewCacheRef.current.has(cacheKey)) {
+      setPreviewHtml(previewCacheRef.current.get(cacheKey)!)
+      setPreviewLoading(false)
+      setPreviewError(null)
+      return
+    }
+
     const api = (window as any).api
     if (!api?.exportPreview) {
       setPreviewLoading(false)
@@ -123,6 +146,8 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     const requestId = ++requestIdRef.current
     setPreviewLoading(true)
     setPreviewError(null)
+
+    const delay = format === 'markdown' || format === 'text' ? 0 : 80
 
     const handle = setTimeout(async () => {
       try {
@@ -136,6 +161,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
         if (!res || typeof res.html !== 'string') {
           throw new Error('Preview generation returned no content')
         }
+        previewCacheRef.current.set(cacheKey, res.html)
         setPreviewHtml(res.html)
         if (res.truncated) {
           setPreviewError('Preview truncated for performance; the exported file is complete.')
@@ -147,7 +173,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
       } finally {
         if (requestId === requestIdRef.current) setPreviewLoading(false)
       }
-    }, 220)
+    }, delay)
 
     return () => clearTimeout(handle)
   }, [isOpen, format, title, content, success])
@@ -168,17 +194,14 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
       if (res?.success) {
         setSuccess({ filePath: res.filePath || '', format })
         showToast?.(`${activeFormat.label} exported successfully.`, 'success')
-      } else if (res?.canceled) {
-        // User dismissed the native save dialog; keep the preview open.
-      } else if (res?.error) {
-        showToast?.(`Failed to export ${activeFormat.label}: ${res.error}`, 'error')
+      } else if (!res?.canceled) {
+        setPreviewError('Export did not complete.')
       }
     } catch (err: any) {
-      console.error('[ExportContainer] Export failed:', err)
-      showToast?.(
-        `Failed to export ${activeFormat.label}: ${err?.message || 'Unknown error'}`,
-        'error'
-      )
+      console.error('[ExportContainer] Export error:', err)
+      const msg = err?.message || 'Export failed.'
+      setPreviewError(msg)
+      showToast?.(`Export failed: ${msg}`, 'error')
     } finally {
       setExporting(false)
     }
@@ -234,16 +257,23 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
   const hasContent = Boolean(content && content.trim().length > 0)
 
   return createPortal(
-    <div className="export-overlay" role="presentation" onClick={exporting ? undefined : onClose}>
+    <div
+      className={`export-overlay ${isMaximized ? 'is-maximized' : ''}`}
+      role="presentation"
+      onClick={exporting ? undefined : onClose}
+    >
       <div
-        className="export-container"
+        className={`export-container ${isMaximized ? 'is-maximized' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label="Export"
         data-testid="export-container"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="export-header">
+        <header
+          className="export-header"
+          onDoubleClick={() => setIsMaximized((prev) => !prev)}
+        >
           <div className="export-header-left">
             <span className="export-header-badge">
               <Download size={14} strokeWidth={2} />
@@ -253,15 +283,27 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
               <span className="export-header-subtitle">{title || 'Untitled'}</span>
             </div>
           </div>
-          <button
-            type="button"
-            className="export-close"
-            aria-label="Close"
-            onClick={onClose}
-            disabled={exporting}
-          >
-            <X size={16} />
-          </button>
+
+          <div className="export-header-actions">
+            <button
+              type="button"
+              className="export-icon-btn export-maximize"
+              aria-label={isMaximized ? 'Restore down' : 'Maximize'}
+              title={isMaximized ? 'Restore down' : 'Maximize'}
+              onClick={() => setIsMaximized((prev) => !prev)}
+            >
+              {isMaximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+            </button>
+            <button
+              type="button"
+              className="export-close"
+              aria-label="Close"
+              onClick={onClose}
+              disabled={exporting}
+            >
+              <X size={16} />
+            </button>
+          </div>
         </header>
 
         {success ? (
@@ -313,13 +355,25 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
           <>
             <div className="export-body">
               <aside className="export-formats" aria-label="Export format">
-                <span className="export-formats-heading">Format</span>
+                {/* Note Source Details Chip */}
+                <div className="export-source-card">
+                  <div className="export-source-card-top">
+                    <FileText size={13} className="export-source-icon" />
+                    <span className="export-source-title">{title || 'Untitled'}</span>
+                  </div>
+                  <div className="export-source-stats">
+                    <span>{noteStats.words} words</span>
+                    <span>&bull;</span>
+                    <span>{noteStats.chars} chars</span>
+                  </div>
+                </div>
+
+                <span className="export-formats-heading">Available Formats</span>
                 {EXPORT_FORMATS.map((f) => (
                   <button
                     key={f.id}
                     type="button"
                     className={`export-format-card ${format === f.id ? 'active' : ''}`}
-                    style={format === f.id ? { borderColor: f.accent } : undefined}
                     aria-pressed={format === f.id}
                     onClick={() => setFormat(f.id)}
                     disabled={exporting}
@@ -328,7 +382,10 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
                       {f.icon}
                     </span>
                     <span className="export-format-text">
-                      <span className="export-format-title">{f.title}</span>
+                      <span className="export-format-title-row">
+                        <span className="export-format-title">{f.title}</span>
+                        <span className="export-format-ext-pill">{f.ext}</span>
+                      </span>
                       <span className="export-format-desc">{f.description}</span>
                     </span>
                   </button>

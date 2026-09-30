@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * Combined Export (`exportCombined.js`)
+ * Combined Export (`exportCombined.ts`)
  * ============================================================================
  * Merges many notes into a SINGLE output file with page breaks between notes,
  * instead of writing one file per note. This is what "select 10 notes → export
@@ -18,15 +18,50 @@
  * ============================================================================
  */
 
-import { dialog } from 'electron'
+import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
-import { renderMarkdown, escapeHtml } from './exportUtils.js'
-import { buildPDFDocument, PDF_PRINT_OPTIONS } from './exportPDF.js'
-import { buildDocsDocument } from './exportDocs.js'
-import { withRenderedHtml } from './renderWindow.js'
-import { stripMermaidScripts } from './mermaidRuntime.js'
+import { renderMarkdown, escapeHtml } from './exportUtils'
+import { buildPDFDocument, PDF_PRINT_OPTIONS } from './exportPDF'
+import { buildDocsDocument } from './exportDocs'
+import { withRenderedHtml } from './renderWindow'
+import { stripMermaidScripts } from './mermaidRuntime'
 
-export const COMBINED_FORMATS = ['pdf', 'html', 'docs', 'markdown', 'text']
+export const COMBINED_FORMATS = ['pdf', 'html', 'docs', 'markdown', 'text'] as const
+
+export type CombinedFormat = (typeof COMBINED_FORMATS)[number]
+
+export interface CombinedNote {
+  id?: string
+  title?: string
+  content: string
+}
+
+export interface CombinedPayload {
+  notes?: CombinedNote[]
+  format?: string
+  filePath?: string
+}
+
+export interface CombinedSectionsResult {
+  html: string
+  toc: string
+  ids: string[]
+}
+
+export interface CombinedProgress {
+  phase: string
+  current: number
+  total: number
+  title?: string
+}
+
+export interface CombinedResult {
+  success: boolean
+  filePath?: string
+  total?: number
+  combined?: boolean
+  canceled?: boolean
+}
 
 /** Hard cap so a pathological title cannot bloat a filename. */
 const MAX_TITLE_LENGTH = 120
@@ -34,11 +69,8 @@ const MAX_TITLE_LENGTH = 120
 /**
  * Sanitises a note title for safe use in a filename (without extension),
  * truncating very long titles with an ellipsis.
- *
- * @param {string} name
- * @returns {string}
  */
-export function sanitizeExportTitle(name) {
+export function sanitizeExportTitle(name?: string): string {
   const cleaned = String(name || 'Untitled')
     .split('')
     .filter((ch) => ch.charCodeAt(0) >= 32) // strip control characters
@@ -54,11 +86,8 @@ export function sanitizeExportTitle(name) {
 
 /**
  * Produces a sensible default filename for a combined export.
- * @param {Array<{title?:string}>} notes
- * @param {string} format
- * @returns {string}
  */
-export function combinedDefaultName(notes, format) {
+export function combinedDefaultName(notes: Array<{ title?: string }>, format: string): string {
   const ext =
     format === 'text' ? 'txt' : format === 'markdown' ? 'md' : format === 'docs' ? 'doc' : format
   const base =
@@ -72,26 +101,27 @@ export function combinedDefaultName(notes, format) {
  * Builds the merged HTML body for a set of notes and a matching table of
  * contents. Every note after the first starts on a new page (print) / new
  * section (screen).
- *
- * @param {Array<{title?:string,content:string}>} notes
- * @param {{ mermaid?: boolean }} [opts]
- * @returns {Promise<{ html: string, toc: string, ids: string[] }>}
  */
-export async function buildCombinedSections(notes, opts = {}) {
-  const { mermaid = false } = opts
-  const sections = []
-  const tocItems = []
-  const ids = []
+export async function buildCombinedSections(
+  notes: Array<{ title?: string; content: string }>,
+  opts: { mermaid?: boolean; toc?: boolean } = {}
+): Promise<CombinedSectionsResult> {
+  const { mermaid = false, toc: showToc = false } = opts
+  const sections: string[] = []
+  const tocItems: string[] = []
+  const ids: string[] = []
 
   for (let i = 0; i < notes.length; i++) {
-    const note = notes[i] || {}
+    const note = notes[i] || { content: '' }
     const title = note.title || 'Untitled'
     const id = `note-${i}`
     ids.push(id)
 
-    tocItems.push(`<li><a href="#${id}">${escapeHtml(title)}</a></li>`)
+    if (showToc) {
+      tocItems.push(`<li><a href="#${id}">${escapeHtml(title)}</a></li>`)
+    }
 
-    let bodyHtml
+    let bodyHtml: string
     try {
       const rendered = await renderMarkdown(note.content || '', {
         wikilinkMode: 'span',
@@ -105,17 +135,13 @@ export async function buildCombinedSections(notes, opts = {}) {
     }
 
     const pageBreak = i > 0 ? ' data-page-break="true"' : ''
-    // Only inject the note title when the note's own content doesn't already
-    // start with a heading — otherwise we'd print two titles back-to-back.
-    const startsWithHeading = /^\s*<h[12][\s>]/i.test(bodyHtml)
-    const heading = startsWithHeading ? '' : `<h1 class="note-title">${escapeHtml(title)}</h1>`
     sections.push(
-      `<section class="note" id="${id}"${pageBreak}>` + `${heading}` + `${bodyHtml}` + `</section>`
+      `<section class="note" id="${id}"${pageBreak}>${bodyHtml}</section>`
     )
   }
 
   const toc =
-    tocItems.length > 1
+    showToc && tocItems.length > 1
       ? `<nav class="combined-toc"><h2 class="combined-toc-title">Contents</h2><ol>${tocItems.join(
           ''
         )}</ol></nav>`
@@ -126,11 +152,12 @@ export async function buildCombinedSections(notes, opts = {}) {
 
 /**
  * Builds a single self-contained HTML document containing all notes.
- * @param {string} title
- * @param {string} sectionsHtml
- * @param {string} tocHtml
  */
-export function buildCombinedHTMLDocument(title, sectionsHtml, tocHtml = '') {
+export function buildCombinedHTMLDocument(
+  title: string,
+  sectionsHtml: string,
+  tocHtml: string = ''
+): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -160,7 +187,7 @@ export function buildCombinedHTMLDocument(title, sectionsHtml, tocHtml = '') {
     .note-title { font-size: 1.7em; color: #0f172a; margin-bottom: 0.8em; }
     .note-error { color: #94a3b8; font-style: italic; }
     h1, h2, h3, h4, h5, h6 { color: #0f172a; margin: 1.4em 0 0.5em; line-height: 1.3; }
-    p { margin-bottom: 1em; }
+    p { margin-bottom: 1em; text-align: justify; text-justify: inter-word; }
     ul, ol { margin: 0 0 1em; padding-left: 1.5em; }
     code { font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.88em; background: #f1f5f9; color: #e11d48; padding: 2px 6px; border-radius: 4px; }
     pre { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 18px; overflow-x: auto; margin: 1.2em 0; }
@@ -188,21 +215,21 @@ export function buildCombinedHTMLDocument(title, sectionsHtml, tocHtml = '') {
 
 /**
  * Builds merged markdown for all notes.
- * @param {Array<{title?:string,content:string}>} notes
  */
-export function buildCombinedMarkdown(notes) {
+export function buildCombinedMarkdown(notes: Array<{ title?: string; content: string }>): string {
   return notes
-    .map((note) => `# ${note.title || 'Untitled'}\n\n${note.content || ''}`)
+    .map((note) => (note.content || '').trim())
+    .filter(Boolean)
     .join('\n\n---\n\n')
 }
 
 /**
  * Builds merged plain text for all notes (markdown stripped).
- * @param {Array<{title?:string,content:string}>} notes
- * @returns {Promise<string>}
  */
-export async function buildCombinedText(notes) {
-  const parts = []
+export async function buildCombinedText(
+  notes: Array<{ title?: string; content: string }>
+): Promise<string> {
+  const parts: string[] = []
   for (const note of notes) {
     const { html } = await renderMarkdown(note.content || '', { toc: false })
     const plain = html
@@ -218,20 +245,20 @@ export async function buildCombinedText(notes) {
       .replace(/&nbsp;/g, ' ')
       .replace(/\n\s*\n\s*\n/g, '\n\n')
       .trim()
-    parts.push(
-      `${note.title || 'Untitled'}\n${'='.repeat(Math.min(60, (note.title || 'Untitled').length))}\n\n${plain}`
-    )
+    if (plain) {
+      parts.push(plain)
+    }
   }
   return parts.join('\n\n\n')
 }
 
 // ── Export orchestration ────────────────────────────────────────────────────
 
-async function renderPdfBuffer(html) {
+async function renderPdfBuffer(html: string): Promise<Buffer> {
   return withRenderedHtml(html, (win) => win.webContents.printToPDF(PDF_PRINT_OPTIONS))
 }
 
-async function renderDocsHtml(html) {
+async function renderDocsHtml(html: string): Promise<string> {
   return withRenderedHtml(html, async (win) => {
     const rendered = await win.webContents.executeJavaScript('document.documentElement.outerHTML')
     return stripMermaidScripts(String(rendered || ''))
@@ -240,22 +267,18 @@ async function renderDocsHtml(html) {
 
 /**
  * Exports all notes into a single merged file.
- *
- * @param {BrowserWindow|null} mainWindow
- * @param {object} payload
- * @param {Array<{id?:string,title?:string,content:string}>} payload.notes
- * @param {string} payload.format One of COMBINED_FORMATS
- * @param {string} [payload.filePath] Pre-chosen output file (optional)
- * @param {(progress: object) => void} [onProgress]
- * @returns {Promise<object>}
  */
-export async function handleExportCombined(mainWindow, payload, onProgress) {
+export async function handleExportCombined(
+  mainWindow: BrowserWindow | null,
+  payload: CombinedPayload,
+  onProgress?: (progress: CombinedProgress) => void
+): Promise<CombinedResult> {
   const { notes = [], format = 'pdf' } = payload || {}
 
   if (!Array.isArray(notes) || notes.length === 0) {
     throw new Error('No notes provided for combined export')
   }
-  if (!COMBINED_FORMATS.includes(format)) {
+  if (!COMBINED_FORMATS.includes(format as CombinedFormat)) {
     throw new Error(`Unsupported combined format: ${format}`)
   }
 
@@ -271,7 +294,7 @@ export async function handleExportCombined(mainWindow, payload, onProgress) {
             : format === 'markdown'
               ? [{ name: 'Markdown Document', extensions: ['md', 'markdown'] }]
               : [{ name: 'Text Files', extensions: ['txt'] }]
-    const picked = await dialog.showSaveDialog(mainWindow, {
+    const picked = await dialog.showSaveDialog(mainWindow as any, {
       title: 'Save Combined Export',
       defaultPath: combinedDefaultName(notes, format),
       filters

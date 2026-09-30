@@ -1,69 +1,191 @@
 /* ===== Batch Export Dialog (extends ExportContainer shell) ===== */
 
 .batch-export-container {
-  width: 900px;
+  width: 920px;
 }
 
-/* Mode cards (top of the left rail) */
-.batch-mode-cards {
+.batch-export-container.is-maximized {
+  width: 100vw !important;
+  height: 100vh !important;
+}
+
+/* Section dividers & headers in sidebar */
+.export-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+/* Sleek Segmented Mode Pills */
+.batch-mode-pills {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-
-.batch-mode-card {
-  display: flex;
-  flex-direction: column;
   gap: 4px;
-  padding: 8px;
-  text-align: left;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  padding: 3px;
   background: var(--bg-panel);
-  color: var(--text-main);
-  cursor: pointer;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    opacity 0.2s ease;
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  margin-bottom: 6px;
 }
 
-.batch-mode-card:hover:not(:disabled) {
-  background: var(--bg-active);
-}
-
-.batch-mode-card.active {
-  background: color-mix(in srgb, var(--text-accent) 8%, transparent);
-  border-color: var(--text-accent);
-}
-
-.batch-mode-card:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.batch-mode-icon {
+.batch-mode-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.batch-mode-pill:hover:not(:disabled) {
+  color: var(--text-main);
   background: var(--bg-active);
+}
+
+.batch-mode-pill.active {
+  background: var(--bg-active);
+  color: var(--text-main);
+  font-weight: 600;
+  border-color: var(--border-subtle);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.batch-mode-pill:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Collapsible Included Notes Drawer */
+.batch-notes-drawer {
+  border: 1px solid var(--border-dim);
+  border-radius: 9px;
+  background: var(--bg-panel);
+  overflow: hidden;
+  margin: 4px 0 6px 0;
+}
+
+.batch-notes-drawer-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-main);
+  cursor: pointer;
+  font-size: 11.5px;
+  transition: background 0.15s ease;
+}
+
+.batch-notes-drawer-toggle:hover {
+  background: var(--bg-active);
+}
+
+.batch-notes-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.batch-notes-icon {
   color: var(--text-accent);
 }
 
-.batch-mode-title {
-  font-size: 11.5px;
+.batch-notes-count-badge {
+  font-size: 10px;
   font-weight: 600;
+  background: var(--bg-active);
+  color: var(--text-muted);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+.batch-chevron {
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+}
+
+.batch-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.batch-notes-list {
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 4px;
+  border-top: 1px solid var(--border-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: color-mix(in srgb, var(--bg-panel) 70%, transparent);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle) transparent;
+}
+
+.batch-note-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: all 0.15s ease;
+}
+
+.batch-note-row:hover {
+  background: var(--bg-active);
   color: var(--text-main);
 }
 
-.batch-mode-sub {
+.batch-note-row.active {
+  background: color-mix(in srgb, var(--text-accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--text-accent) 30%, transparent);
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.batch-note-row-idx {
   font-size: 10px;
-  line-height: 1.3;
-  color: var(--text-muted);
+  opacity: 0.6;
+  font-family: var(--font-mono, monospace);
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.batch-note-row-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.batch-note-row-pill {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: var(--text-accent);
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 3px;
+  flex-shrink: 0;
 }
 
 /* Progress overlay pinned to the bottom of the preview pane */
@@ -80,6 +202,7 @@
   border: 1px solid var(--border-card);
   border-radius: 8px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  z-index: 10;
 }
 
 .batch-progress-label {

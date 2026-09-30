@@ -1,13 +1,13 @@
 /**
  * ============================================================================
- * Markdown Source Preview (`preview/markdownPreview.js`)
+ * Markdown Source Preview (`preview/markdownPreview.ts`)
  * ============================================================================
  * Full-width, themed view of the raw markdown source. No card, no shadow.
  * ============================================================================
  */
 
-import { escapeHtml } from '../exportUtils.js'
-import { themeVarsCss, basePreviewCss, wrapPreviewDocument } from './themeTokens.js'
+import { escapeHtml } from '../exportUtils'
+import { themeVarsCss, basePreviewCss, wrapPreviewDocument } from './themeTokens'
 
 const MARKDOWN_CSS = `
     .md {
@@ -23,12 +23,9 @@ const MARKDOWN_CSS = `
 `
 
 /**
- * @param {string} title
- * @param {string} content
- * @param {unknown} theme
- * @returns {string} Full HTML document
+ * Builds a raw markdown source preview HTML document.
  */
-export function buildMarkdownPreview(title, content, theme) {
+export function buildMarkdownPreview(title?: string, content?: string, theme?: unknown): string {
   const safeTitle = title || 'Untitled'
   const body = `  <pre class="md">${escapeHtml(content || '')}</pre>`
   return wrapPreviewDocument(

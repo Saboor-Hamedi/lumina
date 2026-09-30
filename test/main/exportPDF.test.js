@@ -125,12 +125,13 @@ describe('handleExportPDF', () => {
 })
 
 describe('generatePDFHTML', () => {
-  it('adds a clean title heading when the note has no heading', async () => {
+  it('does not prepend the note input title into the document body', async () => {
     const html = await generatePDFHTML('My Note', 'just a paragraph')
-    expect(html).toMatch(/<h1>My Note<\/h1>/)
+    expect(html).not.toMatch(/<h1>My Note<\/h1>/)
+    expect(html).toContain('just a paragraph')
   })
 
-  it('does not duplicate the title when the note already starts with a heading', async () => {
+  it('preserves headings authored in the note content', async () => {
     const html = await generatePDFHTML('My Note', '# Different Heading\n\nbody')
     expect(html).not.toMatch(/<h1>My Note<\/h1>/)
     expect(html).toMatch(/<h1[^>]*>Different Heading<\/h1>/)

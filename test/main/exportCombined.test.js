@@ -66,10 +66,11 @@ describe('exportCombined.combinedDefaultName', () => {
 })
 
 describe('exportCombined.buildCombinedMarkdown', () => {
-  it('merges notes with titles and separators', () => {
+  it('merges notes content with separators without injecting input titles', () => {
     const md = buildCombinedMarkdown(notes)
-    expect(md).toContain('# First Note')
-    expect(md).toContain('# Second Note')
+    expect(md).toContain('Hello **world**')
+    expect(md).toContain('Body two')
+    expect(md).toContain('Body three')
     expect(md).toContain('---')
   })
 })
@@ -96,27 +97,27 @@ describe('exportCombined.buildCombinedSections', () => {
     expect(html.match(/data-page-break="true"/g)?.length).toBe(2)
   })
 
-  it('builds a table of contents for multiple notes', async () => {
-    const { toc } = await buildCombinedSections(notes)
+  it('builds a table of contents when requested', async () => {
+    const { toc } = await buildCombinedSections(notes, { toc: true })
     expect(toc).toContain('href="#note-0"')
     expect(toc).toContain('First Note')
   })
 
-  it('omits the table of contents for a single note', async () => {
-    const { toc } = await buildCombinedSections([notes[0]])
+  it('omits the table of contents by default', async () => {
+    const { toc } = await buildCombinedSections(notes)
     expect(toc).toBe('')
   })
 
-  it('does not inject a title when the note already starts with a heading', async () => {
-    const { html } = await buildCombinedSections([{ title: 'T', content: '# T\n\nbody' }])
-    expect(html).not.toContain('note-title')
-    expect(html.match(/<h1/g)?.length).toBe(1)
+  it('omits the table of contents for a single note', async () => {
+    const { toc } = await buildCombinedSections([notes[0]], { toc: true })
+    expect(toc).toBe('')
   })
 
-  it('injects a title when the note has no heading', async () => {
+  it('does not inject input title when note has no heading', async () => {
     const { html } = await buildCombinedSections([{ title: 'T', content: 'just body' }])
-    expect(html).toContain('note-title')
-    expect(html).toContain('>T</h1>')
+    expect(html).not.toContain('note-title')
+    expect(html).not.toContain('>T</h1>')
+    expect(html).toContain('just body')
   })
 })
 
@@ -152,7 +153,7 @@ describe('exportCombined.handleExportCombined', () => {
     await fs.rm(tmpDir, { recursive: true, force: true }).catch(() => {})
   })
 
-  it('writes one merged markdown file', async () => {
+  it('writes one merged markdown file without injecting input titles', async () => {
     const filePath = path.join(tmpDir, 'combined.md')
     showSaveDialog.mockResolvedValue({ canceled: false, filePath })
 
@@ -160,8 +161,9 @@ describe('exportCombined.handleExportCombined', () => {
 
     expect(result).toMatchObject({ success: true, total: 3, combined: true })
     const written = await fs.readFile(filePath, 'utf-8')
-    expect(written).toContain('# First Note')
-    expect(written).toContain('# Third Note')
+    expect(written).toContain('# First')
+    expect(written).toContain('Body three')
+    expect(written).not.toContain('# First Note')
   })
 
   it('writes a single PDF via one print run', async () => {
@@ -176,7 +178,7 @@ describe('exportCombined.handleExportCombined', () => {
     expect(written.toString()).toBe('mock-pdf')
   })
 
-  it('writes one merged HTML file', async () => {
+  it('writes one merged HTML file without injecting input titles', async () => {
     const filePath = path.join(tmpDir, 'combined.html')
     showSaveDialog.mockResolvedValue({ canceled: false, filePath })
 
@@ -184,13 +186,14 @@ describe('exportCombined.handleExportCombined', () => {
 
     expect(result).toMatchObject({ success: true, combined: true })
     const written = await fs.readFile(filePath, 'utf-8')
-    expect(written).toContain('First Note')
-    expect(written).toContain('Third Note')
+    expect(written).toContain('<h1>First</h1>')
+    expect(written).toContain('Body three')
+    expect(written).not.toContain('First Note')
     // HTML format must not spin up a print window
     expect(mockPrintToPDF).not.toHaveBeenCalled()
   })
 
-  it('writes one merged text file', async () => {
+  it('writes one merged text file without injecting input titles', async () => {
     const filePath = path.join(tmpDir, 'combined.txt')
     showSaveDialog.mockResolvedValue({ canceled: false, filePath })
 
@@ -198,7 +201,9 @@ describe('exportCombined.handleExportCombined', () => {
 
     expect(result).toMatchObject({ success: true, combined: true })
     const written = await fs.readFile(filePath, 'utf-8')
-    expect(written).toContain('First Note')
+    expect(written).toContain('First')
+    expect(written).toContain('Body three')
+    expect(written).not.toContain('First Note')
   })
 
   it('writes one merged Word document via the render window', async () => {

@@ -1,7 +1,18 @@
-import { dialog } from 'electron'
+import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
-import { renderMarkdown, escapeHtml } from './exportUtils.js'
-import { withRenderedHtml } from './renderWindow.js'
+import { renderMarkdown, escapeHtml } from './exportUtils'
+import { withRenderedHtml } from './renderWindow'
+
+export interface ExportPDFPayload {
+  title?: string
+  content?: string
+}
+
+export interface ExportPDFResult {
+  success: boolean
+  filePath?: string
+  canceled?: boolean
+}
 
 /**
  * Wraps a rendered markdown body in a print-optimised, A4 PDF document with a
@@ -9,13 +20,8 @@ import { withRenderedHtml } from './renderWindow.js'
  *
  * Exported separately so the export preview dialog can reuse the exact same
  * markup without duplicating styles.
- *
- * @param {string} title
- * @param {string} htmlBody Rendered HTML body (with TOC anchors injected)
- * @param {string} tocHtml Table of contents markup (may be empty)
- * @returns {string} Full HTML document
  */
-export function buildPDFDocument(title, htmlBody, tocHtml = '') {
+export function buildPDFDocument(title?: string, htmlBody: string = '', tocHtml: string = ''): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,7 +31,7 @@ export function buildPDFDocument(title, htmlBody, tocHtml = '') {
   <style>
     @page {
       size: A4;
-      margin: 20mm 20mm;
+      margin: 25mm 22mm 28mm 22mm;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
@@ -97,9 +103,10 @@ export function buildPDFDocument(title, htmlBody, tocHtml = '') {
     h3 { font-size: 12.5pt; margin-top: 14pt; margin-bottom: 6pt; color: #334155; }
     h4 { font-size: 11pt; margin-top: 12pt; margin-bottom: 4pt; color: #475569; }
     p {
-      margin-bottom: 10pt;
+      margin-bottom: 11pt;
       color: #334155;
       text-align: justify;
+      text-justify: inter-word;
       hyphens: auto;
       orphans: 3;
       widows: 3;
@@ -434,23 +441,14 @@ export function buildPDFDocument(title, htmlBody, tocHtml = '') {
 /**
  * Renders markdown to a full print-ready PDF HTML document (no file I/O).
  * Shared by the exporter and the preview dialog.
- *
- * @param {string} title
- * @param {string} content Markdown source
- * @returns {Promise<string>} Full HTML document
  */
-export async function generatePDFHTML(title, content) {
-  const { html, tocHtml } = await renderMarkdown(content, {
+export async function generatePDFHTML(title?: string, content?: string): Promise<string> {
+  const { html, tocHtml } = await renderMarkdown(content || '', {
     wikilinkMode: 'link',
     mermaid: true,
     toc: true
   })
-  // If the note doesn't begin with its own heading, add a clean title so the
-  // very top of the document is never blank. If it already starts with an <h1>
-  // we skip it, preventing a duplicated heading.
-  const startsWithHeading = /^\s*<h[12][\s>]/i.test(html)
-  const titleHeading = startsWithHeading ? '' : `<h1>${escapeHtml(title || 'Untitled')}</h1>\n`
-  return buildPDFDocument(title, titleHeading + html, tocHtml)
+  return buildPDFDocument(title, html, tocHtml)
 }
 
 /**
@@ -460,21 +458,25 @@ export async function generatePDFHTML(title, content) {
  */
 export const PDF_PRINT_OPTIONS = {
   printBackground: true,
-  pageSize: 'A4',
+  pageSize: 'A4' as const,
   displayHeaderFooter: true,
-  headerTemplate: '<div></div>',
+  headerTemplate:
+    '<div style="width:100%;box-sizing:border-box;font-size:9.5px;color:#94a3b8;padding:10mm 22mm 0 22mm;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;"></div>',
   footerTemplate:
-    '<div style="width:100%;font-size:10px;color:#94a3b8;text-align:right;padding:0 6mm 6px 0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;"><span class="pageNumber"></span></div>',
-  margins: { top: 0.79, bottom: 0.85, left: 0.79, right: 0.79 }
+    '<div style="width:100%;box-sizing:border-box;font-size:10.5px;color:#94a3b8;text-align:right;padding:0 22mm 12mm 22mm;font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;"><span class="pageNumber"></span></div>',
+  margins: { top: 0.98, bottom: 1.15, left: 0.866, right: 0.866 }
 }
 
-export const handleExportPDF = async (mainWindow, payload) => {
+export const handleExportPDF = async (
+  mainWindow: BrowserWindow | null,
+  payload: ExportPDFPayload
+): Promise<ExportPDFResult> => {
   try {
     const { title, content } = payload || {}
     if (!content) throw new Error('No content provided')
 
     // Show save dialog FIRST for immediate user feedback
-    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow as any, {
       title: 'Save PDF',
       defaultPath: `${title || 'Untitled'}.pdf`,
       filters: [{ name: 'PDF Files', extensions: ['pdf'] }]

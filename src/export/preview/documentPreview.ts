@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * Rendered Document Preview (`preview/documentPreview.js`)
+ * Rendered Document Preview (`preview/documentPreview.ts`)
  * ============================================================================
  * Full-width, themed preview for the rich formats (PDF, Word, HTML). It reuses
  * the exact markdown pipeline as the exporters (images embedded, wikilinks,
@@ -9,8 +9,8 @@
  * ============================================================================
  */
 
-import { renderMarkdown, escapeHtml } from '../exportUtils.js'
-import { themeVarsCss, basePreviewCss, wrapPreviewDocument, isLightTheme } from './themeTokens.js'
+import { renderMarkdown } from '../exportUtils'
+import { themeVarsCss, basePreviewCss, wrapPreviewDocument, isLightTheme } from './themeTokens'
 
 const DOCUMENT_CSS = `
     .doc { width: 100%; max-width: 840px; margin: 0 auto; }
@@ -24,7 +24,7 @@ const DOCUMENT_CSS = `
     h2 { font-size: 1.45em; }
     h3 { font-size: 1.2em; }
     h4 { font-size: 1.05em; color: var(--text-muted); }
-    p { margin: 0 0 1em; color: var(--text-main); }
+    p { margin: 0 0 1em; color: var(--text-main); text-align: justify; text-justify: inter-word; hyphens: auto; }
     ul, ol { margin: 0 0 1em; padding-left: 1.5em; }
     li { margin: 0.25em 0; }
     hr { border: none; height: 1px; background: var(--border-card); margin: 1.8em 0; }
@@ -138,25 +138,28 @@ const DOCUMENT_CSS = `
 /**
  * Builds a full-width themed preview for the given rich format.
  *
- * @param {string} format 'pdf' | 'docs' | 'html'
- * @param {string} title
- * @param {string} content Markdown source
- * @param {unknown} theme
- * @returns {Promise<string>} Full HTML document
+ * @param format 'pdf' | 'docs' | 'html'
+ * @param title Document title
+ * @param content Markdown source
+ * @param theme Resolved app theme tokens
+ * @returns Full HTML document
  */
-export async function buildDocumentPreview(format, title, content, theme) {
-  const { html, tocHtml } = await renderMarkdown(content, {
+export async function buildDocumentPreview(
+  _format: string,
+  title?: string,
+  content?: string,
+  theme?: unknown
+): Promise<string> {
+  const { html, tocHtml } = await renderMarkdown(content || '', {
     wikilinkMode: 'span',
     mermaid: true,
     toc: true
   })
 
   const safeTitle = title || 'Untitled'
-  const startsWithHeading = /^\s*<h[12][\s>]/i.test(html)
-  const titleHeading = startsWithHeading ? '' : `<h1>${escapeHtml(safeTitle)}</h1>\n`
 
   const body = `  <article class="doc">
-    ${titleHeading}${tocHtml}
+    ${tocHtml}
     ${html}
   </article>`
 

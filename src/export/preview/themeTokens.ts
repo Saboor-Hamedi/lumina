@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * Preview Theme Tokens (`preview/themeTokens.js`)
+ * Preview Theme Tokens (`preview/themeTokens.ts`)
  * ============================================================================
  * The preview iframe is a separate document and cannot read the app's CSS
  * variables, so the renderer sends its resolved theme tokens along with the
@@ -9,7 +9,26 @@
  * ============================================================================
  */
 
-export const DEFAULT_THEME = {
+export interface ThemeTokens {
+  'bg-app': string
+  'bg-panel': string
+  'bg-sidebar': string
+  'bg-editor': string
+  'bg-card': string
+  'bg-active': string
+  'text-main': string
+  'text-muted': string
+  'text-faint': string
+  'text-accent': string
+  'border-dim': string
+  'border-card': string
+  'border-subtle': string
+  'font-sans': string
+  'font-mono': string
+  [key: string]: string
+}
+
+export const DEFAULT_THEME: ThemeTokens = {
   'bg-app': '#0e0f15',
   'bg-panel': '#13141c',
   'bg-sidebar': '#13141c',
@@ -31,15 +50,13 @@ export const DEFAULT_THEME = {
 /**
  * Merges untrusted theme input over the defaults, accepting only short,
  * non-empty string values for known keys.
- *
- * @param {unknown} theme
- * @returns {Record<string, string>}
  */
-export function normalizeTheme(theme) {
-  const out = { ...DEFAULT_THEME }
+export function normalizeTheme(theme?: unknown): ThemeTokens {
+  const out: ThemeTokens = { ...DEFAULT_THEME }
   if (theme && typeof theme === 'object') {
+    const obj = theme as Record<string, unknown>
     for (const key of Object.keys(DEFAULT_THEME)) {
-      const value = theme[key]
+      const value = obj[key]
       if (typeof value === 'string') {
         const trimmed = value.trim()
         if (trimmed && trimmed.length <= 96) out[key] = trimmed
@@ -51,10 +68,8 @@ export function normalizeTheme(theme) {
 
 /**
  * Emits the `:root` custom-property block for a theme.
- * @param {unknown} theme
- * @returns {string}
  */
-export function themeVarsCss(theme) {
+export function themeVarsCss(theme?: unknown): string {
   const t = normalizeTheme(theme)
   const lines = Object.entries(t).map(([key, value]) => `    --${key}: ${value};`)
   return `:root {\n${lines.join('\n')}\n  }`
@@ -63,11 +78,8 @@ export function themeVarsCss(theme) {
 /**
  * Heuristically decides whether a theme is light, based on the luminance of its
  * editor background. Used to pick a matching Mermaid diagram theme.
- *
- * @param {unknown} theme
- * @returns {boolean}
  */
-export function isLightTheme(theme) {
+export function isLightTheme(theme?: unknown): boolean {
   const t = normalizeTheme(theme)
   const hex = t['bg-editor']
   const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
@@ -83,12 +95,11 @@ export function isLightTheme(theme) {
 
 /**
  * Shared resets, premium scrollbars, and base typography for all previews.
- * @returns {string}
  */
-export function basePreviewCss() {
+export function basePreviewCss(): string {
   return `
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scrollbar-width: thin; scrollbar-color: var(--border-subtle) transparent; }
+    html { scrollbar-width: thin; scrollbar-color: var(--border-subtle) transparent; height: 100%; }
     ::-webkit-scrollbar { width: 11px; height: 11px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb {
@@ -107,8 +118,18 @@ export function basePreviewCss() {
       line-height: 1.7;
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
-      padding: 40px 48px;
+      padding: 36px 24px;
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    .doc, .page, .container, pre.md, pre.txt, article {
+      width: 100%;
+      max-width: 820px;
+      margin-left: auto;
+      margin-right: auto;
     }
     a { color: var(--text-accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
@@ -117,13 +138,13 @@ export function basePreviewCss() {
 
 /**
  * Wraps arbitrary preview CSS/body into a complete HTML document.
- * @param {string} css
- * @param {string} body
- * @param {string} [title='Preview']
- * @param {string} [extraHead='']
- * @returns {string}
  */
-export function wrapPreviewDocument(css, body, title = 'Preview', extraHead = '') {
+export function wrapPreviewDocument(
+  css: string,
+  body: string,
+  title: string = 'Preview',
+  extraHead: string = ''
+): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

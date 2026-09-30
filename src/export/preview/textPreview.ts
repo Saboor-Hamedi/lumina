@@ -1,13 +1,13 @@
 /**
  * ============================================================================
- * Plain Text Preview (`preview/textPreview.js`)
+ * Plain Text Preview (`preview/textPreview.ts`)
  * ============================================================================
  * Full-width, themed plain-text view. No card, no shadow.
  * ============================================================================
  */
 
-import { renderMarkdown, escapeHtml } from '../exportUtils.js'
-import { themeVarsCss, basePreviewCss, wrapPreviewDocument } from './themeTokens.js'
+import { renderMarkdown, escapeHtml } from '../exportUtils'
+import { themeVarsCss, basePreviewCss, wrapPreviewDocument } from './themeTokens'
 
 const TEXT_CSS = `
     .txt {
@@ -23,10 +23,8 @@ const TEXT_CSS = `
 
 /**
  * Converts rendered HTML to readable plain text.
- * @param {string} html
- * @returns {string}
  */
-function htmlToPlainText(html) {
+function htmlToPlainText(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/p>|<\/h[1-6]>|<\/div>|<\/li>|<\/blockquote>/gi, '\n\n')
@@ -43,14 +41,15 @@ function htmlToPlainText(html) {
 }
 
 /**
- * @param {string} title
- * @param {string} content Markdown source
- * @param {unknown} theme
- * @returns {Promise<string>} Full HTML document
+ * Builds a plain text preview HTML document.
  */
-export async function buildTextPreview(title, content, theme) {
+export async function buildTextPreview(
+  title?: string,
+  content?: string,
+  theme?: unknown
+): Promise<string> {
   const safeTitle = title || 'Untitled'
-  const { html } = await renderMarkdown(content, { toc: false })
+  const { html } = await renderMarkdown(content || '', { toc: false })
   const plain = htmlToPlainText(html)
   const body = `  <pre class="txt">${escapeHtml(plain)}</pre>`
   return wrapPreviewDocument(

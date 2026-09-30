@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * Clean HTML & Markdown Bundle Exporter (`exportBundle.js`)
+ * Clean HTML & Markdown Bundle Exporter (`exportBundle.ts`)
  * ============================================================================
  * Robust export system for Lumina:
  * 1. Self-contained Clean HTML export (embedded CSS, syntax highlighting, base64 images)
@@ -8,22 +8,38 @@
  * ============================================================================
  */
 
-import { dialog } from 'electron'
+import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
 import path from 'path'
-import { renderMarkdown } from './exportUtils.js'
-import WorkspaceManager from '../main/workspace/workspaceManager.js'
+import { renderMarkdown } from './exportUtils'
+import WorkspaceManager from '../main/workspace/workspaceManager'
+
+export interface CleanHtmlOptions {
+  toc?: boolean
+}
+
+export interface ExportBundlePayload {
+  title?: string
+  content?: string
+}
+
+export interface ExportBundleResult {
+  success: boolean
+  filePath?: string
+  bundleDir?: string | null
+  canceled?: boolean
+}
 
 /**
  * Builds a self-contained, beautifully styled HTML document from markdown.
- * @param {string} title
- * @param {string} content Markdown source
- * @param {object} [opts]
- * @param {boolean} [opts.toc=true] Whether to prepend a table of contents
  */
-export async function generateCleanHTML(title, content, opts = {}) {
+export async function generateCleanHTML(
+  title?: string,
+  content?: string,
+  opts: CleanHtmlOptions = {}
+): Promise<string> {
   const { toc = true } = opts
-  const { html: htmlBody, tocHtml } = await renderMarkdown(content, {
+  const { html: htmlBody, tocHtml } = await renderMarkdown(content || '', {
     wikilinkMode: 'span',
     toc
   })
@@ -90,7 +106,7 @@ export async function generateCleanHTML(title, content, opts = {}) {
     h1 { font-size: 2.2em; margin-top: 0; }
     h2 { font-size: 1.6em; }
     h3 { font-size: 1.3em; }
-    p { margin-bottom: 1.2em; }
+    p { margin-bottom: 1.2em; text-align: justify; text-justify: inter-word; }
     code {
       font-family: 'Consolas', 'Fira Code', monospace;
       font-size: 0.9em;
@@ -207,12 +223,15 @@ export async function generateCleanHTML(title, content, opts = {}) {
 /**
  * Handles exporting a note to a standalone, fully self-contained HTML file.
  */
-export async function handleExportCleanHTML(mainWindow, payload) {
+export async function handleExportCleanHTML(
+  mainWindow: BrowserWindow | null,
+  payload: ExportBundlePayload
+): Promise<ExportBundleResult> {
   try {
     const { title, content } = payload || {}
     if (!content) throw new Error('No content provided')
 
-    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow as any, {
       title: 'Export as Clean HTML',
       defaultPath: `${title || 'Untitled'}.html`,
       filters: [{ name: 'HTML Document', extensions: ['html', 'htm'] }]
@@ -234,12 +253,15 @@ export async function handleExportCleanHTML(mainWindow, payload) {
 /**
  * Handles exporting a note and all its linked local media as a complete Markdown bundle folder.
  */
-export async function handleExportMarkdownBundle(mainWindow, payload) {
+export async function handleExportMarkdownBundle(
+  mainWindow: BrowserWindow | null,
+  payload: ExportBundlePayload
+): Promise<ExportBundleResult> {
   try {
     const { title, content } = payload || {}
     if (!content) throw new Error('No content provided')
 
-    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow as any, {
       title: 'Export Markdown Bundle',
       defaultPath: `${title || 'Untitled'}.md`,
       filters: [{ name: 'Markdown Document', extensions: ['md', 'markdown'] }]
@@ -280,7 +302,8 @@ export async function handleExportMarkdownBundle(mainWindow, payload) {
 
             const imgFileName = path.basename(cleanUrl)
             const targetImagePath = path.join(assetsDir, imgFileName)
-            await fs.writeFile(targetImagePath, buffer)
+            const fileData = (buffer as any).buffer || buffer
+            await fs.writeFile(targetImagePath, fileData)
 
             // Rewrite link to relative assets folder
             const relativeUrl = `./${baseName}_assets/${imgFileName}`

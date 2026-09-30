@@ -1,8 +1,17 @@
 import { Marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
+import { BrowserWindow } from 'electron'
 
-export const handleExportHTML = async (mainWindow, payload) => {
+export interface ExportHTMLPayload {
+  title?: string
+  content?: string
+}
+
+export const handleExportHTML = async (
+  _mainWindow: BrowserWindow | null,
+  payload: ExportHTMLPayload
+): Promise<string> => {
   try {
     const { title, content } = payload || {}
     if (!content) throw new Error('No content provided')
@@ -18,7 +27,7 @@ export const handleExportHTML = async (mainWindow, payload) => {
     )
 
     const processedContent = (content || '').replace(/\[\[(.*?)\]\]/g, '<a href="#">$1</a>')
-    const htmlContent = await marked.parse(processedContent)
+    const htmlContent = (await marked.parse(processedContent)) as string
 
     const html = `<!DOCTYPE html>
 <html lang="en">

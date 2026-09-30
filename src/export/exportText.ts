@@ -1,7 +1,21 @@
-import { dialog } from 'electron'
+import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
 
-export const handleExportText = async (mainWindow, payload) => {
+export interface ExportTextPayload {
+  title?: string
+  content?: string
+}
+
+export interface ExportResult {
+  success: boolean
+  filePath?: string
+  canceled?: boolean
+}
+
+export const handleExportText = async (
+  mainWindow: BrowserWindow | null,
+  payload: ExportTextPayload
+): Promise<ExportResult> => {
   try {
     const { title, content } = payload || {}
     if (!content) throw new Error('No content provided')
@@ -13,7 +27,7 @@ export const handleExportText = async (mainWindow, payload) => {
     // First, convert wikilinks to standard links so they can be stripped gracefully
     const processedContent = (content || '').replace(/\[\[(.*?)\]\]/g, '$1')
 
-    let html = await marked.parse(processedContent)
+    const html = (await marked.parse(processedContent)) as string
 
     // Convert block elements to newlines
     let textContent = html.replace(/<br\s*\/?>/gi, '\n')
@@ -36,7 +50,7 @@ export const handleExportText = async (mainWindow, payload) => {
     textContent = textContent.replace(/\n\s*\n\s*\n/g, '\n\n').trim()
 
     // Show save dialog
-    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow as any, {
       title: 'Export as Text File',
       defaultPath: `${title || 'Untitled'}.txt`,
       filters: [

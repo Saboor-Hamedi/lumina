@@ -1,11 +1,11 @@
 import { Marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
-import WorkspaceManager from '../main/workspace/workspaceManager.js'
+import WorkspaceManager from '../main/workspace/workspaceManager'
 
 /**
  * ============================================================================
- * Shared Export Utilities (`exportUtils.js`)
+ * Shared Export Utilities (`exportUtils.ts`)
  * ============================================================================
  * Deduplicated helpers used by every exporter (HTML, PDF, Docs, Bundle, etc.)
  * so bug fixes and improvements live in exactly one place.
@@ -19,11 +19,34 @@ import WorkspaceManager from '../main/workspace/workspaceManager.js'
  * ============================================================================
  */
 
+export interface RenderMarkdownOptions {
+  wikilinkMode?: 'span' | 'link'
+  mermaid?: boolean
+  toc?: boolean
+}
+
+export interface RenderMarkdownResult {
+  html: string
+  tocHtml: string
+  tocCount: number
+}
+
+export interface TocOptions {
+  title?: string
+  maxLevel?: number
+}
+
+export interface TocResult {
+  html: string
+  toc: string
+  count: number
+}
+
 /**
  * Creates a pre-configured Marked instance with highlight.js syntax highlighting.
  * Mermaid code blocks are left untouched (returned as raw source).
  */
-export function createMarked() {
+export function createMarked(): Marked {
   return new Marked(
     markedHighlight({
       langPrefix: 'hljs language-',
@@ -41,12 +64,8 @@ export function createMarked() {
  * The manager currently returns a `ReadAssetResult` object
  * (`{ buffer, base64, dataUrl, mimeType }`), but older/alternate shapes
  * (a raw Buffer, a base64 string, or an existing data URL) are handled too.
- *
- * @param {any} asset
- * @param {string} fallbackMime
- * @returns {string|null} data URI, or null when it cannot be resolved
  */
-function assetToDataUri(asset, fallbackMime = 'image/png') {
+function assetToDataUri(asset: any, fallbackMime = 'image/png'): string | null {
   if (!asset) return null
   if (typeof asset === 'string') {
     if (asset.startsWith('data:')) return asset
@@ -70,7 +89,7 @@ function assetToDataUri(asset, fallbackMime = 'image/png') {
 }
 
 /** Returns true when a URL is remote or already inline and must be left alone. */
-function isExternalUrl(url) {
+function isExternalUrl(url?: string | null): boolean {
   return /^(https?:|data:|blob:|mailto:|#)/i.test(String(url || '').trim())
 }
 
@@ -78,11 +97,8 @@ function isExternalUrl(url) {
  * Turns a workspace-relative image reference into a data URI.
  * Accepts markdown-relative paths, `asset://local/...` URLs, and absolute
  * `/...` paths. Returns null for external URLs or unresolvable assets.
- *
- * @param {string} rawUrl
- * @returns {Promise<string|null>}
  */
-async function resolveImageDataUri(rawUrl) {
+async function resolveImageDataUri(rawUrl: string): Promise<string | null> {
   let cleanUrl = String(rawUrl || '').trim()
   if (!cleanUrl || isExternalUrl(cleanUrl)) return null
 
@@ -119,17 +135,8 @@ async function resolveImageDataUri(rawUrl) {
  * Converts all local images in `content` to base64 data URIs so the exported
  * document is fully self-contained. Handles both Markdown (`![alt](url)`) and
  * raw HTML (`<img src="...">`) image syntax.
- *
- * Robustness:
- *  - Skips remote (http/data/blob) images.
- *  - Resolves `asset://local/...`, absolute `/...`, and relative workspace paths.
- *  - On failure, logs and continues (never throws) so one bad image cannot abort
- *    the entire export.
- *
- * @param {string} content Markdown source (may include raw HTML)
- * @returns {Promise<string>} Content with local images replaced by data URIs
  */
-export async function convertImagesToBase64(content) {
+export async function convertImagesToBase64(content: string): Promise<string> {
   let processedContent = content || ''
 
   // 1. Markdown images: ![alt](url)
@@ -172,13 +179,11 @@ export async function convertImagesToBase64(content) {
  * Registers a Mermaid renderer on a Marked instance so that ```mermaid code
  * blocks become `<div class="mermaid">…</div>` elements (later rendered by the
  * Mermaid runtime in the export template).
- *
- * @param {Marked} marked
  */
-export function setupMermaidRenderer(marked) {
+export function setupMermaidRenderer(marked: Marked): void {
   marked.use({
     renderer: {
-      code(token) {
+      code(token: any) {
         if (token.lang === 'mermaid') {
           const escaped = token.text
             .replace(/&/g, '&amp;')
@@ -196,12 +201,8 @@ export function setupMermaidRenderer(marked) {
  * Converts Obsidian-style wikilinks `[[Note]]` into anchor placeholders.
  * Exporters that want plain text can strip these; HTML/PDF exporters convert
  * them to clickable spans.
- *
- * @param {string} content
- * @param {'span'|'link'} mode
- * @returns {string}
  */
-export function convertWikilinks(content, mode = 'span') {
+export function convertWikilinks(content?: string, mode: 'span' | 'link' = 'span'): string {
   if (mode === 'link') {
     return (content || '').replace(/\[\[(.*?)\]\]/g, '<a href="#">$1</a>')
   }
@@ -211,23 +212,14 @@ export function convertWikilinks(content, mode = 'span') {
 /**
  * Generates a clickable table of contents from h1–h3 headings found in rendered
  * HTML. Each entry links to an anchor inserted before its heading.
- *
- * @param {string} html Rendered HTML body
- * @param {object} [opts]
- * @param {string} [opts.title='Table of Contents'] Heading text for the TOC block
- * @param {number} [opts.maxLevel=3] Deepest heading level to include (1–3)
- * @returns {{ html: string, toc: string, count: number }}
- *   - html: the input HTML with anchor ids injected before each heading
- *   - toc:  a standalone `<nav class="toc">…</nav>` block
- *   - count: number of headings found
  */
-export function generateTOC(html, opts = {}) {
+export function generateTOC(html?: string, opts: TocOptions = {}): TocResult {
   const { maxLevel = 3 } = opts
   if (!html || typeof html !== 'string') {
     return { html: html || '', toc: '', count: 0 }
   }
 
-  const entries = []
+  const entries: Array<{ level: number; text: string; id: string }> = []
   let count = 0
 
   // Match h1–h3 opening tags (with optional attributes) and their inner text.
@@ -263,22 +255,18 @@ export function generateTOC(html, opts = {}) {
 /**
  * Runs the full markdown → export-HTML pipeline:
  * image embedding → wikilinks → marked → optional mermaid setup → TOC.
- *
- * @param {string} content Markdown source
- * @param {object} [opts]
- * @param {'span'|'link'} [opts.wikilinkMode='span']
- * @param {boolean} [opts.mermaid=false] Register the mermaid renderer
- * @param {boolean} [opts.toc=true] Generate a table of contents
- * @returns {Promise<{ html: string, tocHtml: string, tocCount: number }>}
  */
-export async function renderMarkdown(content, opts = {}) {
+export async function renderMarkdown(
+  content: string,
+  opts: RenderMarkdownOptions = {}
+): Promise<RenderMarkdownResult> {
   const { wikilinkMode = 'span', mermaid = false, toc = true } = opts
   const marked = createMarked()
   if (mermaid) setupMermaidRenderer(marked)
 
   let processedContent = await convertImagesToBase64(content || '')
   processedContent = convertWikilinks(processedContent, wikilinkMode)
-  let html = await marked.parse(processedContent)
+  let html = (await marked.parse(processedContent)) as string
 
   let tocHtml = ''
   let tocCount = 0
@@ -294,10 +282,8 @@ export async function renderMarkdown(content, opts = {}) {
 
 /**
  * Converts heading text to a URL-safe anchor id.
- * @param {string} text
- * @returns {string}
  */
-export function slugifyHeading(text) {
+export function slugifyHeading(text: string): string {
   return text
     .toLowerCase()
     .replace(/<[^>]*>/g, '')
@@ -309,11 +295,9 @@ export function slugifyHeading(text) {
 
 /**
  * Escapes HTML special characters in a string.
- * @param {string} text
- * @returns {string}
  */
-export function escapeHtml(text) {
-  return String(text)
+export function escapeHtml(text?: string | null): string {
+  return String(text ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')

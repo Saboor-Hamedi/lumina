@@ -20,6 +20,8 @@ export interface FormatSpec {
   acceptLabel: string
   /** Accent colour used for the icon + selected border. */
   accent: string
+  /** Primary file extension including dot, e.g. ".pdf". */
+  ext: string
 }
 
 /**
@@ -35,7 +37,8 @@ export const EXPORT_FORMATS: FormatSpec[] = [
     icon: <Printer size={20} strokeWidth={1.75} />,
     apiKey: 'exportPDF',
     acceptLabel: 'Export PDF',
-    accent: '#ef4444'
+    accent: '#ef4444',
+    ext: '.pdf'
   },
   {
     id: 'docs',
@@ -45,7 +48,8 @@ export const EXPORT_FORMATS: FormatSpec[] = [
     icon: <FileText size={20} strokeWidth={1.75} />,
     apiKey: 'exportDocs',
     acceptLabel: 'Export Word',
-    accent: '#2563eb'
+    accent: '#2563eb',
+    ext: '.doc'
   },
   {
     id: 'html',
@@ -55,7 +59,8 @@ export const EXPORT_FORMATS: FormatSpec[] = [
     icon: <FileCode size={20} strokeWidth={1.75} />,
     apiKey: 'exportHTML',
     acceptLabel: 'Export HTML',
-    accent: '#f59e0b'
+    accent: '#f59e0b',
+    ext: '.html'
   },
   {
     id: 'markdown',
@@ -65,7 +70,8 @@ export const EXPORT_FORMATS: FormatSpec[] = [
     icon: <FileJson size={20} strokeWidth={1.75} />,
     apiKey: 'exportMarkdown',
     acceptLabel: 'Export Markdown',
-    accent: '#22c55e'
+    accent: '#22c55e',
+    ext: '.md'
   },
   {
     id: 'text',
@@ -75,7 +81,8 @@ export const EXPORT_FORMATS: FormatSpec[] = [
     icon: <FileType size={20} strokeWidth={1.75} />,
     apiKey: 'exportText',
     acceptLabel: 'Export Text',
-    accent: '#94a3b8'
+    accent: '#94a3b8',
+    ext: '.txt'
   }
 ]
 

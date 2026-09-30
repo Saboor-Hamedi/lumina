@@ -1,21 +1,27 @@
-import { dialog } from 'electron'
+import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
-import { renderMarkdown } from './exportUtils.js'
-import { withRenderedHtml } from './renderWindow.js'
-import { stripMermaidScripts } from './mermaidRuntime.js'
+import { renderMarkdown } from './exportUtils'
+import { withRenderedHtml } from './renderWindow'
+import { stripMermaidScripts } from './mermaidRuntime'
+
+export interface ExportDocsPayload {
+  title?: string
+  content?: string
+}
+
+export interface ExportDocsResult {
+  success: boolean
+  filePath?: string
+  canceled?: boolean
+}
 
 /**
  * Wraps a rendered markdown body in an MS-Word compatible HTML document with a
  * table of contents and Mermaid rendering (converted to inline PNG for Word).
  *
  * Exported separately so batch export and preview can reuse the same markup.
- *
- * @param {string} title
- * @param {string} htmlBody Rendered HTML body
- * @param {string} tocHtml Table of contents markup (may be empty)
- * @returns {string} Full HTML document
  */
-export function buildDocsDocument(title, htmlBody, tocHtml = '') {
+export function buildDocsDocument(title?: string, htmlBody: string = '', tocHtml: string = ''): string {
   return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
   <meta charset="utf-8">
@@ -52,7 +58,7 @@ export function buildDocsDocument(title, htmlBody, tocHtml = '') {
     }
     h3 { font-size: 13pt; margin-top: 1.2em; color: #334155; }
     h4 { font-size: 12pt; margin-top: 1.2em; color: #475569; }
-    p { margin-bottom: 1.2em; color: #334155; text-align: justify; }
+    p { margin-bottom: 1.2em; color: #334155; text-align: justify; text-justify: inter-word; }
     code {
       font-family: 'Consolas', 'Courier New', monospace;
       font-size: 10pt;
@@ -279,12 +285,9 @@ export function buildDocsDocument(title, htmlBody, tocHtml = '') {
 
 /**
  * Renders markdown to a full Word-compatible HTML document (no file I/O).
- * @param {string} title
- * @param {string} content Markdown source
- * @returns {Promise<string>}
  */
-export async function generateDocsHTML(title, content) {
-  const { html, tocHtml } = await renderMarkdown(content, {
+export async function generateDocsHTML(title?: string, content?: string): Promise<string> {
+  const { html, tocHtml } = await renderMarkdown(content || '', {
     wikilinkMode: 'link',
     mermaid: true,
     toc: true
@@ -292,13 +295,16 @@ export async function generateDocsHTML(title, content) {
   return buildDocsDocument(title, html, tocHtml)
 }
 
-export const handleExportDocs = async (mainWindow, payload) => {
+export const handleExportDocs = async (
+  mainWindow: BrowserWindow | null,
+  payload: ExportDocsPayload
+): Promise<ExportDocsResult> => {
   try {
     const { title, content } = payload || {}
     if (!content) throw new Error('No content provided')
 
     // Show save dialog FIRST for immediate user feedback
-    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow as any, {
       title: 'Export as Word Document',
       defaultPath: `${title || 'Untitled'}.doc`,
       filters: [{ name: 'Word Document', extensions: ['doc'] }]
