@@ -15,6 +15,10 @@ import { buildPreview, SUPPORTED_PREVIEW_FORMATS } from '../../export/preview'
 import { handleExportBatch, BATCH_FORMATS } from '../../export/exportBatch'
 // @ts-ignore
 import { handleExportCombined, COMBINED_FORMATS } from '../../export/exportCombined'
+// @ts-ignore
+import { withRenderedHtml } from '../../export/renderWindow'
+// @ts-ignore
+import { stripMermaidScripts } from '../../export/mermaidRuntime'
 import { validateIpc, z } from './ipcValidation'
 
 /**
@@ -103,7 +107,23 @@ export function registerExportHandlers(getMainWindow: () => BrowserWindow | null
     if (!SUPPORTED_PREVIEW_FORMATS.includes(valid.format)) {
       throw new Error(`Unsupported preview format: ${valid.format}`)
     }
-    return buildPreview(valid.format, valid.title || 'Untitled', valid.content, valid.theme)
+    const preview = await buildPreview(
+      valid.format,
+      valid.title || 'Untitled',
+      valid.content,
+      valid.theme
+    )
+    // Render Mermaid in a hidden window (local runtime) and inline the SVG so
+    // the preview iframe never depends on a CDN or script execution.
+    if (preview && typeof preview.html === 'string' && preview.html.includes('class="mermaid"')) {
+      preview.html = await withRenderedHtml(preview.html, async (win) => {
+        const rendered = await win.webContents.executeJavaScript(
+          'document.documentElement.outerHTML'
+        )
+        return stripMermaidScripts(String(rendered || preview.html))
+      })
+    }
+    return preview
   })
 
   // Batch export multiple notes to a folder, streaming progress events

@@ -1,6 +1,7 @@
-import { dialog, BrowserWindow } from 'electron'
+import { dialog } from 'electron'
 import fs from 'fs/promises'
 import { renderMarkdown, escapeHtml } from './exportUtils.js'
+import { withRenderedHtml } from './renderWindow.js'
 
 /**
  * Wraps a rendered markdown body in a print-optimised, A4 PDF document with a
@@ -375,9 +376,9 @@ export function buildPDFDocument(title, htmlBody, tocHtml = '') {
 
     async function renderMermaid() {
       try {
-        var elements = document.querySelectorAll('.mermaid');
+        var elements = Array.prototype.slice.call(document.querySelectorAll('.mermaid'));
         if (elements.length > 0) {
-          mermaid.init(undefined, elements);
+          await mermaid.run({ nodes: elements, suppressErrors: true });
         }
 
         const svgs = document.querySelectorAll('.mermaid svg');
@@ -453,33 +454,6 @@ export async function generatePDFHTML(title, content) {
 }
 
 /**
- * Waits for Mermaid diagrams inside a BrowserWindow to finish rendering.
- * Resolves via a MutationObserver watching for the `mermaid-done` body class,
- * with a hard timeout so a stuck render can never hang the export.
- *
- * @param {BrowserWindow} win
- * @param {number} [timeoutMs=3000]
- */
-async function waitForMermaid(win, timeoutMs = 3000) {
-  await win.webContents.executeJavaScript(`
-    new Promise((resolve) => {
-      if (document.body.classList.contains('mermaid-done')) {
-        setTimeout(resolve, 500);
-      } else {
-        const observer = new MutationObserver(() => {
-          if (document.body.classList.contains('mermaid-done')) {
-            observer.disconnect();
-            setTimeout(resolve, 500);
-          }
-        });
-        observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-        setTimeout(resolve, ${timeoutMs});
-      }
-    })
-  `)
-}
-
-/**
  * Shared Chromium print options for A4 PDF export.
  * Adds consistent margins and a subtle page-number footer so exported
  * documents are print-ready without further editing.
@@ -495,7 +469,6 @@ export const PDF_PRINT_OPTIONS = {
 }
 
 export const handleExportPDF = async (mainWindow, payload) => {
-  let printWin = null
   try {
     const { title, content } = payload || {}
     if (!content) throw new Error('No content provided')
@@ -513,29 +486,15 @@ export const handleExportPDF = async (mainWindow, payload) => {
 
     const html = await generatePDFHTML(title, content)
 
-    // Create a hidden browser window to print from
-    printWin = new BrowserWindow({
-      show: false,
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true
-      }
-    })
-
-    await printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
-    await waitForMermaid(printWin)
-
-    // Generate PDF with consistent page margins and a page-number footer
-    const pdfData = await printWin.webContents.printToPDF(PDF_PRINT_OPTIONS)
+    // Render (with Mermaid inlined) in a hidden window, then print to PDF.
+    const pdfData = await withRenderedHtml(html, (win) =>
+      win.webContents.printToPDF(PDF_PRINT_OPTIONS)
+    )
 
     await fs.writeFile(filePath, pdfData)
     return { success: true, filePath }
   } catch (error) {
     console.error('[Main] Export PDF failed:', error)
     throw error
-  } finally {
-    if (printWin && printWin.isDestroyed?.() !== true) {
-      printWin.close()
-    }
   }
 }

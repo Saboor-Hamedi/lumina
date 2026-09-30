@@ -1,10 +1,23 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+const readAsset = vi.fn()
+
+vi.mock('../../src/main/workspace/workspaceManager.js', () => ({
+  default: { readAsset: (...args) => readAsset(...args) }
+}))
+
+vi.mock('electron', () => ({ dialog: {}, BrowserWindow: class {} }))
+
 import {
   generateTOC,
   slugifyHeading,
   escapeHtml,
-  convertWikilinks
+  convertWikilinks,
+  convertImagesToBase64
 } from '../../src/export/exportUtils'
+
+const PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
 
 describe('exportUtils.generateTOC', () => {
   it('injects anchor ids and builds a clickable list', () => {
@@ -75,5 +88,70 @@ describe('exportUtils.convertWikilinks', () => {
 
   it('converts to anchor in link mode', () => {
     expect(convertWikilinks('See [[Note]]', 'link')).toContain('<a href="#">Note</a>')
+  })
+})
+
+describe('exportUtils.convertImagesToBase64', () => {
+  beforeEach(() => {
+    readAsset.mockReset()
+  })
+
+  it('embeds a local image from the object returned by readAsset', async () => {
+    readAsset.mockResolvedValue({
+      buffer: Buffer.from('x'),
+      base64: PNG_BASE64,
+      dataUrl: `data:image/png;base64,${PNG_BASE64}`,
+      mimeType: 'image/png',
+      size: 1
+    })
+
+    const out = await convertImagesToBase64('![pic](images/a.png)')
+    expect(out).toContain(`data:image/png;base64,${PNG_BASE64}`)
+    expect(out).not.toContain('images/a.png')
+  })
+
+  it('falls back to the buffer when base64 is missing', async () => {
+    readAsset.mockResolvedValue({ buffer: Buffer.from('hello'), mimeType: 'image/jpeg' })
+
+    const out = await convertImagesToBase64('![pic](images/a.jpg)')
+    expect(out).toContain(`data:image/jpeg;base64,${Buffer.from('hello').toString('base64')}`)
+  })
+
+  it('leaves remote and data images untouched', async () => {
+    const src = '![a](https://x.com/a.png) ![b](data:image/png;base64,AAAA)'
+    const out = await convertImagesToBase64(src)
+    expect(out).toBe(src)
+    expect(readAsset).not.toHaveBeenCalled()
+  })
+
+  it('resolves asset://local/ URLs', async () => {
+    readAsset.mockResolvedValue({ dataUrl: `data:image/png;base64,${PNG_BASE64}` })
+    const out = await convertImagesToBase64('![pic](asset://local/images/a.png)')
+    expect(readAsset).toHaveBeenCalledWith('images/a.png')
+    expect(out).toContain(`data:image/png;base64,${PNG_BASE64}`)
+  })
+
+  it('resolves asset:// URLs with query/hash stripped', async () => {
+    readAsset.mockResolvedValue({ dataUrl: `data:image/png;base64,${PNG_BASE64}` })
+    await convertImagesToBase64('![pic](asset://local/images/a.png?v=2#frag)')
+    expect(readAsset).toHaveBeenCalledWith('images/a.png')
+  })
+
+  it('converts raw HTML <img> sources too', async () => {
+    readAsset.mockResolvedValue({ dataUrl: `data:image/png;base64,${PNG_BASE64}` })
+    const out = await convertImagesToBase64('<img src="images/a.png" alt="x" />')
+    expect(out).toContain(`src="data:image/png;base64,${PNG_BASE64}"`)
+  })
+
+  it('keeps the original URL when the asset cannot be resolved', async () => {
+    readAsset.mockResolvedValue(null)
+    const out = await convertImagesToBase64('![pic](images/missing.png)')
+    expect(out).toContain('images/missing.png')
+  })
+
+  it('never throws when readAsset rejects', async () => {
+    readAsset.mockRejectedValue(new Error('boom'))
+    const out = await convertImagesToBase64('![pic](images/a.png)')
+    expect(out).toContain('images/a.png')
   })
 })

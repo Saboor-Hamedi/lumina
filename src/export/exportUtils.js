@@ -69,57 +69,99 @@ function assetToDataUri(asset, fallbackMime = 'image/png') {
   return null
 }
 
+/** Returns true when a URL is remote or already inline and must be left alone. */
+function isExternalUrl(url) {
+  return /^(https?:|data:|blob:|mailto:|#)/i.test(String(url || '').trim())
+}
+
 /**
- * Converts all local markdown images in `content` to base64 data URIs so the
- * exported document is fully self-contained.
+ * Turns a workspace-relative image reference into a data URI.
+ * Accepts markdown-relative paths, `asset://local/...` URLs, and absolute
+ * `/...` paths. Returns null for external URLs or unresolvable assets.
+ *
+ * @param {string} rawUrl
+ * @returns {Promise<string|null>}
+ */
+async function resolveImageDataUri(rawUrl) {
+  let cleanUrl = String(rawUrl || '').trim()
+  if (!cleanUrl || isExternalUrl(cleanUrl)) return null
+
+  if (cleanUrl.startsWith('<') && cleanUrl.endsWith('>')) cleanUrl = cleanUrl.slice(1, -1)
+  if (cleanUrl.startsWith('asset://local/')) cleanUrl = cleanUrl.slice('asset://local/'.length)
+  else if (cleanUrl.startsWith('asset://'))
+    cleanUrl = cleanUrl.replace(/^asset:\/\//, '').replace(/^local\//, '')
+
+  // Drop query/hash and leading slash, then decode percent-encoding.
+  cleanUrl = cleanUrl.split('#')[0].split('?')[0]
+  if (cleanUrl.startsWith('/')) cleanUrl = cleanUrl.slice(1)
+  try {
+    cleanUrl = decodeURIComponent(cleanUrl)
+  } catch {
+    /* keep raw */
+  }
+  if (!cleanUrl) return null
+
+  const asset = await WorkspaceManager.readAsset(cleanUrl)
+
+  let fallbackMime = 'image/png'
+  const lowerUrl = cleanUrl.toLowerCase()
+  if (lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg')) fallbackMime = 'image/jpeg'
+  else if (lowerUrl.endsWith('.gif')) fallbackMime = 'image/gif'
+  else if (lowerUrl.endsWith('.svg')) fallbackMime = 'image/svg+xml'
+  else if (lowerUrl.endsWith('.webp')) fallbackMime = 'image/webp'
+  else if (lowerUrl.endsWith('.bmp')) fallbackMime = 'image/bmp'
+  else if (lowerUrl.endsWith('.avif')) fallbackMime = 'image/avif'
+
+  return assetToDataUri(asset, fallbackMime)
+}
+
+/**
+ * Converts all local images in `content` to base64 data URIs so the exported
+ * document is fully self-contained. Handles both Markdown (`![alt](url)`) and
+ * raw HTML (`<img src="...">`) image syntax.
  *
  * Robustness:
- *  - Skips remote (http/data:) images.
- *  - Strips optional angle-brackets and decodes URI components.
- *  - Handles the object shape returned by WorkspaceManager.readAsset.
- *  - On failure, logs and continues (never throws) so one bad image does not
- *    abort the entire export.
+ *  - Skips remote (http/data/blob) images.
+ *  - Resolves `asset://local/...`, absolute `/...`, and relative workspace paths.
+ *  - On failure, logs and continues (never throws) so one bad image cannot abort
+ *    the entire export.
  *
- * @param {string} content Markdown source
- * @returns {Promise<string>} Markdown with local images replaced by data URIs
+ * @param {string} content Markdown source (may include raw HTML)
+ * @returns {Promise<string>} Content with local images replaced by data URIs
  */
 export async function convertImagesToBase64(content) {
   let processedContent = content || ''
-  const imgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g
-  const matches = [...processedContent.matchAll(imgRegex)]
 
-  for (const match of matches) {
-    const fullMatch = match[0]
-    const alt = match[1]
-    const url = match[2]
-
-    if (url.startsWith('http') || url.startsWith('data:')) continue
-
+  // 1. Markdown images: ![alt](url)
+  const mdRegex = /!\[([^\]]*)\]\(([^)]+)\)/g
+  for (const match of [...processedContent.matchAll(mdRegex)]) {
+    const [fullMatch, alt, url] = match
+    if (isExternalUrl(url)) continue
     try {
-      let cleanUrl = url.startsWith('/') ? url.slice(1) : url
-      if (cleanUrl.startsWith('<') && cleanUrl.endsWith('>')) {
-        cleanUrl = cleanUrl.slice(1, -1)
+      const dataUri = await resolveImageDataUri(url)
+      if (dataUri) {
+        processedContent = processedContent.replace(fullMatch, `![${alt}](${dataUri})`)
       }
-      cleanUrl = decodeURIComponent(cleanUrl)
-
-      const asset = await WorkspaceManager.readAsset(cleanUrl)
-
-      let fallbackMime = 'image/png'
-      const lowerUrl = cleanUrl.toLowerCase()
-      if (lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg')) fallbackMime = 'image/jpeg'
-      else if (lowerUrl.endsWith('.gif')) fallbackMime = 'image/gif'
-      else if (lowerUrl.endsWith('.svg')) fallbackMime = 'image/svg+xml'
-      else if (lowerUrl.endsWith('.webp')) fallbackMime = 'image/webp'
-
-      const dataUri = assetToDataUri(asset, fallbackMime)
-      if (!dataUri) {
-        console.warn('[exportUtils] Asset not found, skipping:', cleanUrl)
-        continue
-      }
-
-      processedContent = processedContent.replace(fullMatch, `![${alt}](${dataUri})`)
     } catch (e) {
       console.error('[exportUtils] Failed to convert image to base64:', url, e)
+    }
+  }
+
+  // 2. Raw HTML images: <img ... src="url" ...>
+  const htmlRegex = /(<img\b[^>]*\bsrc\s*=\s*)(["'])([^"']+)\2/gi
+  for (const match of [...processedContent.matchAll(htmlRegex)]) {
+    const [fullMatch, prefix, quote, url] = match
+    if (isExternalUrl(url)) continue
+    try {
+      const dataUri = await resolveImageDataUri(url)
+      if (dataUri) {
+        processedContent = processedContent.replace(
+          fullMatch,
+          `${prefix}${quote}${dataUri}${quote}`
+        )
+      }
+    } catch (e) {
+      console.error('[exportUtils] Failed to convert HTML image to base64:', url, e)
     }
   }
 

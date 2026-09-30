@@ -5,28 +5,15 @@ import os from 'os'
 import { handleExportDocs } from '../../src/export/exportDocs'
 
 const showSaveDialog = vi.fn()
-const mockLoadURL = vi.fn()
 const mockExecuteJavaScript = vi.fn()
-const mockClose = vi.fn()
-
-const { MockBrowserWindow } = vi.hoisted(() => {
-  return {
-    MockBrowserWindow: class MockBrowserWindow {
-      constructor() {
-        this.show = false
-        this.webContents = {
-          executeJavaScript: (...args) => mockExecuteJavaScript(...args)
-        }
-        this.loadURL = (...args) => mockLoadURL(...args)
-        this.close = () => mockClose()
-      }
-    }
-  }
-})
+const mockWithRenderedHtml = vi.fn()
 
 vi.mock('electron', () => ({
-  dialog: { showSaveDialog: (...args) => showSaveDialog(...args) },
-  BrowserWindow: MockBrowserWindow
+  dialog: { showSaveDialog: (...args) => showSaveDialog(...args) }
+}))
+
+vi.mock('../../src/export/renderWindow.js', () => ({
+  withRenderedHtml: (...args) => mockWithRenderedHtml(...args)
 }))
 
 describe('handleExportDocs', () => {
@@ -38,9 +25,16 @@ describe('handleExportDocs', () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lumina-export-docs-'))
     filePath = path.join(tmpDir, 'export.doc')
     showSaveDialog.mockReset()
-    mockLoadURL.mockReset()
     mockExecuteJavaScript.mockReset().mockResolvedValue(renderedHtml)
-    mockClose.mockReset()
+    mockWithRenderedHtml.mockReset().mockImplementation(async (_html, fn) =>
+      fn({
+        webContents: {
+          executeJavaScript: (...a) => mockExecuteJavaScript(...a)
+        },
+        isDestroyed: () => false,
+        close: () => {}
+      })
+    )
   })
 
   afterEach(async () => {
@@ -71,13 +65,12 @@ describe('handleExportDocs', () => {
     expect(written).not.toContain('mermaid()')
   })
 
-  it('loads the generated HTML into a hidden window', async () => {
+  it('renders the generated HTML in a hidden render window', async () => {
     showSaveDialog.mockResolvedValue({ canceled: false, filePath })
 
     await handleExportDocs(null, { title: 'Note', content: 'body' })
 
-    expect(mockLoadURL).toHaveBeenCalledTimes(1)
-    expect(mockLoadURL.mock.calls[0][0]).toContain('data:text/html')
+    expect(mockWithRenderedHtml).toHaveBeenCalledTimes(1)
   })
 
   it('includes mermaid rendering script in generated HTML', async () => {
@@ -85,8 +78,8 @@ describe('handleExportDocs', () => {
 
     await handleExportDocs(null, { title: 'Note', content: '```mermaid\ngraph TD\n```' })
 
-    const url = mockLoadURL.mock.calls[0][0]
-    expect(decodeURIComponent(url)).toContain('mermaid.initialize')
+    const htmlArg = mockWithRenderedHtml.mock.calls[0][0]
+    expect(htmlArg).toContain('mermaid.initialize')
   })
 
   it('returns canceled when dialog is canceled', async () => {

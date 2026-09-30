@@ -206,14 +206,25 @@ export async function buildDocumentPreview(format, title, content, theme) {
             el.innerHTML = '<div class="mermaid-error">Diagram could not be rendered (syntax error)</div>';
           }
         });
+        document.body.classList.add('mermaid-done');
       }
-      if (document.querySelectorAll('.mermaid').length > 0) {
+      // Only render diagrams that aren't already inlined as SVG (the main
+      // process may have pre-rendered them). Already-rendered ones are just
+      // clamped by finish().
+      var pending = Array.prototype.slice
+        .call(document.querySelectorAll('.mermaid'))
+        .filter(function (el) {
+          return !el.querySelector('svg');
+        });
+      if (pending.length > 0) {
         mermaid
-          .run({ querySelector: '.mermaid', suppressErrors: true })
+          .run({ nodes: pending, suppressErrors: true })
           .then(finish)
           .catch(function () {
             finish();
           });
+      } else {
+        finish();
       }
     } catch (e) {}
     }

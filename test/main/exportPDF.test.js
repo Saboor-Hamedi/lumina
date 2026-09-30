@@ -5,30 +5,17 @@ import os from 'os'
 import { handleExportPDF, generatePDFHTML } from '../../src/export/exportPDF'
 
 const showSaveDialog = vi.fn()
-const mockLoadURL = vi.fn()
 const mockExecuteJavaScript = vi.fn()
 const mockPrintToPDF = vi.fn()
 const mockClose = vi.fn()
-
-const { MockBrowserWindow } = vi.hoisted(() => {
-  return {
-    MockBrowserWindow: class MockBrowserWindow {
-      constructor() {
-        this.show = false
-        this.webContents = {
-          executeJavaScript: (...args) => mockExecuteJavaScript(...args),
-          printToPDF: (...args) => mockPrintToPDF(...args)
-        }
-        this.loadURL = (...args) => mockLoadURL(...args)
-        this.close = () => mockClose()
-      }
-    }
-  }
-})
+const mockWithRenderedHtml = vi.fn()
 
 vi.mock('electron', () => ({
-  dialog: { showSaveDialog: (...args) => showSaveDialog(...args) },
-  BrowserWindow: MockBrowserWindow
+  dialog: { showSaveDialog: (...args) => showSaveDialog(...args) }
+}))
+
+vi.mock('../../src/export/renderWindow.js', () => ({
+  withRenderedHtml: (...args) => mockWithRenderedHtml(...args)
 }))
 
 describe('handleExportPDF', () => {
@@ -39,10 +26,19 @@ describe('handleExportPDF', () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lumina-export-pdf-'))
     filePath = path.join(tmpDir, 'export.pdf')
     showSaveDialog.mockReset()
-    mockLoadURL.mockReset()
     mockExecuteJavaScript.mockReset().mockResolvedValue(undefined)
     mockPrintToPDF.mockReset().mockResolvedValue(Buffer.from('mock-pdf-data'))
     mockClose.mockReset()
+    mockWithRenderedHtml.mockReset().mockImplementation(async (_html, fn) =>
+      fn({
+        webContents: {
+          printToPDF: (...a) => mockPrintToPDF(...a),
+          executeJavaScript: (...a) => mockExecuteJavaScript(...a)
+        },
+        isDestroyed: () => false,
+        close: () => mockClose()
+      })
+    )
   })
 
   afterEach(async () => {
@@ -62,13 +58,13 @@ describe('handleExportPDF', () => {
     expect(written.toString()).toBe('mock-pdf-data')
   })
 
-  it('loads HTML into a hidden browser window', async () => {
+  it('renders the generated HTML in a hidden render window', async () => {
     showSaveDialog.mockResolvedValue({ canceled: false, filePath })
 
     await handleExportPDF(null, { title: 'Note', content: 'body' })
 
-    expect(mockLoadURL).toHaveBeenCalledTimes(1)
-    expect(mockLoadURL.mock.calls[0][0]).toContain('data:text/html')
+    expect(mockWithRenderedHtml).toHaveBeenCalledTimes(1)
+    expect(mockWithRenderedHtml.mock.calls[0][0]).toContain('<!DOCTYPE html>')
   })
 
   it('calls printToPDF with A4 settings', async () => {
@@ -100,8 +96,8 @@ describe('handleExportPDF', () => {
 
     await handleExportPDF(null, { title: 'Note', content: 'See [[Other]]' })
 
-    const url = mockLoadURL.mock.calls[0][0]
-    expect(decodeURIComponent(url)).toContain('<a href="#">Other</a>')
+    const htmlArg = mockWithRenderedHtml.mock.calls[0][0]
+    expect(htmlArg).toContain('<a href="#">Other</a>')
   })
 
   it('returns canceled when dialog is canceled', async () => {

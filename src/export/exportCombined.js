@@ -18,11 +18,13 @@
  * ============================================================================
  */
 
-import { dialog, BrowserWindow } from 'electron'
+import { dialog } from 'electron'
 import fs from 'fs/promises'
 import { renderMarkdown, escapeHtml } from './exportUtils.js'
 import { buildPDFDocument, PDF_PRINT_OPTIONS } from './exportPDF.js'
 import { buildDocsDocument } from './exportDocs.js'
+import { withRenderedHtml } from './renderWindow.js'
+import { stripMermaidScripts } from './mermaidRuntime.js'
 
 export const COMBINED_FORMATS = ['pdf', 'html', 'docs', 'markdown', 'text']
 
@@ -226,65 +228,14 @@ export async function buildCombinedText(notes) {
 // ── Export orchestration ────────────────────────────────────────────────────
 
 async function renderPdfBuffer(html) {
-  const printWin = new BrowserWindow({
-    show: false,
-    webPreferences: { nodeIntegration: false, contextIsolation: true }
-  })
-  try {
-    await printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
-    await printWin.webContents.executeJavaScript(`
-      new Promise((resolve) => {
-        if (document.body.classList.contains('mermaid-done')) {
-          setTimeout(resolve, 400);
-        } else {
-          const observer = new MutationObserver(() => {
-            if (document.body.classList.contains('mermaid-done')) {
-              observer.disconnect();
-              setTimeout(resolve, 400);
-            }
-          });
-          observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-          setTimeout(resolve, 4000);
-        }
-      })
-    `)
-    return await printWin.webContents.printToPDF(PDF_PRINT_OPTIONS)
-  } finally {
-    if (printWin && printWin.isDestroyed?.() !== true) {
-      printWin.close()
-    }
-  }
+  return withRenderedHtml(html, (win) => win.webContents.printToPDF(PDF_PRINT_OPTIONS))
 }
 
 async function renderDocsHtml(html) {
-  const printWin = new BrowserWindow({
-    show: false,
-    webPreferences: { nodeIntegration: false, contextIsolation: true }
+  return withRenderedHtml(html, async (win) => {
+    const rendered = await win.webContents.executeJavaScript('document.documentElement.outerHTML')
+    return stripMermaidScripts(String(rendered || ''))
   })
-  try {
-    await printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
-    const rendered = await printWin.webContents.executeJavaScript(`
-      new Promise((resolve) => {
-        if (document.body.classList.contains('mermaid-done')) {
-          setTimeout(() => resolve(document.documentElement.outerHTML), 500);
-        } else {
-          const observer = new MutationObserver(() => {
-            if (document.body.classList.contains('mermaid-done')) {
-              observer.disconnect();
-              setTimeout(() => resolve(document.documentElement.outerHTML), 500);
-            }
-          });
-          observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-          setTimeout(() => resolve(document.documentElement.outerHTML), 5000);
-        }
-      })
-    `)
-    return rendered.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-  } finally {
-    if (printWin && printWin.isDestroyed?.() !== true) {
-      printWin.close()
-    }
-  }
 }
 
 /**

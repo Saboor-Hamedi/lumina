@@ -13,30 +13,17 @@ import {
 } from '../../src/export/exportCombined'
 
 const showSaveDialog = vi.fn()
-const mockLoadURL = vi.fn()
 const mockExecuteJavaScript = vi.fn()
 const mockPrintToPDF = vi.fn()
 const mockClose = vi.fn()
-
-const { MockBrowserWindow } = vi.hoisted(() => {
-  return {
-    MockBrowserWindow: class MockBrowserWindow {
-      constructor() {
-        this.destroyed = false
-        this.webContents = {
-          executeJavaScript: (...args) => mockExecuteJavaScript(...args),
-          printToPDF: (...args) => mockPrintToPDF(...args)
-        }
-        this.loadURL = (...args) => mockLoadURL(...args)
-        this.close = () => mockClose()
-      }
-    }
-  }
-})
+const mockWithRenderedHtml = vi.fn()
 
 vi.mock('electron', () => ({
-  dialog: { showSaveDialog: (...args) => showSaveDialog(...args) },
-  BrowserWindow: MockBrowserWindow
+  dialog: { showSaveDialog: (...args) => showSaveDialog(...args) }
+}))
+
+vi.mock('../../src/export/renderWindow.js', () => ({
+  withRenderedHtml: (...args) => mockWithRenderedHtml(...args)
 }))
 
 const notes = [
@@ -146,10 +133,19 @@ describe('exportCombined.handleExportCombined', () => {
   beforeEach(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lumina-combined-'))
     showSaveDialog.mockReset()
-    mockLoadURL.mockReset()
     mockExecuteJavaScript.mockReset().mockResolvedValue(undefined)
     mockPrintToPDF.mockReset().mockResolvedValue(Buffer.from('mock-pdf'))
     mockClose.mockReset()
+    mockWithRenderedHtml.mockReset().mockImplementation(async (_html, fn) =>
+      fn({
+        webContents: {
+          printToPDF: (...a) => mockPrintToPDF(...a),
+          executeJavaScript: (...a) => mockExecuteJavaScript(...a)
+        },
+        isDestroyed: () => false,
+        close: () => mockClose()
+      })
+    )
   })
 
   afterEach(async () => {
@@ -205,7 +201,7 @@ describe('exportCombined.handleExportCombined', () => {
     expect(written).toContain('First Note')
   })
 
-  it('writes one merged Word document via the print window', async () => {
+  it('writes one merged Word document via the render window', async () => {
     const filePath = path.join(tmpDir, 'combined.doc')
     showSaveDialog.mockResolvedValue({ canceled: false, filePath })
     mockExecuteJavaScript.mockResolvedValue('<html><body>rendered</body></html>')
@@ -213,7 +209,7 @@ describe('exportCombined.handleExportCombined', () => {
     const result = await handleExportCombined(null, { notes, format: 'docs' })
 
     expect(result).toMatchObject({ success: true, combined: true })
-    expect(mockLoadURL).toHaveBeenCalledTimes(1)
+    expect(mockWithRenderedHtml).toHaveBeenCalledTimes(1)
     const written = await fs.readFile(filePath, 'utf-8')
     expect(written).toBe('<html><body>rendered</body></html>')
   })

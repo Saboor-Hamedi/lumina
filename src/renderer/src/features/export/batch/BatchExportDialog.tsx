@@ -15,7 +15,7 @@ import {
 import { EXPORT_FORMATS, getFormat, type ExportFormat } from '../formats'
 import { PREVIEW_COMPONENTS } from '../previews'
 import '../css/exportContainer.css'
-import './batchExportDialog.css'
+import '../css/batchExportDialog.css'
 
 export type BatchFormat = ExportFormat
 /** 'combined' = one merged file; 'separate' = one file per note. */

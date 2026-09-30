@@ -1,6 +1,8 @@
-import { dialog, BrowserWindow } from 'electron'
+import { dialog } from 'electron'
 import fs from 'fs/promises'
 import { renderMarkdown } from './exportUtils.js'
+import { withRenderedHtml } from './renderWindow.js'
+import { stripMermaidScripts } from './mermaidRuntime.js'
 
 /**
  * Wraps a rendered markdown body in an MS-Word compatible HTML document with a
@@ -197,9 +199,9 @@ export function buildDocsDocument(title, htmlBody, tocHtml = '') {
 
     async function renderMermaid() {
       try {
-        const elements = document.querySelectorAll('.mermaid');
+        const elements = Array.prototype.slice.call(document.querySelectorAll('.mermaid'));
         if (elements.length > 0) {
-          mermaid.init(undefined, elements);
+          await mermaid.run({ nodes: elements, suppressErrors: true });
         }
 
         // Convert SVGs to Base64 PNGs for MS Word compatibility
@@ -291,7 +293,6 @@ export async function generateDocsHTML(title, content) {
 }
 
 export const handleExportDocs = async (mainWindow, payload) => {
-  let printWin = null
   try {
     const { title, content } = payload || {}
     if (!content) throw new Error('No content provided')
@@ -309,49 +310,16 @@ export const handleExportDocs = async (mainWindow, payload) => {
 
     const html = await generateDocsHTML(title, content)
 
-    // Create a hidden browser window to execute scripts
-    printWin = new BrowserWindow({
-      show: false,
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true
-      }
+    // Render (Mermaid inlined) and strip script tags for MS Word compatibility.
+    const cleanHtml = await withRenderedHtml(html, async (win) => {
+      const rendered = await win.webContents.executeJavaScript('document.documentElement.outerHTML')
+      return stripMermaidScripts(String(rendered || ''))
     })
-
-    await printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
-
-    // Wait for mermaid to finish rendering and converting to PNG
-    const renderedHtml = await printWin.webContents.executeJavaScript(`
-      new Promise((resolve) => {
-        if (document.body.classList.contains('mermaid-done')) {
-          setTimeout(() => resolve(document.documentElement.outerHTML), 500);
-        } else {
-          const observer = new MutationObserver(() => {
-            if (document.body.classList.contains('mermaid-done')) {
-              observer.disconnect();
-              setTimeout(() => resolve(document.documentElement.outerHTML), 500);
-            }
-          });
-          observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-          setTimeout(() => resolve(document.documentElement.outerHTML), 5000); // 5 seconds timeout fallback
-        }
-      })
-    `)
-
-    // Strip out the script tags so MS word doesn't complain about them
-    const cleanHtml = renderedHtml.replace(
-      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-      ''
-    )
 
     await fs.writeFile(filePath, cleanHtml, 'utf-8')
     return { success: true, filePath }
   } catch (error) {
     console.error('[Main] Export Docs failed:', error)
     throw error
-  } finally {
-    if (printWin && printWin.isDestroyed?.() !== true) {
-      printWin.close()
-    }
   }
 }
