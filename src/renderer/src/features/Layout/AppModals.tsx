@@ -1,5 +1,5 @@
 /**
- * AppModals.jsx
+ * AppModals.tsx
  * 
  * Global Floating Dialogs, Modals, and Overlay Layer for Lumina.
  * 
@@ -31,11 +31,9 @@ import { VoiceCapsule } from '../voice'
 
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
-import { useSettingsStore } from '../../core/store/SettingStore'
-import { handleRenameSnippet } from '../../core/hooks/handleRenameSnippet'
+import { renameNote } from '../../core/hooks/renameNote'
 
 // Lazy-load heavy modals and panels to optimize initial bundle evaluation time
-// Lumina AI Chat Modal
 const LuminaChat = React.lazy(() => import('../AI/Lumina'))
 const Settings = React.lazy(() => import('../Settings/Settings'))
 const Theme = React.lazy(() => import('../theme/Theme'))
@@ -44,7 +42,56 @@ const Graph = React.lazy(() => import('../graph/Graph'))
 const Guide = React.lazy(() => import('../modals/Guide'))
 const CanvasDrawerModal = React.lazy(() => import('../canvas/CanvasDrawerModal'))
 
-export const AppModals = ({
+export interface RenameModalState {
+  isOpen: boolean
+  item?: any
+  newName: string
+}
+
+export interface AppModalsProps {
+  showSettings: boolean
+  setShowSettings: (val: boolean) => void
+  settingsInitialTab: string
+  setSettingsInitialTab: (tab: string) => void
+  showThemeModal: boolean
+  setShowThemeModal: (val: boolean) => void
+  showAIChatModal: boolean
+  setShowAIChatModal: (val: boolean) => void
+  setSavedRightSidebarState: (state: any) => void
+  setRightSidebarTab: (tab: any) => void
+  updateRightSidebarOpen: (open: boolean) => void
+  showPalette: boolean
+  setShowPalette: (val: boolean) => void
+  paletteInitialQuery: string
+  snippets: any[]
+  selectedSnippet: any
+  setSelectedSnippet: (snippet: any) => void
+  setActiveTab: (tab: string) => void
+  handleNew: () => void
+  renameModal: RenameModalState
+  setRenameModal: (modal: RenameModalState) => void
+  showGraph: boolean
+  setShowGraph: (val: boolean) => void
+  showDocsModal: boolean
+  setShowDocsModal: (val: boolean) => void
+  showGuideModal: boolean
+  setShowGuideModal: (val: boolean) => void
+  handleLoadStarterWorkspace: () => Promise<void>
+  showDeleteConfirm: boolean
+  setShowDeleteConfirm: (val: boolean) => void
+  snippetToDelete: any
+  handleConfirmDelete: () => void
+  saveSnippet: (snippet: any) => Promise<any> | void
+  loadWorkspace: () => Promise<void> | void
+  showToast: (msg: string, type?: any, duration?: number) => void
+  showActiveIconPicker: boolean
+  setShowActiveIconPicker: (val: boolean) => void
+  activeTabId: string | null
+  toast: any
+  clearToast: () => void
+}
+
+export const AppModals: React.FC<AppModalsProps> = ({
   showSettings,
   setShowSettings,
   settingsInitialTab,
@@ -54,8 +101,6 @@ export const AppModals = ({
   showAIChatModal,
   setShowAIChatModal,
   setSavedRightSidebarState,
-  setRightSidebarTab,
-  updateRightSidebarOpen,
   showPalette,
   setShowPalette,
   paletteInitialQuery,
@@ -88,19 +133,24 @@ export const AppModals = ({
 }) => {
   // Preload settings bundle during idle time to eliminate modal opening latency
   React.useEffect(() => {
-    const idleId = typeof window !== 'undefined' && 'requestIdleCallback' in window
-      ? window.requestIdleCallback(() => {
-          import('../Settings/Settings').catch(() => {})
-        })
-      : setTimeout(() => {
-          import('../Settings/Settings').catch(() => {})
-        }, 800)
+    const idleId =
+      typeof window !== 'undefined' && 'requestIdleCallback' in window
+        ? window.requestIdleCallback(() => {
+            import('../Settings/Settings').catch(() => {})
+          })
+        : setTimeout(() => {
+            import('../Settings/Settings').catch(() => {})
+          }, 800)
 
     return () => {
-      if (typeof window !== 'undefined' && 'cancelIdleCallback' in window && typeof idleId === 'number') {
+      if (
+        typeof window !== 'undefined' &&
+        'cancelIdleCallback' in window &&
+        typeof idleId === 'number'
+      ) {
         window.cancelIdleCallback(idleId)
       } else {
-        clearTimeout(idleId)
+        clearTimeout(idleId as any)
       }
     }
   }, [])
@@ -183,7 +233,7 @@ export const AppModals = ({
                 }
                 setShowGraph(false)
               }}
-              onNavigate={(snippet) => {
+              onNavigate={(snippet: any) => {
                 setSelectedSnippet(snippet)
                 setActiveTab('files')
                 setShowGraph(false)
@@ -229,7 +279,7 @@ export const AppModals = ({
         initialName={renameModal.newName}
         itemType={renameModal.item?.type === 'folder' ? 'folder' : 'note'}
         onClose={() => setRenameModal({ isOpen: false, item: null, newName: '' })}
-        onRename={async (newName) => {
+        onRename={async (newName: string) => {
           if (renameModal.item?.type === 'folder') {
             const folderId = renameModal.item.id
             const parentPath = folderId.includes('/')
@@ -238,7 +288,7 @@ export const AppModals = ({
             const newFolderPath = parentPath ? `${parentPath}/${newName}` : newName
             if (newFolderPath !== folderId) {
               try {
-                await window.api.renameFolder(folderId, newFolderPath)
+                await (window as any).api.renameFolder(folderId, newFolderPath)
                 useWorkspaceStore.getState().setSelectedFolder(newFolderPath)
                 await loadWorkspace()
               } catch (err) {
@@ -248,14 +298,16 @@ export const AppModals = ({
             }
             setRenameModal({ isOpen: false, item: null, newName: '' })
           } else {
-            handleRenameSnippet({
+            renameNote({
               renameModal: { ...renameModal, newName },
+              saveNote: saveSnippet,
               saveSnippet,
+              setSelectedNote: setSelectedSnippet,
               setSelectedSnippet,
               setRenameModal,
               setIsCreatingSnippet: () => {},
               showToast
-            })
+            } as any)
           }
         }}
       />
@@ -266,7 +318,7 @@ export const AppModals = ({
           isOpen={showActiveIconPicker}
           onClose={() => setShowActiveIconPicker(false)}
           currentIcon={(selectedSnippet || snippets.find((s) => s.id === activeTabId))?.customIcon}
-          onSelect={(iconName) => {
+          onSelect={(iconName: string) => {
             const active = selectedSnippet || snippets.find((s) => s.id === activeTabId)
             if (active) {
               saveSnippet({ ...active, customIcon: iconName })

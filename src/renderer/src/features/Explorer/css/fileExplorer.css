@@ -349,7 +349,7 @@
 }
 
 .explorer-header-container {
-  min-width: 260px;
+  min-width: 0;
   flex-shrink: 0;
   box-sizing: border-box;
 }

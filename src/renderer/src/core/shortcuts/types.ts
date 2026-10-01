@@ -59,4 +59,5 @@ export interface KeyboardShortcutHandlers {
   onToggleSidebar?: () => void
   onToggleCanvasDrawer?: () => void
   onInlineAI?: () => boolean | void
+  onFind?: () => void
 }

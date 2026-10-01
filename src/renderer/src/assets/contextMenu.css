@@ -1,39 +1,46 @@
 /* 
  * ============ CONTEXT MENU SYSTEM ============
  * Controls the styling for all Context Menus across Lumina.
- * 
- * LOCATIONS:
- * 1. Editor Context Menu: src/renderer/src/features/Editor/menu/index.jsx
- * 2. File Explorer / Nodes Menu: src/renderer/src/features/Navigation/hooks/useContextMenu.jsx
- * 3. Base Component: src/renderer/src/features/modals/ContextMenu.jsx
- * 
- * This file (contextMenu.css) is globally imported in index.css.
+ * Sleek, modern, glassmorphic floating menu with refined shadows and typography.
  */
+
 .context-menu {
   position: fixed;
-  min-width: 200px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-dim);
-  border-radius: 8px;
-  padding: 4px;
+  min-width: 210px;
+  background: color-mix(in srgb, var(--bg-panel, #1e2029) 92%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid color-mix(in srgb, var(--border-dim, rgba(255, 255, 255, 0.1)) 70%, transparent);
+  border-radius: 10px;
+  padding: 5px;
   z-index: 10000;
-  animation: menuAppear 0.08s cubic-bezier(0, 0, 0.2, 1) forwards;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  animation: menuAppear 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-shadow:
+    0 10px 28px -6px rgba(0, 0, 0, 0.28),
+    0 4px 10px -2px rgba(0, 0, 0, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
   will-change: transform, opacity;
   transform-origin: top left;
+  user-select: none;
 }
 
 @keyframes menuAppear {
-  from { opacity: 0; transform: scale(0.97) translateY(-2px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .submenu {
   position: absolute !important;
-  top: -4px;
+  top: -5px;
   left: 100% !important;
   margin: 0 !important;
-  transform: translateX(5px);
+  transform: translateX(6px);
 }
 
 /* Invisible bridge to prevent hover loss across the gap */
@@ -42,75 +49,135 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -15px;
-  width: 15px;
+  left: -16px;
+  width: 16px;
 }
 
 .submenu.flip-left {
   left: auto !important;
   right: 100% !important;
-  transform: translateX(-5px);
+  transform: translateX(-6px);
 }
 
 .submenu.flip-left::before {
   left: auto;
-  right: -15px;
+  right: -16px;
 }
 
 .menu-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 8px;
-  border-radius: 6px;
-  font-size: 12px;
-  color: var(--text-muted);
-  cursor: default;
-  transition: background 0.05s ease, color 0.05s ease;
-  margin: 2px 0;
+  padding: 6.5px 10px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: background 0.08s ease, color 0.08s ease, transform 0.06s ease;
+  margin: 1.5px 0;
+  gap: 12px;
 }
 
-.menu-item:hover {
-  background: var(--bg-active);
-  color: var(--text-main);
+.menu-item:hover,
+.menu-item.hovered {
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  color: var(--text-main, #f8fafc);
 }
 
-.menu-shortcut {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  font-family: inherit;
+.menu-item:hover .menu-icon-left,
+.menu-item.hovered .menu-icon-left {
+  color: var(--text-main, #f8fafc) !important;
+}
+
+.menu-item:hover .menu-submenu-arrow,
+.menu-item.hovered .menu-submenu-arrow {
+  color: var(--text-main, #f8fafc) !important;
+  transform: translateX(1.5px);
+}
+
+.menu-item.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .menu-label {
   flex: 1;
   font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.menu-icon-left {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-faint, #64748b);
+  transition: color 0.08s ease;
+  flex-shrink: 0;
 }
 
 .menu-icon-right {
-  opacity: 0.7;
-  color: var(--text-accent);
+  opacity: 0.8;
+  color: var(--text-accent, var(--primary, #818cf8));
   display: flex;
   align-items: center;
+  flex-shrink: 0;
+}
+
+.menu-submenu-arrow {
+  transition: transform 0.12s ease, color 0.08s ease;
+  flex-shrink: 0;
+}
+
+.menu-shortcut-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .menu-shortcut {
-  font-size: 10px;
-  opacity: 0.5;
-  font-weight: 600;
+  font-size: 10.5px;
+  font-weight: 400;
+  font-family: inherit;
+  color: var(--text-faint, #64748b);
+  padding: 0 2px;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  line-height: 1.2;
+  letter-spacing: 0.2px;
+}
+
+.menu-item:hover .menu-shortcut,
+.menu-item.hovered .menu-shortcut {
+  color: var(--text-muted, #94a3b8);
+  background: transparent;
 }
 
 .menu-divider {
   height: 1px;
-  background: var(--border-dim);
-  margin: 6px;
+  background: color-mix(in srgb, var(--border-dim, rgba(255, 255, 255, 0.08)) 70%, transparent);
+  margin: 4px 6px;
 }
 
 .menu-item.danger {
+  color: var(--text-danger, #f87171);
+}
+
+.menu-item.danger .menu-icon-left {
+  color: var(--text-danger, #f87171) !important;
+}
+
+.menu-item.danger:hover,
+.menu-item.danger.hovered {
+  background: rgba(239, 68, 68, 0.12);
   color: #ef4444;
 }
 
-.menu-item.danger:hover {
-  background: var(--bg-active);
-  color: #ef4444;
+.menu-item.danger:hover .menu-icon-left,
+.menu-item.danger.hovered .menu-icon-left {
+  color: #ef4444 !important;
 }

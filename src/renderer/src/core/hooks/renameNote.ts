@@ -1,6 +1,30 @@
+/**
+ * renameNote.ts
+ *
+ * Core rename engine for Lumina notes, folders, PDFs, and image assets.
+ * Handles in-place filesystem moves for media files and optimistic updates with revert on failure.
+ */
+
 import { useWorkspaceStore } from '../store/workspaceStore'
 
-export const handleRenameSnippet = async ({
+export interface RenameModalData {
+  isOpen: boolean
+  item: any
+  newName?: string
+}
+
+export interface RenameNoteParams {
+  renameModal: RenameModalData
+  saveNote?: (snippet: any) => Promise<any> | void
+  saveSnippet?: (snippet: any) => Promise<any> | void
+  setSelectedNote?: (snippet: any) => void
+  setSelectedSnippet?: (snippet: any) => void
+  setRenameModal: (modal: { isOpen: boolean; item: any; newName?: string }) => void
+  setIsCreatingSnippet?: (isCreating: boolean) => void
+  showToast?: (message: string, type?: 'info' | 'error' | 'success') => void
+}
+
+export const renameNote = async ({
   renameModal,
   saveNote,
   saveSnippet,
@@ -9,7 +33,7 @@ export const handleRenameSnippet = async ({
   setRenameModal,
   setIsCreatingSnippet,
   showToast
-}) => {
+}: RenameNoteParams): Promise<void> => {
   if (!renameModal.item) {
     if (showToast) showToast('❌ Cannot rename: No note selected.', 'error')
     setRenameModal({ isOpen: false, item: null })
@@ -17,13 +41,13 @@ export const handleRenameSnippet = async ({
   }
 
   const item = renameModal.item
-  let baseName = (renameModal.newName || item.title || '').trim() || 'Untitled'
+  const baseName = (renameModal.newName || item.title || '').trim() || 'Untitled'
 
   // If nothing changed, skip saving and close modal
   if (item.title === baseName) {
     if (showToast) showToast('No changes', 'info')
     setRenameModal({ isOpen: false, item: null })
-    setIsCreatingSnippet(false)
+    if (setIsCreatingSnippet) setIsCreatingSnippet(false)
     return
   }
 
@@ -37,27 +61,28 @@ export const handleRenameSnippet = async ({
 
     if (oldRel === newRel) {
       setRenameModal({ isOpen: false, item: null })
-      setIsCreatingSnippet(false)
+      if (setIsCreatingSnippet) setIsCreatingSnippet(false)
       return
     }
 
     try {
-      await window.api?.moveFile?.(oldRel, newRel)
+      const api = (window as any).api
+      await api?.moveFile?.(oldRel, newRel)
       const loadWorkspace = useWorkspaceStore.getState().loadWorkspace
       await loadWorkspace?.()
 
       const freshSnippets = useWorkspaceStore.getState().notes || []
       const newSnippet = freshSnippets.find(
-        (s) =>
+        (s: any) =>
           s.relativePath === newRel ||
           (s.fileName === targetFileName && (s.folderId || '') === (item.folderId || ''))
       )
 
       if (newSnippet) {
-        useWorkspaceStore.setState((state) => {
-          const nextTabs = state.openTabs.map((tid) => (tid === item.id ? newSnippet.id : tid))
+        useWorkspaceStore.setState((state: any) => {
+          const nextTabs = state.openTabs.map((tid: string) => (tid === item.id ? newSnippet.id : tid))
           const nextActiveId = state.activeTabId === item.id ? newSnippet.id : state.activeTabId
-          const nextPinned = state.pinnedTabIds.map((pid) => (pid === item.id ? newSnippet.id : pid))
+          const nextPinned = state.pinnedTabIds.map((pid: string) => (pid === item.id ? newSnippet.id : pid))
           return {
             openTabs: nextTabs,
             activeTabId: nextActiveId,
@@ -66,12 +91,12 @@ export const handleRenameSnippet = async ({
           }
         })
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to rename PDF:', err)
       if (showToast) showToast(err?.message || '❌ Failed to rename PDF.', 'error')
     } finally {
       setRenameModal({ isOpen: false, item: null })
-      setIsCreatingSnippet(false)
+      if (setIsCreatingSnippet) setIsCreatingSnippet(false)
     }
     return
   }
@@ -89,27 +114,28 @@ export const handleRenameSnippet = async ({
 
     if (oldRel === newRel) {
       setRenameModal({ isOpen: false, item: null })
-      setIsCreatingSnippet(false)
+      if (setIsCreatingSnippet) setIsCreatingSnippet(false)
       return
     }
 
     try {
-      await window.api?.moveFile?.(oldRel, newRel)
+      const api = (window as any).api
+      await api?.moveFile?.(oldRel, newRel)
       const loadWorkspace = useWorkspaceStore.getState().loadWorkspace
       await loadWorkspace?.()
 
       const freshSnippets = useWorkspaceStore.getState().notes || []
       const newSnippet = freshSnippets.find(
-        (s) =>
+        (s: any) =>
           s.relativePath === newRel ||
           (s.fileName === targetFileName && (s.folderId || '') === (item.folderId || ''))
       )
 
       if (newSnippet) {
-        useWorkspaceStore.setState((state) => {
-          const nextTabs = state.openTabs.map((tid) => (tid === item.id ? newSnippet.id : tid))
+        useWorkspaceStore.setState((state: any) => {
+          const nextTabs = state.openTabs.map((tid: string) => (tid === item.id ? newSnippet.id : tid))
           const nextActiveId = state.activeTabId === item.id ? newSnippet.id : state.activeTabId
-          const nextPinned = state.pinnedTabIds.map((pid) => (pid === item.id ? newSnippet.id : pid))
+          const nextPinned = state.pinnedTabIds.map((pid: string) => (pid === item.id ? newSnippet.id : pid))
           return {
             openTabs: nextTabs,
             activeTabId: nextActiveId,
@@ -118,18 +144,18 @@ export const handleRenameSnippet = async ({
           }
         })
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to rename image:', err)
       if (showToast) showToast(err?.message || '❌ Failed to rename image.', 'error')
     } finally {
       setRenameModal({ isOpen: false, item: null })
-      setIsCreatingSnippet(false)
+      if (setIsCreatingSnippet) setIsCreatingSnippet(false)
     }
     return
   }
 
   // --- Standard Note Rename Logic ---
-  const extMap = {
+  const extMap: Record<string, string> = {
     js: 'javascript',
     jsx: 'javascript',
     ts: 'typescript',
@@ -174,6 +200,10 @@ export const handleRenameSnippet = async ({
     }
   } finally {
     setRenameModal({ isOpen: false, item: null })
-    setIsCreatingSnippet(false)
+    if (setIsCreatingSnippet) setIsCreatingSnippet(false)
   }
 }
+
+// Backwards-compatibility alias
+export const handleRenameSnippet = renameNote
+export default renameNote

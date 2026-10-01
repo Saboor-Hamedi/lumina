@@ -50,6 +50,7 @@ describe('SettingStore', () => {
         anthropicKey: null,
         groqKey: null,
         ollamaUrl: 'http://localhost:11434/api/chat',
+        ollamaModel: null,
         commandPaletteMode: 'search',
         commandPaletteSplitRatio: 50,
         launchOnStartup: false,

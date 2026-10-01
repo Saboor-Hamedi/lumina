@@ -94,11 +94,9 @@ export function useExplorerOperations({
     const nextSet = next instanceof Set ? next : new Set<string>(next || [])
     const nextArr = Array.from(nextSet)
 
-    // Keep folder expansion state persistence immediate, but let React perform
-    // the potentially large virtual-tree projection at transition priority.
     expandedFoldersRef.current = nextSet
-    startTransition(() => setExpandedFoldersRaw(nextSet))
-    markExplorerPerf('folder-state-update', { expandedFolderCount: nextSet.size, scheduled: true })
+    setExpandedFoldersRaw(nextSet)
+    markExplorerPerf('folder-state-update', { expandedFolderCount: nextSet.size, scheduled: false })
     if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
     persistTimerRef.current = setTimeout(() => {
       persistTimerRef.current = null

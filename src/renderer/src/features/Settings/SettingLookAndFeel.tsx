@@ -374,6 +374,7 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
                   useBorderLeft: checked
                 }
                 updateSetting('cursor', next)
+                updateSetting('useBorderLeft', checked)
               }}
             />
           </div>

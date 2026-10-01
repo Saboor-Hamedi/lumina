@@ -1,12 +1,12 @@
 import { describe, it, expect, vi } from 'vitest'
-import { handleRenameSnippet } from '../../../../../src/renderer/src/core/hooks/handleRenameSnippet'
+import { renameNote } from '../../../../../src/renderer/src/core/hooks/renameNote'
 
-describe('handleRenameSnippet', () => {
+describe('renameNote', () => {
   it('shows error toast when no item in renameModal', async () => {
     const showToast = vi.fn()
     const setRenameModal = vi.fn()
 
-    await handleRenameSnippet({
+    await renameNote({
       renameModal: { isOpen: true, item: null, newName: 'Test' },
       saveSnippet: vi.fn(),
       setSelectedSnippet: vi.fn(),
@@ -24,7 +24,7 @@ describe('handleRenameSnippet', () => {
     const setRenameModal = vi.fn()
     const setIsCreatingSnippet = vi.fn()
 
-    await handleRenameSnippet({
+    await renameNote({
       renameModal: {
         isOpen: true,
         item: { id: '1', title: 'Same Title', language: 'markdown' },
@@ -47,7 +47,7 @@ describe('handleRenameSnippet', () => {
     const setRenameModal = vi.fn()
     const setIsCreatingSnippet = vi.fn()
 
-    await handleRenameSnippet({
+    await renameNote({
       renameModal: {
         isOpen: true,
         item: { id: '1', title: 'Old Name', language: 'markdown' },
@@ -72,7 +72,7 @@ describe('handleRenameSnippet', () => {
     const saveSnippet = vi.fn()
     const setSelectedSnippet = vi.fn()
 
-    await handleRenameSnippet({
+    await renameNote({
       renameModal: {
         isOpen: true,
         item: { id: '1', title: '', language: 'markdown' },
@@ -93,7 +93,7 @@ describe('handleRenameSnippet', () => {
     const setSelectedSnippet = vi.fn()
     const originalItem = { id: '1', title: 'Original', language: 'markdown' }
 
-    await handleRenameSnippet({
+    await renameNote({
       renameModal: {
         isOpen: true,
         item: originalItem,
@@ -113,7 +113,7 @@ describe('handleRenameSnippet', () => {
   it('handles missing showToast gracefully', async () => {
     const saveSnippet = vi.fn()
 
-    await handleRenameSnippet({
+    await renameNote({
       renameModal: {
         isOpen: true,
         item: { id: '1', title: 'Old', language: 'markdown' },

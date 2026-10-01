@@ -1,5 +1,5 @@
 /**
- * MainLayout.jsx
+ * MainLayout.tsx
  *
  * Core 3-Pane Application Shell & Workspace Orchestrator for Lumina.
  *
@@ -21,7 +21,7 @@ import ActivityBar from '../Navigation/ActivityBar'
 import Welcome from '../../Welcome'
 import TabBar from './TabBar'
 import TabContentPane from './TabContentPane'
-import AppModals from './AppModals'
+import AppModals, { RenameModalState } from './AppModals'
 import { ExternalDropOverlay, useWorkspaceDrop } from '../Explorer/drop'
 import { countExplorerPerfRender, markExplorerPerf } from '../Explorer/utils/explorerPerf'
 import { FileText, FolderDown } from 'lucide-react'
@@ -52,7 +52,11 @@ import { useSidebarResize } from './resizeSidebar'
  * GraphTabPane — stable memoized wrapper for the embedded graph tab.
  * Reads its own visibility from the store to avoid re-rendering peer tabs on switch.
  */
-const GraphTabPane = React.memo(({ onNavigate }) => {
+interface GraphTabPaneProps {
+  onNavigate: (snippet: any) => void
+}
+
+const GraphTabPane = React.memo<GraphTabPaneProps>(({ onNavigate }) => {
   const isSelected = useWorkspaceStore((state) => state.activeTabId === GRAPH_TAB_ID)
   return (
     <div
@@ -107,7 +111,7 @@ const LuminaTabPane = React.memo(() => {
 })
 LuminaTabPane.displayName = 'LuminaTabPane'
 
-export const MainLayout = () => {
+export const MainLayout: React.FC = () => {
   countExplorerPerfRender('MainLayout')
   const {
     snippets,
@@ -133,17 +137,17 @@ export const MainLayout = () => {
   const { toast, showToast, clearToast } = useToast()
 
   useEffect(() => {
-    const handleGlobalToast = (e) => {
-      const { message, type = 'info', duration = 3000 } = e.detail || {}
+    const handleGlobalToast = (e: any) => {
+      const { message, type = 'info' } = e.detail || {}
       if (message) {
-        showToast(message, type, duration)
+        showToast(message, type)
       }
     }
     const handleClearToast = () => clearToast()
-    window.addEventListener('show-toast', handleGlobalToast)
+    window.addEventListener('show-toast', handleGlobalToast as EventListener)
     window.addEventListener('clear-toast', handleClearToast)
     return () => {
-      window.removeEventListener('show-toast', handleGlobalToast)
+      window.removeEventListener('show-toast', handleGlobalToast as EventListener)
       window.removeEventListener('clear-toast', handleClearToast)
     }
   }, [showToast, clearToast])
@@ -155,39 +159,36 @@ export const MainLayout = () => {
 
   const [activeTab, setActiveTab] = useState('files')
   const [showSettings, setShowSettings] = useState(false)
-  const [initialSettingsTab, setInitialSettingsTab] = useState('general')
   const [showThemeModal, setShowThemeModal] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [paletteInitialQuery, setPaletteInitialQuery] = useState('')
   const [showGraph, setShowGraph] = useState(false)
   const [showDocsModal, setShowDocsModal] = useState(false)
   const [showGuideModal, setShowGuideModal] = useState(false)
-  const [showDetailsModal, setShowDetailsModal] = useState(false)
-  const [showAIChatModal, setShowAIChatModal] = useState(() => {
-    return useSettingsStore.getState().settings?.aiChatModalState?.isOpen || false
+  const [showAIChatModal, setShowAIChatModal] = useState<boolean>(() => {
+    return (useSettingsStore.getState().settings as any)?.aiChatModalState?.isOpen || false
   })
-  const [showExplorerModal, setShowExplorerModal] = useState(false)
+  const [, setShowExplorerModal] = useState(false)
   const [showActiveIconPicker, setShowActiveIconPicker] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(() => {
-    const storeVal = useSettingsStore.getState().settings?.sidebar?.isLeftOpen
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState<boolean>(() => {
+    const storeVal = (useSettingsStore.getState().settings as any)?.sidebar?.isLeftOpen
     if (typeof storeVal === 'boolean') return storeVal
     return true
   })
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(() => {
-    const storeVal = useSettingsStore.getState().settings?.rightSidebar?.isRightOpen
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState<boolean>(() => {
+    const storeVal = (useSettingsStore.getState().settings as any)?.rightSidebar?.isRightOpen
     if (typeof storeVal === 'boolean') return storeVal
     return false
   })
-  const [rightSidebarTab, setRightSidebarTab] = useState('details')
+  const [rightSidebarTab, setRightSidebarTab] = useState<string>('details')
   const rightSidebarTabRef = useRef(rightSidebarTab)
   useEffect(() => {
     rightSidebarTabRef.current = rightSidebarTab
   }, [rightSidebarTab])
 
-  const [renameModal, setRenameModal] = useState({ isOpen: false, item: null, newName: '' })
-  const [savedRightSidebarState, setSavedRightSidebarState] = useState(null)
-  const appShellRef = useRef(null)
+  const [renameModal, setRenameModal] = useState<RenameModalState>({ isOpen: false, item: null, newName: '' })
+  const [, setSavedRightSidebarState] = useState<any>(null)
+  const appShellRef = useRef<HTMLDivElement | null>(null)
 
   const isLeftSidebarOpenRef = useRef(isLeftSidebarOpen)
   const isRightSidebarOpenRef = useRef(isRightSidebarOpen)
@@ -200,34 +201,34 @@ export const MainLayout = () => {
     isRightSidebarOpenRef.current = isRightSidebarOpen
   }, [isRightSidebarOpen])
 
-  const updateLeftSidebarOpen = useCallback((valOrFn) => {
+  const updateLeftSidebarOpen = useCallback((valOrFn: boolean | ((prev: boolean) => boolean)) => {
     const next = typeof valOrFn === 'function' ? valOrFn(isLeftSidebarOpenRef.current) : valOrFn
     isLeftSidebarOpenRef.current = next
     setIsLeftSidebarOpen(next)
     window.dispatchEvent(new CustomEvent('left-sidebar-toggle', { detail: { open: next } }))
-    const currentSidebar = useSettingsStore.getState().settings?.sidebar || {}
+    const currentSidebar = (useSettingsStore.getState().settings as any)?.sidebar || {}
     if (currentSidebar.isLeftOpen !== next) {
       useSettingsStore.getState().updateSettings({
         sidebar: {
           ...currentSidebar,
           isLeftOpen: next
         }
-      })
+      } as any)
     }
   }, [])
 
-  const updateRightSidebarOpen = useCallback((valOrFn) => {
+  const updateRightSidebarOpen = useCallback((valOrFn: boolean | ((prev: boolean) => boolean)) => {
     const next = typeof valOrFn === 'function' ? valOrFn(isRightSidebarOpenRef.current) : valOrFn
     isRightSidebarOpenRef.current = next
     setIsRightSidebarOpen(next)
-    const currentRSidebar = useSettingsStore.getState().settings?.rightSidebar || {}
+    const currentRSidebar = (useSettingsStore.getState().settings as any)?.rightSidebar || {}
     if (currentRSidebar.isRightOpen !== next) {
       useSettingsStore.getState().updateSettings({
         rightSidebar: {
           ...currentRSidebar,
           isRightOpen: next
         }
-      })
+      } as any)
     }
   }, [])
 
@@ -257,7 +258,7 @@ export const MainLayout = () => {
   }, [updateRightSidebarOpen])
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [snippetToDelete, setSnippetToDelete] = useState(null)
+  const [snippetToDelete, setSnippetToDelete] = useState<any>(null)
 
   const {
     leftWidth,
@@ -279,7 +280,7 @@ export const MainLayout = () => {
       try {
         await Promise.all([useSettingsStore.getState().init(), loadWorkspace()])
 
-        const actualSettings = useSettingsStore.getState().settings || {}
+        const actualSettings = (useSettingsStore.getState().settings as any) || {}
 
         if (actualSettings.openTabs && Array.isArray(actualSettings.openTabs)) {
           useWorkspaceStore
@@ -291,8 +292,8 @@ export const MainLayout = () => {
             )
         } else if (actualSettings.lastNoteId) {
           const allSnippets = useWorkspaceStore.getState().notes || []
-          const last = allSnippets.find((s) => s.id === actualSettings.lastNoteId)
-          if (last) setSelectedNote(last)
+          const last = allSnippets.find((s: any) => s.id === actualSettings.lastNoteId)
+          if (last) setSelectedSnippet(last)
         }
 
         const legacySidebar = actualSettings.sidebar || {}
@@ -361,11 +362,12 @@ export const MainLayout = () => {
 
     window.addEventListener('toggle-inspector', handleToggleInspector)
 
-    let cleanupGlobalShortcut = null
-    if (window.api?.onToggleCommandPalette) {
-      cleanupGlobalShortcut = window.api.onToggleCommandPalette(() => {
+    let cleanupGlobalShortcut: (() => void) | null = null
+    const winApi = (window as any).api
+    if (winApi?.onToggleCommandPalette) {
+      cleanupGlobalShortcut = winApi.onToggleCommandPalette(() => {
         if (
-          window.__isRecordingShortcut ||
+          (window as any).__isRecordingShortcut ||
           document.querySelector(
             '.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay'
           ) ||
@@ -387,23 +389,22 @@ export const MainLayout = () => {
       window.removeEventListener('toggle-inspector', handleToggleInspector)
       if (cleanupGlobalShortcut) cleanupGlobalShortcut()
     }
-  }, [updateRightSidebarOpen, handleToggleInspector])
+  }, [updateRightSidebarOpen, handleToggleInspector, loadWorkspace, setSelectedSnippet, setLeftWidth, setRightWidth])
 
   useEffect(() => {
-    if (window.api?.onVaultUpdated) {
-      const cleanup = window.api.onVaultUpdated(() => {
+    const winApi = (window as any).api
+    if (winApi?.onVaultUpdated) {
+      const cleanup = winApi.onVaultUpdated(() => {
         loadWorkspace()
       })
       return cleanup
     }
   }, [loadWorkspace])
 
-  const pinnedTabIds = useWorkspaceStore((state) => state.pinnedTabIds)
-
   useEffect(() => {
-    const handleRenameShortcut = (e) => {
+    const handleRenameShortcut = (e: KeyboardEvent) => {
       if (
-        window.__isRecordingShortcut ||
+        (window as any).__isRecordingShortcut ||
         document.querySelector(
           '.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay'
         ) ||
@@ -418,7 +419,7 @@ export const MainLayout = () => {
         e.preventDefault()
         const currentSelectedFolder = useWorkspaceStore.getState().selectedFolder
         if (currentSelectedFolder) {
-          const folderName = currentSelectedFolder.split('/').pop()
+          const folderName = currentSelectedFolder.split('/').pop() || ''
           setRenameModal({
             isOpen: true,
             item: { type: 'folder', id: currentSelectedFolder, name: folderName },
@@ -428,7 +429,7 @@ export const MainLayout = () => {
           setRenameModal({
             isOpen: true,
             item: selectedSnippet,
-            newName: selectedSnippet.title
+            newName: selectedSnippet.title || ''
           })
         } else {
           showToast('No note or folder selected to rename', 'info')
@@ -441,7 +442,7 @@ export const MainLayout = () => {
 
   // Dedicated direct capturing listener for Ctrl + Shift + / (Canvas Drawer Modal)
   useEffect(() => {
-    const handleCanvasDrawerKey = (e) => {
+    const handleCanvasDrawerKey = (e: KeyboardEvent) => {
       const isCtrl = e.ctrlKey || e.metaKey
       const isSlash =
         e.code === 'Slash' ||
@@ -454,10 +455,11 @@ export const MainLayout = () => {
         e.stopPropagation()
         e.stopImmediatePropagation()
         const now = Date.now()
-        if (window.__lastCanvasDrawerDispatch && now - window.__lastCanvasDrawerDispatch < 300) {
+        const lastDispatch = (window as any).__lastCanvasDrawerDispatch || 0
+        if (now - lastDispatch < 300) {
           return
         }
-        window.__lastCanvasDrawerDispatch = now
+        ;(window as any).__lastCanvasDrawerDispatch = now
         window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))
       }
     }
@@ -467,9 +469,9 @@ export const MainLayout = () => {
 
   // Dedicated capture-phase shortcut listener for Tab Navigation (Ctrl+Tab, Ctrl+Shift+Tab, Ctrl+1..9)
   useEffect(() => {
-    const handleTabNavCapture = (e) => {
+    const handleTabNavCapture = (e: KeyboardEvent) => {
       if (
-        window.__isRecordingShortcut ||
+        (window as any).__isRecordingShortcut ||
         document.querySelector(
           '.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay'
         ) ||
@@ -554,8 +556,9 @@ export const MainLayout = () => {
     },
     onOpenFile: async () => {
       try {
-        if (!window.api?.openFile) return
-        const file = await window.api.openFile()
+        const winApi = (window as any).api
+        if (!winApi?.openFile) return
+        const file = await winApi.openFile()
         if (file && typeof file.content === 'string') {
           const newSnippet = {
             id: Date.now().toString(),
@@ -581,7 +584,7 @@ export const MainLayout = () => {
       setShowSettings(true)
     },
     onChangeIcon: () => {
-      const active = selectedSnippet || snippets.find((s) => s.id === activeTabId)
+      const active = selectedSnippet || snippets.find((s: any) => s.id === activeTabId)
       if (active) {
         setShowActiveIconPicker(true)
       } else {
@@ -653,7 +656,7 @@ export const MainLayout = () => {
       const activeItem =
         selectedSnippet ||
         (activeTabId && activeTabId !== GRAPH_TAB_ID
-          ? snippets.find((s) => s.id === activeTabId)
+          ? snippets.find((s: any) => s.id === activeTabId)
           : null)
       if (activeItem) {
         setSnippetToDelete(activeItem)
@@ -666,8 +669,9 @@ export const MainLayout = () => {
       }
     },
     onCloseWindow: () => {
-      if (window.api?.closeWindow) {
-        window.api.closeWindow()
+      const winApi = (window as any).api
+      if (winApi?.closeWindow) {
+        winApi.closeWindow()
       } else {
         console.error('[MainLayout] Close window API not available')
       }
@@ -775,9 +779,9 @@ export const MainLayout = () => {
 
   const handleLoadStarterWorkspace = useCallback(async () => {
     try {
-      const created = await populateStarterWorkspace((snippet) => saveSnippet(snippet))
+      const created = await populateStarterWorkspace((snippet: any) => saveSnippet(snippet))
       if (created && created.length > 0) {
-        const welcomeSnippet = created.find((s) => s.id === 'starter-welcome') || created[0]
+        const welcomeSnippet = created.find((s: any) => s.id === 'starter-welcome') || created[0]
         setSelectedSnippet(welcomeSnippet)
         setActiveTab('files')
       }
@@ -790,7 +794,7 @@ export const MainLayout = () => {
   const handleOpenSettings = useCallback(() => setShowSettings(true), [])
   const handleOpenTheme = useCallback(() => setShowThemeModal(true), [])
   const handleToggleGraph = useCallback(() => {
-    const mode = useSettingsStore.getState().settings?.graphDisplayMode || 'modal'
+    const mode = (useSettingsStore.getState().settings as any)?.graphDisplayMode || 'modal'
     if (mode === 'tab') {
       useWorkspaceStore.getState().openGraphTab()
     } else {
@@ -800,7 +804,7 @@ export const MainLayout = () => {
   const handleOpenDocs = useCallback(() => setShowDocsModal(true), [])
   const handleToggleExplorerModal = useCallback(() => setShowExplorerModal((prev) => !prev), [])
   const handleToggleAIChat = useCallback(() => {
-    const currentMode = useSettingsStore.getState().settings.aiChatDisplayMode || 'sidebar'
+    const currentMode = (useSettingsStore.getState().settings as any)?.aiChatDisplayMode || 'sidebar'
     if (currentMode === 'modal') {
       setShowAIChatModal((prev) => !prev)
     } else {
@@ -812,7 +816,7 @@ export const MainLayout = () => {
   }, [])
 
   useEffect(() => {
-    const handleAskAnything = (e) => {
+    const handleAskAnything = (e: any) => {
       const query = e.detail?.query || ''
       setPaletteInitialQuery(query)
       setShowPalette(true)
@@ -832,7 +836,7 @@ export const MainLayout = () => {
     const handleOpenGraphModalEvent = () => {
       setShowGraph(true)
     }
-    window.addEventListener('open-ask-anything', handleAskAnything)
+    window.addEventListener('open-ask-anything', handleAskAnything as EventListener)
     window.addEventListener('open-ai-chat', handleAIChatEvent)
     window.addEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
     window.addEventListener('trigger-new-canvas', handleNewCanvasEvent)
@@ -845,7 +849,7 @@ export const MainLayout = () => {
     }, 1200)
 
     return () => {
-      window.removeEventListener('open-ask-anything', handleAskAnything)
+      window.removeEventListener('open-ask-anything', handleAskAnything as EventListener)
       window.removeEventListener('open-ai-chat', handleAIChatEvent)
       window.removeEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
       window.removeEventListener('trigger-new-canvas', handleNewCanvasEvent)
@@ -857,7 +861,7 @@ export const MainLayout = () => {
 
   // Stable snippet map — only re-computes when notes change (saves, renames), NOT on tab switch
   const snippetMap = useMemo(() => {
-    const map = new Map()
+    const map = new Map<string, any>()
     for (let i = 0; i < snippets.length; i++) {
       map.set(snippets[i].id, snippets[i])
     }
@@ -865,11 +869,8 @@ export const MainLayout = () => {
   }, [snippets])
 
   // Stable editor instances — only re-mounts when the set of open tabs changes or a snippet is saved.
-  // GraphTabPane and LuminaTabPane read their own isSelected from the store directly, so activeTabId
-  // does NOT need to be a dep here. TabContentPane also gets isSelected as a stable prop derived
-  // from activeTabId — React reconciles only the changed `isSelected` bool efficiently.
   const renderedEditors = useMemo(() => {
-    return openTabs.map((tabId) => {
+    return openTabs.map((tabId: string) => {
       if (tabId === GRAPH_TAB_ID) {
         return <GraphTabPane key={tabId} onNavigate={setSelectedSnippet} />
       }
@@ -915,7 +916,7 @@ export const MainLayout = () => {
         '--left-sidebar-content-width': `${Math.max(180, leftWidth)}px`,
         '--right-sidebar-width': `${rightWidth}px`,
         '--right-sidebar-content-width': `${Math.max(200, rightWidth)}px`
-      }}
+      } as React.CSSProperties}
     >
       <div className="shell-body">
         <ActivityBar
@@ -961,7 +962,7 @@ export const MainLayout = () => {
                   activeTabId !== GRAPH_TAB_ID &&
                   activeTabId !== LUMINA_TAB_ID &&
                   openTabs.includes(selectedSnippet.id) &&
-                  snippets.some((s) => s.id === selectedSnippet.id) && (
+                  snippets.some((s: any) => s.id === selectedSnippet.id) && (
                     <Breadcrumbs snippet={selectedSnippet} />
                   )}
               </>
@@ -979,8 +980,8 @@ export const MainLayout = () => {
                 }}
               />
             ) : openTabs.filter(
-                (id) =>
-                  id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || snippets.some((s) => s.id === id)
+                (id: string) =>
+                  id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || snippets.some((s: any) => s.id === id)
               ).length > 0 ? (
               <div
                 className="workspace-container"
@@ -1066,10 +1067,10 @@ export const MainLayout = () => {
 
       <StatusBar
         onToggleInspector={handleToggleInspector}
-        onToggleExplorerModal={handleToggleExplorerModal}
         onSettingsClick={handleOpenSettings}
         onThemeClick={handleOpenTheme}
-        onGraphClick={handleToggleGraph}
+        onDocsClick={handleOpenDocs}
+        onGuideClick={() => setShowGuideModal(true)}
       />
 
       <AppModals

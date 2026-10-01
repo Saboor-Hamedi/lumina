@@ -312,7 +312,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
           sidebarFocus,
           isQueryActive: Boolean(query.trim())
         })
-        const filePaddingLeft = `${item.depth * 10 + 18}px`
+        const filePaddingLeft = `${item.depth * 10 + 4}px`
 
         return (
           <div

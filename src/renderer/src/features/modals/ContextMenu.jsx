@@ -83,15 +83,16 @@ const MenuItem = ({ opt, onClose }) => {
                 <kbd
                   className="menu-shortcut"
                   style={{
-                    fontSize: '10px',
-                    fontWeight: 600,
-                    color: 'var(--text-muted, #94a3b8)',
-                    padding: '1px 5px',
-                    borderRadius: '4px',
-                    background: 'rgba(255, 255, 255, 0.06)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    lineHeight: 1.3,
-                    whiteSpace: 'nowrap'
+                    fontSize: '10.5px',
+                    fontWeight: 400,
+                    color: 'var(--text-faint, #64748b)',
+                    padding: '0 2px',
+                    borderRadius: '0',
+                    background: 'transparent',
+                    border: 'none',
+                    lineHeight: 1.2,
+                    whiteSpace: 'nowrap',
+                    letterSpacing: '0.2px'
                   }}
                 >
                   {part.trim()}

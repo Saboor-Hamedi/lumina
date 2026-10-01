@@ -141,9 +141,13 @@ export const useFontSettings = (): FontSettings => {
   const [themeAccentColor, setThemeAccentColor] = useState<string>(() =>
     getInitial('themeAccentColor', '')
   )
-  const [useBorderLeft, setUseBorderLeft] = useState<boolean>(() =>
-    getInitial('useBorderLeft', true)
-  )
+  const [useBorderLeft, setUseBorderLeft] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem('useBorderLeft')
+      if (stored !== null) return stored !== 'false'
+    } catch {}
+    return getInitial('useBorderLeft', true)
+  })
 
   const persistDebounceRef = useRef<any>(null)
   const caretDebounceRef = useRef<any>(null)
@@ -345,7 +349,7 @@ export const useFontSettings = (): FontSettings => {
         root.style.setProperty('--caret-color', finalCaretColor)
         void root.offsetHeight
 
-        const isMono = (f: string) => f && (f.toLowerCase().includes('mono') || f.toLowerCase().includes('code'))
+        const isMono = (f: string): boolean => Boolean(f && (f.toLowerCase().includes('mono') || f.toLowerCase().includes('code')))
         const efStack = buildFontFamilyStack(ef, isMono(ef))
         const pfStack = buildFontFamilyStack(pf, false)
         root.style.setProperty('--font-editor', efStack)
@@ -531,7 +535,7 @@ export const useFontSettings = (): FontSettings => {
             )
           }
 
-          const isMono = (f: string) => f && (f.toLowerCase().includes('mono') || f.toLowerCase().includes('code'))
+          const isMono = (f: string): boolean => Boolean(f && (f.toLowerCase().includes('mono') || f.toLowerCase().includes('code')))
           if (incoming.editorFontFamily) {
             const efStack = buildFontFamilyStack(incoming.editorFontFamily, isMono(incoming.editorFontFamily))
             root.style.setProperty('--font-editor', efStack)
@@ -597,7 +601,7 @@ export const useFontSettings = (): FontSettings => {
     const sizePx = `${editorFontSize}px`
     const pSizePx = `${previewFontSize}px`
 
-    const isMono = (f: string) => f && (f.toLowerCase().includes('mono') || f.toLowerCase().includes('code'))
+    const isMono = (f: string): boolean => Boolean(f && (f.toLowerCase().includes('mono') || f.toLowerCase().includes('code')))
     const editorFontStack = buildFontFamilyStack(editorFontFamily, isMono(editorFontFamily))
     const previewFontStack = buildFontFamilyStack(previewFontFamily, false)
 
@@ -853,6 +857,9 @@ export const useFontSettings = (): FontSettings => {
       const isEnabled = Boolean(enabled)
       setUseBorderLeft(isEnabled)
       document.documentElement.setAttribute('data-use-active-line-border', isEnabled ? 'true' : 'false')
+      try {
+        localStorage.setItem('useBorderLeft', isEnabled ? 'true' : 'false')
+      } catch {}
       persistTheme({ useBorderLeft: isEnabled })
       window.dispatchEvent(
         new CustomEvent('caret-style-update', { detail: { useBorderLeft: isEnabled } })

@@ -34,6 +34,8 @@ export interface Settings {
   showLineNumbers: boolean
   autoSave: boolean
   cursorStyle: string
+  cursor?: { useBorderLeft?: boolean; [key: string]: any }
+  useBorderLeft?: boolean
   smoothScrolling: boolean
   sidebarCollapsedSections: SidebarSectionCollapsedState
   sortBy: string
@@ -124,6 +126,16 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     showLineNumbers: false,
     autoSave: true,
     cursorStyle: 'smooth',
+    cursor: {
+      useBorderLeft:
+        typeof localStorage !== 'undefined' && localStorage.getItem('useBorderLeft') !== null
+          ? localStorage.getItem('useBorderLeft') !== 'false'
+          : true
+    },
+    useBorderLeft:
+      typeof localStorage !== 'undefined' && localStorage.getItem('useBorderLeft') !== null
+        ? localStorage.getItem('useBorderLeft') !== 'false'
+        : true,
     smoothScrolling: true,
     sidebarCollapsedSections: {
       pinned: false,
@@ -228,6 +240,15 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
             root.setAttribute('data-modern-ui', String(Boolean(mergedSettings.modernUi)))
             root.style.setProperty('--font-editor', mergedSettings.fontFamily)
             root.style.setProperty('--font-size-editor', `${mergedSettings.fontSize}px`)
+            const isBorder =
+              typeof localStorage !== 'undefined' && localStorage.getItem('useBorderLeft') !== null
+                ? localStorage.getItem('useBorderLeft') !== 'false'
+                : mergedSettings.cursor?.useBorderLeft !== undefined
+                  ? mergedSettings.cursor.useBorderLeft !== false
+                  : mergedSettings.useBorderLeft !== undefined
+                    ? mergedSettings.useBorderLeft !== false
+                    : true
+            root.setAttribute('data-use-active-line-border', isBorder ? 'true' : 'false')
           }
 
           if (api && typeof api.onSettingsChanged === 'function') {
@@ -245,6 +266,13 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
                     root.style.setProperty('--font-editor', updatedParams.fontFamily)
                     root.style.setProperty('--font-size-editor', `${updatedParams.fontSize}px`)
                     root.style.setProperty('--cursor-style', updatedParams.cursorStyle)
+                    if (updatedParams.cursor?.useBorderLeft !== undefined || updatedParams.useBorderLeft !== undefined) {
+                      const isBorder =
+                        updatedParams.cursor?.useBorderLeft !== undefined
+                          ? updatedParams.cursor.useBorderLeft !== false
+                          : updatedParams.useBorderLeft !== false
+                      root.setAttribute('data-use-active-line-border', isBorder ? 'true' : 'false')
+                    }
                   }
                 } catch (err) {
                   console.error('[SettingStore] Error applying external settings:', err)
@@ -307,9 +335,23 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       if (key === 'cursor' || key === 'useBorderLeft') {
         const isBorder = key === 'cursor' ? (value?.useBorderLeft !== false) : Boolean(value)
         root.setAttribute('data-use-active-line-border', isBorder ? 'true' : 'false')
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('useBorderLeft', isBorder ? 'true' : 'false')
+        }
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('caret-style-update'))
         }
+      }
+    }
+
+    if (typeof localStorage !== 'undefined') {
+      if (key === 'modernUi') localStorage.setItem('lumina_modern_ui', String(Boolean(value)))
+      if (key === 'deepSeekKey') {
+        if (value) localStorage.setItem('lumina_deepseek_key', String(value))
+        else localStorage.removeItem('lumina_deepseek_key')
+      }
+      if (key === 'previewModalMaximized') {
+        localStorage.setItem('lumina_modal_maximized_preview', String(Boolean(value)))
       }
     }
 
@@ -348,6 +390,22 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     set((state) => ({
       settings: { ...state.settings, ...newSettings }
     }))
+
+    if (typeof localStorage !== 'undefined') {
+      if (newSettings.modernUi !== undefined) {
+        localStorage.setItem('lumina_modern_ui', String(Boolean(newSettings.modernUi)))
+      }
+      if (newSettings.deepSeekKey !== undefined) {
+        if (newSettings.deepSeekKey) {
+          localStorage.setItem('lumina_deepseek_key', String(newSettings.deepSeekKey))
+        } else {
+          localStorage.removeItem('lumina_deepseek_key')
+        }
+      }
+      if (newSettings.previewModalMaximized !== undefined) {
+        localStorage.setItem('lumina_modal_maximized_preview', String(Boolean(newSettings.previewModalMaximized)))
+      }
+    }
 
     // Persist to settings.json via IPC
     try {

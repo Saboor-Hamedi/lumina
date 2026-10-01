@@ -170,10 +170,9 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '6px',
             color: folderColor || undefined,
-            padding: '2px 6px',
-            marginLeft: '-6px',
+            padding: '2px 4px',
             flex: 1,
             minWidth: 0,
             overflow: 'hidden'
