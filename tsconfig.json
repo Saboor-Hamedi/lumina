@@ -5,6 +5,7 @@
     "moduleResolution": "bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
+    "jsxImportSource": "react",
     "strict": true,
     "allowJs": true,
     "checkJs": false,
@@ -19,7 +20,14 @@
     "paths": {
       "@renderer/*": ["./src/renderer/src/*"]
     },
-    "types": ["vite/client", "@testing-library/jest-dom", "vitest/globals"]
+    "types": [
+      "react",
+      "react-dom",
+      "node",
+      "vite/client",
+      "@testing-library/jest-dom",
+      "vitest/globals"
+    ]
   },
   "include": [
     "src/main/**/*",

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Sparkles, Network } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
-import InlineGraph from '../../Graph/InlineGraph'
+import InlineGraph from '../../graph/InlineGraph'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../../core/shortcuts'
 import ProgressTracker, { LearnedButton } from '../../roadmap/ProgressTracker'
@@ -69,7 +69,15 @@ export const EditorActionBar = ({
         margin: '4px 0 2px 0'
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap', marginLeft: '-6px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          flexWrap: 'wrap',
+          marginLeft: '-6px'
+        }}
+      >
         <ToolTip text="Ask AI (Ctrl+K)" position="bottom">
           <button
             onClick={(e) => {

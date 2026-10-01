@@ -25,7 +25,7 @@ vi.mock('d3-force-3d', () => ({
 }))
 
 import { render, screen } from '@testing-library/react'
-import Graph3D from '../../../../../src/renderer/src/features/Graph/Graph3D'
+import Graph3D from '../../../../../src/renderer/src/features/graph/3d/Graph3D'
 import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 
 describe('Graph3D', () => {

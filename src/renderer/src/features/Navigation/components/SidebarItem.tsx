@@ -61,9 +61,17 @@ const SnippetContextMenu: React.FC<SnippetContextMenuProps> = ({
     type: 'file',
     callbacks: {
       onOpen: onClick,
+      onSummary: () => summarizeNotes(snippet),
       onRename: () => setIsRenaming(true),
       onChangeIcon: () => setShowIconPicker(true),
       onTogglePin: handleTogglePin,
+      onExport: () => {
+        window.dispatchEvent(
+          new CustomEvent('open-export-dialog', {
+            detail: { snippet }
+          })
+        )
+      },
       onDelete: () => setShowDeleteConfirm(true),
       onCloseNote: () => (useWorkspaceStore.getState() as any).closeTab(snippet.id),
       onClose

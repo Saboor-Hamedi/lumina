@@ -58,6 +58,13 @@ Step beyond linear text documents into an infinite spatial whiteboard (`.canvas`
 ### 💡 Ambient Caps Lock Indicator & Distraction-Free Status Bar
 Never accidentally shout in your notes. Lumina features a subtle, glowing organic blob light centered right in your status bar that illuminates in your accent color when Caps Lock is on—detected immediately from hardware at startup—and disappears the instant it is turned off.
 
+### 🖨️ Theme-True Document & PDF Export
+Turn your notes and research vaults into publication-ready PDFs, Word docs, or HTML bundles with a single click:
+- **Live Themed Previews:** Inspect your document in a real-time preview frame before saving to disk.
+- **Exact Theme Matching:** PDFs automatically inherit your active editor theme—including Dark, Light, and warm Porcelain palettes.
+- **Batch Vault Export:** Export entire project folders or multiple selected notes into a single unified book with automatic Tables of Contents, or as cleanly organized separate files.
+- **Graph Vector & Image Export:** Save your 2D Knowledge Graph directly as SVG vectors or high-resolution PNG images. Nodes remember custom positions, while central notes spring back elastically to equilibrium.
+
 ---
 
 ## Getting Started in 5 Simple Steps

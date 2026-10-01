@@ -40,7 +40,7 @@ const LuminaChat = React.lazy(() => import('../AI/Lumina'))
 const Settings = React.lazy(() => import('../Settings/Settings'))
 const Theme = React.lazy(() => import('../theme/Theme'))
 const Documentation = React.lazy(() => import('../Docs/Documentation'))
-const Graph = React.lazy(() => import('../Graph/Graph'))
+const Graph = React.lazy(() => import('../graph/Graph'))
 const Guide = React.lazy(() => import('../modals/Guide'))
 const CanvasDrawerModal = React.lazy(() => import('../canvas/CanvasDrawerModal'))
 

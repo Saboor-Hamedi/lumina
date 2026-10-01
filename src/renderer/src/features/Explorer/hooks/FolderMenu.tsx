@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useMemo } from 'react'
-import { Trash2, X, Sparkles, Download } from 'lucide-react'
 import { useContextMenu } from '../../Navigation/hooks/useContextMenu'
 import type { ExportTargetNote } from '../utils/exportSelection'
 
@@ -21,6 +20,9 @@ interface ContextMenuOption {
   danger?: boolean
   onClick?: () => void
   type?: 'divider'
+  shortcut?: string
+  disabled?: boolean
+  children?: ContextMenuOption[]
 }
 
 interface UseFolderContextMenuParams {
@@ -32,10 +34,10 @@ interface UseFolderContextMenuParams {
   setRenamingValue: (val: string) => void
   loadWorkspace: () => Promise<void>
   selectedCount?: number
+  selectedFolderIds?: Set<string>
+  selectedNoteIds?: Set<string>
   selectedNotes?: Snippet[]
-  /** Fully resolved export targets for the current multi-selection. */
   exportNotes?: ExportTargetNote[]
-  /** Resolves a single folder (and its subtree) to export targets. */
   resolveFolderNotes?: (folderId: string) => ExportTargetNote[]
   onSummarizeSelected?: (notes: Snippet[]) => void
   onExportSelected?: (notes: ExportTargetNote[]) => void
@@ -61,14 +63,10 @@ export function useFolderContextMenu({
   setRenamingFolder,
   setRenamingValue,
   loadWorkspace,
-  selectedCount = 0,
-  selectedNotes = [],
   exportNotes = [],
   resolveFolderNotes,
   onSummarizeSelected,
-  onExportSelected,
-  onRequestBulkDelete,
-  clearSelection
+  onExportSelected
 }: UseFolderContextMenuParams): FolderContextMenuResult {
   const [folderContext, setFolderContext] = useState<FolderContext | null>(null)
   const [deleteConfirmFolder, setDeleteConfirmFolder] = useState<string | null>(null)
@@ -103,13 +101,6 @@ export function useFolderContextMenu({
         setCreating({ type: 'folder', parentId: folderContext?.folderId || null })
         setCreatingValue('')
       },
-      onCreateCanvas: () => {
-        if (folderContext?.folderId) {
-          setExpandedFolders((prev) => new Set(prev).add(folderContext.folderId))
-        }
-        setCreating({ type: 'canvas', parentId: folderContext?.folderId || null })
-        setCreatingValue('')
-      },
       onRename: () => {
         if (folderContext?.folderId) {
           const parts = folderContext.folderId.split('/')
@@ -122,6 +113,24 @@ export function useFolderContextMenu({
           setDeleteConfirmFolder(folderContext.folderId)
         }
       },
+      onSummary: () => {
+        if (folderContext?.folderId && resolveFolderNotes) {
+          const targets = resolveFolderNotes(folderContext.folderId)
+          if (targets.length > 0) {
+            onSummarizeSelected?.(targets as any)
+          }
+        }
+      },
+      onExport: () => {
+        if (folderContext?.folderId && resolveFolderNotes) {
+          const targets = resolveFolderNotes(folderContext.folderId)
+          if (targets.length > 0) {
+            onExportSelected?.(targets)
+          }
+        } else if (exportNotes.length > 0) {
+          onExportSelected?.(exportNotes)
+        }
+      },
       onClose: () => setFolderContext(null),
       isFolderPinned: folderContext?.folderId
         ? pinnedFolders.includes(folderContext.folderId)
@@ -129,100 +138,10 @@ export function useFolderContextMenu({
     }
   })
 
-  /** Builds the "Export as PDF…" menu entry for a resolved set of notes. */
-  const buildExportOption = useCallback(
-    (targets: ExportTargetNote[], label: string): ContextMenuOption => ({
-      label,
-      icon: React.createElement(Download, { size: 14 }),
-      onClick: () => {
-        setFolderContext(null)
-        onExportSelected?.(targets)
-      }
-    }),
-    [onExportSelected]
-  )
-
+  // Single unified menu that matches the user's specification exactly
   const contextMenuOptions = useMemo((): ContextMenuOption[] => {
-    // ── Multi-selection (files and/or folders) ──────────────────────────────
-    if (selectedCount > 1) {
-      const options: ContextMenuOption[] = []
-
-      if (exportNotes.length > 0) {
-        options.push(
-          buildExportOption(
-            exportNotes,
-            `Export ${exportNotes.length} ${exportNotes.length === 1 ? 'Note' : 'Notes'} as PDF…`
-          )
-        )
-      }
-
-      if (selectedNotes && selectedNotes.length > 0) {
-        options.push({
-          label:
-            selectedNotes.length > 1 ? `Summarize ${selectedNotes.length} Notes` : 'Summarize Note',
-          icon: React.createElement(Sparkles, { size: 14, className: 'text-primary' }),
-          onClick: () => {
-            setFolderContext(null)
-            clearSelection?.()
-            onSummarizeSelected?.(selectedNotes)
-          }
-        })
-      }
-
-      if (options.length > 0) options.push({ type: 'divider' })
-
-      options.push(
-        {
-          label: `Delete ${selectedCount} Items`,
-          icon: React.createElement(Trash2, { size: 14, className: 'text-danger' }),
-          danger: true,
-          onClick: () => {
-            setFolderContext(null)
-            onRequestBulkDelete?.()
-          }
-        },
-        {
-          label: 'Deselect All',
-          icon: React.createElement(X, { size: 14 }),
-          onClick: () => {
-            setFolderContext(null)
-            clearSelection?.()
-          }
-        }
-      )
-      return options
-    }
-
-    // ── Single folder right-click: offer to export the folder subtree ───────
-    if (folderContext?.folderId && resolveFolderNotes) {
-      const folderTargets = resolveFolderNotes(folderContext.folderId)
-      if (folderTargets.length > 0) {
-        return [
-          buildExportOption(
-            folderTargets,
-            `Export Folder as PDF (${folderTargets.length} ${
-              folderTargets.length === 1 ? 'Note' : 'Notes'
-            })…`
-          ),
-          { type: 'divider' },
-          ...(defaultMenuOptions as ContextMenuOption[])
-        ]
-      }
-    }
-
     return defaultMenuOptions as ContextMenuOption[]
-  }, [
-    selectedCount,
-    selectedNotes,
-    exportNotes,
-    folderContext,
-    resolveFolderNotes,
-    buildExportOption,
-    onSummarizeSelected,
-    defaultMenuOptions,
-    onRequestBulkDelete,
-    clearSelection
-  ])
+  }, [defaultMenuOptions])
 
   const handleConfirmDeleteFolder = useCallback(async () => {
     if (!deleteConfirmFolder) return

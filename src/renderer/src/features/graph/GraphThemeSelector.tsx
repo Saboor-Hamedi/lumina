@@ -2,29 +2,32 @@ import React from 'react'
 import { Layers } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/SettingStore'
 
+export interface GraphThemeSelectorProps {
+  variant?: 'button' | 'dropdown'
+  size?: 'small' | 'medium' | 'large'
+}
+
 /**
  * GraphThemeSelector Component
  * Standalone theme switcher for graph visualization.
- * Cycles through available themes: default, space, nebula, frost, neural
- *
- * @param {Object} props
- * @param {string} [props.variant='button'] - Display variant: 'button' or 'dropdown'
- * @param {string} [props.size='medium'] - Size: 'small', 'medium', 'large'
  */
-const GraphThemeSelector = ({ variant = 'button', size = 'medium' }) => {
+export const GraphThemeSelector: React.FC<GraphThemeSelectorProps> = ({
+  variant = 'button',
+  size = 'medium'
+}) => {
   const { settings, updateSetting } = useSettingsStore()
   const graphTheme = settings.graphTheme || 'default'
 
-  const graphThemes = ['default', 'space', 'nebula', 'ocean', 'sunset', 'neural']
+  const graphThemes = ['default', 'space', 'nebula', 'ocean', 'sunset', 'neural'] as const
 
   const rotateTheme = () => {
-    const currentIndex = graphThemes.indexOf(graphTheme)
+    const currentIndex = graphThemes.indexOf(graphTheme as any)
     const nextIndex = (currentIndex + 1) % graphThemes.length
     updateSetting('graphTheme', graphThemes[nextIndex])
   }
 
-  const getThemeLabel = (theme) => {
-    const labels = {
+  const getThemeLabel = (theme: string): string => {
+    const labels: Record<string, string> = {
       default: 'Default',
       space: 'Space',
       nebula: 'Nebula',

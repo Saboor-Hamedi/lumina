@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-vi.mock('../../../../../../src/renderer/src/features/Graph/InlineGraph', () => ({
+vi.mock('../../../../../../src/renderer/src/features/graph/2d/InlineGraph', () => ({
   default: () => <div data-testid="inline-graph" />
 }))
 
@@ -16,12 +16,12 @@ describe('EditorMetadata', () => {
       selectedSnippet: null,
       openTabs: [],
       activeTabId: null
-    })
+    } as any)
     global.ResizeObserver = class {
-      constructor() {}
       observe() {}
+      unobserve() {}
       disconnect() {}
-    }
+    } as any
   })
 
   const baseProps = {

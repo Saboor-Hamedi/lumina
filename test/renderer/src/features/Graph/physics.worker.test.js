@@ -72,7 +72,7 @@ let workerModule
 
 async function loadWorker() {
   const mod = await import(
-    '../../../../../src/renderer/src/features/Graph/physics.worker'
+    '../../../../../src/renderer/src/features/graph/physics.worker'
   )
   return mod
 }

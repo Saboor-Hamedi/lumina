@@ -60,10 +60,10 @@ export interface FileExplorerProps {
  * Centered Explorer Modal (Start Menu Replica) & Embedded Sidebar Vault Tree
  */
 export const FileExplorer: React.FC<FileExplorerProps> = ({
-  isOpen,
+  isOpen = false,
   onClose = () => {},
-  isEmbedded
-}) => {
+  isEmbedded = false
+}: FileExplorerProps) => {
   markExplorerPerf('render-start', { component: 'FileExplorer' })
   countExplorerPerfRender('FileExplorer')
   // Search state with debounced indexing
@@ -285,7 +285,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   // Keyboard navigation & multi-item selection state
   const {
     selectedNoteIds,
+    setSelectedNoteIds,
     selectedFolderIds,
+    setSelectedFolderIds,
     lastClickedFolder,
     setLastClickedFolder,
     selectedIndex,
@@ -372,6 +374,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     setRenamingValue,
     loadWorkspace,
     selectedCount: totalSelectedCount,
+    selectedFolderIds,
+    selectedNoteIds,
     selectedNotes,
     exportNotes,
     resolveFolderNotes,
@@ -670,7 +674,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                     hoveredFolderId={hoveredFolderId}
                     selectedNoteIds={selectedNoteIds}
                     selectedNoteIdsRef={selectedNoteIdsRef}
+                    setSelectedNoteIds={setSelectedNoteIds}
                     selectedFolderIds={selectedFolderIds}
+                    setSelectedFolderIds={setSelectedFolderIds}
                     selectedSnippetId={selectedSnippetId}
                     selectedSnippetIdRef={selectedSnippetIdRef}
                     selectedIndex={selectedIndex}
@@ -719,7 +725,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
       <BatchExportDialog
         isOpen={!!batchExportNotes}
         notes={batchExportNotes || []}
-        folderName={lastClickedFolder?.name || 'Folder Export'}
+        folderName={lastClickedFolder ? (typeof lastClickedFolder === 'string' ? lastClickedFolder.split('/').pop() || 'Folder Export' : 'Folder Export') : 'Folder Export'}
         initialFormat="pdf"
         onClose={() => setBatchExportNotes(null)}
       />

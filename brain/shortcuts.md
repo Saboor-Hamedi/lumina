@@ -28,6 +28,7 @@ Lumina is designed so you can navigate and write smoothly without your hands eve
 | `Ctrl + N` | **New Note** — Immediately create a fresh, blank note |
 | `Ctrl + S` | **Save Note** — Ensure your current changes are saved immediately (Lumina also auto-saves!) |
 | `Ctrl + R` | **Rename Note** — Quickly give your note a new title |
+| `Ctrl + E` | **Export Note / PDF** — Open the export panel to save as themed PDF, HTML, or Word doc |
 | `Ctrl + Shift + D` | **Delete Note** — Move the current note to the trash |
 | `Ctrl + Win + .` | **Change Note Icon** — Pick an expressive icon for your note or tab |
 

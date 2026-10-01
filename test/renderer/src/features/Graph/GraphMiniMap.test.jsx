@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import GraphMiniMap from '../../../../../src/renderer/src/features/Graph/GraphMiniMap'
+import GraphMiniMap from '../../../../../src/renderer/src/features/graph/2d/GraphMiniMap'
 
 describe('GraphMiniMap', () => {
   let rafId = 0

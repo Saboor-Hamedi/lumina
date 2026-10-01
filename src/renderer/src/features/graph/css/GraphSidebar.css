@@ -4,7 +4,7 @@
   border: none;
   border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
   border-radius: 0;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.45);
+  box-shadow: -1px 0 4px rgba(0, 0, 0, 0.04);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   display: flex;
@@ -43,7 +43,7 @@
   background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #18181b)) 75%, transparent) !important;
   border: none !important;
   border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
-  box-shadow: -2px 0 16px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: -1px 0 3px rgba(0, 0, 0, 0.04) !important;
 }
 
 .lumina-canvas-toolbar-right.is-expanded {
@@ -54,21 +54,21 @@
   background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #121316)) 84%, transparent) !important;
   border: none !important;
   border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
-  box-shadow: -6px 0 24px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: -1px 0 4px rgba(0, 0, 0, 0.04) !important;
 }
 
 [data-theme='light'] .lumina-canvas-toolbar-right:not(.is-expanded),
 .theme-light .lumina-canvas-toolbar-right:not(.is-expanded) {
   background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #ffffff)) 80%, transparent) !important;
   border-left: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08)) !important;
-  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.05) !important;
+  box-shadow: -1px 0 3px rgba(0, 0, 0, 0.03) !important;
 }
 
 [data-theme='light'] .lumina-canvas-toolbar-right.is-expanded,
 .theme-light .lumina-canvas-toolbar-right.is-expanded {
   background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #ffffff)) 88%, transparent) !important;
   border-left: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08)) !important;
-  box-shadow: -6px 0 20px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: -1px 0 4px rgba(0, 0, 0, 0.04) !important;
 }
 
 .nexus-main {

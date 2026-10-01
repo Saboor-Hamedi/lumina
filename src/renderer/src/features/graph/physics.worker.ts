@@ -1,17 +1,26 @@
-import { forceSimulation, forceManyBody, forceLink, forceCenter, forceCollide, forceX, forceY } from 'd3-force'
+import {
+  forceSimulation,
+  forceManyBody,
+  forceLink,
+  forceCenter,
+  forceCollide,
+  forceX,
+  forceY,
+  Simulation
+} from 'd3-force'
 
-let simulation
-let nodes = []
-let links = []
-let positionsBuffer
+let simulation: Simulation<any, any> | undefined
+let nodes: any[] = []
+let links: any[] = []
+let positionsBuffer: Float32Array
 let isBufferLocked = false
 
-self.onmessage = (e) => {
+self.onmessage = (e: MessageEvent) => {
   const { type, payload } = e.data
 
   if (type === 'INIT') {
-    nodes = payload.nodes.map((n) => ({ ...n }))
-    links = payload.links.map((l) => ({
+    nodes = payload.nodes.map((n: any) => ({ ...n }))
+    links = payload.links.map((l: any) => ({
       source: typeof l.source === 'object' ? l.source.id : l.source,
       target: typeof l.target === 'object' ? l.target.id : l.target
     }))
@@ -22,7 +31,6 @@ self.onmessage = (e) => {
     const baseCharge = nodeCount <= 8 ? -250 : -800
     const centerStrength = nodeCount <= 8 ? 0.15 : (payload.settings?.centerForce ?? 0.05)
 
-    // Pure Physics based precisely on guide.md
     simulation = forceSimulation(nodes)
       .force(
         'charge',
@@ -33,8 +41,8 @@ self.onmessage = (e) => {
       .force(
         'link',
         forceLink(links)
-          .id((d) => d.id)
-          .distance((link) => (nodeCount <= 8 ? 60 : 30) + ((link.weight || 1) * 2))
+          .id((d: any) => d.id)
+          .distance((link: any) => (nodeCount <= 8 ? 60 : 30) + ((link.weight || 1) * 2))
           .strength(0.1 * (payload.settings?.linkForce || 1))
       )
       .force('collide', forceCollide().radius(15).iterations(1))
@@ -42,17 +50,14 @@ self.onmessage = (e) => {
       .force('x', forceX(0).strength(centerStrength))
       .force('y', forceY(0).strength(centerStrength))
       .alphaDecay(0.05)
-      
-    // Allocate ONCE when the worker starts
+
     positionsBuffer = new Float32Array(nodes.length * 2)
     isBufferLocked = false
 
     simulation.on('tick', () => {
-      // High performance transfer using Ping-Pong Float32Array
-      if (isBufferLocked) return // Skip tick if main thread hasn't returned buffer
-      
+      if (isBufferLocked) return
       isBufferLocked = true
-      
+
       for (let i = 0; i < nodes.length; i++) {
         positionsBuffer[i * 2] = nodes[i].x || 0
         positionsBuffer[i * 2 + 1] = nodes[i].y || 0
@@ -65,13 +70,12 @@ self.onmessage = (e) => {
     const nodeCount = nodes.length
     const baseCharge = nodeCount <= 8 ? -250 : -800
     const centerStrength = nodeCount <= 8 ? 0.15 : (payload.settings?.centerForce ?? 0.05)
-    simulation.force('charge').strength(baseCharge * (payload.settings?.repelForce || 1))
-    simulation.force('link').strength(0.1 * (payload.settings?.linkForce || 1))
-    simulation.force('x').strength(centerStrength)
-    simulation.force('y').strength(centerStrength)
+    ;(simulation.force('charge') as any)?.strength(baseCharge * (payload.settings?.repelForce || 1))
+    ;(simulation.force('link') as any)?.strength(0.1 * (payload.settings?.linkForce || 1))
+    ;(simulation.force('x') as any)?.strength(centerStrength)
+    ;(simulation.force('y') as any)?.strength(centerStrength)
     simulation.alpha(1).restart()
   } else if (type === 'RELEASE_BUFFER') {
-    // Main thread has finished reading and returned ownership of the exact same memory!
     if (payload && payload.buffer) {
       positionsBuffer = new Float32Array(payload.buffer)
       isBufferLocked = false
@@ -89,11 +93,28 @@ self.onmessage = (e) => {
   } else if (type === 'DRAG_END') {
     const node = nodes.find((n) => n.id === payload.id)
     if (node) {
-      node.fx = null
-      node.fy = null
-      simulation.alphaTarget(0)
-      simulation.alpha(1).restart()
+      if (payload.isCentral) {
+        node.fx = null
+        node.fy = null
+        if (simulation) {
+          simulation.alphaTarget(0)
+          simulation.alpha(0.6).restart()
+        }
+      } else {
+        node.fx = payload.x !== undefined ? payload.x : node.x
+        node.fy = payload.y !== undefined ? payload.y : node.y
+        if (simulation) {
+          simulation.alphaTarget(0)
+          simulation.alpha(0.2).restart()
+        }
+      }
     }
+  } else if (type === 'RESET_POSITIONS') {
+    nodes.forEach((n) => {
+      n.fx = null
+      n.fy = null
+    })
+    if (simulation) simulation.alpha(1).restart()
   } else if (type === 'REHEAT') {
     if (simulation) simulation.alpha(1).restart()
   }

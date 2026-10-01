@@ -2,8 +2,8 @@
 
 > **Architectural Source of Truth**: This document defines Lumina's core purpose, mental model, system architecture, architectural decision log, development invariants, known limitations, and strategic future roadmap.
 
-**Version**: `v1.0.64` | **Status**: Active Production | **Knowledge Classification**: Evergreen Architecture  
-**Last Verified**: September 2026 | **Target Audience**: Core Developers & Lumina AI Agents
+**Version**: `v1.0.65` | **Status**: Active Production | **Knowledge Classification**: Evergreen Architecture  
+**Last Verified**: October 2026 | **Target Audience**: Core Developers & Lumina AI Agents
 
 ---
 
@@ -68,6 +68,14 @@ AI in Lumina is a thinking partner, not an automated content mill. Lumina connec
   - *Deep Mode*: Extended chain-of-thought reasoning for difficult multi-step analytical challenges.
   - *Creative Mode*: Divergent associative brainstorming and conceptual synthesis.
 
+### High-Fidelity Themed Document & Topography Export
+Thinking is meant to be shared and archived with aesthetic integrity. Lumina treats document generation and export as a core cognitive extension:
+- **Theme-Synchronized PDF Engine**: Converts individual notes or merged multi-document vaults into publication-ready PDFs. Every visual aspect — typography, syntax-highlighted code blocks, tables, callouts, and inline math — exactly preserves the active user theme (Dark, Light, Porcelain, or custom palettes) via sandboxed offscreen styling.
+- **Interactive Live Preview**: Real-time sandboxed preview pane (`PDFPreview`, `DOCSPreview`, `HTMLPreview`, `MarkdownPreview`, `TEXTPreview`) rendering the exact document output with zoom and layout inspection before writing to disk.
+- **Batch Vault Synthesis**: Multi-select notes or whole folder hierarchies to export into unified single volumes (with automatic hierarchical Table of Contents and dynamic page bookmarks) or cleanly structured standalone document bundles with live progress streaming.
+- **Vector & Image Knowledge Topography**: Instant export of 2D knowledge graphs to high-resolution PNG images or scalable SVG vectors directly from the graph workspace for papers, presentations, and archival documentation.
+- **Zero-Dependency Offline Assets**: Embedded images (`asset://`), local attachments, and dynamic Mermaid diagrams are automatically bundled inline as vector SVG and data URIs, producing self-contained, standalone documents.
+
 ---
 
 ## 3. System Architecture & Layout Hierarchy
@@ -104,6 +112,21 @@ User memory is structured into three clear tiers:
 2. **User Preferences**: Preferred communication styles, technical depth, formatting habits, and language conventions.
 3. **Learned Facts**: Explicit insights and project details curated across sessions.
 
+### Sandboxed Document Export Architecture
+Document generation is strictly decoupled into modular backend pipelines (`src/export/`) and renderer interfaces (`src/renderer/src/features/export/`):
+- **Core Exporters**: `exportPDF.js` (A4 layout, auto-TOC, page counter, print-optimized CSS), `exportBundle.js` (clean self-contained HTML/Markdown bundles), `exportDocs.js` (.doc Word-compatible format), `exportBatch.js` (folder-recursive batch processing), and `exportCombined.js` (single merged volume synthesis).
+- **IPC Preview Pipeline**: `src/export/preview/` generates theme-tokenized HTML previews without touching the filesystem, streamed across IPC channels to sandboxed preview components (`PDFPreview`, `DOCSPreview`, `HTMLPreview`, `MarkdownPreview`, `TEXTPreview`).
+- **Offline Mermaid Runtime**: Diagram rendering executes via an offscreen Electron render window (`mermaidRuntime.js`, `renderWindow.js`), rendering charts directly into inline SVGs before document assembly.
+
+### Modular Knowledge Graph Architecture
+The knowledge topography engine (`src/renderer/src/features/graph/`) operates across specialized, decoupled modules:
+- **Modular Directory Hierarchy**:
+  - `graph/2d/`: High-performance HTML5 2D canvas renderer (`Graph2D.tsx`), radar HUD (`GraphMiniMap.tsx`), and inline graph widgets (`InlineGraph.tsx`).
+  - `graph/3d/`: Hardware-accelerated WebGL force-directed space (`Graph3D.tsx`).
+  - `graph/utils/`: High-resolution vector & raster export (`graphExport.ts`), layout coordinate persistence, and geometry transforms.
+  - `graph/css/`: Domain stylesheets (`Graph.css`, `GraphSidebar.css`) with low-profile shadows and theme-adaptive variable injection.
+- **Worker-Driven Physics**: D3 force simulations run off-thread in `physics.worker.ts`, preserving 60+ FPS UI fluidity even across thousands of nodes.
+
 ---
 
 ## 4. Architectural Decision Log (The "Why")
@@ -129,6 +152,16 @@ To prevent well-intentioned regressions, the rationales behind key architectural
 - **Context**: Semantic search and knowledge indexing require computing 384-dimensional vector embeddings via neural models.
 - **Decision**: Embedding generation is delegated to a separate background worker thread (`indexer-worker.js`), never computed on the main Electron thread or UI process.
 - **Rationale**: Neural feature extraction is CPU-intensive. Running embeddings on the UI or main event loop introduces noticeable 100–300ms frame drops and typing stutter. A dedicated worker thread keeps the editor silky smooth at 60 FPS while background indexing proceeds silently.
+
+### Decision 5: Live Sandboxed IPC Previews for Document Exports
+- **Context**: Verifying export formatting previously required writing files to disk and opening external applications, leading to repeated trial-and-error cycles.
+- **Decision**: Stream styled document HTML over IPC into sandboxed preview frames (`src/export/preview/`) with active theme token variables before writing to disk.
+- **Rationale**: Provides instant visual feedback for pagination, typography, code block syntax highlighting, and table-of-contents layout without disk clutter.
+
+### Decision 6: LocalStorage Node Persistence with Elastic Central Physics
+- **Context**: Users arranging knowledge graph topologies lost customized node placements upon navigation or reload. Conversely, pinning the active central node frozen in space degraded local navigation.
+- **Decision**: Persist peripheral dragged node coordinates in `localStorage`, but enforce elastic spring release on central/focused notes so they smoothly return to equilibrium.
+- **Rationale**: Gives users manual layout agency over graph clusters while maintaining automatic force-directed centering for active document exploration.
 
 ---
 
@@ -180,6 +213,9 @@ To ensure consistent communication across agents, developers, and UI components:
 - **Curtain Sidebar**: The responsive layout pattern where sidebars clip stationary content from the screen edges during resizing rather than compressing or breaking internal element layouts.
 - **Plaintext Axiom**: The foundational principle that every note is a standard Markdown file directly on disk, guaranteeing lifetime data sovereignty without database locks.
 - **Knowledge Topography**: The structural layout of notes, clusters, central hubs, and orphan thoughts revealed by the 2D/3D force-directed knowledge graph.
+- **Theme-Synchronized PDF Pipeline**: The print-to-PDF rendering system that injects CSS custom properties and active theme tokens into an offscreen render window, ensuring exports match dark, light, or porcelain themes with exact color fidelity.
+- **Batch Vault Synthesis**: The engine that compiles multi-selected files or entire directory trees into unified single-volume exports with auto-generated tables of contents and bookmarks, or processes them concurrently into discrete file bundles.
+- **Elastic Central Physics**: Dynamic force relaxation on central/focused graph nodes upon drag release, gently guiding active notes back toward visual equilibrium while preserving custom coordinates for peripheral nodes.
 
 ---
 

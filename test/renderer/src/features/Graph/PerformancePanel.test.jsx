@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, act, fireEvent } from '@testing-library/react'
-import PerformancePanel from '../../../../../src/renderer/src/features/Graph/PerformancePanel'
-import { usePerformanceStore } from '../../../../../src/renderer/src/features/Graph/usePerformanceStore'
+import PerformancePanel from '../../../../../src/renderer/src/features/graph/PerformancePanel'
+import { usePerformanceStore } from '../../../../../src/renderer/src/features/graph/usePerformanceStore'
 
 describe('PerformancePanel', () => {
   let rafId = 0

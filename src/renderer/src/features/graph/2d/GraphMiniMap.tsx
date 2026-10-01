@@ -1,23 +1,40 @@
 import React, { useEffect, useRef } from 'react'
 import { Target } from 'lucide-react'
-import ToolTip from '../../components/atoms/ToolTip'
+import ToolTip from '../../../components/atoms/ToolTip'
 
-const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DMode }) => {
-  const canvasRef = useRef(null)
-  const rafRef = useRef(null)
+export interface GraphMiniMapProps {
+  graphRef: React.RefObject<any>
+  graphData: {
+    nodes?: Array<{ id: string | number; x: number; y: number; z?: number; val?: number; [key: string]: any }>
+    links?: Array<any>
+  }
+  mainWidth: number
+  mainHeight: number
+  style?: React.CSSProperties
+  is3DMode?: boolean
+}
+
+const GraphMiniMap: React.FC<GraphMiniMapProps> = ({
+  graphRef,
+  graphData,
+  mainWidth,
+  mainHeight,
+  style,
+  is3DMode
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const rafRef = useRef<number | null>(null)
   const graphDataRef = useRef(graphData)
 
-  // Keep ref current so the draw loop always reads the latest node positions
   useEffect(() => {
     graphDataRef.current = graphData
   }, [graphData])
 
   useEffect(() => {
     let lastDrawTime = 0
-    const draw = (timestamp) => {
+    const draw = (timestamp: number) => {
       rafRef.current = requestAnimationFrame(draw)
-      
-      // Throttle to ~10 FPS (100ms) to save CPU
+
       if (timestamp - lastDrawTime < 100) return
       lastDrawTime = timestamp
 
@@ -25,16 +42,14 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
       if (!canvas || !graphRef.current) return
 
       const ctx = canvas.getContext('2d')
+      if (!ctx) return
       const { width, height } = canvas
 
       ctx.clearRect(0, 0, width, height)
 
       const nodes = graphDataRef.current?.nodes || []
-      if (nodes.length === 0) {
-        return
-      }
+      if (nodes.length === 0) return
 
-      // 1. Calculate bounds of the entire graph
       let minX = Infinity,
         minY = Infinity,
         maxX = -Infinity,
@@ -44,15 +59,14 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
         if (n.x < minX) minX = n.x
         if (n.x > maxX) maxX = n.x
         if (is3DMode) {
-          if (n.z < minY) minY = n.z
-          if (n.z > maxY) maxY = n.z
+          if ((n.z ?? 0) < minY) minY = n.z ?? 0
+          if ((n.z ?? 0) > maxY) maxY = n.z ?? 0
         } else {
           if (n.y < minY) minY = n.y
           if (n.y > maxY) maxY = n.y
         }
       }
 
-      // Add a small safety margin
       const padding = 50
       minX -= padding
       maxX += padding
@@ -62,7 +76,6 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
       const graphW = Math.max(maxX - minX, 1)
       const graphH = Math.max(maxY - minY, 1)
 
-      // Calculate scale to fit graph into the minimap canvas
       const scaleX = width / graphW
       const scaleY = height / graphH
       const scale = Math.min(scaleX, scaleY)
@@ -70,29 +83,24 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
       const offsetX = width / 2 - ((minX + maxX) / 2) * scale
       const offsetY = height / 2 - ((minY + maxY) / 2) * scale
 
-      // 2. Draw nodes
       ctx.fillStyle = 'rgba(64, 186, 250, 0.4)'
       for (let i = 0; i < nodes.length; i++) {
         const n = nodes[i]
-        
-        let cx, cy
+        let cx: number, cy: number
         if (is3DMode) {
-          // 3D mode: Project X and Z onto the 2D canvas (top-down view)
           cx = n.x * scale + offsetX
-          cy = n.z * scale + offsetY // Map Z to Y for top-down floor-plan
+          cy = (n.z ?? 0) * scale + offsetY
         } else {
           cx = n.x * scale + offsetX
           cy = n.y * scale + offsetY
         }
-        
-        const r = Math.max(1, (n.val ? Math.sqrt(n.val) : 1) * 0.5)
 
+        const r = Math.max(1, (n.val ? Math.sqrt(n.val) : 1) * 0.5)
         ctx.beginPath()
         ctx.arc(cx, cy, r, 0, Math.PI * 2)
         ctx.fill()
       }
 
-      // 3. Draw viewport box (Only in 2D mode, 3D viewport mapping is too complex)
       try {
         if (!is3DMode && graphRef.current.zoom && graphRef.current.centerAt) {
           const currentZoom = graphRef.current.zoom()
@@ -114,13 +122,12 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
             ctx.lineWidth = 1
             ctx.strokeRect(boxX, boxY, boxW, boxH)
 
-            // Semi-transparent fill for viewport
             ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'
             ctx.fillRect(boxX, boxY, boxW, boxH)
           }
         }
-      } catch (err) {
-        // centerAt/zoom might throw if not fully initialized
+      } catch {
+        // Ignore initialization timing
       }
     }
 
@@ -128,9 +135,9 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
-  }, [graphRef, mainWidth, mainHeight])
+  }, [graphRef, mainWidth, mainHeight, is3DMode])
 
-  const handleRecenter = (e) => {
+  const handleRecenter = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (graphRef.current && graphRef.current.zoomToFit) {
       graphRef.current.zoomToFit(800, 100)
@@ -161,8 +168,6 @@ const GraphMiniMap = ({ graphRef, graphData, mainWidth, mainHeight, style, is3DM
         height={120}
         style={{ width: '100%', height: '100%', display: 'block' }}
       />
-
-      {/* Recenter Button Overlay */}
       <ToolTip text="Recenter Graph" position="top">
         <button
           title="Recenter Graph"

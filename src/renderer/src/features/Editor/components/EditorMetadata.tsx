@@ -4,19 +4,32 @@ import EditorActionBar from './EditorActionBar'
 
 export { EditorTitleBar, EditorActionBar }
 
+export interface EditorMetadataProps {
+  snippet?: any
+  title?: string
+  setTitle?: (title: string) => void
+  setIsDirty?: (dirty: boolean) => void
+  isDirty?: boolean
+  titleRef?: React.RefObject<HTMLInputElement | null> | React.MutableRefObject<any>
+  onInlineAI?: () => void
+  editorMenu?: React.ReactNode
+  showTitle?: boolean
+  showActions?: boolean
+}
+
 /**
  * EditorMetadata
  *
  * Unified container composing EditorTitleBar and EditorActionBar.
  * Allows independent toggling via `showTitle` and `showActions` flags.
  */
-export const EditorMetadata = React.memo(
+export const EditorMetadata: React.FC<EditorMetadataProps> = React.memo(
   ({
     snippet,
-    title,
-    setTitle,
-    setIsDirty,
-    isDirty,
+    title = '',
+    setTitle = () => {},
+    setIsDirty = () => {},
+    isDirty = false,
     titleRef,
     onInlineAI,
     editorMenu,
@@ -34,7 +47,7 @@ export const EditorMetadata = React.memo(
             title={title}
             setTitle={setTitle}
             setIsDirty={setIsDirty}
-            titleRef={titleRef}
+            titleRef={titleRef as any}
             editorMenu={editorMenu}
             showMenu={true}
           />

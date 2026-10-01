@@ -4,34 +4,37 @@ import {
   Network,
   RefreshCw,
   Layers,
-  PanelLeftClose,
-  PanelLeftOpen,
   ExternalLink,
-  SlidersHorizontal
+  Download,
+  FileCode
 } from 'lucide-react'
 import * as THREE from 'three'
-import Graph3D from './Graph3D'
-import Graph2D from './Graph2D'
+import Graph3D from './3d/Graph3D'
+import Graph2D from './2d/Graph2D'
 import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
-// Lumina AI Agent store
 import { useAIStore } from '../AI/tools/lumina'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { usePerformanceStore } from './usePerformanceStore'
 import PerformancePanel from './PerformancePanel'
 import { buildGraphData, buildSemanticLinks } from '../../core/utils/graphBuilder'
-import { forceRadial, forceManyBody, forceCollide, forceCenter, forceX, forceY } from 'd3-force'
 import ToolTip from '../../components/atoms/ToolTip'
 import GraphSidebar from './GraphSidebar'
-import GraphMiniMap from './GraphMiniMap'
 import '../canvas/css/canvas-drawer.css'
 import '../canvas/css/canvas-toolbar.css'
 import '../canvas/css/canvas-studio.css'
-import './Graph.css'
+import './css/Graph.css'
 import { getNodeColor, drawNode } from './graphs'
+import {
+  exportGraphAsPNG,
+  exportGraphAsSVG,
+  saveNodePosition,
+  loadNodePositions,
+  clearNodePositions
+} from './utils/graphExport'
 
 const sharedSphereGeometry = new THREE.SphereGeometry(1, 8, 8)
-const materialCache = {}
-const getMaterial = (color) => {
+const materialCache: Record<string, THREE.MeshBasicMaterial> = {}
+const getMaterial = (color: string) => {
   if (!materialCache[color]) {
     materialCache[color] = new THREE.MeshBasicMaterial({
       color: color,
@@ -42,16 +45,6 @@ const getMaterial = (color) => {
   return materialCache[color]
 }
 
-/**
- * Graph Component
- * Beautiful knowledge graph visualization with multiple modes and themes.
- *
- * Can be used as:
- * - Modal overlay (default): Shows with backdrop and close button
- * - Tab view: Set `embedded={true}` to use without overlay in tab
- *
- * Memoized for performance - expensive graph calculations.
- */
 export const getActiveThemeColors = () => {
   if (typeof document !== 'undefined') {
     const root = document.documentElement
@@ -60,7 +53,7 @@ export const getActiveThemeColors = () => {
     if (rgb) return { rgb, hex: hex || `rgb(${rgb})` }
     if (hex && hex.startsWith('#')) {
       const clean = hex.replace('#', '')
-      const bigint = parseInt(clean.length === 3 ? clean.split('').map(c => c + c).join('') : clean, 16)
+      const bigint = parseInt(clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean, 16)
       if (!isNaN(bigint)) {
         const r = (bigint >> 16) & 255
         const g = (bigint >> 8) & 255
@@ -72,7 +65,14 @@ export const getActiveThemeColors = () => {
   return { rgb: '167, 139, 250', hex: '#a78bfa' }
 }
 
-const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false }) => {
+export interface GraphProps {
+  isOpen?: boolean
+  onClose?: () => void
+  onNavigate?: (snippet: any) => void
+  embedded?: boolean
+}
+
+const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false }) => {
   const [themeColors, setThemeColors] = useState(() => getActiveThemeColors())
 
   useEffect(() => {
@@ -99,40 +99,37 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       window.removeEventListener('storage', updateTheme)
     }
   }, [])
+
   const snippets = useWorkspaceStore((s) => s.notes) || []
   const graphSnippets = useMemo(() => {
     return (snippets || []).filter((s) => s.type !== 'image' && s.language !== 'image')
   }, [snippets])
   const selectedSnippet = useWorkspaceStore((s) => s.selectedNote)
-  const dirtySnippetIds = useWorkspaceStore((s) => s.dirtyNoteIds) || []
   const embeddingsCache = useAIStore((s) => s.embeddingsCache)
 
-  const handleRecenter = (e) => {
+  const handleRecenter = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
     if (graphRef.current && graphRef.current.zoomToFit) {
       graphRef.current.zoomToFit(800, 100)
     }
   }
+
   const graphHideTags = useSettingsStore((s) => s.settings.graphHideTags)
   const graphHideGhosts = useSettingsStore((s) => s.settings.graphHideGhosts)
   const graphHideOrphans = useSettingsStore((s) => s.settings.graphHideOrphans)
-  
+
   const [localSidebarOpen, setLocalSidebarOpen] = useState(true)
   const storeSidebarOpen = useSettingsStore((s) => s.settings.graphSidebarOpen)
   const isSidebarOpen = storeSidebarOpen !== undefined ? storeSidebarOpen : localSidebarOpen
 
   const is3DMode = useSettingsStore((s) => s.settings.graph3DMode ?? false)
   const graphNodeSize = useSettingsStore((s) => s.settings.graphNodeSize || 1.5)
-  const graphNodeColor = useSettingsStore((s) => s.settings.graphNodeColor || '#40bafa')
-  const graphShowTexts = useSettingsStore((s) => s.settings.graphShowTexts !== false)
 
-  const [hoverNode, setHoverNode] = useState(null)
+  const [hoverNode, setHoverNode] = useState<any>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
 
-  const isSpinning = useSettingsStore((s) => s.settings.graphAnimate ?? false)
-  const graphRef = useRef()
-  const containerRef = useRef()
+  const graphRef = useRef<any>()
+  const containerRef = useRef<HTMLDivElement | null>(null)
   const [isEngineReady, setIsEngineReady] = useState(false)
   const [dimensions, setDimensions] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 800,
@@ -181,7 +178,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
   useEffect(() => {
     if (embedded || !isOpen) return
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
         e.stopPropagation()
@@ -221,31 +218,30 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     }
   }, [embedded])
 
-  const [rawGraphData, setRawGraphData] = useState({ nodes: [], links: [] })
+  const [rawGraphData, setRawGraphData] = useState<{ nodes: any[]; links: any[] }>({ nodes: [], links: [] })
   const [isBuildingGraph, setIsBuildingGraph] = useState(true)
 
   useEffect(() => {
     setIsBuildingGraph(true)
 
-    // Defer the heavy calculation so the modal can instantly animate in
     const timer = setTimeout(() => {
       const rawData = buildGraphData(graphSnippets)
       const semantic = buildSemanticLinks(rawData.nodes, rawData.links, graphSnippets, embeddingsCache)
       let nodes = rawData.nodes
       let links = [...rawData.links, ...semantic]
 
-      // Calculate Age Gravity and Tags
       const now = Date.now()
-      const maxAge = 30 * 24 * 60 * 60 * 1000 // 30 days is "old"
+      const maxAge = 30 * 24 * 60 * 60 * 1000
 
-      // Count links per node for sizing and halo logic
-      const linkCounts = {}
+      const linkCounts: Record<string, number> = {}
       links.forEach((l) => {
         const src = typeof l.source === 'object' ? l.source.id : l.source
         const tgt = typeof l.target === 'object' ? l.target.id : l.target
         linkCounts[src] = (linkCounts[src] || 0) + 1
         linkCounts[tgt] = (linkCounts[tgt] || 0) + 1
       })
+
+      const savedPositions = loadNodePositions()
 
       setRawGraphData((prev) => {
         const prevNodes = new Map(prev.nodes.map((n) => [n.id, n]))
@@ -278,19 +274,34 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           n.linkCount = linkCounts[n.id] || 0
           n.val = n.linkCount + 1
 
+          const savedPos = savedPositions[n.id]
+
           const oldN = prevNodes.get(n.id)
           if (oldN) {
             oldN.ageFactor = n.ageFactor
             oldN.val = n.val
             oldN.linkCount = n.linkCount
             oldN.primaryTag = n.primaryTag
+            if (savedPos) {
+              oldN.fx = savedPos.x
+              oldN.fy = savedPos.y
+              oldN.x = savedPos.x
+              oldN.y = savedPos.y
+            }
             return oldN
           }
 
-          const spread = nodes.length <= 10 ? 200 : 1000
-          n.x = (Math.random() - 0.5) * spread
-          n.y = (Math.random() - 0.5) * spread
-          n.z = (Math.random() - 0.5) * spread
+          if (savedPos) {
+            n.fx = savedPos.x
+            n.fy = savedPos.y
+            n.x = savedPos.x
+            n.y = savedPos.y
+          } else {
+            const spread = nodes.length <= 10 ? 200 : 1000
+            n.x = (Math.random() - 0.5) * spread
+            n.y = (Math.random() - 0.5) * spread
+            n.z = (Math.random() - 0.5) * spread
+          }
           return n
         })
 
@@ -327,7 +338,7 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       })
 
       setIsBuildingGraph(false)
-    }, embedded ? 0 : 20) // Immediate in tab, minimal 20ms in modal for ultra snappy opening
+    }, embedded ? 0 : 20)
 
     return () => clearTimeout(timer)
   }, [snippets, selectedSnippet, embeddingsCache, embedded])
@@ -341,7 +352,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       nodes = nodes.filter((n) => n.group !== 'ghost')
     }
 
-    // Filter links to only keep those whose nodes still exist
     const validNodeIds = new Set(nodes.map((n) => n.id))
     links = links.filter((l) => {
       const src = typeof l.source === 'object' ? l.source.id : l.source
@@ -366,7 +376,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
   const prevSelectedId = useRef(selectedSnippet?.id)
   const hasInitialRender = useRef(false)
 
-  // Center on mount and data load
   useEffect(() => {
     if (graphRef.current && !isBuildingGraph && graphData.nodes.length > 0) {
       const isFirstRender = !hasInitialRender.current
@@ -382,7 +391,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             const node = graphData.nodes.find((n) => n.snippetId === selectedSnippet.id)
             if (node) {
               if (is3DMode) {
-                // In 3D, position the camera to look at the node from a reasonable distance
                 const distance = 200
                 const distRatio =
                   1 + distance / Math.max(1, Math.hypot(node.x || 0, node.y || 0, node.z || 0))
@@ -392,14 +400,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                     x: (node.x || 0) * distRatio,
                     y: (node.y || 0) * distRatio,
                     z: (node.z || 0) * distRatio
-                  }, // new position
-                  { x: node.x || 0, y: node.y || 0, z: node.z || 0 }, // lookAt
-                  400 // ms transition duration
+                  },
+                  { x: node.x || 0, y: node.y || 0, z: node.z || 0 },
+                  400
                 )
               } else {
                 if (graphRef.current.centerAt) {
                   graphRef.current.centerAt(node.x || 0, node.y || 0, 400)
-                  graphRef.current.zoom(1.0, 400) // Lowered zoom from 1.5 to 1.0
+                  graphRef.current.zoom(1.0, 400)
                 }
               }
             }
@@ -408,7 +416,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               graphRef.current.zoomToFit(400, 50)
             } else if (!is3DMode && graphRef.current.zoomToFit) {
               graphRef.current.zoomToFit(400, 50)
-              // If graph is tiny, it zooms in way too far. Cap it after animation finishes.
               setTimeout(() => {
                 if (graphRef.current && graphRef.current.zoom() > 1.5) {
                   graphRef.current.zoom(1.5, 400)
@@ -416,37 +423,21 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               }, 450)
             }
           }
-        }, 100) // Small delay to ensure WebGL engine is ready
+        }, 100)
       }
     }
   }, [selectedSnippet, isBuildingGraph, graphData.nodes, is3DMode])
 
-  // Ref for debouncing reheat
-  const reheatTimeoutRef = useRef(null)
-
-  // Physics Engine Setup
-  // (Removed: Graph2D handles its own physics in a WebWorker to prevent main-thread freezing,
-  // and Graph3D handles its own internal physics. This legacy block was causing the main thread
-  // to fight the WebWorker, halving the framerate).
   useEffect(() => {
-    // We still need to trigger the initial pulse overlay removal
     setIsEngineReady(false)
     const safetyTimer = setTimeout(() => setIsEngineReady(true), 1500)
     return () => clearTimeout(safetyTimer)
   }, [is3DMode])
 
-  // Auto-Spin Logic removed to prevent CPU heavy continuous physics simulation
-
-  // Precompute line colors based on Lumina theme accent
   const defaultLineColor = useMemo(() => {
     return `rgba(${themeColors.rgb}, ${is3DMode ? 0.35 : 0.25})`
   }, [themeColors.rgb, is3DMode])
 
-  const dimmedLineColor = useMemo(() => {
-    return `rgba(${themeColors.rgb}, ${is3DMode ? 0.08 : 0.04})`
-  }, [themeColors.rgb, is3DMode])
-
-  // Pre-compute neighbors for hover highlighting to prevent O(N^2) canvas lag
   const hoverNeighbors = useMemo(() => {
     if (!hoverNode) return new Set()
     const neighbors = new Set()
@@ -459,17 +450,19 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
     return neighbors
   }, [hoverNode, graphData.links])
 
-  const nodeColorFn = useCallback((node) => {
-    return getNodeColor(node, selectedSnippet?.id, themeColors.hex)
-  }, [selectedSnippet, themeColors.hex])
+  const nodeColorFn = useCallback(
+    (node: any) => {
+      return getNodeColor(node, selectedSnippet?.id, themeColors.hex)
+    },
+    [selectedSnippet, themeColors.hex]
+  )
 
   const normalizedSearchQuery = useMemo(() => searchQuery.trim().toLowerCase(), [searchQuery])
 
   const paintNode = useCallback(
-    (node, ctx, globalScale) => {
+    (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
       const isActive = selectedSnippet && node.snippetId === selectedSnippet.id
       const isHovered = hoverNode === node
-      // Cap max radius tightly — nodes should be dots, not planets
       const baseR = node.val ? Math.min(10, Math.max(3, Math.sqrt(node.val) * 2.8)) : 3
       const r = baseR * graphNodeSize + 3
 
@@ -480,9 +473,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
 
       const isNeighborDimmed = hoverNode && hoverNode !== node && !hoverNeighbors.has(node.id)
 
-      // LEVEL OF DETAIL (LOD) OPTIMIZATION:
       const showText =
-        graphShowTexts && (isActive || isHovered || isSearchMatch || globalScale >= 1.2)
+        useSettingsStore.getState().settings.graphShowTexts !== false &&
+        (isActive || isHovered || isSearchMatch || globalScale >= 1.2)
 
       drawNode(
         ctx,
@@ -504,14 +497,62 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
       hoverNeighbors,
       normalizedSearchQuery,
       graphNodeSize,
-      graphShowTexts,
       nodeColorFn
     ]
   )
 
+  // Handlers for exporting and resetting layout
+  const handleExportPNG = useCallback(() => {
+    exportGraphAsPNG(containerRef.current, 'lumina-knowledge-graph.png')
+  }, [])
+
+  const handleExportSVG = useCallback(() => {
+    exportGraphAsSVG(graphData, dimensions.width, dimensions.height, themeColors, 'lumina-knowledge-graph.svg')
+  }, [graphData, dimensions, themeColors])
+
+  const handleResetLayout = useCallback(() => {
+    clearNodePositions()
+    window.dispatchEvent(new CustomEvent('reset-graph-positions'))
+    if (graphRef.current?.zoomToFit) {
+      graphRef.current.zoomToFit(600, 50)
+    }
+  }, [])
+
+  const centralNodeId = useMemo(() => {
+    if (selectedSnippet) {
+      const sNode = graphData.nodes.find((n) => n.snippetId === selectedSnippet.id)
+      if (sNode) return sNode.id
+    }
+    let maxDegree = -1
+    let maxId: any = null
+    for (const n of graphData.nodes) {
+      const deg = n.linkCount || n.val || 0
+      if (deg > maxDegree) {
+        maxDegree = deg
+        maxId = n.id
+      }
+    }
+    return maxId
+  }, [selectedSnippet, graphData.nodes])
+
+  const isCentralNode = useCallback(
+    (node: any) => {
+      if (!node) return false
+      if (centralNodeId && node.id === centralNodeId) return true
+      if (selectedSnippet && node.snippetId === selectedSnippet.id) return true
+      return Boolean(node.isCenter)
+    },
+    [centralNodeId, selectedSnippet]
+  )
+
+  const handleNodePositionChanged = useCallback((node: any) => {
+    if (node?.id && !isCentralNode(node) && node.x !== undefined && node.y !== undefined) {
+      saveNodePosition(node.id, node.x, node.y)
+    }
+  }, [isCentralNode])
+
   if (!isOpen && !embedded) return null
 
-  // Render as embedded (tab) or modal
   if (embedded) {
     return (
       <div
@@ -525,7 +566,10 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
         }}
       >
         <PerformancePanel onRecenter={handleRecenter} is3DMode={is3DMode} />
-        <div className="nexus-body" style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+        <div
+          className="nexus-body"
+          style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}
+        >
           {is3DMode ? (
             <Graph3D
               key="3d-graph-embedded"
@@ -535,38 +579,42 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               graphData={graphData}
               nodeColor={nodeColorFn}
               nodeRelSize={4}
-              nodeThreeObject={(node) => {
+              nodeThreeObject={(node: any) => {
                 const base = node.val ? Math.min(10, Math.max(3, Math.sqrt(node.val) * 2.8)) : 3
                 const r = base * graphNodeSize + 3
                 const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColorFn(node)))
                 mesh.scale.set(r, r, r)
                 return mesh
               }}
-              linkVisibility={(link) => {
-                if (!window._luminaIsDragging) return true
+              linkVisibility={(link: any) => {
+                if (!(window as any)._luminaIsDragging) return true
                 return link.source === hoverNode || link.target === hoverNode
               }}
-              linkColor={(link) => {
-                const isHoverConnected = hoverNode && (link.source === hoverNode || link.target === hoverNode);
-                const isSelectedConnected = selectedSnippet && ((link.source.snippetId === selectedSnippet.id) || (link.target.snippetId === selectedSnippet.id));
-                const isActive = hoverNode ? isHoverConnected : isSelectedConnected;
-                
-                const { settings } = useSettingsStore.getState();
+              linkColor={(link: any) => {
+                const isHoverConnected =
+                  hoverNode && (link.source === hoverNode || link.target === hoverNode)
+                const isSelectedConnected =
+                  selectedSnippet &&
+                  (link.source.snippetId === selectedSnippet.id ||
+                    link.target.snippetId === selectedSnippet.id)
+                const isActive = hoverNode ? isHoverConnected : isSelectedConnected
+
+                const { settings } = useSettingsStore.getState()
                 if (isActive) {
-                  const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.85;
-                  return `rgba(${themeColors.rgb}, ${highlightOpacity})`;
-                }
-                
-                if (hoverNode || selectedSnippet) {
-                  const dimOpacity = settings.graphLinkDimOpacity ?? 0.04;
-                  return `rgba(${themeColors.rgb}, ${dimOpacity})`;
+                  const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.85
+                  return `rgba(${themeColors.rgb}, ${highlightOpacity})`
                 }
 
-                return defaultLineColor;
+                if (hoverNode || selectedSnippet) {
+                  const dimOpacity = settings.graphLinkDimOpacity ?? 0.04
+                  return `rgba(${themeColors.rgb}, ${dimOpacity})`
+                }
+
+                return defaultLineColor
               }}
               linkWidth={0.5}
-              onNodeHover={(node) => setHoverNode(node)}
-              onNodeClick={(node) => {
+              onNodeHover={(node: any) => setHoverNode(node)}
+              onNodeClick={(node: any) => {
                 if (graphRef.current && is3DMode) {
                   const distance = 400
                   const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z)
@@ -580,34 +628,49 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 setTimeout(() => {
                   if (node.snippetId) {
                     const s = snippets.find((sn) => sn.id === node.snippetId)
-                    if (s) onNavigate(s)
+                    if (s) onNavigate?.(s)
                   }
                 }, 150)
               }}
-              onNodeDrag={(node) => {
-                if (!window._luminaIsDragging) {
-                  window._luminaIsDragging = true
+              onNodeDrag={() => {
+                if (!(window as any)._luminaIsDragging) {
+                  ;(window as any)._luminaIsDragging = true
                   usePerformanceStore.getState().setDragging(true)
                 }
               }}
-              onNodeDragEnd={(node) => {
-                window._luminaIsDragging = false
+              onNodeDragEnd={(node: any) => {
+                ;(window as any)._luminaIsDragging = false
                 usePerformanceStore.getState().setDragging(false)
                 setHoverNode(null)
-                node.fx = null
-                node.fy = null
-                node.fz = null
+                const isCentral = isCentralNode(node)
+                if (isCentral) {
+                  node.fx = null
+                  node.fy = null
+                  node.fz = null
+                } else {
+                  node.fx = node.x
+                  node.fy = node.y
+                  node.fz = node.z
+                  handleNodePositionChanged(node)
+                }
                 if (graphRef.current) graphRef.current.d3ReheatSimulation()
               }}
               onRenderFramePre={() => {
-                window._luminaFrameStart = performance.now()
+                ;(window as any)._luminaFrameStart = performance.now()
               }}
               onRenderFramePost={() => {
                 const now = performance.now()
-                const frameTime = now - window._luminaFrameStart
-                const fps = window._luminaLastFrame ? 1000 / (now - window._luminaLastFrame) : 60
-                window._luminaLastFrame = now
-                usePerformanceStore.getState().updateMetrics({ frameTime, fps, nodeCount: graphData?.nodes?.length || 0, linkCount: graphData?.links?.length || 0 })
+                const frameTime = now - ((window as any)._luminaFrameStart || now)
+                const fps = (window as any)._luminaLastFrame
+                  ? 1000 / (now - (window as any)._luminaLastFrame)
+                  : 60
+                ;(window as any)._luminaLastFrame = now
+                usePerformanceStore.getState().updateMetrics({
+                  frameTime,
+                  fps,
+                  nodeCount: graphData?.nodes?.length || 0,
+                  linkCount: graphData?.links?.length || 0
+                })
               }}
               backgroundColor="rgba(0,0,0,0)"
               d3AlphaDecay={0.05}
@@ -628,6 +691,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               defaultLineColor={defaultLineColor}
               onNavigate={onNavigate}
               setIsEngineReady={setIsEngineReady}
+              onNodePositionChanged={handleNodePositionChanged}
+              isCentralNode={isCentralNode}
             />
           )}
         </div>
@@ -642,12 +707,14 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           is3DMode={is3DMode}
           onToggle3D={handleToggle3D}
           onSwitchToModal={handleSwitchToModal}
+          onExportPNG={handleExportPNG}
+          onExportSVG={handleExportSVG}
+          onResetLayout={handleResetLayout}
         />
       </div>
     )
   }
 
-  // Modal mode - Slide-up Drawer matching CanvasDrawerModal exactly
   return (
     <div className="canvas-drawer-overlay graph-drawer-overlay" onClick={handleClose}>
       <div
@@ -665,7 +732,10 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
           </div>
 
           <div className="canvas-drawer-header-actions">
-            <ToolTip text={is3DMode ? 'Switch to 2D Nexus' : 'Switch to 3D Cosmos'} position="bottom">
+            <ToolTip
+              text={is3DMode ? 'Switch to 2D Nexus' : 'Switch to 3D Cosmos'}
+              position="bottom"
+            >
               <button
                 type="button"
                 className="canvas-drawer-action-btn"
@@ -676,6 +746,26 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
               </button>
             </ToolTip>
 
+            <ToolTip text="Export PNG Image" position="bottom">
+              <button
+                type="button"
+                className="canvas-drawer-action-btn"
+                onClick={handleExportPNG}
+              >
+                <Download size={14} />
+              </button>
+            </ToolTip>
+
+            <ToolTip text="Export SVG Vector" position="bottom">
+              <button
+                type="button"
+                className="canvas-drawer-action-btn"
+                onClick={handleExportSVG}
+              >
+                <FileCode size={14} />
+              </button>
+            </ToolTip>
+
             <ToolTip text="Recenter Graph" position="bottom">
               <button
                 type="button"
@@ -683,10 +773,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 onClick={handleRecenter}
               >
                 <RefreshCw size={14} />
-                {/* <span>Recenter</span> */}
               </button>
             </ToolTip>
-
 
             <ToolTip text="Open in Editor Tab" position="bottom">
               <button
@@ -695,7 +783,6 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 onClick={handleOpenAsTab}
               >
                 <ExternalLink size={14} />
-                {/* <span>Open in Tab</span> */}
               </button>
             </ToolTip>
 
@@ -706,17 +793,30 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 onClick={handleClose}
                 aria-label="Close"
               >
-                <span className="sr-only" style={{ display: 'none' }}>Close</span>
+                <span className="sr-only" style={{ display: 'none' }}>
+                  Close
+                </span>
                 <X size={14} />
               </button>
             </ToolTip>
           </div>
         </div>
 
-        <div className="canvas-drawer-body" style={{ position: 'relative', width: '100%', height: 'calc(100% - 34px)', overflow: 'hidden' }}>
+        <div
+          className="canvas-drawer-body"
+          style={{
+            position: 'relative',
+            width: '100%',
+            height: 'calc(100% - 34px)',
+            overflow: 'hidden'
+          }}
+        >
           <PerformancePanel onRecenter={handleRecenter} is3DMode={is3DMode} />
 
-          <div className="nexus-body" style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+          <div
+            className="nexus-body"
+            style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}
+          >
             <div className={`graph-initializer ${isEngineReady ? 'ready' : ''}`}>
               <div className="pulse-ring"></div>
               <div className="graph-initializer-text">Initializing Physics</div>
@@ -731,38 +831,42 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 graphData={graphData}
                 nodeColor={nodeColorFn}
                 nodeRelSize={4}
-                nodeThreeObject={(node) => {
+                nodeThreeObject={(node: any) => {
                   const base = node.val ? Math.min(10, Math.max(3, Math.sqrt(node.val) * 2.8)) : 3
                   const r = base * graphNodeSize + 3
                   const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColorFn(node)))
                   mesh.scale.set(r, r, r)
                   return mesh
                 }}
-                linkVisibility={(link) => {
-                  if (!window._luminaIsDragging) return true
+                linkVisibility={(link: any) => {
+                  if (!(window as any)._luminaIsDragging) return true
                   return link.source === hoverNode || link.target === hoverNode
                 }}
-                linkColor={(link) => {
-                  const isHoverConnected = hoverNode && (link.source === hoverNode || link.target === hoverNode);
-                  const isSelectedConnected = selectedSnippet && ((link.source.snippetId === selectedSnippet.id) || (link.target.snippetId === selectedSnippet.id));
-                  const isActive = hoverNode ? isHoverConnected : isSelectedConnected;
-                  
-                  const { settings } = useSettingsStore.getState();
+                linkColor={(link: any) => {
+                  const isHoverConnected =
+                    hoverNode && (link.source === hoverNode || link.target === hoverNode)
+                  const isSelectedConnected =
+                    selectedSnippet &&
+                    (link.source.snippetId === selectedSnippet.id ||
+                      link.target.snippetId === selectedSnippet.id)
+                  const isActive = hoverNode ? isHoverConnected : isSelectedConnected
+
+                  const { settings } = useSettingsStore.getState()
                   if (isActive) {
-                    const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.85;
-                    return `rgba(${themeColors.rgb}, ${highlightOpacity})`;
-                  }
-                  
-                  if (hoverNode || selectedSnippet) {
-                    const dimOpacity = settings.graphLinkDimOpacity ?? 0.04;
-                    return `rgba(${themeColors.rgb}, ${dimOpacity})`;
+                    const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.85
+                    return `rgba(${themeColors.rgb}, ${highlightOpacity})`
                   }
 
-                  return defaultLineColor;
+                  if (hoverNode || selectedSnippet) {
+                    const dimOpacity = settings.graphLinkDimOpacity ?? 0.04
+                    return `rgba(${themeColors.rgb}, ${dimOpacity})`
+                  }
+
+                  return defaultLineColor
                 }}
                 linkWidth={0.5}
-                onNodeHover={(node) => setHoverNode(node)}
-                onNodeClick={(node) => {
+                onNodeHover={(node: any) => setHoverNode(node)}
+                onNodeClick={(node: any) => {
                   if (graphRef.current) {
                     const distance = 400
                     const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z)
@@ -776,21 +880,29 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                   setTimeout(() => {
                     if (node.snippetId) {
                       const s = snippets.find((sn) => sn.id === node.snippetId)
-                      if (s) onNavigate(s)
+                      if (s) onNavigate?.(s)
                     }
                   }, 150)
                 }}
-                onNodeDrag={(node) => {
-                  window._luminaIsDragging = true
+                onNodeDrag={() => {
+                  ;(window as any)._luminaIsDragging = true
                   usePerformanceStore.getState().setDragging(true)
                 }}
-                onNodeDragEnd={(node) => {
-                  window._luminaIsDragging = false
+                onNodeDragEnd={(node: any) => {
+                  ;(window as any)._luminaIsDragging = false
                   usePerformanceStore.getState().setDragging(false)
                   setHoverNode(null)
-                  node.fx = null
-                  node.fy = null
-                  node.fz = null
+                  const isCentral = isCentralNode(node)
+                  if (isCentral) {
+                    node.fx = null
+                    node.fy = null
+                    node.fz = null
+                  } else {
+                    node.fx = node.x
+                    node.fy = node.y
+                    node.fz = node.z
+                    handleNodePositionChanged(node)
+                  }
                   if (graphRef.current) graphRef.current.d3ReheatSimulation()
                 }}
                 backgroundColor="rgba(0,0,0,0)"
@@ -810,6 +922,8 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
                 defaultLineColor={defaultLineColor}
                 onNavigate={onNavigate}
                 setIsEngineReady={setIsEngineReady}
+                onNodePositionChanged={handleNodePositionChanged}
+                isCentralNode={isCentralNode}
               />
             )}
           </div>
@@ -823,6 +937,9 @@ const Graph = React.memo(({ isOpen = true, onClose, onNavigate, embedded = false
             onRecenter={handleRecenter}
             is3DMode={is3DMode}
             onToggle3D={handleToggle3D}
+            onExportPNG={handleExportPNG}
+            onExportSVG={handleExportSVG}
+            onResetLayout={handleResetLayout}
           />
         </div>
       </div>

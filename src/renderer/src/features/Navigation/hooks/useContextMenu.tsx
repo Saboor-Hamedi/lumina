@@ -14,12 +14,12 @@ import {
   X,
   Sparkles,
   CloudUpload,
-  LayoutDashboard
+  Download,
+  Upload
 } from 'lucide-react'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/SettingStore'
 import { useShallow } from 'zustand/react/shallow'
-// Lumina AI Note Summarizer
 import { summarizeNotes } from '../../AI/services/summarizeNotes'
 
 export interface ContextMenuCallbacks {
@@ -30,8 +30,10 @@ export interface ContextMenuCallbacks {
   onDelete?: () => void
   onCloseNote?: () => void
   onCreateNote?: () => void
-  onCreateCanvas?: () => void
   onCreateFolder?: () => void
+  onExport?: () => void
+  onImport?: () => void
+  onSummary?: () => void
   onClose?: () => void
   isFolderPinned?: boolean
 }
@@ -43,7 +45,7 @@ export interface UseContextMenuProps {
 }
 
 export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
-  const { saveSnippet, clipboard, setClipboard, snippets, folderColors, setFolderColor } =
+  const { saveSnippet, clipboard, setClipboard, snippets, folderColors, setFolderColor, loadWorkspace } =
     useWorkspaceStore(
       useShallow((state: any) => ({
         saveSnippet: state.saveNote || state.saveSnippet,
@@ -51,7 +53,8 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
         setClipboard: state.setClipboard,
         snippets: state.notes || state.snippets || [],
         folderColors: state.folderColors || {},
-        setFolderColor: state.setFolderColor
+        setFolderColor: state.setFolderColor,
+        loadWorkspace: state.loadWorkspace
       }))
     )
 
@@ -67,6 +70,9 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
       e?.stopPropagation()
       if (type === 'file' && item) {
         setClipboard({ action: 'copy', item })
+        callbacks.onClose?.()
+      } else if (type === 'folder' && item) {
+        setClipboard({ action: 'copy', item: { itemType: 'folder', folderId: item } })
         callbacks.onClose?.()
       }
     },
@@ -98,10 +104,10 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
             return Math.random().toString(36).substring(2, 15)
           }
 
-          let newTitle = `${clipboard.item.title} (Copy)`
+          let newTitle = `${clipboard.item.title || 'Note'} (Copy)`
           let counter = 1
           while (snippets.some((s: any) => s.title === newTitle && s.folderId === targetFolderId)) {
-            newTitle = `${clipboard.item.title} (Copy ${++counter})`
+            newTitle = `${clipboard.item.title || 'Note'} (Copy ${++counter})`
           }
 
           const newSnippet = {
@@ -128,6 +134,50 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
     [clipboard, type, item, snippets, saveSnippet, setClipboard, callbacks]
   )
 
+  const handleDefaultImport = useCallback(async () => {
+    const targetFolderId = type === 'folder' ? item : type === 'file' ? item?.folderId : null
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.multiple = true
+    input.style.display = 'none'
+    input.onchange = async (e: any) => {
+      const files: File[] = Array.from(e.target?.files || [])
+      if (files.length === 0) return
+      try {
+        const api = (window as any).api
+        const paths = files
+          .map((f: any) => api?.getPathForFile?.(f) || (f as any).path)
+          .filter(Boolean)
+        if (paths.length > 0 && api?.importExternalPaths) {
+          await api.importExternalPaths(paths, targetFolderId || null)
+        } else {
+          for (const file of files) {
+            const text = await file.text()
+            const title = file.name.replace(/\.[^/.]+$/, '')
+            await saveSnippet({
+              id:
+                typeof crypto !== 'undefined' && crypto.randomUUID
+                  ? crypto.randomUUID()
+                  : Math.random().toString(36).slice(2),
+              title,
+              code: text,
+              folderId: targetFolderId || null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            })
+          }
+        }
+        await loadWorkspace?.()
+      } catch (err) {
+        console.error('Import failed:', err)
+      }
+    }
+    document.body.appendChild(input)
+    input.click()
+    setTimeout(() => input.remove(), 1000)
+    callbacks.onClose?.()
+  }, [type, item, saveSnippet, loadWorkspace, callbacks])
+
   const colorPickerOption = useMemo(() => {
     let currentCol: string | null = null
     if (type === 'file' && item) {
@@ -146,7 +196,7 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
     ]
 
     return {
-      label: 'Background',
+      label: 'Theme',
       icon: <Palette size={14} />,
       children: colors.map((c) => ({
         id: c.id || 'default',
@@ -169,52 +219,42 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
           } else if (type === 'folder' && item) {
             setFolderColor(item, c.id)
           }
+          callbacks.onClose?.()
         }
       }))
     }
-  }, [type, item, folderColors, saveSnippet, setFolderColor])
+  }, [type, item, folderColors, saveSnippet, setFolderColor, callbacks])
 
   const options = useMemo(() => {
+    // ── File / Note Menu ────────────────────────────────────────────────────
     if (type === 'file') {
       return [
         {
           label: 'Open',
-          shortcut: 'Ctrl+O',
+          shortcut: 'Enter',
           icon: <ExternalLink size={14} />,
           onClick: () => {
             const api = (window as any).api
             if (api?.openFile) {
               api.openFile()
             }
+            callbacks.onOpen?.()
             callbacks.onClose?.()
           }
         },
         {
-          label: 'Summarize with Lumina',
-          icon: <Sparkles size={14} />,
+          label: 'Summary',
+          icon: <Sparkles size={14} className="text-primary" />,
           onClick: () => {
             callbacks.onClose?.()
-            summarizeNotes(item)
-          }
-        },
-        {
-          label: 'Reveal in File Explorer',
-          shortcut: 'Ctrl+Shift+E',
-          icon: <FolderOpen size={14} />,
-          onClick: () => {
-            const api = (window as any).api
-            if (api?.openVaultFolder) {
-              const relativePath =
-                type === 'file'
-                  ? (item?.folderId ? item.folderId + '/' : '') + item?.fileName
-                  : type === 'folder'
-                    ? item
-                    : undefined
-              api.openVaultFolder(relativePath)
+            if (callbacks.onSummary) {
+              callbacks.onSummary()
+            } else {
+              summarizeNotes(item)
             }
-            callbacks.onClose?.()
           }
         },
+        { type: 'divider' },
         {
           label: 'Rename',
           shortcut: 'Ctrl+R',
@@ -225,35 +265,39 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
           }
         },
         {
-          label: 'Change Icon',
-          shortcut: 'Win + Shift + .',
-          icon: <Palette size={14} />,
-          onClick: () => {
-            callbacks.onChangeIcon?.()
-            callbacks.onClose?.()
-          }
-        },
-        {
           label: 'Copy',
+          shortcut: 'Ctrl+C',
           icon: <Copy size={14} />,
           onClick: handleCopy
         },
         {
-          label: 'Cut',
-          icon: <Scissors size={14} />,
-          onClick: handleCut
-        },
-        {
           label: 'Paste',
+          shortcut: 'Ctrl+V',
           icon: <Clipboard size={14} />,
-          disabled: !clipboard || clipboard.item.itemType === 'folder',
+          disabled: !clipboard,
           onClick: handlePaste
         },
+        { type: 'divider' },
         {
-          label: item?.isPinned ? 'Remove from Favorites' : 'Add to Favorites',
-          icon: item?.isPinned ? <Star size={14} fill="currentColor" /> : <Star size={14} />,
+          label: 'Reveal in File Explorer',
+          shortcut: 'Ctrl+Shift+E',
+          icon: <FolderOpen size={14} />,
           onClick: () => {
-            callbacks.onTogglePin?.()
+            const api = (window as any).api
+            if (api?.openVaultFolder) {
+              const relativePath = (item?.folderId ? item.folderId + '/' : '') + (item?.fileName || '')
+              api.openVaultFolder(relativePath)
+            }
+            callbacks.onClose?.()
+          }
+        },
+        { type: 'divider' },
+        colorPickerOption,
+        {
+          label: 'Export',
+          icon: <Download size={14} />,
+          onClick: () => {
+            callbacks.onExport?.()
             callbacks.onClose?.()
           }
         },
@@ -276,10 +320,7 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
                     if (res?.success) {
                       window.dispatchEvent(
                         new CustomEvent('show-toast', {
-                          detail: {
-                            message: 'Successfully backed up',
-                            type: 'success'
-                          }
+                          detail: { message: 'Successfully backed up', type: 'success' }
                         })
                       )
                     } else {
@@ -300,6 +341,7 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
               }
             ]
           : []),
+        { type: 'divider' },
         {
           label: 'Delete',
           shortcut: 'Ctrl+Shift+D',
@@ -310,11 +352,8 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
             callbacks.onClose?.()
           }
         },
-        { type: 'divider' },
-        colorPickerOption,
-        { type: 'divider' },
         {
-          label: 'Close',
+          label: 'Close Note',
           icon: <X size={14} />,
           onClick: () => {
             callbacks.onCloseNote?.()
@@ -324,22 +363,15 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
       ]
     }
 
-    if (type === 'folder' || type === 'body') {
-      const isFolder = !!item // if item exists, it's a folder, otherwise it's the body
+    // ── Folder Menu ─────────────────────────────────────────────────────────
+    if (type === 'folder') {
       return [
         {
-          label: 'New Note',
+          label: 'New File',
+          shortcut: 'Ctrl+N',
           icon: <FilePlus size={14} />,
           onClick: () => {
             callbacks.onCreateNote?.()
-            callbacks.onClose?.()
-          }
-        },
-        {
-          label: 'New Canvas',
-          icon: <LayoutDashboard size={14} />,
-          onClick: () => {
-            callbacks.onCreateCanvas?.()
             callbacks.onClose?.()
           }
         },
@@ -352,70 +384,135 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
           }
         },
         {
+          label: 'Rename',
+          shortcut: 'Ctrl+R',
+          icon: <Edit2 size={14} />,
+          onClick: () => {
+            callbacks.onRename?.()
+            callbacks.onClose?.()
+          }
+        },
+        {
+          label: 'Copy',
+          shortcut: 'Ctrl+C',
+          icon: <Copy size={14} />,
+          onClick: handleCopy
+        },
+        {
+          label: 'Paste',
+          shortcut: 'Ctrl+V',
+          icon: <Clipboard size={14} />,
+          disabled: !clipboard,
+          onClick: handlePaste
+        },
+        { type: 'divider' },
+        {
           label: 'Reveal in File Explorer',
           shortcut: 'Ctrl+Shift+E',
           icon: <FolderOpen size={14} />,
           onClick: () => {
             const api = (window as any).api
             if (api?.openVaultFolder) {
-              const relativePath =
-                type === 'file'
-                  ? (item?.folderId ? item.folderId + '/' : '') + item?.fileName
-                  : type === 'folder'
-                    ? item
-                    : undefined
-              api.openVaultFolder(relativePath)
+              api.openVaultFolder(item)
             }
             callbacks.onClose?.()
           }
         },
-        ...(isFolder
-          ? [
-              {
-                label: 'Rename',
-                shortcut: 'Ctrl+R',
-                icon: <Edit2 size={14} />,
-                onClick: () => {
-                  callbacks.onRename?.()
-                  callbacks.onClose?.()
-                }
-              }
-            ]
-          : []),
+        {
+          label: 'Summary',
+          icon: <Sparkles size={14} className="text-primary" />,
+          onClick: () => {
+            callbacks.onSummary?.()
+            callbacks.onClose?.()
+          }
+        },
+        { type: 'divider' },
+        colorPickerOption,
+        {
+          label: 'Export',
+          icon: <Download size={14} />,
+          onClick: () => {
+            callbacks.onExport?.()
+            callbacks.onClose?.()
+          }
+        },
+        {
+          label: 'Import',
+          icon: <Upload size={14} />,
+          onClick: () => {
+            if (callbacks.onImport) {
+              callbacks.onImport()
+            } else {
+              handleDefaultImport()
+            }
+          }
+        },
+        { type: 'divider' },
+        {
+          label: 'Delete Folder',
+          shortcut: 'Ctrl+Shift+D',
+          icon: <Trash2 size={14} />,
+          danger: true,
+          onClick: () => {
+            callbacks.onDelete?.()
+            callbacks.onClose?.()
+          }
+        }
+      ]
+    }
+
+    // ── Body / Root Background Menu ─────────────────────────────────────────
+    if (type === 'body') {
+      return [
+        {
+          label: 'New File',
+          shortcut: 'Ctrl+N',
+          icon: <FilePlus size={14} />,
+          onClick: () => {
+            callbacks.onCreateNote?.()
+            callbacks.onClose?.()
+          }
+        },
+        {
+          label: 'New Folder',
+          icon: <FolderPlus size={14} />,
+          onClick: () => {
+            callbacks.onCreateFolder?.()
+            callbacks.onClose?.()
+          }
+        },
         {
           label: 'Paste',
+          shortcut: 'Ctrl+V',
           icon: <Clipboard size={14} />,
-          disabled: !clipboard || clipboard.item.itemType === 'folder',
+          disabled: !clipboard,
           onClick: handlePaste
         },
-        ...(isFolder
-          ? [
-              {
-                label: callbacks.isFolderPinned ? 'Unpin from Favorites' : 'Pin to Favorites',
-                icon: callbacks.isFolderPinned ? (
-                  <Star size={14} fill="currentColor" />
-                ) : (
-                  <Star size={14} />
-                ),
-                onClick: () => {
-                  togglePinnedFolder(item)
-                  callbacks.onClose?.()
-                }
-              },
-              {
-                label: 'Delete',
-                shortcut: 'Ctrl+Shift+D',
-                icon: <Trash2 size={14} />,
-                danger: true,
-                onClick: () => {
-                  callbacks.onDelete?.()
-                  callbacks.onClose?.()
-                }
-              },
-              { type: 'divider' },
-              colorPickerOption
-            ]
-          : [])
+        { type: 'divider' },
+        {
+          label: 'Reveal in File Explorer',
+          shortcut: 'Ctrl+Shift+E',
+          icon: <FolderOpen size={14} />,
+          onClick: () => {
+            const api = (window as any).api
+            if (api?.openVaultFolder) {
+              api.openVaultFolder(undefined)
+            }
+            callbacks.onClose?.()
+          }
+        },
+        { type: 'divider' },
+        {
+          label: 'Import',
+          icon: <Upload size={14} />,
+          onClick: () => {
+            if (callbacks.onImport) {
+              callbacks.onImport()
+            } else {
+              handleDefaultImport()
+            }
+          }
+        }
       ]
     }
 
@@ -425,10 +522,9 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
     item,
     clipboard,
     handleCopy,
-    handleCut,
     handlePaste,
+    handleDefaultImport,
     callbacks,
-    togglePinnedFolder,
     colorPickerOption,
     googleUser
   ])

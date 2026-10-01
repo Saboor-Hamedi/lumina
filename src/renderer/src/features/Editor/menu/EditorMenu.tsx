@@ -10,32 +10,38 @@ import { useToast } from '../../../core/notification'
 import ToastNotification from '../../../core/notification'
 import ToolTip from '../../../components/atoms/ToolTip'
 
-const EditorMenu = ({
-  title,
+export interface EditorMenuProps {
+  title?: string
+  snippet?: any
+  setSelectedSnippet?: (snippet: any) => void
+  isDirty?: boolean
+  isSaving?: boolean
+  onSave?: (snippet?: any) => Promise<any> | void
+  onToggleInspector?: () => void
+  onInlineAI?: () => void
+  onPreview?: () => void
+  onOpenExportDialog?: () => void
+}
+
+export const EditorMenu: React.FC<EditorMenuProps> = ({
   snippet,
-  setSelectedSnippet,
-  isDirty,
-  isSaving = false,
-  onSave,
-  onToggleInspector,
-  onInlineAI,
   onPreview,
   onOpenExportDialog
 }) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false)
-  const menuRef = useRef(null)
-  const buttonRef = useRef(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const buttonRef = useRef<HTMLButtonElement | null>(null)
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 })
   const { toast, showToast, clearToast } = useToast()
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = (event: MouseEvent) => {
       if (
         showMoreMenu &&
         menuRef.current &&
-        !menuRef.current.contains(event.target) &&
+        !menuRef.current.contains(event.target as Node) &&
         buttonRef.current &&
-        !buttonRef.current.contains(event.target)
+        !buttonRef.current.contains(event.target as Node)
       ) {
         setShowMoreMenu(false)
       }
@@ -49,7 +55,7 @@ const EditorMenu = ({
 
   useEffect(() => {
     if (!showMoreMenu) return
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
         e.stopPropagation()

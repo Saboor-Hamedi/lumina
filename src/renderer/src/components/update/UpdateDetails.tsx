@@ -8,26 +8,25 @@ import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
+- Interactive Theme-Synchronized PDF Export: Export notes and entire vaults to polished, publication-ready PDFs with live preview, auto-generated Table of Contents, page numbers, and exact theme matching across Dark, Light, and Porcelain palettes.
+- Knowledge Graph Vector & Image Export (SVG & PNG): Download your 2D knowledge topography as scalable vectors or high-resolution images directly from the graph controls.
+- Persistent Node Layout & Elastic Central Physics: Dragged nodes retain their coordinates across app sessions via localStorage persistence, while central hub notes spring back elastically to equilibrium upon release.
+- Batch Export Engine: Export multiple selected notes or full folder trees into a single combined document or separate files with live progress tracking.
 - Workspace Index Query Engine (luminaQueryIndex): Query your workspace like a database. Search and filter notes across tags (#tag), folders, incoming and outgoing wikilinks, YAML frontmatter, and headings with structured graph records.
-- Dynamic Inline LuminaIndexBadge: Sleek inline search badge with live scan beam, active filter pills, matched note counters, and an expandable drawer with clickable note rows that open directly in the editor. Appears in natural document flow right where the query ran.
-- In-App System Health Diagnostics (luminaDiagnoseSystem / /doctor): Live multi-subsystem diagnostic tool measuring latency across Disk I/O, IndexedDB, Notes Store, and Memory without cluttering disk files unless requested.
-- Wikilink & Orphan Note Auditor (auditWikilinks / /audit): Scans workspace connectivity, highlights broken links and orphan notes, and offers immediate scaffolding for missing files.
 - Spatial Infinite Canvas (.canvas): 2D infinite spatial whiteboard with pan/zoom (10% to 500%), dot-grid canvas, 12+ geometric vector shapes, dynamic shape ports, magnetic snapping, and 90° orthogonal connector routing.
-- Live-Preview Markdown Highlighting (==highlight==): Real-time live preview for ==text== in the editor. Delimiters collapse into clean colored spans and reveal on cursor focus (Mod+Shift+H).
 
 Improved
-- Modularized CSS Architecture: Decomposed monolithic chat stylesheets into domain modules (indexBadge.css, healthBadge.css, auditBadge.css, treeBadge.css, memoryBadge.css, chatCode.css, chatThinking.css), cutting duplicate rules.
-- Sleek TreeBadge Header: Low-profile 28px tree badge header with micro-stats and ghost copy button.
-- Theme Polish & Porcelain Support: Authentic Porcelain theme integration across all badges with warm paper background variables (--bg-card: #eae6dd).
-- Slash Commands & Natural Intent Routing: Added /index, /query, and /audit shortcuts with natural language intent routing.
+- Modularized Graph Subsystem: Fully migrated Graph architecture into strict TypeScript with dedicated 2D canvas (Graph2D), 3D WebGL (Graph3D), and web-worker physics modules.
+- Streamlined Graph Sidebar & HUD: Minimalist header with direct search and instant collapse, zero-scroll controls layout, and unobtrusive performance telemetry.
+- Automated Publishing Pipeline (npm run publish): One-command automated build and GitHub release deployment with zero manual steps.
 - Code Block Image Export: Theme-aware solid backgrounds matching your active color palette instead of gradients.
-- Canvas Ergonomics: Marquee selection, multi-node alignment toolbar, minimap radar HUD, and sticky note shortcuts (Ctrl+Enter).
+- Porcelain Theme Polish: Authentic warm paper palette integration across all export engines, graph canvases, and diagnostic badges.
 
 Fixed
-- Natural Badge Flow: Index badges now render sequentially inline at the inquiry point instead of being pinned to the top.
+- Central Hub Drag Freeze: Fixed issue where dragging central nodes caused them to stay frozen in place instead of smoothly springing back to equilibrium.
+- Dynamic Import Resolution: Resolved path casing and module resolution bugs across graph components.
+- Theme Fallbacks: Corrected dark background fallbacks on light themes across graph panels and export previews.
 - Hex Color Tag Collision: Prevented 3/6-digit hex color codes (#38bdf8, #ffffff) from being falsely matched as tags.
-- YAML Frontmatter Primitives: Correctly parses booleans and numbers in frontmatter attributes.
-- LevelDB Dev Manifest Recovery: Automatically repairs and resets corrupted dev LevelDB manifests on startup.
 - Breadcrumbs Long-Title Truncation: Long note titles truncate gracefully with responsive clamping and full hover tooltips.`
 
 export interface ReleaseCategory {
@@ -111,7 +110,7 @@ export const parseReleaseNotes = (notes?: unknown): ReleaseCategory[] => {
 
 export const UpdateDetails: React.FC = () => {
   const { status, updateInfo, progress, download, install, check, lastChecked } = useUpdateStore()
-  const [currentVersion, setCurrentVersion] = useState<string>('1.0.62')
+  const [currentVersion, setCurrentVersion] = useState<string>('1.0.65')
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const dropdownRef = useRef<HTMLDivElement | null>(null)
 
@@ -166,8 +165,16 @@ export const UpdateDetails: React.FC = () => {
 
   const newVersion = updateInfo?.version || currentVersion
 
-  // Always use our curated release notes directly in the body (ignoring GitHub tag blurbs)
-  const parsedNotes = useMemo(() => parseReleaseNotes(DEFAULT_RELEASE_NOTES), [])
+  // Parse notes from incoming update info if available, otherwise use curated release notes
+  const parsedNotes = useMemo(() => {
+    if (updateInfo?.releaseNotes) {
+      const parsed = parseReleaseNotes(updateInfo.releaseNotes)
+      if (parsed.length > 0 && parsed[0].items.length > 0) {
+        return parsed
+      }
+    }
+    return parseReleaseNotes(DEFAULT_RELEASE_NOTES)
+  }, [updateInfo?.releaseNotes])
 
   // Compute trigger button icon and tooltip dynamically
   const { triggerIcon, triggerTooltip, triggerClass } = useMemo(() => {

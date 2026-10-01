@@ -1,11 +1,11 @@
 /**
  * MainLayout.jsx
- * 
+ *
  * Core 3-Pane Application Shell & Workspace Orchestrator for Lumina.
- * 
+ *
  * Architecture & Responsibilities:
  * - Left Pane: Collapsible Navigation Sidebar (Vault file tree, tags, quick actions, settings).
- * - Center Pane: 
+ * - Center Pane:
  *     - TabBar: Multi-tab management (reorder, close, pin, preview, new tab).
  *     - Breadcrumbs: File path hierarchy navigation and quick rename.
  *     - TabContentPane: Mounted pane routing (Markdown Editor, Canvas, PDF, Image, or Welcome).
@@ -25,7 +25,7 @@ import AppModals from './AppModals'
 import { ExternalDropOverlay, useWorkspaceDrop } from '../Explorer/drop'
 import { countExplorerPerfRender, markExplorerPerf } from '../Explorer/utils/explorerPerf'
 import { FileText, FolderDown } from 'lucide-react'
-const Graph = React.lazy(() => import('../Graph/Graph'))
+const Graph = React.lazy(() => import('../graph/Graph'))
 const LuminaChatContent = React.lazy(() =>
   import('../AI/components/LuminaChatContent').then((m) => ({ default: m.LuminaChatContent }))
 )
@@ -74,11 +74,7 @@ const GraphTabPane = React.memo(({ onNavigate }) => {
       }}
     >
       <React.Suspense fallback={null}>
-        <Graph
-          embedded={true}
-          isOpen={isSelected}
-          onNavigate={onNavigate}
-        />
+        <Graph embedded={true} isOpen={isSelected} onNavigate={onNavigate} />
       </React.Suspense>
     </div>
   )
@@ -204,7 +200,6 @@ export const MainLayout = () => {
     isRightSidebarOpenRef.current = isRightSidebarOpen
   }, [isRightSidebarOpen])
 
-
   const updateLeftSidebarOpen = useCallback((valOrFn) => {
     const next = typeof valOrFn === 'function' ? valOrFn(isLeftSidebarOpenRef.current) : valOrFn
     isLeftSidebarOpenRef.current = next
@@ -282,10 +277,7 @@ export const MainLayout = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
-        await Promise.all([
-          useSettingsStore.getState().init(),
-          loadWorkspace()
-        ])
+        await Promise.all([useSettingsStore.getState().init(), loadWorkspace()])
 
         const actualSettings = useSettingsStore.getState().settings || {}
 
@@ -313,9 +305,12 @@ export const MainLayout = () => {
 
         setIsLeftSidebarOpen(finalLeftOpen)
         isLeftSidebarOpenRef.current = finalLeftOpen
-        window.dispatchEvent(new CustomEvent('left-sidebar-toggle', { detail: { open: finalLeftOpen } }))
+        window.dispatchEvent(
+          new CustomEvent('left-sidebar-toggle', { detail: { open: finalLeftOpen } })
+        )
 
-        const rawLeftWidth = legacySidebar.width || legacySidebar.leftWidth || actualSettings.leftWidth
+        const rawLeftWidth =
+          legacySidebar.width || legacySidebar.leftWidth || actualSettings.leftWidth
         if (rawLeftWidth) {
           const clampedLeft = Math.min(600, Math.max(180, Number(rawLeftWidth)))
           setLeftWidth(clampedLeft)
@@ -332,7 +327,8 @@ export const MainLayout = () => {
         setIsRightSidebarOpen(finalRightOpen)
         isRightSidebarOpenRef.current = finalRightOpen
 
-        const rawRightWidth = legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth
+        const rawRightWidth =
+          legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth
         if (rawRightWidth) {
           const clampedRight = Math.min(750, Math.max(200, Number(rawRightWidth)))
           setRightWidth(clampedRight)
@@ -370,8 +366,12 @@ export const MainLayout = () => {
       cleanupGlobalShortcut = window.api.onToggleCommandPalette(() => {
         if (
           window.__isRecordingShortcut ||
-          document.querySelector('.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay') ||
-          (document.activeElement && document.activeElement.closest && document.activeElement.closest('.shortcut-inline-container, .shortcut-modal'))
+          document.querySelector(
+            '.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay'
+          ) ||
+          (document.activeElement &&
+            document.activeElement.closest &&
+            document.activeElement.closest('.shortcut-inline-container, .shortcut-modal'))
         ) {
           return
         }
@@ -404,8 +404,12 @@ export const MainLayout = () => {
     const handleRenameShortcut = (e) => {
       if (
         window.__isRecordingShortcut ||
-        document.querySelector('.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay') ||
-        (document.activeElement && document.activeElement.closest && document.activeElement.closest('.shortcut-inline-container, .shortcut-modal'))
+        document.querySelector(
+          '.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay'
+        ) ||
+        (document.activeElement &&
+          document.activeElement.closest &&
+          document.activeElement.closest('.shortcut-inline-container, .shortcut-modal'))
       ) {
         return
       }
@@ -439,7 +443,12 @@ export const MainLayout = () => {
   useEffect(() => {
     const handleCanvasDrawerKey = (e) => {
       const isCtrl = e.ctrlKey || e.metaKey
-      const isSlash = e.code === 'Slash' || e.key === '/' || e.key === '?' || e.code === 'NumpadDivide' || e.key === 'Divide'
+      const isSlash =
+        e.code === 'Slash' ||
+        e.key === '/' ||
+        e.key === '?' ||
+        e.code === 'NumpadDivide' ||
+        e.key === 'Divide'
       if (isCtrl && e.shiftKey && isSlash) {
         e.preventDefault()
         e.stopPropagation()
@@ -461,8 +470,12 @@ export const MainLayout = () => {
     const handleTabNavCapture = (e) => {
       if (
         window.__isRecordingShortcut ||
-        document.querySelector('.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay') ||
-        (document.activeElement && document.activeElement.closest && document.activeElement.closest('.shortcut-inline-container, .shortcut-modal'))
+        document.querySelector(
+          '.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay'
+        ) ||
+        (document.activeElement &&
+          document.activeElement.closest &&
+          document.activeElement.closest('.shortcut-inline-container, .shortcut-modal'))
       ) {
         return
       }
@@ -508,8 +521,6 @@ export const MainLayout = () => {
     window.addEventListener('keydown', handleTabNavCapture, true)
     return () => window.removeEventListener('keydown', handleTabNavCapture, true)
   }, [])
-
-
 
   useEffect(() => {
     if (activeTab === 'graph') {
@@ -603,7 +614,12 @@ export const MainLayout = () => {
         return true
       }
       if (isRightSidebarOpen) {
-        if (showPalette || document.querySelector('.command-palette-overlay, .command-palette-container, .modal-overlay')) {
+        if (
+          showPalette ||
+          document.querySelector(
+            '.command-palette-overlay, .command-palette-container, .modal-overlay'
+          )
+        ) {
           return false
         }
         updateRightSidebarOpen(false)
@@ -825,7 +841,7 @@ export const MainLayout = () => {
 
     // Preload Graph component in background after app mount
     const preloadTimer = setTimeout(() => {
-      import('../Graph/Graph')
+      import('../graph/Graph')
     }, 1200)
 
     return () => {
@@ -838,7 +854,6 @@ export const MainLayout = () => {
       clearTimeout(preloadTimer)
     }
   }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme])
-
 
   // Stable snippet map — only re-computes when notes change (saves, renames), NOT on tab switch
   const snippetMap = useMemo(() => {
@@ -933,10 +948,7 @@ export const MainLayout = () => {
           </div>
         </div>
         <main className="shell-main">
-          <div
-            className="shell-center-workspace"
-            {...workspaceDropProps}
-          >
+          <div className="shell-center-workspace" {...workspaceDropProps}>
             {(activeTab === 'files' || activeTab === 'search') && (
               <>
                 <TabBar
@@ -968,9 +980,7 @@ export const MainLayout = () => {
               />
             ) : openTabs.filter(
                 (id) =>
-                  id === GRAPH_TAB_ID ||
-                  id === LUMINA_TAB_ID ||
-                  snippets.some((s) => s.id === id)
+                  id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || snippets.some((s) => s.id === id)
               ).length > 0 ? (
               <div
                 className="workspace-container"

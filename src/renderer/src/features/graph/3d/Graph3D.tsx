@@ -1,15 +1,43 @@
 import React, { useEffect, useRef, useImperativeHandle } from 'react'
 import ForceGraph3D from 'react-force-graph-3d'
-import { useSettingsStore } from '../../core/store/SettingStore'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 import { forceX, forceY } from 'd3-force'
 import { forceCollide } from 'd3-force-3d'
 
-const Graph3D = React.forwardRef(({ graphData, ...restProps }, ref) => {
-  const internalRef = useRef()
+export interface Graph3DProps {
+  graphData: {
+    nodes: Array<any>
+    links: Array<any>
+  }
+  width?: number
+  height?: number
+  nodeColor?: (node: any) => string
+  nodeRelSize?: number
+  nodeThreeObject?: (node: any) => any
+  linkVisibility?: (link: any) => boolean
+  linkColor?: (link: any) => string
+  linkWidth?: number
+  onNodeHover?: (node: any) => void
+  onNodeClick?: (node: any) => void
+  onNodeDrag?: (node: any) => void
+  onNodeDragEnd?: (node: any) => void
+  onRenderFramePre?: () => void
+  onRenderFramePost?: () => void
+  backgroundColor?: string
+  d3AlphaDecay?: number
+  d3VelocityDecay?: number
+  showNavInfo?: boolean
+  linkDirectionalParticles?: number
+  onEngineStop?: () => void
+  [key: string]: any
+}
+
+const Graph3D = React.forwardRef<any, Graph3DProps>(({ graphData, ...restProps }, ref) => {
+  const internalRef = useRef<any>(null)
 
   useImperativeHandle(ref, () => internalRef.current)
 
-  const reheatTimeoutRef = useRef(null)
+  const reheatTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Physics Engine Setup
   useEffect(() => {
@@ -34,13 +62,12 @@ const Graph3D = React.forwardRef(({ graphData, ...restProps }, ref) => {
           fg.d3Force('custom_x').strength(0)
           fg.d3Force('custom_y').strength(0)
 
-          fg.d3Force('custom_gravity', (alpha) => {
-            // Increase multiplier to pull the clusters tighter
+          fg.d3Force('custom_gravity', (alpha: number) => {
             const strength = centerForce * 0.3
             const maxRadius = 1000
             const orphanPull = 0.5
 
-            graphData.nodes.forEach((n) => {
+            graphData.nodes.forEach((n: any) => {
               if (n.val <= 1) {
                 const dist = Math.hypot(n.x || 0, n.y || 0, n.z || 0) || 1
                 if (dist > maxRadius) {
@@ -59,11 +86,10 @@ const Graph3D = React.forwardRef(({ graphData, ...restProps }, ref) => {
           if (fg.d3Force('custom_radial')) fg.d3Force('custom_radial', null)
           if (fg.d3Force('custom_charge')) fg.d3Force('custom_charge', null)
 
-          // Apply 3D collision so nodes don't tangle, using dynamic radius based on node volume
           fg.d3Force(
             'custom_collide',
             forceCollide()
-              .radius((n) => {
+              .radius((n: any) => {
                 const base = n.val ? Math.max(2, Math.sqrt(n.val) * 2.5) : 2
                 const sizeMult = settings.graphNodeSize || 1.5
                 return base * sizeMult + 2
@@ -100,13 +126,12 @@ const Graph3D = React.forwardRef(({ graphData, ...restProps }, ref) => {
       fg.d3Force('custom_charge', null)
       fg.d3Force('custom_collide', null)
 
-      fg.d3Force('custom_gravity', (alpha) => {
-        // Increase multiplier to pull the clusters tighter
+      fg.d3Force('custom_gravity', (alpha: number) => {
         const strength = centerForce * 0.3
         const maxRadius = 1000
         const orphanPull = 0.5
 
-        graphData.nodes.forEach((n) => {
+        graphData.nodes.forEach((n: any) => {
           if (n.val <= 1) {
             const dist = Math.hypot(n.x || 0, n.y || 0, n.z || 0) || 1
             if (dist > maxRadius) {
@@ -148,7 +173,7 @@ const Graph3D = React.forwardRef(({ graphData, ...restProps }, ref) => {
       fg.d3Force(
         'custom_collide',
         forceCollide()
-          .radius((n) => {
+          .radius((n: any) => {
             const base = n.val ? Math.min(8, Math.max(2, Math.sqrt(n.val) * 2.2)) : 2
             const sizeMult = initialSettings.graphNodeSize || 1.5
             return base * sizeMult + 2
@@ -171,15 +196,19 @@ const Graph3D = React.forwardRef(({ graphData, ...restProps }, ref) => {
     }
   }, [graphData])
 
-  return <ForceGraph3D 
-    ref={internalRef} 
-    graphData={graphData} 
-    glConfig={{ antialias: false, alpha: true, premultipliedAlpha: false }}
-    dpr={window.devicePixelRatio > 1 ? 1.5 : 1}
-    cooldownTicks={150}
-    onEngineStop={() => { window._luminaPhysicsActive = false }}
-    {...restProps} 
-  />
+  return (
+    <ForceGraph3D
+      ref={internalRef}
+      graphData={graphData}
+      glConfig={{ antialias: false, alpha: true, premultipliedAlpha: false }}
+      dpr={typeof window !== 'undefined' && window.devicePixelRatio > 1 ? 1.5 : 1}
+      cooldownTicks={150}
+      onEngineStop={() => {
+        if (typeof window !== 'undefined') (window as any)._luminaPhysicsActive = false
+      }}
+      {...restProps}
+    />
+  )
 })
 
 Graph3D.displayName = 'Graph3D'

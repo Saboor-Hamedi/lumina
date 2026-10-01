@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import GraphSidebar from '../../../../../src/renderer/src/features/Graph/GraphSidebar'
+import GraphSidebar from '../../../../../src/renderer/src/features/graph/GraphSidebar'
 import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 
 describe('GraphSidebar', () => {

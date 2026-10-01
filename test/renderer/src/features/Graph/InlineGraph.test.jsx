@@ -13,16 +13,16 @@ vi.mock('d3-force', () => ({
   forceCenter: () => ({})
 }))
 
-vi.mock('../../../../../src/renderer/src/features/Graph/PerformancePanel', () => ({
+vi.mock('../../../../../src/renderer/src/features/graph/PerformancePanel', () => ({
   default: () => <div data-testid="perf-panel" />
 }))
 
-vi.mock('../../../../../src/renderer/src/features/Graph/GraphMiniMap', () => ({
+vi.mock('../../../../../src/renderer/src/features/graph/2d/GraphMiniMap', () => ({
   default: () => <div data-testid="minimap" />
 }))
 
 import { render, screen, act } from '@testing-library/react'
-import InlineGraph from '../../../../../src/renderer/src/features/Graph/InlineGraph'
+import InlineGraph from '../../../../../src/renderer/src/features/graph/2d/InlineGraph'
 import { useWorkspaceStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
 import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 

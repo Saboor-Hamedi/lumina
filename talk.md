@@ -238,7 +238,7 @@
 
 ---
 
-### 20. No Export of Graph View
+### 20. No Export of Graph View [COMPLETED]
 
 **What:** Can't export the graph visualization as an image.
 
@@ -562,7 +562,7 @@
 
 ---
 
-### 47. No Graph Export
+### 47. No Graph Export [COMPLETED]
 
 **What:** Can't export the knowledge graph as an image.
 
@@ -572,7 +572,7 @@
 
 ---
 
-### 48. No Graph Layout Persistence
+### 48. No Graph Layout Persistence [COMPLETED]
 
 **What:** Graph layout is not saved; nodes reset to default positions on re-render.
 

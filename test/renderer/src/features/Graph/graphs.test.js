@@ -1,5 +1,5 @@
 
-import { stringToColor, getNodeColor, drawNode } from '../../../../../src/renderer/src/features/Graph/graphs'
+import { stringToColor, getNodeColor, drawNode } from '../../../../../src/renderer/src/features/graph/graphs'
 
 describe('graphs utils', () => {
   describe('stringToColor', () => {

@@ -112,6 +112,8 @@ export interface ExplorerVirtuosoListProps {
   /** Ref for selectedNoteIds — used inside renderItemContent to avoid reactive dep */
   selectedNoteIdsRef: React.RefObject<Set<string>>
   selectedFolderIds: Set<string>
+  setSelectedFolderIds?: React.Dispatch<React.SetStateAction<Set<string>>>
+  setSelectedNoteIds?: React.Dispatch<React.SetStateAction<Set<string>>>
   selectedSnippetId: string | null
   /** Ref for selectedSnippetId — used inside renderItemContent to avoid reactive dep */
   selectedSnippetIdRef: React.RefObject<string | null>
@@ -151,6 +153,8 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
   selectedNoteIds,
   selectedNoteIdsRef,
   selectedFolderIds,
+  setSelectedFolderIds,
+  setSelectedNoteIds,
   selectedSnippetId,
   selectedSnippetIdRef,
   selectedIndex,
@@ -276,9 +280,14 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
                 }
               }}
               onContextMenu={(id, e) => {
-                if (totalSelectedCount > 1 && (selectedFolderIds.has(id) || (selectedNoteIdsRef.current?.size ?? 0) > 0)) {
+                const isPartOfMulti =
+                  selectedFolderIds.has(id) &&
+                  selectedFolderIds.size + (selectedNoteIdsRef.current?.size ?? 0) > 1
+                if (isPartOfMulti) {
                   handleFolderContextMenu(id, e)
                 } else {
+                  setSelectedFolderIds?.(new Set([id]))
+                  setSelectedNoteIds?.(new Set())
                   setSidebarFocus('folder')
                   setLastClickedFolder(id)
                   setSelectedIndex(index)
@@ -324,7 +333,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
               }}
               onContextMenu={
                 totalSelectedCount > 1 &&
-                (currentNoteIds.has(item.snippet.id) || selectedFolderIds.size > 0)
+                currentNoteIds.has(item.snippet.id)
                   ? (snippet, e) => handleFolderContextMenu(snippet.id, e)
                   : undefined
               }

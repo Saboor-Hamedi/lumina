@@ -41,27 +41,27 @@ vi.mock('three', () => {
   }
 })
 
-vi.mock('../../../../../src/renderer/src/features/Graph/Graph2D', () => ({
+vi.mock('../../../../../src/renderer/src/features/graph/2d/Graph2D', () => ({
   default: () => <div data-testid="graph-2d" />
 }))
 
-vi.mock('../../../../../src/renderer/src/features/Graph/Graph3D', () => ({
+vi.mock('../../../../../src/renderer/src/features/graph/3d/Graph3D', () => ({
   default: () => <div data-testid="graph-3d" />
 }))
 
-vi.mock('../../../../../src/renderer/src/features/Graph/GraphSidebar', () => ({
+vi.mock('../../../../../src/renderer/src/features/graph/GraphSidebar', () => ({
   default: () => <div data-testid="graph-sidebar" />
 }))
 
-vi.mock('../../../../../src/renderer/src/features/Graph/GraphMiniMap', () => ({
+vi.mock('../../../../../src/renderer/src/features/graph/2d/GraphMiniMap', () => ({
   default: () => <div data-testid="minimap" />
 }))
 
-vi.mock('../../../../../src/renderer/src/features/Graph/PerformancePanel', () => ({
+vi.mock('../../../../../src/renderer/src/features/graph/PerformancePanel', () => ({
   default: () => <div data-testid="perf-panel" />
 }))
 
-vi.mock('../../../../../src/renderer/src/features/Graph/GraphThemeSelector', () => ({
+vi.mock('../../../../../src/renderer/src/features/graph/GraphThemeSelector', () => ({
   default: () => <div data-testid="theme-selector" />
 }))
 
@@ -77,7 +77,7 @@ vi.mock('../../../../../src/renderer/src/features/modals/ModalHeader', () => {
 })
 
 import { render, screen } from '@testing-library/react'
-import Graph from '../../../../../src/renderer/src/features/Graph/Graph'
+import Graph from '../../../../../src/renderer/src/features/graph/Graph'
 import { useWorkspaceStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
 import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 
