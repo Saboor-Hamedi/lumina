@@ -1,12 +1,21 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { handleExportDocs } from '../../export/exportDocs'
-import { handleExportPDF } from '../../export/exportPDF'
+import {
+  handleExportPDF,
+  generatePDFHTML,
+  buildPDFDocument,
+  PDF_PRINT_OPTIONS
+} from '../../export/exportPDF'
 import { handleExportMarkdown } from '../../export/exportMarkdown'
 import { handleExportText } from '../../export/exportText'
 import { handleExportCleanHTML, handleExportMarkdownBundle } from '../../export/exportBundle'
 import { buildPreview, SUPPORTED_PREVIEW_FORMATS } from '../../export/preview'
 import { handleExportBatch, BATCH_FORMATS } from '../../export/exportBatch'
-import { handleExportCombined, COMBINED_FORMATS } from '../../export/exportCombined'
+import {
+  handleExportCombined,
+  buildCombinedSections,
+  COMBINED_FORMATS
+} from '../../export/exportCombined'
 import { withRenderedHtml } from '../../export/renderWindow'
 import { stripMermaidScripts } from '../../export/mermaidRuntime'
 import { validateIpc, z } from './ipcValidation'
@@ -29,17 +38,19 @@ import { validateIpc, z } from './ipcValidation'
 
 const exportPayloadSchema = z.record(z.string(), z.any())
 
-const previewPayloadSchema = z.object({
-  format: z.string(),
-  title: z.string().optional(),
-  content: z.string(),
-  theme: z.record(z.string(), z.string()).optional()
-})
-
 const batchNoteSchema = z.object({
   id: z.string().optional(),
   title: z.string().optional(),
   content: z.string()
+})
+
+const previewPayloadSchema = z.object({
+  format: z.string(),
+  title: z.string().optional(),
+  content: z.string().optional().default(''),
+  theme: z.record(z.string(), z.string()).optional(),
+  toc: z.boolean().optional(),
+  notes: z.array(batchNoteSchema).optional()
 })
 
 const batchPayloadSchema = z.object({
@@ -51,7 +62,9 @@ const batchPayloadSchema = z.object({
 const combinedPayloadSchema = z.object({
   notes: z.array(batchNoteSchema).min(1),
   format: z.string(),
-  filePath: z.string().optional()
+  filePath: z.string().optional(),
+  toc: z.boolean().optional(),
+  title: z.string().optional()
 })
 
 export function registerExportHandlers(getMainWindow: () => BrowserWindow | null): void {
@@ -94,26 +107,34 @@ export function registerExportHandlers(getMainWindow: () => BrowserWindow | null
   // Render a preview document for the export dialog (no file written)
   ipcMain.handle('window:export-preview', async (_, payload) => {
     const valid = validateIpc(previewPayloadSchema, payload)
-    if (!SUPPORTED_PREVIEW_FORMATS.includes(valid.format)) {
+    if (!SUPPORTED_PREVIEW_FORMATS.includes(valid.format as any)) {
       throw new Error(`Unsupported preview format: ${valid.format}`)
     }
+
+    const showToc = valid.toc ?? true
+    let previewHtml = ''
+
+    let previewMarkdown = valid.content || ''
+    if (valid.notes && valid.notes.length > 0) {
+      previewMarkdown = valid.notes
+        .map((n) => `# ${n.title || 'Untitled'}\n\n${(n.content || '').trim()}`)
+        .join('\n\n---\n\n')
+    }
+
     const preview = await buildPreview(
       valid.format,
       valid.title || 'Untitled',
-      valid.content,
-      valid.theme
+      previewMarkdown,
+      valid.theme,
+      { toc: showToc }
     )
-    // Render Mermaid in a hidden window (local runtime) and inline the SVG so
-    // the preview iframe never depends on a CDN or script execution.
-    if (preview && typeof preview.html === 'string' && preview.html.includes('class="mermaid"')) {
-      preview.html = await withRenderedHtml(preview.html, async (win) => {
-        const rendered = await win.webContents.executeJavaScript(
-          'document.documentElement.outerHTML'
-        )
-        return stripMermaidScripts(String(rendered || preview.html))
-      })
+    previewHtml = preview.html
+
+    return {
+      html: previewHtml,
+      format: valid.format,
+      truncated: false
     }
-    return preview
   })
 
   // Batch export multiple notes to a folder, streaming progress events

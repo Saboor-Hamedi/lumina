@@ -168,23 +168,27 @@ export async function buildDocumentPreview(
   _format: string,
   title?: string,
   content?: string,
-  theme?: unknown
+  theme?: unknown,
+  opts: { toc?: boolean } = {}
 ): Promise<string> {
+  const showToc = opts.toc ?? true
   const { html, tocHtml } = await renderMarkdown(content || '', {
     wikilinkMode: 'span',
     mermaid: true,
-    toc: true
+    toc: showToc
   })
 
   const safeTitle = title || 'Untitled'
 
   const body = `  <article class="doc">
-    ${tocHtml}
+    ${showToc ? tocHtml : ''}
     ${html}
   </article>`
 
+  const hasMermaid = html.includes('class="mermaid"')
   const mermaidTheme = isLightTheme(theme) ? 'default' : 'dark'
-  const mermaidScript = `
+  const mermaidScript = hasMermaid
+    ? `
   <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.3/dist/mermaid.min.js"></script>
   <script>
     function start() {
@@ -257,11 +261,14 @@ export async function buildDocumentPreview(
       start();
     }
   </script>`
+    : ''
+
+  const highlightCss = `<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/${isLightTheme(theme) ? 'github' : 'github-dark'}.min.css">`
 
   return wrapPreviewDocument(
     `${themeVarsCss(theme)}\n${basePreviewCss()}\n${DOCUMENT_CSS}`,
     body,
     safeTitle,
-    mermaidScript
+    `${highlightCss}\n${mermaidScript}`
   )
 }

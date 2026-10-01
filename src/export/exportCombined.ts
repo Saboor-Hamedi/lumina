@@ -40,6 +40,8 @@ export interface CombinedPayload {
   notes?: CombinedNote[]
   format?: string
   filePath?: string
+  toc?: boolean
+  title?: string
 }
 
 export interface CombinedSectionsResult {
@@ -305,22 +307,32 @@ export async function handleExportCombined(
     filePath = picked.filePath
   }
 
-  const docTitle = 'Combined Export'
+  const docTitle = payload.title || (notes.length === 1 ? notes[0]?.title || 'Untitled' : 'Combined Export')
+  const showToc = payload.toc ?? false
 
   onProgress?.({ phase: 'start', current: 0, total: notes.length, title: 'Preparing…' })
 
   if (format === 'pdf') {
-    const { html: sectionsHtml, toc } = await buildCombinedSections(notes, { mermaid: true })
+    const { html: sectionsHtml, toc } = await buildCombinedSections(notes, {
+      mermaid: true,
+      toc: showToc
+    })
     const html = buildPDFDocument(docTitle, sectionsHtml, toc)
     const data = await renderPdfBuffer(html)
     await fs.writeFile(filePath, data)
   } else if (format === 'docs') {
-    const { html: sectionsHtml, toc } = await buildCombinedSections(notes, { mermaid: true })
+    const { html: sectionsHtml, toc } = await buildCombinedSections(notes, {
+      mermaid: true,
+      toc: showToc
+    })
     const html = buildDocsDocument(docTitle, sectionsHtml, toc)
     const clean = await renderDocsHtml(html)
     await fs.writeFile(filePath, clean, 'utf-8')
   } else if (format === 'html') {
-    const { html: sectionsHtml, toc } = await buildCombinedSections(notes, { mermaid: false })
+    const { html: sectionsHtml, toc } = await buildCombinedSections(notes, {
+      mermaid: false,
+      toc: showToc
+    })
     await fs.writeFile(filePath, buildCombinedHTMLDocument(docTitle, sectionsHtml, toc), 'utf-8')
   } else if (format === 'markdown') {
     await fs.writeFile(filePath, buildCombinedMarkdown(notes), 'utf-8')

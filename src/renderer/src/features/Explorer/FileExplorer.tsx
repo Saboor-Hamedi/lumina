@@ -719,6 +719,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
       <BatchExportDialog
         isOpen={!!batchExportNotes}
         notes={batchExportNotes || []}
+        folderName={lastClickedFolder?.name || 'Folder Export'}
         initialFormat="pdf"
         onClose={() => setBatchExportNotes(null)}
       />

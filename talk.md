@@ -462,13 +462,11 @@
 
 ## Infrastructure Gaps
 
-### 37. No CI/CD Pipeline
+### 37. No CI/CD Pipeline [COMPLETED]
 
 **What:** No GitHub Actions, no automated testing, no automated builds.
 
-**Why it matters:** No automated quality assurance. Cross-platform issues go undetected.
-
-**Suggestion:** Add GitHub Actions workflow: lint → typecheck → unit tests → e2e tests → build. Run on every PR.
+**Status:** **[COMPLETED]** - Configured `.github/workflows/ci.yml` (multi-platform matrix testing on Windows, Ubuntu, and macOS on every push and PR) and updated `.github/workflows/release.yml` with pre-publish test gates.
 
 ---
 
@@ -673,7 +671,7 @@
 ## Top 10 Priority Recommendations
 
 1. **Move OAuth secrets to environment variables** — **[COMPLETED]** (All secrets moved to `.env`)
-2. **Add CI/CD pipeline** — automated testing, building, publishing
+2. **Add CI/CD pipeline** — **[COMPLETED]** (Automated multi-platform testing, building, and publishing via GitHub Actions)
 3. **Split `index.js` into domain-specific IPC handlers** — **[COMPLETED]** (1,219 lines -> 76 lines, modularized under `src/main/handlers/` and `src/main/app/`)
 4. **Split `aiStreamRunner.ts` and `aiPromptBuilder.ts`** — **[COMPLETED]** (Modularized into `streaming/` and `prompt/` + `luminaPromptBuilder.ts`)
 5. **Add IPC payload validation with zod** — **[COMPLETED]** (`src/main/handlers/ipcValidation.ts` + Zod schemas on all handlers)

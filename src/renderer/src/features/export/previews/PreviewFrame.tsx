@@ -11,6 +11,10 @@ export interface PreviewProps {
   error?: string | null
   /** Human-readable label shown in empty states, e.g. "PDF". */
   label?: string
+  /** Base64-encoded PDF binary for native PDF preview */
+  pdfBase64?: string
+  /** Document title */
+  title?: string
   /** Optional badge text (deprecated). */
   badge?: string
   /** Optional secondary badge (deprecated). */

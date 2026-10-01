@@ -6,6 +6,7 @@ import { withRenderedHtml } from './renderWindow'
 export interface ExportPDFPayload {
   title?: string
   content?: string
+  toc?: boolean
 }
 
 export interface ExportPDFResult {
@@ -21,7 +22,100 @@ export interface ExportPDFResult {
  * Exported separately so the export preview dialog can reuse the exact same
  * markup without duplicating styles.
  */
-export function buildPDFDocument(title?: string, htmlBody: string = '', tocHtml: string = ''): string {
+export function buildPDFDocument(
+  title?: string,
+  htmlBody: string = '',
+  tocHtml: string = ''
+): string {
+  const hasMermaid = htmlBody.includes('class="mermaid"')
+  const mermaidScript = hasMermaid
+    ? `
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.3/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'default',
+      themeVariables: { fontSize: '13px' },
+      flowchart: { useMaxWidth: true, htmlLabels: true },
+      sequence: { useMaxWidth: true },
+      gantt: { useMaxWidth: true }
+    });
+
+    function clampSvgSize(svgEl) {
+      try {
+        var vb = svgEl.viewBox && svgEl.viewBox.baseVal;
+        var w0 = vb && vb.width ? vb.width : 0;
+        var h0 = vb && vb.height ? vb.height : 0;
+        if (!w0 || !h0) {
+          var bb = svgEl.getBBox();
+          if (!bb || !bb.width || !bb.height) return;
+          w0 = bb.width;
+          h0 = bb.height;
+          svgEl.setAttribute('viewBox', bb.x + ' ' + bb.y + ' ' + bb.width + ' ' + bb.height);
+        }
+        var MAX_W = 560, MAX_H = 360;
+        var scale = Math.min(MAX_W / w0, MAX_H / h0, 1);
+        svgEl.removeAttribute('style');
+        svgEl.setAttribute('width', Math.round(w0 * scale));
+        svgEl.setAttribute('height', Math.round(h0 * scale));
+        svgEl.style.maxWidth = '100%';
+        svgEl.style.height = 'auto';
+      } catch (e) {}
+    }
+
+    async function renderMermaid() {
+      try {
+        var elements = Array.prototype.slice.call(document.querySelectorAll('.mermaid'));
+        if (elements.length > 0) {
+          await mermaid.run({ nodes: elements, suppressErrors: true });
+        }
+
+        const svgs = document.querySelectorAll('.mermaid svg');
+        svgs.forEach(svgEl => {
+           const shapes = svgEl.querySelectorAll('.node rect, .node circle, .node ellipse, .node polygon, .node path, .mindmap-node rect, .mindmap-node circle, .mindmap-node ellipse, .mindmap-node polygon, .mindmap-node path, .cluster rect, rect.actor, .actor, rect.note, .note, rect.task, .task, rect.labelBox, .labelBox, .pieTitleText, .pieSector, .rect, .labelBkg, .label-container, .activation0, .activation1, .activation2, rect');
+           shapes.forEach(shape => {
+               shape.style.setProperty('fill', 'transparent', 'important');
+               shape.style.setProperty('stroke', '#000000', 'important');
+               shape.style.setProperty('stroke-width', '1px', 'important');
+             });
+           const texts = svgEl.querySelectorAll('.node .label text, .mindmap-node text, .label text, .edgeLabel text, .cluster-label text, text.actor, .actor text, text.noteText, .noteText, text.messageText, .messageText, text.loopText, .loopText, text.taskText, text.labelText, .labelText, .legend text, text, tspan, p, span, div');
+           texts.forEach(text => {
+               text.style.setProperty('color', '#000000', 'important');
+               text.style.setProperty('fill', '#000000', 'important');
+               text.style.setProperty('stroke', 'none', 'important');
+             });
+           const edges = svgEl.querySelectorAll('.edgePath path, .mindmap-edges path, path.link, path.edge, .flowchart-link, path.messageLine0, path.messageLine1, path.loopLine, path.taskLine, .messageLine0, .messageLine1, .edgeLine, .transition');
+           edges.forEach(edge => {
+               edge.style.setProperty('stroke', '#000000', 'important');
+               edge.style.setProperty('stroke-width', '1px', 'important');
+               edge.style.setProperty('fill', 'none', 'important');
+             });
+             const markers = svgEl.querySelectorAll('marker path, marker polygon, marker circle');
+             markers.forEach(marker => {
+               marker.style.setProperty('fill', '#000000', 'important');
+               marker.style.setProperty('stroke', '#000000', 'important');
+             });
+             clampSvgSize(svgEl);
+        });
+
+        document.querySelectorAll('.mermaid').forEach(function (el) {
+          if (el.querySelector('svg')) return;
+          var text = el.textContent || '';
+          if (text && /error|syntax|parse/i.test(text)) {
+            el.innerHTML =
+              '<div class="mermaid-error">Diagram could not be rendered (syntax error)</div>';
+          }
+        });
+      } catch (err) {
+        console.error(err);
+      } finally {
+        document.body.classList.add('mermaid-done');
+      }
+    }
+    window.addEventListener('load', renderMermaid);
+  </script>`
+    : ''
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -47,7 +141,6 @@ export function buildPDFDocument(title?: string, htmlBody: string = '', tocHtml:
       padding: 40px 48px;
       min-height: 100vh;
     }
-    /* Premium scrollbars (iframe preview) */
     html { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.18) transparent; }
     ::-webkit-scrollbar { width: 11px; height: 11px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -59,21 +152,25 @@ export function buildPDFDocument(title?: string, htmlBody: string = '', tocHtml:
     }
     ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); background-clip: padding-box; }
     ::-webkit-scrollbar-corner { background: transparent; }
-    /* Screen (preview) — a flat, crisp paper page on a dark desk */
+    /* Screen (preview) — a crisp, arranged A4 paper sheet on dark desk */
     .page {
-      max-width: 720px;
-      margin: 0 auto;
+      width: 100%;
+      max-width: 760px;
+      min-height: 1060px;
+      margin: 20px auto 36px auto;
       background: #ffffff;
-      padding: 64px 76px;
-      border-radius: 2px;
+      padding: 56px 64px 64px 64px;
+      border-radius: 3px;
       border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: none;
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2);
     }
     @media print {
       html, body { background: #ffffff; }
       body { padding: 0; }
       .page {
+        width: auto;
         max-width: none;
+        min-height: auto;
         margin: 0;
         padding: 0;
         border: none;
@@ -134,7 +231,6 @@ export function buildPDFDocument(title?: string, htmlBody: string = '', tocHtml:
       box-decoration-break: clone;
       -webkit-box-decoration-break: clone;
     }
-    /* Prevent the syntax-highlight theme from painting a second, nested block */
     pre code,
     pre code.hljs,
     code.hljs,
@@ -241,7 +337,6 @@ export function buildPDFDocument(title?: string, htmlBody: string = '', tocHtml:
       border-radius: 6px;
       text-align: center;
     }
-    /* Normalise figure sizing so every diagram/image prints at a consistent scale */
     figure {
       margin: 12pt auto;
       text-align: center;
@@ -311,7 +406,6 @@ export function buildPDFDocument(title?: string, htmlBody: string = '', tocHtml:
       color: #2563eb;
       text-decoration: underline;
     }
-    /* Combined export: multiple notes merged into one document */
     .note-title {
       font-size: 17pt;
       color: #0f172a;
@@ -340,8 +434,8 @@ export function buildPDFDocument(title?: string, htmlBody: string = '', tocHtml:
     }
     @media screen {
       .note[data-page-break='true'] {
-        margin-top: 36pt;
-        padding-top: 24pt;
+        margin-top: 48px;
+        padding-top: 36px;
         border-top: 1px dashed #cbd5e1;
       }
     }
@@ -352,97 +446,7 @@ export function buildPDFDocument(title?: string, htmlBody: string = '', tocHtml:
     ${tocHtml}
     ${htmlBody}
   </article>
-
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.3/dist/mermaid.min.js"></script>
-  <script>
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: 'default',
-      themeVariables: { fontSize: '13px' },
-      flowchart: { useMaxWidth: true, htmlLabels: true },
-      sequence: { useMaxWidth: true },
-      gantt: { useMaxWidth: true }
-    });
-
-    // Clamp every diagram to a consistent, print-friendly size. We size from the
-    // SVG viewBox so oversized graphs shrink proportionally and never dominate
-    // the page (max ~14.8cm wide, ~9.5cm tall), while small ones are left alone.
-    function clampSvgSize(svgEl) {
-      try {
-        var vb = svgEl.viewBox && svgEl.viewBox.baseVal;
-        var w0 = vb && vb.width ? vb.width : 0;
-        var h0 = vb && vb.height ? vb.height : 0;
-        if (!w0 || !h0) {
-          // Some diagram types omit a viewBox — derive one from the geometry.
-          var bb = svgEl.getBBox();
-          if (!bb || !bb.width || !bb.height) return;
-          w0 = bb.width;
-          h0 = bb.height;
-          svgEl.setAttribute('viewBox', bb.x + ' ' + bb.y + ' ' + bb.width + ' ' + bb.height);
-        }
-        var MAX_W = 560, MAX_H = 360;
-        var scale = Math.min(MAX_W / w0, MAX_H / h0, 1);
-        svgEl.removeAttribute('style');
-        svgEl.setAttribute('width', Math.round(w0 * scale));
-        svgEl.setAttribute('height', Math.round(h0 * scale));
-        svgEl.style.maxWidth = '100%';
-        svgEl.style.height = 'auto';
-      } catch (e) {}
-    }
-
-    async function renderMermaid() {
-      try {
-        var elements = Array.prototype.slice.call(document.querySelectorAll('.mermaid'));
-        if (elements.length > 0) {
-          await mermaid.run({ nodes: elements, suppressErrors: true });
-        }
-
-        const svgs = document.querySelectorAll('.mermaid svg');
-        svgs.forEach(svgEl => {
-           const shapes = svgEl.querySelectorAll('.node rect, .node circle, .node ellipse, .node polygon, .node path, .mindmap-node rect, .mindmap-node circle, .mindmap-node ellipse, .mindmap-node polygon, .mindmap-node path, .cluster rect, rect.actor, .actor, rect.note, .note, rect.task, .task, rect.labelBox, .labelBox, .pieTitleText, .pieSector, .rect, .labelBkg, .label-container, .activation0, .activation1, .activation2, rect');
-           shapes.forEach(shape => {
-               shape.style.setProperty('fill', 'transparent', 'important');
-               shape.style.setProperty('stroke', '#000000', 'important');
-               shape.style.setProperty('stroke-width', '1px', 'important');
-             });
-           const texts = svgEl.querySelectorAll('.node .label text, .mindmap-node text, .label text, .edgeLabel text, .cluster-label text, text.actor, .actor text, text.noteText, .noteText, text.messageText, .messageText, text.loopText, .loopText, text.taskText, text.labelText, .labelText, .legend text, text, tspan, p, span, div');
-           texts.forEach(text => {
-               text.style.setProperty('color', '#000000', 'important');
-               text.style.setProperty('fill', '#000000', 'important');
-               text.style.setProperty('stroke', 'none', 'important');
-             });
-           const edges = svgEl.querySelectorAll('.edgePath path, .mindmap-edges path, path.link, path.edge, .flowchart-link, path.messageLine0, path.messageLine1, path.loopLine, path.taskLine, .messageLine0, .messageLine1, .edgeLine, .transition');
-           edges.forEach(edge => {
-               edge.style.setProperty('stroke', '#000000', 'important');
-               edge.style.setProperty('stroke-width', '1px', 'important');
-               edge.style.setProperty('fill', 'none', 'important');
-             });
-             const markers = svgEl.querySelectorAll('marker path, marker polygon, marker circle');
-             markers.forEach(marker => {
-               marker.style.setProperty('fill', '#000000', 'important');
-               marker.style.setProperty('stroke', '#000000', 'important');
-             });
-             clampSvgSize(svgEl);
-        });
-
-        // Any diagram that failed to produce an SVG (bad syntax) is swapped for
-        // a small, tidy notice instead of Mermaid's oversized error text.
-        document.querySelectorAll('.mermaid').forEach(function (el) {
-          if (el.querySelector('svg')) return;
-          var text = el.textContent || '';
-          if (text && /error|syntax|parse/i.test(text)) {
-            el.innerHTML =
-              '<div class="mermaid-error">Diagram could not be rendered (syntax error)</div>';
-          }
-        });
-      } catch (err) {
-        console.error(err);
-      } finally {
-        document.body.classList.add('mermaid-done');
-      }
-    }
-    window.addEventListener('load', renderMermaid);
-  </script>
+  ${mermaidScript}
 </body>
 </html>`
 }
@@ -451,13 +455,18 @@ export function buildPDFDocument(title?: string, htmlBody: string = '', tocHtml:
  * Renders markdown to a full print-ready PDF HTML document (no file I/O).
  * Shared by the exporter and the preview dialog.
  */
-export async function generatePDFHTML(title?: string, content?: string): Promise<string> {
+export async function generatePDFHTML(
+  title?: string,
+  content?: string,
+  opts: { toc?: boolean } = {}
+): Promise<string> {
+  const showToc = opts.toc ?? true
   const { html, tocHtml } = await renderMarkdown(content || '', {
     wikilinkMode: 'link',
     mermaid: true,
-    toc: true
+    toc: showToc
   })
-  return buildPDFDocument(title, html, tocHtml)
+  return buildPDFDocument(title, html, showToc ? tocHtml : '')
 }
 
 /**
@@ -481,7 +490,7 @@ export const handleExportPDF = async (
   payload: ExportPDFPayload
 ): Promise<ExportPDFResult> => {
   try {
-    const { title, content } = payload || {}
+    const { title, content, toc } = payload || {}
     if (!content) throw new Error('No content provided')
 
     // Show save dialog FIRST for immediate user feedback
@@ -495,7 +504,7 @@ export const handleExportPDF = async (
       return { success: false, canceled: true }
     }
 
-    const html = await generatePDFHTML(title, content)
+    const html = await generatePDFHTML(title, content, { toc })
 
     // Render (with Mermaid inlined) in a hidden window, then print to PDF.
     const pdfData = await withRenderedHtml(html, (win) =>

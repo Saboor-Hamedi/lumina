@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { EXPORT_FORMATS, getFormat, type ExportFormat } from './formats'
 import { PREVIEW_COMPONENTS } from './previews'
+import Toggle from '../../components/toggle/Toggle'
 import './css/exportContainer.css'
 
 /** CSS custom properties read from the app to theme the preview iframe. */
@@ -35,20 +36,30 @@ const PREVIEW_THEME_KEYS = [
   'border-subtle'
 ]
 
+import { getTheme } from '../theme/hooks/themeDefinitions'
+
 /** Reads the app's resolved theme tokens so the preview matches the UI. */
-function readThemeTokens(): Record<string, string> | undefined {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return undefined
+function readThemeTokens(): Record<string, string> {
+  const out: Record<string, string> = {}
   try {
-    const cs = getComputedStyle(document.documentElement)
-    const out: Record<string, string> = {}
-    for (const key of PREVIEW_THEME_KEYS) {
-      const value = cs.getPropertyValue(`--${key}`).trim()
-      if (value) out[key] = value
+    const savedThemeId = (typeof localStorage !== 'undefined' && localStorage.getItem('theme-id')) || 'dark'
+    const themeDef = getTheme(savedThemeId)
+    if (themeDef?.colors) {
+      for (const [key, val] of Object.entries(themeDef.colors)) {
+        if (typeof val === 'string' && key.startsWith('--')) {
+          out[key.replace(/^--/, '')] = val
+        }
+      }
     }
-    return out
-  } catch {
-    return undefined
-  }
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      const cs = getComputedStyle(document.documentElement)
+      for (const key of PREVIEW_THEME_KEYS) {
+        const value = cs.getPropertyValue(`--${key}`).trim()
+        if (value) out[key] = value
+      }
+    }
+  } catch {}
+  return out
 }
 
 export interface ExportContainerProps {
@@ -82,14 +93,25 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
 }) => {
   const [format, setFormat] = useState<ExportFormat>(initialFormat)
   const [isMaximized, setIsMaximized] = useState(false)
-  const [previewHtml, setPreviewHtml] = useState('')
+  const [includeToc, setIncludeToc] = useState(true)
+  const [previewData, setPreviewData] = useState<{ html: string; pdfBase64?: string }>({ html: '' })
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
   const [success, setSuccess] = useState<SuccessState | null>(null)
   const [copied, setCopied] = useState(false)
+  const [themeTick, setThemeTick] = useState(0)
   const requestIdRef = useRef(0)
-  const previewCacheRef = useRef<Map<string, string>>(new Map())
+  const previewCacheRef = useRef<Map<string, { html: string; pdfBase64?: string }>>(new Map())
+
+  useEffect(() => {
+    const onThemeChange = () => {
+      previewCacheRef.current.clear()
+      setThemeTick((t) => t + 1)
+    }
+    window.addEventListener('theme-changed', onThemeChange)
+    return () => window.removeEventListener('theme-changed', onThemeChange)
+  }, [])
 
   const activeFormat = useMemo(() => getFormat(format), [format])
   const PreviewComponent = PREVIEW_COMPONENTS[format]
@@ -107,6 +129,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     if (!isOpen) return
     setFormat(initialFormat)
     setIsMaximized(false)
+    setIncludeToc(true)
     setPreviewError(null)
     setSuccess(null)
     setExporting(false)
@@ -119,18 +142,18 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     setSuccess(null)
   }, [format])
 
-  // Generate the preview whenever the dialog opens or the format changes.
+  // Generate the preview whenever the dialog opens, format changes, or TOC is toggled.
   useEffect(() => {
     if (!isOpen || success) return
     if (!content) {
-      setPreviewHtml('')
+      setPreviewData({ html: '' })
       setPreviewError(null)
       return
     }
 
-    const cacheKey = format
+    const cacheKey = `${format}:${includeToc ? 'toc' : 'notoc'}`
     if (previewCacheRef.current.has(cacheKey)) {
-      setPreviewHtml(previewCacheRef.current.get(cacheKey)!)
+      setPreviewData(previewCacheRef.current.get(cacheKey)!)
       setPreviewLoading(false)
       setPreviewError(null)
       return
@@ -139,7 +162,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     const api = (window as any).api
     if (!api?.exportPreview) {
       setPreviewLoading(false)
-      setPreviewHtml('')
+      setPreviewData({ html: '' })
       setPreviewError('Preview is unavailable in this build.')
       return
     }
@@ -148,36 +171,58 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     setPreviewLoading(true)
     setPreviewError(null)
 
-    const delay = format === 'markdown' || format === 'text' ? 0 : 80
+    let isMounted = true
 
-    const handle = setTimeout(async () => {
-      try {
-        const res = await api.exportPreview({
-          format,
+    api.exportPreview({
+      format,
+      title,
+      content,
+      theme: readThemeTokens(),
+      toc: includeToc
+    }).then((res: any) => {
+      if (!isMounted || requestId !== requestIdRef.current) return
+      if (!res || typeof res.html !== 'string') {
+        throw new Error('Preview generation returned no content')
+      }
+      const data = { html: res.html }
+      previewCacheRef.current.set(cacheKey, data)
+      setPreviewData(data)
+      if (res.truncated) {
+        setPreviewError('Preview truncated for performance; the exported file is complete.')
+      }
+      setPreviewLoading(false)
+    }).catch((err: any) => {
+      if (!isMounted || requestId !== requestIdRef.current) return
+      console.error('[ExportContainer] Preview failed:', err)
+      setPreviewError(err?.message || 'Failed to generate preview.')
+      setPreviewLoading(false)
+    })
+
+    // Pre-warm remaining formats in background for zero-latency instant switching
+    const otherFormats: ExportFormat[] = (['pdf', 'docs', 'html', 'markdown', 'text'] as ExportFormat[]).filter(
+      (f) => f !== format
+    )
+    for (const f of otherFormats) {
+      const otherKey = `${f}:${includeToc ? 'toc' : 'notoc'}`
+      if (!previewCacheRef.current.has(otherKey)) {
+        api.exportPreview({
+          format: f,
           title,
           content,
-          theme: readThemeTokens()
-        })
-        if (requestId !== requestIdRef.current) return
-        if (!res || typeof res.html !== 'string') {
-          throw new Error('Preview generation returned no content')
-        }
-        previewCacheRef.current.set(cacheKey, res.html)
-        setPreviewHtml(res.html)
-        if (res.truncated) {
-          setPreviewError('Preview truncated for performance; the exported file is complete.')
-        }
-      } catch (err: any) {
-        if (requestId !== requestIdRef.current) return
-        console.error('[ExportContainer] Preview failed:', err)
-        setPreviewError(err?.message || 'Failed to generate preview.')
-      } finally {
-        if (requestId === requestIdRef.current) setPreviewLoading(false)
+          theme: readThemeTokens(),
+          toc: includeToc
+        }).then((res: any) => {
+          if (res?.html) {
+            previewCacheRef.current.set(otherKey, { html: res.html })
+          }
+        }).catch(() => {})
       }
-    }, delay)
+    }
 
-    return () => clearTimeout(handle)
-  }, [isOpen, format, title, content, success])
+    return () => {
+      isMounted = false
+    }
+  }, [isOpen, format, title, content, success, includeToc, themeTick])
 
   const handleExport = useCallback(async () => {
     const api = (window as any).api
@@ -191,7 +236,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
 
     setExporting(true)
     try {
-      const res = await handler({ title, content, language: 'markdown' })
+      const res = await handler({ title, content, language: 'markdown', toc: includeToc })
       if (res?.success) {
         setSuccess({ filePath: res.filePath || '', format })
         showToast?.(`${activeFormat.label} exported successfully.`, 'success')
@@ -206,7 +251,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     } finally {
       setExporting(false)
     }
-  }, [activeFormat, title, content, format, showToast])
+  }, [activeFormat, title, content, format, includeToc, showToast])
 
   const handleCopyPath = useCallback(async () => {
     if (!success?.filePath) return
@@ -389,8 +434,12 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
                     aria-pressed={format === f.id}
                     onClick={() => setFormat(f.id)}
                     disabled={exporting}
+                    style={{ '--card-accent': f.accent } as React.CSSProperties}
                   >
-                    <span className="export-format-icon" style={{ color: f.accent }}>
+                    <span
+                      className="export-format-icon"
+                      style={{ color: format === f.id ? f.accent : 'var(--text-muted)' }}
+                    >
                       {f.icon}
                     </span>
                     <span className="export-format-text">
@@ -402,12 +451,32 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
                     </span>
                   </button>
                 ))}
+
+                {(format === 'pdf' || format === 'docs' || format === 'html') && (
+                  <div className="export-options-group">
+                    <span className="export-formats-heading">Options</span>
+                    <div className="export-option-row" onClick={() => setIncludeToc((prev) => !prev)}>
+                      <div className="export-option-label">
+                        <span className="export-option-title">Include Table of Contents</span>
+                        <span className="export-option-desc">Add navigation index at start</span>
+                      </div>
+                      <Toggle
+                        checked={includeToc}
+                        onCheckedChange={setIncludeToc}
+                        disabled={exporting}
+                        ariaLabel="Include Table of Contents"
+                      />
+                    </div>
+                  </div>
+                )}
               </aside>
 
               <section className="export-preview-pane" aria-label="Preview">
                 {hasContent ? (
                   <PreviewComponent
-                    html={previewHtml}
+                    html={previewData.html}
+                    pdfBase64={previewData.pdfBase64}
+                    title={title}
                     loading={previewLoading}
                     error={previewError}
                   />

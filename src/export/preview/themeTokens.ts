@@ -118,7 +118,7 @@ export function basePreviewCss(): string {
       line-height: 1.7;
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizeLegibility;
-      padding: 36px 24px;
+      padding: 24px;
       min-height: 100vh;
       display: flex;
       flex-direction: column;

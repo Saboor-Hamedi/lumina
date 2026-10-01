@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { EXPORT_FORMATS, getFormat, type ExportFormat } from '../formats'
 import { PREVIEW_COMPONENTS } from '../previews'
+import Toggle from '../../../components/toggle/Toggle'
 import '../css/exportContainer.css'
 import '../css/batchExportDialog.css'
 
@@ -37,6 +38,8 @@ export interface BatchNote {
 export interface BatchExportDialogProps {
   isOpen: boolean
   notes: BatchNote[]
+  /** Optional folder or collection name used for the combined document title */
+  folderName?: string
   /** Format preselected when the dialog opens. Defaults to PDF. */
   initialFormat?: BatchFormat
   onClose: () => void
@@ -75,19 +78,29 @@ const PREVIEW_THEME_KEYS = [
   'border-subtle'
 ]
 
-function readThemeTokens(): Record<string, string> | undefined {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return undefined
+import { getTheme } from '../../theme/hooks/themeDefinitions'
+
+function readThemeTokens(): Record<string, string> {
+  const out: Record<string, string> = {}
   try {
-    const cs = getComputedStyle(document.documentElement)
-    const out: Record<string, string> = {}
-    for (const key of PREVIEW_THEME_KEYS) {
-      const value = cs.getPropertyValue(`--${key}`).trim()
-      if (value) out[key] = value
+    const savedThemeId = (typeof localStorage !== 'undefined' && localStorage.getItem('theme-id')) || 'dark'
+    const themeDef = getTheme(savedThemeId)
+    if (themeDef?.colors) {
+      for (const [key, val] of Object.entries(themeDef.colors)) {
+        if (typeof val === 'string' && key.startsWith('--')) {
+          out[key.replace(/^--/, '')] = val
+        }
+      }
     }
-    return out
-  } catch {
-    return undefined
-  }
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      const cs = getComputedStyle(document.documentElement)
+      for (const key of PREVIEW_THEME_KEYS) {
+        const value = cs.getPropertyValue(`--${key}`).trim()
+        if (value) out[key] = value
+      }
+    }
+  } catch {}
+  return out
 }
 
 /**
@@ -101,6 +114,7 @@ function readThemeTokens(): Record<string, string> | undefined {
 export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
   isOpen,
   notes,
+  folderName = 'Combined Export',
   initialFormat = 'pdf',
   onClose,
   showToast
@@ -117,8 +131,18 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
   const [previewHtml, setPreviewHtml] = useState('')
   const [previewLoading, setPreviewLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [themeTick, setThemeTick] = useState(0)
   const unsubscribeRef = useRef<(() => void) | null>(null)
   const requestIdRef = useRef(0)
+
+  useEffect(() => {
+    const onThemeChange = () => {
+      previewCacheRef.current.clear()
+      setThemeTick((t) => t + 1)
+    }
+    window.addEventListener('theme-changed', onThemeChange)
+    return () => window.removeEventListener('theme-changed', onThemeChange)
+  }, [])
 
   const count = notes?.length || 0
   const activeFormat = useMemo(() => getFormat(format), [format])
@@ -152,7 +176,9 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
       .join('\n\n\n')
   }, [notes, mode, selectedNoteIndex])
 
-  const previewCacheRef = useRef<Map<string, string>>(new Map())
+  const [includeToc, setIncludeToc] = useState(true)
+  const [previewData, setPreviewData] = useState<{ html: string; pdfBase64?: string }>({ html: '' })
+  const previewCacheRef = useRef<Map<string, { html: string; pdfBase64?: string }>>(new Map())
 
   // Reset transient state each time the dialog opens.
   useEffect(() => {
@@ -162,6 +188,7 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
       setIsMaximized(false)
       setShowNotesList(false)
       setSelectedNoteIndex(0)
+      setIncludeToc(true)
       setExporting(false)
       setProgress(null)
       setResult(null)
@@ -183,13 +210,13 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
     if (!isOpen || result) return
     const api = (window as any).api
     if (!api?.exportPreview || !previewMarkdown) {
-      setPreviewHtml('')
+      setPreviewData({ html: '' })
       return
     }
 
-    const cacheKey = `${format}:${mode}:${mode === 'separate' ? selectedNoteIndex : 'all'}`
+    const cacheKey = `${format}:${mode}:${mode === 'separate' ? selectedNoteIndex : 'all'}:${includeToc ? 'toc' : 'notoc'}`
     if (previewCacheRef.current.has(cacheKey)) {
-      setPreviewHtml(previewCacheRef.current.get(cacheKey)!)
+      setPreviewData(previewCacheRef.current.get(cacheKey)!)
       setPreviewLoading(false)
       return
     }
@@ -197,34 +224,68 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
     const requestId = ++requestIdRef.current
     setPreviewLoading(true)
 
-    const delay = format === 'markdown' || format === 'text' ? 0 : 80
+    const previewTitle =
+      mode === 'combined'
+        ? folderName || 'Combined Export'
+        : notes?.[selectedNoteIndex]?.title || notes?.[0]?.title || 'Untitled'
 
-    const handle = setTimeout(async () => {
-      try {
-        const previewTitle =
-          mode === 'combined'
-            ? 'Combined Export'
-            : notes?.[selectedNoteIndex]?.title || notes?.[0]?.title || 'Untitled'
+    const payloadNotes =
+      mode === 'combined'
+        ? (notes || []).map((n) => ({
+            id: n.id,
+            title: n.title || 'Untitled',
+            content: n.content ?? n.code ?? ''
+          }))
+        : undefined
 
-        const res = await api.exportPreview({
-          format,
+    let isMounted = true
+
+    api.exportPreview({
+      format,
+      title: previewTitle,
+      content: previewMarkdown,
+      theme: readThemeTokens(),
+      toc: includeToc,
+      notes: payloadNotes
+    }).then((res: any) => {
+      if (!isMounted || requestId !== requestIdRef.current) return
+      if (res && typeof res.html === 'string') {
+        const data = { html: res.html }
+        previewCacheRef.current.set(cacheKey, data)
+        setPreviewData(data)
+      }
+      setPreviewLoading(false)
+    }).catch(() => {
+      if (!isMounted || requestId !== requestIdRef.current) return
+      setPreviewLoading(false)
+    })
+
+    // Pre-warm remaining formats for instant 0ms switching
+    const otherFormats: BatchFormat[] = (['pdf', 'docs', 'html', 'markdown', 'text'] as BatchFormat[]).filter(
+      (f) => f !== format
+    )
+    for (const f of otherFormats) {
+      const otherKey = `${f}:${mode}:${mode === 'separate' ? selectedNoteIndex : 'all'}:${includeToc ? 'toc' : 'notoc'}`
+      if (!previewCacheRef.current.has(otherKey)) {
+        api.exportPreview({
+          format: f,
           title: previewTitle,
           content: previewMarkdown,
-          theme: readThemeTokens()
-        })
-        if (requestId !== requestIdRef.current) return
-        if (res && typeof res.html === 'string') {
-          previewCacheRef.current.set(cacheKey, res.html)
-          setPreviewHtml(res.html)
-        }
-      } catch {
-        /* preview is best-effort */
-      } finally {
-        if (requestId === requestIdRef.current) setPreviewLoading(false)
+          theme: readThemeTokens(),
+          toc: includeToc,
+          notes: payloadNotes
+        }).then((res: any) => {
+          if (res?.html) {
+            previewCacheRef.current.set(otherKey, { html: res.html })
+          }
+        }).catch(() => {})
       }
-    }, delay)
-    return () => clearTimeout(handle)
-  }, [isOpen, format, mode, previewMarkdown, result, notes, selectedNoteIndex])
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [isOpen, format, mode, previewMarkdown, result, notes, selectedNoteIndex, includeToc, folderName, themeTick])
 
   // Subscribe to batch progress while exporting.
   useEffect(() => {
@@ -276,7 +337,12 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
     setProgress({ current: 0, total: payloadNotes.length, title: '', phase: 'start' })
 
     try {
-      const res = await api[method]({ notes: payloadNotes, format })
+      const res = await api[method]({
+        notes: payloadNotes,
+        format,
+        toc: includeToc,
+        title: folderName
+      })
       if (res?.canceled) {
         setExporting(false)
         setProgress(null)
@@ -574,8 +640,12 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                     aria-pressed={format === f.id}
                     onClick={() => setFormat(f.id)}
                     disabled={exporting}
+                    style={{ '--card-accent': f.accent } as React.CSSProperties}
                   >
-                    <span className="export-format-icon" style={{ color: f.accent }}>
+                    <span
+                      className="export-format-icon"
+                      style={{ color: format === f.id ? f.accent : 'var(--text-muted)' }}
+                    >
                       {f.icon}
                     </span>
                     <span className="export-format-text">
@@ -587,10 +657,34 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                     </span>
                   </button>
                 ))}
+
+                {(format === 'pdf' || format === 'docs' || format === 'html') && (
+                  <div className="export-options-group">
+                    <span className="export-formats-heading">Options</span>
+                    <div className="export-option-row" onClick={() => setIncludeToc((prev) => !prev)}>
+                      <div className="export-option-label">
+                        <span className="export-option-title">Include Table of Contents</span>
+                        <span className="export-option-desc">Add navigation index at start</span>
+                      </div>
+                      <Toggle
+                        checked={includeToc}
+                        onCheckedChange={setIncludeToc}
+                        disabled={exporting}
+                        ariaLabel="Include Table of Contents"
+                      />
+                    </div>
+                  </div>
+                )}
               </aside>
 
               <section className="export-preview-pane" aria-label="Preview">
-                <PreviewComponent html={previewHtml} loading={previewLoading} error={error} />
+                <PreviewComponent
+                  html={previewData.html}
+                  pdfBase64={previewData.pdfBase64}
+                  title={mode === 'separate' ? activeNoteTitle : folderName}
+                  loading={previewLoading}
+                  error={error}
+                />
                 {exporting && (
                   <div className="batch-progress" aria-live="polite">
                     <div className="batch-progress-label">
@@ -630,7 +724,7 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                   {exporting
                     ? 'Exporting…'
                     : mode === 'combined'
-                      ? `Export as 1 ${format.toUpperCase()}`
+                      ? `Export as ${format === 'docs' ? 'DOCX' : format.toUpperCase()}`
                       : `Export ${count} Files`}
                 </span>
               </button>

@@ -46,7 +46,8 @@ export async function buildPreview(
   format: string,
   title?: string,
   content?: string,
-  theme?: unknown
+  theme?: unknown,
+  opts: { toc?: boolean } = {}
 ): Promise<BuildPreviewResult> {
   if (!SUPPORTED_PREVIEW_FORMATS.includes(format as SupportedPreviewFormat)) {
     throw new Error(`Unsupported preview format: ${format}`)
@@ -57,7 +58,7 @@ export async function buildPreview(
     case 'html':
     case 'pdf':
     case 'docs':
-      html = await buildDocumentPreview(format, title, content, theme)
+      html = await buildDocumentPreview(format, title, content, theme, opts)
       break
     case 'markdown':
     case 'markdown-bundle':

@@ -255,36 +255,36 @@
   color: var(--text-faint);
 }
 
-/* Rich format card */
+/* Rich format card (subtle & ergonomic) */
 .export-format-card {
   display: flex;
   align-items: flex-start;
   gap: 11px;
   width: 100%;
-  padding: 11px 12px;
+  padding: 9px 11px;
   text-align: left;
   border: 1px solid transparent;
-  border-radius: 10px;
-  background: var(--bg-panel);
+  border-radius: 9px;
+  background: transparent;
   color: var(--text-main);
   cursor: pointer;
   transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease;
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .export-format-card:hover:not(:disabled) {
   background: var(--bg-active);
+  border-color: rgba(255, 255, 255, 0.04);
 }
 
 .export-format-card.active {
-  background: color-mix(in srgb, var(--text-accent) 8%, transparent);
-  border-color: var(--text-accent);
+  background: color-mix(in srgb, var(--card-accent, var(--text-accent)) 8%, transparent);
+  border-color: color-mix(in srgb, var(--card-accent, var(--text-accent)) 38%, transparent);
 }
 
 .export-format-card:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
@@ -292,11 +292,18 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: var(--bg-active);
+  width: 32px;
+  height: 32px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-card);
   flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.export-format-card.active .export-format-icon {
+  background: color-mix(in srgb, var(--card-accent, var(--text-accent)) 14%, transparent);
+  border-color: color-mix(in srgb, var(--card-accent, var(--text-accent)) 32%, transparent);
 }
 
 .export-format-text {
@@ -316,32 +323,78 @@
 }
 
 .export-format-title {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-main);
 }
 
 .export-format-ext-pill {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 600;
   font-family: var(--font-mono, monospace);
-  padding: 1px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.05);
   color: var(--text-muted);
   border: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
 .export-format-card.active .export-format-ext-pill {
-  background: color-mix(in srgb, var(--text-accent) 20%, transparent);
-  color: var(--text-accent);
-  border-color: color-mix(in srgb, var(--text-accent) 40%, transparent);
+  background: color-mix(in srgb, var(--card-accent, var(--text-accent)) 16%, transparent);
+  color: var(--card-accent, var(--text-accent));
+  border-color: color-mix(in srgb, var(--card-accent, var(--text-accent)) 32%, transparent);
 }
 
 .export-format-desc {
   font-size: 11.5px;
   line-height: 1.4;
+  color: var(--text-muted);
+}
+
+/* ---- Document Options & Toggle Switch ---- */
+.export-options-group {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.export-option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.export-option-row:hover {
+  background: var(--bg-active);
+  border-color: var(--border-subtle);
+}
+
+.export-option-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.export-option-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.export-option-desc {
+  font-size: 10.5px;
   color: var(--text-muted);
 }
 
