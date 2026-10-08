@@ -124,6 +124,9 @@ export default defineConfig(({ mode }) => ({
     plugins: [externalizeDepsPlugin()]
   },
   renderer: {
+    worker: {
+      format: 'es'
+    },
     resolve: {
       extensions: ['.ts', '.tsx', '.mjs', '.js', '.jsx', '.json'],
       alias: {
