@@ -45,6 +45,7 @@ export interface UseContextMenuProps {
 }
 
 export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
+  const effectiveType = type === 'folder' && !item ? 'body' : type
   const { saveSnippet, clipboard, setClipboard, snippets, folderColors, setFolderColor, loadWorkspace } =
     useWorkspaceStore(
       useShallow((state: any) => ({
@@ -68,26 +69,26 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
   const handleCopy = useCallback(
     (e?: React.MouseEvent) => {
       e?.stopPropagation()
-      if (type === 'file' && item) {
+      if (effectiveType === 'file' && item) {
         setClipboard({ action: 'copy', item })
         callbacks.onClose?.()
-      } else if (type === 'folder' && item) {
+      } else if (effectiveType === 'folder' && item) {
         setClipboard({ action: 'copy', item: { itemType: 'folder', folderId: item } })
         callbacks.onClose?.()
       }
     },
-    [type, item, setClipboard, callbacks]
+    [effectiveType, item, setClipboard, callbacks]
   )
 
   const handleCut = useCallback(
     (e?: React.MouseEvent) => {
       e?.stopPropagation()
-      if (type === 'file' && item) {
+      if (effectiveType === 'file' && item) {
         setClipboard({ action: 'cut', item })
         callbacks.onClose?.()
       }
     },
-    [type, item, setClipboard, callbacks]
+    [effectiveType, item, setClipboard, callbacks]
   )
 
   const handlePaste = useCallback(
@@ -96,7 +97,7 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
       if (!clipboard?.item) return
 
       try {
-        const targetFolderId = type === 'folder' ? item : type === 'file' ? item.folderId : null
+        const targetFolderId = effectiveType === 'folder' ? item : effectiveType === 'file' ? item.folderId : null
 
         if (clipboard.action === 'copy') {
           const generateId = () => {
@@ -131,11 +132,11 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
       }
       callbacks.onClose?.()
     },
-    [clipboard, type, item, snippets, saveSnippet, setClipboard, callbacks]
+    [clipboard, effectiveType, item, snippets, saveSnippet, setClipboard, callbacks]
   )
 
   const handleDefaultImport = useCallback(async () => {
-    const targetFolderId = type === 'folder' ? item : type === 'file' ? item?.folderId : null
+    const targetFolderId = effectiveType === 'folder' ? item : effectiveType === 'file' ? item?.folderId : null
     const input = document.createElement('input')
     input.type = 'file'
     input.multiple = true
@@ -176,13 +177,13 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
     input.click()
     setTimeout(() => input.remove(), 1000)
     callbacks.onClose?.()
-  }, [type, item, saveSnippet, loadWorkspace, callbacks])
+  }, [effectiveType, item, saveSnippet, loadWorkspace, callbacks])
 
   const colorPickerOption = useMemo(() => {
     let currentCol: string | null = null
-    if (type === 'file' && item) {
+    if (effectiveType === 'file' && item) {
       currentCol = item.color || null
-    } else if (type === 'folder' && item) {
+    } else if (effectiveType === 'folder' && item) {
       currentCol = folderColors[item] || null
     }
 
@@ -196,7 +197,7 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
     ]
 
     return {
-      label: 'Theme',
+      label: 'Background',
       icon: <Palette size={14} />,
       children: colors.map((c) => ({
         id: c.id || 'default',
@@ -214,20 +215,20 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
         ),
         isActive: () => currentCol === c.id,
         onClick: async () => {
-          if (type === 'file' && item) {
+          if (effectiveType === 'file' && item) {
             await saveSnippet({ ...item, color: c.id })
-          } else if (type === 'folder' && item) {
+          } else if (effectiveType === 'folder' && item) {
             setFolderColor(item, c.id)
           }
           callbacks.onClose?.()
         }
       }))
     }
-  }, [type, item, folderColors, saveSnippet, setFolderColor, callbacks])
+  }, [effectiveType, item, folderColors, saveSnippet, setFolderColor, callbacks])
 
   const options = useMemo(() => {
     // ── File / Note Menu ────────────────────────────────────────────────────
-    if (type === 'file') {
+    if (effectiveType === 'file') {
       return [
         {
           label: 'Open',
@@ -269,6 +270,12 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
           shortcut: 'Ctrl+C',
           icon: <Copy size={14} />,
           onClick: handleCopy
+        },
+        {
+          label: 'Cut',
+          shortcut: 'Ctrl+X',
+          icon: <Scissors size={14} />,
+          onClick: handleCut
         },
         {
           label: 'Paste',
@@ -353,7 +360,7 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
           }
         },
         {
-          label: 'Close Note',
+          label: 'Close',
           icon: <X size={14} />,
           onClick: () => {
             callbacks.onCloseNote?.()
@@ -364,10 +371,10 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
     }
 
     // ── Folder Menu ─────────────────────────────────────────────────────────
-    if (type === 'folder') {
+    if (effectiveType === 'folder') {
       return [
         {
-          label: 'New File',
+          label: 'New Note',
           shortcut: 'Ctrl+N',
           icon: <FilePlus size={14} />,
           onClick: () => {
@@ -449,7 +456,7 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
         },
         { type: 'divider' },
         {
-          label: 'Delete Folder',
+          label: 'Delete',
           shortcut: 'Ctrl+Shift+D',
           icon: <Trash2 size={14} />,
           danger: true,
@@ -462,10 +469,10 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
     }
 
     // ── Body / Root Background Menu ─────────────────────────────────────────
-    if (type === 'body') {
+    if (effectiveType === 'body') {
       return [
         {
-          label: 'New File',
+          label: 'New Note',
           shortcut: 'Ctrl+N',
           icon: <FilePlus size={14} />,
           onClick: () => {
@@ -518,10 +525,11 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
 
     return []
   }, [
-    type,
+    effectiveType,
     item,
     clipboard,
     handleCopy,
+    handleCut,
     handlePaste,
     handleDefaultImport,
     callbacks,

@@ -9,9 +9,9 @@
     "format": "prettier --write .",
     "lint": "eslint .",
     "start": "electron-vite preview",
-    "predev": "node scripts/ensure-rust-core.mjs",
+    "predev": "node scripts/ensure-rust-core.mjs && node scripts/ensure-transformers.mjs && node scripts/ensure-electron.mjs",
     "dev": "electron-vite dev",
-    "prebuild": "node scripts/ensure-rust-core.mjs --release",
+    "prebuild": "node scripts/ensure-rust-core.mjs --release && node scripts/ensure-transformers.mjs && node scripts/ensure-electron.mjs",
     "build": "electron-vite build",
     "build:rust": "npx napi build --platform --release --cwd crates/lumina_core",
     "build:rust:debug": "npx napi build --platform --cwd crates/lumina_core",
@@ -93,7 +93,7 @@
     "d3-force": "^3.0.0",
     "dexie": "^4.2.1",
     "dotenv-cli": "^11.0.0",
-    "electron": "^39.2.4",
+    "electron": "^39.8.10",
     "electron-builder": "^26.4.0",
     "electron-vite": "^4.0.1",
     "eslint": "^9.36.0",
@@ -140,5 +140,8 @@
         "repo": "lumina"
       }
     ]
+  },
+  "allowScripts": {
+    "electron@39.8.10": true
   }
 }

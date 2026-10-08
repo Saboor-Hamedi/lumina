@@ -81,6 +81,13 @@ export function useExplorerOperations({
   const loadWorkspace = useWorkspaceStore((state) => state.loadWorkspace)
 
   const [expandedFolders, setExpandedFoldersRaw] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('lumina-expanded-folders')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) return new Set(parsed)
+      }
+    } catch {}
     return new Set(Array.isArray(expandedFoldersSetting) ? expandedFoldersSetting : [])
   })
   const [collapsedDuringSearch, setCollapsedDuringSearch] = useState<Set<string>>(() => new Set())
@@ -96,6 +103,9 @@ export function useExplorerOperations({
 
     expandedFoldersRef.current = nextSet
     setExpandedFoldersRaw(nextSet)
+    try {
+      localStorage.setItem('lumina-expanded-folders', JSON.stringify(nextArr))
+    } catch {}
     markExplorerPerf('folder-state-update', { expandedFolderCount: nextSet.size, scheduled: false })
     if (persistTimerRef.current) clearTimeout(persistTimerRef.current)
     persistTimerRef.current = setTimeout(() => {
@@ -111,6 +121,9 @@ export function useExplorerOperations({
         persistTimerRef.current = null
       }
       const current = Array.from(expandedFoldersRef.current || [])
+      try {
+        localStorage.setItem('lumina-expanded-folders', JSON.stringify(current))
+      } catch {}
       useSettingsStore.getState().updateSetting('expandedFolders', current)
     }
 

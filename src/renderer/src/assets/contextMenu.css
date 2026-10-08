@@ -1,33 +1,28 @@
 /* 
  * ============ CONTEXT MENU SYSTEM ============
- * Controls the styling for all Context Menus across Lumina.
- * Sleek, modern, glassmorphic floating menu with refined shadows and typography.
+ * Precision, structural context menu matching bugs.md specification.
+ * Sleek, opaque surface, 3-column architectural grid, 1px sharp borders.
  */
 
 .context-menu {
   position: fixed;
-  min-width: 210px;
-  background: color-mix(in srgb, var(--bg-panel, #1e2029) 92%, transparent);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid color-mix(in srgb, var(--border-dim, rgba(255, 255, 255, 0.1)) 70%, transparent);
-  border-radius: 10px;
-  padding: 5px;
+  min-width: 220px;
+  background: var(--bg-panel, #1e1e2e);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 4px;
   z-index: 10000;
-  animation: menuAppear 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: menuAppear 0.1s ease-out forwards;
   box-shadow:
-    0 10px 28px -6px rgba(0, 0, 0, 0.28),
-    0 4px 10px -2px rgba(0, 0, 0, 0.16),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-  will-change: transform, opacity;
-  transform-origin: top left;
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 1px 3px rgba(0, 0, 0, 0.2);
   user-select: none;
 }
 
 @keyframes menuAppear {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(-4px);
+    transform: scale(0.98) translateY(-2px);
   }
   to {
     opacity: 1;
@@ -37,63 +32,57 @@
 
 .submenu {
   position: absolute !important;
-  top: -5px;
+  top: -4px;
   left: 100% !important;
   margin: 0 !important;
-  transform: translateX(6px);
+  transform: translateX(4px);
 }
 
-/* Invisible bridge to prevent hover loss across the gap */
 .submenu::before {
   content: "";
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -16px;
-  width: 16px;
+  left: -12px;
+  width: 12px;
 }
 
 .submenu.flip-left {
   left: auto !important;
   right: 100% !important;
-  transform: translateX(-6px);
+  transform: translateX(-4px);
 }
 
 .submenu.flip-left::before {
   left: auto;
-  right: -16px;
+  right: -12px;
 }
 
+/* 3-Column Grid Layout: Icon (20px), Label (1fr), Shortcut (auto) */
 .menu-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  padding: 6.5px 10px;
-  border-radius: 7px;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--text-muted, #94a3b8);
-  cursor: pointer;
-  transition: background 0.08s ease, color 0.08s ease, transform 0.06s ease;
-  margin: 1.5px 0;
   gap: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-main, #e2e8f0);
+  cursor: pointer;
+  transition: background 0.1s ease-out, color 0.1s ease-out;
+  position: relative;
+  text-decoration: none;
 }
 
 .menu-item:hover,
 .menu-item.hovered {
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
-  color: var(--text-main, #f8fafc);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
 }
 
-.menu-item:hover .menu-icon-left,
-.menu-item.hovered .menu-icon-left {
-  color: var(--text-main, #f8fafc) !important;
-}
-
-.menu-item:hover .menu-submenu-arrow,
-.menu-item.hovered .menu-submenu-arrow {
-  color: var(--text-main, #f8fafc) !important;
-  transform: translateX(1.5px);
+.menu-item:active {
+  background: rgba(255, 255, 255, 0.09);
 }
 
 .menu-item.disabled {
@@ -102,73 +91,96 @@
   pointer-events: none;
 }
 
-.menu-label {
-  flex: 1;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-}
-
-.menu-icon-left {
+/* Column 1: Fixed 20px Icon */
+.menu-col-icon {
+  width: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
-  color: var(--text-faint, #64748b);
-  transition: color 0.08s ease;
+  color: var(--text-muted, #94a3b8);
   flex-shrink: 0;
 }
 
-.menu-icon-right {
-  opacity: 0.8;
-  color: var(--text-accent, var(--primary, #818cf8));
+.menu-item:hover .menu-col-icon,
+.menu-item.hovered .menu-col-icon {
+  color: #ffffff;
+}
+
+/* Column 2: Flexible Label */
+.menu-label {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Column 3: Right-aligned Shortcut */
+.menu-col-shortcut {
   display: flex;
   align-items: center;
-  flex-shrink: 0;
-}
-
-.menu-submenu-arrow {
-  transition: transform 0.12s ease, color 0.08s ease;
-  flex-shrink: 0;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-left: auto;
 }
 
 .menu-shortcut-wrap {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
 }
 
 .menu-shortcut {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 400;
-  font-family: inherit;
   color: var(--text-faint, #64748b);
-  padding: 0 2px;
-  border-radius: 0;
+  padding: 0;
   background: transparent;
   border: none;
   line-height: 1.2;
-  letter-spacing: 0.2px;
+  white-space: nowrap;
+}
+
+.menu-shortcut-plus {
+  font-size: 10px;
+  color: var(--text-faint, #64748b);
 }
 
 .menu-item:hover .menu-shortcut,
-.menu-item.hovered .menu-shortcut {
+.menu-item.hovered .menu-shortcut,
+.menu-item:hover .menu-shortcut-plus,
+.menu-item.hovered .menu-shortcut-plus {
   color: var(--text-muted, #94a3b8);
-  background: transparent;
 }
 
+.menu-submenu-arrow,
+.menu-check {
+  color: var(--text-faint, #64748b);
+  flex-shrink: 0;
+  transition: transform 0.1s ease-out;
+}
+
+.menu-item:hover .menu-submenu-arrow,
+.menu-item.hovered .menu-submenu-arrow {
+  color: #ffffff;
+  transform: translateX(1px);
+}
+
+/* Dividers */
 .menu-divider {
   height: 1px;
-  background: color-mix(in srgb, var(--border-dim, rgba(255, 255, 255, 0.08)) 70%, transparent);
-  margin: 4px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 6px 8px;
 }
 
+/* Destructive / Danger Item (e.g. Delete Folder / Delete Note) */
 .menu-item.danger {
-  color: var(--text-danger, #f87171);
+  color: #ef4444;
 }
 
-.menu-item.danger .menu-icon-left {
-  color: var(--text-danger, #f87171) !important;
+.menu-item.danger .menu-col-icon {
+  color: #ef4444;
 }
 
 .menu-item.danger:hover,
@@ -177,7 +189,7 @@
   color: #ef4444;
 }
 
-.menu-item.danger:hover .menu-icon-left,
-.menu-item.danger.hovered .menu-icon-left {
-  color: #ef4444 !important;
+.menu-item.danger:hover .menu-col-icon,
+.menu-item.danger.hovered .menu-col-icon {
+  color: #ef4444;
 }

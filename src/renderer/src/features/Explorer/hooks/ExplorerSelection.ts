@@ -264,17 +264,6 @@ export function useExplorerSelection({
     if (idx !== -1) {
       // Only update selectedIndex if it actually changed (avoids cascading re-renders)
       setSelectedIndex((prev) => (prev === idx ? prev : idx))
-
-      if (lastScrolledSnippetRef.current !== selectedSnippetId) {
-        lastScrolledSnippetRef.current = selectedSnippetId
-
-        // skipNextScrollRef is set synchronously by handleSelect when the user
-        // clicks a note in the explorer — no time-race, 100% reliable.
-        if (!skipNextScrollRef.current) {
-          virtuosoRef.current?.scrollToIndex({ index: idx, align: 'nearest' })
-        }
-        skipNextScrollRef.current = false
-      }
     }
   }, [selectedSnippetId, flatTree, virtuosoRef])
 
@@ -308,7 +297,7 @@ export function useExplorerSelection({
       // Mark that this selection came from an explorer click — effect will skip scrollToIndex
       skipNextScrollRef.current = true
       lastScrolledSnippetRef.current = snippet.id
-      setLastClickedFolder(snippet.folderId || '')
+      setLastClickedFolder(null)
       setSelectedFolder(null)
       setSelectedNoteIds(new Set([snippet.id]))
       setSelectedFolderIds(new Set())

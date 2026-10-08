@@ -344,7 +344,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   // Flat list of notes that should be exported for the current selection.
   // Expands any selected folder into its full subtree and de-duplicates notes in visual order.
   const exportNotes = useMemo(
-    () => resolveExportNotes({ notes: allSnippets || snippets, selectedNoteIds, selectedFolderIds }),
+    () =>
+      resolveExportNotes({ notes: allSnippets || snippets, selectedNoteIds, selectedFolderIds }),
     [allSnippets, snippets, selectedNoteIds, selectedFolderIds]
   )
 
@@ -725,7 +726,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
       <BatchExportDialog
         isOpen={!!batchExportNotes}
         notes={batchExportNotes || []}
-        folderName={lastClickedFolder ? (typeof lastClickedFolder === 'string' ? lastClickedFolder.split('/').pop() || 'Folder Export' : 'Folder Export') : 'Folder Export'}
+        folderName={
+          lastClickedFolder
+            ? typeof lastClickedFolder === 'string'
+              ? lastClickedFolder.split('/').pop() || 'Folder Export'
+              : 'Folder Export'
+            : 'Folder Export'
+        }
         initialFormat="pdf"
         onClose={() => setBatchExportNotes(null)}
       />

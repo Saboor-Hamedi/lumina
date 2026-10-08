@@ -13,7 +13,7 @@ const MenuItem = ({ opt, onClose }) => {
     if (isHovered && hasChildren && itemRef.current && submenuRef.current) {
       const parentRect = itemRef.current.getBoundingClientRect()
       const submenuRect = submenuRef.current.getBoundingClientRect()
-      
+
       if (parentRect.right + submenuRect.width > window.innerWidth - 10) {
         setIsFlipped(true)
       } else {
@@ -48,76 +48,44 @@ const MenuItem = ({ opt, onClose }) => {
         if (opt.action) opt.action()
         onClose()
       }}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '12px',
-        position: 'relative',
-        ...(opt.disabled ? { opacity: 0.5, cursor: 'not-allowed', pointerEvents: 'none' } : {})
-      }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        {opt.icon && (
-          <div
-            className="menu-icon-left"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              color: opt.danger ? 'var(--text-danger, #ef4444)' : 'var(--text-faint)'
-            }}
-          >
-            {opt.icon}
-          </div>
-        )}
-        <span className="menu-label" style={{ whiteSpace: 'nowrap' }}>
-          {opt.label}
-        </span>
+      <div className="menu-col-icon">
+        {opt.icon || null}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <span className="menu-label">
+        {opt.label}
+      </span>
+
+      <div className="menu-col-shortcut">
         {opt.shortcut && (
-          <span className="menu-shortcut-wrap" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+          <span className="menu-shortcut-wrap">
             {opt.shortcut.split('+').map((part, pIdx, arr) => (
               <React.Fragment key={pIdx}>
-                <kbd
-                  className="menu-shortcut"
-                  style={{
-                    fontSize: '10.5px',
-                    fontWeight: 400,
-                    color: 'var(--text-faint, #64748b)',
-                    padding: '0 2px',
-                    borderRadius: '0',
-                    background: 'transparent',
-                    border: 'none',
-                    lineHeight: 1.2,
-                    whiteSpace: 'nowrap',
-                    letterSpacing: '0.2px'
-                  }}
-                >
+                <span className="menu-shortcut">
                   {part.trim()}
-                </kbd>
+                </span>
                 {pIdx < arr.length - 1 && (
-                  <span style={{ fontSize: '9px', color: 'var(--text-faint, #64748b)' }}>+</span>
+                  <span className="menu-shortcut-plus">+</span>
                 )}
               </React.Fragment>
             ))}
           </span>
         )}
-        {opt.isActive && opt.isActive() && <Check size={14} className="menu-check" style={{ color: 'var(--text-faint)' }} />}
-        {hasChildren && <ChevronRight size={14} className="menu-submenu-arrow" style={{ color: 'var(--text-faint)' }} />}
+        {opt.isActive && opt.isActive() && <Check size={14} className="menu-check" />}
+        {hasChildren && <ChevronRight size={14} className="menu-submenu-arrow" />}
       </div>
 
       {hasChildren && isHovered && (
-        <div 
+        <div
           className={`context-menu submenu ${isFlipped ? 'flip-left' : ''}`}
           ref={submenuRef}
         >
           {opt.children.map((child, i) => (
-            <MenuItem 
-              key={child.id || i} 
-              opt={child} 
-              onClose={onClose} 
+            <MenuItem
+              key={child.id || i}
+              opt={child}
+              onClose={onClose}
             />
           ))}
         </div>
@@ -140,7 +108,7 @@ const ContextMenu = ({ x, y, options, onClose }) => {
     }
   }, [onClose])
 
-  const menuX = Math.min(x, window.innerWidth - 220)
+  const menuX = Math.min(x, window.innerWidth - 230)
   const menuY = Math.min(y, window.innerHeight - (options.length * 36 + 20))
 
   return createPortal(
@@ -172,10 +140,10 @@ const ContextMenu = ({ x, y, options, onClose }) => {
         onContextMenu={(e) => e.stopPropagation()}
       >
         {options.map((opt, i) => (
-          <MenuItem 
-            key={opt.id || i} 
-            opt={opt} 
-            onClose={onClose} 
+          <MenuItem
+            key={opt.id || i}
+            opt={opt}
+            onClose={onClose}
           />
         ))}
       </div>

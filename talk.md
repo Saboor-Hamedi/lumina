@@ -2,19 +2,19 @@
 
 ## Current State
 
-| Area | File | Notes |
-|------|------|-------|
-| Clean HTML | `src/export/exportBundle.js` | Self-contained, base64 images, syntax highlighting, wikilinks, TOC |
-| Markdown Bundle | `src/export/exportBundle.js` | Copies assets to subfolder, rewrites links |
-| Word (.doc) | `src/export/exportDocs.js` | Mermaid→inline SVG, base64 images, MS Word compatible, TOC |
-| Markdown | `src/export/exportMarkdown.js` | Plain dump, no processing |
-| PDF | `src/export/exportPDF.js` | Mermaid→inline SVG, A4, TOC, page-number footer, print-optimized CSS |
-| Plain Text | `src/export/exportText.js` | HTML→text conversion |
-| Batch / Combined | `src/export/exportBatch.js`, `src/export/exportCombined.js` | Per-file or merged-into-one export with progress events |
-| Shared utilities | `src/export/exportUtils.js` | Image embedding (`asset://`, HTML images), wikilinks, TOC |
-| Mermaid runtime | `src/export/mermaidRuntime.js`, `src/export/renderWindow.js` | Offline local Mermaid + offscreen render window |
-| Preview builder | `src/export/preview/` | `documentPreview`, `markdownPreview`, `textPreview`, `themeTokens` |
-| Export UI | `src/renderer/src/features/export/` | `ExportContainer`, `batch/BatchExportDialog`, `previews/*` |
+| Area             | File                                                         | Notes                                                                |
+| ---------------- | ------------------------------------------------------------ | -------------------------------------------------------------------- |
+| Clean HTML       | `src/export/exportBundle.js`                                 | Self-contained, base64 images, syntax highlighting, wikilinks, TOC   |
+| Markdown Bundle  | `src/export/exportBundle.js`                                 | Copies assets to subfolder, rewrites links                           |
+| Word (.doc)      | `src/export/exportDocs.js`                                   | Mermaid→inline SVG, base64 images, MS Word compatible, TOC           |
+| Markdown         | `src/export/exportMarkdown.js`                               | Plain dump, no processing                                            |
+| PDF              | `src/export/exportPDF.js`                                    | Mermaid→inline SVG, A4, TOC, page-number footer, print-optimized CSS |
+| Plain Text       | `src/export/exportText.js`                                   | HTML→text conversion                                                 |
+| Batch / Combined | `src/export/exportBatch.js`, `src/export/exportCombined.js`  | Per-file or merged-into-one export with progress events              |
+| Shared utilities | `src/export/exportUtils.js`                                  | Image embedding (`asset://`, HTML images), wikilinks, TOC            |
+| Mermaid runtime  | `src/export/mermaidRuntime.js`, `src/export/renderWindow.js` | Offline local Mermaid + offscreen render window                      |
+| Preview builder  | `src/export/preview/`                                        | `documentPreview`, `markdownPreview`, `textPreview`, `themeTokens`   |
+| Export UI        | `src/renderer/src/features/export/`                          | `ExportContainer`, `batch/BatchExportDialog`, `previews/*`           |
 
 > Note: `src/export/exportHTML.js` is dead code — the `window:export-html` channel routes to `handleExportCleanHTML` in `exportBundle.js`.
 
@@ -87,6 +87,7 @@
 **Why it matters:** A note with 10 images at 5MB each becomes a 50MB+ export. This is slow to generate and hard to share.
 
 **Suggestion:** Add image optimization options:
+
 - Resize to max width (e.g., 1200px)
 - Compress (quality slider: 60–90%)
 - Format conversion (PNG→JPEG for photos)
@@ -308,12 +309,12 @@
 
 ## Summary
 
-| Category | Count |
-|----------|-------|
-| Critical Gaps | 8 |
-| Nice-to-Have Gaps | 12 |
-| Code Quality Issues | 5 |
-| **Total** | **25** |
+| Category            | Count  |
+| ------------------- | ------ |
+| Critical Gaps       | 8      |
+| Nice-to-Have Gaps   | 12     |
+| Code Quality Issues | 5      |
+| **Total**           | **25** |
 
 **Completed this pass:** #1 Batch Export, #2 Export Preview, #4 Table of Contents, #13 Progress Indication, #21 Duplicated Image-to-Base64, #22 Duplicated Mermaid Rendering, #23 Error Recovery (**7 / 25**).
 
@@ -323,20 +324,20 @@
 
 ## bugs.md Status Check
 
-| # | Suggestion | Status |
-|---|------------|--------|
-| 1 | Break Up the Monolithic Keydown Handler | **Not Done** — still ~400 lines |
-| 2 | Eliminate the Circular Dependency | **Done** — `tableShared.js` created |
-| 3 | Replace `ignoreEvent()` with Granular Event Handling | **Not Done** — still returns `true` |
-| 4 | Add TypeScript Types | **Not Done** — all `.js` |
-| 5 | Extract Hardcoded Constants to a Config Object | **Done** — `tableConfig.js` created |
-| 6 | Fix Memory Leaks from Uncleaned Event Listeners | **Not Done** |
-| 7 | Simplify Focus Management | **Partially Done** — uses `view.requestMeasure` |
-| 8 | Make `findCurrentTableRange` More Robust | **Partially Done** — removed 500-char fallback |
-| 9 | Debounce `dispatchModelFromDom` More Aggressively | **Partially Done** — uses `requestAnimationFrame` |
-| 10 | Add Error Boundaries and Defensive Checks | **Not Done** |
+- **[COMPLETED] WorkspaceIndexer Worker Sharp Binary Crash** — Resolved. Statically imported `sharp` inside `@xenova/transformers` made safe via `scripts/ensure-transformers.mjs` (runs on `predev` and `prebuild`). Worker thread now initializes `Xenova/all-MiniLM-L6-v2` and produces 384-dimensional embeddings cleanly without crash.
 
-**Score: 2/10 done, 3/10 partial, 5/10 not started**
+| #   | Suggestion                                           | Status                                            |
+| --- | ---------------------------------------------------- | ------------------------------------------------- |
+| 1   | Break Up the Monolithic Keydown Handler              | **Not Done** — still ~400 lines                   |
+| 2   | Eliminate the Circular Dependency                    | **Done** — `tableShared.js` created               |
+| 3   | Replace `ignoreEvent()` with Granular Event Handling | **Not Done** — still returns `true`               |
+| 4   | Add TypeScript Types                                 | **Not Done** — all `.js`                          |
+| 5   | Extract Hardcoded Constants to a Config Object       | **Done** — `tableConfig.js` created               |
+| 6   | Fix Memory Leaks from Uncleaned Event Listeners      | **Not Done**                                      |
+| 7   | Simplify Focus Management                            | **Partially Done** — uses `view.requestMeasure`   |
+| 8   | Make `findCurrentTableRange` More Robust             | **Partially Done** — removed 500-char fallback    |
+| 9   | Debounce `dispatchModelFromDom` More Aggressively    | **Partially Done** — uses `requestAnimationFrame` |
+| 10  | Add Error Boundaries and Defensive Checks            | **Not Done**                                      |
 
 ---
 
@@ -391,6 +392,7 @@
 **What:** 40+ IPC handlers registered inline in the main entry file.
 
 **Status:** **[COMPLETED]** - Completely refactored `src/main/index.js` down from 1,219 lines to 76 lines. Deconstructed into:
+
 - `src/main/handlers/` (10 modular TypeScript IPC handler domains with Zod validation)
 - `src/main/app/windowManager.ts` (Window creation & bounds)
 - `src/main/app/protocolManager.ts` (`asset://` custom protocol & dev network filters)
@@ -406,6 +408,7 @@
 **Why it matters:** Extremely hard to maintain and test. Changes in one area can break others.
 
 **Resolution:** Fully modularized under `src/renderer/src/features/AI/services/streaming/`:
+
 - `deepseekStreamer.ts` (Dynamic Vercel AI SDK loading, stream state machine, RAF throttler)
 - `fallbackStreamer.ts` (Alternative provider streaming & status narrator)
 - `luminaDisplayBuilder.ts` (Real-time formatting, activity badges, narrative thoughts)
@@ -422,6 +425,7 @@
 **Why it matters:** Hard to read, test, and modify. Prompt injection risk from unsanitized content.
 
 **Resolution:** Fully modularized under `src/renderer/src/features/AI/services/prompt/` and renamed facade:
+
 - `mentionResolver.ts` (Resolves `@Note` and referenced files with recursive normalization)
 - `contextRetriever.ts` (Workspace RAG context injection, safe truncation, credential stripping)
 - `promptDirectives.ts` (Theme awareness, Lumina intelligence badges, mode instructions, intent directives)
@@ -517,20 +521,6 @@
 **Why it matters:** Bundle bloat affects startup time and memory usage.
 
 **Suggestion:** Add `size-limit` or similar tool. Set budgets and fail CI if exceeded.
-
----
-
-## Feature Gaps
-
-### 43. No Vim Mode
-
-**What:** `vimMode` setting exists in settings but no Vim keymap extension found.
-
-**Why it matters:** Vim users can't use the app efficiently.
-
-**Suggestion:** Add CodeMirror Vim keymap extension. Toggle via the existing `vimMode` setting.
-
----
 
 ### 44. No Collaborative Editing
 
@@ -656,15 +646,15 @@
 
 ## Summary
 
-| Category | Count |
-|----------|-------|
-| Export System | 25 |
-| Security | 5 |
-| Architecture | 6 |
-| Infrastructure | 6 |
-| Feature Gaps | 8 |
-| Code Quality | 5 |
-| **Total** | **55** |
+| Category       | Count  |
+| -------------- | ------ |
+| Export System  | 25     |
+| Security       | 5      |
+| Architecture   | 6      |
+| Infrastructure | 6      |
+| Feature Gaps   | 8      |
+| Code Quality   | 5      |
+| **Total**      | **55** |
 
 ---
 

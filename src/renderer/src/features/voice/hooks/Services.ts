@@ -156,10 +156,20 @@ export class VoiceService {
 
   private getStoredGroqKey(): string | null {
     try {
-      return useSettingsStore.getState().settings?.groqKey || null
+      const fromStore = useSettingsStore.getState().settings?.groqKey
+      if (fromStore) return fromStore
     } catch {
-      return null
+      // ignore
     }
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const fromLocal = localStorage.getItem('lumina_groq_key')
+        if (fromLocal) return fromLocal
+      }
+    } catch {
+      // ignore
+    }
+    return null
   }
 
   async startRecording(): Promise<void> {
@@ -346,6 +356,14 @@ export class VoiceService {
       const text = await transcribeWithGroq(audioData, groqKey, this.lastTranscribedText)
       this.updateState({ isTranscribing: false, interimText: '', error: null })
       const smoothed = removePrefixOverlap(text || '', this.lastTranscribedText)
+      if (smoothed && typeof window !== 'undefined') {
+        const instanceId = this.state.activeInstanceId || 'editor-voice'
+        window.dispatchEvent(
+          new CustomEvent('voice-insert-text', {
+            detail: { text: smoothed, instanceId, isSegment: false }
+          })
+        )
+      }
       return smoothed || null
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Transcription failed'

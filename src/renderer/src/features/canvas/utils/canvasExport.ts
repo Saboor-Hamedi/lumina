@@ -230,6 +230,35 @@ export function getExportThemeColors(): CanvasExportThemeColors {
   }
 
 
+  // Check localStorage cached theme colors
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const cached = localStorage.getItem('lumina_active_theme_colors')
+      if (cached) {
+        const parsed = JSON.parse(cached)
+        if (parsed && (parsed['--bg-app'] || parsed['--text-main'])) {
+          const bgApp = parsed['--bg-app'] || '#0c0d10'
+          const bgCard = parsed['--bg-card'] || parsed['--bg-panel'] || bgApp
+          const textMain = parsed['--text-main'] || '#f8fafc'
+          const textMuted = parsed['--text-muted'] || '#cbd5e1'
+          const borderSubtle = parsed['--border-subtle'] || 'rgba(255, 255, 255, 0.12)'
+          const borderDim = parsed['--border-dim'] || 'rgba(255, 255, 255, 0.08)'
+
+          return {
+            bgApp,
+            bgCard,
+            textMain,
+            textMuted,
+            borderSubtle,
+            borderDim
+          }
+        }
+      }
+    }
+  } catch {
+    // ignore parse error
+  }
+
   // Fallback dark defaults
   return {
     bgApp: '#0c0d10',

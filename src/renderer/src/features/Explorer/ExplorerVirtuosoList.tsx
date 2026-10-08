@@ -238,9 +238,11 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
           ? !context.collapsedDuringSearch?.has(item.id)
           : context.expandedFolders?.has(item.id)
         const isMultiSelected = selectedFolderIds.has(item.id)
+        const isNoteActive = sidebarFocus === 'note' || (selectedNoteIdsRef?.current ? selectedNoteIdsRef.current.size > 0 : false)
         const isActive =
-          isMultiSelected ||
-          (sidebarFocus === 'folder' && (lastClickedFolder === item.id || index === selectedIndex))
+          !isNoteActive &&
+          (isMultiSelected ||
+            (sidebarFocus === 'folder' && (lastClickedFolder === item.id || index === selectedIndex)))
 
         return (
           <div
