@@ -47,8 +47,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: npx electron-builder --publish always -c.publish.releaseType=release
+        run: npx electron-builder --publish always
 
       - name: Publish Release (Undraft)
         if: success()
