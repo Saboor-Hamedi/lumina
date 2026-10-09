@@ -51,8 +51,9 @@ const IndentGuides: React.FC<IndentGuidesProps> = React.memo(({ depth }) => {
 IndentGuides.displayName = 'IndentGuides'
 
 export interface DroppableVirtuosoWrapperProps {
-  children: React.ReactNode | ((props: { showDropHighlight: boolean }) => React.ReactNode)
+  children: React.ReactNode | ((props: { showDropHighlight: boolean; isOverRoot: boolean }) => React.ReactNode)
   isDragging: boolean
+  isOverRoot?: boolean
   onClick?: (e: React.MouseEvent) => void
   onPointerDown?: (e: React.PointerEvent) => void
   onDragEnter?: (e: React.DragEvent) => void
@@ -69,6 +70,7 @@ export interface DroppableVirtuosoWrapperProps {
 export const DroppableVirtuosoWrapper: React.FC<DroppableVirtuosoWrapperProps> = ({
   children,
   isDragging,
+  isOverRoot,
   onClick,
   onPointerDown,
   onDragEnter,
@@ -77,7 +79,8 @@ export const DroppableVirtuosoWrapper: React.FC<DroppableVirtuosoWrapperProps> =
   onDrop
 }) => {
   const { isOver, setNodeRef } = useDroppable({ id: 'root-drop-zone' })
-  const showDropHighlight = isOver && isDragging
+  const activeRootOver = Boolean(isOver || isOverRoot)
+  const showDropHighlight = activeRootOver && isDragging
   return (
     <div
       ref={setNodeRef}
@@ -97,7 +100,7 @@ export const DroppableVirtuosoWrapper: React.FC<DroppableVirtuosoWrapperProps> =
         boxSizing: 'border-box'
       }}
     >
-      {typeof children === 'function' ? children({ showDropHighlight }) : children}
+      {typeof children === 'function' ? children({ showDropHighlight, isOverRoot: activeRootOver }) : children}
     </div>
   )
 }
@@ -131,6 +134,7 @@ export interface ExplorerVirtuosoListProps {
   virtuosoContext: any
   isDragging: boolean
   activeListDragItem?: any
+  currentOverId?: string | null
   isDraggingExternal: boolean
   hoveredFolderId: string | null
   selectedNoteIds: Set<string>
@@ -174,6 +178,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
   virtuosoContext,
   isDragging,
   activeListDragItem,
+  currentOverId,
   isDraggingExternal,
   hoveredFolderId,
   selectedNoteIds,
@@ -404,21 +409,46 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
     ]
   )
 
+  const isOverFolder = Boolean(
+    hoveredFolderId ||
+    (currentOverId && (currentOverId.startsWith('folder-') || currentOverId.startsWith('drag-folder-')))
+  )
+  const isOverRootExplicit = Boolean(!isOverFolder && (currentOverId === 'root-drop-zone' || (!currentOverId && isDragging)))
+
   return (
     <DroppableVirtuosoWrapper
       isDragging={isDragging}
+      isOverRoot={isOverRootExplicit}
       onClick={handleBackgroundClick}
       onDragEnter={(e) => handleExternalDragEnter(e, '')}
       onDragOver={(e) => handleExternalDragOver(e, '')}
       onDragLeave={handleExternalDragLeave}
       onDrop={(e) => handleExternalDrop(e, '')}
     >
-      {({ showDropHighlight }) => (
-        <>
-          {isDraggingExternal && !hoveredFolderId && (
-            <ExternalDropOverlay targetName="Vault Root" />
-          )}
-          {flatTree.length === 0 ? (
+      {({ showDropHighlight }) => {
+        const showRootOverlay =
+          (isDraggingExternal && !hoveredFolderId) ||
+          (showDropHighlight && isDragging && !isOverFolder && !hoveredFolderId)
+
+        const rootCount = activeListDragItem?.count || 1
+        const rootSnippetTitle =
+          activeListDragItem?.snippet?.title || activeListDragItem?.snippet?.fileName || 'Note'
+        const rootLabel = isDraggingExternal
+          ? 'Drop files to import into Root'
+          : rootCount > 1
+          ? `Move ${rootCount} notes to Root`
+          : `Move "${rootSnippetTitle}" to Root`
+
+        return (
+          <>
+            {showRootOverlay && (
+              <ExternalDropOverlay
+                label={rootLabel}
+                targetName="Root"
+                count={rootCount}
+              />
+            )}
+            {flatTree.length === 0 ? (
             <div
               className="empty-state"
               style={{
@@ -460,8 +490,9 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
             />
           )}
         </>
-      )}
-    </DroppableVirtuosoWrapper>
+      )
+    }}
+  </DroppableVirtuosoWrapper>
   )
 }
 

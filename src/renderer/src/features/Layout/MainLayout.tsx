@@ -1020,6 +1020,7 @@ export const MainLayout: React.FC = () => {
             {workspaceDrop.isOver && (
               <ExternalDropOverlay
                 label={workspaceDrop.label}
+                count={workspaceDrop.count}
                 icon={workspaceDrop.isExternal ? FolderDown : FileText}
               />
             )}

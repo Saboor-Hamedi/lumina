@@ -681,6 +681,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                     virtuosoContext={virtuosoContext}
                     isDragging={!!activeListDragItem}
                     activeListDragItem={activeListDragItem}
+                    currentOverId={currentOverId}
                     isDraggingExternal={isDraggingExternal}
                     hoveredFolderId={hoveredFolderId}
                     selectedNoteIds={selectedNoteIds}

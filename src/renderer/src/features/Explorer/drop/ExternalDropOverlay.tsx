@@ -5,12 +5,14 @@ import './css/externaldropOverlay.css'
 export interface ExternalDropOverlayProps {
   targetName?: string
   label?: string
+  count?: number
   icon?: React.ComponentType<{ size?: number; className?: string }>
 }
 
 const ExternalDropOverlay: React.FC<ExternalDropOverlayProps> = ({
   targetName = 'Vault',
   label,
+  count,
   icon: Icon = FolderDown
 }) => {
   return (
@@ -20,6 +22,9 @@ const ExternalDropOverlay: React.FC<ExternalDropOverlayProps> = ({
         <span className="external-drop-text">
           {label || `Drop into ${targetName}`}
         </span>
+        {count && count > 1 ? (
+          <span className="external-drop-badge">{count}</span>
+        ) : null}
       </div>
     </div>
   )

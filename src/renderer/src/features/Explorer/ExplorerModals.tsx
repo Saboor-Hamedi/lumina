@@ -94,7 +94,7 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
     const count = activeListDragItem.count || 1
     const snippetTitle =
       activeListDragItem.snippet?.title || activeListDragItem.snippet?.fileName || 'Note'
-    const countSubject = count > 1 ? `${count} notes` : `"${snippetTitle}"`
+    const countSubject = count > 1 ? 'notes' : `"${snippetTitle}"`
 
     let targetDesc = ''
     if (currentOverId === 'root-drop-zone') {
@@ -122,27 +122,7 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
         <FolderDown size={14} className="external-drop-icon" />
         <span className="external-drop-text">{label}</span>
         {count > 1 && (
-          <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minWidth: '20px',
-              height: '18px',
-              padding: '0 6px',
-              borderRadius: '9999px',
-              background: 'var(--text-accent, #40bafa)',
-              color: '#ffffff',
-              fontSize: '11px',
-              fontWeight: 700,
-              lineHeight: 1,
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.35)',
-              flexShrink: 0,
-              marginLeft: '4px'
-            }}
-          >
-            {count}
-          </span>
+          <span className="external-drop-badge">{count}</span>
         )}
       </div>
     )

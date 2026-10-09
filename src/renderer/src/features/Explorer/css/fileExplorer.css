@@ -844,22 +844,23 @@
 }
 
 .folder-tree-main.folder-over {
-  background: color-mix(in srgb, var(--text-accent, #40bafa) 18%, transparent) !important;
-  box-shadow: inset 0 0 0 1.5px var(--text-accent, #40bafa), 0 0 12px color-mix(in srgb, var(--text-accent, #40bafa) 30%, transparent) !important;
+  background: color-mix(in srgb, var(--text-accent, #40bafa) 10%, transparent) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--text-accent, #40bafa) 50%, transparent),
+    0 0 8px color-mix(in srgb, var(--text-accent, #40bafa) 12%, transparent) !important;
   border-radius: 4px !important;
   position: relative;
-  transition: all 0.1s ease-out;
+  transition: all 0.12s ease-out;
 }
 
 .folder-tree-main.folder-over .folder-chevron,
 .folder-tree-main.folder-over .folder-icon-color {
   color: var(--text-accent, #40bafa) !important;
-  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--text-accent, #40bafa) 60%, transparent));
 }
 
 .tree-item.drop-over {
-  background: color-mix(in srgb, var(--text-accent, #40bafa) 12%, transparent) !important;
-  border-bottom: 1.5px solid var(--text-accent, #40bafa) !important;
+  background: color-mix(in srgb, var(--text-accent, #40bafa) 8%, transparent) !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--text-accent, #40bafa) 50%, transparent) !important;
   border-radius: 2px;
   position: relative;
 }
@@ -870,9 +871,9 @@
   left: 2px;
   right: 2px;
   bottom: 0;
-  height: 1.5px;
+  height: 1px;
   background: var(--text-accent, #40bafa);
-  opacity: 0.9;
+  opacity: 0.8;
   pointer-events: none;
   z-index: 10;
 }
@@ -897,9 +898,11 @@
 }
 
 .recommended-list.root-drop-over {
-  box-shadow: none !important;
-  background: transparent !important;
-  border: none !important;
+  border: 1px dashed color-mix(in srgb, var(--text-accent, #40bafa) 50%, transparent) !important;
+  background: color-mix(in srgb, var(--text-accent, #40bafa) 3%, transparent) !important;
+  border-radius: 6px !important;
+  box-shadow: inset 0 0 16px color-mix(in srgb, var(--text-accent, #40bafa) 4%, transparent) !important;
+  transition: all 0.15s ease-out;
 }
 
 .tree-item.multi-selected {

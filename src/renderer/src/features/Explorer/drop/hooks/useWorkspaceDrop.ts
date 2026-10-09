@@ -202,9 +202,9 @@ export function useWorkspaceDrop(): {
       return 'Drop files to import into Lumina'
     }
     if (dropState.count > 1) {
-      return `Open ${dropState.count} Notes in Tabs`
+      return 'Open notes in tabs'
     }
-    return `Open "${dropState.title || 'Note'}" in Tab`
+    return `Open "${dropState.title || 'Note'}" in tab`
   }, [dropState.isExternal, dropState.count, dropState.title])
 
   const workspaceDrop: WorkspaceDropState = useMemo(
