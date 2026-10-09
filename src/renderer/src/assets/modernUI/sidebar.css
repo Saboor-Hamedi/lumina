@@ -90,14 +90,25 @@
 .start-section .tree-item,
 [data-modern-ui='true'] .tree-item,
 [data-modern-ui='true'] .start-section .tree-item {
-  height: 24px !important;
-  min-height: 24px !important;
-  margin: 0 !important;
-  border-radius: 0 !important;
-  padding: 0 8px !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  margin: 1px 2px !important;
+  border-radius: 4px !important;
+  padding: 0 4px 0 18px !important;
   gap: 6px !important;
   font-size: 12px !important;
   transition: background 0.1s ease, color 0.1s ease !important;
+}
+
+.folder-tree-main,
+[data-modern-ui='true'] .folder-tree-main {
+  height: 26px !important;
+  min-height: 26px !important;
+  margin: 1px 2px !important;
+  border-radius: 4px !important;
+  padding: 0 4px 0 0 !important;
+  gap: 4px !important;
+  font-size: 12px !important;
 }
 
 .tree-item:hover,
@@ -118,10 +129,24 @@
 }
 
 /* Neo-Tree Indent lines */
+.tree-indent-guides {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
 .tree-indent-guide,
 [data-modern-ui='true'] .tree-indent-guide {
-  border-left: 1px solid var(--border-dim) !important;
-  opacity: 0.6;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
+  border-left: none !important;
+  opacity: 0.45;
 }
 
 /* Neo-Tree Search input */

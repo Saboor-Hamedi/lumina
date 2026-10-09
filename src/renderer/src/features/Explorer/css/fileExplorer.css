@@ -480,7 +480,24 @@
   text-overflow: ellipsis;
 }
 
-/* Recommended List / Tree Items */
+/* Tree Indent Guidelines */
+.tree-indent-guides {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tree-indent-guide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--border-subtle, rgba(255, 255, 255, 0.08));
+  opacity: 0.45;
+}
 /* Recommended List / Tree Items */
 .recommended-list {
   display: flex;
@@ -490,14 +507,14 @@
 
 .tree-item,
 .start-section .tree-item {
-  padding: 0 8px;
-  height: 28px;
-  margin: 1px 4px;
-  border-radius: 6px;
+  padding: 0 4px 0 18px;
+  height: 26px;
+  margin: 1px 2px;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 7px;
+  gap: 6px;
   cursor: pointer;
   transition:
     background-color 0.1s ease,
@@ -643,13 +660,13 @@
 .folder-tree-main {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex: 1;
   overflow: hidden;
-  padding: 0 8px;
-  height: 28px;
-  margin: 1px 4px;
-  border-radius: 6px;
+  padding: 0 4px 0 0;
+  height: 26px;
+  margin: 1px 2px;
+  border-radius: 4px;
   transition: none;
   position: relative;
   cursor: pointer;

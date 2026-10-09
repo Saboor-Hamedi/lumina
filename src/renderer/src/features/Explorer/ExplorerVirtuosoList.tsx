@@ -4,11 +4,12 @@
  * Part 2 of the 4-Part Partitioned FileExplorer Architecture.
  * 
  * High-Performance Virtualized List Engine for Lumina's File Explorer:
- * - Powered by `react-virtuoso` with dynamic element measurement (`defaultItemHeight={28}`).
+ * - Powered by `react-virtuoso` with dynamic element measurement (`defaultItemHeight={26}`).
  * - Prevents element hiding/blank space during both ultra-fast trackpad flings and slow precision wheel scrolls.
  * - Deep overscan buffering (1500px main & reverse, ~50 items) ensures items are always pre-rendered in DOM.
  * - Hardware-accelerated GPU layout containment (`contain: layout style`, `transform: translateZ(0)`) for 120 FPS performance.
  * - Fully accessible row dispatching for Folder tree items, Note snippet items, and Inline Creation inputs.
+ * - Pixel-perfect hierarchy alignment with subtle indentation guide lines.
  *
  * Performance note (tab switching):
  * - selectedSnippetId and selectedNoteIds are received as REFS (selectedSnippetIdRef / selectedNoteIdsRef).
@@ -25,6 +26,29 @@ import { SortableListItem } from './components'
 import { DroppableFolderItem, ExternalDropOverlay } from './drop'
 import { isSnippetActive } from './utils/explorerSelectionHelper'
 import { beginExplorerPerf, countExplorerPerfRender } from './utils/explorerPerf'
+
+const INDENT_STEP = 16
+const GUIDE_LINE_OFFSET = 9
+
+interface IndentGuidesProps {
+  depth: number
+}
+
+const IndentGuides: React.FC<IndentGuidesProps> = React.memo(({ depth }) => {
+  if (!depth || depth <= 0) return null
+  return (
+    <div className="tree-indent-guides" aria-hidden="true">
+      {Array.from({ length: depth }, (_, i) => (
+        <span
+          key={i}
+          className="tree-indent-guide"
+          style={{ left: `${i * INDENT_STEP + GUIDE_LINE_OFFSET}px` }}
+        />
+      ))}
+    </div>
+  )
+})
+IndentGuides.displayName = 'IndentGuides'
 
 export interface DroppableVirtuosoWrapperProps {
   children: React.ReactNode | ((props: { showDropHighlight: boolean }) => React.ReactNode)
@@ -182,6 +206,8 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
   // so that switching tabs does not invalidate this callback and re-render all Virtuoso rows.
   const renderItemContent = useCallback(
     (index: number, item: any, context: any) => {
+      const depth = item.depth || 0
+
       // 1. Inline creation input row (New Folder, New Canvas, or New Markdown Note)
       if (item.type === 'input') {
         return (
@@ -189,23 +215,23 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
             className="folder-tree-item"
             style={{
               position: 'relative',
-              paddingLeft: `${item.depth * 10 + (item.kind === 'folder' ? 0 : 10)}px`,
-              minHeight: '28px',
+              paddingLeft: `${depth * INDENT_STEP}px`,
+              minHeight: '26px',
               boxSizing: 'border-box',
               contain: 'layout style',
               transform: 'translateZ(0)'
             }}
           >
+            <IndentGuides depth={depth} />
             <div
               className="folder-tree-main creating-input"
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                padding: '2px 6px',
+                gap: '6px',
+                padding: '0 4px 0 20px',
                 borderRadius: '4px',
-                background: 'transparent',
-                paddingLeft: '1px'
+                background: 'transparent'
               }}
             >
               {item.kind === 'folder' ? (
@@ -248,13 +274,14 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
           <div
             style={{
               position: 'relative',
-              paddingLeft: `${item.depth * 10}px`,
-              minHeight: '28px',
+              paddingLeft: `${depth * INDENT_STEP}px`,
+              minHeight: '26px',
               boxSizing: 'border-box',
               contain: 'layout style',
               transform: 'translateZ(0)'
             }}
           >
+            <IndentGuides depth={depth} />
             <DroppableFolderItem
               item={item}
               isExpanded={isExpanded}
@@ -314,19 +341,19 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
           sidebarFocus,
           isQueryActive: Boolean(query.trim())
         })
-        const filePaddingLeft = `${item.depth * 10 + 4}px`
 
         return (
           <div
             style={{
               position: 'relative',
-              paddingLeft: filePaddingLeft,
-              minHeight: '28px',
+              paddingLeft: `${depth * INDENT_STEP}px`,
+              minHeight: '26px',
               boxSizing: 'border-box',
               contain: 'layout style',
               transform: 'translateZ(0)'
             }}
           >
+            <IndentGuides depth={depth} />
             <SortableListItem
               key={item.snippet.id}
               snippet={item.snippet}
@@ -411,7 +438,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
                 willChange: 'scroll-position'
               }}
               data={flatTree}
-              defaultItemHeight={28}
+              defaultItemHeight={26}
               increaseViewportBy={{ top: 800, bottom: 600 }}
               overscan={{ main: 400, reverse: 600 }}
               computeItemKey={(index, item) => {
@@ -435,4 +462,3 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
 }
 
 export default React.memo(ExplorerVirtuosoList)
-

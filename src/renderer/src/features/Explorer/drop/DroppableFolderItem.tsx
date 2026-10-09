@@ -142,8 +142,7 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
         className={`folder-tree-main ${isOver || isExternalOver ? 'folder-over' : ''} ${isActive ? 'active' : ''}`}
         style={{
           cursor: 'pointer',
-          userSelect: 'none',
-          paddingLeft: '3px'
+          userSelect: 'none'
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -159,7 +158,7 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
           onContextMenu(item.id, e)
         }}
       >
-        <span style={{ display: 'inline-flex', flexShrink: 0 }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 14, height: 14, flexShrink: 0 }}>
           {isExpanded ? (
             <ChevronDown size={14} className="folder-chevron" />
           ) : (
@@ -172,13 +171,13 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
             alignItems: 'center',
             gap: '6px',
             color: folderColor || undefined,
-            padding: '2px 4px',
+            padding: '2px 0',
             flex: 1,
             minWidth: 0,
             overflow: 'hidden'
           }}
         >
-          <span style={{ display: 'inline-flex', flexShrink: 0 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 14, height: 14, flexShrink: 0 }}>
             {isExpanded ? (
               <FolderOpen
                 size={14}

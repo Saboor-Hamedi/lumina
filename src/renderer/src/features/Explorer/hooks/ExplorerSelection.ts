@@ -151,14 +151,38 @@ export function useExplorerSelection({
   }, [isOpen, modalRef, selectAll, clearSelection, selectedNoteIds, selectedFolderIds, sidebarFocus, onRequestBulkDelete])
 
   useEffect(() => {
-    const handleDocumentPointerDown = (e: PointerEvent) => {
-      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+    const handleOutsideInteraction = (e: Event) => {
+      const target = e.target as HTMLElement | null
+      if (!target) return
+
+      // Don't clear selection if interacting with explorer popups, dialogs, context menus, or prompts
+      if (
+        target.closest?.(
+          '[role="menu"], [role="dialog"], [data-radix-popper-content-wrapper], .context-menu, [data-state="open"], .confirm-modal-overlay, .dropdown-menu'
+        )
+      ) {
+        return
+      }
+
+      if (modalRef.current && !modalRef.current.contains(target)) {
         setSidebarFocus(null)
+        setSelectedNoteIds((prev) => {
+          if (prev.size > 1) {
+            return selectedSnippetId ? new Set([selectedSnippetId]) : new Set()
+          }
+          return prev
+        })
+        setSelectedFolderIds(new Set())
       }
     }
-    document.addEventListener('pointerdown', handleDocumentPointerDown)
-    return () => document.removeEventListener('pointerdown', handleDocumentPointerDown)
-  }, [modalRef])
+
+    document.addEventListener('pointerdown', handleOutsideInteraction, true)
+    document.addEventListener('focusin', handleOutsideInteraction, true)
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsideInteraction, true)
+      document.removeEventListener('focusin', handleOutsideInteraction, true)
+    }
+  }, [modalRef, selectedSnippetId])
 
   const handleBackgroundClick = useCallback(
     (e: React.MouseEvent) => {
@@ -195,11 +219,7 @@ export function useExplorerSelection({
       return
     }
 
-    setSelectedNoteIds((prev) => {
-      // Don't replace a multi-selection with a single item
-      if (prev.size <= 1) return new Set([selectedSnippetId])
-      return prev
-    })
+    setSelectedNoteIds(new Set([selectedSnippetId]))
     setSelectedFolderIds(new Set())
     setLastClickedNoteId(selectedSnippetId)
     setSidebarFocus('note')
