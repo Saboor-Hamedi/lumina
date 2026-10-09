@@ -72,6 +72,10 @@ interface UseExplorerDndParams {
   flatTree: FlatTreeItem[]
   selectedNoteIds: Set<string>
   setSelectedNoteIds?: (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => void
+  selectedFolderIds?: Set<string>
+  setSelectedFolderIds?: (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => void
+  setSidebarFocus?: (focus: any) => void
+  clearSelection?: () => void
   saveSnippet: (snippet: Snippet) => Promise<void>
   loadWorkspace: () => Promise<void>
   setExpandedFolders: (updater: Set<string> | ((prev: Set<string>) => Set<string>)) => void
@@ -92,6 +96,10 @@ export function useExplorerDnd({
   flatTree,
   selectedNoteIds,
   setSelectedNoteIds,
+  selectedFolderIds,
+  setSelectedFolderIds,
+  setSidebarFocus,
+  clearSelection,
   saveSnippet,
   loadWorkspace,
   setExpandedFolders
@@ -178,6 +186,14 @@ export function useExplorerDnd({
     (event: DragStartEvent) => {
       const { active } = event
       if (String(active.id).startsWith('drag-folder-')) {
+        const folderId = String(active.id).replace('drag-folder-', '')
+        const isFolderSelected = selectedFolderIds?.has(folderId)
+        if (!isFolderSelected) {
+          // Dragging an unselected folder: follow Windows behavior (select this folder, clear others)
+          setSelectedFolderIds?.(new Set([folderId]))
+          setSelectedNoteIds?.(new Set())
+          setSidebarFocus?.('folder')
+        }
         setActiveListDragItem({
           type: 'folder',
           id: active.id,
@@ -187,8 +203,20 @@ export function useExplorerDnd({
         const activeSnippet = allSnippets.find((s) => s.id === active.id)
         if (activeSnippet) {
           const flatItem = flatTree.find((f) => f.type === 'file' && f.snippet?.id === active.id)
-          const isMulti = selectedNoteIds.has(String(active.id)) && selectedNoteIds.size > 1
-          const draggedSnippetIds = isMulti ? Array.from(selectedNoteIds) : [String(active.id)]
+          const fileId = String(active.id)
+          const isFileSelected = selectedNoteIds.has(fileId)
+
+          let draggedSnippetIds: string[]
+          if (isFileSelected) {
+            // Dragging an already-selected item: drag entire group if multiple selected
+            draggedSnippetIds = selectedNoteIds.size > 1 ? Array.from(selectedNoteIds) : [fileId]
+          } else {
+            // Dragging an unselected item: deselect previous items and select only this item
+            setSelectedNoteIds?.(new Set([fileId]))
+            setSelectedFolderIds?.(new Set())
+            setSidebarFocus?.('note')
+            draggedSnippetIds = [fileId]
+          }
 
           setActiveListDragItem({
             type: 'file',
@@ -201,7 +229,7 @@ export function useExplorerDnd({
         }
       }
     },
-    [allSnippets, flatTree, selectedNoteIds]
+    [allSnippets, flatTree, selectedNoteIds, selectedFolderIds, setSelectedNoteIds, setSelectedFolderIds, setSidebarFocus]
   )
 
   const handleListDragOver = useCallback((event: DragOverEvent) => {
@@ -348,6 +376,12 @@ export function useExplorerDnd({
                   setExpandedFolders((prev: Set<string>) => new Set(prev).add(targetFolderId!))
                 }
                 await loadWorkspace()
+                setSelectedFolderIds?.((prev) => {
+                  const next = new Set(prev)
+                  next.delete(sourceFolderId)
+                  return next
+                })
+                clearSelection?.()
               } catch (e) {
                 console.error('Failed to move folder into target folder:', e)
               }
@@ -475,11 +509,18 @@ export function useExplorerDnd({
         }
 
         if (setSelectedNoteIds) {
-          setSelectedNoteIds(new Set(idsToMove))
+          setSelectedNoteIds((prev) => {
+            const next = new Set(prev)
+            idsToMove.forEach((id) => next.delete(id))
+            return next
+          })
+        }
+        if (clearSelection) {
+          clearSelection()
         }
       }
     },
-    [activeListDragItem, allSnippets, saveSnippet, loadWorkspace, setExpandedFolders, setSelectedNoteIds]
+    [activeListDragItem, allSnippets, saveSnippet, loadWorkspace, setExpandedFolders, setSelectedNoteIds, setSelectedFolderIds, clearSelection]
   )
 
   return {

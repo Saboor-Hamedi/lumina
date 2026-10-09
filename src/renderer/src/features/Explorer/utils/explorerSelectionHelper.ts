@@ -83,26 +83,34 @@ export function isSnippetActive({
 }: IsSnippetActiveParams): boolean {
   if (!snippetId) return false
 
-  // 1. Explicit multi-selection or single-selection in explorer
-  if (selectedNoteIds && selectedNoteIds.has(snippetId)) {
-    return true
+  // 1. Authoritative selection set: if explicit note selection exists, only selected notes are active
+  if (selectedNoteIds !== undefined || selectedFolderIds !== undefined) {
+    const hasNoteSelection = Boolean(selectedNoteIds && selectedNoteIds.size > 0)
+    const hasFolderSelection = Boolean(selectedFolderIds && selectedFolderIds.size > 0)
+
+    if (hasNoteSelection) {
+      return Boolean(selectedNoteIds?.has(snippetId))
+    }
+    if (hasFolderSelection) {
+      return false
+    }
+    if (sidebarFocus === 'root') {
+      return false
+    }
   }
 
-  // 2. Active search or keyboard index match
+  // 2. Active search or keyboard index match when actively querying
   if (
+    isQueryActive &&
     typeof itemIndex === 'number' &&
     typeof selectedIndex === 'number' &&
-    itemIndex === selectedIndex &&
-    (isQueryActive || sidebarFocus === 'note' || sidebarFocus === 'multi')
+    itemIndex === selectedIndex
   ) {
     return true
   }
 
-  // 3. Workspace active tab / note fallback
-  const hasMultiNotes = selectedNoteIds && selectedNoteIds.size > 1
-  const hasFolders = selectedFolderIds && selectedFolderIds.size > 0
-
-  if (!hasMultiNotes && !hasFolders && activeSnippetId && snippetId === activeSnippetId) {
+  // 3. Workspace active tab / note fallback when no explicit selection in explorer
+  if (activeSnippetId && snippetId === activeSnippetId && sidebarFocus !== 'root') {
     return true
   }
 

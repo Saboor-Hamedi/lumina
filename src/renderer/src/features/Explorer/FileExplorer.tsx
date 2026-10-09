@@ -339,6 +339,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     flatTree,
     selectedNoteIds,
     setSelectedNoteIds,
+    selectedFolderIds,
+    setSelectedFolderIds,
+    setSidebarFocus,
+    clearSelection,
     saveSnippet,
     loadWorkspace,
     setExpandedFolders

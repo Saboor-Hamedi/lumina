@@ -19,7 +19,8 @@
 import React from 'react'
 import { createPortal } from 'react-dom'
 import { DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core'
-import { Folder, FolderDown } from 'lucide-react'
+import { Folder, Files } from 'lucide-react'
+import { getSnippetIcon } from '../Icons/FileIcon'
 import Confirm from '../modals/Confirm'
 import ContextMenu from '../modals/ContextMenu'
 import './drop/css/externaldropOverlay.css'
@@ -94,7 +95,7 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
     const count = activeListDragItem.count || 1
     const snippetTitle =
       activeListDragItem.snippet?.title || activeListDragItem.snippet?.fileName || 'Note'
-    const countSubject = count > 1 ? 'notes' : `"${snippetTitle}"`
+    const countSubject = count > 1 ? `${count} items` : `"${snippetTitle}"`
 
     let targetDesc = ''
     if (currentOverId === 'root-drop-zone') {
@@ -115,11 +116,19 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
       }
     }
 
-    const label = targetDesc ? `Move ${countSubject} ${targetDesc}` : `Move ${countSubject}`
+    const label = targetDesc
+      ? `Move ${countSubject} ${targetDesc}`
+      : count > 1
+      ? `Move ${count} items`
+      : snippetTitle
 
     return (
       <div className="external-drop-pill" style={{ pointerEvents: 'none', userSelect: 'none' }}>
-        <FolderDown size={14} className="external-drop-icon" />
+        {count > 1 ? (
+          <Files size={14} className="external-drop-icon" />
+        ) : (
+          getSnippetIcon(activeListDragItem.snippet, 14, 'external-drop-icon')
+        )}
         <span className="external-drop-text">{label}</span>
         {count > 1 && (
           <span className="external-drop-badge">{count}</span>

@@ -270,12 +270,15 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
         const isExpanded = context.query?.trim()
           ? !context.collapsedDuringSearch?.has(item.id)
           : context.expandedFolders?.has(item.id)
-        const isMultiSelected = selectedFolderIds.has(item.id)
-        const isNoteActive = sidebarFocus === 'note' || (selectedNoteIdsRef?.current ? selectedNoteIdsRef.current.size > 0 : false)
+        const isNoteActive =
+          sidebarFocus === 'note' ||
+          (selectedNoteIdsRef?.current ? selectedNoteIdsRef.current.size > 0 : false) ||
+          selectedNoteIds.size > 0
+        const hasFolderSelection = selectedFolderIds.size > 0
         const isActive =
           !isNoteActive &&
-          (isMultiSelected ||
-            (sidebarFocus === 'folder' && (lastClickedFolder === item.id || index === selectedIndex)))
+          (selectedFolderIds.has(item.id) ||
+            (!hasFolderSelection && sidebarFocus === 'folder' && lastClickedFolder === item.id))
 
         return (
           <div
@@ -413,7 +416,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
     hoveredFolderId ||
     (currentOverId && (currentOverId.startsWith('folder-') || currentOverId.startsWith('drag-folder-')))
   )
-  const isOverRootExplicit = Boolean(!isOverFolder && (currentOverId === 'root-drop-zone' || (!currentOverId && isDragging)))
+  const isOverRootExplicit = Boolean(!isOverFolder && currentOverId === 'root-drop-zone')
 
   return (
     <DroppableVirtuosoWrapper
@@ -425,10 +428,8 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
       onDragLeave={handleExternalDragLeave}
       onDrop={(e) => handleExternalDrop(e, '')}
     >
-      {({ showDropHighlight }) => {
-        const showRootOverlay =
-          (isDraggingExternal && !hoveredFolderId) ||
-          (showDropHighlight && isDragging && !isOverFolder && !hoveredFolderId)
+      {() => {
+        const showRootOverlay = Boolean(isDraggingExternal && !hoveredFolderId)
 
         const rootCount = activeListDragItem?.count || 1
         const rootSnippetTitle =

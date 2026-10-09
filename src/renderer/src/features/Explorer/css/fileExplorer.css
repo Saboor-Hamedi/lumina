@@ -898,10 +898,11 @@
 }
 
 .recommended-list.root-drop-over {
-  border: 1px dashed color-mix(in srgb, var(--text-accent, #40bafa) 50%, transparent) !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
   background: color-mix(in srgb, var(--text-accent, #40bafa) 3%, transparent) !important;
   border-radius: 6px !important;
-  box-shadow: inset 0 0 16px color-mix(in srgb, var(--text-accent, #40bafa) 4%, transparent) !important;
   transition: all 0.15s ease-out;
 }
 

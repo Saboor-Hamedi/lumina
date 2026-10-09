@@ -17,6 +17,11 @@ import { useContextMenu } from '../hooks/useContextMenu'
 import { isSnippetActive } from '../../Explorer/utils/explorerSelectionHelper'
 import { useUnsaved, UnsavedIndicator } from '../../../core/hooks/unsave'
 
+const emptyDragImage = typeof window !== 'undefined' ? new Image() : null
+if (emptyDragImage) {
+  emptyDragImage.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+}
+
 export interface SidebarItemProps {
   snippet: any
   isActive?: boolean
@@ -411,6 +416,9 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
           e.dataTransfer.setData('application/lumina-snippet', JSON.stringify(snippet))
           e.dataTransfer.setData('text/plain', snippet.title || '')
           e.dataTransfer.effectAllowed = 'copyMove'
+          if (emptyDragImage && e.dataTransfer?.setDragImage) {
+            e.dataTransfer.setDragImage(emptyDragImage, 0, 0)
+          }
         } catch (err) {}
       }}
     >

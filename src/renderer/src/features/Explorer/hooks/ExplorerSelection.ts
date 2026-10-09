@@ -395,18 +395,21 @@ export function useExplorerSelection({
         const maxIdx = Math.max(anchorPos, itemIndex)
 
         const rangeNotes = new Set<string>()
+        const rangeFolders = new Set<string>()
 
-        // When shift-clicking files, collect only visible file items in this range
+        // Collect all visible selectable items (both files and folders) in this continuous range
         for (let i = minIdx; i <= maxIdx; i++) {
           const item = flatTree[i]
-          if (item?.type === 'file' && item.snippet) {
+          if (item?.type === 'file' && item.snippet?.id) {
             rangeNotes.add(item.snippet.id)
+          } else if (item?.type === 'folder' && item.id) {
+            rangeFolders.add(item.id)
           }
         }
         rangeNotes.add(snippet.id)
 
         setSelectedNoteIds(rangeNotes)
-        setSelectedFolderIds(new Set()) // Clear folder selection so collapsed folders aren't selected
+        setSelectedFolderIds(rangeFolders)
         setLastClickedNoteId(snippet.id)
         setSelectedIndex(itemIndex)
         setSidebarFocus('multi')

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
@@ -125,6 +125,13 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
     }
   })
 
+  const wasDraggingRef = useRef(false)
+  useEffect(() => {
+    if (isDragging) {
+      wasDraggingRef.current = true
+    }
+  }, [isDragging])
+
   return (
     <div
       ref={setDroppableRef}
@@ -149,6 +156,10 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
         {...attributes}
         {...listeners}
         onClick={(e) => {
+          if (wasDraggingRef.current) {
+            wasDraggingRef.current = false
+            return
+          }
           if (e.button !== 0) return
           if (!isRenaming) onToggle(item.id, e)
         }}
