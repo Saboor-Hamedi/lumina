@@ -6,6 +6,7 @@ import { countExplorerPerfRender } from '../utils/explorerPerf'
 export interface SortableListItemProps {
   snippet: any
   isActive?: boolean
+  isMultiDragging?: boolean
   onClick?: (snippet: any, e?: React.MouseEvent) => void
   onContextMenu?: (snippet: any, e: React.MouseEvent) => void
   searchQuery?: string
@@ -16,6 +17,7 @@ export interface SortableListItemProps {
 const SortableListItemComponent: React.FC<SortableListItemProps> = ({
   snippet,
   isActive,
+  isMultiDragging,
   onClick,
   onContextMenu,
   searchQuery,
@@ -70,9 +72,10 @@ const SortableListItemComponent: React.FC<SortableListItemProps> = ({
     [onClick, snippet]
   )
 
+  const isDimmed = isDragging || isMultiDragging
   const style: React.CSSProperties = {
-    opacity: isDragging ? 0.35 : 1,
-    zIndex: isDragging ? 99 : 1,
+    opacity: isDimmed ? 0.35 : 1,
+    zIndex: isDimmed ? 99 : 1,
     position: 'relative'
   }
 
@@ -105,6 +108,7 @@ function areNotePropsEqual(
     prev.snippet?.updatedAt === next.snippet?.updatedAt &&
     prev.snippet?.isPinned === next.snippet?.isPinned &&
     prev.isActive === next.isActive &&
+    prev.isMultiDragging === next.isMultiDragging &&
     prev.searchQuery === next.searchQuery &&
     prev.matchSnippet === next.matchSnippet &&
     prev.depth === next.depth

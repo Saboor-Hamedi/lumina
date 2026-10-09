@@ -451,6 +451,25 @@ export class WorkspaceManager {
     return result
   }
 
+  /**
+   * Moves multiple files in a single atomic batch and scans once.
+   */
+  async moveFiles(
+    moves: Array<{ oldRelPath: string; newRelPath: string }>
+  ): Promise<{ success: boolean; movedCount: number; errors: string[] }> {
+    if (this.watcher) await this.watcher.close()
+    try {
+      const result = await WorkspaceOperations.moveFiles(this.workspacePath!, moves)
+      this.saveCache().catch(() => {})
+      await this.scanWorkspace()
+      this.notifyWindows('workspace:updated')
+      this.notifyWindows('vault:updated')
+      return result
+    } finally {
+      this.setupWatcher()
+    }
+  }
+
   // ──────────────────────────────────────────────────────────────────────────
   // Folder Operations
   // ──────────────────────────────────────────────────────────────────────────

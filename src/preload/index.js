@@ -48,6 +48,8 @@ const api = {
     electronAPI.ipcRenderer.invoke('workspace:renameFolder', oldPath, newPath),
   moveFile: (oldRelPath, newRelPath) =>
     electronAPI.ipcRenderer.invoke('workspace:moveFile', oldRelPath, newRelPath),
+  moveFiles: (moves) =>
+    electronAPI.ipcRenderer.invoke('workspace:moveFiles', moves),
   deleteFolder: (path) => electronAPI.ipcRenderer.invoke('workspace:deleteFolder', path),
   bulkDelete: ({ folderIds, snippetIds }) =>
     electronAPI.ipcRenderer.invoke('workspace:bulkDelete', { folderIds, snippetIds }),

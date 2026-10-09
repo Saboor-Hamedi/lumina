@@ -6,7 +6,7 @@
  * Manages all overlay dialogs and floating portals for the File Explorer:
  * 1. `@dnd-kit/core` DragOverlay Portal
  *    - Renders floating visual ghosts for dragged folders and notes.
- *    - Supports multi-selection badge counters (e.g. "+3").
+ *    - Displays a sleek single-file row with exact count badge for multi-selected files.
  *    - Teleports directly to `document.body` for smooth 60fps GPU dragging across overflow boundaries.
  * 2. Explorer Context Menu
  *    - Right-click actions for folders, root background, and bulk selections.
@@ -19,11 +19,10 @@
 import React from 'react'
 import { createPortal } from 'react-dom'
 import { DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core'
-import { Folder } from 'lucide-react'
+import { Folder, FolderDown } from 'lucide-react'
 import Confirm from '../modals/Confirm'
 import ContextMenu from '../modals/ContextMenu'
-import SidebarItem from '../Navigation/components/SidebarItem'
-import { OverlayWrapper } from './components'
+import './drop/css/externaldropOverlay.css'
 
 export interface ExplorerModalsProps {
   activeListDragItem: {
@@ -32,6 +31,8 @@ export interface ExplorerModalsProps {
     snippet?: any
     count?: number
   } | null
+  currentOverId?: string | null
+  allSnippets?: any[]
   folderContext: { folderId: string; x: number; y: number } | null
   setFolderContext: (ctx: { folderId: string; x: number; y: number } | null) => void
   contextMenuOptions: any[]
@@ -48,6 +49,8 @@ export interface ExplorerModalsProps {
 
 export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
   activeListDragItem,
+  currentOverId,
+  allSnippets = [],
   folderContext,
   setFolderContext,
   contextMenuOptions,
@@ -61,6 +64,90 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
   selectedFolderIds,
   selectedNoteIds
 }) => {
+  const renderDragOverlayContent = () => {
+    if (!activeListDragItem) return null
+
+    if (activeListDragItem.type === 'folder') {
+      const folderName = activeListDragItem.item?.name || 'Folder'
+      let targetLabel = ''
+      if (currentOverId === 'root-drop-zone') {
+        targetLabel = 'to Root'
+      } else if (
+        currentOverId &&
+        (currentOverId.startsWith('folder-') || currentOverId.startsWith('drag-folder-'))
+      ) {
+        const targetFolderId = currentOverId.replace('folder-', '').replace('drag-folder-', '')
+        const targetName = targetFolderId.split('/').pop() || targetFolderId
+        targetLabel = `into "${targetName}"`
+      }
+      const label = targetLabel ? `Move "${folderName}" ${targetLabel}` : `Move "${folderName}"`
+
+      return (
+        <div className="external-drop-pill" style={{ pointerEvents: 'none', userSelect: 'none' }}>
+          <Folder size={14} className="external-drop-icon" fill="#e8a825" color="#e8a825" />
+          <span className="external-drop-text">{label}</span>
+        </div>
+      )
+    }
+
+    // activeListDragItem.type === 'file'
+    const count = activeListDragItem.count || 1
+    const snippetTitle =
+      activeListDragItem.snippet?.title || activeListDragItem.snippet?.fileName || 'Note'
+    const countSubject = count > 1 ? `${count} notes` : `"${snippetTitle}"`
+
+    let targetDesc = ''
+    if (currentOverId === 'root-drop-zone') {
+      targetDesc = 'to Root'
+    } else if (
+      currentOverId &&
+      (currentOverId.startsWith('folder-') || currentOverId.startsWith('drag-folder-'))
+    ) {
+      const targetFolderId = currentOverId.replace('folder-', '').replace('drag-folder-', '')
+      const targetName = targetFolderId.split('/').pop() || targetFolderId
+      targetDesc = `into "${targetName}"`
+    } else if (currentOverId) {
+      const overSnippet = allSnippets.find((s: any) => s.id === currentOverId)
+      if (overSnippet) {
+        const parentFolder = overSnippet.folderId
+        const targetName = parentFolder ? parentFolder.split('/').pop() : 'Root'
+        targetDesc = targetName === 'Root' ? 'to Root' : `into "${targetName}"`
+      }
+    }
+
+    const label = targetDesc ? `Move ${countSubject} ${targetDesc}` : `Move ${countSubject}`
+
+    return (
+      <div className="external-drop-pill" style={{ pointerEvents: 'none', userSelect: 'none' }}>
+        <FolderDown size={14} className="external-drop-icon" />
+        <span className="external-drop-text">{label}</span>
+        {count > 1 && (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minWidth: '20px',
+              height: '18px',
+              padding: '0 6px',
+              borderRadius: '9999px',
+              background: 'var(--text-accent, #40bafa)',
+              color: '#ffffff',
+              fontSize: '11px',
+              fontWeight: 700,
+              lineHeight: 1,
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.35)',
+              flexShrink: 0,
+              marginLeft: '4px'
+            }}
+          >
+            {count}
+          </span>
+        )}
+      </div>
+    )
+  }
+
   return (
     <>
       {/* 1. DragOverlay Portal: renders floating ghost during item reordering or folder moving */}
@@ -73,77 +160,7 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
             })
           }}
         >
-          {activeListDragItem?.type === 'folder' ? (
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '4px 10px',
-                borderRadius: '6px',
-                background: 'var(--bg-panel, #1e1e2e)',
-                border: '1px solid var(--border-color, rgba(255,255,255,0.12))',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-                color: 'var(--text-main)',
-                fontSize: '13px',
-                fontWeight: 500,
-                pointerEvents: 'none',
-                transform: 'translate3d(0, 0, 0)'
-              }}
-            >
-              <Folder size={14} fill="#e8a825" color="#e8a825" />
-              <span>{activeListDragItem.item?.name || 'Folder'}</span>
-            </div>
-          ) : activeListDragItem?.type === 'file' ? (
-            <OverlayWrapper>
-              <div
-                className="start-section"
-                style={{
-                  width: '220px',
-                  maxWidth: '220px',
-                  overflow: 'hidden',
-                  position: 'relative'
-                }}
-              >
-                <div
-                  style={{
-                    opacity: 0.95,
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
-                    borderRadius: '6px',
-                    background: 'var(--bg-panel, #1e1e2e)',
-                    border: '1px solid var(--border-color, rgba(255,255,255,0.1))',
-                    overflow: 'hidden'
-                  }}
-                >
-                  <SidebarItem
-                    snippet={activeListDragItem.snippet}
-                    variant="list"
-                    isActive={false}
-                    searchQuery=""
-                  />
-                </div>
-                {activeListDragItem.count && activeListDragItem.count > 1 ? (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: '-6px',
-                      right: '-6px',
-                      background: 'var(--text-accent, #6366f1)',
-                      color: '#ffffff',
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      padding: '1px 6px',
-                      borderRadius: '10px',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
-                      zIndex: 10
-                    }}
-                  >
-                    +{activeListDragItem.count}
-                  </span>
-                ) : null}
-              </div>
-            </OverlayWrapper>
-          ) : null}
+          {renderDragOverlayContent()}
         </DragOverlay>,
         document.body
       )}

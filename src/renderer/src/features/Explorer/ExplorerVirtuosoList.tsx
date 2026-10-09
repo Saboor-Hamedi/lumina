@@ -130,6 +130,7 @@ export interface ExplorerVirtuosoListProps {
   flatTree: any[]
   virtuosoContext: any
   isDragging: boolean
+  activeListDragItem?: any
   isDraggingExternal: boolean
   hoveredFolderId: string | null
   selectedNoteIds: Set<string>
@@ -172,6 +173,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
   flatTree,
   virtuosoContext,
   isDragging,
+  activeListDragItem,
   isDraggingExternal,
   hoveredFolderId,
   selectedNoteIds,
@@ -367,6 +369,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
                   : undefined
               }
               isActive={isNoteActive}
+              isMultiDragging={Boolean(activeListDragItem?.draggedSnippetIds?.includes(item.snippet.id))}
               searchQuery={query}
               matchSnippet={matchMetaMap?.get(item.snippet.id)?.matchSnippet || ''}
               depth={item.depth}
@@ -383,6 +386,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
       selectedIndex,
       totalSelectedCount,
       hoveredFolderId,
+      activeListDragItem,
       query,
       matchMetaMap,
       toggleFolder,
@@ -411,7 +415,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
     >
       {({ showDropHighlight }) => (
         <>
-          {(isDraggingExternal || showDropHighlight) && !hoveredFolderId && (
+          {isDraggingExternal && !hoveredFolderId && (
             <ExternalDropOverlay targetName="Vault Root" />
           )}
           {flatTree.length === 0 ? (

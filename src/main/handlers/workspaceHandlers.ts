@@ -206,6 +206,32 @@ export function registerWorkspaceHandlers(getMainWindow: () => BrowserWindow | n
     return result
   })
 
+  // Move multiple files between directories atomically
+  registerWorkspaceHandle('moveFiles', async (_, moves) => {
+    if (!Array.isArray(moves) || moves.length === 0) {
+      return { success: true, movedCount: 0, errors: [] }
+    }
+    const validMoves = moves
+      .filter((m) => m && typeof m.oldRelPath === 'string' && typeof m.newRelPath === 'string')
+      .map((m) => ({
+        oldRelPath: validateIpc(stringPathSchema, m.oldRelPath),
+        newRelPath: validateIpc(stringPathSchema, m.newRelPath)
+      }))
+    const result = await WorkspaceManager.moveFiles(validMoves)
+    if (WorkspaceManager.workspacePath) {
+      for (const m of validMoves) {
+        const oldFullPath = path.join(WorkspaceManager.workspacePath, m.oldRelPath)
+        const newFullPath = path.join(WorkspaceManager.workspacePath, m.newRelPath)
+        WorkspaceIndexer.deleteChunksForFile(oldFullPath).catch(() => {})
+        if (newFullPath.endsWith('.md')) {
+          WorkspaceIndexer.indexFile(newFullPath, true).catch(() => {})
+        }
+      }
+      WorkspaceSearch.reload().catch(() => {})
+    }
+    return result
+  })
+
   // Delete folder and clean indexed records
   registerWorkspaceHandle('deleteFolder', async (_, folderPath) => {
     const validPath = validateIpc(stringPathSchema, folderPath)

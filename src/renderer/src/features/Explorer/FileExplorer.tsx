@@ -327,10 +327,18 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   })
 
   // Internal Drag and Drop (reordering notes & dropping files into folders)
-  const { sensors, activeListDragItem, handleListDragStart, handleListDragEnd } = useExplorerDnd({
+  const {
+    sensors,
+    activeListDragItem,
+    currentOverId,
+    handleListDragStart,
+    handleListDragOver,
+    handleListDragEnd
+  } = useExplorerDnd({
     allSnippets,
     flatTree,
     selectedNoteIds,
+    setSelectedNoteIds,
     saveSnippet,
     loadWorkspace,
     setExpandedFolders
@@ -663,6 +671,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                 sensors={sensors}
                 collisionDetection={explorerCollisionDetection}
                 onDragStart={handleListDragStart}
+                onDragOver={handleListDragOver}
                 onDragEnd={handleListDragEnd}
               >
                 <React.Profiler id="ExplorerVirtuosoList" onRender={handleExplorerProfiler}>
@@ -671,6 +680,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                     flatTree={flatTree}
                     virtuosoContext={virtuosoContext}
                     isDragging={!!activeListDragItem}
+                    activeListDragItem={activeListDragItem}
                     isDraggingExternal={isDraggingExternal}
                     hoveredFolderId={hoveredFolderId}
                     selectedNoteIds={selectedNoteIds}
@@ -700,28 +710,30 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                     handleExternalDrop={handleExternalDrop}
                   />
                 </React.Profiler>
+
+                {/* Part 3: Explorer Modals (DragOverlay inside DndContext, ContextMenu, Delete Confirmations) */}
+                <ExplorerModals
+                  activeListDragItem={activeListDragItem}
+                  currentOverId={currentOverId}
+                  allSnippets={allSnippets}
+                  folderContext={folderContext}
+                  setFolderContext={setFolderContext}
+                  contextMenuOptions={contextMenuOptions}
+                  deleteConfirmFolder={deleteConfirmFolder}
+                  setDeleteConfirmFolder={setDeleteConfirmFolder}
+                  handleConfirmDeleteFolder={handleConfirmDeleteFolder}
+                  bulkDeleteModalOpen={bulkDeleteModalOpen}
+                  setBulkDeleteModalOpen={setBulkDeleteModalOpen}
+                  handleConfirmBulkDelete={handleConfirmBulkDelete}
+                  totalSelectedCount={totalSelectedCount}
+                  selectedFolderIds={selectedFolderIds}
+                  selectedNoteIds={selectedNoteIds}
+                />
               </DndContext>
             </div>
           )}
         </div>
       </div>
-
-      {/* Part 3: Explorer Modals (DragOverlay, ContextMenu, Delete Confirmations) */}
-      <ExplorerModals
-        activeListDragItem={activeListDragItem}
-        folderContext={folderContext}
-        setFolderContext={setFolderContext}
-        contextMenuOptions={contextMenuOptions}
-        deleteConfirmFolder={deleteConfirmFolder}
-        setDeleteConfirmFolder={setDeleteConfirmFolder}
-        handleConfirmDeleteFolder={handleConfirmDeleteFolder}
-        bulkDeleteModalOpen={bulkDeleteModalOpen}
-        setBulkDeleteModalOpen={setBulkDeleteModalOpen}
-        handleConfirmBulkDelete={handleConfirmBulkDelete}
-        totalSelectedCount={totalSelectedCount}
-        selectedFolderIds={selectedFolderIds}
-        selectedNoteIds={selectedNoteIds}
-      />
 
       <BatchExportDialog
         isOpen={!!batchExportNotes}

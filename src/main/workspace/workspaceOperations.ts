@@ -565,6 +565,33 @@ export class WorkspaceOperations {
   }
 
   /**
+   * Moves multiple files in a single atomic batch.
+   */
+  static async moveFiles(
+    workspacePath: string,
+    moves: Array<{ oldRelPath: string; newRelPath: string }>
+  ): Promise<{ success: boolean; movedCount: number; errors: string[] }> {
+    if (!workspacePath) throw new Error('No workspace open')
+    let movedCount = 0
+    const errors: string[] = []
+
+    for (const { oldRelPath, newRelPath } of moves) {
+      try {
+        const ok = await this.moveFile(workspacePath, oldRelPath, newRelPath)
+        if (ok) movedCount++
+      } catch (err: any) {
+        errors.push(err.message || String(err))
+      }
+    }
+
+    return {
+      success: errors.length === 0,
+      movedCount,
+      errors
+    }
+  }
+
+  /**
    * Creates a directory on disk and registers it and parent segments in `foldersSet`.
    */
   static async createFolder(
