@@ -103,6 +103,18 @@ describe('screenLoader controller', () => {
     expect(document.getElementById('screen-loader-substatus')?.textContent).toBe('Checking 15 folders')
   })
 
+  it('guarantees monotonicity and prevents progress from dropping (e.g. 94% down to 74%)', () => {
+    initScreenLoader()
+    setScreenLoaderProgress(94, 'Almost there...')
+    expect(getScreenLoaderProgress()).toBe(94)
+
+    // Attempt to downgrade without force
+    setScreenLoaderProgress(74, 'Delayed step')
+    expect(getScreenLoaderProgress()).toBe(94)
+    expect(document.getElementById('screen-loader-percent')?.textContent).toBe('94%')
+    expect(document.getElementById('screen-loader-bar-fill')?.style.width).toBe('94%')
+  })
+
   it('fades out and hides screen loader', async () => {
     initScreenLoader()
     const loader = document.getElementById('screen-loader')

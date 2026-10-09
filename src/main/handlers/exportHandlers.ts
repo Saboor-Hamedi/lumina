@@ -56,7 +56,9 @@ const previewPayloadSchema = z.object({
 const batchPayloadSchema = z.object({
   notes: z.array(batchNoteSchema).min(1),
   format: z.string(),
-  outputDir: z.string().optional()
+  outputDir: z.string().optional(),
+  compressZip: z.boolean().optional(),
+  archiveTitle: z.string().optional()
 })
 
 const combinedPayloadSchema = z.object({
@@ -98,6 +100,12 @@ export function registerExportHandlers(getMainWindow: () => BrowserWindow | null
     return handleExportMarkdownBundle(getMainWindow(), valid)
   })
 
+  // Export active note directly as a compressed ZIP archive (.zip)
+  ipcMain.handle('window:export-zip', async (_, payload) => {
+    const valid = validateIpc(exportPayloadSchema, payload)
+    return handleExportMarkdownBundle(getMainWindow(), { ...valid, compressZip: true })
+  })
+
   // Export active note to simple text format (.txt)
   ipcMain.handle('window:export-text', async (_, payload) => {
     const valid = validateIpc(exportPayloadSchema, payload)
@@ -107,7 +115,11 @@ export function registerExportHandlers(getMainWindow: () => BrowserWindow | null
   // Render a preview document for the export dialog (no file written)
   ipcMain.handle('window:export-preview', async (_, payload) => {
     const valid = validateIpc(previewPayloadSchema, payload)
-    if (!SUPPORTED_PREVIEW_FORMATS.includes(valid.format as any)) {
+    const effectiveFormat = valid.format === 'zip' ? 'markdown' : valid.format
+    if (
+      !SUPPORTED_PREVIEW_FORMATS.includes(effectiveFormat as any) &&
+      !SUPPORTED_PREVIEW_FORMATS.includes(valid.format as any)
+    ) {
       throw new Error(`Unsupported preview format: ${valid.format}`)
     }
 
@@ -122,7 +134,7 @@ export function registerExportHandlers(getMainWindow: () => BrowserWindow | null
     }
 
     const preview = await buildPreview(
-      valid.format,
+      effectiveFormat,
       valid.title || 'Untitled',
       previewMarkdown,
       valid.theme,

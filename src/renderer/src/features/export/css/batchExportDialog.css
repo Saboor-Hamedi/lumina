@@ -244,3 +244,41 @@
   border-radius: 999px;
   transition: width 0.2s ease;
 }
+
+/* Dedicated archive badge when format is ZIP */
+.batch-zip-mode-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, #8b5cf6 10%, var(--bg-panel));
+  border: 1px solid color-mix(in srgb, #8b5cf6 30%, transparent);
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+.batch-zip-mode-icon {
+  color: #8b5cf6;
+  flex-shrink: 0;
+}
+
+.batch-zip-mode-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.batch-zip-mode-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.batch-zip-mode-desc {
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+

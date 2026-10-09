@@ -146,6 +146,7 @@ const api = {
   exportMarkdown: (payload) => electronAPI.ipcRenderer.invoke('window:export-markdown', payload),
   exportMarkdownBundle: (payload) =>
     electronAPI.ipcRenderer.invoke('window:export-markdown-bundle', payload),
+  exportZip: (payload) => electronAPI.ipcRenderer.invoke('window:export-zip', payload),
   exportText: (payload) => electronAPI.ipcRenderer.invoke('window:export-text', payload),
   exportDocs: (payload) => electronAPI.ipcRenderer.invoke('window:export-docs', payload),
   exportPreview: (payload) => electronAPI.ipcRenderer.invoke('window:export-preview', payload),

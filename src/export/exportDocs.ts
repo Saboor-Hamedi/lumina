@@ -4,9 +4,12 @@ import { renderMarkdown } from './exportUtils'
 import { withRenderedHtml } from './renderWindow'
 import { stripMermaidScripts } from './mermaidRuntime'
 
+import { ImageOptimizationOptions } from './imageOptimizer'
+
 export interface ExportDocsPayload {
   title?: string
   content?: string
+  optimizeImages?: boolean
 }
 
 export interface ExportDocsResult {
@@ -286,11 +289,16 @@ export function buildDocsDocument(title?: string, htmlBody: string = '', tocHtml
 /**
  * Renders markdown to a full Word-compatible HTML document (no file I/O).
  */
-export async function generateDocsHTML(title?: string, content?: string): Promise<string> {
+export async function generateDocsHTML(
+  title?: string,
+  content?: string,
+  opts: { imageOptimization?: ImageOptimizationOptions } = {}
+): Promise<string> {
   const { html, tocHtml } = await renderMarkdown(content || '', {
     wikilinkMode: 'link',
     mermaid: true,
-    toc: true
+    toc: true,
+    imageOptimization: opts.imageOptimization ?? { enabled: true }
   })
   return buildDocsDocument(title, html, tocHtml)
 }
@@ -300,7 +308,7 @@ export const handleExportDocs = async (
   payload: ExportDocsPayload
 ): Promise<ExportDocsResult> => {
   try {
-    const { title, content } = payload || {}
+    const { title, content, optimizeImages } = payload || {}
     if (!content) throw new Error('No content provided')
 
     // Show save dialog FIRST for immediate user feedback
@@ -314,7 +322,9 @@ export const handleExportDocs = async (
       return { success: false, canceled: true }
     }
 
-    const html = await generateDocsHTML(title, content)
+    const html = await generateDocsHTML(title, content, {
+      imageOptimization: optimizeImages !== false ? { enabled: true } : { enabled: false }
+    })
 
     // Render (Mermaid inlined) and strip script tags for MS Word compatibility.
     const cleanHtml = await withRenderedHtml(html, async (win) => {

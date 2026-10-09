@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
-import { Printer, FileText, FileCode, FileJson, FileType } from 'lucide-react'
+import { Printer, FileText, FileCode, FileJson, FileType, Archive } from 'lucide-react'
 
 /** Supported single-note export formats. */
-export type ExportFormat = 'pdf' | 'html' | 'docs' | 'markdown' | 'text'
+export type ExportFormat = 'pdf' | 'html' | 'docs' | 'markdown' | 'zip' | 'text'
 
 /** Placeholder tokens replaced in format descriptions. */
 export interface FormatSpec {
@@ -72,6 +72,17 @@ export const EXPORT_FORMATS: FormatSpec[] = [
     acceptLabel: 'Export Markdown',
     accent: '#22c55e',
     ext: '.md'
+  },
+  {
+    id: 'zip',
+    label: 'ZIP',
+    title: 'ZIP Archive',
+    description: 'Note with all referenced media bundled in a .zip file.',
+    icon: <Archive size={20} strokeWidth={1.75} />,
+    apiKey: 'exportZip',
+    acceptLabel: 'Export as ZIP Archive',
+    accent: '#8b5cf6',
+    ext: '.zip'
   },
   {
     id: 'text',

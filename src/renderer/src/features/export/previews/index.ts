@@ -13,6 +13,7 @@ export const PREVIEW_COMPONENTS: Record<ExportFormat, ComponentType<PreviewProps
   docs: DOCSPreview,
   html: HTMLPreview,
   markdown: MarkdownPreview,
+  zip: MarkdownPreview,
   text: TEXTPreview
 }
 

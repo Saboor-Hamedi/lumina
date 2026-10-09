@@ -16,7 +16,8 @@ import {
   ChevronDown,
   FileText,
   Check,
-  ArrowLeft
+  ArrowLeft,
+  Archive
 } from 'lucide-react'
 import { EXPORT_FORMATS, getFormat, type ExportFormat } from '../formats'
 import { PREVIEW_COMPONENTS } from '../previews'
@@ -166,7 +167,7 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
   const previewMarkdown = useMemo(() => {
     const list = notes || []
     if (list.length === 0) return ''
-    if (mode === 'separate') {
+    if (mode === 'separate' || format === 'zip') {
       const activeNote = list[selectedNoteIndex] || list[0]
       return activeNote.content ?? activeNote.code ?? ''
     }
@@ -174,9 +175,14 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
       .map((n) => (n.content ?? n.code ?? '').trim())
       .filter(Boolean)
       .join('\n\n\n')
-  }, [notes, mode, selectedNoteIndex])
+  }, [notes, mode, format, selectedNoteIndex])
+
+  const activeNoteTitle = useMemo(() => {
+    return notes?.[selectedNoteIndex]?.title || notes?.[0]?.title || 'Untitled'
+  }, [notes, selectedNoteIndex])
 
   const [includeToc, setIncludeToc] = useState(true)
+  const [compressZip, setCompressZip] = useState(false)
   const [previewData, setPreviewData] = useState<{ html: string; pdfBase64?: string }>({ html: '' })
   const previewCacheRef = useRef<Map<string, { html: string; pdfBase64?: string }>>(new Map())
 
@@ -184,11 +190,12 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
   useEffect(() => {
     if (isOpen) {
       setFormat(initialFormat)
-      setMode('combined')
+      setMode(initialFormat === 'zip' ? 'separate' : 'combined')
       setIsMaximized(false)
       setShowNotesList(false)
       setSelectedNoteIndex(0)
       setIncludeToc(true)
+      setCompressZip(false)
       setExporting(false)
       setProgress(null)
       setResult(null)
@@ -197,6 +204,13 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
       previewCacheRef.current.clear()
     }
   }, [isOpen, initialFormat])
+
+  // When format is 'zip', destination mode is always strictly 'separate'
+  useEffect(() => {
+    if (format === 'zip' && mode !== 'separate') {
+      setMode('separate')
+    }
+  }, [format, mode])
 
   // Changing format or mode clears the previous result so you can export again.
   useEffect(() => {
@@ -214,7 +228,8 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
       return
     }
 
-    const cacheKey = `${format}:${mode}:${mode === 'separate' ? selectedNoteIndex : 'all'}:${includeToc ? 'toc' : 'notoc'}`
+    const isSeparate = mode === 'separate' || format === 'zip'
+    const cacheKey = `${format}:${isSeparate ? 'separate' : 'combined'}:${isSeparate ? selectedNoteIndex : 'all'}:${includeToc ? 'toc' : 'notoc'}`
     if (previewCacheRef.current.has(cacheKey)) {
       setPreviewData(previewCacheRef.current.get(cacheKey)!)
       setPreviewLoading(false)
@@ -225,12 +240,12 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
     setPreviewLoading(true)
 
     const previewTitle =
-      mode === 'combined'
+      !isSeparate
         ? folderName || 'Combined Export'
         : notes?.[selectedNoteIndex]?.title || notes?.[0]?.title || 'Untitled'
 
     const payloadNotes =
-      mode === 'combined'
+      !isSeparate
         ? (notes || []).map((n) => ({
             id: n.id,
             title: n.title || 'Untitled',
@@ -265,7 +280,7 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
       (f) => f !== format
     )
     for (const f of otherFormats) {
-      const otherKey = `${f}:${mode}:${mode === 'separate' ? selectedNoteIndex : 'all'}:${includeToc ? 'toc' : 'notoc'}`
+      const otherKey = `${f}:${isSeparate ? 'separate' : 'combined'}:${isSeparate ? selectedNoteIndex : 'all'}:${includeToc ? 'toc' : 'notoc'}`
       if (!previewCacheRef.current.has(otherKey)) {
         api.exportPreview({
           format: f,
@@ -310,10 +325,11 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
 
   const handleStart = useCallback(async () => {
     const api = (window as any).api
-    const method = mode === 'combined' ? 'exportCombined' : 'exportBatch'
+    const isZip = format === 'zip' || (mode === 'separate' && compressZip)
+    const method = isZip ? 'exportBatch' : mode === 'combined' ? 'exportCombined' : 'exportBatch'
     if (typeof api?.[method] !== 'function') {
       const msg =
-        mode === 'combined'
+        mode === 'combined' && !isZip
           ? 'Combined export is unavailable in this build. Restart/rebuild the app and try again.'
           : 'Batch export is unavailable in this environment.'
       setError(msg)
@@ -337,11 +353,14 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
     setProgress({ current: 0, total: payloadNotes.length, title: '', phase: 'start' })
 
     try {
+      const isZip = format === 'zip' || (mode === 'separate' && compressZip)
       const res = await api[method]({
         notes: payloadNotes,
-        format,
+        format: format === 'zip' ? 'markdown' : format,
         toc: includeToc,
-        title: folderName
+        title: folderName,
+        compressZip: isZip,
+        archiveTitle: folderName || 'Lumina-Notes'
       })
       if (res?.canceled) {
         setExporting(false)
@@ -360,7 +379,9 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
         showToast?.(
           res.combined
             ? `Combined ${res.total} notes into one ${format.toUpperCase()}.`
-            : `Exported ${res.exported ?? res.total} notes successfully.`,
+            : res.isZip
+              ? `Packaged ${res.exported ?? res.total} notes into ZIP archive.`
+              : `Exported ${res.exported ?? res.total} notes successfully.`,
           'success'
         )
       } else {
@@ -373,7 +394,7 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
     } finally {
       setExporting(false)
     }
-  }, [notes, format, mode, showToast])
+  }, [notes, format, mode, includeToc, compressZip, folderName, showToast])
 
   const handleCopyPath = useCallback(async () => {
     const p = result?.filePath || result?.outputDir
@@ -487,7 +508,9 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
             <p className="export-success-detail">
               {result.combined
                 ? `Merged ${result.total} notes into one ${format.toUpperCase()} file.`
-                : `Saved ${result.exported} of ${result.total} notes.`}
+                : result.filePath && result.filePath.toLowerCase().endsWith('.zip')
+                  ? `Packaged all ${result.exported} notes as individual .md files into ZIP archive.`
+                  : `Saved ${result.exported} of ${result.total} notes.`}
             </p>
 
             {resultPath && (
@@ -555,32 +578,44 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                   </div>
                 </div>
 
-                {/* Destination Mode Segmented Control */}
+                {/* Destination Mode Segmented Control or Archive Badge */}
                 <span className="export-formats-heading">Destination Mode</span>
-                <div className="batch-mode-pills" role="radiogroup" aria-label="Export mode">
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={mode === 'combined'}
-                    className={`batch-mode-pill ${mode === 'combined' ? 'active' : ''}`}
-                    onClick={() => setMode('combined')}
-                    disabled={exporting}
-                  >
-                    <Layers size={13} strokeWidth={2} />
-                    <span>Merged File</span>
-                  </button>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={mode === 'separate'}
-                    className={`batch-mode-pill ${mode === 'separate' ? 'active' : ''}`}
-                    onClick={() => setMode('separate')}
-                    disabled={exporting}
-                  >
-                    <Files size={13} strokeWidth={2} />
-                    <span>Separate Files</span>
-                  </button>
-                </div>
+                {format !== 'zip' ? (
+                  <div className="batch-mode-pills" role="radiogroup" aria-label="Export mode">
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={mode === 'combined'}
+                      className={`batch-mode-pill ${mode === 'combined' ? 'active' : ''}`}
+                      onClick={() => setMode('combined')}
+                      disabled={exporting}
+                    >
+                      <Layers size={13} strokeWidth={2} />
+                      <span>Merged File</span>
+                    </button>
+                    <button
+                      type="button"
+                      role="radio"
+                      aria-checked={mode === 'separate'}
+                      className={`batch-mode-pill ${mode === 'separate' ? 'active' : ''}`}
+                      onClick={() => setMode('separate')}
+                      disabled={exporting}
+                    >
+                      <Files size={13} strokeWidth={2} />
+                      <span>Separate Files</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="batch-zip-mode-badge" role="status">
+                    <Archive size={15} strokeWidth={2} className="batch-zip-mode-icon" />
+                    <div className="batch-zip-mode-content">
+                      <span className="batch-zip-mode-title">Individual Notes Archive</span>
+                      <span className="batch-zip-mode-desc">
+                        {count} separate .md files inside one .zip
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Collapsible Included Notes Drawer */}
                 <div className="batch-notes-drawer">
@@ -604,17 +639,18 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                   {showNotesList && (
                     <div className="batch-notes-list">
                       {notes.map((n, idx) => {
-                        const isViewing = mode === 'separate' && selectedNoteIndex === idx
+                        const canInspectIndividual = mode === 'separate' || format === 'zip'
+                        const isViewing = canInspectIndividual && selectedNoteIndex === idx
                         return (
                           <button
                             key={n.id || idx}
                             type="button"
                             className={`batch-note-row ${isViewing ? 'active' : ''}`}
                             onClick={() => {
-                              if (mode === 'separate') setSelectedNoteIndex(idx)
+                              if (canInspectIndividual) setSelectedNoteIndex(idx)
                             }}
                             title={
-                              mode === 'separate'
+                              canInspectIndividual
                                 ? `Click to preview "${n.title || 'Untitled'}"`
                                 : n.title || 'Untitled'
                             }
@@ -637,9 +673,12 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                     key={f.id}
                     type="button"
                     className={`export-format-card ${format === f.id ? 'active' : ''}`}
-                    aria-pressed={format === f.id}
-                    onClick={() => setFormat(f.id)}
-                    disabled={exporting}
+                    onClick={() => {
+                      setFormat(f.id)
+                      if (f.id === 'zip') {
+                        setMode('separate')
+                      }
+                    }}
                     style={{ '--card-accent': f.accent } as React.CSSProperties}
                   >
                     <span
@@ -658,21 +697,37 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                   </button>
                 ))}
 
-                {(format === 'pdf' || format === 'docs' || format === 'html') && (
+                {((format === 'pdf' || format === 'docs' || format === 'html') || (mode === 'separate' && format !== 'zip')) && (
                   <div className="export-options-group">
                     <span className="export-formats-heading">Options</span>
-                    <div className="export-option-row" onClick={() => setIncludeToc((prev) => !prev)}>
-                      <div className="export-option-label">
-                        <span className="export-option-title">Include Table of Contents</span>
-                        <span className="export-option-desc">Add navigation index at start</span>
+                    {(format === 'pdf' || format === 'docs' || format === 'html') && (
+                      <div className="export-option-row" onClick={() => setIncludeToc((prev) => !prev)}>
+                        <div className="export-option-label">
+                          <span className="export-option-title">Include Table of Contents</span>
+                          <span className="export-option-desc">Add navigation index at start</span>
+                        </div>
+                        <Toggle
+                          checked={includeToc}
+                          onCheckedChange={setIncludeToc}
+                          disabled={exporting}
+                          ariaLabel="Include Table of Contents"
+                        />
                       </div>
-                      <Toggle
-                        checked={includeToc}
-                        onCheckedChange={setIncludeToc}
-                        disabled={exporting}
-                        ariaLabel="Include Table of Contents"
-                      />
-                    </div>
+                    )}
+                    {mode === 'separate' && format !== 'zip' && (
+                      <div className="export-option-row" onClick={() => setCompressZip((prev) => !prev)}>
+                        <div className="export-option-label">
+                          <span className="export-option-title">Compress as ZIP Archive</span>
+                          <span className="export-option-desc">Package notes into a single .zip file</span>
+                        </div>
+                        <Toggle
+                          checked={compressZip}
+                          onCheckedChange={setCompressZip}
+                          disabled={exporting}
+                          ariaLabel="Compress as ZIP Archive"
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </aside>
@@ -681,7 +736,7 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                 <PreviewComponent
                   html={previewData.html}
                   pdfBase64={previewData.pdfBase64}
-                  title={mode === 'separate' ? activeNoteTitle : folderName}
+                  title={mode === 'separate' || format === 'zip' ? activeNoteTitle : folderName}
                   loading={previewLoading}
                   error={error}
                 />
@@ -723,9 +778,11 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                 <span>
                   {exporting
                     ? 'Exporting…'
-                    : mode === 'combined'
-                      ? `Export as ${format === 'docs' ? 'DOCX' : format.toUpperCase()}`
-                      : `Export ${count} Files`}
+                    : format === 'zip' || (mode === 'separate' && compressZip)
+                      ? `Export ${count} Notes as ZIP Archive`
+                      : mode === 'combined'
+                        ? `Export as ${format === 'docs' ? 'DOCX' : format.toUpperCase()}`
+                        : `Export ${count} Files`}
                 </span>
               </button>
             </footer>

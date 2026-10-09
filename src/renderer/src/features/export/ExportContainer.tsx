@@ -94,6 +94,9 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
   const [format, setFormat] = useState<ExportFormat>(initialFormat)
   const [isMaximized, setIsMaximized] = useState(false)
   const [includeToc, setIncludeToc] = useState(true)
+  const [bundleAssets, setBundleAssets] = useState(false)
+  const [compressZip, setCompressZip] = useState(false)
+  const [optimizeImages, setOptimizeImages] = useState(true)
   const [previewData, setPreviewData] = useState<{ html: string; pdfBase64?: string }>({ html: '' })
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState<string | null>(null)
@@ -130,6 +133,9 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     setFormat(initialFormat)
     setIsMaximized(false)
     setIncludeToc(true)
+    setBundleAssets(false)
+    setCompressZip(false)
+    setOptimizeImages(true)
     setPreviewError(null)
     setSuccess(null)
     setExporting(false)
@@ -226,7 +232,14 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
 
   const handleExport = useCallback(async () => {
     const api = (window as any).api
-    const handler = api?.[activeFormat.apiKey]
+    const isZip = format === 'zip'
+    const isBundle = isZip || (format === 'markdown' && (bundleAssets || compressZip))
+    const apiKey = isZip
+      ? (typeof api?.exportZip === 'function' ? 'exportZip' : 'exportMarkdownBundle')
+      : isBundle
+        ? 'exportMarkdownBundle'
+        : activeFormat.apiKey
+    const handler = api?.[apiKey]
     if (typeof handler !== 'function') {
       const msg = `${activeFormat.label} export is not supported in this environment.`
       setPreviewError(msg)
@@ -236,10 +249,22 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
 
     setExporting(true)
     try {
-      const res = await handler({ title, content, language: 'markdown', toc: includeToc })
+      const res = await handler({
+        title,
+        content,
+        language: 'markdown',
+        toc: includeToc,
+        compressZip: isZip || (format === 'markdown' && compressZip),
+        optimizeImages
+      })
       if (res?.success) {
         setSuccess({ filePath: res.filePath || '', format })
-        showToast?.(`${activeFormat.label} exported successfully.`, 'success')
+        const label = isZip || compressZip
+          ? 'ZIP archive'
+          : bundleAssets
+            ? 'Markdown bundle'
+            : activeFormat.label
+        showToast?.(`${label} exported successfully.`, 'success')
       } else if (!res?.canceled) {
         setPreviewError('Export did not complete.')
       }
@@ -251,7 +276,17 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     } finally {
       setExporting(false)
     }
-  }, [activeFormat, title, content, format, includeToc, showToast])
+  }, [
+    activeFormat,
+    title,
+    content,
+    format,
+    includeToc,
+    bundleAssets,
+    compressZip,
+    optimizeImages,
+    showToast
+  ])
 
   const handleCopyPath = useCallback(async () => {
     if (!success?.filePath) return
@@ -452,9 +487,10 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
                   </button>
                 ))}
 
-                {(format === 'pdf' || format === 'docs' || format === 'html') && (
-                  <div className="export-options-group">
-                    <span className="export-formats-heading">Options</span>
+                <div className="export-options-group">
+                  <span className="export-formats-heading">Options</span>
+
+                  {(format === 'pdf' || format === 'docs' || format === 'html') && (
                     <div className="export-option-row" onClick={() => setIncludeToc((prev) => !prev)}>
                       <div className="export-option-label">
                         <span className="export-option-title">Include Table of Contents</span>
@@ -467,8 +503,62 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
                         ariaLabel="Include Table of Contents"
                       />
                     </div>
-                  </div>
-                )}
+                  )}
+
+                  {format === 'markdown' && (
+                    <>
+                      <div className="export-option-row" onClick={() => setBundleAssets((prev) => !prev)}>
+                        <div className="export-option-label">
+                          <span className="export-option-title">Bundle Referenced Media</span>
+                          <span className="export-option-desc">Include local images & media</span>
+                        </div>
+                        <Toggle
+                          checked={bundleAssets}
+                          onCheckedChange={(checked) => {
+                            setBundleAssets(checked)
+                            if (!checked) setCompressZip(false)
+                          }}
+                          disabled={exporting}
+                          ariaLabel="Bundle Referenced Media"
+                        />
+                      </div>
+
+                      {bundleAssets && (
+                        <div className="export-option-row" onClick={() => setCompressZip((prev) => !prev)}>
+                          <div className="export-option-label">
+                            <span className="export-option-title">Compress as ZIP Archive</span>
+                            <span className="export-option-desc">Package note & assets into .zip</span>
+                          </div>
+                          <Toggle
+                            checked={compressZip}
+                            onCheckedChange={setCompressZip}
+                            disabled={exporting}
+                            ariaLabel="Compress as ZIP Archive"
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {(format === 'pdf' ||
+                    format === 'docs' ||
+                    format === 'html' ||
+                    format === 'zip' ||
+                    (format === 'markdown' && bundleAssets)) && (
+                    <div className="export-option-row" onClick={() => setOptimizeImages((prev) => !prev)}>
+                      <div className="export-option-label">
+                        <span className="export-option-title">Optimize Images</span>
+                        <span className="export-option-desc">Resize & compress to reduce size</span>
+                      </div>
+                      <Toggle
+                        checked={optimizeImages}
+                        onCheckedChange={setOptimizeImages}
+                        disabled={exporting}
+                        ariaLabel="Optimize Images"
+                      />
+                    </div>
+                  )}
+                </div>
               </aside>
 
               <section className="export-preview-pane" aria-label="Preview">
@@ -506,7 +596,13 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
                 title={!hasContent ? 'There is nothing to export' : undefined}
               >
                 {exporting ? <Loader2 size={15} className="spin" /> : <Download size={15} />}
-                <span>{exporting ? 'Exporting…' : activeFormat.acceptLabel}</span>
+                <span>
+                  {exporting
+                    ? 'Exporting…'
+                    : compressZip
+                      ? 'Export as ZIP Archive'
+                      : activeFormat.acceptLabel}
+                </span>
               </button>
             </footer>
           </>

@@ -13,20 +13,27 @@ import fs from 'fs/promises'
 import path from 'path'
 import { renderMarkdown } from './exportUtils'
 import WorkspaceManager from '../main/workspace/workspaceManager'
+import { createZipArchive, type ZipFileEntry } from './zipExporter'
+import { optimizeAssetData, type ImageOptimizationOptions } from './imageOptimizer'
 
 export interface CleanHtmlOptions {
   toc?: boolean
+  imageOptimization?: ImageOptimizationOptions
 }
 
 export interface ExportBundlePayload {
   title?: string
   content?: string
+  compressZip?: boolean
+  optimizeImages?: boolean
+  imageOptimization?: ImageOptimizationOptions
 }
 
 export interface ExportBundleResult {
   success: boolean
   filePath?: string
   bundleDir?: string | null
+  isZip?: boolean
   canceled?: boolean
 }
 
@@ -38,10 +45,11 @@ export async function generateCleanHTML(
   content?: string,
   opts: CleanHtmlOptions = {}
 ): Promise<string> {
-  const { toc = true } = opts
+  const { toc = true, imageOptimization } = opts
   const { html: htmlBody, tocHtml } = await renderMarkdown(content || '', {
     wikilinkMode: 'span',
-    toc
+    toc,
+    imageOptimization
   })
 
   return `<!DOCTYPE html>
@@ -241,7 +249,10 @@ export async function handleExportCleanHTML(
       return { success: false, canceled: true }
     }
 
-    const html = await generateCleanHTML(title, content)
+    const html = await generateCleanHTML(title, content, {
+      toc: payload.toc ?? true,
+      imageOptimization: payload.optimizeImages !== false ? payload.imageOptimization : undefined
+    })
     await fs.writeFile(filePath, html, 'utf-8')
     return { success: true, filePath }
   } catch (error) {
@@ -251,7 +262,8 @@ export async function handleExportCleanHTML(
 }
 
 /**
- * Handles exporting a note and all its linked local media as a complete Markdown bundle folder.
+ * Handles exporting a note and all its linked local media as a complete Markdown bundle:
+ * Either as a single compressed .zip file or as a folder + .md file.
  */
 export async function handleExportMarkdownBundle(
   mainWindow: BrowserWindow | null,
@@ -261,23 +273,44 @@ export async function handleExportMarkdownBundle(
     const { title, content } = payload || {}
     if (!content) throw new Error('No content provided')
 
+    const isZipRequested = Boolean(payload.compressZip)
+    const cleanTitle = (title || 'Untitled').replace(/\.(md|markdown)$/i, '')
+    const defaultExt = isZipRequested ? '.zip' : '.md'
+    const filters = isZipRequested
+      ? [{ name: 'ZIP Archive (*.zip)', extensions: ['zip'] }]
+      : [
+          { name: 'Markdown Document (*.md)', extensions: ['md', 'markdown'] },
+          { name: 'ZIP Archive (*.zip)', extensions: ['zip'] }
+        ]
+
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow as any, {
-      title: 'Export Markdown Bundle',
-      defaultPath: `${title || 'Untitled'}.md`,
-      filters: [{ name: 'Markdown Document', extensions: ['md', 'markdown'] }]
+      title: isZipRequested
+        ? 'Export ZIP Archive'
+        : 'Export Markdown Bundle',
+      defaultPath: `${cleanTitle}${defaultExt}`,
+      filters
     })
 
     if (canceled || !filePath) {
       return { success: false, canceled: true }
     }
 
-    const targetDir = path.dirname(filePath)
-    const baseName = path.basename(filePath, path.extname(filePath))
+    let actualFilePath = filePath
+    if (isZipRequested && !actualFilePath.toLowerCase().endsWith('.zip')) {
+      actualFilePath = actualFilePath.replace(/\.(md|markdown)$/i, '') + '.zip'
+    }
+
+    const isZip = isZipRequested || actualFilePath.toLowerCase().endsWith('.zip')
+    const shouldOptimize = payload.optimizeImages !== false
+    const baseName = path.basename(actualFilePath, path.extname(actualFilePath))
+    const targetDir = path.dirname(actualFilePath)
     const assetsDir = path.join(targetDir, `${baseName}_assets`)
 
     let processedContent = content || ''
     const imgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g
     const matches = [...processedContent.matchAll(imgRegex)]
+
+    const zipEntries: ZipFileEntry[] = []
     let hasCopiedAssets = false
 
     for (const match of matches) {
@@ -293,32 +326,81 @@ export async function handleExportMarkdownBundle(
           }
           cleanUrl = decodeURIComponent(cleanUrl)
 
-          const buffer = await WorkspaceManager.readAsset(cleanUrl)
-          if (buffer) {
-            if (!hasCopiedAssets) {
-              await fs.mkdir(assetsDir, { recursive: true })
-              hasCopiedAssets = true
+          const rawAsset = await WorkspaceManager.readAsset(cleanUrl)
+          if (rawAsset) {
+            let fileData: Buffer
+            let mimeType = 'image/png'
+
+            const lowerUrl = cleanUrl.toLowerCase()
+            if (lowerUrl.endsWith('.jpg') || lowerUrl.endsWith('.jpeg')) mimeType = 'image/jpeg'
+            else if (lowerUrl.endsWith('.gif')) mimeType = 'image/gif'
+            else if (lowerUrl.endsWith('.svg')) mimeType = 'image/svg+xml'
+            else if (lowerUrl.endsWith('.webp')) mimeType = 'image/webp'
+
+            if (shouldOptimize) {
+              const opt = optimizeAssetData(rawAsset, mimeType, payload.imageOptimization)
+              fileData = opt?.buffer || (rawAsset as any).buffer || Buffer.from(rawAsset as any)
+            } else {
+              fileData = (rawAsset as any).buffer || Buffer.from(rawAsset as any)
             }
 
             const imgFileName = path.basename(cleanUrl)
-            const targetImagePath = path.join(assetsDir, imgFileName)
-            const fileData = (buffer as any).buffer || buffer
-            await fs.writeFile(targetImagePath, fileData)
 
-            // Rewrite link to relative assets folder
-            const relativeUrl = `./${baseName}_assets/${imgFileName}`
-            processedContent = processedContent.replace(fullMatch, `![${alt}](${relativeUrl})`)
+            if (isZip) {
+              // In zip mode, store in assets/ folder inside archive
+              zipEntries.push({
+                name: `assets/${imgFileName}`,
+                data: fileData
+              })
+              const relativeUrl = `./assets/${imgFileName}`
+              processedContent = processedContent.replace(fullMatch, `![${alt}](${relativeUrl})`)
+            } else {
+              // In folder mode, write to ${baseName}_assets
+              if (!hasCopiedAssets) {
+                await fs.mkdir(assetsDir, { recursive: true })
+                hasCopiedAssets = true
+              }
+              const targetImagePath = path.join(assetsDir, imgFileName)
+              await fs.writeFile(targetImagePath, fileData)
+              const relativeUrl = `./${baseName}_assets/${imgFileName}`
+              processedContent = processedContent.replace(fullMatch, `![${alt}](${relativeUrl})`)
+            }
           }
         } catch (e) {
-          console.error('[ExportBundle] Failed to copy asset to bundle:', url, e)
+          console.error('[ExportBundle] Failed to process asset for bundle:', url, e)
         }
       }
     }
 
-    await fs.writeFile(filePath, processedContent, 'utf-8')
-    return { success: true, filePath, bundleDir: hasCopiedAssets ? assetsDir : null }
+    if (isZip) {
+      // Add the markdown file at root of the zip archive
+      zipEntries.unshift({
+        name: `${baseName}.md`,
+        data: processedContent
+      })
+      await createZipArchive(actualFilePath, zipEntries, {
+        comment: `Exported from Lumina: ${title || 'Untitled'}`
+      })
+      return { success: true, filePath: actualFilePath, isZip: true, bundleDir: null }
+    } else {
+      await fs.writeFile(actualFilePath, processedContent, 'utf-8')
+      return { success: true, filePath: actualFilePath, isZip: false, bundleDir: hasCopiedAssets ? assetsDir : null }
+    }
   } catch (error) {
     console.error('[ExportBundle] Export Markdown Bundle failed:', error)
     throw error
   }
+}
+
+/**
+ * Convenience handler dedicated to exporting a note and its media as a ZIP archive.
+ */
+export async function handleExportZip(
+  mainWindow: BrowserWindow | null,
+  payload: ExportBundlePayload
+): Promise<ExportBundleResult> {
+  return handleExportMarkdownBundle(mainWindow, {
+    ...payload,
+    compressZip: true
+  })
 }

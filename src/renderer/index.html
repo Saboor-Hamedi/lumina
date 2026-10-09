@@ -38,10 +38,16 @@
         const timer = setInterval(function () {
           const bar = document.getElementById('screen-loader-bar-fill')
           const pct = document.getElementById('screen-loader-percent')
+          if (!bar || !pct) return
+          // Respect any higher progress set by controller or scripts
+          const currentText = parseInt(pct.textContent || '0', 10) || 0
+          if (currentText > p) {
+            p = currentText
+          }
           if (p < 85) {
             p += Math.min(3, Math.max(1, Math.floor((85 - p) / 10)))
-            if (bar) bar.style.width = p + '%'
-            if (pct) pct.textContent = p + '%'
+            bar.style.width = p + '%'
+            pct.textContent = p + '%'
           } else {
             clearInterval(timer)
           }

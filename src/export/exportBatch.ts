@@ -18,8 +18,9 @@ import { generateCleanHTML } from './exportBundle.js'
 import { generatePDFHTML, PDF_PRINT_OPTIONS } from './exportPDF.js'
 // @ts-ignore
 import { buildDocsDocument } from './exportDocs.js'
+import { createZipArchive, type ZipFileEntry } from './zipExporter'
 
-export const BATCH_FORMATS = ['html', 'pdf', 'docs', 'markdown', 'text'] as const
+export const BATCH_FORMATS = ['html', 'pdf', 'docs', 'markdown', 'text', 'zip'] as const
 export type BatchFormat = (typeof BATCH_FORMATS)[number]
 
 export interface BatchNoteInput {
@@ -32,6 +33,8 @@ export interface BatchPayload {
   notes: BatchNoteInput[]
   format: BatchFormat
   outputDir?: string
+  compressZip?: boolean
+  archiveTitle?: string
 }
 
 export interface BatchProgress {
@@ -47,6 +50,8 @@ export interface BatchExportResult {
   success: boolean
   canceled?: boolean
   outputDir?: string
+  filePath?: string
+  isZip?: boolean
   total?: number
   exported?: number
   failed?: number
@@ -181,6 +186,7 @@ async function writeOne(
       await fs.writeFile(filePath, cleanHtml, 'utf-8')
       return filePath
     }
+    case 'zip':
     case 'markdown': {
       const filePath = await uniquePath(outputDir, base, '.md')
       await fs.writeFile(filePath, content, 'utf-8')
@@ -222,9 +228,33 @@ export async function handleExportBatch(
     content: String(n?.content ?? '')
   }))
 
-  // Resolve output directory (use provided, else prompt)
+  // Resolve output directory or ZIP target
   let outputDir = payload.outputDir
-  if (!outputDir) {
+  let zipTargetFilePath: string | null = null
+  let tempBatchDir: string | null = null
+
+  const isZipExport = Boolean(payload.compressZip || format === 'zip')
+  if (isZipExport) {
+    const defaultZipName = `${safeFileName(payload.archiveTitle || 'Lumina-Batch-Export')}.zip`
+    const picked = await dialog.showSaveDialog(mainWindow as any, {
+      title: 'Save Batch Export as ZIP Archive',
+      defaultPath: defaultZipName,
+      filters: [{ name: 'ZIP Archive (*.zip)', extensions: ['zip'] }]
+    })
+    if (picked.canceled || !picked.filePath) {
+      return { success: false, canceled: true }
+    }
+    let chosenZipPath = picked.filePath
+    if (!chosenZipPath.toLowerCase().endsWith('.zip')) {
+      chosenZipPath = chosenZipPath.replace(/\.(md|markdown)$/i, '') + '.zip'
+    }
+    zipTargetFilePath = chosenZipPath
+
+    // Create temporary folder for individual notes prior to archiving
+    const os = await import('os')
+    tempBatchDir = await fs.mkdtemp(path.join(os.tmpdir(), 'lumina-batch-'))
+    outputDir = tempBatchDir
+  } else if (!outputDir) {
     const picked = await dialog.showOpenDialog(mainWindow as any, {
       title: 'Choose Export Destination Folder',
       properties: ['openDirectory', 'createDirectory']
@@ -275,6 +305,37 @@ export async function handleExportBatch(
         })
       }
     }
+
+    // If zip mode was requested, bundle all files into the archive
+    if (zipTargetFilePath && tempBatchDir && succeeded.length > 0) {
+      onProgress?.({
+        phase: 'start',
+        current: normalizedNotes.length,
+        total: normalizedNotes.length,
+        title: 'Compressing archive…'
+      })
+
+      const zipEntries: ZipFileEntry[] = []
+      for (const item of succeeded) {
+        try {
+          const fileData = await fs.readFile(item.filePath)
+          zipEntries.push({
+            name: path.basename(item.filePath),
+            data: fileData
+          })
+        } catch (e) {
+          console.error('[exportBatch] Failed to read file for zip archive:', item.filePath, e)
+        }
+      }
+
+      await createZipArchive(zipTargetFilePath, zipEntries, {
+        comment: `Lumina Batch Export (${succeeded.length} notes)`
+      })
+
+      try {
+        await fs.rm(tempBatchDir, { recursive: true, force: true })
+      } catch {}
+    }
   } finally {
     if (printWin && printWin.isDestroyed?.() !== true) {
       printWin.close()
@@ -286,9 +347,12 @@ export async function handleExportBatch(
     current: normalizedNotes.length,
     total: normalizedNotes.length
   })
+
   return {
-    success: true,
-    outputDir,
+    success: succeeded.length > 0,
+    outputDir: zipTargetFilePath ? path.dirname(zipTargetFilePath) : outputDir,
+    filePath: zipTargetFilePath || undefined,
+    isZip: Boolean(zipTargetFilePath),
     total: normalizedNotes.length,
     exported: succeeded.length,
     failed: failed.length,

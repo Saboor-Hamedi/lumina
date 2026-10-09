@@ -65,7 +65,14 @@ export function ScreenLoader({
   const isExplicit = progress !== undefined
   const clampedExplicit = isExplicit ? Math.max(0, Math.min(100, Math.round(progress))) : null
 
-  const [dynamicProgress, setDynamicProgress] = useState<number>(12)
+  const [dynamicProgress, setDynamicProgress] = useState<number>(() => {
+    if (typeof document !== 'undefined') {
+      const el = document.getElementById('screen-loader-percent')
+      const parsed = el ? parseInt(el.textContent || '', 10) : NaN
+      if (!isNaN(parsed) && parsed > 0) return Math.min(parsed, 94)
+    }
+    return 18
+  })
   const [dynamicStatus, setDynamicStatus] = useState<string>(status)
 
   useEffect(() => {
@@ -99,27 +106,36 @@ export function ScreenLoader({
       }
     ]
 
-    const timeouts: NodeJS.Timeout[] = []
-    let current = 12
+    let current = dynamicProgress
+    let ticker: NodeJS.Timeout | null = null
+    const stageTimeouts: NodeJS.Timeout[] = []
+
+    const advanceTo = (target: number) => {
+      if (ticker) clearInterval(ticker)
+      ticker = setInterval(() => {
+        if (current < target) {
+          current += 1
+          setDynamicProgress((prev) => Math.max(prev, current))
+        } else {
+          if (ticker) clearInterval(ticker)
+          ticker = null
+        }
+      }, 35)
+    }
 
     stages.forEach((stage) => {
       const t = setTimeout(() => {
         setDynamicStatus(stage.label)
-        const interval = setInterval(() => {
-          current += 1
-          if (current >= stage.target) {
-            current = stage.target
-            clearInterval(interval)
-          }
-          setDynamicProgress(current)
-        }, 35)
-        timeouts.push(interval as unknown as NodeJS.Timeout)
+        if (stage.target > current) {
+          advanceTo(stage.target)
+        }
       }, stage.atMs)
-      timeouts.push(t)
+      stageTimeouts.push(t)
     })
 
     return () => {
-      timeouts.forEach((t) => clearTimeout(t))
+      if (ticker) clearInterval(ticker)
+      stageTimeouts.forEach((t) => clearTimeout(t))
     }
   }, [isExplicit])
 

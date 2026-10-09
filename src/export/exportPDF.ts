@@ -3,10 +3,13 @@ import fs from 'fs/promises'
 import { renderMarkdown, escapeHtml } from './exportUtils'
 import { withRenderedHtml } from './renderWindow'
 
+import { ImageOptimizationOptions } from './imageOptimizer'
+
 export interface ExportPDFPayload {
   title?: string
   content?: string
   toc?: boolean
+  optimizeImages?: boolean
 }
 
 export interface ExportPDFResult {
@@ -458,13 +461,14 @@ export function buildPDFDocument(
 export async function generatePDFHTML(
   title?: string,
   content?: string,
-  opts: { toc?: boolean } = {}
+  opts: { toc?: boolean; imageOptimization?: ImageOptimizationOptions } = {}
 ): Promise<string> {
   const showToc = opts.toc ?? true
   const { html, tocHtml } = await renderMarkdown(content || '', {
     wikilinkMode: 'link',
     mermaid: true,
-    toc: showToc
+    toc: showToc,
+    imageOptimization: opts.imageOptimization ?? { enabled: true }
   })
   return buildPDFDocument(title, html, showToc ? tocHtml : '')
 }
@@ -490,7 +494,7 @@ export const handleExportPDF = async (
   payload: ExportPDFPayload
 ): Promise<ExportPDFResult> => {
   try {
-    const { title, content, toc } = payload || {}
+    const { title, content, toc, optimizeImages } = payload || {}
     if (!content) throw new Error('No content provided')
 
     // Show save dialog FIRST for immediate user feedback
@@ -504,7 +508,10 @@ export const handleExportPDF = async (
       return { success: false, canceled: true }
     }
 
-    const html = await generatePDFHTML(title, content, { toc })
+    const html = await generatePDFHTML(title, content, {
+      toc,
+      imageOptimization: optimizeImages !== false ? { enabled: true } : { enabled: false }
+    })
 
     // Render (with Mermaid inlined) in a hidden window, then print to PDF.
     const pdfData = await withRenderedHtml(html, (win) =>

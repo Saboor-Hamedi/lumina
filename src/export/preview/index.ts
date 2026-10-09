@@ -22,7 +22,8 @@ export const SUPPORTED_PREVIEW_FORMATS = [
   'docs',
   'markdown',
   'text',
-  'markdown-bundle'
+  'markdown-bundle',
+  'zip'
 ] as const
 
 export type SupportedPreviewFormat = (typeof SUPPORTED_PREVIEW_FORMATS)[number]
@@ -62,6 +63,7 @@ export async function buildPreview(
       break
     case 'markdown':
     case 'markdown-bundle':
+    case 'zip':
       html = buildMarkdownPreview(title, content, theme)
       break
     case 'text':

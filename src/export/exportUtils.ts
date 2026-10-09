@@ -2,6 +2,7 @@ import { Marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
 import WorkspaceManager from '../main/workspace/workspaceManager'
+import { optimizeAssetData, type ImageOptimizationOptions } from './imageOptimizer'
 
 /**
  * ============================================================================
@@ -23,6 +24,7 @@ export interface RenderMarkdownOptions {
   wikilinkMode?: 'span' | 'link'
   mermaid?: boolean
   toc?: boolean
+  imageOptimization?: ImageOptimizationOptions
 }
 
 export interface RenderMarkdownResult {
@@ -61,31 +63,45 @@ export function createMarked(): Marked {
 
 /**
  * Normalises whatever `WorkspaceManager.readAsset` returns into a data URI.
- * The manager currently returns a `ReadAssetResult` object
- * (`{ buffer, base64, dataUrl, mimeType }`), but older/alternate shapes
- * (a raw Buffer, a base64 string, or an existing data URL) are handled too.
+ * Automatically runs optimization (resizing & compression) when available.
  */
-function assetToDataUri(asset: any, fallbackMime = 'image/png'): string | null {
+function assetToDataUri(
+  asset: any,
+  fallbackMime = 'image/png',
+  optimization?: ImageOptimizationOptions
+): string | null {
   if (!asset) return null
+
+  let originalDataUrl: string | null = null
   if (typeof asset === 'string') {
-    if (asset.startsWith('data:')) return asset
-    return `data:${fallbackMime};base64,${asset}`
-  }
-  if (typeof asset === 'object') {
-    if (typeof asset.dataUrl === 'string' && asset.dataUrl.startsWith('data:')) return asset.dataUrl
-    const mime = asset.mimeType || fallbackMime
-    if (typeof asset.base64 === 'string' && asset.base64.length > 0) {
-      return `data:${mime};base64,${asset.base64}`
+    if (asset.startsWith('data:')) {
+      originalDataUrl = asset
+    } else {
+      originalDataUrl = `data:${fallbackMime};base64,${asset}`
     }
-    if (asset.buffer) {
+  } else if (typeof asset === 'object') {
+    if (typeof asset.dataUrl === 'string' && asset.dataUrl.startsWith('data:')) {
+      originalDataUrl = asset.dataUrl
+    } else if (typeof asset.base64 === 'string' && asset.base64.length > 0) {
+      const mime = asset.mimeType || fallbackMime
+      originalDataUrl = `data:${mime};base64,${asset.base64}`
+    } else if (asset.buffer) {
+      const mime = asset.mimeType || fallbackMime
       const buf = Buffer.isBuffer(asset.buffer) ? asset.buffer : Buffer.from(asset.buffer)
-      return `data:${mime};base64,${buf.toString('base64')}`
+      originalDataUrl = `data:${mime};base64,${buf.toString('base64')}`
+    }
+  } else if (Buffer.isBuffer(asset)) {
+    originalDataUrl = `data:${fallbackMime};base64,${asset.toString('base64')}`
+  }
+
+  if (optimization && optimization.enabled !== false) {
+    const optimized = optimizeAssetData(asset, fallbackMime, optimization)
+    if (optimized?.optimized && optimized.dataUrl) {
+      return optimized.dataUrl
     }
   }
-  if (Buffer.isBuffer(asset)) {
-    return `data:${fallbackMime};base64,${asset.toString('base64')}`
-  }
-  return null
+
+  return originalDataUrl
 }
 
 /** Returns true when a URL is remote or already inline and must be left alone. */
@@ -98,7 +114,10 @@ function isExternalUrl(url?: string | null): boolean {
  * Accepts markdown-relative paths, `asset://local/...` URLs, and absolute
  * `/...` paths. Returns null for external URLs or unresolvable assets.
  */
-async function resolveImageDataUri(rawUrl: string): Promise<string | null> {
+async function resolveImageDataUri(
+  rawUrl: string,
+  optimization?: ImageOptimizationOptions
+): Promise<string | null> {
   let cleanUrl = String(rawUrl || '').trim()
   if (!cleanUrl || isExternalUrl(cleanUrl)) return null
 
@@ -128,7 +147,7 @@ async function resolveImageDataUri(rawUrl: string): Promise<string | null> {
   else if (lowerUrl.endsWith('.bmp')) fallbackMime = 'image/bmp'
   else if (lowerUrl.endsWith('.avif')) fallbackMime = 'image/avif'
 
-  return assetToDataUri(asset, fallbackMime)
+  return assetToDataUri(asset, fallbackMime, optimization)
 }
 
 /**
@@ -136,7 +155,10 @@ async function resolveImageDataUri(rawUrl: string): Promise<string | null> {
  * document is fully self-contained. Handles both Markdown (`![alt](url)`) and
  * raw HTML (`<img src="...">`) image syntax.
  */
-export async function convertImagesToBase64(content: string): Promise<string> {
+export async function convertImagesToBase64(
+  content: string,
+  optimization?: ImageOptimizationOptions
+): Promise<string> {
   let processedContent = content || ''
 
   // 1. Markdown images: ![alt](url)
@@ -145,7 +167,7 @@ export async function convertImagesToBase64(content: string): Promise<string> {
     const [fullMatch, alt, url] = match
     if (isExternalUrl(url)) continue
     try {
-      const dataUri = await resolveImageDataUri(url)
+      const dataUri = await resolveImageDataUri(url, optimization)
       if (dataUri) {
         processedContent = processedContent.replace(fullMatch, `![${alt}](${dataUri})`)
       }
@@ -160,7 +182,7 @@ export async function convertImagesToBase64(content: string): Promise<string> {
     const [fullMatch, prefix, quote, url] = match
     if (isExternalUrl(url)) continue
     try {
-      const dataUri = await resolveImageDataUri(url)
+      const dataUri = await resolveImageDataUri(url, optimization)
       if (dataUri) {
         processedContent = processedContent.replace(
           fullMatch,
@@ -264,7 +286,7 @@ export async function renderMarkdown(
   const marked = createMarked()
   if (mermaid) setupMermaidRenderer(marked)
 
-  let processedContent = await convertImagesToBase64(content || '')
+  let processedContent = await convertImagesToBase64(content || '', opts.imageOptimization)
   processedContent = convertWikilinks(processedContent, wikilinkMode)
   let html = (await marked.parse(processedContent)) as string
 
