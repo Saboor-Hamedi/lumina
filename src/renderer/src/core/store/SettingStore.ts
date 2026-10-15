@@ -230,7 +230,12 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
             mergedSettings.theme && mergedSettings.theme !== 'default'
               ? mergedSettings.theme
               : ((typeof localStorage !== 'undefined' && localStorage.getItem('theme-id')) || 'dark')
-          mergedSettings.theme = activeTheme
+          if (mergedSettings.shortcuts?.canvasDrawer === 'Ctrl + Shift + /') {
+            mergedSettings.shortcuts.canvasDrawer = 'Ctrl + Shift + ;'
+          }
+          if (mergedSettings.shortcuts?.canvas === 'Ctrl + Shift + /') {
+            mergedSettings.shortcuts.canvas = 'Ctrl + Shift + ;'
+          }
 
           set({ settings: mergedSettings })
 

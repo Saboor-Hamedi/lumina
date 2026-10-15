@@ -29,7 +29,7 @@ const Graph = React.lazy(() => import('../graph/Graph'))
 const LuminaChatContent = React.lazy(() =>
   import('../AI/components/LuminaChatContent').then((m) => ({ default: m.LuminaChatContent }))
 )
-import { useKeyboardShortcuts } from '../../core/shortcuts'
+import { useKeyboardShortcuts, matchesShortcut } from '../../core/shortcuts'
 import { useWorkspaceStore, GRAPH_TAB_ID, LUMINA_TAB_ID } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useUpdateStore } from '../../core/store/UpdateSetting'
@@ -442,17 +442,45 @@ export const MainLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleRenameShortcut)
   }, [selectedSnippet, showToast])
 
-  // Dedicated direct capturing listener for Ctrl + Shift + / (Canvas Tab)
+  // Dedicated direct capturing listener for Canvas Tab (default: Ctrl + Shift + ;)
   useEffect(() => {
     const handleCanvasShortcut = (e: KeyboardEvent) => {
+      if (
+        (window as any).__isRecordingShortcut ||
+        document.querySelector(
+          '.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay'
+        ) ||
+        (document.activeElement &&
+          (document.activeElement as HTMLElement).closest &&
+          (document.activeElement as HTMLElement).closest(
+            '.shortcut-inline-container, .shortcut-modal'
+          ))
+      ) {
+        return
+      }
       const isCtrl = e.ctrlKey || e.metaKey
-      const isSlash =
-        e.code === 'Slash' ||
-        e.key === '/' ||
-        e.key === '?' ||
-        e.code === 'NumpadDivide' ||
-        e.key === 'Divide'
-      if (isCtrl && e.shiftKey && isSlash) {
+      const isShift = e.shiftKey
+      const isSemicolon =
+        e.code === 'Semicolon' ||
+        e.key === ';' ||
+        e.key === ':' ||
+        e.keyCode === 186 ||
+        e.keyCode === 59
+
+      // Direct match for default Ctrl + Shift + ;
+      const isDefaultCanvas = isCtrl && isShift && !e.altKey && isSemicolon
+
+      // Match configured custom shortcut if user customized it in settings
+      const userShortcuts = useSettingsStore.getState().settings.shortcuts || {}
+      const configuredCanvasKey = userShortcuts.canvasDrawer || userShortcuts.canvas
+      const matchesConfigured =
+        configuredCanvasKey &&
+        configuredCanvasKey !== 'Ctrl + Shift + /' &&
+        configuredCanvasKey !== 'Ctrl + Shift + ;'
+          ? matchesShortcut(e, configuredCanvasKey)
+          : false
+
+      if (isDefaultCanvas || matchesConfigured) {
         e.preventDefault()
         e.stopPropagation()
         e.stopImmediatePropagation()

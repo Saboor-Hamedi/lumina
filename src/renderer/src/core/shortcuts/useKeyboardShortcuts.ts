@@ -82,7 +82,7 @@ export function matchesShortcut(e: KeyboardEvent, shortcutStr: string): boolean 
 
   for (const part of parts) {
     const p = part.toLowerCase()
-    if (p === 'ctrl' || p === 'control') reqCtrl = true
+    if (p === 'ctrl' || p === 'control' || p === 'cntl' || p === 'ctl') reqCtrl = true
     else if (p === 'shift') reqShift = true
     else if (p === 'alt' || p === 'option') reqAlt = true
     else if (p === 'win' || p === 'cmd' || p === 'meta' || p === 'command' || p === 'super') reqMeta = true
@@ -128,6 +128,21 @@ export function matchesShortcut(e: KeyboardEvent, shortcutStr: string): boolean 
     return true
   }
 
+  // Dedicated robust semicolon matching (handles ':' shifted key and Semicolon code)
+  const isSemicolonTarget = targetKey === ';' || targetKey === ':' || targetKey === 'semicolon'
+  if (isSemicolonTarget) {
+    const isSemicolonEvent =
+      eventKey === ';' ||
+      eventKey === ':' ||
+      e.code === 'Semicolon' ||
+      e.keyCode === 186 ||
+      e.keyCode === 59
+    if (!isSemicolonEvent) return false
+    if (Boolean(reqShift) !== Boolean(e.shiftKey)) return false
+    if (Boolean(reqAlt) !== Boolean(e.altKey)) return false
+    return true
+  }
+
   if (Boolean(reqShift) !== Boolean(e.shiftKey)) return false
   if (Boolean(reqAlt) !== Boolean(e.altKey)) return false
 
@@ -142,9 +157,6 @@ export function matchesShortcut(e: KeyboardEvent, shortcutStr: string): boolean 
   }
   if (targetKey === ',') {
     return eventKey === ',' || eventKey === '<' || e.code === 'Comma'
-  }
-  if (targetKey === ';') {
-    return eventKey === ';' || eventKey === ':' || e.code === 'Semicolon'
   }
   if (targetKey === '\\') {
     return eventKey === '\\' || eventKey === '|' || e.code === 'Backslash'
@@ -163,6 +175,10 @@ export function matchesShortcut(e: KeyboardEvent, shortcutStr: string): boolean 
  */
 export function getActiveShortcutKey(id: string, customShortcuts?: ShortcutMap): string {
   if (customShortcuts && customShortcuts[id]) {
+    // If the saved shortcut is the old deprecated default 'Ctrl + Shift + /', migrate to new default
+    if (id === 'canvasDrawer' && customShortcuts[id] === 'Ctrl + Shift + /') {
+      return 'Ctrl + Shift + ;'
+    }
     return customShortcuts[id]
   }
   const def = DEFAULT_SHORTCUTS.find((s) => s.id === id)
@@ -325,8 +341,19 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
         return
       }
 
-      // Spatial Canvas Tab
-      if (matchesShortcut(e, getKey('canvasDrawer'))) {
+      // Spatial Canvas Tab (Ctrl + Shift + ;)
+      const isSemicolonCode =
+        e.code === 'Semicolon' ||
+        e.key === ';' ||
+        e.key === ':' ||
+        e.keyCode === 186 ||
+        e.keyCode === 59
+      const isDirectCanvasDefault =
+        (e.ctrlKey || e.metaKey) && e.shiftKey && !e.altKey && isSemicolonCode
+      const matchesCustom =
+        matchesShortcut(e, getKey('canvasDrawer')) || matchesShortcut(e, getKey('canvas'))
+
+      if (isDirectCanvasDefault || matchesCustom) {
         e.preventDefault()
         e.stopPropagation()
         e.stopImmediatePropagation()

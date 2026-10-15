@@ -1,14 +1,27 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { DEFAULT_SHORTCUTS } from '../defaultShortcuts'
+import { DEFAULT_SHORTCUTS, ShortcutItem } from '../defaultShortcuts'
 import '../css/shortcut.css'
 
 const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.userAgent)
 
+interface WindowApiWithShortcuts {
+  pauseGlobalShortcuts?: () => Promise<void>
+  resumeGlobalShortcuts?: () => Promise<void>
+}
+
+export interface ShortcutRenameBoxProps {
+  isOpen: boolean
+  onClose: () => void
+  shortcutItem: ShortcutItem | null
+  onSave: (id: string, newKey: string) => void
+  allShortcuts?: ShortcutItem[]
+}
+
 /**
  * Normalizes a shortcut key combination string for accurate comparison.
  */
-function normalizeCombo(str) {
+export function normalizeCombo(str: string): string {
   if (!str) return ''
   const parts = str.split('+').map((s) => s.trim().toLowerCase()).filter(Boolean)
   const ctrl = parts.includes('ctrl') || parts.includes('control') || parts.includes('cmd') || parts.includes('command')
@@ -30,7 +43,7 @@ function normalizeCombo(str) {
     else mainKey = p
   }
 
-  const result = []
+  const result: string[] = []
   if (ctrl) result.push('ctrl')
   if (alt) result.push('alt')
   if (shift) result.push('shift')
@@ -43,13 +56,13 @@ function normalizeCombo(str) {
 /**
  * Finds whether a shortcut combo conflicts with an existing assigned shortcut.
  */
-function findConflict(combo, currentId, allShortcuts) {
+export function findConflict(combo: string, currentId: string, allShortcuts?: ShortcutItem[]): boolean {
   if (!combo) return false
   const normalized = normalizeCombo(combo)
   if (!normalized) return false
 
   const combined = [...(allShortcuts || []), ...DEFAULT_SHORTCUTS]
-  const seenIds = new Set()
+  const seenIds = new Set<string>()
 
   for (const s of combined) {
     if (!s || s.id === currentId || seenIds.has(s.id)) continue
@@ -67,7 +80,7 @@ function findConflict(combo, currentId, allShortcuts) {
  * Formats a canonical combo string for display depending on OS.
  * (e.g. on macOS "Ctrl + Shift + F" -> "⌘ + ⇧ + F")
  */
-function formatDisplayCombo(canonicalCombo) {
+export function formatDisplayCombo(canonicalCombo: string): string {
   if (!canonicalCombo) return ''
   if (!isMac) return canonicalCombo
   return canonicalCombo
@@ -80,8 +93,8 @@ function formatDisplayCombo(canonicalCombo) {
 /**
  * Extracts active modifier keys from KeyboardEvent.
  */
-function getModifiers(e) {
-  const parts = []
+export function getModifiers(e: KeyboardEvent): string[] {
+  const parts: string[] = []
   const isPrimary = isMac ? e.metaKey : e.ctrlKey
   const isSecondary = isMac ? e.ctrlKey : e.metaKey
 
@@ -95,7 +108,7 @@ function getModifiers(e) {
 /**
  * Extracts normalized non-modifier main key from KeyboardEvent.
  */
-function getMainKey(e) {
+export function getMainKey(e: KeyboardEvent): string | null {
   const key = e.key
   const code = e.code
 
@@ -120,20 +133,20 @@ function getMainKey(e) {
 
 /**
  * Shortcut Modal Component
- * Styled identically to Rename.jsx modal with key recording and collision detection.
+ * Styled identically to Rename modal with key recording and collision detection.
  */
-const ShortcutRenameBox = ({
+export const ShortcutRenameBox: React.FC<ShortcutRenameBoxProps> = ({
   isOpen,
   onClose,
   shortcutItem,
   onSave,
   allShortcuts = []
 }) => {
-  const inputRef = useRef(null)
-  const [currentDisplay, setCurrentDisplay] = useState('')
-  const [committedKey, setCommittedKey] = useState('')
-  const [isComplete, setIsComplete] = useState(false)
-  const [isTaken, setIsTaken] = useState(false)
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const [currentDisplay, setCurrentDisplay] = useState<string>('')
+  const [committedKey, setCommittedKey] = useState<string>('')
+  const [isComplete, setIsComplete] = useState<boolean>(false)
+  const [isTaken, setIsTaken] = useState<boolean>(false)
 
   const isCompleteRef = useRef(isComplete)
   const committedKeyRef = useRef(committedKey)
@@ -150,12 +163,13 @@ const ShortcutRenameBox = ({
   useEffect(() => {
     if (isOpen && shortcutItem) {
       if (typeof window !== 'undefined') {
-        window.__isRecordingShortcut = true
+        ;(window as any).__isRecordingShortcut = true
       }
 
       // Keep Electron global shortcuts from consuming keys while recording.
-      if (window.api?.pauseGlobalShortcuts) {
-        window.api.pauseGlobalShortcuts().catch(() => {})
+      const winApi = (window as unknown as { api?: WindowApiWithShortcuts }).api
+      if (winApi?.pauseGlobalShortcuts) {
+        winApi.pauseGlobalShortcuts().catch(() => {})
       }
 
       setCurrentDisplay('')
@@ -171,18 +185,19 @@ const ShortcutRenameBox = ({
 
     return () => {
       if (typeof window !== 'undefined') {
-        window.__isRecordingShortcut = false
+        ;(window as any).__isRecordingShortcut = false
       }
-      if (window.api?.resumeGlobalShortcuts) {
-        window.api.resumeGlobalShortcuts().catch(() => {})
+      const winApi = (window as unknown as { api?: WindowApiWithShortcuts }).api
+      if (winApi?.resumeGlobalShortcuts) {
+        winApi.resumeGlobalShortcuts().catch(() => {})
       }
     }
   }, [isOpen, shortcutItem])
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen || !shortcutItem) return
 
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       // 1. Esc to close
       if (e.key === 'Escape') {
         e.preventDefault()
@@ -253,7 +268,7 @@ const ShortcutRenameBox = ({
       setIsTaken(conflict)
     }
 
-    const handleKeyUp = (e) => {
+    const handleKeyUp = (e: KeyboardEvent) => {
       // If user released modifier keys without pressing a main key,
       // revert back to the last valid committed shortcut if any
       if (!isCompleteRef.current) {
@@ -283,15 +298,13 @@ const ShortcutRenameBox = ({
 
   if (!isOpen || !shortcutItem) return null
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (isComplete && !isTaken && committedKey) {
       onSave(shortcutItem.id, committedKey)
       onClose()
     }
   }
-
-  const currentOriginal = shortcutItem.key || shortcutItem.defaultKey
 
   return createPortal(
     <div className="modal-overlay shortcut-modal-overlay" onClick={onClose}>

@@ -1,271 +1,215 @@
 /**
  * ============================================================================
- * Lumina Modern Error Boundary & Fault Recovery Styles
+ * Lumina Modern Fault Recovery UI (VS Code Style)
  * ============================================================================
- * Sleek, non-disruptive, glassmorphic card design inspired by VS Code.
+ * Clean, seamless, non-intrusive fault state that naturally fits any container
+ * (sidebars, tabs, modals, or full screen) without disruptive cards or textarea boxes.
  * ============================================================================
  */
 
 .lumina-error-boundary {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
   width: 100%;
-  padding: 24px;
-  background: var(--bg-app, #0f1117);
+  height: 100%;
+  min-height: 140px;
+  padding: 16px;
   box-sizing: border-box;
-  animation: luminaErrorFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
   user-select: text;
   -webkit-user-select: text;
-}
-
-@keyframes luminaErrorFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.lumina-error-card {
-  max-width: 520px;
-  width: 100%;
-  background: var(--bg-panel, rgba(22, 24, 34, 0.92));
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
-  border-radius: 12px;
-  box-shadow: 
-    0 16px 40px -8px rgba(0, 0, 0, 0.45),
-    0 2px 10px rgba(0, 0, 0, 0.15);
-  padding: 18px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  box-sizing: border-box;
-}
-
-/* Header */
-.lumina-error-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  position: relative;
+  background: transparent;
+  color: var(--text-main, #e2e8f0);
 }
 
 .lumina-error-icon-box {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.28);
-  color: #f59e0b;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  margin-bottom: 10px;
   flex-shrink: 0;
 }
 
-.lumina-error-title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-}
-
 .lumina-error-title {
-  margin: 0;
-  font-size: 14px;
+  margin: 0 0 4px 0;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-main, #f1f5f9);
   letter-spacing: -0.01em;
 }
 
-.lumina-error-badge {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 10px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-muted, #94a3b8);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.lumina-error-dismiss-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted, #94a3b8);
-  cursor: pointer;
-  padding: 5px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-  margin-left: auto;
-}
-
-.lumina-error-dismiss-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-main, #ffffff);
-}
-
-/* Message */
 .lumina-error-message {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--text-secondary, #cbd5e1);
+  margin: 0 0 14px 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-muted, #94a3b8);
+  max-width: 380px;
   word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
 }
 
-/* Actions */
 .lumina-error-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding-top: 4px;
-}
-
-.lumina-error-left-actions {
-  display: flex;
-  align-items: center;
+  justify-content: center;
   gap: 8px;
 }
 
 .lumina-error-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11.5px;
+  gap: 5px;
+  font-size: 11px;
   font-weight: 500;
-  padding: 5px 12px;
-  border-radius: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
   border: 1px solid transparent;
+  outline: none;
 }
 
 .lumina-error-btn.primary {
-  background: var(--bg-active, rgba(64, 186, 250, 0.14));
-  border-color: var(--border-subtle, rgba(64, 186, 250, 0.35));
-  color: var(--text-accent, #60a5fa);
+  background: var(--text-accent, #38bdf8);
+  color: #0b0f19;
+  border-color: var(--text-accent, #38bdf8);
+  font-weight: 600;
 }
 
 .lumina-error-btn.primary:hover {
-  background: rgba(64, 186, 250, 0.22);
-  color: #93c5fd;
+  filter: brightness(1.1);
 }
 
 .lumina-error-btn.secondary {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
-  color: var(--text-secondary, #94a3b8);
+  background: color-mix(in srgb, var(--text-main, #ffffff) 6%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  color: var(--text-main, #e2e8f0);
 }
 
 .lumina-error-btn.secondary:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--text-main, #ffffff) 12%, transparent);
+  border-color: var(--border-subtle, rgba(255, 255, 255, 0.2));
+}
+
+.lumina-error-btn.ghost {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted, #94a3b8);
+}
+
+.lumina-error-btn.ghost:hover {
+  color: var(--text-main, #ffffff);
+  background: color-mix(in srgb, var(--text-main, #ffffff) 6%, transparent);
+}
+
+.lumina-error-badge {
+  font-family: monospace;
+  font-size: 9.5px;
+  color: var(--text-muted, #71717a);
+  margin-top: 8px;
+  opacity: 0.7;
+}
+
+/* Crash loop indicator */
+.lumina-error-boundary.has-loop .lumina-error-icon-box {
+  background: rgba(239, 68, 68, 0.14);
+  color: #ef4444;
+}
+
+/* Full-window Root Crash Recovery UI */
+.lumina-error-root {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-main, #0f172a);
+  color: var(--text-main, #f8fafc);
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.lumina-error-root-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 480px;
+  padding: 36px 32px;
+  background: var(--bg-card, rgba(30, 41, 59, 0.7));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+}
+
+.lumina-error-root-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  margin-bottom: 16px;
+}
+
+.lumina-error-root-title {
+  margin: 0 0 8px 0;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
   color: var(--text-main, #ffffff);
 }
 
-.lumina-error-btn.text-toggle {
-  background: transparent;
+.lumina-error-root-desc {
+  margin: 0 0 24px 0;
+  font-size: 13px;
+  line-height: 1.5;
   color: var(--text-muted, #94a3b8);
-  padding: 4px 6px;
 }
 
-.lumina-error-btn.text-toggle:hover {
-  color: var(--text-main, #f1f5f9);
-}
-
-/* Collapsible Details Drawer */
-.lumina-error-details-drawer {
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 8px;
-  overflow: hidden;
+.lumina-error-root-actions {
   display: flex;
-  flex-direction: column;
-  animation: luminaErrorDrawerExpand 0.18s ease-out;
-}
-
-@keyframes luminaErrorDrawerExpand {
-  from {
-    opacity: 0;
-    transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.lumina-error-details-header {
-  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  padding: 6px 10px;
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  justify-content: center;
+  gap: 10px;
 }
 
-.lumina-error-details-label {
-  font-size: 10.5px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text-muted, #71717a);
+.lumina-error-btn.large {
+  padding: 7px 16px;
+  font-size: 12.5px;
+  border-radius: 6px;
 }
 
-.lumina-error-copy-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-  color: var(--text-muted, #94a3b8);
-  font-size: 10.5px;
-  padding: 2px 7px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
+/* Hidden log accessible for assistive technologies and unit testing */
+.lumina-error-hidden-log {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  background: transparent !important;
 }
 
-.lumina-error-copy-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-}
-
-.lumina-error-copy-btn.copied {
-  background: rgba(34, 197, 94, 0.15);
-  border-color: rgba(34, 197, 94, 0.35);
-  color: #4ade80;
-}
-
-.lumina-error-pre {
-  margin: 0;
-  padding: 10px 12px;
-  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-  font-size: 11px;
-  line-height: 1.55;
-  color: #cbd5e1;
-  max-height: 150px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
-
-.lumina-error-pre::-webkit-scrollbar {
-  width: 5px;
-}
-
-.lumina-error-pre::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 3px;
-}

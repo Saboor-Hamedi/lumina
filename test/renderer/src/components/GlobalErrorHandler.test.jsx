@@ -96,4 +96,36 @@ describe('GlobalErrorHandler', () => {
 
     expect(logError).toHaveBeenCalled()
   })
+
+  it('renders root crash screen when isRoot is true', () => {
+    render(
+      <GlobalErrorHandler isRoot={true}>
+        <BadChild />
+      </GlobalErrorHandler>
+    )
+
+    expect(screen.getByText('Lumina encountered a problem')).toBeInTheDocument()
+    expect(screen.getByText('Reload Application')).toBeInTheDocument()
+  })
+
+  it('detects crash loops and switches primary button to Reload App', () => {
+    const { rerender } = render(
+      <GlobalErrorHandler>
+        <BadChild />
+      </GlobalErrorHandler>
+    )
+
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument()
+
+    // Simulate consecutive crash (retry failure)
+    rerender(
+      <GlobalErrorHandler>
+        <BadChild />
+      </GlobalErrorHandler>
+    )
+
+    // Component caught error again
+    expect(screen.getByText('Reload App')).toBeInTheDocument()
+  })
 })
+

@@ -1,15 +1,6 @@
 import React, { useMemo, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import {
-  FileText,
-  Folder,
-  Star,
-  HardDrive,
-  FileCode,
-  Image,
-  Layers,
-  X
-} from 'lucide-react'
+import { FileText, Folder, Star, HardDrive, FileCode, Image, Layers, X } from 'lucide-react'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import '../css/workspacestat.css'
 
@@ -54,7 +45,7 @@ export const WorkspaceStat: React.FC<WorkspaceStatProps> = ({ isOpen, onClose, a
 
       const text = s.code || ''
       totalChars += text.length
-      totalTextBytes += (new TextEncoder().encode(text)).length
+      totalTextBytes += new TextEncoder().encode(text).length
 
       if (text.trim()) {
         const words = text.trim().split(/\s+/).filter(Boolean).length
@@ -181,11 +172,7 @@ export const WorkspaceStat: React.FC<WorkspaceStatProps> = ({ isOpen, onClose, a
           <Layers size={13} className="vault-stats-title-icon" />
           <span className="vault-stats-title">Workspace Details</span>
         </div>
-        <button
-          className="vault-stats-close-btn"
-          onClick={onClose}
-          aria-label="Close"
-        >
+        <button className="vault-stats-close-btn" onClick={onClose} aria-label="Close">
           <X size={12} />
         </button>
       </div>

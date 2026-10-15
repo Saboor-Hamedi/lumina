@@ -21,6 +21,14 @@ function App() {
     if (window.electron?.ipcRenderer) {
       const handleError = (_, errorData) => {
         console.error('[App] Main process error:', errorData)
+        window.dispatchEvent(
+          new CustomEvent('show-toast', {
+            detail: {
+              message: `Background Task: ${errorData?.message || 'A service error occurred'}`,
+              type: 'warning'
+            }
+          })
+        )
       }
       window.electron.ipcRenderer.on('app:error', handleError)
       return () => {

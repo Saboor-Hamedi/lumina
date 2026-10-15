@@ -7,6 +7,7 @@ describe('useKeyboardShortcuts', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    window.__lastCanvasDispatch = 0
     keydownHandlers = []
 
     vi.spyOn(window, 'addEventListener').mockImplementation((event, handler) => {
@@ -176,6 +177,43 @@ describe('useKeyboardShortcuts', () => {
 
     triggerKey('\\', { ctrl: true })
     expect(onTogglePreview).toHaveBeenCalled()
+  })
+
+  it('calls onToggleCanvas on Ctrl+Shift+; with semicolon or colon', () => {
+    const onToggleCanvas = vi.fn()
+    renderHook(() => useKeyboardShortcuts({ onToggleCanvas }))
+
+    // Browser with shifted semicolon produces key: ':' and code: 'Semicolon'
+    const event = new KeyboardEvent('keydown', {
+      key: ':',
+      code: 'Semicolon',
+      ctrlKey: true,
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true
+    })
+    for (const h of keydownHandlers) {
+      h(event)
+    }
+    expect(onToggleCanvas).toHaveBeenCalled()
+  })
+
+  it('calls onToggleCanvasDrawer on Ctrl+Shift+; when onToggleCanvasDrawer is provided', () => {
+    const onToggleCanvasDrawer = vi.fn()
+    renderHook(() => useKeyboardShortcuts({ onToggleCanvasDrawer }))
+
+    const event = new KeyboardEvent('keydown', {
+      key: ';',
+      code: 'Semicolon',
+      ctrlKey: true,
+      shiftKey: true,
+      bubbles: true,
+      cancelable: true
+    })
+    for (const h of keydownHandlers) {
+      h(event)
+    }
+    expect(onToggleCanvasDrawer).toHaveBeenCalled()
   })
 
   it('ignores keyboard repeat events', () => {

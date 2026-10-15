@@ -18,28 +18,28 @@ describe('Notification', () => {
   })
 
   it('should render success toast with icon', () => {
-    const toast = { type: 'success', message: 'Success message' }
+    const toast = { type: 'success' as const, message: 'Success message' }
     render(<Notification toast={toast} onClose={vi.fn()} />)
 
     expect(screen.getByText('Success message')).toBeInTheDocument()
   })
 
   it('should render error toast with icon', () => {
-    const toast = { type: 'error', message: 'Error message' }
+    const toast = { type: 'error' as const, message: 'Error message' }
     render(<Notification toast={toast} onClose={vi.fn()} />)
 
     expect(screen.getByText('Error message')).toBeInTheDocument()
   })
 
   it('should render info toast with icon', () => {
-    const toast = { type: 'info', message: 'Info message' }
+    const toast = { type: 'info' as const, message: 'Info message' }
     render(<Notification toast={toast} onClose={vi.fn()} />)
 
     expect(screen.getByText('Info message')).toBeInTheDocument()
   })
 
   it('should apply correct CSS class based on type', () => {
-    const toast = { type: 'success', message: 'Test' }
+    const toast = { type: 'success' as const, message: 'Test' }
     const { container } = render(<Notification toast={toast} onClose={vi.fn()} />)
 
     const toastElement = document.body.querySelector('.toast-notification')
@@ -47,7 +47,7 @@ describe('Notification', () => {
   })
 
   it('should handle exit animation', () => {
-    const toast = { type: 'success', message: 'Test' }
+    const toast = { type: 'success' as const, message: 'Test' }
     const { rerender } = render(<Notification toast={toast} onClose={vi.fn()} />)
 
     expect(screen.getByText('Test')).toBeInTheDocument()
@@ -65,7 +65,7 @@ describe('Notification', () => {
   })
 
   it('should apply theme variables to notification container and message for light/white theme compatibility', () => {
-    const toast = { type: 'info', message: 'Theme contrast test' }
+    const toast = { type: 'info' as const, message: 'Theme contrast test' }
     render(<Notification toast={toast} onClose={vi.fn()} />)
 
     const toastElement = document.body.querySelector('.toast-notification') as HTMLElement

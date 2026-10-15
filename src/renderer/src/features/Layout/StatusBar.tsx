@@ -72,7 +72,13 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform)
   const userShortcuts = useSettingsStore((s) => s.settings.shortcuts) || {}
   const inspectorShortcut = userShortcuts.toggleInspector || (isMac ? '⌘I' : 'Ctrl + I')
-  const canvasShortcut = userShortcuts.canvasDrawer || (isMac ? '⌘⇧/' : 'Ctrl + Shift + /')
+  const rawCanvas = userShortcuts.canvasDrawer || userShortcuts.canvas
+  const canvasShortcut =
+    rawCanvas && rawCanvas !== 'Ctrl + Shift + /'
+      ? rawCanvas
+      : isMac
+        ? '⌘⇧;'
+        : 'Ctrl + Shift + ;'
 
   const toggleDropdown = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
