@@ -38,6 +38,10 @@
 .external-drop-icon {
   color: var(--text-accent, #40bafa);
   flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  min-height: 14px;
 }
 
 .external-drop-text {
@@ -46,6 +50,10 @@
   color: var(--text-main, #ffffff);
   letter-spacing: 0.01em;
   white-space: nowrap;
+  line-height: 1;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .external-drop-badge {
@@ -63,6 +71,7 @@
   line-height: 1;
   margin-left: 2px;
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 @keyframes drop-fade-in {

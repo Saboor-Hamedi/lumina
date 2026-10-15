@@ -28,6 +28,7 @@ import {
 } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import SettingDropdown from '../Navigation/components/SettingDropdown'
 import ToolTip from '../../components/atoms/ToolTip'
 import CapsLock from '../../components/capsLock'
@@ -68,6 +69,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   const [imgError, setImgError] = useState<boolean>(false)
   const settingsBtnRef = useRef<HTMLButtonElement | null>(null)
   const { user, isLoggedIn } = useCurrentUser()
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform)
+  const userShortcuts = useSettingsStore((s) => s.settings.shortcuts) || {}
+  const inspectorShortcut = userShortcuts.toggleInspector || (isMac ? '⌘I' : 'Ctrl + I')
+  const canvasShortcut = userShortcuts.canvasDrawer || (isMac ? '⌘⇧/' : 'Ctrl + Shift + /')
 
   const toggleDropdown = useCallback((e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
@@ -188,7 +193,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
         <span className="status-bar-divider" />
 
-        <ToolTip text="Toggle Details & Outline (Ctrl + \)" position="top">
+        <ToolTip text={`Toggle Details (${inspectorShortcut})`} position="top">
           <button type="button" className="status-bar-btn" onClick={onToggleInspector}>
             <PanelRight size={11} />
             <span>Details</span>
@@ -197,7 +202,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
         <span className="status-bar-divider" />
 
-        <ToolTip text="Canvas Drawer (Ctrl + Shift + /)" position="top">
+        <ToolTip text={`Canvas Drawer (${canvasShortcut})`} position="top">
           <button
             type="button"
             className="status-bar-btn"

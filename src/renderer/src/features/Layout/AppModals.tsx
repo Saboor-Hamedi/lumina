@@ -33,14 +33,29 @@ import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { renameNote } from '../../core/hooks/renameNote'
 
+// Helper to retry dynamic imports if Vite dev server is still starting/recompiling
+const lazyWithRetry = <T extends React.ComponentType<any>>(
+  factory: () => Promise<{ default: T }>
+) =>
+  React.lazy(async () => {
+    try {
+      return await factory()
+    } catch {
+      // In Vite dev mode, transient timing/recompilation lag can occur on initial boot.
+      // A quick retry allows Vite to finish module transformation without crashing.
+      await new Promise((r) => setTimeout(r, 400))
+      return await factory()
+    }
+  })
+
 // Lazy-load heavy modals and panels to optimize initial bundle evaluation time
-const LuminaChat = React.lazy(() => import('../AI/Lumina'))
-const Settings = React.lazy(() => import('../Settings/Settings'))
-const Theme = React.lazy(() => import('../theme/Theme'))
-const Documentation = React.lazy(() => import('../Docs/Documentation'))
-const Graph = React.lazy(() => import('../graph/Graph'))
-const Guide = React.lazy(() => import('../modals/Guide'))
-const CanvasDrawerModal = React.lazy(() => import('../canvas/CanvasDrawerModal'))
+const LuminaChat = lazyWithRetry(() => import('../AI/Lumina'))
+const Settings = lazyWithRetry(() => import('../Settings/Settings'))
+const Theme = lazyWithRetry(() => import('../theme/Theme'))
+const Documentation = lazyWithRetry(() => import('../Docs/Documentation'))
+const Graph = lazyWithRetry(() => import('../graph/Graph'))
+const Guide = lazyWithRetry(() => import('../modals/Guide'))
+const CanvasDrawerModal = lazyWithRetry(() => import('../canvas/CanvasDrawerModal'))
 
 export interface RenameModalState {
   isOpen: boolean

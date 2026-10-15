@@ -26,7 +26,7 @@ export interface SidebarItemProps {
   snippet: any
   isActive?: boolean
   onClick?: (e?: any, extra?: any) => void
-  onContextMenu?: (snippet: any, e: React.MouseEvent) => void
+  onContextMenu?: (snippet: any, e: React.MouseEvent) => boolean | void
   style?: React.CSSProperties
   variant?: 'list' | 'grid'
   dndProps?: {
@@ -226,9 +226,14 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+      if (onClick) onClick(snippet, e)
+    } else if (onClick && !isActive) {
+      onClick(snippet, e)
+    }
     if (onContextMenu) {
-      onContextMenu(snippet, e)
-      return
+      const handled = onContextMenu(snippet, e)
+      if (handled !== false) return
     }
     if (snippet.itemType === 'folder') return
     setContextMenu({ x: e.clientX, y: e.clientY })

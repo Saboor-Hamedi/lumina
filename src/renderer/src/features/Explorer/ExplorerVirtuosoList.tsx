@@ -319,17 +319,18 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
                 }
               }}
               onContextMenu={(id, e) => {
+                if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                  handleFolderClick(id, index, e)
+                  handleFolderContextMenu(id, e)
+                  return
+                }
                 const isPartOfMulti =
                   selectedFolderIds.has(id) &&
                   selectedFolderIds.size + (selectedNoteIdsRef.current?.size ?? 0) > 1
                 if (isPartOfMulti) {
                   handleFolderContextMenu(id, e)
                 } else {
-                  setSelectedFolderIds?.(new Set([id]))
-                  setSelectedNoteIds?.(new Set())
-                  setSidebarFocus('folder')
-                  setLastClickedFolder(id)
-                  setSelectedIndex(index)
+                  handleFolderClick(id, index, e)
                   handleFolderContextMenu(id, e)
                 }
               }}
@@ -370,12 +371,18 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
               onClick={(snippet, e) => {
                 if (e) handleNoteClick(snippet, index, e)
               }}
-              onContextMenu={
-                totalSelectedCount > 1 &&
-                currentNoteIds.has(item.snippet.id)
-                  ? (snippet, e) => handleFolderContextMenu(snippet.id, e)
-                  : undefined
-              }
+              onContextMenu={(snippet, e) => {
+                const isMulti =
+                  e.shiftKey ||
+                  e.ctrlKey ||
+                  e.metaKey ||
+                  (totalSelectedCount > 1 && currentNoteIds.has(snippet.id))
+                if (isMulti) {
+                  handleFolderContextMenu(snippet.id, e)
+                  return true
+                }
+                return false
+              }}
               isActive={isNoteActive}
               isMultiDragging={Boolean(activeListDragItem?.draggedSnippetIds?.includes(item.snippet.id))}
               searchQuery={query}

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
-import Notification from '../../../../../src/renderer/src/core/notification/Notification'
+import Notification from '../../../../../src/renderer/src/core/notification'
 
 describe('Notification', () => {
   beforeEach(() => {

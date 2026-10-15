@@ -1,13 +1,12 @@
 import './assets/index.css'
 import './assets/globalErrorHandler.css'
-import { StrictMode, Suspense, lazy } from 'react'
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import App from './App'
 import ScreenLoader from './components/ScreenLoader.tsx'
 import { initScreenLoader } from './components/screenLoader'
 import GlobalErrorHandler from './components/GlobalErrorHandler'
 import { initDomTooltips } from './components/atoms/domTooltip'
-
-const App = lazy(() => import('./App'))
 
 initScreenLoader()
 initDomTooltips()
@@ -68,9 +67,7 @@ if (import.meta.env.PROD) {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <GlobalErrorHandler isRoot={true}>
-      <Suspense fallback={<ScreenLoader status="Loading your notes..." />}>
-        <App />
-      </Suspense>
+      <App />
     </GlobalErrorHandler>
   </StrictMode>
 )

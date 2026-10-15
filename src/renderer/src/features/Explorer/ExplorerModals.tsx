@@ -93,8 +93,9 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
 
     // activeListDragItem.type === 'file'
     const count = activeListDragItem.count || 1
-    const snippetTitle =
+    const rawTitle =
       activeListDragItem.snippet?.title || activeListDragItem.snippet?.fileName || 'Note'
+    const snippetTitle = rawTitle.length > 20 ? `${rawTitle.slice(0, 18)}…` : rawTitle
     const countSubject = count > 1 ? `${count} items` : `"${snippetTitle}"`
 
     let targetDesc = ''
@@ -106,13 +107,15 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
     ) {
       const targetFolderId = currentOverId.replace('folder-', '').replace('drag-folder-', '')
       const targetName = targetFolderId.split('/').pop() || targetFolderId
-      targetDesc = `into "${targetName}"`
+      const displayFolderName = targetName.length > 16 ? `${targetName.slice(0, 14)}…` : targetName
+      targetDesc = `into "${displayFolderName}"`
     } else if (currentOverId) {
       const overSnippet = allSnippets.find((s: any) => s.id === currentOverId)
       if (overSnippet) {
         const parentFolder = overSnippet.folderId
         const targetName = parentFolder ? parentFolder.split('/').pop() : 'Root'
-        targetDesc = targetName === 'Root' ? 'to Root' : `into "${targetName}"`
+        const displayFolderName = targetName && targetName.length > 16 ? `${targetName.slice(0, 14)}…` : targetName
+        targetDesc = targetName === 'Root' ? 'to Root' : `into "${displayFolderName}"`
       }
     }
 

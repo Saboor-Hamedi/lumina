@@ -8,7 +8,7 @@ export interface SortableListItemProps {
   isActive?: boolean
   isMultiDragging?: boolean
   onClick?: (snippet: any, e?: React.MouseEvent) => void
-  onContextMenu?: (snippet: any, e: React.MouseEvent) => void
+  onContextMenu?: (snippet: any, e: React.MouseEvent) => boolean | void
   searchQuery?: string
   matchSnippet?: string
   depth?: number

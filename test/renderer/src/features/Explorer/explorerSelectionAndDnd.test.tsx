@@ -202,6 +202,69 @@ describe('Explorer Selection and Drag-and-Drop', () => {
       expect(result.current.selectedNoteIds.has('note-3')).toBe(false)
       expect(result.current.selectedNoteIds.has('note-4')).toBe(false)
     })
+
+    it('Shift + right-click selects the full continuous range from anchor to clicked item', () => {
+      const { result } = renderHook(() =>
+        useExplorerSelection({
+          isOpen: true,
+          modalRef: { current: null },
+          virtuosoRef: { current: null },
+          flatTree: mockFlatTree,
+          query: '',
+          selectedSnippetId: null
+        })
+      )
+
+      // 1. Select note-1 (index 1) with left click
+      act(() => {
+        result.current.handleNoteClick(mockFlatTree[1].snippet, 1)
+      })
+      expect(result.current.selectedNoteIds.has('note-1')).toBe(true)
+      expect(result.current.selectedNoteIds.size).toBe(1)
+
+      // 2. Shift + right-click note-4 (index 5)
+      const shiftRightClickEvent = { button: 2, shiftKey: true } as any
+      act(() => {
+        result.current.handleNoteClick(mockFlatTree[5].snippet, 5, shiftRightClickEvent)
+      })
+
+      // Range [1..5] includes note-1, note-2, FolderB, note-3, note-4
+      expect(result.current.selectedNoteIds.has('note-1')).toBe(true)
+      expect(result.current.selectedNoteIds.has('note-2')).toBe(true)
+      expect(result.current.selectedFolderIds.has('FolderB')).toBe(true)
+      expect(result.current.selectedNoteIds.has('note-3')).toBe(true)
+      expect(result.current.selectedNoteIds.has('note-4')).toBe(true)
+      expect(result.current.selectedNoteIds.size).toBe(4)
+      expect(result.current.selectedFolderIds.size).toBe(1)
+    })
+
+    it('Ctrl + right-click toggles and adds items into the multi-selection', () => {
+      const { result } = renderHook(() =>
+        useExplorerSelection({
+          isOpen: true,
+          modalRef: { current: null },
+          virtuosoRef: { current: null },
+          flatTree: mockFlatTree,
+          query: '',
+          selectedSnippetId: null
+        })
+      )
+
+      // 1. Select note-1 (index 1)
+      act(() => {
+        result.current.handleNoteClick(mockFlatTree[1].snippet, 1)
+      })
+
+      // 2. Ctrl + right-click note-3 (index 4)
+      const ctrlRightClickEvent = { button: 2, ctrlKey: true } as any
+      act(() => {
+        result.current.handleNoteClick(mockFlatTree[4].snippet, 4, ctrlRightClickEvent)
+      })
+
+      expect(result.current.selectedNoteIds.has('note-1')).toBe(true)
+      expect(result.current.selectedNoteIds.has('note-3')).toBe(true)
+      expect(result.current.selectedNoteIds.size).toBe(2)
+    })
   })
 
   describe('isSnippetActive Authoritative Highlight Resolution', () => {

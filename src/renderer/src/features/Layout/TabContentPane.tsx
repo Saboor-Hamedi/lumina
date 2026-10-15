@@ -27,11 +27,29 @@ import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { countExplorerPerfRender, markExplorerPerf } from '../Explorer/utils/explorerPerf'
 
+// Helper to retry dynamic imports if Vite dev server is still starting or compiling modules
+const lazyWithRetry = <T extends React.ComponentType<any>>(
+  factory: () => Promise<{ default: T }>
+) =>
+  React.lazy(async () => {
+    let attempts = 0
+    while (attempts < 3) {
+      try {
+        return await factory()
+      } catch (err) {
+        attempts++
+        if (attempts >= 3) throw err
+        await new Promise((r) => setTimeout(r, 350 * attempts))
+      }
+    }
+    return factory()
+  })
+
 // Keep editor initialization off the explorer click's synchronous render path.
-const Editor = React.lazy(() => import('../Editor/Editor'))
-const ImageViewerTab = React.lazy(() => import('../media/ImageViewerTab'))
-const PDFViewerTab = React.lazy(() => import('../media/PDFViewerTab'))
-const CanvasTabPane = React.lazy(() => import('../canvas/CanvasTabPane'))
+const Editor = lazyWithRetry(() => import('../Editor/Editor'))
+const ImageViewerTab = lazyWithRetry(() => import('../media/ImageViewerTab'))
+const PDFViewerTab = lazyWithRetry(() => import('../media/PDFViewerTab'))
+const CanvasTabPane = lazyWithRetry(() => import('../canvas/CanvasTabPane'))
 
 export interface TabContentPaneProps {
   /** The note or snippet record to render in this pane */
