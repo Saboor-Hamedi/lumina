@@ -278,5 +278,32 @@ describe('VaultManager', () => {
       expect(asset.dataUrl).toContain('data:application/pdf;base64,')
       expect(asset.buffer.toString()).toBe('%PDF-1.4 fake pdf data')
     })
+
+    it('resolves assets referenced with cache-busting query strings, hashes and ./ prefixes', async () => {
+      await fs.writeFile(path.join(testVaultPath, 'banner.png'), 'banner-bytes')
+
+      const withQuery = await VaultManager.readAsset('./banner.png?v=2')
+      expect(withQuery).not.toBeNull()
+      expect(withQuery!.mimeType).toBe('image/png')
+      expect(withQuery!.buffer.toString()).toBe('banner-bytes')
+
+      const withHash = await VaultManager.readAsset('banner.png#section')
+      expect(withHash!.buffer.toString()).toBe('banner-bytes')
+    })
+
+    it('decodes percent-encoded asset names', async () => {
+      await fs.writeFile(path.join(testVaultPath, 'my image.png'), 'spaced-bytes')
+
+      const asset = await VaultManager.readAsset('my%20image.png')
+      expect(asset!.buffer.toString()).toBe('spaced-bytes')
+    })
+
+    it('returns null instead of throwing when the asset is missing', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+      await expect(VaultManager.readAsset('./does-not-exist.png')).resolves.toBeNull()
+
+      warnSpy.mockRestore()
+    })
   })
 })

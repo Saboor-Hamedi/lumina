@@ -25,6 +25,7 @@ export interface ExportBundlePayload {
   title?: string
   content?: string
   compressZip?: boolean
+  toc?: boolean
   optimizeImages?: boolean
   imageOptimization?: ImageOptimizationOptions
 }
@@ -324,7 +325,13 @@ export async function handleExportMarkdownBundle(
           if (cleanUrl.startsWith('<') && cleanUrl.endsWith('>')) {
             cleanUrl = cleanUrl.slice(1, -1)
           }
-          cleanUrl = decodeURIComponent(cleanUrl)
+          // Drop query/hash before decoding so cache-busted refs resolve correctly.
+          cleanUrl = cleanUrl.split('#')[0].split('?')[0]
+          try {
+            cleanUrl = decodeURIComponent(cleanUrl)
+          } catch {
+            /* keep raw */
+          }
 
           const rawAsset = await WorkspaceManager.readAsset(cleanUrl)
           if (rawAsset) {

@@ -20,6 +20,29 @@ export interface SaveWorkspaceImageResult {
 export type SaveVaultImageResult = SaveWorkspaceImageResult
 
 /**
+ * Normalises a markdown/asset URL into a safe workspace-relative path.
+ *
+ * Drops `#hash` and `?query` suffixes (so cache-busted references such as
+ * `./banner.png?v=2` resolve to the real file), decodes percent-encoding
+ * defensively, and strips leading slashes. Query/hash are removed *before*
+ * decoding so encoded `%3F`/`%23` inside a real filename are preserved.
+ */
+function normalizeAssetPath(relativePath?: string): string {
+  const withoutQuery = String(relativePath || '')
+    .split('#')[0]
+    .split('?')[0]
+
+  let decoded = withoutQuery
+  try {
+    decoded = decodeURIComponent(withoutQuery)
+  } catch {
+    // Keep the raw value when percent-encoding is malformed (e.g. a literal '%')
+  }
+
+  return decoded.replace(/^[/\\]+/, '')
+}
+
+/**
  * WorkspaceMediaManager
  *
  * Manages media assets, embedded images, binary file I/O,
@@ -108,11 +131,18 @@ export class WorkspaceMediaManager {
 
   /**
    * Reads an asset from disk and returns its binary buffer, base64 data, and MIME type.
+   *
+   * Returns `null` when the asset does not exist (e.g. a pasted document that
+   * references images not present in the workspace) so the renderer can show a
+   * placeholder instead of surfacing a hard error.
    */
-  static async readAsset(workspacePath: string, relativePath: string): Promise<ReadAssetResult> {
+  static async readAsset(
+    workspacePath: string,
+    relativePath: string
+  ): Promise<ReadAssetResult | null> {
     if (!workspacePath) throw new Error('No workspace open')
     try {
-      const cleanRel = decodeURIComponent(relativePath || '').replace(/^[/\\]+/, '')
+      const cleanRel = normalizeAssetPath(relativePath)
       const workspaceRoot = path.resolve(workspacePath)
       const finalPath = path.resolve(workspaceRoot, cleanRel)
 
@@ -121,7 +151,9 @@ export class WorkspaceMediaManager {
       }
 
       if (!fsSync.existsSync(finalPath)) {
-        throw new Error(`Asset not found: ${relativePath}`)
+        // Missing assets are expected and non-fatal; degrade gracefully.
+        console.warn('[WorkspaceMediaManager] Asset not found:', relativePath)
+        return null
       }
       const buffer = await fs.readFile(finalPath)
       const ext = path.extname(finalPath).toLowerCase()
@@ -160,7 +192,7 @@ export class WorkspaceMediaManager {
   static async deleteAsset(workspacePath: string, relativePath: string): Promise<boolean> {
     if (!workspacePath) throw new Error('No workspace open')
     try {
-      const cleanRel = decodeURIComponent(relativePath || '').replace(/^[/\\]+/, '')
+      const cleanRel = normalizeAssetPath(relativePath)
       const workspaceRoot = path.resolve(workspacePath)
       const finalPath = path.resolve(workspaceRoot, cleanRel)
 
