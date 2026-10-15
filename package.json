@@ -108,6 +108,7 @@
     "katex": "^0.18.5",
     "lucide-react": "^0.555.0",
     "mermaid": "^11.15.0",
+    "patch-package": "^8.0.1",
     "pdf-lib": "^1.17.1",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
