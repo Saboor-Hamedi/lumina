@@ -32,8 +32,19 @@ describe('VaultManager', () => {
     await VaultManager.init(testVaultPath, os.tmpdir())
     VaultManager.snippets = new Map()
     VaultManager.folders = new Set()
+
+    // Unit tests mutate the workspace directly and assert on the in-memory
+    // cache synchronously. The live chokidar watcher schedules debounced
+    // rescans that reassign `snippets`, racing save/delete under load (which
+    // produced intermittent null results). Disable it for deterministic tests.
     if (VaultManager.watcher) {
-      ;(VaultManager.watcher as any).on('error', () => {})
+      await VaultManager.watcher.close()
+      VaultManager.watcher = null
+    }
+    const pendingScan = (VaultManager as any).scanDebounceTimeout
+    if (pendingScan) {
+      clearTimeout(pendingScan)
+      ;(VaultManager as any).scanDebounceTimeout = null
     }
   })
 
