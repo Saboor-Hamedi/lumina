@@ -16,6 +16,7 @@ import { getHighlightRegex } from '../../../core/utils/searchRanker'
 import { useContextMenu } from '../hooks/useContextMenu'
 import { isSnippetActive } from '../../Explorer/utils/explorerSelectionHelper'
 import { useUnsaved, UnsavedIndicator } from '../../../core/hooks/unsave'
+import { summarizeNotes } from '../../AI/services/summarizeNotes'
 
 const emptyDragImage = typeof window !== 'undefined' ? new Image() : null
 if (emptyDragImage) {

@@ -21,11 +21,43 @@ function generateId(): string {
   return Math.random().toString(36).substring(2, 15)
 }
 
-function resolveTargetFolder(notes: any[]): string {
+function normalizeFolder(folder?: string): string {
+  return String(folder || '')
+    .replace(/\\/g, '/')
+    .replace(/^\/+|\/+$/g, '')
+}
+
+/**
+ * Determines the folder a summary note should be created in.
+ *
+ * The summary always stays with its source material and is never placed
+ * outside the source note(s):
+ * - a note at the workspace root produces a root-level summary,
+ * - a note inside a folder produces the summary in that folder,
+ * - several notes resolve to their deepest shared ancestor folder
+ *   (root when they share none).
+ */
+export function resolveTargetFolder(notes: any[]): string {
   if (!notes || notes.length === 0) return ''
-  const firstFolder = notes[0]?.folderId || ''
-  const same = notes.every((n) => (n.folderId || '') === firstFolder)
-  return same ? firstFolder : ''
+
+  const segmentLists = notes.map((n) => {
+    const folder = normalizeFolder(n?.folderId)
+    return folder ? folder.split('/') : []
+  })
+
+  let common = segmentLists[0]
+  for (let i = 1; i < segmentLists.length && common.length > 0; i++) {
+    const other = segmentLists[i]
+    const next: string[] = []
+    const max = Math.min(common.length, other.length)
+    for (let j = 0; j < max; j++) {
+      if (common[j] === other[j]) next.push(common[j])
+      else break
+    }
+    common = next
+  }
+
+  return common.join('/')
 }
 
 export interface SummarizeNotesOptions {
@@ -53,7 +85,10 @@ export async function summarizeNotes(inputNotes: any | any[], options: Summarize
   }
 
   const baseTitle = generateSummaryTitle(validNotes)
-  const targetFolderId = resolveTargetFolder(validNotes)
+  const targetFolderId =
+    options.folderId !== undefined
+      ? normalizeFolder(options.folderId)
+      : resolveTargetFolder(validNotes)
 
   let finalTitle = baseTitle
   let counter = 1

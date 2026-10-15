@@ -39,7 +39,7 @@ interface UseFolderContextMenuParams {
   selectedNotes?: Snippet[]
   exportNotes?: ExportTargetNote[]
   resolveFolderNotes?: (folderId: string) => ExportTargetNote[]
-  onSummarizeSelected?: (notes: Snippet[]) => void
+  onSummarizeSelected?: (notes: Snippet[], folderId?: string) => void
   onExportSelected?: (notes: ExportTargetNote[]) => void
   onRequestBulkDelete?: () => void
   clearSelection?: () => void
@@ -117,7 +117,7 @@ export function useFolderContextMenu({
         if (folderContext?.folderId && resolveFolderNotes) {
           const targets = resolveFolderNotes(folderContext.folderId)
           if (targets.length > 0) {
-            onSummarizeSelected?.(targets as any)
+            onSummarizeSelected?.(targets as any, folderContext?.folderId)
           }
         }
       },

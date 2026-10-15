@@ -392,7 +392,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
     selectedNotes,
     exportNotes,
     resolveFolderNotes,
-    onSummarizeSelected: (notes: any) => summarizeNotes(notes),
+    onSummarizeSelected: (notes: any, folderId?: string) =>
+      summarizeNotes(notes, folderId !== undefined ? { folderId } : {}),
     onExportSelected: (notes: any) => setBatchExportNotes(notes),
     onRequestBulkDelete: () => setBulkDeleteModalOpen(true),
     clearSelection
