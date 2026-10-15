@@ -186,6 +186,8 @@ export const MainLayout: React.FC = () => {
     rightSidebarTabRef.current = rightSidebarTab
   }, [rightSidebarTab])
 
+  const handleOpenOrCreateCanvasTabRef = useRef<() => void>(() => {})
+
   const [renameModal, setRenameModal] = useState<RenameModalState>({ isOpen: false, item: null, newName: '' })
   const [, setSavedRightSidebarState] = useState<any>(null)
   const appShellRef = useRef<HTMLDivElement | null>(null)
@@ -440,9 +442,9 @@ export const MainLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleRenameShortcut)
   }, [selectedSnippet, showToast])
 
-  // Dedicated direct capturing listener for Ctrl + Shift + / (Canvas Drawer Modal)
+  // Dedicated direct capturing listener for Ctrl + Shift + / (Canvas Tab)
   useEffect(() => {
-    const handleCanvasDrawerKey = (e: KeyboardEvent) => {
+    const handleCanvasShortcut = (e: KeyboardEvent) => {
       const isCtrl = e.ctrlKey || e.metaKey
       const isSlash =
         e.code === 'Slash' ||
@@ -455,16 +457,30 @@ export const MainLayout: React.FC = () => {
         e.stopPropagation()
         e.stopImmediatePropagation()
         const now = Date.now()
-        const lastDispatch = (window as any).__lastCanvasDrawerDispatch || 0
+        const lastDispatch = (window as any).__lastCanvasDispatch || 0
         if (now - lastDispatch < 300) {
           return
         }
-        ;(window as any).__lastCanvasDrawerDispatch = now
-        window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))
+        ;(window as any).__lastCanvasDispatch = now
+        handleOpenOrCreateCanvasTabRef.current?.()
       }
     }
-    window.addEventListener('keydown', handleCanvasDrawerKey, true)
-    return () => window.removeEventListener('keydown', handleCanvasDrawerKey, true)
+
+    const handleCanvasTabEvent = () => {
+      handleOpenOrCreateCanvasTabRef.current?.()
+    }
+
+    window.addEventListener('keydown', handleCanvasShortcut, true)
+    window.addEventListener('open-canvas-tab', handleCanvasTabEvent)
+    window.addEventListener('toggle-canvas-drawer', handleCanvasTabEvent)
+    window.addEventListener('open-canvas-drawer', handleCanvasTabEvent)
+
+    return () => {
+      window.removeEventListener('keydown', handleCanvasShortcut, true)
+      window.removeEventListener('open-canvas-tab', handleCanvasTabEvent)
+      window.removeEventListener('toggle-canvas-drawer', handleCanvasTabEvent)
+      window.removeEventListener('open-canvas-drawer', handleCanvasTabEvent)
+    }
   }, [])
 
   // Dedicated capture-phase shortcut listener for Tab Navigation (Ctrl+Tab, Ctrl+Shift+Tab, Ctrl+1..9)
@@ -649,7 +665,7 @@ export const MainLayout: React.FC = () => {
       }
     },
     onToggleCanvasDrawer: () => {
-      window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))
+      handleOpenOrCreateCanvasTabRef.current?.()
     },
     onNew: () => handleNew(),
     onDelete: () => {
@@ -764,6 +780,67 @@ export const MainLayout: React.FC = () => {
       showToast('Failed to create canvas. Please try again.', 'error')
     }
   }
+
+  const handleOpenOrCreateCanvasTab = useCallback(async () => {
+    try {
+      const state = useWorkspaceStore.getState()
+      const allNotes = state.notes || (state as any).snippets || []
+
+      // 1. Is the currently active tab already a canvas?
+      const currentActive = allNotes.find((n: any) => n.id === state.activeTabId)
+      const isCurrentCanvas =
+        currentActive &&
+        (currentActive.type === 'canvas' ||
+          currentActive.language === 'canvas' ||
+          currentActive.fileName?.endsWith('.canvas'))
+      if (isCurrentCanvas) {
+        return
+      }
+
+      // 2. Is there an open canvas in openTabs?
+      const openCanvasId = state.openTabs.find((tabId: string) => {
+        const note = allNotes.find((n: any) => n.id === tabId)
+        return (
+          note &&
+          (note.type === 'canvas' ||
+            note.language === 'canvas' ||
+            note.fileName?.endsWith('.canvas'))
+        )
+      })
+
+      if (openCanvasId) {
+        const targetNote = allNotes.find((n: any) => n.id === openCanvasId)
+        if (targetNote) {
+          state.setSelectedNote(targetNote)
+          setActiveTab('files')
+          return
+        }
+      }
+
+      // 3. Is there any canvas in workspace notes?
+      const existingCanvasNote = allNotes.find(
+        (n: any) =>
+          n.type === 'canvas' ||
+          n.language === 'canvas' ||
+          n.fileName?.endsWith('.canvas')
+      )
+
+      if (existingCanvasNote) {
+        state.setSelectedNote(existingCanvasNote)
+        setActiveTab('files')
+        return
+      }
+
+      // 4. Otherwise create a new canvas
+      await handleNewCanvas()
+    } catch (err) {
+      console.error('[MainLayout] Failed to open or create canvas tab:', err)
+    }
+  }, [handleNewCanvas])
+
+  useEffect(() => {
+    handleOpenOrCreateCanvasTabRef.current = handleOpenOrCreateCanvasTab
+  }, [handleOpenOrCreateCanvasTab])
 
   const handleConfirmDelete = async () => {
     if (snippetToDelete) {

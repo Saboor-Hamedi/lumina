@@ -30,7 +30,6 @@ export interface UseCanvasShortcutsOptions {
   selectedNodeIds: string[]
   selectedEdgeId: string | null
   snapToGrid: boolean
-  onOpenDrawer?: () => void
   deleteSelected: (ids?: string[]) => void
   deleteEdge: (id: string) => void
   setSelectedEdgeId: (id: string | null) => void
@@ -66,7 +65,6 @@ export function useCanvasShortcuts({
   selectedNodeIds,
   selectedEdgeId,
   snapToGrid,
-  onOpenDrawer,
   deleteSelected,
   deleteEdge,
   setSelectedEdgeId,
@@ -98,27 +96,6 @@ export function useCanvasShortcuts({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const isCtrl = e.ctrlKey || e.metaKey
-      const isSlash = e.code === 'Slash' || e.key === '/' || e.key === '?' || e.code === 'NumpadDivide'
-
-      // Canvas Drawer toggle: Ctrl + Shift + /
-      if (isCtrl && e.shiftKey && isSlash) {
-        e.preventDefault()
-        e.stopPropagation()
-        e.stopImmediatePropagation()
-        const now = Date.now()
-        if ((window as any).__lastCanvasDrawerDispatch && now - (window as any).__lastCanvasDrawerDispatch < 300) {
-          return
-        }
-        ;(window as any).__lastCanvasDrawerDispatch = now
-        if (onOpenDrawer) {
-          onOpenDrawer()
-        } else {
-          window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))
-        }
-        return
-      }
-
       // Check if user is typing in any input, textarea, or ProseMirror/contenteditable editor
       const activeEl = document.activeElement as HTMLElement | null
       const activeTag = (activeEl?.tagName || '').toLowerCase()
@@ -342,7 +319,6 @@ export function useCanvasShortcuts({
     setEditingField,
     setToolMode,
     setIsSpacePressed,
-    onOpenDrawer,
     undo,
     redo
   ])

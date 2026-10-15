@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import {
   PanelRight,
-  PanelBottomOpen,
   Shapes,
   Grid,
   Map as MapIcon,
@@ -43,7 +42,6 @@ export interface SlimCanvasDockProps {
   onCopyImage?: () => void
   onExportPNG?: () => void
   onExportSVG?: () => void
-  onOpenDrawer?: () => void
   hasSelectedNodes?: boolean
   snapToGrid?: boolean
   onToggleSnapToGrid?: () => void
@@ -69,7 +67,6 @@ export const SlimCanvasDock: React.FC<SlimCanvasDockProps> = React.memo(
     onCopyImage,
     onExportPNG,
     onExportSVG,
-    onOpenDrawer,
     hasSelectedNodes = false,
     snapToGrid = false,
     onToggleSnapToGrid,
@@ -116,24 +113,6 @@ export const SlimCanvasDock: React.FC<SlimCanvasDockProps> = React.memo(
         </ToolTip>
 
         <div className="lumina-canvas-divider horizontal" />
-
-        {/* Open in Inline Canvas Drawer */}
-        {onOpenDrawer && (
-          <>
-            <ToolTip text="Open as Inline Canvas Drawer" position="left">
-              <button
-                type="button"
-                className="lumina-canvas-tool-btn"
-                onClick={onOpenDrawer}
-                aria-label="Open as Inline Canvas Drawer"
-              >
-                <PanelBottomOpen size={14} />
-              </button>
-            </ToolTip>
-
-            <div className="lumina-canvas-divider horizontal" />
-          </>
-        )}
 
         {/* Shapes Menu Tool */}
         {onAddShape && (

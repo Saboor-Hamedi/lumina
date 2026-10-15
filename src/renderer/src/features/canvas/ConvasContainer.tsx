@@ -46,7 +46,6 @@ import './css/canvas-studio.css'
 import './css/canvas-dropdown.css'
 import './css/canvas-nodes.css'
 import './css/canvas-shapes.css'
-import './css/canvas-drawer.css'
 import './css/canvas-selection.css'
 import './css/canvas-minimap.css'
 import './css/canvas-toast.css'
@@ -54,13 +53,11 @@ import './css/canvas-toast.css'
 export interface ConvasContainerProps {
   initialData?: CanvasData
   onChange?: (data: CanvasData) => void
-  onOpenDrawer?: () => void
 }
 
 export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   initialData,
-  onChange,
-  onOpenDrawer
+  onChange
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const { toast, showToast, clearToast } = useToast()
@@ -352,7 +349,6 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     selectedNodeIds,
     selectedEdgeId,
     snapToGrid,
-    onOpenDrawer,
     deleteSelected,
     deleteEdge,
     setSelectedEdgeId,
@@ -962,7 +958,6 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         onCopyImage={handleCopyImage}
         onExportPNG={handleExportPNG}
         onExportSVG={handleExportSVG}
-        onOpenDrawer={onOpenDrawer}
         hasSelectedNodes={selectedNodeIds.length > 0}
         selectedCount={selectedNodeIds.length + Math.max(selectedEdgeIds.length, selectedEdgeId ? 1 : 0)}
         selectedColor={selectedColor}

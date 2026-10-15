@@ -641,3 +641,140 @@
   font-weight: 500 !important;
   pointer-events: none !important;
 }
+
+/* Knowledge Graph Slide-up Drawer Modal */
+.graph-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 28px;
+  z-index: 9998;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: graphDrawerFadeIn 0.18s ease-out;
+}
+
+@keyframes graphDrawerFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.graph-drawer-container {
+  position: relative;
+  width: 100%;
+  height: 94%;
+  background: var(--bg-app, var(--bg-main, #0f1015));
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: graphDrawerSlideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes graphDrawerSlideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.graph-drawer-header {
+  height: 34px;
+  background: color-mix(in srgb, var(--bg-panel, #18181b) 92%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  z-index: 100;
+  user-select: none;
+  color: var(--text-main, #e2e8f0);
+}
+
+.graph-drawer-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.graph-drawer-selector-btn {
+  background: color-mix(in srgb, var(--text-main, #ffffff) 5%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  color: var(--text-main, #f8fafc);
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  user-select: none;
+}
+
+.graph-drawer-icon {
+  color: var(--text-accent, #38bdf8);
+}
+
+.graph-drawer-title {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.graph-drawer-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-drawer-action-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted, #94a3b8);
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 5px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.graph-drawer-action-btn:hover {
+  color: var(--text-main, #f8fafc);
+  background: color-mix(in srgb, var(--text-main, #ffffff) 8%, transparent);
+  border-color: var(--border-subtle, rgba(255, 255, 255, 0.1));
+}
+
+.graph-drawer-action-btn.close-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.graph-drawer-body {
+  flex: 1;
+  width: 100%;
+  height: calc(100% - 34px);
+  position: relative;
+  overflow: hidden;
+}
+

@@ -415,11 +415,11 @@ export function useEditorExtensions({
             key: 'Mod-Shift-/',
             run: () => {
               const now = Date.now()
-              if ((window as any).__lastCanvasDrawerDispatch && now - (window as any).__lastCanvasDrawerDispatch < 300) {
+              if ((window as any).__lastCanvasDispatch && now - (window as any).__lastCanvasDispatch < 300) {
                 return true
               }
-              ;(window as any).__lastCanvasDrawerDispatch = now
-              window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))
+              ;(window as any).__lastCanvasDispatch = now
+              window.dispatchEvent(new CustomEvent('open-canvas-tab'))
               return true
             }
           },

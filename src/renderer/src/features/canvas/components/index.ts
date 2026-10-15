@@ -7,7 +7,7 @@
  * 1. NODES (`components/nodes/`):
  *    - `CanvasNodeCard.tsx`: Spatial card renderer (shapes, notes, markdown, PDFs, images)
  *    - `CanvasNodesLayer.tsx`: Viewport layer orchestrating all cards
- *    - `CanvasImagePreview.tsx`: Media overlay preview modal
+ *    - `CanvasImagePreview.tsx`: Image card renderer with local asset protocol support
  *
  * 2. EDGES (`components/edges/`):
  *    - `CanvasEdgeItem.tsx`: Dynamic connector wire with interactive controls & editable labels

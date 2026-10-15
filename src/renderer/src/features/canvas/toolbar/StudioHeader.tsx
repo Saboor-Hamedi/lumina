@@ -1,10 +1,9 @@
 import React from 'react'
-import { SlidersHorizontal, PanelBottomOpen, PanelRightClose, Undo2, Redo2 } from 'lucide-react'
+import { SlidersHorizontal, PanelRightClose, Undo2, Redo2 } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 
 export interface StudioHeaderProps {
   cardCount: number
-  onOpenDrawer?: () => void
   onCollapse: () => void
   onUndo?: () => void
   canUndo?: boolean
@@ -13,7 +12,7 @@ export interface StudioHeaderProps {
 }
 
 export const StudioHeader: React.FC<StudioHeaderProps> = React.memo(
-  ({ cardCount, onOpenDrawer, onCollapse, onUndo, canUndo, onRedo, canRedo }) => {
+  ({ cardCount, onCollapse, onUndo, canUndo, onRedo, canRedo }) => {
     return (
       <div className="lumina-canvas-studio-header">
         <div className="lumina-canvas-studio-title-group">
@@ -47,19 +46,6 @@ export const StudioHeader: React.FC<StudioHeaderProps> = React.memo(
                 aria-label="Redo"
               >
                 <Redo2 size={13} />
-              </button>
-            </ToolTip>
-          )}
-
-          {onOpenDrawer && (
-            <ToolTip text="Open in Drawer" position="bottom">
-              <button
-                type="button"
-                className="lumina-canvas-studio-header-btn"
-                onClick={onOpenDrawer}
-                aria-label="Open as Drawer"
-              >
-                <PanelBottomOpen size={13} />
               </button>
             </ToolTip>
           )}

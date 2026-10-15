@@ -55,7 +55,6 @@ const Theme = lazyWithRetry(() => import('../theme/Theme'))
 const Documentation = lazyWithRetry(() => import('../Docs/Documentation'))
 const Graph = lazyWithRetry(() => import('../graph/Graph'))
 const Guide = lazyWithRetry(() => import('../modals/Guide'))
-const CanvasDrawerModal = lazyWithRetry(() => import('../canvas/CanvasDrawerModal'))
 
 export interface RenameModalState {
   isOpen: boolean
@@ -350,11 +349,6 @@ export const AppModals: React.FC<AppModalsProps> = ({
 
       {/* Voice Capsule Recording Assistant */}
       <VoiceCapsule />
-
-      {/* Spatial Canvas Slide-up Drawer Modal */}
-      <React.Suspense fallback={null}>
-        <CanvasDrawerModal />
-      </React.Suspense>
     </>
   )
 }

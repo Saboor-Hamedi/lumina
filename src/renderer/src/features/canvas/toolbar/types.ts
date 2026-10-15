@@ -37,7 +37,6 @@ export interface ConvasToolBarRightProps {
   onCopyImage?: () => void
   onExportPNG?: () => void
   onExportSVG?: () => void
-  onOpenDrawer?: () => void
   hasSelectedNodes?: boolean
   selectedCount?: number
   selectedColor?: CanvasNodeColor

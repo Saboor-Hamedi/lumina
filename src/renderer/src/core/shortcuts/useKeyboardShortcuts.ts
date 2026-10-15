@@ -325,20 +325,22 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
         return
       }
 
-      // Spatial Canvas Drawer Modal
+      // Spatial Canvas Tab
       if (matchesShortcut(e, getKey('canvasDrawer'))) {
         e.preventDefault()
         e.stopPropagation()
         e.stopImmediatePropagation()
         const now = Date.now()
-        if ((window as any).__lastCanvasDrawerDispatch && now - (window as any).__lastCanvasDrawerDispatch < 300) {
+        if ((window as any).__lastCanvasDispatch && now - (window as any).__lastCanvasDispatch < 300) {
           return
         }
-        ;(window as any).__lastCanvasDrawerDispatch = now
-        if (shortcutsRef.current.onToggleCanvasDrawer) {
+        ;(window as any).__lastCanvasDispatch = now
+        if (shortcutsRef.current.onToggleCanvas) {
+          shortcutsRef.current.onToggleCanvas()
+        } else if (shortcutsRef.current.onToggleCanvasDrawer) {
           shortcutsRef.current.onToggleCanvasDrawer()
         } else {
-          window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))
+          window.dispatchEvent(new CustomEvent('open-canvas-tab'))
         }
         return
       }

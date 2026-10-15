@@ -49,7 +49,6 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     onCopyImage,
     onExportPNG,
     onExportSVG,
-    onOpenDrawer,
     hasSelectedNodes = false,
     selectedCount = 0,
     selectedColor,
@@ -136,7 +135,6 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
           {/* Studio Header */}
           <StudioHeader
             cardCount={nodes.length}
-            onOpenDrawer={onOpenDrawer}
             onCollapse={toggleExpanded}
             onUndo={onUndo}
             canUndo={canUndo}
@@ -230,7 +228,6 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
         onCopyImage={onCopyImage}
         onExportPNG={onExportPNG}
         onExportSVG={onExportSVG}
-        onOpenDrawer={onOpenDrawer}
         hasSelectedNodes={hasSelectedNodes}
         snapToGrid={snapToGrid}
         onToggleSnapToGrid={onToggleSnapToGrid}

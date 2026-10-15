@@ -202,11 +202,11 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
         <span className="status-bar-divider" />
 
-        <ToolTip text={`Canvas Drawer (${canvasShortcut})`} position="top">
+        <ToolTip text={`Canvas (${canvasShortcut})`} position="top">
           <button
             type="button"
             className="status-bar-btn"
-            onClick={() => window.dispatchEvent(new CustomEvent('toggle-canvas-drawer'))}
+            onClick={() => window.dispatchEvent(new CustomEvent('open-canvas-tab'))}
           >
             <LayoutGrid size={11} />
             <span className="status-bar-label-collapse">Canvas</span>

@@ -9,7 +9,6 @@
  * - canvas-dropdown.css: Glassmorphic accessible custom dropdown components
  * - canvas-nodes.css: Node cards, markdown, colors, magnetic ports & edge hitboxes
  * - canvas-shapes.css: Shape palette, vector SVG geometry nodes & float actions
- * - canvas-drawer.css: Spatial slide-up canvas drawer modal
  * - canvas-selection.css: Multi-selection floating actions & batch controls
  * - canvas-minimap.css: Canvas bird's-eye minimap radar & footer card
  * - canvas-toast.css: Spatial notification toast alerts
@@ -22,7 +21,6 @@
 @import './canvas-dropdown.css';
 @import './canvas-nodes.css';
 @import './canvas-shapes.css';
-@import './canvas-drawer.css';
 @import './canvas-selection.css';
 @import './canvas-minimap.css';
 @import './canvas-toast.css';

@@ -19,7 +19,6 @@ import PerformancePanel from './PerformancePanel'
 import { buildGraphData, buildSemanticLinks } from '../../core/utils/graphBuilder'
 import ToolTip from '../../components/atoms/ToolTip'
 import GraphSidebar from './GraphSidebar'
-import '../canvas/css/canvas-drawer.css'
 import '../canvas/css/canvas-toolbar.css'
 import '../canvas/css/canvas-studio.css'
 import './css/Graph.css'
@@ -716,29 +715,29 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
   }
 
   return (
-    <div className="canvas-drawer-overlay graph-drawer-overlay" onClick={handleClose}>
+    <div className="graph-drawer-overlay" onClick={handleClose}>
       <div
         ref={containerRef}
-        className="canvas-drawer-container graph-drawer-container"
+        className="graph-drawer-container"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="canvas-drawer-header" data-testid="modal-header">
-          <div className="canvas-drawer-title-group">
-            <div className="canvas-drawer-selector-btn">
-              <Network size={14} className="canvas-drawer-icon" />
-              <span className="canvas-drawer-title">Knowledge Graph</span>
+        <div className="graph-drawer-header" data-testid="modal-header">
+          <div className="graph-drawer-title-group">
+            <div className="graph-drawer-selector-btn">
+              <Network size={14} className="graph-drawer-icon" />
+              <span className="graph-drawer-title">Knowledge Graph</span>
               <span className="graph-drawer-badge">{rawGraphData.nodes.length} nodes</span>
             </div>
           </div>
 
-          <div className="canvas-drawer-header-actions">
+          <div className="graph-drawer-header-actions">
             <ToolTip
               text={is3DMode ? 'Switch to 2D Nexus' : 'Switch to 3D Cosmos'}
               position="bottom"
             >
               <button
                 type="button"
-                className="canvas-drawer-action-btn"
+                className="graph-drawer-action-btn"
                 onClick={handleToggle3D}
               >
                 <Layers size={13} />
@@ -749,7 +748,7 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
             <ToolTip text="Export PNG Image" position="bottom">
               <button
                 type="button"
-                className="canvas-drawer-action-btn"
+                className="graph-drawer-action-btn"
                 onClick={handleExportPNG}
               >
                 <Download size={14} />
@@ -759,7 +758,7 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
             <ToolTip text="Export SVG Vector" position="bottom">
               <button
                 type="button"
-                className="canvas-drawer-action-btn"
+                className="graph-drawer-action-btn"
                 onClick={handleExportSVG}
               >
                 <FileCode size={14} />
@@ -769,7 +768,7 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
             <ToolTip text="Recenter Graph" position="bottom">
               <button
                 type="button"
-                className="canvas-drawer-action-btn"
+                className="graph-drawer-action-btn"
                 onClick={handleRecenter}
               >
                 <RefreshCw size={14} />
@@ -779,7 +778,7 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
             <ToolTip text="Open in Editor Tab" position="bottom">
               <button
                 type="button"
-                className="canvas-drawer-action-btn"
+                className="graph-drawer-action-btn"
                 onClick={handleOpenAsTab}
               >
                 <ExternalLink size={14} />
@@ -789,7 +788,7 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
             <ToolTip text="Close Drawer (Esc)" position="bottom">
               <button
                 type="button"
-                className="canvas-drawer-action-btn close-btn"
+                className="graph-drawer-action-btn close-btn"
                 onClick={handleClose}
                 aria-label="Close"
               >
@@ -803,7 +802,7 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
         </div>
 
         <div
-          className="canvas-drawer-body"
+          className="graph-drawer-body"
           style={{
             position: 'relative',
             width: '100%',
