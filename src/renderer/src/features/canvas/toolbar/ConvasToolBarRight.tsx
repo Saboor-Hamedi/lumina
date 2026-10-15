@@ -10,7 +10,7 @@
  *
  * 2. EXPANDED CANVAS STUDIO MODE (Expanded):
  *    - 300px full-height control studio container orchestrating modular subcomponents:
- *        📐 StudioHeader: title, count badge, drawer & collapse actions
+ *        📐 StudioHeader: title, count badge & collapse actions
  *        🗂️ StudioTabsBar: segmented navigation (Shapes, Wires, Layout, Export)
  *        🎨 StudioShapesTab: 22 geometric shapes, color swatches & search
  *        🔗 StudioWiresTab: smart dynamic direction & line style selectors
@@ -121,7 +121,7 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     }, [selectedEdgeId])
 
     // ========================================================================
-    // EXPANDED STUDIO DRAWER VIEW
+    // EXPANDED STUDIO PANEL VIEW
     // ========================================================================
     if (isExpanded) {
       return (

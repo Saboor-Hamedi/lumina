@@ -424,7 +424,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
       const target = e.target as HTMLElement | null
-      // Do not hijack scroll or pan if the user's cursor is over toolbars, sidebars, studio drawer, or menus!
+      // Do not hijack scroll or pan if the user's cursor is over toolbars, sidebars, studio panel, or menus!
       if (
         target?.closest?.(
           '.lumina-canvas-toolbar, .lumina-canvas-toolbar-right, .lumina-canvas-export-menu, .lumina-canvas-shapes-menu, .lumina-canvas-minimap, .lumina-sidebar, .right-sidebar'
