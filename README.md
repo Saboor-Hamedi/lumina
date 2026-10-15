@@ -3,13 +3,13 @@
 ![banner](./banner.png?v=2)
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.0.65-blue" alt="version">
-  <img src="https://img.shields.io/badge/unit%20tests-757%20passed-success" alt="unit tests">
-  <img src="https://img.shields.io/badge/e2e%20tests-23%20tests-blue" alt="e2e tests">
+  <img src="https://img.shields.io/badge/version-1.0.69-blue" alt="version">
+  <img src="https://img.shields.io/badge/unit%20tests-1181%20tests-success" alt="unit tests">
+  <img src="https://img.shields.io/badge/e2e%20tests-78%20tests-blue" alt="e2e tests">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
 </p>
 
-lumina is a premium, AI-powered thinking environment and personal intelligence cockpit. Features a multi-tab workspace, infinite spatial 2D canvas, modular interactive knowledge graph, theme-synchronized PDF & multi-format export, AI semantic search (local + cloud), 21 ergonomic themes, persistent AI Memory profiles, Google Drive sync mirroring, draggable modals, and a beautiful editor with wikilinks, mermaid diagrams, KaTeX math formulas, code blocks with image export, callouts, and progressive disclosure formatting.
+lumina is a premium, AI-powered thinking environment and personal intelligence cockpit. Features a multi-tab workspace, infinite spatial 2D canvas, modular interactive knowledge graph, theme-synchronized PDF & multi-format export, AI semantic search (local + cloud), 64 ergonomic themes, persistent AI Memory profiles, Google Drive sync mirroring, draggable modals, and a beautiful editor with wikilinks, mermaid diagrams, KaTeX math formulas, code blocks with image export, callouts, and progressive disclosure formatting.
 
 ---
 
@@ -30,6 +30,7 @@ lumina is a premium, AI-powered thinking environment and personal intelligence c
 - **wikilinks** — `[[link]]` and `[[link|display]]` with auto-update on rename and hover preview cards.
 - **ai semantic search** — local embeddings via onnx (privacy-first) or cloud providers.
 - **daily notes** — one-click journal creation with auto-date and starter templates.
+- **gmail integration** — read, search, label, and compose email from a unified inbox.
 - **multi-workspace** — instantly switch between workspace directories.
 
 ### editor
@@ -56,11 +57,12 @@ lumina is a premium, AI-powered thinking environment and personal intelligence c
 - **rag context** — semantic search over your workspace as real-time context for every query.
 - **open editor tab context** — ai prompt engine treats active unsaved buffers as immediate workspace context.
 - **image generation** — huggingface inference api integration.
+- **voice dictation** — speech-to-text capture and transcription via Groq Whisper.
 - **local embeddings** — `all-minilm-l6-v2` via @xenova/transformers in a web worker.
 
 ### ui & ergonomics
 
-- **21 curated themes** — dark, light, high-contrast, and retro amber palettes with calibrated contrast for long sessions.
+- **64 curated themes** — dark, light, high-contrast, and retro amber palettes with calibrated contrast for long sessions.
 - **zero-latency draggable modals** — theme selector and icon picker feature direct GPU-accelerated header drag handling with position memory.
 - **crisp zero-blur backdrops** — high-contrast dark backdrops for instant rendering and readability.
 - **curtain sidebars** — smooth sliding curtain resize mechanic that protects notes and tabs from squishing.
@@ -77,7 +79,7 @@ lumina is a premium, AI-powered thinking environment and personal intelligence c
 
 ### prerequisites
 
-- node.js 18+ (lts)
+- node.js 20+ (lts)
 - npm
 - git
 
@@ -149,43 +151,53 @@ click the graph icon in the activity bar. nodes are notes, edges are wikilinks. 
 ```
 lumina/
 ├── crates/                      # native high-performance Rust core modules
-│   └── lumina_core/             # N-API native bindings (Rayon parallel walker, regex scanner, memchr)
+│   └── lumina_core/             # N-API native bindings (Rayon parallel walker & scanner)
 ├── resources/                   # application icons (.png, .ico) and desktop packaging assets
 ├── src/
 │   ├── main/                    # electron main process
 │   │   ├── index.js             # main entry point, IPC registry, window lifecycle
-│   │   ├── SettingsManager.js   # settings persistence (.lumina/settings.json)
-│   │   ├── FloatingWindowManager.js # draggable floating AI chat window manager
 │   │   ├── AppUpdater.js        # background auto-update engine
 │   │   ├── indexer-worker.js    # semantic vector indexing worker
+│   │   ├── app/                 # window, protocol, lifecycle & crash management
+│   │   ├── settings/            # settings & app_config persistence (.lumina/settings.json)
 │   │   ├── workspace/           # workspace operations, file watcher, scanner, indexer, search, media
 │   │   ├── auth/                # Google OAuth authentication & token exchange
 │   │   ├── backup/              # Google Drive cloud backup & recovery engine
-│   │   └── handlers/            # shortcuts, tray icon, auto-launcher, window resize & opacity
+│   │   ├── email/               # Gmail API integration
+│   │   ├── lumina/              # native LLM streaming bridge (Ollama)
+│   │   ├── shortcuts/           # global shortcut registration
+│   │   └── handlers/            # IPC handlers: windows, tray, launcher, export, system
 │   ├── export/                  # note & vault export subsystem (PDF, DOCX, Markdown, HTML)
-│   │   ├── exportPDF.js         # print-optimized A4 PDF generator with theme styles & auto-TOC
-│   │   ├── exportBundle.js      # clean self-contained HTML and Markdown asset bundles
-│   │   ├── exportDocs.js        # Word-compatible (.doc) formatted documents
-│   │   ├── exportMarkdown.js    # plain Markdown exporter
-│   │   ├── exportText.js        # plain text stripper
-│   │   ├── exportBatch.js       # recursive folder & multi-note batch export
-│   │   ├── exportCombined.js    # multi-document single-volume synthesis
-│   │   ├── exportUtils.js       # TOC generator, base64 image & asset:// packager
-│   │   ├── mermaidRuntime.js    # offline Mermaid diagram script injector
-│   │   ├── renderWindow.js      # offscreen headless browser window for SVG diagram rasterization
+│   │   ├── exportPDF.ts         # print-optimized A4 PDF generator with theme styles & auto-TOC
+│   │   ├── exportHTML.ts        # self-contained themed HTML export
+│   │   ├── exportBundle.ts      # clean self-contained HTML and Markdown asset bundles
+│   │   ├── exportDocs.ts        # Word-compatible (.doc) formatted documents
+│   │   ├── exportMarkdown.ts    # plain Markdown exporter
+│   │   ├── exportText.ts        # plain text stripper
+│   │   ├── exportBatch.ts       # recursive folder & multi-note batch export
+│   │   ├── exportCombined.ts    # multi-document single-volume synthesis
+│   │   ├── exportUtils.ts       # TOC generator, base64 image & asset:// packager
+│   │   ├── imageOptimizer.ts    # embedded image downscaling & compression
+│   │   ├── zipExporter.ts       # zip packaging for batch exports
+│   │   ├── mermaidRuntime.ts    # offline Mermaid diagram script injector
+│   │   ├── renderWindow.ts      # offscreen headless browser window for SVG diagram rasterization
 │   │   └── preview/             # sandboxed live IPC preview generators & theme token synchronizer
 │   ├── preload/                 # secure context bridge (IPC exposed APIs)
 │   │   └── index.js
 │   └── renderer/                # react 19 frontend application
 │       └── src/
 │           ├── core/            # core state, hooks, and client infrastructure
-│           │   ├── store/       # zustand stores (workspaceStore, SettingStore, UpdateSetting, etc.)
-│           │   ├── hooks/       # keyboard shortcuts, font settings, theme hooks, unsaved state
+│           │   ├── store/       # zustand stores (workspaceStore, SettingStore, etc.)
+│           │   ├── hooks/       # keyboard shortcuts, font settings, cursor & unsaved state
 │           │   ├── ai/          # AI provider adapters, tool registry, token streaming
+│           │   ├── editor/      # CodeMirror 6 extension assembly
+│           │   ├── code/        # syntax highlighting & code-block rendering
+│           │   ├── mermaid/     # mermaid diagram extension & lightbox
 │           │   ├── notification/# in-app banner, toast & status notifications
-│           │   ├── themes/      # theme definitions, 21 color palettes, CSS variable injector
+│           │   ├── shortcuts/   # keyboard shortcut registry
+│           │   ├── i18n/        # text normalization, bidi & IME helpers
 │           │   ├── utils/       # helper utilities, search rankers, graph builders, starters
-│           │   └── db/          # client database & local storage models (Dexie / IndexedDB)
+│           │   └── db/          # client database models (Dexie / IndexedDB)
 │           ├── features/        # domain feature modules
 │           │   ├── Editor/      # CodeMirror 6 markdown editor, KaTeX math, callouts, wikilinks, Drive push
 │           │   ├── AI/          # Lumina AI copilot, session history, composer, prompt modes, InlineLumina
@@ -205,10 +217,9 @@ lumina/
 │           │   │   ├── PerformancePanel.tsx # real-time FPS & node telemetry HUD with recenter target
 │           │   │   └── physics.worker.ts # off-thread d3-force physics simulation worker
 │           │   ├── commandpalette/ # global spotlight, fuzzy & semantic search, quick actions
-│           │   ├── codeBlock/   # syntax-highlighted code blocks, copy-to-clipboard, image export
 │           │   ├── table/       # interactive markdown table editor & column sorting
-│           │   ├── mermaid/     # inline mermaid diagram renderer & lightbox
 │           │   ├── media/       # media viewer, lightbox, and clipboard image pasting
+│           │   ├── email/       # Gmail inbox, threads, and composition UI
 │           │   ├── profile/     # unified Google user profile, avatar tooltip, and auth actions
 │           │   ├── roadmap/     # learning curriculum tracker & progress indicators
 │           │   ├── Settings/    # settings dialog & configuration panels (AI Memory, Appearance, etc.)
@@ -219,14 +230,14 @@ lumina/
 │           │   ├── modals/      # modal dialogs (Guide, About, Prompts, Confirmations, Rename)
 │           │   ├── slash/       # slash command registry and interactive palette
 │           │   ├── template/    # note templates & creation wizard
-│           │   ├── theme/       # 21 custom themes, draggable Theme modal & grid selector
+│           │   ├── theme/       # 64 custom themes, draggable Theme modal & grid selector
 │           │   └── Icons/       # 190+ curated icons & draggable IconPicker modal
 │           ├── components/      # shared UI primitives, atoms, error boundaries, and update banner
 │           │   └── update/      # update notification banner, release notes dropdown (UpdateDetails)
 │           └── assets/          # global styles, base fonts, and layout rules
 ├── test/
 │   ├── main/                    # unit tests — main process, export engines, workspace manager
-│   ├── renderer/                # unit tests — react components, hooks, stores, modals (757 tests)
+│   ├── renderer/                # unit tests — react components, hooks, stores, modals
 │   └── e2e/                     # end-to-end tests (playwright test suites)
 ├── brain/                       # system design specifications, memory docs, and roadmap
 └── scripts/                     # build, package, native rust bootstrap, and release scripts
@@ -249,7 +260,7 @@ npm run test:coverage    # with v8 coverage report
 npm run test:watch       # alias for watch mode
 
 # e2e tests (playwright — requires npm run build first)
-npm run e2e              # run all 23 e2e tests
+npm run e2e              # run all 78 e2e tests
 npm run e2e:list         # list all e2e tests without running
 npm run e2e:debug        # open playwright inspector
 
@@ -260,10 +271,10 @@ npm run test:all         # unit tests + e2e back to back
 ### tech stack
 
 **native core:**
-rust 2021 · napi-rs 2.16 · rayon 1.10 · walkdir 2.5 · regex 1.11 · memchr 2.7
+rust 2021 · napi-rs 2.16 · rayon 1.10 · walkdir 2.5 · serde 1.0
 
 **main process:**
-electron 39.2.4 · chokidar 5 · gray-matter 4
+electron 39.8 · chokidar 5 · gray-matter 4
 
 **renderer:**
 react 19.1.1 · codemirror 6 · zustand 5 · dexie 4 · marked 17 · highlight.js 11 · lucide-react · @xenova/transformers 2 · react-force-graph-2d · three.js · d3-force-3d · flexsearch
@@ -277,7 +288,7 @@ vite 7 · electron-vite · vitest · tailwindcss 3 · electron-builder 26
 
 lumina has two test layers that run independently:
 
-### unit tests — 757 tests across 90 test suites (100% passing)
+### unit tests — 1181 tests across 143 test files
 
 covers components, hooks, stores, utils, and main-process modules. uses **vitest** with jsdom.
 
@@ -287,23 +298,37 @@ npm run test:run                # single run (ci)
 npm run test:coverage           # with v8 coverage report
 ```
 
-### e2e tests — 23 tests across 3 files
+### e2e tests — 78 tests across 17 files
 
-launches the **real electron app** against a fresh temp vault per test. covers the full user flow — app launch, vault operations, and note crud — against the real filesystem. uses **playwright**.
+launches the **real electron app** against a fresh temp vault per test. covers the full user flow — app launch, workspace operations, note crud, search, editor, tabs, export, and settings — against the real filesystem. uses **playwright**.
 
 > ⚠️ requires a build first: `npm run build`
 
 ```bash
-npm run e2e                     # run all 23 e2e tests
+npm run e2e                     # run all 78 e2e tests
 npm run e2e:list                # list tests without running
 npm run e2e:debug               # open playwright inspector
 ```
 
-| suite             | what's tested                                                  |
-| ----------------- | -------------------------------------------------------------- |
-| app.e2e.test.js   | launches · no js errors · title bar · welcome page             |
-| vault.e2e.test.js | writable vault · note persistence · multi-note                 |
-| note.e2e.test.js  | create · frontmatter · rename · delete · bulk · timestamp sort |
+| suite                          | what's tested                                          |
+| ------------------------------ | ------------------------------------------------------ |
+| app.e2e.test.js                | launches · no js errors · title bar · welcome page     |
+| workspace.e2e.test.js          | writable vault · note persistence · multi-note         |
+| note.e2e.test.js               | create · frontmatter · rename · delete · bulk          |
+| noteTitleRename.e2e.test.js    | rename propagation to title & wikilinks                |
+| editor.e2e.test.js             | editing · formatting · autosave                        |
+| search.e2e.test.js             | quick search & spotlight results                       |
+| commandpalette-and-sidebar.e2e.test.js | command palette & sidebar navigation           |
+| tabs.e2e.test.js               | open · switch · pin · close tabs                       |
+| explorer.e2e.test.js           | file tree · create · folder operations                 |
+| dailynotes.e2e.test.js         | journal creation & dated notes                         |
+| dragdrop.e2e.test.js           | note drag & drop reordering                            |
+| export.e2e.test.js             | PDF / HTML / Markdown export                           |
+| settings.e2e.test.js           | settings persistence                                   |
+| settings-modal.e2e.test.js     | settings dialog controls                               |
+| voice.e2e.test.js              | voice dictation controls                               |
+| update.e2e.test.js             | update banner & channel controls                       |
+| documentation-and-template.e2e.test.js | in-app docs & note templates                   |
 
 ---
 
@@ -318,7 +343,7 @@ the `brain/` directory contains the core project documentation:
 | `brain/lumina.md`       | high-level system guide, theme definitions, and UX principles                  |
 | `brain/specs/scope.md`  | feature specifications, roadmap deliverables, and phased milestones            |
 | `brain/shortcuts.md`    | complete keyboard shortcuts and navigation map                                 |
-| `bugs.md`               | master Life & Work Cockpit roadmap and upcoming feature specs                  |
+| `bugs.md`               | runtime error log and debugging notes                                          |
 
 ---
 
