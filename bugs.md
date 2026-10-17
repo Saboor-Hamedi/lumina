@@ -1,78 +1,81 @@
-# Explain the File Ordering Mismatch in Lumina
+# Fix Mermaid Flowchart Scaling and Centering in Lumina
 
-I want you to understand a specific issue in Lumina. **For now, explain the situation only. Do not modify code, implement a fix, or change any files.**
+## Problem
 
-## What Happened
+Mermaid rendering is working perfectly in Lumina. The diagrams are generated correctly, and there are no issues with their content or functionality.
 
-I have a folder named `sqlite` containing 10 numbered files, from `01` to `10`.
+However, the rendered flowcharts have a significant visual presentation problem.
 
-Initially, I asked Lumina's AI to organize these files in the correct order. The AI performed the organization, and the actual files are now correctly ordered when viewed in native Windows 11 File Explorer.
+As shown in the screenshots:
 
-Windows File Explorer displays them as follows:
+- The Mermaid container is large, but the actual flowchart occupies only a tiny portion of it.
+- The diagram is positioned near the top of the container instead of being centered.
+- There is excessive empty space surrounding the diagram, particularly below it.
+- Increasing the container's height does not make the diagram larger.
+- The flowchart remains small regardless of how much space is available.
 
-```text
-01 Introduction Sqlite
-02 Installing Sqlite
-03 Sqlite Shell Commands
-04 Creating Tables Sqlite
-05 Inserting Updating Deleting Sqlite
-06 Querying Sqlite
-07 Joins Sqlite
-08 Indexes Sqlite
-09 Python Sqlite
-10 Backup and Limits Sqlite
-```
+This makes the diagrams difficult to read and wastes valuable screen space.
 
-So, the organization itself was successful. The files have the correct names and are displayed in the expected numerical order in Windows File Explorer.
+## Expected Behavior
 
-## The Actual Problem
+I want Mermaid diagrams to look polished, readable, and professionally integrated into Lumina.
 
-When I open the same `sqlite` folder inside Lumina's internal File Explorer, the files appear in a different order.
+1. **Proper scaling:** The flowchart should use the available container space effectively. It should not remain tiny when the container is large.
 
-For example, Lumina displays them in an order similar to this:
+2. **Horizontal and vertical centering:** The entire diagram should be centered within its rendering area, both horizontally and vertically.
 
-```text
-10 Backup and Limits Sqlite
-04 Creating Tables Sqlite
-08 Indexes Sqlite
-05 Inserting Updating Deleting Sqlite
-02 Installing Sqlite
-01 Introduction Sqlite
-07 Joins Sqlite
-09 Python Sqlite
-06 Querying Sqlite
-03 Sqlite Shell Commands
-```
+3. **Responsive sizing:** The diagram should adapt to the available width and height when the container is resized.
 
-Notice the important distinction:
+4. **Readable nodes and text:** Node labels, connections, and text should remain comfortably readable. Do not simply enlarge the container while leaving the SVG diagram unchanged.
 
-- **The files themselves have been organized correctly.**
-- **Windows File Explorer displays them in the correct numerical order.**
-- **Lumina's internal File Explorer displays the same files in a different order.**
+5. **Preserve the aspect ratio:** Scale the diagram proportionally without stretching or distorting it.
 
-The problem is not that the AI failed to organize the files on disk. The problem is that Lumina's internal File Explorer does not display the correctly organized files in the expected order.
+6. **Handle different diagram sizes:** Small, wide, tall, and complex flowcharts should all render appropriately. A very wide diagram should not be forced into a tiny scale merely because its height is large, and a tall diagram should not be unnecessarily constrained by its width.
 
-## What I Want You to Explain
+7. **Keep existing functionality intact:** Mermaid generation, syntax, diagram content, interactions, and existing controls must continue to work.
 
-Please explain your understanding of this situation.
+## Investigate the Actual Cause
 
-1. Why can Lumina's internal File Explorer display the files in a different order even though the actual files are correctly organized and Windows displays them correctly?
+Before making changes, inspect Lumina's existing Mermaid rendering implementation.
 
-2. Does Lumina's internal File Explorer use its own sorting logic, database ordering, cached data, filesystem enumeration order, or some other mechanism? Explain which possibilities are relevant to the existing implementation.
+Determine whether the issue comes from:
 
-3. What is the difference between successfully organizing the files on disk and correctly displaying their order in Lumina's UI?
+- The SVG's intrinsic width and height or its `viewBox`.
+- Mermaid's `useMaxWidth` or other initialization settings.
+- CSS rules controlling the SVG's width, height, maximum dimensions, or transforms.
+- The layout of the Mermaid container and its child elements.
+- The SVG's default sizing behavior, which can leave the rendered diagram at its intrinsic dimensions.
+- Incorrect calculations of the diagram's bounding box or available rendering space.
+- The difference between enlarging the outer container and actually scaling the SVG content.
 
-4. Which part of Lumina's existing architecture determines the order in which files appear in the internal File Explorer? Trace the relevant code and data flow to establish this, rather than guessing.
+Do not assume that any one of these is the cause. Trace the existing implementation and establish what is happening.
 
-5. What evidence would you need to identify the precise reason Lumina's internal File Explorer does not reflect the correct numerical order?
+## Implementation Objective
 
-## Strict Instructions
+Once the cause is established, implement a robust solution that makes the diagram itself occupy an appropriate amount of the available rendering area and positions it in the center.
 
-- Explain only. Do not implement anything.
-- Do not modify, rename, move, or reorganize files.
-- Do not change the sorting logic or UI.
-- Do not assume the cause without inspecting the existing implementation.
-- Do not report that the files are disorganized on disk; they are already organized correctly.
-- Focus specifically on the discrepancy between the correct file organization on disk and the incorrect display order inside Lumina.
+Use the existing rendering architecture wherever possible. Avoid introducing unnecessary dependencies or rebuilding the Mermaid integration.
 
-Conclude by explaining what is already working correctly, what is not working as expected, and which component is responsible for determining the display order, if the code provides sufficient evidence.
+The solution should distinguish between the container's dimensions and the SVG diagram's actual dimensions. Centering the container alone is insufficient if the diagram remains intrinsically small.
+
+If appropriate for the existing implementation, consider measuring the rendered SVG's actual dimensions and `viewBox`, then calculating a proportional scale that respects the available width and height. Ensure that resizing does not cause repeated scaling, layout loops, clipping, or distortion.
+
+Do not apply an aggressive fixed zoom to every diagram. Choose a sizing strategy that works across different flowchart shapes and complexity levels.
+
+## Validation
+
+Test the result using:
+
+- A small flowchart.
+- A wide flowchart with many sequential nodes.
+- A tall flowchart with multiple levels.
+- A complex flowchart with nested subgraphs.
+- A resized Mermaid container.
+
+Verify that the diagram is centered, readable, proportionally scaled, and not clipped in each case.
+
+Also verify that existing Mermaid rendering and controls remain functional.
+
+**Important:** Do not confuse a larger rendering container with a larger diagram. The objective is to make the actual flowchart visible at an appropriate scale, centered in the available space.
+
+After implementation, report the root cause, the files changed, the sizing strategy used, and the tests performed.

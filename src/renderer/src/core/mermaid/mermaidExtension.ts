@@ -5,6 +5,7 @@ import { treeGrowthEffect } from '../../features/table/tableParserProgress'
 import mermaid from 'mermaid'
 import { copyMermaidAsImage } from './mermaidAsImage'
 import { openMermaidLightbox } from './mermaidBox'
+import { computeMermaidFit, getMermaidNaturalSize } from './mermaidFit'
 import React from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -67,18 +68,25 @@ function initializeMermaid(): void {
     suppressErrorRendering: true,
     theme: 'default',
     htmlLabels: false,
-    flowchart: { htmlLabels: false, curve: 'basis' },
+    // useMaxWidth:false removes Mermaid's inline `max-width:<natural>px` + `width:100%`,
+    // which otherwise permanently caps the diagram at its intrinsic size. We size the
+    // SVG ourselves (see applyMermaidFit) so it can grow and stay centered.
+    flowchart: { htmlLabels: false, curve: 'basis', useMaxWidth: false },
     sequence: {
       mirrorActors: false,
       actorMargin: 50,
       boxMargin: 10,
       boxTextMargin: 5,
       noteMargin: 10,
-      messageMargin: 35
+      messageMargin: 35,
+      useMaxWidth: false
     },
-    mindmap: { padding: 16, maxNodeWidth: 200 },
-    state: {},
-    class: { htmlLabels: false },
+    gantt: { useMaxWidth: false },
+    journey: { useMaxWidth: false },
+    mindmap: { padding: 16, maxNodeWidth: 200, useMaxWidth: false },
+    state: { useMaxWidth: false },
+    class: { htmlLabels: false, useMaxWidth: false },
+    er: { useMaxWidth: false },
     themeVariables: {
       fontFamily: currentFont,
       textColor: currentAccent,
@@ -166,7 +174,10 @@ class MermaidWidget extends WidgetType {
   }
 
   toDOM(view: EditorView): HTMLElement {
-    const wrap = document.createElement('div') as HTMLElement & { _reactRoot?: Root | null }
+    const wrap = document.createElement('div') as HTMLElement & {
+      _reactRoot?: Root | null
+      _mermaidFitObserver?: ResizeObserver | null
+    }
     wrap.className = 'cm-mermaid-widget'
     wrap.dataset.code = encodeURIComponent(this.code)
 
@@ -412,7 +423,7 @@ class MermaidWidget extends WidgetType {
     const cachedSvg = mermaidSvgCache.get(this.code)
     if (cachedSvg) {
       contentDiv.innerHTML = cachedSvg
-      classifyMermaidDiagram(contentDiv, this.code)
+      scheduleMermaidFit(contentDiv)
     } else {
       contentDiv.innerHTML = `
         <div class="mermaid-loading">
@@ -435,10 +446,36 @@ class MermaidWidget extends WidgetType {
     scrollWrap.appendChild(contentDiv)
     bodyWrap.appendChild(scrollWrap)
     wrap.appendChild(bodyWrap)
+
+    // Re-fit whenever the container resizes (pane resize, layout shift). Reading the
+    // stable viewBox for natural size + a "skip if unchanged" guard prevents loops.
+    if (typeof ResizeObserver !== 'undefined') {
+      let fitRaf: number | null = null
+      const observer = new ResizeObserver(() => {
+        if (fitRaf !== null) cancelAnimationFrame(fitRaf)
+        fitRaf = requestAnimationFrame(() => {
+          fitRaf = null
+          applyMermaidFit(contentDiv)
+        })
+      })
+      observer.observe(scrollWrap)
+      wrap._mermaidFitObserver = observer
+    }
+
+    scheduleMermaidFit(contentDiv)
     return wrap
   }
 
-  destroy(dom: HTMLElement & { _reactRoot?: Root | null }): void {
+  destroy(
+    dom: HTMLElement & {
+      _reactRoot?: Root | null
+      _mermaidFitObserver?: ResizeObserver | null
+    }
+  ): void {
+    if (dom._mermaidFitObserver) {
+      dom._mermaidFitObserver.disconnect()
+      dom._mermaidFitObserver = null
+    }
     if (dom._reactRoot) {
       const root = dom._reactRoot
       setTimeout(() => root.unmount(), 0)
@@ -449,28 +486,58 @@ class MermaidWidget extends WidgetType {
 
 let mermaidRenderQueue = Promise.resolve()
 
-function classifyMermaidDiagram(container: HTMLElement, code: string): void {
-  const isLR = /^\s*(flowchart|graph)\s+LR\b/i.test(code)
-  const isTD = /^\s*(flowchart|graph)\s+(TD|TB)\b/i.test(code)
-  const svgEl = container.querySelector('svg')
-  let aspectRatio = 1
-  if (svgEl) {
-    const vb = svgEl.getAttribute('viewBox')
-    if (vb) {
-      const parts = vb.split(/[\s,]+/).map(Number)
-      if (parts.length === 4 && parts[3] > 0) {
-        aspectRatio = parts[2] / parts[3]
-      }
-    }
-  }
+/**
+ * Scales the rendered SVG to fill the available space of its `.mermaid-scroll-wrap`
+ * container, preserving aspect ratio and centering via the container's flexbox.
+ *
+ * The natural size is read from the viewBox (stable), never from the live rendered
+ * size, so applying the size cannot feed back into the measurement and loop.
+ */
+export function applyMermaidFit(container: HTMLElement): void {
+  const svg = container.querySelector('svg')
+  if (!svg) return
+  // Never size the loading spinner (also an <svg>) as if it were a diagram.
+  if (svg.closest('.mermaid-loading')) return
 
-  if (isLR || aspectRatio > 2.0) {
-    container.classList.add('mermaid-flowchart-lr')
-    container.classList.remove('mermaid-flowchart-td')
-  } else if (isTD || aspectRatio < 1.0) {
-    container.classList.add('mermaid-flowchart-td')
-    container.classList.remove('mermaid-flowchart-lr')
+  const wrap = container.closest('.mermaid-scroll-wrap') as HTMLElement | null
+  if (!wrap) return
+
+  const natural = getMermaidNaturalSize(svg as SVGSVGElement)
+  if (!natural) return
+
+  const style = getComputedStyle(wrap)
+  const padX = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0)
+  const padY = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0)
+  const availWidth = wrap.clientWidth - padX
+  const availHeight = wrap.clientHeight - padY
+
+  const fit = computeMermaidFit(natural.width, natural.height, availWidth, availHeight)
+  if (!fit) return
+
+  const nextW = `${Math.round(fit.width)}px`
+  const nextH = `${Math.round(fit.height)}px`
+  if (svg.style.width === nextW && svg.style.height === nextH) return
+
+  svg.style.maxWidth = 'none'
+  svg.style.maxHeight = 'none'
+  svg.style.width = nextW
+  svg.style.height = nextH
+}
+
+/**
+ * Defers a fit to the next frame so the container has laid out (and, for cached
+ * renders injected before attachment, has non-zero dimensions).
+ */
+export function scheduleMermaidFit(container: HTMLElement): void {
+  if (typeof requestAnimationFrame !== 'function') {
+    applyMermaidFit(container)
+    return
   }
+  requestAnimationFrame(() => {
+    applyMermaidFit(container)
+    // Fonts / async layout can shift intrinsic metrics slightly; settle once more.
+    requestAnimationFrame(() => applyMermaidFit(container))
+  })
 }
 
 export function renderMermaidToElement(
@@ -483,7 +550,7 @@ export function renderMermaidToElement(
   const cachedSvg = mermaidSvgCache.get(code)
   if (cachedSvg) {
     container.innerHTML = cachedSvg
-    classifyMermaidDiagram(container, code)
+    scheduleMermaidFit(container)
     return
   }
 
@@ -494,7 +561,7 @@ export function renderMermaidToElement(
       const alreadyCached = mermaidSvgCache.get(code)
       if (alreadyCached) {
         container.innerHTML = alreadyCached
-        classifyMermaidDiagram(container, code)
+        scheduleMermaidFit(container)
         return
       }
 
@@ -521,7 +588,7 @@ export function renderMermaidToElement(
 
         mermaidSvgCache.set(code, svg)
         container.innerHTML = svg
-        classifyMermaidDiagram(container, code)
+        scheduleMermaidFit(container)
 
         // If CodeMirror updated or replaced the widget DOM node while asynchronous rendering was in flight,
         // also populate the live active widget(s) in the document.
@@ -531,7 +598,7 @@ export function renderMermaidToElement(
         ).forEach((el) => {
           if (el !== container) {
             el.innerHTML = svg
-            classifyMermaidDiagram(el, code)
+            scheduleMermaidFit(el)
           }
         })
       } catch (err: any) {

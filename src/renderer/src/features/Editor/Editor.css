@@ -1771,7 +1771,9 @@ html[data-use-active-line-border="true"] .cm-heading.cm-activeLine::before {
   width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 
