@@ -631,7 +631,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
               target.closest('[data-item-index]') ||
               target.closest('[data-index]') ||
               target.closest('.header-actions') ||
-              target.closest('.sort-toggle-btn') ||
+              target.closest('.explorer-action-btn') ||
               target.closest('.inline-create-input') ||
               target.closest('.inline-rename-input')
             )

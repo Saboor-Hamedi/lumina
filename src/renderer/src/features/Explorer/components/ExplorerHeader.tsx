@@ -176,7 +176,10 @@ export const ExplorerHeader: React.FC<ExplorerHeaderProps> = ({
       {/* Section Header with Actions (Only rendered on 'all' tab) */}
       {activeTab === 'all' && (
         <div className="start-section-header">
-          <div className="section-title-wrap" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div
+            className="section-title-wrap"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
             {isQueryActive && <h3>Search Results</h3>}
             <NoteNumbers
               count={isQueryActive ? filteredSnippets.length : allSnippets.length}
@@ -188,7 +191,7 @@ export const ExplorerHeader: React.FC<ExplorerHeaderProps> = ({
             <ToolTip text="New Note">
               <button
                 type="button"
-                className="sort-toggle-btn"
+                className="explorer-action-btn"
                 onClick={(e) => {
                   e.stopPropagation()
                   const targetParent = lastClickedFolder || ''
@@ -204,7 +207,7 @@ export const ExplorerHeader: React.FC<ExplorerHeaderProps> = ({
             <ToolTip text="New Folder">
               <button
                 type="button"
-                className="sort-toggle-btn"
+                className="explorer-action-btn"
                 onClick={(e) => {
                   e.stopPropagation()
                   const targetParent = lastClickedFolder || null
@@ -220,7 +223,7 @@ export const ExplorerHeader: React.FC<ExplorerHeaderProps> = ({
             <ToolTip text="Refresh Explorer">
               <button
                 type="button"
-                className="sort-toggle-btn"
+                className="explorer-action-btn"
                 onClick={(e) => {
                   e.stopPropagation()
                   loadWorkspace()
@@ -232,7 +235,7 @@ export const ExplorerHeader: React.FC<ExplorerHeaderProps> = ({
               </button>
             </ToolTip>
             <ToolTip text="Collapse Folders in Explorer">
-              <button type="button" className="sort-toggle-btn" onClick={collapseAllFolders}>
+              <button type="button" className="explorer-action-btn" onClick={collapseAllFolders}>
                 <FoldVertical size={14} />
               </button>
             </ToolTip>

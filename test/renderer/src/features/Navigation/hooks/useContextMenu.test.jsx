@@ -20,7 +20,11 @@ describe('useContextMenu', () => {
   }
 
   it('returns file options with expected labels', () => {
-    const { result } = setup({}, { id: '1', title: 'Note', fileName: 'note.md', folderId: null }, 'file')
+    const { result } = setup(
+      {},
+      { id: '1', title: 'Note', fileName: 'note.md', folderId: null },
+      'file'
+    )
     const labels = result.current.map((o) => o.label)
     expect(labels).toContain('Open')
     expect(labels).toContain('Rename')
@@ -151,5 +155,60 @@ describe('useContextMenu', () => {
     const blue = bg.children.find((c) => c.label === 'Blue')
     await blue.onClick()
     expect(saveSnippet).toHaveBeenCalledWith({ ...item, color: '#60a5fa' })
+  })
+
+  it('folder menu exposes a Sort submenu with Recent/New/Old/Name options', () => {
+    const { result } = setup({}, '2', 'folder')
+    const sort = result.current.find((o) => o.label === 'Sort')
+    expect(sort).toBeTruthy()
+    const labels = sort.children.map((c) => c.label)
+    expect(labels).toContain('Recent')
+    expect(labels).toContain('New')
+    expect(labels).toContain('Old')
+    expect(labels).toContain('Name (A–Z)')
+    expect(labels).toContain('Name (Z–A)')
+    expect(labels).toContain('Custom (drag order)')
+  })
+
+  it('root/body menu exposes a Sort submenu', () => {
+    const { result } = setup({}, null, 'folder')
+    expect(result.current.find((o) => o.label === 'Sort')).toBeTruthy()
+  })
+
+  it('choosing Recent persists modified desc and clears custom noteOrder', async () => {
+    const updateSettings = vi.fn()
+    useSettingsStore.setState({ updateSettings })
+    const onClose = vi.fn()
+    const { result } = setup({ onClose }, '2', 'folder')
+
+    const recent = result.current
+      .find((o) => o.label === 'Sort')
+      .children.find((c) => c.id === 'recent')
+    await recent.onClick()
+
+    expect(updateSettings).toHaveBeenCalledWith({
+      sortBy: 'modified',
+      sortDirection: 'desc',
+      noteOrder: null
+    })
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('sort actions do not throw when updateSettings is unavailable', () => {
+    const original = useSettingsStore.getState().updateSettings
+    useSettingsStore.setState({ updateSettings: undefined })
+    try {
+      const onClose = vi.fn()
+      const { result } = setup({ onClose }, '2', 'folder')
+
+      const nameAsc = result.current
+        .find((o) => o.label === 'Sort')
+        .children.find((c) => c.id === 'name-asc')
+
+      expect(() => nameAsc.onClick()).not.toThrow()
+      expect(onClose).toHaveBeenCalled()
+    } finally {
+      useSettingsStore.setState({ updateSettings: original })
+    }
   })
 })

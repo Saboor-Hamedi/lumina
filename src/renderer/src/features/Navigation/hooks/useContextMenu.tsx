@@ -15,7 +15,13 @@ import {
   Sparkles,
   CloudUpload,
   Download,
-  Upload
+  Upload,
+  ArrowUpDown,
+  Clock,
+  History,
+  CalendarPlus,
+  ArrowDownAZ,
+  ArrowUpAZ
 } from 'lucide-react'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/SettingStore'
@@ -46,25 +52,36 @@ export interface UseContextMenuProps {
 
 export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
   const effectiveType = type === 'folder' && !item ? 'body' : type
-  const { saveSnippet, clipboard, setClipboard, snippets, folderColors, setFolderColor, loadWorkspace } =
-    useWorkspaceStore(
-      useShallow((state: any) => ({
-        saveSnippet: state.saveNote || state.saveSnippet,
-        clipboard: state.clipboard,
-        setClipboard: state.setClipboard,
-        snippets: state.notes || state.snippets || [],
-        folderColors: state.folderColors || {},
-        setFolderColor: state.setFolderColor,
-        loadWorkspace: state.loadWorkspace
-      }))
-    )
-
-  const { togglePinnedFolder, googleUser } = useSettingsStore(
+  const {
+    saveSnippet,
+    clipboard,
+    setClipboard,
+    snippets,
+    folderColors,
+    setFolderColor,
+    loadWorkspace
+  } = useWorkspaceStore(
     useShallow((state: any) => ({
-      togglePinnedFolder: state.togglePinnedFolder,
-      googleUser: state.settings?.googleUser
+      saveSnippet: state.saveNote || state.saveSnippet,
+      clipboard: state.clipboard,
+      setClipboard: state.setClipboard,
+      snippets: state.notes || state.snippets || [],
+      folderColors: state.folderColors || {},
+      setFolderColor: state.setFolderColor,
+      loadWorkspace: state.loadWorkspace
     }))
   )
+
+  const { togglePinnedFolder, googleUser, sortBy, sortDirection, updateSettings } =
+    useSettingsStore(
+      useShallow((state: any) => ({
+        togglePinnedFolder: state.togglePinnedFolder,
+        googleUser: state.settings?.googleUser,
+        sortBy: state.settings?.sortBy || 'name',
+        sortDirection: state.settings?.sortDirection || 'asc',
+        updateSettings: state.updateSettings
+      }))
+    )
 
   const handleCopy = useCallback(
     (e?: React.MouseEvent) => {
@@ -97,7 +114,8 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
       if (!clipboard?.item) return
 
       try {
-        const targetFolderId = effectiveType === 'folder' ? item : effectiveType === 'file' ? item.folderId : null
+        const targetFolderId =
+          effectiveType === 'folder' ? item : effectiveType === 'file' ? item.folderId : null
 
         if (clipboard.action === 'copy') {
           const generateId = () => {
@@ -136,7 +154,8 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
   )
 
   const handleDefaultImport = useCallback(async () => {
-    const targetFolderId = effectiveType === 'folder' ? item : effectiveType === 'file' ? item?.folderId : null
+    const targetFolderId =
+      effectiveType === 'folder' ? item : effectiveType === 'file' ? item?.folderId : null
     const input = document.createElement('input')
     input.type = 'file'
     input.multiple = true
@@ -188,7 +207,12 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
     }
 
     const colors = [
-      { id: null, bg: 'var(--bg-panel)', border: '1px dashed var(--border-main)', title: 'Default (Reset)' },
+      {
+        id: null,
+        bg: 'var(--bg-panel)',
+        border: '1px dashed var(--border-main)',
+        title: 'Default (Reset)'
+      },
       { id: '#60a5fa', bg: '#60a5fa', title: 'Blue' },
       { id: '#c084fc', bg: '#c084fc', title: 'Purple' },
       { id: '#f87171', bg: '#f87171', title: 'Red' },
@@ -225,6 +249,69 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
       }))
     }
   }, [effectiveType, item, folderColors, saveSnippet, setFolderColor, callbacks])
+
+  // Sort sub-menu shared by the folder and root/background context menus.
+  // Sorting applies to the whole explorer (the order notes render in FileExplorer).
+  const sortSubmenuOption = useMemo(() => {
+    const apply = (nextSortBy: string, nextDirection: string) => {
+      const patch: any = { sortBy: nextSortBy, sortDirection: nextDirection }
+      // Leaving custom order clears any stale manual ordering.
+      if (nextSortBy !== 'custom') patch.noteOrder = null
+      updateSettings?.(patch)
+      callbacks.onClose?.()
+    }
+    const isCurrent = (b: string, d: string) => sortBy === b && sortDirection === d
+
+    return {
+      label: 'Sort',
+      icon: <ArrowUpDown size={14} />,
+      children: [
+        {
+          id: 'recent',
+          label: 'Recent',
+          icon: <Clock size={14} />,
+          isActive: () => isCurrent('modified', 'desc'),
+          onClick: () => apply('modified', 'desc')
+        },
+        {
+          id: 'new',
+          label: 'New',
+          icon: <CalendarPlus size={14} />,
+          isActive: () => isCurrent('created', 'desc'),
+          onClick: () => apply('created', 'desc')
+        },
+        {
+          id: 'old',
+          label: 'Old',
+          icon: <History size={14} />,
+          isActive: () => isCurrent('created', 'asc'),
+          onClick: () => apply('created', 'asc')
+        },
+        { type: 'divider' },
+        {
+          id: 'name-asc',
+          label: 'Name (A–Z)',
+          icon: <ArrowDownAZ size={14} />,
+          isActive: () => isCurrent('name', 'asc'),
+          onClick: () => apply('name', 'asc')
+        },
+        {
+          id: 'name-desc',
+          label: 'Name (Z–A)',
+          icon: <ArrowUpAZ size={14} />,
+          isActive: () => isCurrent('name', 'desc'),
+          onClick: () => apply('name', 'desc')
+        },
+        { type: 'divider' },
+        {
+          id: 'custom',
+          label: 'Custom (drag order)',
+          isActive: () => sortBy === 'custom',
+          onClick: () => apply('custom', 'asc')
+        }
+      ]
+    }
+  }, [sortBy, sortDirection, updateSettings, callbacks])
 
   const options = useMemo(() => {
     // ── File / Note Menu ────────────────────────────────────────────────────
@@ -292,7 +379,8 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
           onClick: () => {
             const api = (window as any).api
             if (api?.openVaultFolder) {
-              const relativePath = (item?.folderId ? item.folderId + '/' : '') + (item?.fileName || '')
+              const relativePath =
+                (item?.folderId ? item.folderId + '/' : '') + (item?.fileName || '')
               api.openVaultFolder(relativePath)
             }
             callbacks.onClose?.()
@@ -319,7 +407,10 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
                   try {
                     window.dispatchEvent(
                       new CustomEvent('show-toast', {
-                        detail: { message: `Pushing "${noteName}" to Google Drive...`, type: 'info' }
+                        detail: {
+                          message: `Pushing "${noteName}" to Google Drive...`,
+                          type: 'info'
+                        }
                       })
                     )
                     const api = (window as any).api
@@ -390,6 +481,9 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
             callbacks.onClose?.()
           }
         },
+        { type: 'divider' },
+        sortSubmenuOption,
+        { type: 'divider' },
         {
           label: 'Rename',
           shortcut: 'Ctrl+R',
@@ -488,6 +582,9 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
             callbacks.onClose?.()
           }
         },
+        { type: 'divider' },
+        sortSubmenuOption,
+        { type: 'divider' },
         {
           label: 'Paste',
           shortcut: 'Ctrl+V',
@@ -534,6 +631,7 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
     handleDefaultImport,
     callbacks,
     colorPickerOption,
+    sortSubmenuOption,
     googleUser
   ])
 

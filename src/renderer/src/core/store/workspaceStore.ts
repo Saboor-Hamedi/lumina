@@ -67,7 +67,6 @@ export interface WorkspaceStoreState {
   deleteNote: (id: string, skipConfirm?: boolean) => Promise<void>
   setFolderColor: (folderId: string, color: string | null) => Promise<void>
   updateNoteSelection: (id: string, selection: any) => void
-  reorderNotes: (orderedIds: string[]) => void
 
   // Backward compatibility properties & methods
   snippets?: WorkspaceNote[]
@@ -185,10 +184,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     set((state) => {
       if (
         state.activeTabId === id &&
-        (!id ||
-          state.selectedNote?.id === id ||
-          id === GRAPH_TAB_ID ||
-          id === LUMINA_TAB_ID)
+        (!id || state.selectedNote?.id === id || id === GRAPH_TAB_ID || id === LUMINA_TAB_ID)
       ) {
         return state
       }
@@ -235,10 +231,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       const isClosingActive = state.activeTabId === id || state.selectedNote?.id === id
 
       let nextActiveId = state.activeTabId
-      if (
-        isClosingActive ||
-        !nextTabs.includes(nextActiveId || '')
-      ) {
+      if (isClosingActive || !nextTabs.includes(nextActiveId || '')) {
         const idx = state.openTabs.indexOf(id)
         if (idx === -1) {
           nextActiveId = nextTabs[0] || null
@@ -253,11 +246,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
       const allNotes = state.notes || []
       const nextSelected = isClosingActive
-        ? (nextActiveId &&
-           nextActiveId !== GRAPH_TAB_ID &&
-           nextActiveId !== LUMINA_TAB_ID
-            ? allNotes.find((n) => n.id === nextActiveId) || null
-            : null)
+        ? nextActiveId && nextActiveId !== GRAPH_TAB_ID && nextActiveId !== LUMINA_TAB_ID
+          ? allNotes.find((n) => n.id === nextActiveId) || null
+          : null
         : state.selectedNote
 
       return {
@@ -318,8 +309,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     set((state) => {
       const allNotes = state.notes || []
       const activeId = state.pinnedTabIds.length > 0 ? state.pinnedTabIds[0] : null
-      const activeNote =
-        activeId ? allNotes.find((n) => n.id === activeId) || null : null
+      const activeNote = activeId ? allNotes.find((n) => n.id === activeId) || null : null
       return {
         openTabs: state.openTabs.filter((id) => state.pinnedTabIds.includes(id)),
         activeTabId: activeId,
@@ -411,9 +401,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         return state
       }
 
-      const next = isDirty
-        ? [...currentDirty, id]
-        : currentDirty.filter((dId) => dId !== id)
+      const next = isDirty ? [...currentDirty, id] : currentDirty.filter((dId) => dId !== id)
 
       return { dirtyNoteIds: next }
     }),
@@ -478,9 +466,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
               ? persistedActiveId
               : validTabs[0] || null
           const activeNote =
-            validActiveId &&
-            validActiveId !== GRAPH_TAB_ID &&
-            validActiveId !== LUMINA_TAB_ID
+            validActiveId && validActiveId !== GRAPH_TAB_ID && validActiveId !== LUMINA_TAB_ID
               ? merged.find((n) => n.id === validActiveId) || null
               : null
 
@@ -490,10 +476,13 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
             if (n.folderId && typeof n.folderId === 'string') {
               const clean = n.folderId.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
               let current = ''
-              clean.split('/').filter(Boolean).forEach((part) => {
-                current = current ? `${current}/${part}` : part
-                folderSet.add(current)
-              })
+              clean
+                .split('/')
+                .filter(Boolean)
+                .forEach((part) => {
+                  current = current ? `${current}/${part}` : part
+                  folderSet.add(current)
+                })
             }
           })
           const allFolders = Array.from(folderSet)
@@ -578,7 +567,12 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         const nextDrafts = { ...state.drafts }
         delete nextDrafts[note.id]
 
-        if (existing && existing.title && updatedNote?.title && existing.title !== updatedNote.title) {
+        if (
+          existing &&
+          existing.title &&
+          updatedNote?.title &&
+          existing.title !== updatedNote.title
+        ) {
           const oldTitle = existing.title
           const newTitle = updatedNote.title
           const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -685,9 +679,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       }
 
       const nextSelectedNote =
-        nextActiveId &&
-        nextActiveId !== GRAPH_TAB_ID &&
-        nextActiveId !== LUMINA_TAB_ID
+        nextActiveId && nextActiveId !== GRAPH_TAB_ID && nextActiveId !== LUMINA_TAB_ID
           ? next.find((n) => n.id === nextActiveId) || null
           : null
 
@@ -747,10 +739,6 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         selectedNote: nextSelected
       }
     })
-  },
-
-  reorderNotes: (orderedIds: string[]) => {
-    useSettingsStore.getState().updateSetting('noteOrder', orderedIds)
   }
 }))
 
@@ -788,10 +776,7 @@ if (typeof window !== 'undefined') {
 useWorkspaceStore.subscribe((state) => {
   if (state.isLoading) return
   if (!isStoreInitialized) {
-    if (
-      (state.notes && state.notes.length > 0) ||
-      hasLoadedWorkspaceOnce
-    ) {
+    if ((state.notes && state.notes.length > 0) || hasLoadedWorkspaceOnce) {
       isStoreInitialized = true
       lastWorkspaceState = state
     }

@@ -47,8 +47,16 @@ interface ExplorerSelectionResult {
   clearSelection: () => void
   selectItemAtIndex: (index: number) => void
   handleSelect: (snippet: Snippet) => void
-  handleNoteClick: (snippet: Snippet, index: number | React.SyntheticEvent, e?: React.MouseEvent) => void
-  handleFolderClick: (folderId: string, index: number | React.SyntheticEvent, e?: React.MouseEvent) => void
+  handleNoteClick: (
+    snippet: Snippet,
+    index: number | React.SyntheticEvent,
+    e?: React.MouseEvent
+  ) => void
+  handleFolderClick: (
+    folderId: string,
+    index: number | React.SyntheticEvent,
+    e?: React.MouseEvent
+  ) => void
   handleBackgroundClick: (e: React.MouseEvent) => void
 }
 
@@ -132,7 +140,11 @@ export function useExplorerSelection({
       }
 
       if ((e.ctrlKey || e.metaKey) && (e.key === 'a' || e.key === 'A')) {
-        if (isOpen || modalRef.current?.matches(':hover') || modalRef?.current?.contains(document.activeElement)) {
+        if (
+          isOpen ||
+          modalRef.current?.matches(':hover') ||
+          modalRef?.current?.contains(document.activeElement)
+        ) {
           e.preventDefault()
           selectAll()
         }
@@ -143,7 +155,10 @@ export function useExplorerSelection({
         const isExplorerActive =
           modalRef?.current?.contains(document.activeElement) ||
           Boolean(modalRef.current?.matches(':hover'))
-        if (isExplorerActive && (selectedNoteIds.size > 0 || selectedFolderIds.size > 0 || sidebarFocus === 'folder')) {
+        if (
+          isExplorerActive &&
+          (selectedNoteIds.size > 0 || selectedFolderIds.size > 0 || sidebarFocus === 'folder')
+        ) {
           e.preventDefault()
           onRequestBulkDelete?.()
         }
@@ -152,7 +167,16 @@ export function useExplorerSelection({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, modalRef, selectAll, clearSelection, selectedNoteIds, selectedFolderIds, sidebarFocus, onRequestBulkDelete])
+  }, [
+    isOpen,
+    modalRef,
+    selectAll,
+    clearSelection,
+    selectedNoteIds,
+    selectedFolderIds,
+    sidebarFocus,
+    onRequestBulkDelete
+  ])
 
   useEffect(() => {
     const handleOutsideInteraction = (e: Event) => {
@@ -195,7 +219,7 @@ export function useExplorerSelection({
         !target.closest('.tree-item') &&
         !target.closest('.folder-tree-main') &&
         !target.closest('.header-actions') &&
-        !target.closest('.sort-toggle-btn') &&
+        !target.closest('.explorer-action-btn') &&
         !target.closest('.inline-create-input') &&
         !target.closest('.inline-rename-input') &&
         !target.closest('.start-menu-search') &&
@@ -357,13 +381,19 @@ export function useExplorerSelection({
       if (!snippet) return
       setSelectedFolder(null)
 
-      const event = e || (typeof index === 'object' && (index as any)?.target ? (index as React.MouseEvent) : null)
+      const event =
+        e ||
+        (typeof index === 'object' && (index as any)?.target ? (index as React.MouseEvent) : null)
       const isCtrl = (event as React.MouseEvent)?.ctrlKey || (event as React.MouseEvent)?.metaKey
       const isShift = (event as React.MouseEvent)?.shiftKey
 
-      let itemIndex = typeof index === 'number' && index >= 0 && index < (flatTree?.length || 0) && flatTree[index]?.snippet?.id === snippet.id
-        ? index
-        : -1
+      let itemIndex =
+        typeof index === 'number' &&
+        index >= 0 &&
+        index < (flatTree?.length || 0) &&
+        flatTree[index]?.snippet?.id === snippet.id
+          ? index
+          : -1
       if (itemIndex === -1 && flatTree) {
         itemIndex = flatTree.findIndex((i) => i.type === 'file' && i.snippet?.id === snippet.id)
       }
@@ -375,7 +405,9 @@ export function useExplorerSelection({
         let anchorPos = -1
         if (effectiveAnchorId) {
           anchorPos = flatTree.findIndex((item) =>
-            item.type === 'file' ? item.snippet?.id === effectiveAnchorId : item.id === effectiveAnchorId
+            item.type === 'file'
+              ? item.snippet?.id === effectiveAnchorId
+              : item.id === effectiveAnchorId
           )
         }
 
@@ -444,24 +476,33 @@ export function useExplorerSelection({
     (folderId: string, index: number | React.SyntheticEvent, e?: React.MouseEvent) => {
       if (!folderId) return
 
-      const event = e || (typeof index === 'object' && (index as any)?.target ? (index as React.MouseEvent) : null)
+      const event =
+        e ||
+        (typeof index === 'object' && (index as any)?.target ? (index as React.MouseEvent) : null)
       const isCtrl = (event as React.MouseEvent)?.ctrlKey || (event as React.MouseEvent)?.metaKey
       const isShift = (event as React.MouseEvent)?.shiftKey
 
-      let itemIndex = typeof index === 'number' && index >= 0 && index < (flatTree?.length || 0) && flatTree[index]?.id === folderId
-        ? index
-        : -1
+      let itemIndex =
+        typeof index === 'number' &&
+        index >= 0 &&
+        index < (flatTree?.length || 0) &&
+        flatTree[index]?.id === folderId
+          ? index
+          : -1
       if (itemIndex === -1 && flatTree) {
         itemIndex = flatTree.findIndex((i) => i.type === 'folder' && i.id === folderId)
       }
 
       if (isShift && flatTree && flatTree.length > 0) {
-        const effectiveAnchorId = anchorId || lastClickedFolder || lastClickedNoteId || selectedSnippetId
+        const effectiveAnchorId =
+          anchorId || lastClickedFolder || lastClickedNoteId || selectedSnippetId
 
         let anchorPos = -1
         if (effectiveAnchorId) {
           anchorPos = flatTree.findIndex((item) =>
-            item.type === 'folder' ? item.id === effectiveAnchorId : item.snippet?.id === effectiveAnchorId
+            item.type === 'folder'
+              ? item.id === effectiveAnchorId
+              : item.snippet?.id === effectiveAnchorId
           )
         }
 
