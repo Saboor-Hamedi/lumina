@@ -194,6 +194,30 @@
   opacity: 1;
 }
 
+/* Right-click "toggle items" context menu header (rendered in a body-level portal) */
+.status-bar-menu-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 6px 12px 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.status-bar-menu-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-main, #e2e8f0);
+}
+
+.status-bar-menu-hint {
+  font-size: 10px;
+  color: var(--text-faint, #64748b);
+  white-space: nowrap;
+}
+
 /* Responsive resilience on smaller viewports */
 @media (max-width: 980px) {
   .status-bar-hide-md {

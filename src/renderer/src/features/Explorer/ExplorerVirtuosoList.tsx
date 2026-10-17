@@ -141,6 +141,8 @@ export interface ExplorerVirtuosoListProps {
   /** Ref for selectedNoteIds — used inside renderItemContent to avoid reactive dep */
   selectedNoteIdsRef: React.RefObject<Set<string>>
   selectedFolderIds: Set<string>
+  /** Ref for selectedFolderIds — used inside renderItemContent to avoid reactive dep */
+  selectedFolderIdsRef: React.RefObject<Set<string>>
   setSelectedFolderIds?: React.Dispatch<React.SetStateAction<Set<string>>>
   setSelectedNoteIds?: React.Dispatch<React.SetStateAction<Set<string>>>
   selectedSnippetId: string | null
@@ -184,6 +186,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
   selectedNoteIds,
   selectedNoteIdsRef,
   selectedFolderIds,
+  selectedFolderIdsRef,
   setSelectedFolderIds,
   setSelectedNoteIds,
   selectedSnippetId,
@@ -324,9 +327,10 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
                   handleFolderContextMenu(id, e)
                   return
                 }
+                const folderIds = selectedFolderIdsRef?.current ?? selectedFolderIds
                 const isPartOfMulti =
-                  selectedFolderIds.has(id) &&
-                  selectedFolderIds.size + (selectedNoteIdsRef.current?.size ?? 0) > 1
+                  folderIds.has(id) &&
+                  folderIds.size + (selectedNoteIdsRef.current?.size ?? 0) > 1
                 if (isPartOfMulti) {
                   handleFolderContextMenu(id, e)
                 } else {
@@ -372,11 +376,13 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
                 if (e) handleNoteClick(snippet, index, e)
               }}
               onContextMenu={(snippet, e) => {
+                const noteIds = selectedNoteIdsRef?.current ?? currentNoteIds
+                const folderIds = selectedFolderIdsRef?.current ?? selectedFolderIds
                 const isMulti =
                   e.shiftKey ||
                   e.ctrlKey ||
                   e.metaKey ||
-                  (totalSelectedCount > 1 && currentNoteIds.has(snippet.id))
+                  (noteIds.size + folderIds.size > 1 && noteIds.has(snippet.id))
                 if (isMulti) {
                   handleFolderContextMenu(snippet.id, e)
                   return true
@@ -415,7 +421,8 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
       handleExternalDragOver,
       handleExternalDrop,
       selectedSnippetIdRef,
-      selectedNoteIdsRef
+      selectedNoteIdsRef,
+      selectedFolderIdsRef
     ]
   )
 

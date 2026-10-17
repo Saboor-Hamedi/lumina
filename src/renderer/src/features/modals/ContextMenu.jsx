@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useLayoutEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, ChevronRight } from 'lucide-react'
 
@@ -26,6 +26,14 @@ const MenuItem = ({ opt, onClose }) => {
     return <div className="menu-divider" />
   }
 
+  if (opt.type === 'section') {
+    return (
+      <div className="menu-section" role="presentation">
+        {opt.label}
+      </div>
+    )
+  }
+
   if (opt.type === 'custom') {
     return <React.Fragment>{opt.render(onClose)}</React.Fragment>
   }
@@ -46,7 +54,7 @@ const MenuItem = ({ opt, onClose }) => {
         if (hasChildren) return
         if (opt.onClick) opt.onClick()
         if (opt.action) opt.action()
-        onClose()
+        if (!opt.keepOpen) onClose()
       }}
     >
       <div className="menu-col-icon">
@@ -95,6 +103,9 @@ const MenuItem = ({ opt, onClose }) => {
 }
 
 const ContextMenu = ({ x, y, options, onClose }) => {
+  const menuRef = useRef(null)
+  const [layout, setLayout] = useState(() => ({ x, y, maxHeight: null, scroll: false }))
+
   useEffect(() => {
     const handleGlobalClick = () => onClose()
     const handleKeyDown = (e) => {
@@ -108,8 +119,27 @@ const ContextMenu = ({ x, y, options, onClose }) => {
     }
   }, [onClose])
 
-  const menuX = Math.min(x, window.innerWidth - 230)
-  const menuY = Math.min(y, window.innerHeight - (options.length * 36 + 20))
+  // Measure the rendered menu and flip it upward / cap its height when it would
+  // overflow the viewport (important for long menus such as the status bar menu).
+  useLayoutEffect(() => {
+    const el = menuRef.current
+    if (!el) return
+    const margin = 8
+    const rect = el.getBoundingClientRect()
+    const availH = window.innerHeight - margin * 2
+    const tooTall = rect.height > availH
+    const height = tooTall ? availH : rect.height
+
+    let nx = Math.min(x, window.innerWidth - rect.width - margin)
+    if (nx < margin) nx = margin
+
+    let ny = y
+    if (ny + height > window.innerHeight - margin) ny = y - height
+    if (ny < margin) ny = margin
+    if (ny + height > window.innerHeight - margin) ny = window.innerHeight - height - margin
+
+    setLayout({ x: nx, y: ny, maxHeight: tooTall ? availH : null, scroll: tooTall })
+  }, [x, y])
 
   return createPortal(
     <>
@@ -133,8 +163,16 @@ const ContextMenu = ({ x, y, options, onClose }) => {
         }}
       />
       <div
+        ref={menuRef}
         className="context-menu"
-        style={{ left: menuX, top: menuY, zIndex: 9999, position: 'fixed' }}
+        style={{
+          left: layout.x,
+          top: layout.y,
+          zIndex: 9999,
+          position: 'fixed',
+          maxHeight: layout.maxHeight ?? undefined,
+          overflowY: layout.scroll ? 'auto' : undefined
+        }}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         onContextMenu={(e) => e.stopPropagation()}

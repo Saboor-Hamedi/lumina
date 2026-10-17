@@ -227,6 +227,41 @@ describe('VaultManager', () => {
       expect(folderExists).toBe(false)
       expect(fileExists).toBe(false)
     })
+
+    it('bulk deletes a mixed selection of markdown, canvas, pdf and a folder', async () => {
+      const folderPath = path.join(testVaultPath, 'mixed-folder')
+      await fs.mkdir(folderPath, { recursive: true })
+      await fs.writeFile(path.join(folderPath, 'inside.md'), 'Inside', 'utf-8')
+
+      const mdPath = path.join(testVaultPath, 'note.md')
+      await fs.writeFile(mdPath, '# Note', 'utf-8')
+
+      const canvasPath = path.join(testVaultPath, 'board.canvas')
+      await fs.writeFile(canvasPath, '{"nodes":[],"edges":[]}', 'utf-8')
+
+      const pdfPath = path.join(testVaultPath, 'manual.pdf')
+      await fs.writeFile(pdfPath, '%PDF-1.4 fake pdf data')
+
+      const { snippets } = await VaultManager.scanVault()
+      const mdSnippet = snippets.find((s) => s.fileName === 'note.md')!
+      const canvasSnippet = snippets.find((s) => s.fileName === 'board.canvas')!
+      const pdfSnippet = snippets.find((s) => s.fileName === 'manual.pdf')!
+
+      expect(mdSnippet).toBeDefined()
+      expect(canvasSnippet).toBeDefined()
+      expect(pdfSnippet).toBeDefined()
+
+      await VaultManager.bulkDelete({
+        folderIds: ['mixed-folder'],
+        snippetIds: [mdSnippet.id, canvasSnippet.id, pdfSnippet.id]
+      })
+
+      const exists = async (p: string) => fs.access(p).then(() => true).catch(() => false)
+      expect(await exists(folderPath)).toBe(false)
+      expect(await exists(mdPath)).toBe(false)
+      expect(await exists(canvasPath)).toBe(false)
+      expect(await exists(pdfPath)).toBe(false)
+    })
   })
 
   describe('getSnippets', () => {

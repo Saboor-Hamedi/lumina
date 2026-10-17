@@ -42,6 +42,8 @@ export interface ContextMenuCallbacks {
   onSummary?: () => void
   onClose?: () => void
   isFolderPinned?: boolean
+  /** Overrides the Delete item label (e.g. "Delete 3 Items" for multi-selection). */
+  deleteLabel?: string
 }
 
 export interface UseContextMenuProps {
@@ -441,7 +443,7 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
           : []),
         { type: 'divider' },
         {
-          label: 'Delete',
+          label: callbacks.deleteLabel || 'Delete',
           shortcut: 'Ctrl+Shift+D',
           icon: <Trash2 size={14} />,
           danger: true,
@@ -550,7 +552,7 @@ export function useContextMenu({ item, type, callbacks }: UseContextMenuProps) {
         },
         { type: 'divider' },
         {
-          label: 'Delete',
+          label: callbacks.deleteLabel || 'Delete',
           shortcut: 'Ctrl+Shift+D',
           icon: <Trash2 size={14} />,
           danger: true,

@@ -203,6 +203,48 @@ describe('Explorer Selection and Drag-and-Drop', () => {
       expect(result.current.selectedNoteIds.has('note-4')).toBe(false)
     })
 
+    it('Shift + click does not range from the externally-active note (no "select all")', () => {
+      const rootTree: any[] = Array.from({ length: 6 }, (_, i) => ({
+        type: 'file',
+        snippet: { id: `file-${i + 1}`, title: `File ${i + 1}`, folderId: '' },
+        depth: 0
+      }))
+
+      const { result } = renderHook(() =>
+        useExplorerSelection({
+          isOpen: true,
+          modalRef: { current: null },
+          virtuosoRef: { current: null },
+          flatTree: rootTree,
+          query: '',
+          // First file is the open tab, but the user never clicked in the explorer
+          selectedSnippetId: 'file-1'
+        })
+      )
+
+      // Shift+click file-6 with no explicit anchor -> single-select only, NOT 1..6
+      act(() => {
+        result.current.handleNoteClick(rootTree[5].snippet, 5, { shiftKey: true } as any)
+      })
+      expect(result.current.selectedNoteIds.has('file-6')).toBe(true)
+      expect(result.current.selectedNoteIds.size).toBe(1)
+
+      // Plain-click file-3, then Shift+click file-6 -> range file-3..file-6
+      act(() => {
+        result.current.handleNoteClick(rootTree[2].snippet, 2)
+      })
+      act(() => {
+        result.current.handleNoteClick(rootTree[5].snippet, 5, { shiftKey: true } as any)
+      })
+      expect(result.current.selectedNoteIds.has('file-3')).toBe(true)
+      expect(result.current.selectedNoteIds.has('file-4')).toBe(true)
+      expect(result.current.selectedNoteIds.has('file-5')).toBe(true)
+      expect(result.current.selectedNoteIds.has('file-6')).toBe(true)
+      expect(result.current.selectedNoteIds.has('file-1')).toBe(false)
+      expect(result.current.selectedNoteIds.has('file-2')).toBe(false)
+      expect(result.current.selectedNoteIds.size).toBe(4)
+    })
+
     it('Shift + right-click selects the full continuous range from anchor to clicked item', () => {
       const { result } = renderHook(() =>
         useExplorerSelection({

@@ -438,6 +438,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   const selectedNoteIdsRef = useRef(selectedNoteIds)
   selectedNoteIdsRef.current = selectedNoteIds
 
+  // Stable ref for selectedFolderIds Set — counters for context-menu multi-detection
+  // must be fresh at click time (rows are memoized and can hold stale closures).
+  const selectedFolderIdsRef = useRef(selectedFolderIds)
+  selectedFolderIdsRef.current = selectedFolderIds
+
   // Stable context object passed down to Virtuoso item content.
   // IMPORTANT: selectedNoteIds and selectedSnippetId are intentionally excluded — they
   // are read from refs (selectedNoteIdsRef / selectedSnippetIdRef) inside renderItemContent,
@@ -693,6 +698,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                     selectedNoteIdsRef={selectedNoteIdsRef}
                     setSelectedNoteIds={setSelectedNoteIds}
                     selectedFolderIds={selectedFolderIds}
+                    selectedFolderIdsRef={selectedFolderIdsRef}
                     setSelectedFolderIds={setSelectedFolderIds}
                     selectedSnippetId={selectedSnippetId}
                     selectedSnippetIdRef={selectedSnippetIdRef}

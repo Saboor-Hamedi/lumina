@@ -154,11 +154,16 @@
   color: var(--text-muted, #94a3b8);
 }
 
-.menu-submenu-arrow,
-.menu-check {
+.menu-submenu-arrow {
   color: var(--text-faint, #64748b);
   flex-shrink: 0;
   transition: transform 0.1s ease-out;
+}
+
+/* Active/selected state indicator (e.g. visible status bar items) */
+.menu-check {
+  color: var(--text-accent, #8b5cf6);
+  flex-shrink: 0;
 }
 
 .menu-item:hover .menu-submenu-arrow,
@@ -172,6 +177,18 @@
   height: 1px;
   background: rgba(255, 255, 255, 0.06);
   margin: 6px 8px;
+}
+
+/* Non-interactive section header */
+.menu-section {
+  padding: 7px 12px 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint, #64748b);
+  user-select: none;
+  pointer-events: none;
 }
 
 /* Destructive / Danger Item (e.g. Delete Folder / Delete Note) */

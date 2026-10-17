@@ -1176,6 +1176,10 @@ export const MainLayout: React.FC = () => {
         onSettingsClick={handleOpenSettings}
         onThemeClick={handleOpenTheme}
         onDocsClick={handleOpenDocs}
+        onShortcutsClick={() => {
+          setSettingsInitialTab('shortcuts')
+          setShowSettings(true)
+        }}
         onGuideClick={() => setShowGuideModal(true)}
       />
 

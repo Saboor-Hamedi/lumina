@@ -81,8 +81,11 @@ export function useExplorerSelection({
   const [selectedIndex, setSelectedIndex] = useState(-1)
   const [sidebarFocus, setSidebarFocus] = useState<SidebarFocus>(null)
 
-  // Anchor item ID for Shift+Click range selections (stable across tree collapse/expand)
-  const [anchorId, setAnchorId] = useState<string | null>(selectedSnippetId || null)
+  // Anchor item ID for Shift+Click range selections (stable across tree collapse/expand).
+  // Only ever set by explicit user clicks in the explorer — never seeded from the
+  // externally-active note, otherwise Shift+Click would range from the open tab and
+  // appear to "select everything".
+  const [anchorId, setAnchorId] = useState<string | null>(null)
 
   const clickedInExplorerRef = useRef(0)
   const lastScrolledSnippetRef = useRef<string | null>(null)
@@ -152,9 +155,11 @@ export function useExplorerSelection({
       }
 
       if (e.key === 'Delete' || e.key === 'Backspace') {
+        const hasMultiSelection = selectedNoteIds.size + selectedFolderIds.size > 1
         const isExplorerActive =
           modalRef?.current?.contains(document.activeElement) ||
-          Boolean(modalRef.current?.matches(':hover'))
+          Boolean(modalRef.current?.matches(':hover')) ||
+          (isOpen && hasMultiSelection)
         if (
           isExplorerActive &&
           (selectedNoteIds.size > 0 || selectedFolderIds.size > 0 || sidebarFocus === 'folder')
@@ -248,10 +253,10 @@ export function useExplorerSelection({
       return
     }
 
+    // Only update the highlight. Do NOT touch the range anchor here: an external
+    // tab switch must not move the Shift+Click anchor to the open note.
     setSelectedNoteIds(new Set([selectedSnippetId]))
     setSelectedFolderIds(new Set())
-    setLastClickedNoteId(selectedSnippetId)
-    setAnchorId(selectedSnippetId)
     setSidebarFocus('note')
   }, [selectedSnippetId, query])
 
@@ -399,8 +404,10 @@ export function useExplorerSelection({
       }
 
       if (isShift && flatTree && flatTree.length > 0) {
-        // Fallback to lastClickedNoteId or active selected note if anchorId isn't set yet
-        const effectiveAnchorId = anchorId || lastClickedNoteId || selectedSnippetId
+        // Only use an anchor that came from an explicit explorer click. The active
+        // note (selectedSnippetId) is intentionally NOT used as a fallback so a
+        // Shift+Click never spans from an unrelated open tab.
+        const effectiveAnchorId = anchorId || lastClickedNoteId
 
         let anchorPos = -1
         if (effectiveAnchorId) {
@@ -469,7 +476,7 @@ export function useExplorerSelection({
         handleSelect(snippet)
       }
     },
-    [flatTree, anchorId, lastClickedNoteId, selectedSnippetId, handleSelect, setSelectedFolder]
+    [flatTree, anchorId, lastClickedNoteId, handleSelect, setSelectedFolder]
   )
 
   const handleFolderClick = useCallback(
@@ -494,8 +501,7 @@ export function useExplorerSelection({
       }
 
       if (isShift && flatTree && flatTree.length > 0) {
-        const effectiveAnchorId =
-          anchorId || lastClickedFolder || lastClickedNoteId || selectedSnippetId
+        const effectiveAnchorId = anchorId || lastClickedFolder || lastClickedNoteId
 
         let anchorPos = -1
         if (effectiveAnchorId) {
@@ -561,7 +567,7 @@ export function useExplorerSelection({
         setSelectedFolder(folderId)
       }
     },
-    [flatTree, anchorId, lastClickedFolder, lastClickedNoteId, selectedSnippetId, setSelectedFolder]
+    [flatTree, anchorId, lastClickedFolder, lastClickedNoteId, setSelectedFolder]
   )
 
   return {

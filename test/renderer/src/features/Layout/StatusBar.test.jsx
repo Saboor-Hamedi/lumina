@@ -3,6 +3,7 @@ import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import StatusBar from '../../../../../src/renderer/src/features/Layout/StatusBar'
 import { useWorkspaceStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
+import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 
 describe('StatusBar.jsx', () => {
   const defaultProps = () => ({
@@ -14,6 +15,9 @@ describe('StatusBar.jsx', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     useWorkspaceStore.setState({ selectedSnippet: null })
+    useSettingsStore.setState((state) => ({
+      settings: { ...state.settings, statusBarItems: null }
+    }))
   })
 
   it('renders left utility buttons', () => {
@@ -90,5 +94,50 @@ describe('StatusBar.jsx', () => {
     render(<StatusBar {...defaultProps()} />)
     expect(screen.queryByText(/Drive Synced/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/^Drive$/i)).not.toBeInTheDocument()
+  })
+
+  describe('right-click toggle menu', () => {
+    it('opens a rich menu with sections and every toggleable item', () => {
+      render(<StatusBar {...defaultProps()} />)
+      fireEvent.contextMenu(screen.getByTestId('status-bar'))
+
+      expect(screen.getByText('Status Bar')).toBeInTheDocument()
+      expect(screen.getByText('Editor Mode')).toBeInTheDocument()
+      expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument()
+      expect(screen.getByText('Reading Time')).toBeInTheDocument()
+      expect(screen.queryByText('Reset to Defaults')).not.toBeInTheDocument()
+    })
+
+    it('toggles an item off and persists the value to settings', () => {
+      render(<StatusBar {...defaultProps()} />)
+      fireEvent.contextMenu(screen.getByTestId('status-bar'))
+      fireEvent.click(screen.getByText('Word Count'))
+
+      expect(useSettingsStore.getState().settings.statusBarItems).toEqual({ words: false })
+    })
+
+    it('hides a metric from the bar when toggled off', () => {
+      useWorkspaceStore.setState({
+        selectedSnippet: { id: '1', title: 'Note', code: 'Hello world this is a test note' }
+      })
+
+      render(<StatusBar {...defaultProps()} />)
+      expect(screen.getByText(/7 words/)).toBeInTheDocument()
+
+      fireEvent.contextMenu(screen.getByTestId('status-bar'))
+      fireEvent.click(screen.getByText('Word Count'))
+
+      expect(screen.queryByText(/7 words/)).not.toBeInTheDocument()
+    })
+
+    it('hides an element that a saved preference turned off', () => {
+      useSettingsStore.setState((state) => ({
+        settings: { ...state.settings, statusBarItems: { details: false } }
+      }))
+
+      render(<StatusBar {...defaultProps()} />)
+      expect(screen.queryByText('Details')).not.toBeInTheDocument()
+      expect(screen.getByText('Docs')).toBeInTheDocument()
+    })
   })
 })

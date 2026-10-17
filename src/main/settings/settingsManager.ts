@@ -58,6 +58,7 @@ export interface Settings {
   emailListWidth: number
   emailSidebarOpen: boolean
   emailDetailOpen: boolean
+  statusBarItems?: Record<string, boolean> | null
   [key: string]: any
 }
 
@@ -113,7 +114,8 @@ export const DEFAULT_SETTINGS: Settings = {
   emailSidebarWidth: 195,
   emailListWidth: 300,
   emailSidebarOpen: true,
-  emailDetailOpen: true
+  emailDetailOpen: true,
+  statusBarItems: null
 }
 
 export function formatSettingsJson(settings: Record<string, any>): string {

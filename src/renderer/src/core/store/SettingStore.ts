@@ -73,6 +73,9 @@ export interface Settings {
   windowOpacity: number
   modernUi: boolean
 
+  // Status Bar item visibility (VS Code-style). null = every item uses its default (visible).
+  statusBarItems?: Record<string, boolean> | null
+
   // Favorites & Ordering
   pinnedFolders: string[]
   folderOrder: string[]
@@ -179,6 +182,9 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     windowOpacity: 1.0,
 
     modernUi: true,
+
+    // Status Bar item visibility (null = all items visible by default)
+    statusBarItems: null,
 
     // Favorites & Ordering
     pinnedFolders: [],

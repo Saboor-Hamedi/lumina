@@ -66,10 +66,24 @@ export function useFolderContextMenu({
   exportNotes = [],
   resolveFolderNotes,
   onSummarizeSelected,
-  onExportSelected
+  onExportSelected,
+  selectedCount = 0,
+  selectedFolderIds,
+  selectedNoteIds,
+  onRequestBulkDelete
 }: UseFolderContextMenuParams): FolderContextMenuResult {
   const [folderContext, setFolderContext] = useState<FolderContext | null>(null)
   const [deleteConfirmFolder, setDeleteConfirmFolder] = useState<string | null>(null)
+
+  // A right-clicked item is part of a multi-selection when more than one item is
+  // selected and the clicked id belongs to the current note/folder selection.
+  const isMultiSelectionFor = useCallback(
+    (id: string | null | undefined) => {
+      if (!id || selectedCount <= 1) return false
+      return Boolean(selectedNoteIds?.has(id) || selectedFolderIds?.has(id))
+    },
+    [selectedCount, selectedNoteIds, selectedFolderIds]
+  )
 
   const handleFolderContextMenu = useCallback((id: string, e: React.MouseEvent | null) => {
     if (e) {
@@ -109,10 +123,19 @@ export function useFolderContextMenu({
         }
       },
       onDelete: () => {
-        if (folderContext?.folderId) {
-          setDeleteConfirmFolder(folderContext.folderId)
+        const id = folderContext?.folderId
+        if (!id) return
+        // Multi-selection: delete every selected note/folder via the bulk dialog.
+        if (isMultiSelectionFor(id) && onRequestBulkDelete) {
+          onRequestBulkDelete()
+          return
         }
+        setDeleteConfirmFolder(id)
       },
+      deleteLabel:
+        isMultiSelectionFor(folderContext?.folderId) && selectedCount > 1
+          ? `Delete ${selectedCount} Items`
+          : undefined,
       onSummary: () => {
         if (folderContext?.folderId && resolveFolderNotes) {
           const targets = resolveFolderNotes(folderContext.folderId)
