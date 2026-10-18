@@ -13,7 +13,7 @@ const GOOGLE_CLIENT_ID_PATTERN = /^[0-9]+-[a-z0-9_-]+\.apps\.googleusercontent\.
 
 /** Strip OAuth tokens/secrets before returning a user object to the renderer. */
 function sanitizeGoogleUser(user) {
-  if (!user || typeof user !== 'object') return null
+  if (!user || typeof user !== 'object' || !user.token) return null
   return {
     name: user.name ?? null,
     email: user.email ?? null,
@@ -54,14 +54,28 @@ function bringWindowToFront(getMainWindow) {
 
 export function setupGoogleAuth(getMainWindow) {
   ipcMain.handle('auth:loginWithGoogle', async (event, clientId) => {
+    if (authServer) {
+      try {
+        if (typeof authServer.closeAllConnections === 'function') {
+          authServer.closeAllConnections()
+        }
+        await new Promise((res) => authServer.close(() => res()))
+      } catch {}
+      authServer = null
+    }
+
     return new Promise((resolve) => {
-      if (authServer) {
-        authServer.close()
+      let settled = false
+      const safeResolve = (val) => {
+        if (!settled) {
+          settled = true
+          resolve(val)
+        }
       }
 
       // Reject a malformed client id so it cannot inject extra query parameters.
       if (typeof clientId !== 'string' || !GOOGLE_CLIENT_ID_PATTERN.test(clientId)) {
-        resolve({ error: 'Invalid Google client id.' })
+        safeResolve({ error: 'Invalid Google client id.' })
         return
       }
 
@@ -109,6 +123,9 @@ export function setupGoogleAuth(getMainWindow) {
             res.end(JSON.stringify({ ok: true }))
             setTimeout(() => {
               if (authServer === server) {
+                if (typeof server.closeAllConnections === 'function') {
+                  server.closeAllConnections()
+                }
                 server.close()
                 authServer = null
               }
@@ -120,11 +137,88 @@ export function setupGoogleAuth(getMainWindow) {
             if (reqUrl.query.state !== oauthState) {
               res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' })
               res.end('Invalid OAuth state. Please start the sign-in again from Lumina.')
-              resolve({ error: 'Invalid OAuth state.' })
+              safeResolve({ error: 'Invalid OAuth state.' })
               return
             }
-            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
-            res.end(`
+
+            const code = reqUrl.query.code
+            const error = reqUrl.query.error
+
+            // Keep server alive for 60 seconds so user can click Return to Lumina
+            setTimeout(() => {
+              if (authServer === server) {
+                if (typeof server.closeAllConnections === 'function') {
+                  server.closeAllConnections()
+                }
+                server.close()
+                authServer = null
+              }
+            }, 60000)
+
+            if (error) {
+              res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' })
+              res.end(`Google sign-in error: ${error}`)
+              safeResolve({ error: `Google returned error: ${error}` })
+              return
+            }
+
+            if (!code) {
+              res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' })
+              res.end('Missing authorization code from Google.')
+              safeResolve({ error: 'Failed to retrieve access token from Google.' })
+              return
+            }
+
+            try {
+              // Exchange the authorization code for an access token using the Client Secret
+              const tokenResponse = await net.fetch('https://oauth2.googleapis.com/token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({
+                  client_id: clientId,
+                  client_secret: getGoogleClientSecret(),
+                  code: code,
+                  grant_type: 'authorization_code',
+                  redirect_uri: redirectUri
+                }).toString()
+              })
+
+              if (!tokenResponse.ok) {
+                const errText = await tokenResponse.text()
+                throw new Error(`Token exchange failed: ${errText}`)
+              }
+
+              const tokenData = await tokenResponse.json()
+              const accessToken = tokenData.access_token
+              const refreshToken = tokenData.refresh_token
+
+              const profileResponse = await net.fetch(
+                'https://www.googleapis.com/oauth2/v2/userinfo',
+                {
+                  headers: { Authorization: `Bearer ${accessToken}` }
+                }
+              )
+
+              if (!profileResponse.ok) {
+                throw new Error(`Profile fetch failed: ${profileResponse.status}`)
+              }
+
+              const profile = await profileResponse.json()
+              const existingUser = await SettingsManager.get('googleUser').catch(() => null)
+
+              const user = {
+                name: profile.name,
+                email: profile.email,
+                picture: profile.picture,
+                token: accessToken,
+                refreshToken: refreshToken || existingUser?.refreshToken || null,
+                clientId: clientId
+              }
+
+              await SettingsManager.set('googleUser', user)
+
+              res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+              res.end(`
               <!DOCTYPE html>
               <html lang="en">
                 <head>
@@ -343,106 +437,50 @@ export function setupGoogleAuth(getMainWindow) {
               </html>
             `)
 
-            const code = reqUrl.query.code
-            const error = reqUrl.query.error
-
-            // Keep server alive for 60 seconds so user can click Return to Lumina
-            setTimeout(() => {
-              if (authServer === server) {
-                server.close()
-                authServer = null
-              }
-            }, 60000)
-
-            if (error) {
-              resolve({ error: `Google returned error: ${error}` })
-              return
-            }
-
-            if (code) {
-              try {
-                // Exchange the authorization code for an access token using the Client Secret
-                const tokenResponse = await net.fetch('https://oauth2.googleapis.com/token', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                  body: new URLSearchParams({
-                    client_id: clientId,
-                    client_secret: getGoogleClientSecret(),
-                    code: code,
-                    grant_type: 'authorization_code',
-                    redirect_uri: redirectUri
-                  }).toString()
-                })
-
-                if (!tokenResponse.ok) {
-                  const errText = await tokenResponse.text()
-                  throw new Error(`Token exchange failed: ${errText}`)
-                }
-
-                const tokenData = await tokenResponse.json()
-                const accessToken = tokenData.access_token
-                const refreshToken = tokenData.refresh_token
-
-                const profileResponse = await net.fetch(
-                  'https://www.googleapis.com/oauth2/v2/userinfo',
-                  {
-                    headers: { Authorization: `Bearer ${accessToken}` }
-                  }
-                )
-
-                if (!profileResponse.ok) {
-                  throw new Error(`Profile fetch failed: ${profileResponse.status}`)
-                }
-
-                const profile = await profileResponse.json()
-
-                const user = {
-                  name: profile.name,
-                  email: profile.email,
-                  picture: profile.picture,
-                  token: accessToken,
-                  refreshToken: refreshToken,
-                  clientId: clientId
-                }
-
-                await SettingsManager.set('googleUser', user)
-                resolve(sanitizeGoogleUser(user))
-              } catch (fetchErr) {
-                resolve({ error: `Failed to fetch profile: ${fetchErr.message}` })
-              }
-            } else {
-              resolve({ error: 'Failed to retrieve access token from Google.' })
+              bringWindowToFront(getMainWindow)
+              safeResolve(sanitizeGoogleUser(user))
+            } catch (fetchErr) {
+              res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' })
+              res.end(`Authentication failed: ${fetchErr.message}`)
+              safeResolve({ error: `Failed to fetch profile: ${fetchErr.message}` })
             }
           }
         } catch (serverErr) {
           console.error(serverErr)
-          resolve({ error: 'Local server encountered an error.' })
+          safeResolve({ error: 'Local server encountered an error.' })
         }
       })
 
       authServer = server
       server.on('error', (err) => {
         if (authServer === server) authServer = null
-        resolve({ error: `Local auth server error: ${err.message}` })
+        safeResolve({ error: `Local auth server error: ${err.message}` })
       })
-      server.listen(3000, '127.0.0.1', () => {
+      server.listen(3000, () => {
         shell.openExternal(authUrl)
       })
 
-      // Timeout after 2 minutes to prevent the server from hanging indefinitely
+      // Timeout after 5 minutes to give plenty of time for 2FA phone approval
       setTimeout(() => {
         if (authServer === server) {
+          if (typeof server.closeAllConnections === 'function') {
+            server.closeAllConnections()
+          }
           server.close()
           authServer = null
-          resolve({ error: 'Authentication window timed out.' })
+          safeResolve({ error: 'Authentication window timed out.' })
         }
-      }, 120000)
+      }, 300000)
     })
   })
 
   ipcMain.handle('auth:getGoogleUser', async () => {
     try {
       const user = await SettingsManager.get('googleUser')
+      if (user && typeof user === 'object' && !user.token) {
+        await SettingsManager.set('googleUser', null)
+        return null
+      }
       return sanitizeGoogleUser(user)
     } catch (e) {
       return null

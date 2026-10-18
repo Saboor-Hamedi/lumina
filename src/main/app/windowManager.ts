@@ -156,8 +156,20 @@ export async function createMainWindow(): Promise<BrowserWindow> {
       if (!allowDevTools && mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents.isDevToolsOpened()) {
         mainWindow.webContents.closeDevTools()
       }
-      if (mainWindow) {
+      if (mainWindow && !mainWindow.isDestroyed()) {
         useGlobalShortcut(mainWindow, settings)
+        const safeGoogleUser =
+          settings?.googleUser && typeof settings.googleUser === 'object' && settings.googleUser.token
+            ? {
+                name: settings.googleUser.name ?? null,
+                email: settings.googleUser.email ?? null,
+                picture: settings.googleUser.picture ?? null
+              }
+            : null
+        mainWindow.webContents.send('settings:changed', {
+          ...settings,
+          googleUser: safeGoogleUser
+        })
       }
       updateAutoLauncher(settings.launchOnStartup)
     })

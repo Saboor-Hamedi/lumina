@@ -421,6 +421,15 @@ export class SettingsManager {
       }
     }
 
+    if (
+      this.appConfig.globalApiKeys.googleUser &&
+      typeof this.appConfig.globalApiKeys.googleUser === 'object' &&
+      !this.appConfig.globalApiKeys.googleUser.token
+    ) {
+      this.appConfig.globalApiKeys.googleUser = null
+      needsAppConfigSave = true
+    }
+
     if (needsAppConfigSave) {
       await this.appConfig.save()
     }
@@ -481,6 +490,23 @@ export class SettingsManager {
     return key ? current[key] : current
   }
 
+  private preserveGoogleUserTokens(value: any): any {
+    if (!value || typeof value !== 'object' || value.token) {
+      return value
+    }
+    const existing = this.appConfig.globalApiKeys.googleUser || this.cache?.googleUser
+    if (existing && typeof existing === 'object' && existing.token) {
+      return {
+        ...existing,
+        ...value,
+        token: existing.token,
+        refreshToken: value.refreshToken ?? existing.refreshToken,
+        clientId: value.clientId ?? existing.clientId
+      }
+    }
+    return value
+  }
+
   async set<K extends keyof Settings>(key: K, value: Settings[K]): Promise<boolean> {
     if (!this.cache) {
       try {
@@ -492,6 +518,10 @@ export class SettingsManager {
           shortcuts: this.appConfig.shortcuts
         } as Settings
       }
+    }
+
+    if (key === 'googleUser') {
+      value = this.preserveGoogleUserTokens(value)
     }
 
     if (this.cache && JSON.stringify(this.cache[key]) === JSON.stringify(value)) {
@@ -542,7 +572,8 @@ export class SettingsManager {
     let changed = false
     let globalKeyChanged = false
     const current = this.cache || DEFAULT_SETTINGS
-    for (const [k, v] of Object.entries(settings)) {
+    for (const [k, rawVal] of Object.entries(settings)) {
+      const v = k === 'googleUser' ? this.preserveGoogleUserTokens(rawVal) : rawVal
       if (JSON.stringify((current as any)[k]) !== JSON.stringify(v)) {
         ;(current as any)[k] = v
         changed = true

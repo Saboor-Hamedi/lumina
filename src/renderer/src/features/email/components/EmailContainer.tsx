@@ -572,6 +572,7 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose,
         await window.api.loginWithGoogle(DEFAULT_GOOGLE_CLIENT_ID)
       }
       fetchEmails(currentFolder)
+      fetchLabels()
     } catch (err) {
       console.error('Failed to log in with Google:', err)
     }
@@ -586,6 +587,9 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose,
       (errorMessage.includes('ACCESS_TOKEN_SCOPE_INSUFFICIENT') ||
         errorMessage.includes('insufficient_scope') ||
         errorMessage.includes('Request had insufficient authentication scopes') ||
+        errorMessage.includes('Not logged in to Google') ||
+        errorMessage.includes('Please re-login') ||
+        errorMessage.includes('Please reconnect your Google account') ||
         (errorMessage.includes('Gmail API error (403)') && !errorMessage.includes('rateLimitExceeded')))
   )
 

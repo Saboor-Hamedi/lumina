@@ -20,6 +20,25 @@ import { useSettingsStore } from '../store/SettingStore'
 export const DEFAULT_GOOGLE_CLIENT_ID =
   '736587690312-33s4trbiculu5dvctb92lkl6njgc14ae.apps.googleusercontent.com'
 
+function syncGoogleUserInStore(validUser) {
+  const currentInStore = useSettingsStore.getState().settings?.googleUser
+  const currentSanitized = currentInStore
+    ? {
+        name: currentInStore.name ?? null,
+        email: currentInStore.email ?? null,
+        picture: currentInStore.picture ?? null
+      }
+    : null
+  if (JSON.stringify(currentSanitized) !== JSON.stringify(validUser)) {
+    useSettingsStore.setState((state) => ({
+      settings: {
+        ...state.settings,
+        googleUser: validUser
+      }
+    }))
+  }
+}
+
 export function useCurrentUser() {
   const storedUser = useSettingsStore((state) => state.settings?.googleUser)
   const [user, setUser] = useState(storedUser || null)
@@ -37,12 +56,7 @@ export function useCurrentUser() {
         const remoteUser = await window.api.getGoogleUser()
         const validUser = remoteUser && (remoteUser.email || remoteUser.name) ? remoteUser : null
         setUser(validUser)
-
-        // Sync into settings store if different
-        const currentInStore = useSettingsStore.getState().settings?.googleUser
-        if (JSON.stringify(currentInStore) !== JSON.stringify(validUser)) {
-          useSettingsStore.getState().updateSetting('googleUser', validUser)
-        }
+        syncGoogleUserInStore(validUser)
       }
     } catch (err) {
       console.warn('[useCurrentUser] Failed to check Google user:', err)
@@ -59,9 +73,19 @@ export function useCurrentUser() {
     window.addEventListener('google-user-changed', handleUserChanged)
     window.addEventListener('focus', handleUserChanged)
 
+    let unsubSettings = null
+    if (window.api?.onSettingsChanged) {
+      unsubSettings = window.api.onSettingsChanged(() => {
+        refreshUser()
+      })
+    }
+
     return () => {
       window.removeEventListener('google-user-changed', handleUserChanged)
       window.removeEventListener('focus', handleUserChanged)
+      if (typeof unsubSettings === 'function') {
+        unsubSettings()
+      }
     }
   }, [refreshUser])
 
@@ -75,7 +99,7 @@ export function useCurrentUser() {
       try {
         const userInfo = await window.api.loginWithGoogle(clientId)
         if (userInfo && !userInfo.error) {
-          useSettingsStore.getState().updateSetting('googleUser', userInfo)
+          syncGoogleUserInStore(userInfo)
           setUser(userInfo)
           window.dispatchEvent(new CustomEvent('google-user-changed', { detail: userInfo }))
           return { success: true, user: userInfo }
@@ -99,7 +123,7 @@ export function useCurrentUser() {
       if (window.api?.logoutFromGoogle) {
         await window.api.logoutFromGoogle()
       }
-      useSettingsStore.getState().updateSetting('googleUser', null)
+      syncGoogleUserInStore(null)
       setUser(null)
       window.dispatchEvent(new CustomEvent('google-user-changed', { detail: null }))
       return { success: true }
