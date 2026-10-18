@@ -78,10 +78,12 @@ export const luminaDiagnoseSystemTool = aiSdk.tool({
 
       // 2. Workspace Store & Notes Metrics
       const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const { collectWorkspaceFolders } = await import('../services/prompt/mentionResolver')
       const vs = (useWorkspaceStore as any).getState()
-      const notesList = vs.notes || vs.snippets || []
-      const totalNotes = notesList.length
-      const totalFolders = (vs.folders || []).length
+      const notesList = (vs.notes?.length ? vs.notes : vs.snippets) || []
+      const noteItems = notesList.filter((s: any) => s?.type !== 'image' && s?.type !== 'pdf')
+      const totalNotes = noteItems.length
+      const totalFolders = collectWorkspaceFolders(notesList, vs.folders || []).length
       const openTabsCount = (vs.openTabs || []).length
       const dirtyNotesCount = (vs.dirtyNoteIds || []).length
       const activeSnippet = vs.selectedSnippet || vs.selectedNote

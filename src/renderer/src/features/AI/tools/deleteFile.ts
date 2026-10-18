@@ -3,6 +3,7 @@ import type { AIToolExecutionResult } from '../types/ai.types'
 
 interface DeleteFileInput {
   title: string
+  folder?: string
 }
 
 export const deleteFileTool = aiSdk.tool({
@@ -13,41 +14,74 @@ export const deleteFileTool = aiSdk.tool({
     properties: {
       title: {
         type: 'string',
-        description: 'The title or filename of the note to delete. Use "current" or "active" to delete the open note.'
+        description: 'The title, filename, or "Folder/Title" path of the note to delete. Use "current" or "active" to delete the open note.'
+      },
+      folder: {
+        type: 'string',
+        description: 'Optional workspace folder path containing the note to delete.'
       }
     },
     required: ['title']
   }),
-  execute: async ({ title }): Promise<AIToolExecutionResult> => {
+  execute: async ({ title, folder }): Promise<AIToolExecutionResult> => {
     try {
-      const rawTitle = (title || '').trim().replace(/^@/, '')
+      const rawTitle = (title || '').trim().replace(/^@/, '').replace(/\\/g, '/')
       const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const { normalizeTitle } = await import('../services/prompt/mentionResolver')
       const vs = (useWorkspaceStore as any).getState()
-      const snippets = vs.notes || []
+      const snippets = (Array.isArray(vs.notes) && vs.notes.length > 0 ? vs.notes : vs.snippets) || []
+
+      let cleanFolder = (folder || '').trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').toLowerCase()
+      let effectiveTitle = rawTitle
+      if (rawTitle.includes('/')) {
+        const parts = rawTitle.split('/').filter(Boolean)
+        effectiveTitle = parts.pop() || rawTitle
+        const pathFolder = parts.join('/').toLowerCase()
+        cleanFolder = cleanFolder ? `${cleanFolder}/${pathFolder}` : pathFolder
+      }
+
+      const matchesFolder = (s: any) => {
+        if (!cleanFolder) return true
+        const nf = String(s?.folderId || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').toLowerCase()
+        return nf === cleanFolder || nf.endsWith(`/${cleanFolder}`)
+      }
 
       let target: any = null
       if (
-        !rawTitle ||
-        rawTitle.toLowerCase() === 'current' ||
-        rawTitle.toLowerCase() === 'active' ||
-        rawTitle.toLowerCase() === 'this' ||
-        rawTitle.toLowerCase() === 'this note' ||
-        rawTitle.toLowerCase() === 'this file'
+        !effectiveTitle ||
+        effectiveTitle.toLowerCase() === 'current' ||
+        effectiveTitle.toLowerCase() === 'active' ||
+        effectiveTitle.toLowerCase() === 'this' ||
+        effectiveTitle.toLowerCase() === 'this note' ||
+        effectiveTitle.toLowerCase() === 'this file'
       ) {
-        target = vs.selectedNote || (vs.activeTabId ? snippets.find((s: any) => s.id === vs.activeTabId) : null)
+        target =
+          vs.selectedNote ||
+          vs.selectedSnippet ||
+          (vs.activeTabId ? snippets.find((s: any) => s.id === vs.activeTabId) : null)
       } else {
-        const cleanLower = rawTitle.toLowerCase().replace(/\.md$/i, '')
+        const cleanLower = effectiveTitle.toLowerCase().replace(/\.md$/i, '')
         target = snippets.find(
-          (s: any) => (s.title || '').toLowerCase().replace(/\.md$/i, '') === cleanLower
+          (s: any) =>
+            matchesFolder(s) &&
+            ((s.title || '').toLowerCase().replace(/\.md$/i, '') === cleanLower ||
+              normalizeTitle(s.title) === normalizeTitle(cleanLower))
         )
         if (!target) {
           target = snippets.find(
-            (s: any) => (s.fileName || '').toLowerCase().replace(/\.md$/i, '') === cleanLower
+            (s: any) =>
+              matchesFolder(s) &&
+              (s.fileName || '').toLowerCase().replace(/\.md$/i, '') === cleanLower
+          )
+        }
+        if (!target && cleanFolder) {
+          target = snippets.find(
+            (s: any) => (s.title || '').toLowerCase().replace(/\.md$/i, '') === cleanLower
           )
         }
         if (!target) {
-          target = snippets.find((s: any) =>
-            (s.title || '').toLowerCase().includes(cleanLower)
+          target = snippets.find(
+            (s: any) => matchesFolder(s) && (s.title || '').toLowerCase().includes(cleanLower)
           )
         }
       }
@@ -56,8 +90,10 @@ export const deleteFileTool = aiSdk.tool({
         return { success: false, error: `Note "${rawTitle || 'current'}" not found.` }
       }
 
-      const deletedTitle = target.title || target.fileName || rawTitle
-      const removedWords = (target.code || '').trim() ? (target.code || '').trim().split(/\s+/).length : 0
+      const deletedTitle = target.title || target.fileName || effectiveTitle
+      const deletedFolder = target.folderId || ''
+      const previousContent = target.code || ''
+      const removedWords = previousContent.trim() ? previousContent.trim().split(/\s+/).length : 0
       const deleteAction = vs.deleteNote || vs.deleteSnippet
       if (deleteAction) {
         await deleteAction(target.id, true)
@@ -77,7 +113,10 @@ export const deleteFileTool = aiSdk.tool({
 
       return {
         success: true,
+        id: target.id,
         title: deletedTitle,
+        folderId: deletedFolder,
+        previousContent,
         removedWords,
         summary: `🗑️ Deleted [[${deletedTitle}]] (-${removedWords})`,
         instruction_to_ai: `Note "${deletedTitle}" was deleted successfully. Confirm to user.`

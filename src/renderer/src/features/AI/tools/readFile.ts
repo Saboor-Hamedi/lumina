@@ -28,29 +28,42 @@ export const getReadFileTool = (blockReadFile?: boolean) => {
     }),
     execute: async ({ title, folder, startLine, endLine, includeLineNumbers }): Promise<AIToolExecutionResult> => {
       const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const { collectWorkspaceFolders, matchFolderByQuery, getNotesInFolder, normalizeTitle } =
+        await import('../services/prompt/mentionResolver')
       const vs = (useWorkspaceStore as any).getState()
-      const snippets = vs.notes || vs.snippets || []
+      const snippets = (Array.isArray(vs.notes) && vs.notes.length > 0 ? vs.notes : vs.snippets) || []
+      const knownFolders = collectWorkspaceFolders(snippets, vs.folders || [])
 
       const rawFolder = (folder || '').trim().toLowerCase().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
       const normalizedInput = (title || '').trim().toLowerCase().replace(/^@/, '').replace(/\\/g, '/').replace(/\.md$/, '')
       const baseName = normalizedInput.split('/').pop() || normalizedInput
-      const effectiveFolder = rawFolder || (normalizedInput.includes('/') ? normalizedInput.slice(0, normalizedInput.lastIndexOf('/')) : '')
+      const rawEffectiveFolder = rawFolder || (normalizedInput.includes('/') ? normalizedInput.slice(0, normalizedInput.lastIndexOf('/')) : '')
+      const resolvedEffectiveFolder = rawEffectiveFolder
+        ? (matchFolderByQuery(rawEffectiveFolder, knownFolders) || rawEffectiveFolder).toLowerCase()
+        : ''
 
       let target = snippets.find((s: any) => {
         const noteFolder = (s.folderId || '').toLowerCase().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
         const noteTitle = (s.title || '').toLowerCase().replace(/\.md$/, '')
         const fullPath = noteFolder ? `${noteFolder}/${noteTitle}` : noteTitle
-        if (effectiveFolder) {
-          return noteFolder === effectiveFolder && noteTitle === baseName
+        if (resolvedEffectiveFolder) {
+          return (
+            (noteFolder === resolvedEffectiveFolder || noteFolder === rawEffectiveFolder) &&
+            (noteTitle === baseName || normalizeTitle(noteTitle) === normalizeTitle(baseName))
+          )
         }
         return fullPath === normalizedInput || noteTitle === normalizedInput
       })
 
       if (!target && baseName) {
-        target = snippets.find((s: any) => (s.title || '').toLowerCase().replace(/\.md$/, '') === baseName)
+        target = snippets.find(
+          (s: any) =>
+            (s.title || '').toLowerCase().replace(/\.md$/, '') === baseName ||
+            normalizeTitle(s.title) === normalizeTitle(baseName)
+        )
       }
 
-      if (!target) {
+      if (!target && baseName) {
         target = snippets.find((s: any) => {
           const noteTitle = (s.title || '').toLowerCase()
           return noteTitle.includes(baseName) || baseName.includes(noteTitle)
@@ -59,10 +72,6 @@ export const getReadFileTool = (blockReadFile?: boolean) => {
 
       if (!target) {
         // Check if the requested title is actually a workspace folder (e.g. "entrichment" or "enrichment")
-        const { collectWorkspaceFolders, matchFolderByQuery, getNotesInFolder } = await import(
-          '../services/prompt/mentionResolver'
-        )
-        const knownFolders = collectWorkspaceFolders(snippets, vs.folders || [])
         const matchedFolder = matchFolderByQuery(rawFolder || title, knownFolders)
         if (matchedFolder) {
           const folderNotes = getNotesInFolder(matchedFolder, snippets)

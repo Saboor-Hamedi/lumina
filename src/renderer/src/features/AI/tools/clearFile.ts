@@ -25,10 +25,10 @@ export const clearFileTool = aiSdk.tool({
   }),
   execute: async ({ title, keepHeader = false }): Promise<AIToolExecutionResult> => {
     try {
-      const rawTitle = (title || '').trim().replace(/^@/, '')
+      const rawTitle = (title || '').trim().replace(/^@/, '').replace(/\\/g, '/')
       const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
       const vs = (useWorkspaceStore as any).getState()
-      const snippets = vs.notes || []
+      const snippets = (Array.isArray(vs.notes) && vs.notes.length > 0 ? vs.notes : vs.snippets) || []
 
       let target: any = null
       if (
@@ -39,9 +39,12 @@ export const clearFileTool = aiSdk.tool({
         rawTitle.toLowerCase() === 'this note' ||
         rawTitle.toLowerCase() === 'this file'
       ) {
-        target = vs.selectedNote || (vs.activeTabId ? snippets.find((s: any) => s.id === vs.activeTabId) : null)
+        target =
+          vs.selectedNote ||
+          vs.selectedSnippet ||
+          (vs.activeTabId ? snippets.find((s: any) => s.id === vs.activeTabId) : null)
       } else {
-        const cleanTitle = rawTitle.toLowerCase().replace(/\.md$/, '')
+        const cleanTitle = (rawTitle.split('/').pop() || rawTitle).toLowerCase().replace(/\.md$/, '')
         target = snippets.find((s: any) => (s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle)
         if (!target) {
           target = snippets.find((s: any) => (s.title || '').toLowerCase().includes(cleanTitle))
@@ -52,7 +55,8 @@ export const clearFileTool = aiSdk.tool({
         return { success: false, error: `File "${title}" not found.` }
       }
 
-      const oldWords = (target.code || '').trim() ? (target.code || '').trim().split(/\s+/).length : 0
+      const previousContent = target.code || ''
+      const oldWords = previousContent.trim() ? previousContent.trim().split(/\s+/).length : 0
       const newCode = keepHeader ? `# ${target.title}\n\n` : ''
 
       if (vs.setDraft) {
@@ -70,7 +74,11 @@ export const clearFileTool = aiSdk.tool({
 
       return {
         success: true,
+        id: target.id,
         title: target.title,
+        folderId: target.folderId || '',
+        previousContent,
+        newContent: newCode,
         removedWords: oldWords,
         summary: `🧹 Cleared [[${target.title}]] (-${oldWords})`,
         instruction_to_ai: `File "${target.title}" was completely cleared. Inform the user.`

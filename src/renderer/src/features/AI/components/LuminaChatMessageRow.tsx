@@ -1,73 +1,14 @@
 import React from 'react'
-import { FileText, Code, Brain, Folder } from 'lucide-react'
 import { MessageContent } from './LuminaMessageContent'
 import { ChatActions } from './LuminaChatActions'
 import { ThinkingIndicator } from './LuminaThinkingIndicator'
-import { openNoteInEditor } from './LuminaChatLink'
+import { LuminaEntityMention, getEntityIconForTarget } from './LuminaEntityMention'
 import { useAIStore } from '../tools/lumina'
-import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import type { ChatMessage } from '../types/ai.types'
 import '../css/chatMentions.css'
 
-const BRAIN_DOC_KEYS = [
-  'purpose',
-  'shortcuts',
-  'shortcut',
-  'introduction',
-  'intro',
-  'lumina',
-  'syntax',
-  'code-and-syntax',
-  'tables',
-  'tasklists',
-  'mermaid',
-  'math',
-  'html',
-  'admonitions',
-  'best-practices',
-  'vision',
-  'vision-guide',
-  'scope',
-  'suggestions',
-  'error-reference'
-]
-
-export const getMentionIcon = (target: string): React.ReactNode => {
-  const lower = (target || '').toLowerCase().trim()
-  const clean = lower.replace(/\.md$/, '').replace(/^brain\//, '')
-
-  try {
-    const vs = useWorkspaceStore.getState()
-    const folders = vs?.folders || []
-    const isFolder = folders.some((f: string) => {
-      const nf = f.toLowerCase().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
-      return nf === clean || nf.split('/').pop() === clean
-    })
-    if (isFolder) {
-      return <Folder size={11.5} className="chat-mention-icon folder-icon" />
-    }
-  } catch {}
-
-  if (BRAIN_DOC_KEYS.some((k) => clean === k || clean.endsWith(`/${k}`) || clean.includes(k))) {
-    return <Brain size={12.5} className="chat-mention-icon brain-icon" />
-  }
-
-  if (lower.endsWith('.css') || lower.endsWith('.scss') || lower.endsWith('.less')) {
-    return <span className="chat-mention-symbol css-symbol">{'{ }'}</span>
-  }
-  if (lower.endsWith('.jsx') || lower.endsWith('.tsx')) {
-    return <span className="chat-mention-symbol react-symbol">⚛</span>
-  }
-  if (
-    lower.endsWith('.js') ||
-    lower.endsWith('.ts') ||
-    lower.endsWith('.mjs') ||
-    lower.endsWith('.cjs') ||
-    lower.endsWith('.py')
-  ) {
-    return <Code size={11.5} className="chat-mention-icon code-icon" />
-  }
-  return <FileText size={11.5} className="chat-mention-icon file-icon" />
+export const getMentionIcon = (target: string | any): React.ReactNode => {
+  return getEntityIconForTarget(target, 11.5)
 }
 
 export interface ChatMessageRowProps {
@@ -163,29 +104,11 @@ export const ChatMessageRow: React.FC<ChatMessageRowProps> = React.memo(
 
                       return (
                         <React.Fragment key={pIdx}>
-                          <span
-                            className="mention-chip chat-user-mention-pill"
-                            contentEditable={false}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              openNoteInEditor(cleanTarget)
-                            }}
-                            title={`Click to open [[${displayName}]] in editor`}
-                          >
-                            <span
-                              className="chat-mention-icon-wrapper"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                openNoteInEditor(cleanTarget)
-                              }}
-                              title={`Open ${displayName}`}
-                            >
-                              {getMentionIcon(cleanTarget)}
-                            </span>
-                            <span className="chat-user-mention-text">
-                              @{displayName}
-                            </span>
-                          </span>
+                          <LuminaEntityMention
+                            target={cleanTarget}
+                            label={displayName}
+                            prefixAt={true}
+                          />
                           {trailingPunc}
                         </React.Fragment>
                       )

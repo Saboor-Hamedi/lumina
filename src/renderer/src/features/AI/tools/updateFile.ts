@@ -111,8 +111,12 @@ export const updateFileTool = aiSdk.tool({
     sectionHeader
   }): Promise<AIToolExecutionResult> => {
     const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+    const { collectWorkspaceFolders, matchFolderByQuery, normalizeTitle } = await import(
+      '../services/prompt/mentionResolver'
+    )
     const vs = (useWorkspaceStore as any).getState()
-    const snippets = vs.notes || []
+    const snippets = (Array.isArray(vs.notes) && vs.notes.length > 0 ? vs.notes : vs.snippets) || []
+    const knownFolders = collectWorkspaceFolders(snippets, vs.folders || [])
 
     const rawInput = (title || '').trim().replace(/^@/, '').replace(/\\/g, '/').replace(/\.md$/i, '')
     let cleanTitle = rawInput.toLowerCase()
@@ -126,6 +130,9 @@ export const updateFileTool = aiSdk.tool({
       const titleFolder = parts.join('/').toLowerCase()
       cleanFolder = cleanFolder ? `${cleanFolder}/${titleFolder}` : titleFolder
     }
+    const resolvedCleanFolder = cleanFolder
+      ? (matchFolderByQuery(cleanFolder, knownFolders) || cleanFolder).toLowerCase()
+      : ''
 
     const matchesFolder = (note: any) => {
       if (!cleanFolder) return true
@@ -133,36 +140,42 @@ export const updateFileTool = aiSdk.tool({
         .replace(/\\/g, '/')
         .replace(/^\/+|\/+$/g, '')
         .toLowerCase()
-      return noteFolder === cleanFolder
+      return noteFolder === cleanFolder || noteFolder === resolvedCleanFolder
     }
 
     let target: any = null
 
     // Prefer active open note if it matches or if requested as 'current'
-    if (vs.selectedNote && matchesFolder(vs.selectedNote)) {
-      const activeTitle = (vs.selectedNote.title || '').toLowerCase().replace(/\.md$/, '')
+    const activeNote = vs.selectedNote || vs.selectedSnippet
+    if (activeNote && matchesFolder(activeNote)) {
+      const activeTitle = (activeNote.title || '').toLowerCase().replace(/\.md$/, '')
       if (
         cleanTitle === 'current' ||
         !cleanTitle ||
         activeTitle === cleanTitle ||
+        normalizeTitle(activeTitle) === normalizeTitle(cleanTitle) ||
         activeTitle.includes(cleanTitle) ||
         cleanTitle.includes(activeTitle)
       ) {
-        target = vs.selectedNote
+        target = activeNote
       }
     }
 
     if (!target) {
       if (cleanTitle === 'current' || !cleanTitle) {
-        target = vs.selectedNote || (snippets.length > 0 ? snippets[0] : null)
+        target = activeNote || (snippets.length > 0 ? snippets[0] : null)
       } else {
         target = snippets.find(
           (s: any) =>
-            matchesFolder(s) && (s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle
+            matchesFolder(s) &&
+            ((s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle ||
+              normalizeTitle(s.title) === normalizeTitle(cleanTitle))
         )
         if (!target && cleanFolder) {
           target = snippets.find(
-            (s: any) => (s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle
+            (s: any) =>
+              (s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle ||
+              normalizeTitle(s.title) === normalizeTitle(cleanTitle)
           )
         }
         if (!target) {
@@ -173,8 +186,8 @@ export const updateFileTool = aiSdk.tool({
         if (!target) {
           target = snippets.find((s: any) => (s.title || '').toLowerCase().includes(cleanTitle))
         }
-        if (!target && vs.selectedNote && !cleanFolder) {
-          target = vs.selectedNote
+        if (!target && activeNote && !cleanFolder) {
+          target = activeNote
         }
       }
     }

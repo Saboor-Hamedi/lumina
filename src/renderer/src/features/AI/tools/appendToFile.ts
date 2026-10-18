@@ -4,6 +4,7 @@ import type { AIToolExecutionResult } from '../types/ai.types'
 interface AppendToFileInput {
   title: string
   content: string
+  folder?: string
 }
 
 export const appendToFileTool = aiSdk.tool({
@@ -12,25 +13,50 @@ export const appendToFileTool = aiSdk.tool({
   inputSchema: aiSdk.jsonSchema<AppendToFileInput>({
     type: 'object',
     properties: {
-      title: { type: 'string', description: 'The file title' },
-      content: { type: 'string', description: 'The new content to write/append to the file' }
+      title: { type: 'string', description: 'The file title or "Folder/Title" path' },
+      content: { type: 'string', description: 'The new content to write/append to the file' },
+      folder: { type: 'string', description: 'Optional workspace folder path containing the file' }
     },
     required: ['title', 'content']
   }),
-  execute: async ({ title, content }): Promise<AIToolExecutionResult> => {
+  execute: async ({ title, content, folder }): Promise<AIToolExecutionResult> => {
     const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+    const { normalizeTitle } = await import('../services/prompt/mentionResolver')
     const vs = (useWorkspaceStore as any).getState()
-    const snippets = vs.notes || []
+    const snippets = (Array.isArray(vs.notes) && vs.notes.length > 0 ? vs.notes : vs.snippets) || []
 
-    const cleanTitle = (title || '').trim().toLowerCase().replace(/\.md$/, '')
+    const rawInput = (title || '').trim().replace(/^@/, '').replace(/\\/g, '/').replace(/\.md$/i, '')
+    let cleanTitle = rawInput.toLowerCase()
+    let cleanFolder = (folder || '').trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').toLowerCase()
+    if (rawInput.includes('/')) {
+      const parts = rawInput.split('/').filter(Boolean)
+      cleanTitle = (parts.pop() || '').toLowerCase()
+      const titleFolder = parts.join('/').toLowerCase()
+      cleanFolder = cleanFolder ? `${cleanFolder}/${titleFolder}` : titleFolder
+    }
+
+    const matchesFolder = (s: any) => {
+      if (!cleanFolder) return true
+      const nf = String(s?.folderId || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').toLowerCase()
+      return nf === cleanFolder || nf.endsWith(`/${cleanFolder}`)
+    }
+
     let target = snippets.find(
-      (s: any) => (s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle
+      (s: any) =>
+        matchesFolder(s) &&
+        ((s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle ||
+          normalizeTitle(s.title) === normalizeTitle(cleanTitle))
     )
+    if (!target) {
+      target = snippets.find(
+        (s: any) => (s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle
+      )
+    }
     if (!target) {
       target = snippets.find((s: any) => (s.title || '').toLowerCase().includes(cleanTitle))
     }
-    if (!target && vs.selectedNote) {
-      target = vs.selectedNote
+    if (!target && (vs.selectedNote || vs.selectedSnippet)) {
+      target = vs.selectedNote || vs.selectedSnippet
     }
     if (!target) return { success: false, error: `File "${title}" not found.` }
 
@@ -73,8 +99,13 @@ export const appendToFileTool = aiSdk.tool({
 
     return {
       success: true,
+      id: target.id,
       title: target.title,
+      folderId: target.folderId || '',
+      previousContent: currentCode,
+      newContent: newCode,
       writtenContent: content,
+      addedWords,
       summary: `✍️ Appended to [[${target.title}]] (+${addedWords})`,
       instruction_to_ai:
         'Content written successfully. Give a friendly summary of what was written and highlight key wikilinks.'

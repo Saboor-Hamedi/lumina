@@ -25,23 +25,103 @@
   text-shadow: 0 0 10px rgba(var(--text-accent-rgb, 64, 186, 250), 0.3);
 }
 
-/* Wikilinks & Note Mentions in AI Response */
-.chat-wikilink-chip {
+/* Wikilinks & Rich Workspace Entity Mentions in AI Response (Antigravity Zero-Shift Inline Chip) */
+.chat-wikilink-chip,
+.chat-entity-mention,
+.mention-chip,
+.chat-user-mention-pill {
   display: inline;
-  color: var(--text-accent, #40bafa);
+  vertical-align: baseline;
+  line-height: inherit;
+  font-size: inherit;
+  font-family: inherit;
   font-weight: 500;
+  color: var(--text-main);
   cursor: pointer;
   background: transparent !important;
   border: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  text-decoration: none;
-  transition: opacity 0.15s ease, text-decoration 0.15s ease;
+  border-radius: 4px;
+  padding: 1px 3px;
+  margin: 0;
+  text-decoration: none !important;
+  white-space: nowrap;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  user-select: text;
+  transition:
+    background-color 0.14s ease-out,
+    box-shadow 0.14s ease-out,
+    color 0.14s ease-out;
 }
 
-.chat-wikilink-chip:hover {
-  text-decoration: underline;
-  opacity: 0.85;
+/* Folder Mentions: Sleek inline folder identity without bulky padding/font weight */
+.chat-entity-mention.entity-type-folder {
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.chat-entity-mention.entity-type-folder .chat-mention-icon.folder-icon {
+  color: var(--text-accent, #f59e0b);
+}
+
+/* Note Mentions */
+.chat-entity-mention.entity-type-note .chat-mention-icon.file-icon {
+  color: var(--text-accent, #38bdf8);
+}
+
+/* PDF Mentions */
+.chat-entity-mention.entity-type-pdf .chat-mention-icon.pdf-icon {
+  color: #ef4444;
+}
+
+/* Image Mentions */
+.chat-entity-mention.entity-type-image .chat-mention-icon.image-icon {
+  color: #38bdf8;
+}
+
+/* Diagram & Canvas Mentions */
+.chat-entity-mention.entity-type-diagram .chat-mention-icon.diagram-icon {
+  color: #a855f7;
+}
+
+/* Source-Code & Data File Mentions */
+.chat-entity-mention.entity-type-code .chat-mention-icon.code-icon {
+  color: #10b981;
+}
+
+/* Brain Documentation Mentions */
+.chat-entity-mention.entity-type-brain .chat-mention-icon.brain-icon {
+  color: var(--text-accent, #a855f7);
+}
+
+/* Unresolved / Deleted Entity Graceful Fallback */
+.chat-entity-mention.is-unresolved {
+  opacity: 0.8;
+}
+
+.chat-entity-mention.is-unresolved .chat-mention-icon {
+  color: var(--text-muted, #94a3b8);
+}
+
+.chat-entity-mention-text {
+  font-family: inherit !important;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  vertical-align: baseline;
+  color: inherit;
+  transition: color 0.14s ease-out;
+}
+
+.chat-entity-child-count {
+  font-size: 0.74em;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: rgba(128, 128, 128, 0.12);
+  border-radius: 999px;
+  padding: 0 4px;
+  margin-left: 3px;
+  vertical-align: baseline;
 }
 
 .chat-user-mention {
@@ -71,46 +151,28 @@
   opacity: 0.85;
 }
 
-/* Mention in Chat: Pure Inline Flow & Exact Font Baseline */
-.mention-chip,
-.chat-user-mention-pill {
-  display: inline;
-  vertical-align: baseline;
-  line-height: inherit;
-  font-size: inherit;
-  font-family: inherit;
-  font-weight: 600;
-  white-space: nowrap;
-  background: transparent !important;
-  border: 1px solid transparent !important;
-  border-radius: 4px;
-  padding: 1px 4px;
-  margin: 0;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
-  cursor: pointer;
-  overflow: visible;
-  user-select: text;
-  color: inherit;
-  transition: all 0.15s ease-out;
-}
-
 .chat-mention-icon-wrapper {
   display: inline-block;
-  vertical-align: -0.12em;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.85em;
-  width: 0.85em;
-  height: 0.85em;
+  vertical-align: -0.11em;
+  width: 0.8em;
+  height: 0.8em;
+  margin-right: 3px;
   line-height: 1;
-  margin-right: 3.5px;
-  flex-shrink: 0;
   cursor: pointer;
-  transition: transform 0.15s ease-out, color 0.15s ease-out;
+  transition:
+    transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.14s ease-out;
   color: var(--text-accent, #a855f7);
   padding: 0;
   border-radius: 3px;
+}
+
+/* Keep folder icon slightly more compact so it never looks bulky next to text */
+.chat-entity-mention.entity-type-folder .chat-mention-icon-wrapper {
+  width: 0.76em;
+  height: 0.76em;
+  vertical-align: -0.09em;
 }
 
 .chat-mention-icon-wrapper svg {
@@ -157,35 +219,61 @@
 .chat-user-mention-text {
   font-family: inherit !important;
   font-size: inherit;
-  font-weight: 600;
+  font-weight: inherit;
   line-height: inherit;
   vertical-align: baseline;
   color: inherit;
   letter-spacing: -0.01em;
-  transition: color 0.15s ease-out;
+  transition: color 0.14s ease-out;
 }
 
-/* Hover: Isolated smart chip glow */
+/* Hover: Isolated inner pill highlight + flashy icon pop (zero surrounding text shift) */
 .mention-chip:hover,
-.chat-user-mention-pill:hover {
-  background: rgba(var(--text-accent-rgb, 168, 85, 247), 0.16) !important;
-  border-color: rgba(var(--text-accent-rgb, 168, 85, 247), 0.35) !important;
-  box-shadow: 0 0 0 1px rgba(var(--text-accent-rgb, 168, 85, 247), 0.28) inset,
-              0 0 10px rgba(var(--text-accent-rgb, 168, 85, 247), 0.22);
+.chat-user-mention-pill:hover,
+.chat-entity-mention:hover {
+  background: rgba(var(--text-accent-rgb, 168, 85, 247), 0.12) !important;
+  box-shadow: 0 0 0 1px rgba(var(--text-accent-rgb, 168, 85, 247), 0.24) inset;
   color: var(--text-accent) !important;
 }
 
 .mention-chip:hover .chat-user-mention-text,
-.chat-user-mention-pill:hover .chat-user-mention-text {
+.chat-user-mention-pill:hover .chat-user-mention-text,
+.chat-entity-mention:hover .chat-entity-mention-text {
   color: var(--text-accent);
 }
 
 .mention-chip:hover .chat-mention-icon-wrapper,
-.chat-user-mention-pill:hover .chat-mention-icon-wrapper {
-  color: var(--text-accent);
-  transform: scale(1.15);
+.chat-user-mention-pill:hover .chat-mention-icon-wrapper,
+.chat-entity-mention:hover .chat-mention-icon-wrapper {
+  transform: scale(1.15) translateY(-0.5px);
+  filter: drop-shadow(0 0 5px rgba(var(--text-accent-rgb, 168, 85, 247), 0.55)) brightness(1.18);
 }
 
-.chat-mention-icon-wrapper:hover {
-  transform: scale(1.22);
+/* Light theme hover contrast */
+[data-theme='light'] .chat-entity-mention:hover,
+[data-theme='polaris'] .chat-entity-mention:hover {
+  background: rgba(var(--text-accent-rgb, 99, 102, 241), 0.11) !important;
+  box-shadow: 0 0 0 1px rgba(var(--text-accent-rgb, 99, 102, 241), 0.24) inset;
+}
+
+/* Hierarchical Folder & File Lists inside Chat Responses */
+.chat-bubble ul ul,
+.chat-bubble ol ul {
+  margin-top: 3px;
+  margin-bottom: 3px;
+  padding-left: 1.15em;
+  border-left: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.2));
+  margin-left: 0.2em;
+}
+
+.chat-bubble li > .chat-entity-mention:first-child,
+.chat-bubble li > p > .chat-entity-mention:first-child {
+  margin-left: 0;
+}
+
+.lumina-folder-tree-file-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }

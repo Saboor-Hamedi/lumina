@@ -60,20 +60,16 @@ lumina-activity {
   text-decoration: underline;
 }
 
-.lumina-activity-card {
+.lumina-activity-card:not(.lumina-folder-tree-card) {
   margin: 3px 0 5px 0;
-  border: none !important;
+  border: none;
   border-radius: 0;
-  background: transparent !important;
-  box-shadow: none !important;
+  background: transparent;
+  box-shadow: none;
   overflow: hidden;
   transition: all 0.15s ease;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-.lumina-activity-card:hover {
-  border-color: transparent !important;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .lumina-activity-header {
@@ -82,22 +78,12 @@ lumina-activity {
   justify-content: space-between;
   gap: 8px;
   padding: 3px 0;
-  background: transparent !important;
+  background: transparent;
   cursor: pointer;
   user-select: none;
-  border: none !important;
+  border: none;
   transition: opacity 0.15s ease;
   width: 100%;
-}
-
-.lumina-activity-card.expanded .lumina-activity-header {
-  border-bottom: none !important;
-  background: transparent !important;
-}
-
-.lumina-activity-header:hover {
-  background: transparent !important;
-  opacity: 0.85;
 }
 
 .lumina-activity-title-group {

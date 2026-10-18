@@ -65,14 +65,26 @@ export const grepWorkspaceTool = aiSdk.tool({
       }
 
       const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const { collectWorkspaceFolders, matchFolderByQuery } = await import(
+        '../services/prompt/mentionResolver'
+      )
       const vs = (useWorkspaceStore as any).getState()
-      const notes: any[] = Array.isArray(vs.notes) ? vs.notes : []
+      const notes: any[] =
+        Array.isArray(vs.notes) && vs.notes.length > 0
+          ? vs.notes
+          : Array.isArray(vs.snippets)
+            ? vs.snippets
+            : []
+      const knownFolders = collectWorkspaceFolders(notes, vs.folders || [])
 
-      const cleanFolder = (folder || '')
+      const rawCleanFolder = (folder || '')
         .trim()
         .replace(/\\/g, '/')
         .replace(/^\/+|\/+$/g, '')
         .toLowerCase()
+      const cleanFolder = rawCleanFolder
+        ? (matchFolderByQuery(rawCleanFolder, knownFolders) || rawCleanFolder).toLowerCase()
+        : ''
 
       const limit = Math.min(100, Math.max(1, Number(maxResults) || 30))
       const flags = caseSensitive ? '' : 'i'

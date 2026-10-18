@@ -20,17 +20,24 @@ export const deleteFolderTool = aiSdk.tool({
   }),
   execute: async ({ path }): Promise<AIToolExecutionResult> => {
     try {
-      const cleanPath = (path || '').trim().replace(/^[/\\]+|[/\\]+$/g, '')
-      if (!cleanPath) {
+      const rawPath = (path || '').trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+      if (!rawPath) {
         return { success: false, error: 'Folder path cannot be empty.' }
       }
+
+      const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const { collectWorkspaceFolders, matchFolderByQuery } = await import(
+        '../services/prompt/mentionResolver'
+      )
+      const vs = (useWorkspaceStore as any).getState()
+      const notes = (Array.isArray(vs.notes) && vs.notes.length > 0 ? vs.notes : vs.snippets) || []
+      const knownFolders = collectWorkspaceFolders(notes, vs.folders || [])
+      const cleanPath = matchFolderByQuery(rawPath, knownFolders) || rawPath
 
       if ((window as any).api?.deleteFolder) {
         await (window as any).api.deleteFolder(cleanPath)
       }
 
-      const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
-      const vs = (useWorkspaceStore as any).getState()
       if (vs.loadWorkspace) {
         await vs.loadWorkspace()
       }

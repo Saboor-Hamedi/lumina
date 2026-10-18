@@ -2,6 +2,7 @@ import React, { useMemo, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { FileText, Folder, Star, HardDrive, FileCode, Image, Layers, X } from 'lucide-react'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
+import { collectWorkspaceFolders } from '../../AI/services/prompt/mentionResolver'
 import '../css/workspacestat.css'
 
 export interface WorkspaceStatProps {
@@ -24,12 +25,7 @@ export const WorkspaceStat: React.FC<WorkspaceStatProps> = ({ isOpen, onClose, a
     const totalNotes = noteItems.length
     const totalImages = imageItems.length
     const totalPdfs = pdfItems.length
-    const folderSet = new Set<string>(folders || [])
-
-    notes.forEach((s) => {
-      if (s.folderId) folderSet.add(s.folderId)
-    })
-    const totalFolders = folderSet.size
+    const totalFolders = collectWorkspaceFolders(notes, folders).length
 
     let pinnedCount = 0
     let learnedCount = 0

@@ -476,30 +476,35 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
               : null
 
           const rawFolderList: string[] = freshData.folders || []
-          const folderSet = new Set<string>(rawFolderList)
+          const folderSet = new Set<string>()
+          const addFolderAndParents = (raw?: string) => {
+            const clean = String(raw || '').trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+            if (!clean || clean === '.' || clean.startsWith('.')) return
+            let current = ''
+            for (const part of clean.split('/')) {
+              if (!part || part === '.' || part.startsWith('.')) return
+              current = current ? `${current}/${part}` : part
+              folderSet.add(current)
+            }
+          }
+          rawFolderList.forEach((f) => addFolderAndParents(f))
           merged.forEach((n) => {
             if (n.folderId && typeof n.folderId === 'string') {
-              const clean = n.folderId.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
-              let current = ''
-              clean
-                .split('/')
-                .filter(Boolean)
-                .forEach((part) => {
-                  current = current ? `${current}/${part}` : part
-                  folderSet.add(current)
-                })
+              addFolderAndParents(n.folderId)
             }
           })
           const allFolders = Array.from(folderSet)
 
           set({
             notes: merged,
+            snippets: merged,
             folders: allFolders,
             folderColors,
             openTabs: validTabs,
             pinnedTabIds: validPinned,
             activeTabId: validActiveId,
-            selectedNote: activeNote
+            selectedNote: activeNote,
+            selectedSnippet: activeNote
           })
         } else {
           console.warn('[WorkspaceStore] ✗ Received invalid data from sync.')

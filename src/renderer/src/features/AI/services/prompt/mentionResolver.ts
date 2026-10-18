@@ -68,19 +68,26 @@ export const collectWorkspaceFolders = (
   allFolders: string[] = []
 ): string[] => {
   const folderSet = new Set<string>()
-  ;(allFolders || []).forEach((f) => {
-    const clean = normalizePath(f)
-    if (clean) folderSet.add(clean)
-  })
+  const addFolderAndParents = (raw?: string) => {
+    const clean = normalizePath(raw)
+    if (!clean || clean === '.' || clean.startsWith('.')) return
+    let curr = ''
+    for (const part of clean.split('/')) {
+      if (!part || part === '.' || part.startsWith('.')) return
+      curr = curr ? `${curr}/${part}` : part
+      folderSet.add(curr)
+    }
+  }
+
+  ;(allFolders || []).forEach((f) => addFolderAndParents(f))
   ;(vaultSnippets || []).forEach((s) => {
-    const clean = normalizePath(s?.folderId)
-    if (clean) {
-      let curr = ''
-      clean.split('/').forEach((part) => {
-        if (!part) return
-        curr = curr ? `${curr}/${part}` : part
-        folderSet.add(curr)
-      })
+    if (s?.folderId) {
+      addFolderAndParents(s.folderId)
+    } else if (typeof s?.relativePath === 'string') {
+      const rel = s.relativePath.replace(/\\/g, '/')
+      if (rel.includes('/')) {
+        addFolderAndParents(rel.slice(0, rel.lastIndexOf('/')))
+      }
     }
   })
   return Array.from(folderSet)
@@ -92,10 +99,23 @@ export const collectWorkspaceFolders = (
 export const getNotesInFolder = (folderPath: string, vaultSnippets: any[] = []): any[] => {
   const target = normalizePath(folderPath).toLowerCase()
   if (!target) return []
+  const targetBase = target.split('/').pop() || target
   return (vaultSnippets || [])
     .filter((s) => {
-      const nf = normalizePath(s?.folderId).toLowerCase()
-      return nf === target || nf.startsWith(`${target}/`)
+      const rawFolder =
+        s?.folderId ||
+        (typeof s?.relativePath === 'string' && s.relativePath.replace(/\\/g, '/').includes('/')
+          ? s.relativePath.replace(/\\/g, '/').slice(0, s.relativePath.replace(/\\/g, '/').lastIndexOf('/'))
+          : '')
+      const nf = normalizePath(rawFolder).toLowerCase()
+      if (!nf) return false
+      const nfBase = nf.split('/').pop() || nf
+      return (
+        nf === target ||
+        nf.startsWith(`${target}/`) ||
+        nf.endsWith(`/${target}`) ||
+        nfBase === targetBase
+      )
     })
     .map((s) => ({
       ...s,

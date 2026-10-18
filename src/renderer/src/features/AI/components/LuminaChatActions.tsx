@@ -1,7 +1,19 @@
-import React, { useState } from 'react'
-import { Copy, Check, ThumbsUp, ThumbsDown, Clock3, ChevronDown, FileText, Folder, RotateCcw } from 'lucide-react'
+import React, { useState, useMemo } from 'react'
+import {
+  Copy,
+  Check,
+  ThumbsUp,
+  ThumbsDown,
+  ChevronDown,
+  ChevronRight,
+  FolderTree,
+  Folder,
+  RotateCcw
+} from 'lucide-react'
 import type { ChatMessage, WorkspaceReviewChange } from '../types/ai.types'
 import { useAIStore } from '../tools/lumina'
+import { getEntityIconForTarget } from './LuminaEntityMention'
+import '../css/folderTree.css'
 
 export interface ChatActionsProps {
   msg: ChatMessage
@@ -12,7 +24,7 @@ export interface ChatActionsProps {
 
 /**
  * ChatActions renders action buttons (copy response, rate thumbs up/down, message timestamp,
- * and interactive workspace change review with 1-click Open and Undo) beneath completed assistant responses.
+ * and interactive Workspace Changes folder/file tree with 1-click Open and Undo) beneath completed assistant responses.
  */
 export const ChatActions: React.FC<ChatActionsProps> = ({
   msg,
@@ -21,6 +33,7 @@ export const ChatActions: React.FC<ChatActionsProps> = ({
   onRate
 }) => {
   const [copied, setCopied] = useState<boolean>(false)
+  const [isReviewExpanded, setIsReviewExpanded] = useState<boolean>(true)
   const [revertedPaths, setRevertedPaths] = useState<Record<string, boolean>>({})
   const precedingUserTimestamp = useAIStore((state) => {
     const preceding = state.chatMessages[index - 1]
@@ -38,7 +51,7 @@ export const ChatActions: React.FC<ChatActionsProps> = ({
     try {
       const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
       const vs = (useWorkspaceStore as any).getState()
-      const notes: any[] = vs.notes || []
+      const notes: any[] = vs.notes || vs.snippets || []
       const target =
         (change.noteId && notes.find((n) => n.id === change.noteId)) ||
         notes.find((n) => {
@@ -62,7 +75,7 @@ export const ChatActions: React.FC<ChatActionsProps> = ({
     try {
       const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
       const vs = (useWorkspaceStore as any).getState()
-      const notes: any[] = vs.notes || []
+      const notes: any[] = vs.notes || vs.snippets || []
       const target =
         (change.noteId && notes.find((n) => n.id === change.noteId)) ||
         notes.find((n) => {
@@ -73,7 +86,24 @@ export const ChatActions: React.FC<ChatActionsProps> = ({
           )
         })
 
-      if (change.previousContent !== undefined && target) {
+      if (change.action === 'deleted' && change.previousContent !== undefined) {
+        const saveAction = vs.saveNote || vs.saveSnippet
+        if (saveAction) {
+          const fileName = change.title || change.path.split('/').pop() || 'Restored Note'
+          const folderId =
+            change.folderId ??
+            (change.path.includes('/') ? change.path.slice(0, change.path.lastIndexOf('/')) : '')
+          await saveAction({
+            id: change.noteId || crypto.randomUUID(),
+            title: fileName,
+            folderId,
+            code: change.previousContent,
+            language: 'markdown',
+            timestamp: Date.now()
+          })
+          setRevertedPaths((prev) => ({ ...prev, [change.path]: true }))
+        }
+      } else if (change.previousContent !== undefined && target) {
         const saveAction = vs.saveNote || vs.saveSnippet
         if (saveAction) {
           const restored = await saveAction({ ...target, code: change.previousContent })
@@ -83,7 +113,7 @@ export const ChatActions: React.FC<ChatActionsProps> = ({
           setRevertedPaths((prev) => ({ ...prev, [change.path]: true }))
         }
       } else if (change.action === 'created' && target && vs.deleteNote) {
-        await vs.deleteNote(target.id)
+        await vs.deleteNote(target.id, true)
         setRevertedPaths((prev) => ({ ...prev, [change.path]: true }))
       }
     } catch (_) {}
@@ -122,91 +152,238 @@ export const ChatActions: React.FC<ChatActionsProps> = ({
   const hasDuration = typeof responseDuration === 'number'
   const hasReview = reviewChanges.length > 0
 
+  // Group reviewChanges into a folder/file tree matching LuminaFolderTree
+  const reviewTree = useMemo(() => {
+    const folderMap = new Map<
+      string,
+      { folderPath: string; folderChange?: WorkspaceReviewChange; files: WorkspaceReviewChange[] }
+    >()
+    const rootFiles: WorkspaceReviewChange[] = []
+
+    for (const change of reviewChanges) {
+      const cleanPath = String(change.path || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+      if (change.action === 'folder') {
+        if (!folderMap.has(cleanPath)) {
+          folderMap.set(cleanPath, { folderPath: cleanPath, folderChange: change, files: [] })
+        } else {
+          folderMap.get(cleanPath)!.folderChange = change
+        }
+        continue
+      }
+
+      const folderPath =
+        change.folderId !== undefined
+          ? String(change.folderId || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+          : cleanPath.includes('/')
+            ? cleanPath.slice(0, cleanPath.lastIndexOf('/'))
+            : ''
+
+      if (folderPath) {
+        if (!folderMap.has(folderPath)) {
+          folderMap.set(folderPath, { folderPath, files: [] })
+        }
+        folderMap.get(folderPath)!.files.push(change)
+      } else {
+        rootFiles.push(change)
+      }
+    }
+
+    return {
+      folderGroups: Array.from(folderMap.values()),
+      rootFiles
+    }
+  }, [reviewChanges])
+
+  const folderCount = reviewTree.folderGroups.length
+  const fileCount =
+    reviewTree.rootFiles.length +
+    reviewTree.folderGroups.reduce((sum, g) => sum + g.files.length, 0)
+  const totalTopLevel = reviewTree.folderGroups.length + reviewTree.rootFiles.length
+
+  const renderFileActionMeta = (change: WorkspaceReviewChange) => {
+    const canUndo =
+      change.previousContent !== undefined ||
+      (change.action === 'created' && Boolean(change.noteId || change.title || change.path))
+    const isReverted = Boolean(revertedPaths[change.path])
+
+    return (
+      <span className="lumina-folder-tree-line-meta">
+        <span className={`lumina-folder-tree-action-badge action-${change.action}`}>
+          {isReverted ? 'Reverted' : actionLabel[change.action] || 'Changed'}
+        </span>
+        {(change.addedWords > 0 || change.removedWords > 0) && (
+          <span className="lumina-folder-tree-diff">
+            {change.addedWords > 0 && (
+              <span className="lumina-folder-tree-diff-added">+{change.addedWords}w</span>
+            )}
+            {change.removedWords > 0 && (
+              <span className="lumina-folder-tree-diff-removed">−{change.removedWords}w</span>
+            )}
+          </span>
+        )}
+        {canUndo && (
+          <button
+            type="button"
+            className="lumina-folder-tree-undo-btn"
+            onClick={(e) => handleUndoChange(e, change)}
+            disabled={isReverted}
+            title={
+              isReverted
+                ? 'Change reverted'
+                : `Undo ${actionLabel[change.action]?.toLowerCase() || 'change'}`
+            }
+          >
+            <RotateCcw size={10} />
+            <span>{isReverted ? 'Undone' : 'Undo'}</span>
+          </button>
+        )}
+      </span>
+    )
+  }
+
   return (
     <div className="chat-response-actions">
       {hasReview && (
-        <details className="chat-response-report">
-          <summary className="chat-response-summary">
-            {hasDuration && (
-              <span
-                className="chat-response-duration"
-                title="Time from request start to completed response"
-              >
-                <Clock3 size={12} /> Worked for {formatDuration(responseDuration)}
+        <div
+          className={`lumina-folder-tree-card ${
+            isReviewExpanded ? 'is-expanded' : 'is-collapsed'
+          }`}
+        >
+          <div
+            className="lumina-folder-tree-header"
+            onClick={() => setIsReviewExpanded((prev) => !prev)}
+          >
+            <div className="lumina-folder-tree-title-group">
+              <FolderTree size={12} className="lumina-folder-tree-icon" />
+              <span className="lumina-folder-tree-main-title">Workspace Changes</span>
+              <span className="lumina-folder-tree-stats">
+                {folderCount > 0 && `${folderCount} ${folderCount === 1 ? 'folder' : 'folders'}`}
+                {folderCount > 0 && fileCount > 0 && ' · '}
+                {fileCount > 0 && `${fileCount} ${fileCount === 1 ? 'file' : 'files'}`}
+                {addedWords > 0 && (
+                  <span className="lumina-folder-tree-diff-added" style={{ marginLeft: 6 }}>
+                    +{addedWords}w
+                  </span>
+                )}
+                {removedWords > 0 && (
+                  <span className="lumina-folder-tree-diff-removed" style={{ marginLeft: 4 }}>
+                    −{removedWords}w
+                  </span>
+                )}
+                {hasDuration && ` · ${formatDuration(responseDuration)}`}
               </span>
-            )}
-            <span className="chat-review-trigger">
-              <span className="chat-review-label">Review</span>
-              <span className="chat-review-change-count">
-                {reviewChanges.length} {reviewChanges.length === 1 ? 'change' : 'changes'}
+            </div>
+
+            <div className="lumina-folder-tree-controls">
+              <span className="lumina-folder-tree-chevron">
+                {isReviewExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
               </span>
-              {addedWords > 0 && <span className="chat-review-added">+{addedWords} words</span>}
-              {removedWords > 0 && <span className="chat-review-removed">−{removedWords} words</span>}
-              <ChevronDown size={12} className="chat-review-chevron" />
-            </span>
-          </summary>
-          <div className="chat-review-panel">
-            <div className="chat-review-heading">Workspace changes</div>
-            {reviewChanges.map((change, changeIndex) => {
-              const isFolder = change.action === 'folder'
-              const canOpen = !isFolder && change.action !== 'deleted'
-              const canUndo =
-                change.previousContent !== undefined ||
-                (change.action === 'created' && Boolean(change.noteId || change.title || change.path))
-              const isReverted = Boolean(revertedPaths[change.path])
-              return (
-                <div
-                  className="chat-review-row"
-                  key={`${change.path}-${change.action}-${changeIndex}`}
-                  onClick={() => canOpen && handleOpenChange(change)}
-                  style={canOpen ? { cursor: 'pointer' } : undefined}
-                >
-                  <span className="chat-review-file-icon" aria-hidden="true">
-                    {isFolder ? <Folder size={13} /> : <FileText size={13} />}
-                  </span>
-                  <span className="chat-review-path" title={canOpen ? `Open ${change.path}` : change.path}>
-                    {change.path}
-                  </span>
-                  <span className="chat-review-action">
-                    {isReverted ? 'Reverted' : actionLabel[change.action] || 'Changed'}
-                  </span>
-                  <span className="chat-review-diff">
-                    {change.addedWords > 0 && <span className="chat-review-added">+{change.addedWords}</span>}
-                    {change.removedWords > 0 && <span className="chat-review-removed">−{change.removedWords}</span>}
-                    {change.addedWords === 0 && change.removedWords === 0 && <span>—</span>}
-                  </span>
-                  {canUndo && (
-                    <button
-                      type="button"
-                      className="chat-review-undo-btn"
-                      onClick={(e) => handleUndoChange(e, change)}
-                      disabled={isReverted}
-                      title={isReverted ? 'Change reverted' : `Undo ${actionLabel[change.action]?.toLowerCase() || 'change'}`}
-                      style={{
-                        marginLeft: '6px',
-                        padding: '2px 6px',
-                        fontSize: '11px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '3px',
-                        borderRadius: '4px',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        background: 'transparent',
-                        color: isReverted ? 'var(--text-muted, #888)' : 'inherit',
-                        cursor: isReverted ? 'default' : 'pointer',
-                        opacity: isReverted ? 0.6 : 0.85
-                      }}
-                    >
-                      <RotateCcw size={10} />
-                      {isReverted ? 'Undone' : 'Undo'}
-                    </button>
-                  )}
-                </div>
-              )
-            })}
-            <div className="chat-review-legend">Word changes · green added · red removed · click file to open</div>
+            </div>
           </div>
-        </details>
+
+          {isReviewExpanded && (
+            <div className="lumina-folder-tree-body seamless-scrollbar">
+              {reviewTree.folderGroups.map((group, gIdx) => {
+                const isLastTop = gIdx === totalTopLevel - 1
+                const folderBranch = isLastTop ? '└── ' : '├── '
+                const childIndentGuide = isLastTop ? '    ' : '│   '
+
+                return (
+                  <React.Fragment key={`rev-folder-${group.folderPath}-${gIdx}`}>
+                    <div className="lumina-folder-tree-line is-interactive">
+                      <span className="lumina-folder-tree-line-left">
+                        <span className="lumina-folder-tree-branch">{folderBranch}</span>
+                        <span className="lumina-folder-tree-node-item">
+                          <Folder size={11} className="lumina-folder-tree-folder-icon" />
+                          <span className="lumina-folder-tree-label is-folder">
+                            {group.folderPath}/
+                          </span>
+                        </span>
+                      </span>
+                      {group.folderChange && (
+                        <span className="lumina-folder-tree-line-meta">
+                          <span className="lumina-folder-tree-action-badge action-created">
+                            Folder
+                          </span>
+                        </span>
+                      )}
+                    </div>
+
+                    {group.files.map((change, fIdx) => {
+                      const isLastChild = fIdx === group.files.length - 1
+                      const childBranch = `${childIndentGuide}${isLastChild ? '└── ' : '├── '}`
+                      const canOpen = change.action !== 'deleted'
+                      const fileLabel =
+                        change.title || change.path.split('/').pop() || change.path
+
+                      return (
+                        <div
+                          key={`rev-file-${change.path}-${fIdx}`}
+                          className="lumina-folder-tree-line is-interactive"
+                          onClick={() => canOpen && handleOpenChange(change)}
+                          style={canOpen ? { cursor: 'pointer' } : undefined}
+                        >
+                          <span className="lumina-folder-tree-line-left">
+                            <span className="lumina-folder-tree-branch">{childBranch}</span>
+                            <span className="lumina-folder-tree-node-item">
+                              <span className="lumina-folder-tree-file-icon-wrap">
+                                {getEntityIconForTarget(change.path, 11)}
+                              </span>
+                              <span
+                                className={`lumina-folder-tree-label is-file ${
+                                  canOpen ? 'is-clickable' : ''
+                                }`}
+                                title={canOpen ? `Open ${change.path}` : change.path}
+                              >
+                                {fileLabel}
+                              </span>
+                            </span>
+                          </span>
+                          {renderFileActionMeta(change)}
+                        </div>
+                      )
+                    })}
+                  </React.Fragment>
+                )
+              })}
+
+              {reviewTree.rootFiles.map((change, rIdx) => {
+                const topIdx = reviewTree.folderGroups.length + rIdx
+                const isLastRoot = topIdx === totalTopLevel - 1
+                const branch = isLastRoot ? '└── ' : '├── '
+                const canOpen = change.action !== 'deleted'
+                const fileLabel = change.title || change.path
+
+                return (
+                  <div
+                    key={`rev-root-${change.path}-${rIdx}`}
+                    className="lumina-folder-tree-line is-interactive"
+                    onClick={() => canOpen && handleOpenChange(change)}
+                    style={canOpen ? { cursor: 'pointer' } : undefined}
+                  >
+                    <span className="lumina-folder-tree-line-left">
+                      <span className="lumina-folder-tree-branch">{branch}</span>
+                      <span className="lumina-folder-tree-node-item">
+                        <span className="lumina-folder-tree-file-icon-wrap">
+                          {getEntityIconForTarget(change.path, 11)}
+                        </span>
+                        <span
+                          className={`lumina-folder-tree-label is-file ${
+                            canOpen ? 'is-clickable' : ''
+                          }`}
+                          title={canOpen ? `Open ${change.path}` : change.path}
+                        >
+                          {fileLabel}
+                        </span>
+                      </span>
+                    </span>
+                    {renderFileActionMeta(change)}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
       )}
       <div className="chat-action-buttons">
         <button

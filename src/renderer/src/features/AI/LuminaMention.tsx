@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { FileText, Brain, Folder } from 'lucide-react'
+import { Brain, Folder } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { getBrainDocuments } from './services/brainKnowledge'
+import { collectWorkspaceFolders } from './services/prompt/mentionResolver'
+import { classifySnippetEntityType } from './services/entityResolver'
 import { getMentionIcon } from './components/LuminaChatMessageRow'
 import './css/luminSlash.css'
 
@@ -46,16 +48,9 @@ export const LuminaMention: React.FC<LuminaMentionProps> = ({
   const allItems = useMemo(() => {
     const list: any[] = []
 
-    // Collect all explicit + implicit folder paths from workspace notes
-    const folderSet = new Set<string>(Array.isArray(folders) ? folders : [])
-    ;(notes || []).forEach((n: any) => {
-      if (n?.folderId && typeof n.folderId === 'string') {
-        const clean = n.folderId.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
-        if (clean) folderSet.add(clean)
-      }
-    })
+    const canonicalFolders = collectWorkspaceFolders(notes, folders)
 
-    Array.from(folderSet)
+    canonicalFolders
       .sort((a, b) => a.localeCompare(b))
       .forEach((folderPath: string) => {
         const normFolder = folderPath.toLowerCase().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
@@ -147,7 +142,7 @@ export const LuminaMention: React.FC<LuminaMentionProps> = ({
     if (snippet.isBrain) {
       return <Brain size={13} style={{ color: 'var(--text-accent)' }} />
     }
-    return getMentionIcon(snippet.title || snippet.name || '')
+    return getMentionIcon(snippet)
   }
 
   const getItemBadge = (snippet: any) => {
@@ -156,8 +151,11 @@ export const LuminaMention: React.FC<LuminaMentionProps> = ({
       return `Folder (${count})`
     }
     if (snippet.isBrain) return 'Doc'
-    const title = (snippet.title || snippet.name || '').toLowerCase()
-    if (/\.(jsx?|tsx?|css|scss|py|json|html|sh|sql)$/i.test(title)) return 'Code'
+    const entityType = classifySnippetEntityType(snippet)
+    if (entityType === 'pdf') return 'PDF'
+    if (entityType === 'image') return 'Image'
+    if (entityType === 'diagram') return 'Diagram'
+    if (entityType === 'code') return 'Code'
     return 'Note'
   }
 

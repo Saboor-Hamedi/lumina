@@ -2,6 +2,7 @@ import * as aiSdk from 'ai'
 import type { AIToolExecutionResult } from '../types/ai.types'
 import { useWorkspaceStore, type WorkspaceNote } from '../../../core/store/workspaceStore'
 import { extractWikilinks } from './auditWikilinks'
+import { collectWorkspaceFolders, matchFolderByQuery } from '../services/prompt/mentionResolver'
 
 export interface LuminaQueryIndexInput {
   query?: string
@@ -34,6 +35,8 @@ export interface IndexedNoteRecord {
 
 export interface IndexQueryResult {
   totalWorkspaceNotes: number
+  totalWorkspaceFolders?: number
+  allWorkspaceFolders?: string[]
   totalMatched: number
   filters: Record<string, string | number | undefined>
   notes: IndexedNoteRecord[]
@@ -248,12 +251,16 @@ export const luminaQueryIndexTool = aiSdk.tool({
   }): Promise<AIToolExecutionResult> => {
     try {
       let rawNotes: WorkspaceNote[] = []
+      let rawFolders: string[] = []
       try {
         const ws = useWorkspaceStore.getState()
         if (Array.isArray(ws?.notes) && ws.notes.length > 0) {
           rawNotes = ws.notes
         } else if (Array.isArray(ws?.snippets) && ws.snippets.length > 0) {
           rawNotes = ws.snippets
+        }
+        if (Array.isArray(ws?.folders)) {
+          rawFolders = ws.folders
         }
       } catch (_) {}
 
@@ -265,21 +272,28 @@ export const luminaQueryIndexTool = aiSdk.tool({
         try {
           const res = await (window as any).api.getSnippets()
           rawNotes = res?.snippets || (Array.isArray(res) ? res : [])
+          if (Array.isArray(res?.folders) && rawFolders.length === 0) {
+            rawFolders = res.folders
+          }
         } catch (_) {}
       }
+
+      const allWorkspaceFolders = collectWorkspaceFolders(rawNotes, rawFolders)
 
       if (rawNotes.length === 0) {
         const emptyResult: IndexQueryResult = {
           totalWorkspaceNotes: 0,
+          totalWorkspaceFolders: allWorkspaceFolders.length,
+          allWorkspaceFolders,
           totalMatched: 0,
           filters: { query, tag, folder, linksTo, backlinksFor, hasFrontmatter, hasHeadings },
           notes: [],
-          foldersRepresented: []
+          foldersRepresented: allWorkspaceFolders
         }
         return {
           success: true,
-          summary: 'Workspace contains 0 notes to query.',
-          summaryMarkdown: `<<<LUMINA_INDEX_QUERY:${JSON.stringify(emptyResult)}>>>\nWorkspace contains 0 notes to query.`,
+          summary: `Workspace contains 0 notes across ${allWorkspaceFolders.length} folders to query.`,
+          summaryMarkdown: `<<<LUMINA_INDEX_QUERY:${JSON.stringify(emptyResult)}>>>\nWorkspace contains 0 notes across ${allWorkspaceFolders.length} folders to query.`,
           result: emptyResult
         }
       }
@@ -289,7 +303,11 @@ export const luminaQueryIndexTool = aiSdk.tool({
 
       const cleanQuery = query?.toLowerCase().trim()
       const cleanTag = tag?.toLowerCase().trim().replace(/^#/, '')
-      const cleanFolder = folder?.toLowerCase().trim()
+      const rawCleanFolder = folder?.toLowerCase().trim()
+      const resolvedFolder = rawCleanFolder
+        ? (matchFolderByQuery(rawCleanFolder, allWorkspaceFolders) || rawCleanFolder).toLowerCase()
+        : undefined
+      const cleanFolder = resolvedFolder
       const cleanLinksTo = linksTo?.toLowerCase().trim()
       const cleanBacklinksFor = backlinksFor?.toLowerCase().trim()
       const cleanHeading = hasHeadings?.toLowerCase().trim()
@@ -330,7 +348,9 @@ export const luminaQueryIndexTool = aiSdk.tool({
       const matched = allRecords.filter((rec) => {
         if (cleanFolder) {
           const lowerFolder = rec.folder.toLowerCase()
-          if (!lowerFolder.includes(cleanFolder)) return false
+          if (!lowerFolder.includes(cleanFolder) && !(rawCleanFolder && lowerFolder.includes(rawCleanFolder))) {
+            return false
+          }
         }
 
         if (cleanTag && !isTagsOverview) {
@@ -397,6 +417,8 @@ export const luminaQueryIndexTool = aiSdk.tool({
 
       const indexResult: IndexQueryResult & { allTags?: Array<{ tag: string; count: number }> } = {
         totalWorkspaceNotes: allRecords.length,
+        totalWorkspaceFolders: allWorkspaceFolders.length,
+        allWorkspaceFolders,
         totalMatched: matched.length,
         filters: { query, tag, folder, linksTo, backlinksFor, hasFrontmatter, hasHeadings, sortBy, limit: cleanLimit },
         notes: paginated,
@@ -421,7 +443,7 @@ export const luminaQueryIndexTool = aiSdk.tool({
         const sortedTags = Array.from(allTagCounts.entries()).sort((a, b) => b[1].count - a[1].count)
         summaryLines = [
           `### 🏷️ Workspace Tags Overview`,
-          `*Found **${sortedTags.length}** unique tags across **${allRecords.length}** notes in the workspace:*`,
+          `*Found **${sortedTags.length}** unique tags across **${allRecords.length}** notes and **${allWorkspaceFolders.length}** folders in the workspace:*`,
           '',
           '| Tag | Notes Count | Sample Notes |',
           '| :--- | :---: | :--- |'
@@ -440,7 +462,7 @@ export const luminaQueryIndexTool = aiSdk.tool({
       } else {
         summaryLines = [
           `### 🔍 Workspace Index Query Results${filterSummary}`,
-          `*Found **${matched.length}** matching notes (out of ${allRecords.length} total indexed in workspace).*`,
+          `*Found **${matched.length}** matching notes (out of ${allRecords.length} total notes across ${allWorkspaceFolders.length} folders indexed in workspace).*`,
           '',
           '| Note Title | Folder | Tags | Outgoing Links | Backlinks | Size |',
           '| :--- | :--- | :--- | :---: | :---: | :---: |'
@@ -465,6 +487,8 @@ export const luminaQueryIndexTool = aiSdk.tool({
         summary: summaryLines.join('\n'),
         summaryMarkdown: markerPrefix + summaryLines.join('\n'),
         totalWorkspaceNotes: allRecords.length,
+        totalWorkspaceFolders: allWorkspaceFolders.length,
+        allWorkspaceFolders,
         totalMatched: matched.length,
         filters: indexResult.filters,
         notes: paginated,

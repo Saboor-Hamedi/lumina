@@ -27,6 +27,19 @@ export interface MessageContentProps {
   onCopy?: (content: string) => void
 }
 
+const REMARK_PLUGINS = [remarkGfm]
+
+const MarkdownBlock: React.FC<{ content: string; components: any }> = React.memo(
+  ({ content, components }) => {
+    const processed = useMemo(() => processMarkdownContent(content), [content])
+    return (
+      <ReactMarkdown remarkPlugins={REMARK_PLUGINS} components={components}>
+        {processed}
+      </ReactMarkdown>
+    )
+  }
+)
+
 /**
  * MessageContent orchestrates multi-modal rendering of an AI message:
  * memory badges, reasoning thinking blocks, workspace activities, and Markdown.
@@ -154,15 +167,12 @@ export const MessageContent: React.FC<MessageContentProps> = React.memo(
               />
             )
           }
-          const processed = processMarkdownContent(block.content)
           return (
-            <ReactMarkdown
+            <MarkdownBlock
               key={`md-${idx}`}
-              remarkPlugins={[remarkGfm]}
-              components={markdownComponents as any}
-            >
-              {processed}
-            </ReactMarkdown>
+              content={block.content}
+              components={markdownComponents}
+            />
           )
         })}
         {hasMemoryFallback && (

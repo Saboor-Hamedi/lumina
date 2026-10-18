@@ -20,7 +20,8 @@ import {
   resolveMentions,
   resolveReferencedFiles,
   retrieveWorkspaceRAG,
-  buildSystemPrompt
+  buildSystemPrompt,
+  collectWorkspaceFolders
 } from '../services/luminaPromptBuilder'
 import { getTheme } from '../../theme/hooks/themeDefinitions'
 import {
@@ -1055,13 +1056,22 @@ export const useAIStore = create<AIStore>((set, get) => {
 
       // 3. Resolve Workspace Context & Mentions
       const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
-      const vs = (useWorkspaceStore as any).getState()
-      const allSnippets = Array.isArray(vs.snippets)
-        ? vs.snippets
-        : Array.isArray(vs.notes)
+      let vs = (useWorkspaceStore as any).getState()
+      if ((!vs.notes || vs.notes.length === 0) && (!vs.snippets || vs.snippets.length === 0) && vs.loadWorkspace) {
+        try {
+          await vs.loadWorkspace()
+          vs = (useWorkspaceStore as any).getState()
+        } catch {}
+      }
+      const allSnippets =
+        Array.isArray(vs.notes) && vs.notes.length > 0
           ? vs.notes
-          : Object.values(vs.snippets || vs.notes || {})
-      const allFolders = vs.folders || []
+          : Array.isArray(vs.snippets) && vs.snippets.length > 0
+            ? vs.snippets
+            : Array.isArray(vs.notes)
+              ? vs.notes
+              : Object.values(vs.notes || vs.snippets || {})
+      const allFolders = collectWorkspaceFolders(allSnippets, vs.folders || [])
 
       const mentionedSnippets = resolveMentions(
         cleanMessage,
@@ -1087,6 +1097,7 @@ export const useAIStore = create<AIStore>((set, get) => {
         configuredProviderType === 'ollama' &&
         (isOllamaCreationRequest ||
           attachedMentions.length > 0 ||
+          mentionedSnippets.length > 0 ||
           requestedFiles.length > 0 ||
           /\b(?:workspace|vault|file|files|note|notes|folder|folders|directory|directories|tag|tags|wikilink|backlink|search|find|read|rename|move|update|append|delete|clear|open|save|write|create|doctor|docker|health|diagnostic|audit|index|memory|remember)\b/i.test(cleanMessage))
       const isCompactOllamaConversation =
@@ -1128,10 +1139,11 @@ export const useAIStore = create<AIStore>((set, get) => {
           ? { vaultContext: [], vaultAccessNote: 'No workspace retrieval is needed for this request.' }
           : await retrieveWorkspaceRAG(cleanMessage)
         const modeCfg = getAIMode(mode)
+        const activeEditorNote = vs.selectedNote || vs.selectedSnippet
         const detectedIntent = detectUserIntent(
           cleanMessage,
           mentionedSnippets,
-          vs.selectedSnippet || vs.selectedNote
+          activeEditorNote
         )
 
         const storedThemeId =
@@ -1177,7 +1189,7 @@ export const useAIStore = create<AIStore>((set, get) => {
           vaultAccessNote,
           allSnippets,
           allFolders,
-          selectedSnippet: vs.selectedSnippet || vs.selectedNote,
+          selectedSnippet: activeEditorNote,
           drafts: vs.drafts || {},
           contextSnippets: Array.isArray(contextSnippets) ? contextSnippets : [],
           detectedIntent,

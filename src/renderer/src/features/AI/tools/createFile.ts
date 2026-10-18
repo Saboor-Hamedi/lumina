@@ -72,14 +72,25 @@ export const createFileTool = aiSdk.tool({
         : rawFolder.replace(/^\/+|\/+$/g, '')
 
       const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
+      const { collectWorkspaceFolders } = await import('../services/prompt/mentionResolver')
       const vs = (useWorkspaceStore as any).getState()
-      const existingNotes: any[] = Array.isArray(vs.notes) ? vs.notes : []
+      const existingNotes: any[] =
+        Array.isArray(vs.notes) && vs.notes.length > 0
+          ? vs.notes
+          : Array.isArray(vs.snippets)
+            ? vs.snippets
+            : []
+      const knownFolders = collectWorkspaceFolders(existingNotes, vs.folders || [])
 
       const normalizeFolder = (f: string) =>
         String(f || '')
           .replace(/\\/g, '/')
           .replace(/^\/+|\/+$/g, '')
           .toLowerCase()
+      const canonicalExistingFolder = cleanFolder
+        ? knownFolders.find((kf) => normalizeFolder(kf) === normalizeFolder(cleanFolder))
+        : undefined
+      const resolvedCleanFolder = canonicalExistingFolder || cleanFolder
       const normalizeTitle = (t: string) =>
         String(t || '')
           .trim()
@@ -113,14 +124,14 @@ export const createFileTool = aiSdk.tool({
         cleanTitle = `${cleanTitle} (${suffix})`
       }
 
-      if (cleanFolder && (window as any).api?.createFolder) {
+      if (resolvedCleanFolder && (window as any).api?.createFolder) {
         try {
-          await (window as any).api.createFolder(cleanFolder)
+          await (window as any).api.createFolder(resolvedCleanFolder)
         } catch (_) {}
       }
 
-      if (cleanFolder && vs.addFolder) {
-        vs.addFolder(cleanFolder)
+      if (resolvedCleanFolder && vs.addFolder) {
+        vs.addFolder(resolvedCleanFolder)
       }
 
       const normalizedTags = Array.isArray(tags)
@@ -140,7 +151,7 @@ export const createFileTool = aiSdk.tool({
         id: reusedExisting ? existingMatch.id : crypto.randomUUID(),
         title: cleanTitle,
         code: content || '',
-        folderId: cleanFolder || '',
+        folderId: resolvedCleanFolder || '',
         language: 'markdown',
         timestamp: Date.now()
       }
@@ -171,7 +182,7 @@ export const createFileTool = aiSdk.tool({
         w.replace(/^\[\[|\]\]$/g, '')
       )
 
-      const folderContext = cleanFolder ? ` in \`${cleanFolder}\`` : ''
+      const folderContext = resolvedCleanFolder ? ` in \`${resolvedCleanFolder}\`` : ''
       const wordCount = (content || '').trim() ? (content || '').trim().split(/\s+/).length : 0
       const charCount = (content || '').length
 

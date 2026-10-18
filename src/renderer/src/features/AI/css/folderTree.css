@@ -195,6 +195,42 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  padding: 1px 4px;
+  margin: -1px -4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition:
+    background-color 0.14s ease-out,
+    box-shadow 0.14s ease-out,
+    color 0.14s ease-out;
+}
+
+.lumina-folder-tree-node-item:hover {
+  background: rgba(var(--text-accent-rgb, 168, 85, 247), 0.12);
+  box-shadow: 0 0 0 1px rgba(var(--text-accent-rgb, 168, 85, 247), 0.24) inset;
+}
+
+[data-theme='light'] .lumina-folder-tree-node-item:hover,
+[data-theme='porcelain'] .lumina-folder-tree-node-item:hover {
+  background: rgba(var(--text-accent-rgb, 99, 102, 241), 0.11);
+  box-shadow: 0 0 0 1px rgba(var(--text-accent-rgb, 99, 102, 241), 0.24) inset;
+}
+
+.lumina-folder-tree-folder-icon,
+.lumina-folder-tree-file-icon,
+.lumina-folder-tree-file-icon-wrap {
+  transition:
+    transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.14s ease-out;
+}
+
+.lumina-folder-tree-node-item:hover .lumina-folder-tree-folder-icon,
+.lumina-folder-tree-node-item:hover .lumina-folder-tree-file-icon,
+.lumina-folder-tree-node-item:hover .lumina-folder-tree-file-icon-wrap {
+  transform: scale(1.15) translateY(-0.5px);
+  filter: drop-shadow(0 0 5px rgba(var(--text-accent-rgb, 168, 85, 247), 0.55)) brightness(1.18);
+  opacity: 1;
 }
 
 .lumina-folder-tree-folder-icon {
@@ -206,22 +242,23 @@
 .lumina-folder-tree-file-icon {
   color: var(--text-muted, #94a3b8);
   flex-shrink: 0;
-  opacity: 0.75;
+  opacity: 0.8;
 }
 
 .lumina-folder-tree-label {
   white-space: pre;
+  transition: color 0.14s ease-out;
 }
 
 .lumina-folder-tree-label.is-folder {
   color: var(--text-main, #f1f5f9);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 [data-theme='light'] .lumina-folder-tree-label.is-folder,
 [data-theme='porcelain'] .lumina-folder-tree-label.is-folder {
   color: var(--text-main, #2c2a26) !important;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .lumina-folder-tree-label.is-file {
@@ -231,6 +268,123 @@
 [data-theme='light'] .lumina-folder-tree-label.is-file,
 [data-theme='porcelain'] .lumina-folder-tree-label.is-file {
   color: var(--text-muted, #6b6862) !important;
+}
+
+.lumina-folder-tree-line.is-interactive {
+  justify-content: space-between;
+  gap: 8px;
+  padding: 1px 0;
+  margin: 0;
+  border-radius: 4px;
+}
+
+/* Keep outer row background completely still so only the inner item highlights */
+.lumina-folder-tree-line.is-interactive:hover {
+  background: transparent !important;
+}
+
+.lumina-folder-tree-line-left {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  overflow: visible;
+}
+
+.lumina-folder-tree-label.is-clickable {
+  cursor: pointer;
+}
+
+.lumina-folder-tree-node-item:hover .lumina-folder-tree-label.is-clickable,
+.lumina-folder-tree-label.is-clickable:hover {
+  color: var(--text-accent, #3b82f6) !important;
+  text-decoration: none;
+}
+
+.lumina-folder-tree-line-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+  font-family: var(--font-editor, 'Inter', sans-serif);
+  font-size: 10px;
+}
+
+.lumina-folder-tree-action-badge {
+  font-size: 9.5px;
+  font-weight: 500;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-faint, #94a3b8);
+  letter-spacing: 0.01em;
+}
+
+.lumina-folder-tree-action-badge.action-created {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.lumina-folder-tree-action-badge.action-updated {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.1);
+}
+
+.lumina-folder-tree-action-badge.action-deleted {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.lumina-folder-tree-action-badge.action-renamed,
+.lumina-folder-tree-action-badge.action-moved {
+  color: #c084fc;
+  background: rgba(192, 132, 252, 0.1);
+}
+
+.lumina-folder-tree-diff {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.lumina-folder-tree-diff-added {
+  color: #4ade80;
+  font-weight: 500;
+}
+
+.lumina-folder-tree-diff-removed {
+  color: #f87171;
+  font-weight: 500;
+}
+
+.lumina-folder-tree-undo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  height: 18px;
+  font-size: 10px;
+  font-family: var(--font-editor, 'Inter', sans-serif);
+  border-radius: 3px;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.lumina-folder-tree-undo-btn:hover:not(:disabled) {
+  color: var(--text-main, #f1f5f9);
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  border-color: var(--text-accent, #3b82f6);
+}
+
+.lumina-folder-tree-undo-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 @keyframes fadeInFolderTreeCard {

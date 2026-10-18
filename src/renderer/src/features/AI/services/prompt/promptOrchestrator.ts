@@ -32,6 +32,8 @@ import { luminaMemory } from '../../../../core/ai/memory'
 import type { AIModeConfig, MentionItem } from '../../types/ai.types'
 import type { SafeUserSettings } from './contextRetriever'
 import { truncateForContext } from './contextRetriever'
+import { collectWorkspaceFolders } from './mentionResolver'
+import { classifySnippetEntityType } from '../entityResolver'
 import {
   buildSettingsAwarenessBlock,
   buildLuminaIntelligenceBlock,
@@ -146,7 +148,8 @@ export const buildSystemPrompt = async ({
       'CRITICAL DIRECTIVE:\n' +
       '1. All note contents (including every file inside any @-mentioned folder) are ALREADY PROVIDED ABOVE in this prompt. Do NOT call readFile for these notes.\n' +
       '2. Answer the user\'s question immediately, accurately, and thoroughly using the content above.\n' +
-      '3. NEVER claim you cannot see the files inside the mentioned folder or output filler like "Let me check". You ALREADY have every file\'s name and full content right here!\n'
+      '3. NEVER claim you cannot see the files inside the mentioned folder or output filler like "Let me check". You ALREADY have every file\'s name and full content right here!\n' +
+      '4. Always use the live folder and file contents above, ignoring any earlier messages in this chat session that claimed a folder was empty.\n'
   }
 
   // ── Tier 2: Implicitly Referenced Files & Folders ───────────────────────────
@@ -229,11 +232,88 @@ export const buildSystemPrompt = async ({
 
   // ── File Hierarchy & Paths ─────────────────────────────────────────────────
   if (allSnippets.length > 0 || allFolders.length > 0) {
+    const canonicalFolders = collectWorkspaceFolders(allSnippets, allFolders).sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+    )
+    const noteItems = allSnippets.filter((s: any) => s?.type !== 'image' && s?.type !== 'pdf')
     const filePaths = allSnippets
       .map((s: any) => (s.folderId ? `${s.folderId}/${s.title}` : s.title))
       .join(', ')
-    const folders = allFolders.join(', ')
-    systemPrompt += `\n\n**EXISTING FILES (WITH FOLDER PATHS)**: ${filePaths || 'None'}\n**EXISTING FOLDERS**: ${folders || 'None'}\nUse these exact paths and folders for targeted file operations. When asked to rename, move, update, or clear files in a folder, reference these exact files.`
+    const folders = canonicalFolders.join(', ')
+
+    const formatItemWithType = (s: any): string => {
+      const entityType = classifySnippetEntityType(s)
+      const typeTag =
+        entityType === 'pdf'
+          ? ' [PDF]'
+          : entityType === 'image'
+            ? ' [Image]'
+            : entityType === 'diagram'
+              ? ' [Diagram]'
+              : entityType === 'code'
+                ? ' [Code]'
+                : ''
+      return `[[${s.folderId ? `${s.folderId}/${s.title}|${s.title}` : s.title}]]${typeTag}`
+    }
+
+    // Build folder -> direct files & subfolders index so Lumina knows exact folder contents and empty folders
+    const folderFilesMap = new Map<string, any[]>()
+    const folderSubfoldersMap = new Map<string, string[]>()
+    canonicalFolders.forEach((f) => {
+      folderFilesMap.set(f, [])
+      folderSubfoldersMap.set(f, [])
+    })
+
+    canonicalFolders.forEach((f) => {
+      if (f.includes('/')) {
+        const parent = f.slice(0, f.lastIndexOf('/'))
+        if (folderSubfoldersMap.has(parent)) {
+          folderSubfoldersMap.get(parent)!.push(f)
+        }
+      }
+    })
+
+    const rootFiles: any[] = []
+    allSnippets.forEach((s: any) => {
+      const f = String(s?.folderId || '').trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+      if (f) {
+        if (!folderFilesMap.has(f)) folderFilesMap.set(f, [])
+        folderFilesMap.get(f)!.push(s)
+      } else if (s?.title) {
+        rootFiles.push(s)
+      }
+    })
+
+    const sortSnippetsNaturally = (arr: any[]) =>
+      [...arr].sort((a, b) =>
+        String(a?.title || '').localeCompare(String(b?.title || ''), undefined, {
+          numeric: true,
+          sensitivity: 'base'
+        })
+      )
+
+    const folderBreakdown = Array.from(folderFilesMap.entries())
+      .map(([f, files]) => {
+        const sortedFiles = sortSnippetsNaturally(files)
+        const subFolders = folderSubfoldersMap.get(f) || []
+        const formattedFiles = sortedFiles.map(formatItemWithType)
+        const formattedSubs = subFolders.map((sf) => `[[${sf}|${sf.split('/').pop() || sf}]] [Folder]`)
+        const allChildren = [...formattedSubs, ...formattedFiles]
+        return allChildren.length > 0
+          ? `- [[${f}]] (${sortedFiles.length} files${subFolders.length > 0 ? `, ${subFolders.length} subfolders` : ''}): ${allChildren.join(', ')}`
+          : `- [[${f}]] (0 files / empty)`
+      })
+      .join('\n')
+
+    const sortedRootFiles = sortSnippetsNaturally(rootFiles).map(formatItemWithType)
+
+    systemPrompt +=
+      `\n\n**WORKSPACE TOTALS**: ${noteItems.length} notes (${allSnippets.length} total items), ${canonicalFolders.length} folders\n` +
+      `**EXISTING FOLDERS (${canonicalFolders.length})**: ${folders || 'None'}\n` +
+      `**EXISTING FILES (WITH FOLDER PATHS)**: ${filePaths || 'None'}\n` +
+      (sortedRootFiles.length > 0 ? `**ROOT FILES (${sortedRootFiles.length})**: ${sortedRootFiles.join(', ')}\n` : '') +
+      (folderBreakdown ? `**FOLDER CONTENTS BREAKDOWN**:\n${folderBreakdown}\n` : '') +
+      `Use these exact counts, paths, and folders when answering workspace structure questions or performing targeted file/folder operations.`
   }
 
   // ── Knowledge Graph Topology (1-2 Hop Backlinks & Forward Links) ───────────

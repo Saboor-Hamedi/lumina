@@ -54,7 +54,7 @@ export const renameFileTool = aiSdk.tool({
 
       const { useWorkspaceStore } = await import('../../../core/store/workspaceStore')
       const vs = (useWorkspaceStore as any).getState()
-      const snippets = vs.notes || []
+      const snippets = (Array.isArray(vs.notes) && vs.notes.length > 0 ? vs.notes : vs.snippets) || []
 
       let target: any = null
       if (
