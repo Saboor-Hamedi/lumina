@@ -291,6 +291,10 @@ export async function uploadOrUpdateFile(
  * Resolves the absolute path and relative path of a file input.
  */
 function resolveFilePaths(fileInput, workspacePath) {
+  if (!workspacePath) {
+    throw new Error('No workspace open')
+  }
+
   let fullPath = null
   let relativePath = null
 
@@ -332,7 +336,17 @@ function resolveFilePaths(fileInput, workspacePath) {
     throw new Error(`File not found: ${fullPath || 'unknown'}`)
   }
 
-  return { fullPath, relativePath: relativePath.replace(/\\/g, '/') }
+  // Containment: never resolve, read, or upload anything outside the workspace.
+  const workspaceRoot = path.resolve(workspacePath)
+  const resolvedFullPath = path.resolve(fullPath)
+  const isWin = process.platform === 'win32'
+  const cmpRoot = isWin ? workspaceRoot.toLowerCase() : workspaceRoot
+  const cmpFull = isWin ? resolvedFullPath.toLowerCase() : resolvedFullPath
+  if (cmpFull !== cmpRoot && !cmpFull.startsWith(cmpRoot + path.sep)) {
+    throw new Error('Access denied: file is outside the workspace')
+  }
+
+  return { fullPath: resolvedFullPath, relativePath: relativePath.replace(/\\/g, '/') }
 }
 
 /**

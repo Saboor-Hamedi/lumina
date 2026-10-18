@@ -230,8 +230,11 @@ export class WorkspaceOperations {
         oldSnippet.fileName || `${this.sanitizeTitleForFilename(oldSnippet.title)}.md`
 
       if (oldFileName !== newFileName || oldRelativeFolder !== relativeFolder) {
-        const oldFilePath = path.join(workspacePath, oldRelativeFolder, oldFileName)
         try {
+          const oldFilePath = this.assertSafeWorkspacePath(
+            workspacePath,
+            path.join(oldRelativeFolder, oldFileName)
+          )
           if (fsSync.existsSync(oldFilePath)) {
             await fs.unlink(oldFilePath)
           }
@@ -257,7 +260,10 @@ export class WorkspaceOperations {
       newFileName = `${base}-${snippet.id.slice(0, 5)}${extName}`
     }
 
-    const finalPath = path.join(workspacePath, relativeFolder, newFileName)
+    const finalPath = this.assertSafeWorkspacePath(
+      workspacePath,
+      path.join(relativeFolder, newFileName)
+    )
     const contentChanged = !oldSnippet || oldSnippet.code !== snippet.code
     const newTimestamp =
       snippet.timestamp !== undefined
@@ -343,12 +349,28 @@ export class WorkspaceOperations {
     if (!workspacePath) throw new Error('No workspace open')
     const root = path.resolve(workspacePath)
     const resolved = path.resolve(root, relativePath || '')
-    const isInside = resolved.startsWith(root + path.sep)
-    const isRoot = resolved === root
+    // Case-insensitive comparison on Windows so `C:\W\..` cannot dodge the guard.
+    const isWin = process.platform === 'win32'
+    const cmpRoot = isWin ? root.toLowerCase() : root
+    const cmpResolved = isWin ? resolved.toLowerCase() : resolved
+    const isInside = cmpResolved.startsWith(cmpRoot + path.sep)
+    const isRoot = cmpResolved === cmpRoot
     if (!isInside && !(allowRoot && isRoot)) {
       throw new Error(`Security Violation: Path escapes workspace boundaries: ${relativePath}`)
     }
     return resolved
+  }
+
+  /**
+   * Like `assertSafeWorkspacePath` but returns `null` instead of throwing when the
+   * resolved path escapes the workspace. Useful for best-effort reporting paths.
+   */
+  private static safeResolve(workspacePath: string, relativePath: string): string | null {
+    try {
+      return this.assertSafeWorkspacePath(workspacePath, relativePath)
+    } catch {
+      return null
+    }
   }
 
   /**
@@ -431,7 +453,7 @@ export class WorkspaceOperations {
     await Promise.all(
       normalizedFolders.map(async (normFolder) => {
         try {
-          const fullPath = path.join(workspacePath, normFolder)
+          const fullPath = this.assertSafeWorkspacePath(workspacePath, normFolder)
           if (fsSync.existsSync(fullPath)) {
             await fs.rm(fullPath, { recursive: true, force: true })
           }
@@ -446,12 +468,11 @@ export class WorkspaceOperations {
           for (const [id, snippet] of snippetsMap.entries()) {
             const sFolder = (snippet.folderId || '').replace(/\\/g, '/')
             if (sFolder === normFolder || sFolder.startsWith(`${normFolder}/`)) {
-              const sFilePath = path.join(
+              const sFilePath = this.safeResolve(
                 workspacePath,
-                snippet.folderId || '',
-                snippet.fileName || `${snippet.title}.md`
+                path.join(snippet.folderId || '', snippet.fileName || `${snippet.title}.md`)
               )
-              deletedFilePaths.push(sFilePath)
+              if (sFilePath) deletedFilePaths.push(sFilePath)
               snippetsMap.delete(id)
             }
           }
@@ -489,7 +510,10 @@ export class WorkspaceOperations {
             const relPath = sFolder ? `${sFolder}/${fileName}` : fileName
             if (this.isProtectedPath(relPath)) return
 
-            const filePath = path.join(workspacePath, snippet.folderId || '', fileName)
+            const filePath = this.assertSafeWorkspacePath(
+              workspacePath,
+              path.join(snippet.folderId || '', fileName)
+            )
             deletedFilePaths.push(filePath)
 
             if (fsSync.existsSync(filePath)) {
@@ -497,7 +521,7 @@ export class WorkspaceOperations {
             }
             snippetsMap.delete(snippet.id)
           } else {
-            const directPath = path.join(workspacePath, id)
+            const directPath = this.assertSafeWorkspacePath(workspacePath, id)
             if (fsSync.existsSync(directPath)) {
               deletedFilePaths.push(directPath)
               const stat = await fs.stat(directPath)
@@ -709,9 +733,7 @@ export class WorkspaceOperations {
     }
 
     const normalizedTargetFolder = (targetFolderId || '').replace(/\\/g, '/')
-    const targetBaseDir = normalizedTargetFolder
-      ? path.join(workspacePath, normalizedTargetFolder)
-      : workspacePath
+    const targetBaseDir = this.assertSafeWorkspacePath(workspacePath, normalizedTargetFolder, true)
 
     await fs.mkdir(targetBaseDir, { recursive: true })
 

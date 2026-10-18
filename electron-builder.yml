@@ -11,7 +11,7 @@ files:
   - '!test/*'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
-  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{.env,.env*,.npmrc,pnpm-lock.yaml}'
   - '!node_modules/sharp/**'
   - '!node_modules/onnxruntime-web/**'
   - '!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}'

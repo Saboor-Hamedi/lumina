@@ -18,8 +18,8 @@ function App() {
   }, [])
 
   useEffect(() => {
-    if (window.electron?.ipcRenderer) {
-      const handleError = (_, errorData) => {
+    if (window.api?.onAppError) {
+      const handleError = (errorData) => {
         console.error('[App] Main process error:', errorData)
         window.dispatchEvent(
           new CustomEvent('show-toast', {
@@ -30,10 +30,7 @@ function App() {
           })
         )
       }
-      window.electron.ipcRenderer.on('app:error', handleError)
-      return () => {
-        window.electron.ipcRenderer.removeListener('app:error', handleError)
-      }
+      return window.api.onAppError(handleError)
     }
   }, [])
 

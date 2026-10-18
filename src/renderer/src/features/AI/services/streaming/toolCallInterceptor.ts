@@ -24,6 +24,56 @@ export interface ParseAndExecuteResult {
 }
 
 /**
+ * Every tool name (modern + legacy aliases) that models can leak as raw
+ * `<toolName ...>...</toolName>` — or the mangled `<toolName">...</toolName>`
+ * form. Kept in one place so both detection (`parseAndExecuteDSML`) and
+ * sanitization (`cleanRawToolLeaks`) stay in sync. The file tools (checkFile,
+ * updateFile, createFile, …) previously leaked because they were missing here.
+ */
+export const TOOL_TAG_NAMES = [
+  'luminaQueryIndex',
+  'queryIndex',
+  'luminaDiagnoseSystem',
+  'diagnoseSystem',
+  'auditWikilinks',
+  'readBrainFile',
+  'saveMemory',
+  'updateMemory',
+  'forgetMemory',
+  'forgeMemory',
+  'checkFile',
+  'createFile',
+  'updateFile',
+  'appendToFile',
+  'readFile',
+  'openFile',
+  'renameFile',
+  'moveFile',
+  'clearFile',
+  'deleteFile',
+  'createFolder',
+  'renameFolder',
+  'moveFolder',
+  'deleteFolder'
+] as const
+
+const TOOL_TAG_ALTERNATION = TOOL_TAG_NAMES.join('|')
+
+// Paired leaked invocation: `<checkFile ...>…</checkFile>` (also mangled `<checkFile">…`)
+const PAIRED_TOOL_TAG_RE = new RegExp(
+  `<\\b(?:${TOOL_TAG_ALTERNATION})\\b[^>]*>[\\s\\S]*?<\\/\\b(?:${TOOL_TAG_ALTERNATION})\\b>`,
+  'gi'
+)
+// Any leftover lone opening/closing tool tag
+const LONE_TOOL_TAG_RE = new RegExp(`<\\/?\\b(?:${TOOL_TAG_ALTERNATION})\\b[^>]*>`, 'gi')
+// Detection: any leaked file/diagnostic/memory tool tag
+const TOOL_TAG_DETECT_RE = new RegExp(`<\\/?\\b(?:${TOOL_TAG_ALTERNATION}|tool_call|invoke|parameter)\\b`, 'i')
+const DIRECT_TOOL_TAG_RE = new RegExp(
+  `(?:<tool_call[^>]*name=["']?)?<?\\b(${TOOL_TAG_ALTERNATION})["']?>\\s*([\\s\\S]*?)<\\/\\1>`,
+  'gi'
+)
+
+/**
  * Strips raw XML, DSML, and tool tags from streamed content to prevent visual pollution.
  */
 export const cleanRawToolLeaks = (text?: string): string => {
@@ -31,6 +81,8 @@ export const cleanRawToolLeaks = (text?: string): string => {
   return text
     .replace(/<[｜|]{1,2}[\s\S]*?[｜|]{1,2}>/g, '')
     .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
+    .replace(PAIRED_TOOL_TAG_RE, '')
+    .replace(LONE_TOOL_TAG_RE, '')
     .replace(
       /<\/?(?:tool_calls?|invoke|parameter|luminaQueryIndex|queryIndex|luminaDiagnoseSystem|diagnoseSystem|auditWikilinks)[^>]*>/gi,
       ''
@@ -104,9 +156,7 @@ export const parseAndExecuteDSML = async (
     text.includes('invoke') ||
     text.includes('｜') ||
     text.includes('|') ||
-    /<(?:luminaQueryIndex|queryIndex|luminaDiagnoseSystem|diagnoseSystem|auditWikilinks|createFile|createFolder|updateFile|deleteFile)\b/i.test(
-      text
-    ) ||
+    TOOL_TAG_DETECT_RE.test(text) ||
     /\b(?:luminaQueryIndex|queryIndex|luminaDiagnoseSystem|diagnoseSystem|auditWikilinks)">/i.test(text)
 
   if (!hasToolIndicator) {
@@ -171,8 +221,7 @@ export const parseAndExecuteDSML = async (
   }
 
   // Regex 3: Direct XML tool tag: <luminaQueryIndex>...</luminaQueryIndex> or mangled luminaQueryIndex">...
-  const directTagRegex =
-    /(?:<tool_call[^>]*name=["']?)?<?\b(luminaQueryIndex|queryIndex|luminaDiagnoseSystem|diagnoseSystem|auditWikilinks|saveMemory|createFile|createFolder|updateFile|deleteFile)["']?>\s*([\s\S]*?)<\/\1>/gi
+  const directTagRegex = DIRECT_TOOL_TAG_RE
   for (const match of text.matchAll(directTagRegex)) {
     const toolName = match[1].trim()
     const body = match[2] || ''

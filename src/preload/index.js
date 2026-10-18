@@ -131,6 +131,11 @@ const api = {
   },
   getVersion: () => electronAPI.ipcRenderer.invoke('app:getVersion'),
   isPackaged: () => electronAPI.ipcRenderer.invoke('app:isPackaged'),
+  onAppError: (cb) => {
+    const listener = (_, payload) => cb(payload)
+    ipcRenderer.on('app:error', listener)
+    return () => ipcRenderer.removeListener('app:error', listener)
+  },
   // Auto-Updater
   checkForUpdates: () => electronAPI.ipcRenderer.invoke('update:check'),
   downloadUpdate: () => electronAPI.ipcRenderer.invoke('update:download'),
@@ -191,10 +196,6 @@ const api = {
   // Error Logging
   logError: (errorData) => electronAPI.ipcRenderer.invoke('error:log', errorData),
 
-  // Image Generation (bypasses CSP by using main process)
-  generateImage: (endpoint, headers, body) =>
-    electronAPI.ipcRenderer.invoke('ai:generateImage', { endpoint, headers, body }),
-
   // Google Auth & Backup
   loginWithGoogle: (clientId) => electronAPI.ipcRenderer.invoke('auth:loginWithGoogle', clientId),
   backupWorkspace: (mode = 'zip') => electronAPI.ipcRenderer.invoke('backup:start', mode),
@@ -222,9 +223,23 @@ const api = {
 }
 
 // Expose APIs
+// Only a curated `api` surface and a minimal, non-sensitive `electron.process`
+// shim are exposed. The raw @electron-toolkit `electronAPI` is intentionally NOT
+// exposed because `electronAPI.process.env` would leak the full main-process env.
+const safeElectron = {
+  process: {
+    platform: process.platform,
+    versions: {
+      electron: process.versions.electron,
+      chrome: process.versions.chrome,
+      node: process.versions.node
+    }
+  }
+}
+
 if (process.contextIsolated) {
   try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
+    contextBridge.exposeInMainWorld('electron', safeElectron)
     contextBridge.exposeInMainWorld('api', api)
     // Forward uncaught errors/unhandled rejections to main process and open DevTools on first error
     try {
@@ -282,6 +297,6 @@ if (process.contextIsolated) {
     console.error('Preload Bridge Error:', error)
   }
 } else {
-  window.electron = electronAPI
+  window.electron = safeElectron
   window.api = api
 }

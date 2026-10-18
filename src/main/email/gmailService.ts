@@ -8,6 +8,17 @@ import path from 'path'
 // Declare __dirname if TypeScript environment doesn't have it natively in module scope
 declare const __dirname: string
 
+/** Strip CR/LF (and collapse whitespace) from a value placed on an email header line. */
+function sanitizeHeaderValue(value: unknown): string {
+  return String(value ?? '').replace(/[\r\n]+/g, ' ').trim()
+}
+
+function sanitizeHeaderList(value: string | string[] | undefined): string {
+  if (value === undefined) return ''
+  const list = Array.isArray(value) ? value : [value]
+  return list.map(sanitizeHeaderValue).filter(Boolean).join(', ')
+}
+
 /**
  * Authenticated Google User representation
  */
@@ -326,13 +337,13 @@ function buildRawMimeMessage({
   const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).slice(2)}`
   const lines: string[] = []
 
-  lines.push(`From: ${from}`)
-  lines.push(`To: ${Array.isArray(to) ? to.join(', ') : to}`)
-  if (cc) lines.push(`Cc: ${Array.isArray(cc) ? cc.join(', ') : cc}`)
-  if (bcc) lines.push(`Bcc: ${Array.isArray(bcc) ? bcc.join(', ') : bcc}`)
+  lines.push(`From: ${sanitizeHeaderValue(from)}`)
+  lines.push(`To: ${sanitizeHeaderList(to)}`)
+  if (cc) lines.push(`Cc: ${sanitizeHeaderList(cc)}`)
+  if (bcc) lines.push(`Bcc: ${sanitizeHeaderList(bcc)}`)
   lines.push(`Subject: =?utf-8?B?${Buffer.from(subject || 'No Subject').toString('base64')}?=`)
-  if (inReplyTo) lines.push(`In-Reply-To: ${inReplyTo}`)
-  if (references) lines.push(`References: ${references}`)
+  if (inReplyTo) lines.push(`In-Reply-To: ${sanitizeHeaderValue(inReplyTo)}`)
+  if (references) lines.push(`References: ${sanitizeHeaderValue(references)}`)
   lines.push('MIME-Version: 1.0')
 
   if (attachments.length > 0) {
@@ -347,7 +358,8 @@ function buildRawMimeMessage({
     for (const att of attachments) {
       lines.push(`--${boundary}`)
       const filenameBase64 = Buffer.from(att.filename || 'attachment').toString('base64')
-      lines.push(`Content-Type: ${att.mimeType || 'application/octet-stream'}; name="=?utf-8?B?${filenameBase64}?="`)
+      const mimeType = sanitizeHeaderValue(att.mimeType || 'application/octet-stream')
+      lines.push(`Content-Type: ${mimeType}; name="=?utf-8?B?${filenameBase64}?="`)
       lines.push('Content-Transfer-Encoding: base64')
       lines.push(`Content-Disposition: attachment; filename="=?utf-8?B?${filenameBase64}?="`)
       lines.push('')
@@ -382,7 +394,8 @@ export function setupGmailIpc(): void {
     > => {
       try {
         const user = await getGmailUser()
-        let url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${maxResults}`
+        const safeMaxResults = Math.min(Math.max(Math.trunc(Number(maxResults)) || 30, 1), 100)
+        let url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${safeMaxResults}`
         if (labelIds && labelIds.length > 0 && !labelIds.includes('ALL')) {
           for (const label of labelIds) {
             url += `&labelIds=${encodeURIComponent(label)}`
@@ -414,7 +427,7 @@ export function setupGmailIpc(): void {
           const detailsPromises = batch.map(async (msg) => {
             try {
               const detailRes = await gmailFetch(
-                `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
+                `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(msg.id)}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`,
                 {},
                 user
               )
@@ -466,7 +479,7 @@ export function setupGmailIpc(): void {
     ): Promise<MessageDetails | { error: string }> => {
       try {
         const user = await getGmailUser()
-        const res = await gmailFetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`, {}, user)
+        const res = await gmailFetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(id)}?format=full`, {}, user)
         if (!res.ok) {
           const text = await res.text()
           return { error: `Failed to fetch message details: ${text}` }
@@ -572,7 +585,7 @@ export function setupGmailIpc(): void {
       try {
         const user = await getGmailUser()
         const res = await gmailFetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}/modify`,
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(id)}/modify`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -600,7 +613,7 @@ export function setupGmailIpc(): void {
       try {
         const user = await getGmailUser()
         const res = await gmailFetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}/trash`,
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(id)}/trash`,
           {
             method: 'POST'
           },

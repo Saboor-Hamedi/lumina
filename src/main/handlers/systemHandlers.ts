@@ -4,6 +4,8 @@ import { join } from 'path'
 import fs from 'fs/promises'
 import { pauseGlobalShortcut, resumeGlobalShortcut } from '../shortcuts/useGlobalShortcut'
 import { validateIpc, z } from './ipcValidation'
+import { isAllowedPath } from '../security/allowedPaths'
+import SettingsManager from '../settings'
 
 /**
  * ============================================================================
@@ -62,13 +64,18 @@ export function registerSystemHandlers(getMainWindow: () => BrowserWindow | null
 
   ipcMain.handle('window:open-devtools', () => {
     try {
+      // Refuse to open DevTools in packaged builds unless the user opted in.
+      const allow = !app.isPackaged || SettingsManager.getAll().enableDevTools === true
+      if (!allow) return false
       const win = getMainWindow()
       if (win && !win.isDestroyed()) {
         win.webContents.openDevTools({ mode: 'detach' })
+        return true
       }
     } catch (e) {
       console.error('Failed to open DevTools:', e)
     }
+    return false
   })
 
   ipcMain.handle('window:toggle-maximize', () => {
@@ -147,15 +154,23 @@ export function registerSystemHandlers(getMainWindow: () => BrowserWindow | null
     }
   })
 
-  // Open a file at an absolute path with the OS default application
+  // Open a file with the OS default application.
+  // Restricted to paths the app produced (e.g. export outputs) so the renderer
+  // cannot open arbitrary/executable files on disk.
   ipcMain.handle('shell:openPath', async (_, filePath) => {
     const valid = validateIpc(z.string().min(1), filePath)
+    if (!isAllowedPath(valid)) {
+      throw new Error('Refusing to open a path that was not produced by the app')
+    }
     return shell.openPath(valid)
   })
 
-  // Reveal a file/folder in the OS file manager (Explorer / Finder)
+  // Reveal an app-produced file/folder in the OS file manager (Explorer / Finder)
   ipcMain.handle('shell:showItemInFolder', (_, filePath) => {
     const valid = validateIpc(z.string().min(1), filePath)
+    if (!isAllowedPath(valid)) {
+      throw new Error('Refusing to reveal a path that was not produced by the app')
+    }
     shell.showItemInFolder(valid)
     return true
   })

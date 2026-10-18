@@ -19,6 +19,7 @@ import {
 import { withRenderedHtml } from '../../export/renderWindow'
 import { stripMermaidScripts } from '../../export/mermaidRuntime'
 import { validateIpc, z } from './ipcValidation'
+import { allowPathsFromResult } from '../security/allowedPaths'
 
 /**
  * ============================================================================
@@ -73,43 +74,57 @@ export function registerExportHandlers(getMainWindow: () => BrowserWindow | null
   // Export active note to self-contained HTML
   ipcMain.handle('window:export-html', async (_, payload) => {
     const valid = validateIpc(exportPayloadSchema, payload)
-    return handleExportCleanHTML(getMainWindow(), valid)
+    const result = await handleExportCleanHTML(getMainWindow(), valid)
+    allowPathsFromResult(result)
+    return result
   })
 
   // Export active note to Microsoft Word (.doc) format
   ipcMain.handle('window:export-docs', async (_, payload) => {
     const valid = validateIpc(exportPayloadSchema, payload)
-    return handleExportDocs(getMainWindow(), valid)
+    const result = await handleExportDocs(getMainWindow(), valid)
+    allowPathsFromResult(result)
+    return result
   })
 
   // Export active note to high-resolution print PDF
   ipcMain.handle('window:export-pdf', async (_, payload) => {
     const valid = validateIpc(exportPayloadSchema, payload)
-    return handleExportPDF(getMainWindow(), valid)
+    const result = await handleExportPDF(getMainWindow(), valid)
+    allowPathsFromResult(result)
+    return result
   })
 
   // Export active note to a standalone Markdown file (.md)
   ipcMain.handle('window:export-markdown', async (_, payload) => {
     const valid = validateIpc(exportPayloadSchema, payload)
-    return handleExportMarkdown(getMainWindow(), valid)
+    const result = await handleExportMarkdown(getMainWindow(), valid)
+    allowPathsFromResult(result)
+    return result
   })
 
   // Export active note with an assets subfolder for embedded images
   ipcMain.handle('window:export-markdown-bundle', async (_, payload) => {
     const valid = validateIpc(exportPayloadSchema, payload)
-    return handleExportMarkdownBundle(getMainWindow(), valid)
+    const result = await handleExportMarkdownBundle(getMainWindow(), valid)
+    allowPathsFromResult(result)
+    return result
   })
 
   // Export active note directly as a compressed ZIP archive (.zip)
   ipcMain.handle('window:export-zip', async (_, payload) => {
     const valid = validateIpc(exportPayloadSchema, payload)
-    return handleExportMarkdownBundle(getMainWindow(), { ...valid, compressZip: true })
+    const result = await handleExportMarkdownBundle(getMainWindow(), { ...valid, compressZip: true })
+    allowPathsFromResult(result)
+    return result
   })
 
   // Export active note to simple text format (.txt)
   ipcMain.handle('window:export-text', async (_, payload) => {
     const valid = validateIpc(exportPayloadSchema, payload)
-    return handleExportText(getMainWindow(), valid)
+    const result = await handleExportText(getMainWindow(), valid)
+    allowPathsFromResult(result)
+    return result
   })
 
   // Render a preview document for the export dialog (no file written)
@@ -163,7 +178,9 @@ export function registerExportHandlers(getMainWindow: () => BrowserWindow | null
       }
     }
 
-    return handleExportBatch(win, valid, send)
+    const result = await handleExportBatch(win, valid, send)
+    allowPathsFromResult(result)
+    return result
   })
 
   // Merge multiple notes into a SINGLE file (e.g. one PDF containing all notes)
@@ -180,6 +197,8 @@ export function registerExportHandlers(getMainWindow: () => BrowserWindow | null
       }
     }
 
-    return handleExportCombined(win, valid, send)
+    const result = await handleExportCombined(win, valid, send)
+    allowPathsFromResult(result)
+    return result
   })
 }

@@ -64,7 +64,7 @@ if (typeof window !== 'undefined') {
 
 /**
  * Checks if a KeyboardEvent matches a given shortcut key combination string.
- * Example shortcut strings: "Ctrl + S", "Ctrl + Shift + F", "Shift + Alt + V", "Ctrl + Win + ."
+ * Example shortcut strings: "Ctrl + S", "Ctrl + Shift + F", "Shift + Alt + V", "Win + Shift + ."
  */
 export function matchesShortcut(e: KeyboardEvent, shortcutStr: string): boolean {
   if (!shortcutStr || shortcutStr === 'disabled') return false
@@ -89,20 +89,19 @@ export function matchesShortcut(e: KeyboardEvent, shortcutStr: string): boolean 
     else reqKey = part
   }
 
-  // Platform-aware modifier mapping:
-  // In cross-platform editors, Cmd/Meta on Mac and Ctrl on Win/Linux are interchangeable as primary command keys.
-  // We allow either e.ctrlKey or e.metaKey for primary actions (reqCtrl).
-  const isPrimaryPressed = e.ctrlKey || e.metaKey
-  const isSecondaryPressed = e.ctrlKey && e.metaKey
+  // Platform-aware modifier mapping.
+  // On macOS the primary command key is Command (meta), which our shortcut
+  // strings call "Ctrl"; the physical Control key is represented as "Win".
+  // On Windows/Linux "Ctrl" is physical Control and "Win" is the meta key.
+  // Keeping Ctrl and Meta distinct means a meta combo such as "Win + Shift + ."
+  // can never be mistaken for the Ctrl shortcut "Ctrl + Shift + ." (and back),
+  // which previously made one action shadow the other.
+  const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.userAgent)
+  const wantsCtrlKey = isMac ? reqMeta : reqCtrl
+  const wantsMetaKey = isMac ? reqCtrl : reqMeta
 
-  if (reqMeta && reqCtrl) {
-    if (!isSecondaryPressed) return false
-  } else if (reqMeta || reqCtrl) {
-    if (!isPrimaryPressed) return false
-  } else {
-    // If neither was requested, neither should be pressed
-    if (e.ctrlKey || e.metaKey) return false
-  }
+  if (Boolean(wantsCtrlKey) !== Boolean(e.ctrlKey)) return false
+  if (Boolean(wantsMetaKey) !== Boolean(e.metaKey)) return false
 
   // Main key matching
   const targetKey = reqKey.toLowerCase()

@@ -35,7 +35,7 @@ export function useCurrentUser() {
     try {
       if (window.api?.getGoogleUser) {
         const remoteUser = await window.api.getGoogleUser()
-        const validUser = remoteUser && remoteUser.token ? remoteUser : null
+        const validUser = remoteUser && (remoteUser.email || remoteUser.name) ? remoteUser : null
         setUser(validUser)
 
         // Sync into settings store if different
@@ -111,7 +111,7 @@ export function useCurrentUser() {
     }
   }, [])
 
-  const isLoggedIn = Boolean(user && (user.token || user.email))
+  const isLoggedIn = Boolean(user && (user.email || user.name))
 
   return {
     user,

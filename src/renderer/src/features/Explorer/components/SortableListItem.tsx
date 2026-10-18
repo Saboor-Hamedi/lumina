@@ -96,7 +96,7 @@ const SortableListItemComponent: React.FC<SortableListItemProps> = ({
   )
 }
 
-function areNotePropsEqual(
+export function areNotePropsEqual(
   prev: Readonly<SortableListItemProps>,
   next: Readonly<SortableListItemProps>
 ): boolean {
@@ -107,6 +107,8 @@ function areNotePropsEqual(
     prev.snippet?.folderId === next.snippet?.folderId &&
     prev.snippet?.updatedAt === next.snippet?.updatedAt &&
     prev.snippet?.isPinned === next.snippet?.isPinned &&
+    prev.snippet?.customIcon === next.snippet?.customIcon &&
+    prev.snippet?.color === next.snippet?.color &&
     prev.isActive === next.isActive &&
     prev.isMultiDragging === next.isMultiDragging &&
     prev.searchQuery === next.searchQuery &&

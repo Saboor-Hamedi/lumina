@@ -7,6 +7,7 @@ build
 *.log*
 
 .env
+.env*
 .antigravityignore
 .vercel
 **/.vercel

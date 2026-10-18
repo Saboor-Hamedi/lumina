@@ -352,4 +352,41 @@ describe('VaultManager', () => {
       warnSpy.mockRestore()
     })
   })
+
+  describe('path containment', () => {
+    it('rejects saveWorkspaceImage target folders that escape the workspace', async () => {
+      const buffer = Buffer.from('fake-png-data')
+      await expect(
+        VaultManager.saveWorkspaceImage(buffer, '../escaped', 'x.png')
+      ).rejects.toThrow(/escapes workspace|Security Violation/i)
+
+      const escaped = path.join(path.dirname(testVaultPath), 'escaped', 'x.png')
+      const exists = await fs
+        .access(escaped)
+        .then(() => true)
+        .catch(() => false)
+      expect(exists).toBe(false)
+    })
+
+    it('allows saveWorkspaceImage into a nested in-workspace folder', async () => {
+      const buffer = Buffer.from('fake-png-data')
+      const result = await VaultManager.saveWorkspaceImage(buffer, 'sub/dir', 'pic.png')
+      expect(result.relativePath).toBe('sub/dir/pic.png')
+
+      const onDisk = path.join(testVaultPath, 'sub', 'dir', 'pic.png')
+      await expect(fs.readFile(onDisk)).resolves.toEqual(buffer)
+    })
+
+    it('rejects importExternalPaths with an escaping target folder', async () => {
+      const srcFile = path.join(os.tmpdir(), `lumina-src-${Date.now()}.md`)
+      await fs.writeFile(srcFile, '# hi')
+
+      await expect(
+        VaultManager.importExternalPaths([srcFile], '../escaped-import')
+      ).rejects.toThrow(/escapes workspace|Security Violation/i)
+      await expect(fs.access(srcFile)).resolves.toBeUndefined()
+
+      await fs.rm(srcFile, { force: true })
+    })
+  })
 })

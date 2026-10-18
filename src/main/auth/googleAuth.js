@@ -3,10 +3,23 @@ import http from 'http'
 import url from 'url'
 import path from 'path'
 import fs from 'fs'
+import crypto from 'crypto'
 import SettingsManager from '../settings'
 import { getGoogleClientSecret } from './googleOAuthConstants'
 
 let authServer = null
+
+const GOOGLE_CLIENT_ID_PATTERN = /^[0-9]+-[a-z0-9_-]+\.apps\.googleusercontent\.com$/i
+
+/** Strip OAuth tokens/secrets before returning a user object to the renderer. */
+function sanitizeGoogleUser(user) {
+  if (!user || typeof user !== 'object') return null
+  return {
+    name: user.name ?? null,
+    email: user.email ?? null,
+    picture: user.picture ?? null
+  }
+}
 
 function bringWindowToFront(getMainWindow) {
   try {
@@ -46,7 +59,14 @@ export function setupGoogleAuth(getMainWindow) {
         authServer.close()
       }
 
+      // Reject a malformed client id so it cannot inject extra query parameters.
+      if (typeof clientId !== 'string' || !GOOGLE_CLIENT_ID_PATTERN.test(clientId)) {
+        resolve({ error: 'Invalid Google client id.' })
+        return
+      }
+
       const redirectUri = 'http://localhost:3000/oauth2callback'
+      const oauthState = crypto.randomBytes(16).toString('hex')
       const scopes = [
         'https://www.googleapis.com/auth/drive.file',
         'https://www.googleapis.com/auth/gmail.readonly',
@@ -55,7 +75,7 @@ export function setupGoogleAuth(getMainWindow) {
         'email',
         'profile'
       ].join(' ')
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&access_type=offline&prompt=consent&scope=${encodeURIComponent(scopes)}`
+      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&access_type=offline&prompt=consent&state=${oauthState}&scope=${encodeURIComponent(scopes)}`
 
       // Try reading app icon from resources for browser display
       let iconBase64 = ''
@@ -79,7 +99,7 @@ export function setupGoogleAuth(getMainWindow) {
         ? `data:image/png;base64,${iconBase64}`
         : 'http://localhost:3000/app-icon.png'
 
-      authServer = http.createServer(async (req, res) => {
+      const server = http.createServer(async (req, res) => {
         try {
           const reqUrl = url.parse(req.url, true)
 
@@ -88,8 +108,8 @@ export function setupGoogleAuth(getMainWindow) {
             res.writeHead(200, { 'Content-Type': 'application/json' })
             res.end(JSON.stringify({ ok: true }))
             setTimeout(() => {
-              if (authServer) {
-                authServer.close()
+              if (authServer === server) {
+                server.close()
                 authServer = null
               }
             }, 2000)
@@ -97,6 +117,12 @@ export function setupGoogleAuth(getMainWindow) {
           }
 
           if (reqUrl.pathname === '/oauth2callback') {
+            if (reqUrl.query.state !== oauthState) {
+              res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' })
+              res.end('Invalid OAuth state. Please start the sign-in again from Lumina.')
+              resolve({ error: 'Invalid OAuth state.' })
+              return
+            }
             res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
             res.end(`
               <!DOCTYPE html>
@@ -322,8 +348,8 @@ export function setupGoogleAuth(getMainWindow) {
 
             // Keep server alive for 60 seconds so user can click Return to Lumina
             setTimeout(() => {
-              if (authServer) {
-                authServer.close()
+              if (authServer === server) {
+                server.close()
                 authServer = null
               }
             }, 60000)
@@ -380,7 +406,7 @@ export function setupGoogleAuth(getMainWindow) {
                 }
 
                 await SettingsManager.set('googleUser', user)
-                resolve(user)
+                resolve(sanitizeGoogleUser(user))
               } catch (fetchErr) {
                 resolve({ error: `Failed to fetch profile: ${fetchErr.message}` })
               }
@@ -394,14 +420,19 @@ export function setupGoogleAuth(getMainWindow) {
         }
       })
 
-      authServer.listen(3000, () => {
+      authServer = server
+      server.on('error', (err) => {
+        if (authServer === server) authServer = null
+        resolve({ error: `Local auth server error: ${err.message}` })
+      })
+      server.listen(3000, '127.0.0.1', () => {
         shell.openExternal(authUrl)
       })
 
       // Timeout after 2 minutes to prevent the server from hanging indefinitely
       setTimeout(() => {
-        if (authServer) {
-          authServer.close()
+        if (authServer === server) {
+          server.close()
           authServer = null
           resolve({ error: 'Authentication window timed out.' })
         }
@@ -412,7 +443,7 @@ export function setupGoogleAuth(getMainWindow) {
   ipcMain.handle('auth:getGoogleUser', async () => {
     try {
       const user = await SettingsManager.get('googleUser')
-      return user || null
+      return sanitizeGoogleUser(user)
     } catch (e) {
       return null
     }

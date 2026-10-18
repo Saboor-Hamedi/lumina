@@ -22,7 +22,7 @@
   box-shadow: 0 1px 3px rgba(44, 42, 38, 0.08) !important;
 }
 
-/* Minimal, sleek 28px header matching treeBadge */
+/* Minimal, sleek 28px header matching folderTree */
 .lumina-audit-header {
   display: flex;
   align-items: center;

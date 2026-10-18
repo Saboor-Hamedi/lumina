@@ -35,9 +35,9 @@ const IconItem = React.memo(({ item, index, isActive, isFocused, onSelect }) => 
     >
       <div className="icon-swatch">
         {IconComponent ? (
-          <IconComponent size={21} strokeWidth={1.8} />
+          <IconComponent size={19} strokeWidth={1.8} />
         ) : (
-          <Sparkles size={21} strokeWidth={1.8} />
+          <Sparkles size={19} strokeWidth={1.8} />
         )}
         {isActive && (
           <span className="icon-check-badge">
@@ -161,8 +161,8 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
 
       // Dynamically calculate columns based on actual rendered grid width
       const gridEl = modalContainerRef.current?.querySelector('.icon-modal-grid')
-      const width = gridEl ? gridEl.clientWidth - 40 : 640
-      const columns = Math.max(1, Math.floor(width / 66))
+      const width = gridEl ? gridEl.clientWidth - 28 : 560
+      const columns = Math.max(1, Math.floor(width / 60))
 
       if (e.key === 'ArrowRight') {
         e.preventDefault()
@@ -201,6 +201,9 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
       <div
         ref={modalContainerRef}
         className="icon-modal-container"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Choose an icon"
         onClick={(e) => e.stopPropagation()}
         style={{
           transform: `translate3d(${posRef.current.x}px, ${posRef.current.y}px, 0)`,
@@ -216,10 +219,6 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
         >
           <div className="icon-header-left">
             <span className="icon-header-title">
-              Workspace Icons
-            </span>
-            <span className="icon-header-divider">/</span>
-            <span className="icon-header-subtitle">
               Choose Icon
             </span>
             <span className="icon-step-counter">
@@ -248,7 +247,8 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
               ref={inputRef}
               type="text"
               className="icon-search-input"
-              placeholder="Search icons (e.g., folder, star, science, code)..."
+              placeholder="Search icons..."
+              aria-label="Search icons"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -295,10 +295,25 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
           ))}
         </div>
 
+        {/* Scroll hint fade */}
+        {filteredIcons.length > 0 && <div className="icon-modal-scroll-fade" />}
+
         {/* Empty State */}
         {filteredIcons.length === 0 && (
           <div className="icon-modal-empty">
-            <span>No icons found. Try searching for <em>"code"</em>, <em>"file"</em>, <em>"science"</em>, or <em>"cloud"</em>.</span>
+            <span>No icons found. Try <em>"code"</em>, <em>"file"</em>, <em>"science"</em>, or <em>"cloud"</em>.</span>
+            {search && (
+              <button
+                type="button"
+                className="icon-empty-clear"
+                onClick={() => {
+                  setSearch('')
+                  inputRef.current?.focus({ preventScroll: true })
+                }}
+              >
+                Clear search
+              </button>
+            )}
           </div>
         )}
       </div>

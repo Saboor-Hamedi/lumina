@@ -48,7 +48,7 @@
   border-color: rgba(52, 211, 153, 0.4) !important;
 }
 
-/* Minimal, sleek 28px header matching auditBadge and treeBadge */
+/* Minimal, sleek 28px header matching auditBadge and folderTree */
 .lumina-health-header {
   display: flex;
   align-items: center;

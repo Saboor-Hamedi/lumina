@@ -2,6 +2,7 @@ import { ipcMain, net } from 'electron'
 // @ts-ignore
 import { registerOllamaChatStream } from '../lumina/ollamaChatStream'
 import { validateIpc, z } from './ipcValidation'
+import { resolveAllowedOllamaUrl } from '../security/ollamaUrl'
 
 /**
  * ============================================================================
@@ -30,14 +31,7 @@ export function registerAiHandlers(): void {
     try {
       const validUrl = validateIpc(getModelsSchema, rawUrl)
       const ollamaFetch = typeof net?.fetch === 'function' ? net.fetch.bind(net) : fetch
-      let baseUrl = 'http://127.0.0.1:11434'
-      try {
-        const parsed = new URL(validUrl || 'http://127.0.0.1:11434')
-        const port = parsed.port || '11434'
-        const proto = parsed.protocol || 'http:'
-        const host = parsed.hostname || '127.0.0.1'
-        baseUrl = `${proto}//${host}:${port}`
-      } catch {}
+      const baseUrl = resolveAllowedOllamaUrl(validUrl)
 
       const parsedUrl = new URL(baseUrl)
       const port = parsedUrl.port || '11434'
@@ -82,14 +76,7 @@ export function registerAiHandlers(): void {
       const validPayload = validateIpc(chatPayloadSchema, payload || {})
       const ollamaFetch = typeof net?.fetch === 'function' ? net.fetch.bind(net) : fetch
       const { url: rawUrl, model, messages, tools, options } = validPayload
-      let baseUrl = 'http://127.0.0.1:11434'
-      try {
-        const parsed = new URL(rawUrl || 'http://127.0.0.1:11434')
-        const port = parsed.port || '11434'
-        const proto = parsed.protocol || 'http:'
-        const host = parsed.hostname || '127.0.0.1'
-        baseUrl = `${proto}//${host}:${port}`
-      } catch {}
+      const baseUrl = resolveAllowedOllamaUrl(rawUrl)
 
       const parsedUrl = new URL(baseUrl)
       const port = parsedUrl.port || '11434'

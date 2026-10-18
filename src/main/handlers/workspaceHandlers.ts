@@ -2,6 +2,7 @@ import { ipcMain, dialog, shell, BrowserWindow } from 'electron'
 import path from 'path'
 import fs from 'fs/promises'
 import WorkspaceManager from '../workspace/workspaceManager'
+import { WorkspaceOperations } from '../workspace/workspaceOperations'
 import SettingsManager from '../settings'
 import WorkspaceIndexer from '../workspace/workspaceIndexer'
 import WorkspaceSearch from '../workspace/workspaceSearch'
@@ -27,6 +28,26 @@ import { validateIpc, z } from './ipcValidation'
 const stringIdSchema = z.string().min(1)
 const stringPathSchema = z.string().min(1)
 const snippetObjectSchema = z.record(z.string(), z.any())
+
+const MAX_IMAGE_BYTES = 50 * 1024 * 1024
+
+/** Sniff a raster image format from its magic bytes; returns the canonical extension or null. */
+function detectImageExt(buf: Buffer): string | null {
+  if (!buf || buf.length < 4) return null
+  if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return '.jpg'
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return '.png'
+  if (buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46) return '.gif'
+  if (buf[0] === 0x42 && buf[1] === 0x4d) return '.bmp'
+  if (buf[0] === 0x00 && buf[1] === 0x00 && buf[2] === 0x01 && buf[3] === 0x00) return '.ico'
+  if (
+    buf.length >= 12 &&
+    buf.toString('ascii', 0, 4) === 'RIFF' &&
+    buf.toString('ascii', 8, 12) === 'WEBP'
+  ) {
+    return '.webp'
+  }
+  return null
+}
 
 export function registerWorkspaceHandlers(getMainWindow: () => BrowserWindow | null): void {
   let hasIndexed = false
@@ -100,19 +121,20 @@ export function registerWorkspaceHandlers(getMainWindow: () => BrowserWindow | n
 
       try {
         await fs.access(cleanPath)
+        const stat = await fs.stat(cleanPath)
+        if (!stat.isFile() || stat.size === 0 || stat.size > MAX_IMAGE_BYTES) return null
       } catch {
         return null
       }
       const buffer = await fs.readFile(cleanPath)
-      let fileName = name || path.basename(cleanPath) || `Pasted image ${Date.now()}.png`
-      const ext = path.extname(fileName).toLowerCase()
-      if (!ext || ext === '.tmp') {
-        let detectedExt = '.png'
-        if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) detectedExt = '.jpg'
-        else if (buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46) detectedExt = '.gif'
-        else if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) detectedExt = '.webp'
-        fileName = `${path.basename(fileName, ext)}${detectedExt}`
-      }
+      // Only accept buffers whose magic bytes identify a raster image. This blocks
+      // arbitrary file reads being persisted as fake ".png" workspace assets.
+      const detectedExt = detectImageExt(buffer)
+      if (!detectedExt) return null
+
+      let fileName = name || path.basename(cleanPath) || `Pasted image ${Date.now()}${detectedExt}`
+      const fileBase = path.basename(fileName, path.extname(fileName)) || `Pasted image ${Date.now()}`
+      fileName = `${fileBase}${detectedExt}`
       return await WorkspaceManager.saveImage(buffer, fileName)
     } catch (err) {
       console.error('[Main] saveImageFromPath error:', err)
@@ -288,7 +310,16 @@ export function registerWorkspaceHandlers(getMainWindow: () => BrowserWindow | n
   registerWorkspaceHandle('open-folder', async (_, relativePath) => {
     if (WorkspaceManager.workspacePath) {
       if (relativePath) {
-        shell.showItemInFolder(path.join(WorkspaceManager.workspacePath, relativePath))
+        let safePath: string
+        try {
+          safePath = WorkspaceOperations.assertSafeWorkspacePath(
+            WorkspaceManager.workspacePath,
+            String(relativePath)
+          )
+        } catch {
+          return
+        }
+        shell.showItemInFolder(safePath)
       } else {
         await shell.openPath(WorkspaceManager.workspacePath)
       }

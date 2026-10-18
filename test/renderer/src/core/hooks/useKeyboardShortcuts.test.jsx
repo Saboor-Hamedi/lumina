@@ -59,12 +59,24 @@ describe('useKeyboardShortcuts', () => {
     expect(onSave).toHaveBeenCalled()
   })
 
-  it('calls onSave on Meta+S', () => {
-    const onSave = vi.fn()
-    renderHook(() => useKeyboardShortcuts({ onSave }))
+  it('calls onSave on Cmd+S on macOS', () => {
+    const originalUA = window.navigator.userAgent
+    Object.defineProperty(window.navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
+      configurable: true
+    })
+    try {
+      const onSave = vi.fn()
+      renderHook(() => useKeyboardShortcuts({ onSave }))
 
-    triggerKey('s', { meta: true })
-    expect(onSave).toHaveBeenCalled()
+      triggerKey('s', { meta: true })
+      expect(onSave).toHaveBeenCalled()
+    } finally {
+      Object.defineProperty(window.navigator, 'userAgent', {
+        value: originalUA,
+        configurable: true
+      })
+    }
   })
 
   it('calls onNew on Ctrl+N', () => {

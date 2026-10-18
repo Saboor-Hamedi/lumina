@@ -1,3 +1,5 @@
+import { resolveAllowedOllamaUrl } from '../security/ollamaUrl'
+
 /**
  * Streams Ollama's NDJSON chat response to the renderer over request-scoped IPC.
  * Kept separate from index.js so provider transport details stay out of app setup.
@@ -26,11 +28,7 @@ export function registerOllamaChatStream(ipcMain, net) {
     void (async () => {
       try {
         const ollamaFetch = typeof net?.fetch === 'function' ? net.fetch.bind(net) : fetch
-        let baseUrl = 'http://127.0.0.1:11434'
-        try {
-          const parsed = new URL(rawUrl || baseUrl)
-          baseUrl = `${parsed.protocol}//${parsed.hostname}:${parsed.port || '11434'}`
-        } catch {}
+        const baseUrl = resolveAllowedOllamaUrl(rawUrl)
 
         const parsedUrl = new URL(baseUrl)
         const port = parsedUrl.port || '11434'

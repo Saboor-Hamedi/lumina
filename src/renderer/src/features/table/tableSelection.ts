@@ -1,8 +1,7 @@
-import { dispatchModel, placeCaretAtEnd, findCurrentTableRange } from './tableShared'
+import { dispatchModel, placeCaretAtEnd } from './tableShared'
 import { readModelFromDom as readParsedModel } from './tableModel'
-import { redistributeColumnWidths } from './tableResize'
 import type { EditorView } from '@codemirror/view'
-import type { CellAlignment, TableModel, TableWidgetRange } from './tableModel'
+import type { CellAlignment, TableModel } from './tableModel'
 
 type GridSelection = { minR: number; maxR: number; minC: number; maxC: number }
 type TableSelectionWrapper = HTMLElement & {
@@ -344,9 +343,6 @@ export function setupTableSelection(wrap: TableSelectionWrapper, view: EditorVie
       const maxR = Math.max(start.r, end.r)
       const minC = Math.min(start.c, end.c)
       const maxC = Math.max(start.c, end.c)
-      const colTotal = wrap.querySelectorAll('thead th').length
-      const tbody = wrap.querySelector('tbody')
-      const rowTotal = tbody ? tbody.querySelectorAll('tr:not(.cm-table-empty-row)').length : 0
 
       // Backspace/Delete clears selected cells. Structural row/column deletion
       // remains available through the table menu, so keyboard editing is safe.
@@ -364,79 +360,6 @@ export function setupTableSelection(wrap: TableSelectionWrapper, view: EditorVie
         rowIdx: Math.max(0, minR),
         colIdx: Math.max(0, minC)
       })
-      return
-
-      // If full row(s) are selected (and not the header row), delete the row(s)!
-      if (minR >= 0 && minC === 0 && maxC >= colTotal - 1) {
-        const m = readModelFromDom(wrap)
-        const deleteCount = maxR - minR + 1
-        m.rows.splice(minR, deleteCount)
-        clearSelectionVisuals()
-        startCell = null
-        endCell = null
-        const nextRowIdx = Math.min(minR, m.rows.length - 1)
-        const focusInfo = m.rows.length > 0
-          ? { isHeader: false, rowIdx: Math.max(0, nextRowIdx), colIdx: 0 }
-          : { isHeader: true, rowIdx: 0, colIdx: 0 }
-        dispatchModel(view, wrap, m, focusInfo)
-        return
-      }
-
-      // If full column(s) are selected (from header to bottom), delete the column(s)!
-      const isFullCol = minR === -1 && (rowTotal === 0 ? maxR === -1 : maxR === rowTotal - 1)
-      if (isFullCol) {
-        if (colTotal <= (maxC - minC + 1)) {
-          // Entire table is selected: delete the entire table
-          const range = findCurrentTableRange(view, wrap)
-          if (!range) return
-          const { from, to } = range as TableWidgetRange
-          clearSelectionVisuals()
-          startCell = null
-          endCell = null
-          view.dispatch({
-            changes: { from, to, insert: '' },
-            selection: { anchor: from },
-            scrollIntoView: true
-          })
-          view.focus()
-          return
-        }
-        const m = readModelFromDom(wrap)
-        const deleteCount = maxC - minC + 1
-        m.header.splice(minC, deleteCount)
-        m.alignments.splice(minC, deleteCount)
-        const columnWidths = m.columnWidths ?? []
-        if (columnWidths.length) {
-          columnWidths.splice(minC, deleteCount)
-          // Redistribute freed space so remaining columns fill the container.
-          m.columnWidths = redistributeColumnWidths(columnWidths, wrap)
-        }
-        for (const r of m.rows) r.splice(minC, deleteCount)
-        clearSelectionVisuals()
-        startCell = null
-        endCell = null
-        const nextCol = Math.max(0, Math.min(minC, m.header.length - 1))
-        const focusInfo = { isHeader: true, rowIdx: 0, colIdx: nextCol }
-        dispatchModel(view, wrap, m, focusInfo)
-        return
-      }
-
-      // If not a full row and not a full column: clear content of selected cells
-      selected.forEach((cell) => {
-        cell.dataset.raw = ''
-        const source = cell.querySelector<HTMLElement>('.cm-atomic-table-cell-source')
-        if (source) source.textContent = ''
-      })
-      clearSelectionVisuals()
-      startCell = null
-      endCell = null
-      const m = readModelFromDom(wrap)
-      const focusInfo = {
-        isHeader: minR === -1,
-        rowIdx: Math.max(0, minR),
-        colIdx: Math.max(0, minC)
-      }
-      dispatchModel(view, wrap, m, focusInfo)
       return
     }
 

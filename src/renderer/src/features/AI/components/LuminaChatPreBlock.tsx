@@ -4,7 +4,7 @@ import { Folder, Code as CodeIcon, Copy, Check, ChevronDown } from 'lucide-react
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 // @ts-ignore
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { LuminaTreeBadge, isAsciiTree } from './LuminaTreeBadge'
+import { LuminaFolderTree, isAsciiTree } from './luminaFolderTree'
 import '../css/chatCode.css'
 
 export interface ChatPreBlockProps {
@@ -14,7 +14,7 @@ export interface ChatPreBlockProps {
 
 /**
  * ChatPreBlock renders code blocks with syntax highlighting, language badges, line counters,
- * quick clipboard copy, and automatically extracts folder structure trees into LuminaTreeBadge.
+ * quick clipboard copy, and automatically extracts folder structure trees into LuminaFolderTree.
  */
 export const ChatPreBlock: React.FC<ChatPreBlockProps> = React.memo(({ children, ...props }) => {
   const [copied, setCopied] = useState<boolean>(false)
@@ -43,7 +43,7 @@ export const ChatPreBlock: React.FC<ChatPreBlockProps> = React.memo(({ children,
   const lineCount = codeString ? codeString.split('\n').length : 0
 
   if (isTree) {
-    return <LuminaTreeBadge rawCode={codeString} />
+    return <LuminaFolderTree rawCode={codeString} />
   }
 
   const displayTag = lang.toUpperCase()

@@ -18,7 +18,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
   { id: 'newNote', label: 'New Note', defaultKey: 'Ctrl + N', category: 'File' },
   { id: 'openFile', label: 'Open File', defaultKey: 'Ctrl + O', category: 'File' },
   { id: 'save', label: 'Save', defaultKey: 'Ctrl + S', category: 'File' },
-  { id: 'changeIcon', label: 'Change Note / Tab Icon', defaultKey: 'Ctrl + Win + .', category: 'File' },
+  { id: 'changeIcon', label: 'Change Note / Tab Icon', defaultKey: 'Win + Shift + .', category: 'File' },
   { id: 'closeTab', label: 'Close Tab', defaultKey: 'Ctrl + W', category: 'File' },
   { id: 'closeWindow', label: 'Close Window', defaultKey: 'Ctrl + Shift + W', category: 'File' },
   { id: 'deleteNote', label: 'Delete Note', defaultKey: 'Ctrl + Shift + D', category: 'File', isDanger: true },

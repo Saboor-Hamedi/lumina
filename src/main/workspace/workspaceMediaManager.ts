@@ -89,7 +89,14 @@ export class WorkspaceMediaManager {
     if (!workspacePath) throw new Error('No workspace open')
 
     const normalizedFolder = (targetFolder || '').replace(/\\/g, '/')
-    const folderPath = normalizedFolder ? path.join(workspacePath, normalizedFolder) : workspacePath
+    const workspaceRoot = path.resolve(workspacePath)
+    const folderPath = path.resolve(workspaceRoot, normalizedFolder)
+    const isWin = process.platform === 'win32'
+    const cmpRoot = isWin ? workspaceRoot.toLowerCase() : workspaceRoot
+    const cmpFolder = isWin ? folderPath.toLowerCase() : folderPath
+    if (cmpFolder !== cmpRoot && !cmpFolder.startsWith(cmpRoot + path.sep)) {
+      throw new Error(`Security Violation: Path escapes workspace boundaries: ${targetFolder}`)
+    }
     try {
       await fs.mkdir(folderPath, { recursive: true })
     } catch (e) {}

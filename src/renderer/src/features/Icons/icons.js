@@ -36,7 +36,7 @@ export const EMOJI_LIST = [
   { char: 'FolderPlus', name: 'Folder Plus', tags: ['new folder', 'create directory'] },
   { char: 'FolderGit2', name: 'Git Folder', tags: ['repository', 'repo', 'version control', 'vcs'] },
   { char: 'FolderCode', name: 'Code Folder', tags: ['src', 'source', 'components', 'package'] },
-  { char: 'FolderTree', name: 'Folder Tree', tags: ['hierarchy', 'nested', 'structure', 'tree'] },
+  { char: 'FolderTree', name: 'Folder Tree', tags: ['hierarchy', 'nested', 'structure', 'tree', 'algorithm', 'nodes'] },
   { char: 'FolderArchive', name: 'Archive Folder', tags: ['backup', 'vault', 'storage'] },
   { char: 'FolderHeart', name: 'Favorite Folder', tags: ['starred', 'important', 'love'] },
   { char: 'FolderKanban', name: 'Kanban Folder', tags: ['tasks', 'board', 'workflow'] },
@@ -59,7 +59,7 @@ export const EMOJI_LIST = [
   { char: 'GitPullRequest', name: 'Pull Request', tags: ['git', 'pr', 'review', 'github'] },
   { char: 'GitFork', name: 'Git Fork', tags: ['git', 'fork', 'clone', 'split'] },
   { char: 'GitMerge', name: 'Git Merge', tags: ['git', 'combine', 'squash', 'integrate'] },
-  { char: 'Binary', name: 'Binary', tags: ['data', 'bytes', 'hex', 'low-level', 'bits'] },
+  { char: 'Binary', name: 'Binary', tags: ['data', 'bytes', 'hex', 'low-level', 'bits', 'encoding'] },
   { char: 'Braces', name: 'Braces', tags: ['json', 'code', 'curly', 'brackets'] },
   { char: 'Brackets', name: 'Brackets', tags: ['array', 'list', 'syntax', 'square'] },
   { char: 'Bug', name: 'Bug', tags: ['issue', 'error', 'defect', 'problem', 'debug'] },
@@ -70,7 +70,6 @@ export const EMOJI_LIST = [
   { char: 'Workflow', name: 'Workflow', tags: ['pipeline', 'ci/cd', 'automation', 'diagram'] },
   { char: 'Regex', name: 'Regex', tags: ['pattern', 'match', 'parser', 'token'] },
   { char: 'Blocks', name: 'Blocks', tags: ['components', 'lego', 'modular', 'widgets'] },
-  { char: 'FolderTree', name: 'Tree Graph', tags: ['algorithm', 'structure', 'nodes', 'tree'] },
 
   // ✨ AI, Magic & Tools
   { char: 'Sparkles', name: 'Sparkles', tags: ['ai', 'magic', 'clean', 'lumina', 'assistant', 'prompt'] },
@@ -179,7 +178,6 @@ export const EMOJI_LIST = [
   { char: 'Calculator', name: 'Calculator', tags: ['math', 'finance', 'accounting', 'calculate'] },
   { char: 'Pi', name: 'Pi', tags: ['math', 'formula', 'constant', 'geometry'] },
   { char: 'Sigma', name: 'Sigma', tags: ['sum', 'math', 'statistics', 'formula'] },
-  { char: 'Binary', name: 'Binary Data', tags: ['data', 'bytes', 'hex', 'bits', 'encoding'] },
   { char: 'GraduationCap', name: 'Graduation Cap', tags: ['education', 'study', 'university', 'degree', 'learn'] },
   { char: 'School', name: 'School', tags: ['education', 'academic', 'college', 'learn'] },
 

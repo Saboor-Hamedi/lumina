@@ -1,81 +1,25 @@
-# Fix Mermaid Flowchart Scaling and Centering in Lumina
+<checkFile"> {"title": "01 action words"}</checkFile>
 
-## Problem
+<checkFile"> {"title": "02 adjectives"}</checkFile>
 
-Mermaid rendering is working perfectly in Lumina. The diagrams are generated correctly, and there are no issues with their content or functionality.
+<checkFile"> {"title": "Nouns: Names of Everything!"}</checkFile>
 
-However, the rendered flowcharts have a significant visual presentation problem.
+<checkFile"> {"title": "Conjunctions: Connecting Words!"}</checkFile>
 
-As shown in the screenshots:
+<checkFile"> {"title": "Prepositions: Where and When!"}</checkFile>
 
-- The Mermaid container is large, but the actual flowchart occupies only a tiny portion of it.
-- The diagram is positioned near the top of the container instead of being centered.
-- There is excessive empty space surrounding the diagram, particularly below it.
-- Increasing the container's height does not make the diagram larger.
-- The flowchart remains small regardless of how much space is available.
+<checkFile"> {"title": "Punctuation: The Traffic Lights of Writing!"}</checkFile>
 
-This makes the diagrams difficult to read and wastes valuable screen space.
+<checkFile"> {"title": "Common Mistakes to Fix!"}</checkFile>
 
-## Expected Behavior
+<checkFile"> {"title": "Tenses: When Things Happen"}</checkFile>
 
-I want Mermaid diagrams to look polished, readable, and professionally integrated into Lumina.
+<checkFile"> {"title": "vocabulary building"}</checkFile>
 
-1. **Proper scaling:** The flowchart should use the available container space effectively. It should not remain tiny when the container is large.
+<checkFile"> {"title": "comprehensive writing"}</checkFile>
 
-2. **Horizontal and vertical centering:** The entire diagram should be centered within its rendering area, both horizontally and vertically.
+<checkFile"> {"title": "Summary — vocabulary building"}</checkFile>
 
-3. **Responsive sizing:** The diagram should adapt to the available width and height when the container is resized.
+Now I have the real picture. Let me fix the corrupted 01 action words first — it has repeated "## What is an Action Word?" headings stacked up.
 
-4. **Readable nodes and text:** Node labels, connections, and text should remain comfortably readable. Do not simply enlarge the container while leaving the SVG diagram unchanged.
-
-5. **Preserve the aspect ratio:** Scale the diagram proportionally without stretching or distorting it.
-
-6. **Handle different diagram sizes:** Small, wide, tall, and complex flowcharts should all render appropriately. A very wide diagram should not be forced into a tiny scale merely because its height is large, and a tall diagram should not be unnecessarily constrained by its width.
-
-7. **Keep existing functionality intact:** Mermaid generation, syntax, diagram content, interactions, and existing controls must continue to work.
-
-## Investigate the Actual Cause
-
-Before making changes, inspect Lumina's existing Mermaid rendering implementation.
-
-Determine whether the issue comes from:
-
-- The SVG's intrinsic width and height or its `viewBox`.
-- Mermaid's `useMaxWidth` or other initialization settings.
-- CSS rules controlling the SVG's width, height, maximum dimensions, or transforms.
-- The layout of the Mermaid container and its child elements.
-- The SVG's default sizing behavior, which can leave the rendered diagram at its intrinsic dimensions.
-- Incorrect calculations of the diagram's bounding box or available rendering space.
-- The difference between enlarging the outer container and actually scaling the SVG content.
-
-Do not assume that any one of these is the cause. Trace the existing implementation and establish what is happening.
-
-## Implementation Objective
-
-Once the cause is established, implement a robust solution that makes the diagram itself occupy an appropriate amount of the available rendering area and positions it in the center.
-
-Use the existing rendering architecture wherever possible. Avoid introducing unnecessary dependencies or rebuilding the Mermaid integration.
-
-The solution should distinguish between the container's dimensions and the SVG diagram's actual dimensions. Centering the container alone is insufficient if the diagram remains intrinsically small.
-
-If appropriate for the existing implementation, consider measuring the rendered SVG's actual dimensions and `viewBox`, then calculating a proportional scale that respects the available width and height. Ensure that resizing does not cause repeated scaling, layout loops, clipping, or distortion.
-
-Do not apply an aggressive fixed zoom to every diagram. Choose a sizing strategy that works across different flowchart shapes and complexity levels.
-
-## Validation
-
-Test the result using:
-
-- A small flowchart.
-- A wide flowchart with many sequential nodes.
-- A tall flowchart with multiple levels.
-- A complex flowchart with nested subgraphs.
-- A resized Mermaid container.
-
-Verify that the diagram is centered, readable, proportionally scaled, and not clipped in each case.
-
-Also verify that existing Mermaid rendering and controls remain functional.
-
-**Important:** Do not confuse a larger rendering container with a larger diagram. The objective is to make the actual flowchart visible at an appropriate scale, centered in the available space.
-
-After implementation, report the root cause, the files changed, the sizing strategy used, and the tests performed.
+<updateFile"> {"title": "01 action words", "content": "# Action Words (Verbs): Let's Move!\n\nDate: August 7, 2026\n\nWeek: Lesson 01 of 11 — Week 1 (Fri, Aug 7, 2026)\n\n## What is an Action Word?\n\nAn action word, also called a verb, tells us what someone or something DOES. Every sentence needs an action word! Without verbs, we would not know what is happening!\n\nExample: The dog runs in the park.\n\nThe word runs tells us what the dog is doing. If we said "The dog in the park," you would wonder: What is the dog doing? The verb answers that question!\n\n## Action Words for Different Things We Do\n\n### Actions at School\n- Read — I read a story about a magic tree.\n- Write — We write in our journals every morning.\n- Learn — Today I learned how to multiply numbers.\n- Listen — Please listen carefully to the teacher.\n- Draw — She drew a beautiful rainbow with many colors.\n- Count — We count from one to one hundred.\n- Spell — Can you spell your name for me?\n- Answer — I answered three questions in class.\n\n### Actions at Home\n- Eat — We eat dinner together at 6 o'clock.\n- Sleep — I sleep in my cozy bed every night.\n- Help — I helped my mom set the table for dinner.\n- Play — My brother and I play with our toy cars.\n- Clean — I clean my room every Saturday morning.\n- Cook — My dad cooks the best pancakes on Sunday.\n- Brush — I brush my teeth after every meal.\n- Watch — We watch cartoons after homework.\n\n### Actions Outside\n- Run — She runs faster than anyone in class.\n- Jump — The frog jumped into the pond.\n- Swim — We swim in the pool every summer.\n- Climb — He climbed the tall tree in the backyard.\n- Ride — I ride my bike to the park.\n- Kick — She kicked the ball into the goal.\n- Throw — He threw the frisbee to his dog.\n- Catch — Can you catch the ball with one hand?\n\n### Actions with Our Voice\n- Sing — We sing songs in music class.\n- Shout — Do not shout inside the library.\n- Whisper — She whispered a secret in my ear.\n- Laugh — The joke made everyone laugh loudly.\n- Talk — I talk to my friend on the phone.\n- Ask — You can ask me any question.\n\n## Past, Present, and Future\n\nAction words change to tell us WHEN something happens.\n\n| Present (now) | Past (before) | Future (later) |\n|---------------|---------------|----------------|\n| I walk | I walked | I will walk |\n| I play | I played | I will play |\n| I jump | I jumped | I will jump |\n| I cook | I cooked | I will cook |\n\n> I walk to school every day. (happens regularly)\n> I walked to school yesterday. (already finished)\n> I will walk to school tomorrow. (not yet)\n\n## Common Irregular Verbs (Special Words!)\n\nSome verbs do not add -ed. They change completely! These must be memorized.\n\n| Present | Past | Example |\n|---------|------|---------|\n| go | went | I went to the store. |\n| eat | ate | She ate her lunch. |\n| run | ran | He ran home quickly. |\n| see | saw | We saw a rainbow. |\n| come | came | They came to visit. |\n| make | made | Mom made a cake. |\n| take | took | I took a picture. |\n| give | gave | She gave me a gift. |\n| write | wrote | He wrote a letter. |\n| sing | sang | We sang a song. |\n\n## Story Time: A Day at the Park\n\nOn Saturday morning, Maya woke up early. She ate a quick breakfast and ran to the park with her dog, Max. Max jumped over the fence and chased a butterfly. Maya laughed and threw a red ball across the grass. Max caught it in his mouth and brought it back. They sat under a big tree and watched the clouds. Maya drank water from her bottle and shared a snack with Max. When the sun set, they walked home slowly. Maya brushed her teeth and slept with a happy smile.\n\nHow many action words can you find in this story?\n\n## Fun Idioms with Action Words\n\n| Idiom | Meaning | Example Sentence |\n|-------|---------|------------------|\n| Hit the books | Start studying | I need to hit the books before the test. |\n| Let the cat out of the bag | Tell a secret | He let the cat out of the bag about the party. |\n| Break the ice | Start a conversation | A funny joke can break the ice with new friends. |\n| Hold your horses | Wait and slow down | Hold your horses — we are not leaving yet! |\n| Piece of cake | Very easy | The spelling test was a piece of cake. |\n| Hit the hay | Go to sleep | It is late, time to hit the hay. |\n| Pull someone's leg | Joke with someone | I was only pulling your leg! |\n| Catch a cold | Get sick | Wear a jacket or you will catch a cold. |\n| Run out of | Have none left | We ran out of milk this morning. |\n| Give a hand | Help someone | Can you give me a hand with these boxes? |\n\n## Let's Practice!\n\nA. Circle the action word in each sentence:

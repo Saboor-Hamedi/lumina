@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { isAsciiTree } from '../../../../../../src/renderer/src/features/AI/components/LuminaTreeBadge'
+import { isAsciiTree } from '../../../../../../src/renderer/src/features/AI/components/luminaFolderTree'
 
-describe('LuminaTreeBadge & Tree Structure Detection', () => {
+describe('LuminaFolderTree & Tree Structure Detection', () => {
   it('correctly identifies ASCII folder trees', () => {
     const treeText = `Lumina Vault/
 ├── 01 Programming/
