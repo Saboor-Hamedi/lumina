@@ -17,7 +17,7 @@
  */
 
 import React, { memo, useState, useEffect } from 'react'
-import { Files, Plus, Network, LayoutDashboard, Palette, Book, Compass } from 'lucide-react'
+import { Files, MessageSquare, Network, LayoutDashboard, Palette, Book, Compass } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import DailyNotes from './components/DailyNotes'
 import ActivityBarMail from './components/ActivityBarMail'
@@ -26,6 +26,7 @@ import './css/activitybar.css'
 
 export interface ActivityBarProps {
   onToggleGraph?: () => void
+  onToggleAIChat?: () => void
   onOpenTheme?: () => void
   onOpenDocs?: () => void
   onOpenGuide?: () => void
@@ -33,6 +34,7 @@ export interface ActivityBarProps {
 
 export const ActivityBar: React.FC<ActivityBarProps> = memo(({
   onToggleGraph,
+  onToggleAIChat,
   onOpenTheme,
   onOpenDocs,
   onOpenGuide
@@ -68,8 +70,12 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
     }
   }
 
-  const handleNewNote = () => {
-    window.dispatchEvent(new CustomEvent('trigger-new-note'))
+  const handleOpenLumina = () => {
+    if (onToggleAIChat) {
+      onToggleAIChat()
+    } else {
+      window.dispatchEvent(new CustomEvent('open-ai-chat'))
+    }
   }
 
   const handleNewCanvas = () => {
@@ -107,15 +113,15 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
           </button>
         </ToolTip>
 
-        {/* 1. New Note */}
-        <ToolTip text="New Note" position="right">
+        {/* 1. Lumina AI */}
+        <ToolTip text={`Lumina AI (${isMac ? '⌘⇧\\' : 'Ctrl+Shift+\\'})`} position="right">
           <button
             type="button"
             className="activity-bar-btn"
-            onClick={handleNewNote}
-            aria-label="New Note"
+            onClick={handleOpenLumina}
+            aria-label="Lumina AI"
           >
-            <Plus size={16} />
+            <MessageSquare size={16} />
           </button>
         </ToolTip>
 

@@ -1,15 +1,13 @@
 .theme-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4) !important;
-  backdrop-filter: blur(8px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(8px) saturate(160%) !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10005 !important;
-  animation: themeFadeIn 0.08s ease-out;
-  will-change: opacity;
 }
 
 .theme-modal-container {

@@ -1,10 +1,11 @@
 import React from 'react'
-import { FileText, Code, Brain } from 'lucide-react'
+import { FileText, Code, Brain, Folder } from 'lucide-react'
 import { MessageContent } from './LuminaMessageContent'
 import { ChatActions } from './LuminaChatActions'
 import { ThinkingIndicator } from './LuminaThinkingIndicator'
 import { openNoteInEditor } from './LuminaChatLink'
 import { useAIStore } from '../tools/lumina'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import type { ChatMessage } from '../types/ai.types'
 import '../css/chatMentions.css'
 
@@ -34,6 +35,18 @@ const BRAIN_DOC_KEYS = [
 export const getMentionIcon = (target: string): React.ReactNode => {
   const lower = (target || '').toLowerCase().trim()
   const clean = lower.replace(/\.md$/, '').replace(/^brain\//, '')
+
+  try {
+    const vs = useWorkspaceStore.getState()
+    const folders = vs?.folders || []
+    const isFolder = folders.some((f: string) => {
+      const nf = f.toLowerCase().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+      return nf === clean || nf.split('/').pop() === clean
+    })
+    if (isFolder) {
+      return <Folder size={11.5} className="chat-mention-icon folder-icon" />
+    }
+  } catch {}
 
   if (BRAIN_DOC_KEYS.some((k) => clean === k || clean.endsWith(`/${k}`) || clean.includes(k))) {
     return <Brain size={12.5} className="chat-mention-icon brain-icon" />

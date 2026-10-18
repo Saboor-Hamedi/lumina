@@ -1,8 +1,7 @@
 import * as aiSdk from 'ai'
 import type { AIToolExecutionResult } from '../types/ai.types'
 
-interface UpdateFileInput {
-  title: string
+interface SingleEditHunk {
   sectionHeader?: string
   search?: string
   replace?: string
@@ -10,16 +9,28 @@ interface UpdateFileInput {
   insertAfter?: string
   insertBefore?: string
   position?: string
+  startLine?: number
+  endLine?: number
+}
+
+interface UpdateFileInput extends SingleEditHunk {
+  title: string
+  folder?: string
   content?: string
+  edits?: SingleEditHunk[]
 }
 
 export const updateFileTool = aiSdk.tool({
   description:
-    'Update an existing file with targeted precision. ALWAYS prefer `sectionHeader`, `search` & `replace`, `insertAfter`, or `insertBefore` to edit specific paragraphs, sections, lines, or blocks without wiping the rest of the file. Only use full `content` when complete document rewrite is explicitly requested.',
+    'Update an existing file with targeted precision. ALWAYS prefer `sectionHeader`, `search` & `replace`, `startLine` & `endLine`, `edits` (multi-hunk batch), `insertAfter`, or `insertBefore` to edit specific paragraphs, sections, lines, or blocks without wiping the rest of the file. Only use full `content` when complete document rewrite is explicitly requested.',
   inputSchema: aiSdk.jsonSchema<UpdateFileInput>({
     type: 'object',
     properties: {
       title: { type: 'string', description: 'The file title to update (or "current" for active note)' },
+      folder: {
+        type: 'string',
+        description: 'Optional workspace-relative folder to disambiguate notes with the same title.'
+      },
       sectionHeader: {
         type: 'string',
         description:
@@ -32,11 +43,19 @@ export const updateFileTool = aiSdk.tool({
       },
       replace: {
         type: 'string',
-        description: 'New text, section content, or code to insert in place of `search` or under `sectionHeader`.'
+        description: 'New text, section content, or code to insert in place of `search`, `startLine`..`endLine`, or under `sectionHeader`.'
       },
       text: {
         type: 'string',
         description: 'New text, paragraph, or section content to update into the note.'
+      },
+      startLine: {
+        type: 'number',
+        description: 'Optional 1-indexed start line number for line-range replacement (used with `endLine` and `replace`).'
+      },
+      endLine: {
+        type: 'number',
+        description: 'Optional 1-indexed end line number (inclusive) for line-range replacement.'
       },
       insertAfter: {
         type: 'string',
@@ -50,6 +69,24 @@ export const updateFileTool = aiSdk.tool({
         type: 'string',
         description: 'Where to insert content. Use "top" to place right below the title header (ideal for wikilinks and summaries), or "bottom".'
       },
+      edits: {
+        type: 'array',
+        description: 'Optional list of sequential targeted edits (each with search/replace, sectionHeader/replace, or startLine/endLine/replace) to apply in a single atomic update.',
+        items: {
+          type: 'object',
+          properties: {
+            sectionHeader: { type: 'string' },
+            search: { type: 'string' },
+            replace: { type: 'string' },
+            text: { type: 'string' },
+            startLine: { type: 'number' },
+            endLine: { type: 'number' },
+            insertAfter: { type: 'string' },
+            insertBefore: { type: 'string' },
+            position: { type: 'string' }
+          }
+        }
+      },
       content: {
         type: 'string',
         description:
@@ -60,12 +97,16 @@ export const updateFileTool = aiSdk.tool({
   }),
   execute: async ({
     title,
+    folder,
     search,
     replace,
     text,
+     startLine,
+    endLine,
     insertAfter,
     insertBefore,
     position,
+    edits,
     content,
     sectionHeader
   }): Promise<AIToolExecutionResult> => {
@@ -73,11 +114,32 @@ export const updateFileTool = aiSdk.tool({
     const vs = (useWorkspaceStore as any).getState()
     const snippets = vs.notes || []
 
-    const cleanTitle = (title || '').trim().toLowerCase().replace(/^@/, '').replace(/\.md$/, '')
+    const rawInput = (title || '').trim().replace(/^@/, '').replace(/\\/g, '/').replace(/\.md$/i, '')
+    let cleanTitle = rawInput.toLowerCase()
+    let cleanFolder = (folder || '').trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').toLowerCase()
+    if (/^(?:root|workspace root|vault root|project root|workspace|vault|\.)$/i.test(cleanFolder)) {
+      cleanFolder = ''
+    }
+    if (rawInput.includes('/')) {
+      const parts = rawInput.split('/').filter(Boolean)
+      cleanTitle = (parts.pop() || '').toLowerCase()
+      const titleFolder = parts.join('/').toLowerCase()
+      cleanFolder = cleanFolder ? `${cleanFolder}/${titleFolder}` : titleFolder
+    }
+
+    const matchesFolder = (note: any) => {
+      if (!cleanFolder) return true
+      const noteFolder = String(note?.folderId || '')
+        .replace(/\\/g, '/')
+        .replace(/^\/+|\/+$/g, '')
+        .toLowerCase()
+      return noteFolder === cleanFolder
+    }
+
     let target: any = null
 
     // Prefer active open note if it matches or if requested as 'current'
-    if (vs.selectedNote) {
+    if (vs.selectedNote && matchesFolder(vs.selectedNote)) {
       const activeTitle = (vs.selectedNote.title || '').toLowerCase().replace(/\.md$/, '')
       if (
         cleanTitle === 'current' ||
@@ -95,12 +157,23 @@ export const updateFileTool = aiSdk.tool({
         target = vs.selectedNote || (snippets.length > 0 ? snippets[0] : null)
       } else {
         target = snippets.find(
-          (s: any) => (s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle
+          (s: any) =>
+            matchesFolder(s) && (s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle
         )
+        if (!target && cleanFolder) {
+          target = snippets.find(
+            (s: any) => (s.title || '').toLowerCase().replace(/\.md$/, '') === cleanTitle
+          )
+        }
+        if (!target) {
+          target = snippets.find(
+            (s: any) => matchesFolder(s) && (s.title || '').toLowerCase().includes(cleanTitle)
+          )
+        }
         if (!target) {
           target = snippets.find((s: any) => (s.title || '').toLowerCase().includes(cleanTitle))
         }
-        if (!target && vs.selectedNote) {
+        if (!target && vs.selectedNote && !cleanFolder) {
           target = vs.selectedNote
         }
       }
@@ -125,6 +198,9 @@ export const updateFileTool = aiSdk.tool({
     if (
       !effectiveHeader &&
       search === undefined &&
+      startLine === undefined &&
+      endLine === undefined &&
+      (!Array.isArray(edits) || edits.length === 0) &&
       insertAfter === undefined &&
       insertBefore === undefined &&
       position === undefined &&
@@ -141,7 +217,118 @@ export const updateFileTool = aiSdk.tool({
     let changePos: number | null = null
     let changeLine: number | null = null
 
-    if (position === 'top' && effectiveReplace !== undefined) {
+    if (Array.isArray(edits) && edits.length > 0) {
+      let workingCode = currentCode
+      const appliedSummaries: string[] = []
+      const writtenChunks: string[] = []
+
+      for (let idx = 0; idx < edits.length; idx++) {
+        const hunk = edits[idx]
+        const hunkReplace = hunk.replace !== undefined ? hunk.replace : (hunk.text ?? '')
+        if (typeof hunk.startLine === 'number' && typeof hunk.endLine === 'number') {
+          const lines = workingCode.split('\n')
+          const sLine = Math.max(1, Math.floor(hunk.startLine))
+          const eLine = Math.min(lines.length, Math.max(sLine, Math.floor(hunk.endLine)))
+          const before = lines.slice(0, sLine - 1)
+          const after = lines.slice(eLine)
+          workingCode = [...before, hunkReplace, ...after].join('\n')
+          if (changeLine === null) changeLine = sLine
+          appliedSummaries.push(`lines ${sLine}-${eLine}`)
+          writtenChunks.push(hunkReplace)
+        } else if (hunk.sectionHeader) {
+          const hLines = workingCode.split('\n')
+          const cleanH = hunk.sectionHeader.trim().replace(/^#{1,6}\s*/, '').toLowerCase()
+          let mIdx = -1
+          let mLevel = 2
+          let mFull = ''
+          for (let i = 0; i < hLines.length; i++) {
+            const hm = hLines[i].match(/^(#{1,6})\s+(.*)$/)
+            if (hm && (hm[2].trim().toLowerCase() === cleanH || hm[2].trim().toLowerCase().includes(cleanH))) {
+              mIdx = i
+              mLevel = hm[1].length
+              mFull = hLines[i]
+              break
+            }
+          }
+          if (mIdx !== -1) {
+            let eIdx = hLines.length
+            for (let j = mIdx + 1; j < hLines.length; j++) {
+              const nh = hLines[j].match(/^(#{1,6})\s+/)
+              if (nh && (mLevel === 1 || nh[1].length <= mLevel)) {
+                eIdx = j
+                break
+              }
+            }
+            const cleanBody = hunkReplace.trim().replace(/^#{1,6}\s+[^\r\n]+[\r\n]*/, '').trim()
+            workingCode = [...hLines.slice(0, mIdx + 1), '', cleanBody, '', ...hLines.slice(eIdx)].join('\n')
+            if (changeLine === null) changeLine = mIdx + 1
+            appliedSummaries.push(`section "${mFull}"`)
+            writtenChunks.push(cleanBody)
+          } else {
+            const formatted = hunk.sectionHeader.trim().startsWith('#') ? hunk.sectionHeader.trim() : `## ${hunk.sectionHeader.trim()}`
+            workingCode = workingCode.trimEnd() + `\n\n${formatted}\n\n${hunkReplace.trim()}\n`
+            appliedSummaries.push(`added section "${formatted}"`)
+            writtenChunks.push(hunkReplace.trim())
+          }
+        } else if (hunk.search !== undefined && hunk.search !== '') {
+          if (workingCode.includes(hunk.search)) {
+            if (changePos === null) changePos = workingCode.indexOf(hunk.search)
+            workingCode = workingCode.replace(hunk.search, hunkReplace)
+            appliedSummaries.push(`hunk #${idx + 1}`)
+            writtenChunks.push(hunkReplace)
+          } else {
+            const escaped = hunk.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+            const regex = new RegExp(escaped, 'i')
+            if (regex.test(workingCode)) {
+              if (changePos === null) changePos = workingCode.search(regex)
+              workingCode = workingCode.replace(regex, hunkReplace)
+              appliedSummaries.push(`hunk #${idx + 1}`)
+              writtenChunks.push(hunkReplace)
+            } else {
+              const availableHeadings = (workingCode.match(/^#{1,6}\s+.+$/gm) || []).slice(0, 15)
+              return {
+                success: false,
+                title: target.title,
+                error: `Edit hunk #${idx + 1} search text not found in "${target.title}": "${hunk.search.slice(0, 80)}". No changes were saved.`,
+                availableHeadings
+              }
+            }
+          }
+        } else if (hunk.insertAfter) {
+          const idxPos = workingCode.indexOf(hunk.insertAfter.trim())
+          if (idxPos !== -1) {
+            const ins = idxPos + hunk.insertAfter.trim().length
+            workingCode = workingCode.slice(0, ins) + '\n\n' + hunkReplace.trim() + '\n' + workingCode.slice(ins)
+            appliedSummaries.push(`insertAfter #${idx + 1}`)
+            writtenChunks.push(hunkReplace.trim())
+          }
+        } else if (hunk.insertBefore) {
+          const idxPos = workingCode.indexOf(hunk.insertBefore.trim())
+          if (idxPos !== -1) {
+            workingCode = workingCode.slice(0, idxPos) + hunkReplace.trim() + '\n\n' + workingCode.slice(idxPos)
+            appliedSummaries.push(`insertBefore #${idx + 1}`)
+            writtenChunks.push(hunkReplace.trim())
+          }
+        }
+      }
+
+      newCode = workingCode
+      writtenText = writtenChunks.join('\n\n')
+      summaryText = `Applied ${appliedSummaries.length} targeted edits to **${target.title}**`
+      diffPreview = `\`\`\`markdown\n${writtenText.slice(0, 400)}\n\`\`\``
+    } else if (typeof startLine === 'number' && typeof endLine === 'number' && effectiveReplace !== undefined) {
+      const lines = currentCode.split('\n')
+      const sLine = Math.max(1, Math.floor(startLine))
+      const eLine = Math.min(lines.length, Math.max(sLine, Math.floor(endLine)))
+      const before = lines.slice(0, sLine - 1)
+      const after = lines.slice(eLine)
+      newCode = [...before, effectiveReplace, ...after].join('\n')
+      writtenText = effectiveReplace
+      changeLine = sLine
+      changePos = before.join('\n').length + (before.length > 0 ? 1 : 0)
+      summaryText = `Updated lines ${sLine}–${eLine} in **${target.title}**`
+      diffPreview = `\`\`\`markdown\n${effectiveReplace.trim()}\n\`\`\``
+    } else if (position === 'top' && effectiveReplace !== undefined) {
       const titleMatch = currentCode.match(/^#\s+[^\r\n]+[\r\n]*/m)
       if (titleMatch) {
         const afterTitleIndex = (titleMatch.index || 0) + titleMatch[0].length
@@ -439,34 +626,13 @@ export const updateFileTool = aiSdk.tool({
               newCode = currentCode.replace(regex, effectiveReplace ?? '')
               writtenText = effectiveReplace ?? ''
               summaryText = `Updated targeted section in **${target.title}**`
-            } else if (effectiveReplace !== undefined) {
-              const currentLines2 = currentCode.split('\n')
-              let titleLineIdx = -1
-              for (let i = 0; i < currentLines2.length; i++) {
-                if (currentLines2[i].match(/^#\s+/)) {
-                  titleLineIdx = i
-                  break
-                }
-              }
-              let firstSubheadingIdx = currentLines2.length
-              const searchStart = titleLineIdx !== -1 ? titleLineIdx + 1 : 0
-              for (let j = searchStart; j < currentLines2.length; j++) {
-                if (currentLines2[j].match(/^#{1,6}\s+/)) {
-                  firstSubheadingIdx = j
-                  break
-                }
-              }
-              const beforeLines = titleLineIdx !== -1 ? currentLines2.slice(0, titleLineIdx + 1) : []
-              const afterLines = currentLines2.slice(firstSubheadingIdx)
-              newCode = [...beforeLines, '', effectiveReplace.trim(), '', ...afterLines].join('\n')
-              writtenText = effectiveReplace.trim()
-              summaryText = `Updated opening section in **${target.title}**`
-              changeLine = titleLineIdx !== -1 ? titleLineIdx + 2 : 1
-              changePos = beforeLines.length > 0 ? beforeLines.join('\n').length + 1 : 0
             } else {
+              const availableHeadings = (currentCode.match(/^#{1,6}\s+.+$/gm) || []).slice(0, 15)
               return {
                 success: false,
-                error: `Target text to replace was not found in "${target.title}". Tip: specify sectionHeader to update by heading.`
+                title: target.title,
+                error: `Target text to replace was not found in "${target.title}". File was NOT modified to prevent accidental data loss. Tip: use checkFile or readFile to inspect exact lines/headings, or pass sectionHeader / startLine & endLine.`,
+                availableHeadings
               }
             }
           }
@@ -554,7 +720,7 @@ export const updateFileTool = aiSdk.tool({
     } else {
       return {
         success: false,
-        error: 'Must provide `sectionHeader`, `search` & `replace`, `insertAfter`, `insertBefore`, or `content`'
+        error: 'Must provide `sectionHeader`, `search` & `replace`, `startLine` & `endLine`, `edits`, `insertAfter`, `insertBefore`, or `content`'
       }
     }
 
@@ -620,9 +786,13 @@ export const updateFileTool = aiSdk.tool({
 
     return {
       success: true,
+      id: target.id,
       title: target.title,
+      folderId: target.folderId || '',
       addedWords,
       removedWords,
+      previousContent: currentCode,
+      newContent: newCode,
       writtenContent: writtenText || newCode,
       diffPreview: diffPreview,
       summary: `✏️ Updated [[${target.title}]] ${diffBadge}`,

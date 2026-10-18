@@ -80,6 +80,8 @@ export const getToolStatusDescription = (toolName: string, args: Record<string, 
     case 'luminaQueryIndex':
     case 'queryIndex':
       return `🔍 *Querying workspace index (${args.tag ? '#' + args.tag : ''}${args.folder ? ' in ' + args.folder : ''}${args.query ? ' "' + args.query + '"' : ''})...*`
+    case 'grepWorkspace':
+      return `🔎 *Searching workspace lines for "${args.query || '...'}"${args.folder ? ' in ' + args.folder : ''}...*`
     default:
       return `⚙️ *Working on ${toolName}...*`
   }
@@ -95,6 +97,8 @@ export const getToolInputStartStatus = (toolName?: string): string => {
     case 'luminaQueryIndex':
     case 'queryIndex':
       return 'Querying workspace index...'
+    case 'grepWorkspace':
+      return 'Searching workspace lines...'
     case 'createFolder':
       return 'Planning folder creation...'
     case 'createFile':

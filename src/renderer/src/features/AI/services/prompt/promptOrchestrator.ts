@@ -107,10 +107,31 @@ export const buildSystemPrompt = async ({
         userMemoryBlock
       )
 
-  // ── Tier 1: Explicit @-Mentioned Notes ───────────────────────────────────────
+  // ── Tier 1: Explicit @-Mentioned Notes & Folders ─────────────────────────────
   if (mentionedSnippets.length > 0) {
+    const mentionedFoldersMap = new Map<string, string[]>()
+    mentionedSnippets.forEach((snip: any) => {
+      const f = snip.fromMentionedFolder || snip.folderId
+      if (f) {
+        if (!mentionedFoldersMap.has(f)) mentionedFoldersMap.set(f, [])
+        mentionedFoldersMap.get(f)!.push(snip.title)
+      }
+    })
+
+    const perNoteBudget =
+      mentionedSnippets.length > 3
+        ? Math.max(4000, Math.floor(60000 / mentionedSnippets.length))
+        : 25000
+
     systemPrompt +=
-      '\n\n**🎯 PRIMARY TARGET FILES (@-MENTIONED BY USER — YOUR HIGHEST FOCUS):**\n'
+      '\n\n**🎯 PRIMARY TARGET FILES & FOLDERS (@-MENTIONED BY USER — YOUR HIGHEST FOCUS):**\n'
+    if (mentionedFoldersMap.size > 0) {
+      mentionedFoldersMap.forEach((titles, folderName) => {
+        systemPrompt += `[Mentioned Folder: "${folderName}" — ${titles.length} file(s) inside: ${titles.join(', ')}]\n`
+      })
+      systemPrompt += '\n'
+    }
+
     mentionedSnippets.forEach((snip: any) => {
       const currentContent =
         snip.isBrain
@@ -118,24 +139,30 @@ export const buildSystemPrompt = async ({
           : drafts?.[snip.id] !== undefined
             ? drafts[snip.id]
             : snip.code || ''
-      systemPrompt += `[Target Note: ${snip.title}]\n${truncateForContext(currentContent, 25000)}\n\n`
+      const displayPath = snip.folderId ? `${snip.folderId}/${snip.title}` : snip.title
+      systemPrompt += `[Target Note: ${displayPath}]\n${truncateForContext(currentContent, perNoteBudget)}\n\n`
     })
     systemPrompt +=
       'CRITICAL DIRECTIVE:\n' +
-      '1. The note content is ALREADY PROVIDED ABOVE in this prompt. Do NOT call readFile for this note.\n' +
+      '1. All note contents (including every file inside any @-mentioned folder) are ALREADY PROVIDED ABOVE in this prompt. Do NOT call readFile for these notes.\n' +
       '2. Answer the user\'s question immediately, accurately, and thoroughly using the content above.\n' +
-      '3. NEVER output conversational filler like "Let me check" or "Let me read what is in it". You ALREADY have the content right here, so give the actual answer immediately!\n'
+      '3. NEVER claim you cannot see the files inside the mentioned folder or output filler like "Let me check". You ALREADY have every file\'s name and full content right here!\n'
   }
 
-  // ── Tier 2: Implicitly Referenced Files ─────────────────────────────────────
+  // ── Tier 2: Implicitly Referenced Files & Folders ───────────────────────────
   if (requestedFiles.length > 0) {
+    const perFileBudget =
+      requestedFiles.length > 3
+        ? Math.max(4000, Math.floor(60000 / requestedFiles.length))
+        : 25000
     systemPrompt +=
-      '\n\n**Workspace Files Referenced (content already provided below):**\n'
+      '\n\n**Workspace Files & Folder Contents Referenced (content already provided below):**\n'
     requestedFiles.forEach((f: any) => {
       if (!mentionedSnippets.some((m) => m.id === f.id)) {
         const currentContent =
           drafts?.[f.id] !== undefined ? drafts[f.id] : f.code || ''
-        systemPrompt += `--- ${f.title} ---\n${truncateForContext(currentContent, 25000)}\n`
+        const displayPath = f.folderId ? `${f.folderId}/${f.title}` : f.title
+        systemPrompt += `--- ${displayPath} ---\n${truncateForContext(currentContent, perFileBudget)}\n`
       }
     })
     systemPrompt +=

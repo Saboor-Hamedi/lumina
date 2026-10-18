@@ -41,6 +41,7 @@ export const TOOL_TAG_NAMES = [
   'updateMemory',
   'forgetMemory',
   'forgeMemory',
+  'grepWorkspace',
   'checkFile',
   'createFile',
   'updateFile',

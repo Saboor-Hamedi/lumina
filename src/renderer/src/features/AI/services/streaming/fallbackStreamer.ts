@@ -12,6 +12,7 @@
 
 import type { AIModeConfig } from '../../types/ai.types'
 import { getToolResultThought, getToolStatusDescription } from './luminaDisplayBuilder'
+import { parseAndExecuteDSML } from './toolCallInterceptor'
 
 export interface RunFallbackProviderStreamParams {
   provider: any
@@ -39,6 +40,20 @@ export const runFallbackProviderStream = async ({
   onToolActivity
 }: RunFallbackProviderStreamParams): Promise<string> => {
   let fullContent = ''
+  const activitySummaries: string[] = []
+  const specialBadges: string[] = []
+
+  const buildCombinedDisplay = (rawText: string) => {
+    const blocks: string[] = [...specialBadges]
+    if (activitySummaries.length > 0) {
+      blocks.push(`<lumina-activity>\n${activitySummaries.join('\n')}\n</lumina-activity>`)
+    }
+    if (rawText.trim()) {
+      blocks.push(rawText.trim())
+    }
+    return blocks.join('\n\n')
+  }
+
   const providerMessages = systemPrompt
     ? [{ role: 'system', content: systemPrompt }, ...finalMessages]
     : finalMessages
@@ -49,7 +64,34 @@ export const runFallbackProviderStream = async ({
     signal: controller.signal,
     tools: sdkTools,
     onToolActivity: (toolName: string, args: Record<string, any>, result: any) => {
-      if (result) onToolActivity?.(toolName, args, result)
+      if (result) {
+        onToolActivity?.(toolName, args, result)
+        if (toolName === 'diagnoseSystem' || toolName === 'luminaDiagnoseSystem') {
+          const payload = JSON.stringify({ ...(result?.result || {}), isChecking: false })
+          specialBadges.push(`<lumina-health>\n${payload}\n</lumina-health>`)
+        } else if (toolName === 'auditWikilinks') {
+          const payload = JSON.stringify({ ...(result?.result || result || {}), isScanning: false })
+          specialBadges.push(`<lumina-audit>\n${payload}\n</lumina-audit>`)
+        } else if (toolName === 'luminaQueryIndex' || toolName === 'queryIndex') {
+          const rObj = result?.result || result || {}
+          const payload = JSON.stringify({
+            totalWorkspaceNotes: rObj.totalWorkspaceNotes ?? 0,
+            totalMatched: rObj.totalMatched ?? 0,
+            filters: rObj.filters ?? {},
+            notes: rObj.notes ?? [],
+            foldersRepresented: rObj.foldersRepresented ?? [],
+            isQuerying: false
+          })
+          specialBadges.push(`<lumina-index>\n${payload}\n</lumina-index>`)
+        } else if (['saveMemory', 'updateMemory', 'forgetMemory', 'forgeMemory'].includes(toolName)) {
+          if (result?.summary) {
+            specialBadges.push(`<lumina-memory>\n${result.summary}\n</lumina-memory>`)
+          }
+        } else if (result?.summary && !activitySummaries.includes(result.summary)) {
+          activitySummaries.push(result.summary)
+        }
+        onContentUpdate(buildCombinedDisplay(fullContent))
+      }
       const target = args?.title || args?.path || args?.oldTitle || ''
       onThinkingStatusUpdate(
         result
@@ -68,7 +110,7 @@ export const runFallbackProviderStream = async ({
       rafId = null
     }
     pendingUpdate = false
-    onContentUpdate(fullContent)
+    onContentUpdate(buildCombinedDisplay(fullContent))
     onThinkingStatusUpdate(fullContent.trim().length > 30 ? '' : 'Writing...')
   }
 
@@ -87,7 +129,20 @@ export const runFallbackProviderStream = async ({
     }
   }
 
+  if (sdkTools && fullContent) {
+    const intercepted = await parseAndExecuteDSML(fullContent, sdkTools, activitySummaries)
+    if (intercepted.didExecute) {
+      fullContent = intercepted.cleanedText
+      for (const out of intercepted.toolOutputs) {
+        if (out.type === 'health') specialBadges.push(`<lumina-health>\n${out.content}\n</lumina-health>`)
+        else if (out.type === 'audit') specialBadges.push(`<lumina-audit>\n${out.content}\n</lumina-audit>`)
+        else if (out.type === 'index') specialBadges.push(`<lumina-index>\n${out.content}\n</lumina-index>`)
+        else if (out.type === 'memory') specialBadges.push(`<lumina-memory>\n${out.content}\n</lumina-memory>`)
+      }
+    }
+  }
+
   flush()
 
-  return fullContent
+  return buildCombinedDisplay(fullContent)
 }

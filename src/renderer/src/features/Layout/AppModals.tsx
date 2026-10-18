@@ -32,6 +32,7 @@ import { VoiceCapsule } from '../voice'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { renameNote } from '../../core/hooks/renameNote'
+import Theme from '../theme/Theme'
 
 // Helper to retry dynamic imports if Vite dev server is still starting/recompiling
 const lazyWithRetry = <T extends React.ComponentType<any>>(
@@ -51,7 +52,6 @@ const lazyWithRetry = <T extends React.ComponentType<any>>(
 // Lazy-load heavy modals and panels to optimize initial bundle evaluation time
 const LuminaChat = lazyWithRetry(() => import('../AI/Lumina'))
 const Settings = lazyWithRetry(() => import('../Settings/Settings'))
-const Theme = lazyWithRetry(() => import('../theme/Theme'))
 const Documentation = lazyWithRetry(() => import('../Docs/Documentation'))
 const Graph = lazyWithRetry(() => import('../graph/Graph'))
 const Guide = lazyWithRetry(() => import('../modals/Guide'))
@@ -303,6 +303,7 @@ export const AppModals: React.FC<AppModalsProps> = ({
             if (newFolderPath !== folderId) {
               try {
                 await (window as any).api.renameFolder(folderId, newFolderPath)
+                await useWorkspaceStore.getState().migrateFolderColor(folderId, newFolderPath)
                 useWorkspaceStore.getState().setSelectedFolder(newFolderPath)
                 await loadWorkspace()
               } catch (err) {

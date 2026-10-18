@@ -24,9 +24,11 @@ export const useTheme = (): UseThemeReturn => {
     return localStorage.getItem('theme-id') || 'dark'
   })
 
-  // Apply theme on mount
+  // Apply theme on mount only if not already applied to documentElement
   useEffect(() => {
-    applyThemeUtil(currentTheme)
+    if (document.documentElement.getAttribute('data-theme') !== currentTheme) {
+      applyThemeUtil(currentTheme)
+    }
   }, [])
 
   /**

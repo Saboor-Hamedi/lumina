@@ -11,6 +11,7 @@ import { renameFolderTool } from './renameFolder'
 import { deleteFolderTool } from './deleteFolder'
 import { moveFolderTool } from './moveFolder'
 import { checkFileTool } from './checkFile'
+import { grepWorkspaceTool } from './grepWorkspace'
 import { clearFileTool } from './clearFile'
 import { readBrainFileTool } from './readBrainFile'
 import { luminaDiagnoseSystemTool, diagnoseSystemTool } from './luminaDiagnoseSystem'
@@ -18,13 +19,21 @@ import { auditWikilinksTool } from './auditWikilinks'
 import { luminaQueryIndexTool, queryIndexTool } from './luminaQueryIndex'
 import { saveMemoryTool, updateMemoryTool, forgetMemoryTool } from '../../../core/ai/memory'
 
-export { luminaDiagnoseSystemTool, diagnoseSystemTool, auditWikilinksTool, luminaQueryIndexTool, queryIndexTool }
+export {
+  luminaDiagnoseSystemTool,
+  diagnoseSystemTool,
+  auditWikilinksTool,
+  luminaQueryIndexTool,
+  queryIndexTool,
+  grepWorkspaceTool
+}
 
 export const getAITools = (blockReadFile?: boolean, allowOpenFile: boolean = false): Record<string, any> => {
   const tools: Record<string, any> = {
     createFile: createFileTool,
     readFile: getReadFileTool(blockReadFile),
     checkFile: checkFileTool,
+    grepWorkspace: grepWorkspaceTool,
     // Expose one public tool name: advertising both aliases makes some models
     // execute the same diagnostics twice. The legacy name remains understood
     // by the stream parser for old model responses.

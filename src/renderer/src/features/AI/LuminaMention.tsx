@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { FileText, Brain } from 'lucide-react'
+import { FileText, Brain, Folder } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { getBrainDocuments } from './services/brainKnowledge'
@@ -15,7 +15,7 @@ export interface LuminaMentionProps {
 
 /**
  * LuminaMention provides a keyboard-navigable autocomplete overlay for `@` mentions,
- * searching through active workspace notes and system brain documentation.
+ * searching through active workspace folders, notes, and system brain documentation.
  */
 export const LuminaMention: React.FC<LuminaMentionProps> = ({
   isOpen,
@@ -25,6 +25,7 @@ export const LuminaMention: React.FC<LuminaMentionProps> = ({
 }) => {
   const [selectedIndex, setSelectedIndex] = useState<number>(0)
   const notes = useWorkspaceStore((state: any) => state.notes) || []
+  const folders = useWorkspaceStore((state: any) => state.folders) || []
 
   useKeyboardShortcuts({
     onEscape: isOpen
@@ -43,7 +44,40 @@ export const LuminaMention: React.FC<LuminaMentionProps> = ({
   const brainDocs = useMemo(() => getBrainDocuments(), [])
 
   const allItems = useMemo(() => {
-    const list = [...(notes || [])]
+    const list: any[] = []
+
+    // Collect all explicit + implicit folder paths from workspace notes
+    const folderSet = new Set<string>(Array.isArray(folders) ? folders : [])
+    ;(notes || []).forEach((n: any) => {
+      if (n?.folderId && typeof n.folderId === 'string') {
+        const clean = n.folderId.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+        if (clean) folderSet.add(clean)
+      }
+    })
+
+    Array.from(folderSet)
+      .sort((a, b) => a.localeCompare(b))
+      .forEach((folderPath: string) => {
+        const normFolder = folderPath.toLowerCase().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+        const folderNotes = (notes || []).filter((n: any) => {
+          const nf = String(n?.folderId || '')
+            .toLowerCase()
+            .replace(/\\/g, '/')
+            .replace(/^\/+|\/+$/g, '')
+          return nf === normFolder || nf.startsWith(`${normFolder}/`)
+        })
+        list.push({
+          id: `folder:${folderPath}`,
+          title: folderPath,
+          name: folderPath.split('/').pop() || folderPath,
+          folderId: folderPath,
+          isFolder: true,
+          noteCount: folderNotes.length
+        })
+      })
+
+    list.push(...(notes || []))
+
     brainDocs.forEach((bd: any) => {
       list.push({
         id: bd.id,
@@ -54,7 +88,7 @@ export const LuminaMention: React.FC<LuminaMentionProps> = ({
       })
     })
     return list
-  }, [notes, brainDocs])
+  }, [notes, folders, brainDocs])
 
   const filteredSnippets = allItems
     .filter((item: any) => {
@@ -62,10 +96,11 @@ export const LuminaMention: React.FC<LuminaMentionProps> = ({
       const query = filterText.toLowerCase()
       return (
         item.title.toLowerCase().includes(query) ||
-        (item.name && item.name.toLowerCase().includes(query))
+        (item.name && item.name.toLowerCase().includes(query)) ||
+        (item.folderId && String(item.folderId).toLowerCase().includes(query))
       )
     })
-    .slice(0, 6)
+    .slice(0, 8)
 
   useEffect(() => {
     setSelectedIndex(0)
@@ -106,6 +141,9 @@ export const LuminaMention: React.FC<LuminaMentionProps> = ({
   }, [isOpen, filteredSnippets, selectedIndex, onSelect, onClose])
 
   const getItemIcon = (snippet: any) => {
+    if (snippet.isFolder) {
+      return <Folder size={13} style={{ color: 'var(--text-accent)' }} />
+    }
     if (snippet.isBrain) {
       return <Brain size={13} style={{ color: 'var(--text-accent)' }} />
     }
@@ -113,6 +151,10 @@ export const LuminaMention: React.FC<LuminaMentionProps> = ({
   }
 
   const getItemBadge = (snippet: any) => {
+    if (snippet.isFolder) {
+      const count = snippet.noteCount ?? 0
+      return `Folder (${count})`
+    }
     if (snippet.isBrain) return 'Doc'
     const title = (snippet.title || snippet.name || '').toLowerCase()
     if (/\.(jsx?|tsx?|css|scss|py|json|html|sh|sql)$/i.test(title)) return 'Code'

@@ -111,13 +111,46 @@ function recordWorkspaceReviewChange(
     removedWords = countWords(note?.code)
   }
 
+  const noteId = String(result.id || note?.id || '') || undefined
+  const previousContent =
+    typeof result.previousContent === 'string'
+      ? result.previousContent
+      : action === 'updated' && typeof note?.code === 'string'
+        ? note.code
+        : undefined
+  const newContent =
+    typeof result.newContent === 'string'
+      ? result.newContent
+      : typeof result.writtenContent === 'string'
+        ? result.writtenContent
+        : undefined
+
   const existing = changes.find((change) => change.path.toLowerCase() === path.toLowerCase())
   if (existing) {
     existing.addedWords += addedWords
     existing.removedWords += removedWords
+    if (noteId && !existing.noteId) existing.noteId = noteId
+    if (title && !existing.title) existing.title = title
+    if (folder && !existing.folderId) existing.folderId = folder
+    if (previousContent !== undefined && existing.previousContent === undefined) {
+      existing.previousContent = previousContent
+    }
+    if (newContent !== undefined) {
+      existing.newContent = newContent
+    }
     if (action === 'deleted' || action === 'renamed' || action === 'moved') existing.action = action
   } else {
-    changes.push({ path, action, addedWords, removedWords })
+    changes.push({
+      path,
+      action,
+      addedWords,
+      removedWords,
+      noteId,
+      title: title || undefined,
+      folderId: folder || undefined,
+      previousContent,
+      newContent
+    })
   }
 }
 
@@ -725,6 +758,10 @@ export const useAIStore = create<AIStore>((set, get) => {
       const settingsObj = settings?.settings || settings || {}
       const { deepSeekKey } = settingsObj
       const visibleKey = deepSeekKey || (import.meta as any).env?.VITE_DEEPSEEK_KEY
+      const resolvedEarlyProvider = resolveProviderConfig(settingsObj)
+      const hasProviderAccess =
+        resolvedEarlyProvider.providerType === 'ollama' ||
+        Boolean(resolvedEarlyProvider.apiKey || visibleKey)
 
       const userMsg: ChatMessage = {
         id: crypto.randomUUID(),
@@ -749,19 +786,19 @@ export const useAIStore = create<AIStore>((set, get) => {
         /^(?:tell\s+me\s+about\s+(?:your|you|lumina)\s+health|check\s+(?:your\s+)?health|run\s+diagnostics|system\s+health|how\s+is\s+your\s+health)(?:\s+.*)?$/i.test(cleanMessage) ||
         /^(?:you\s+)?run\s+(?:the\s+)?(?:\/)?(?:doctor|docker)(?:\s+.*)?$/i.test(cleanMessage)
 
-      // Only execute directly offline if explicitly /doctor or if there is no API key available
-      const isDirectDoctorCmd = isExplicitDoctorCmd || (!visibleKey && isConversationalHealth)
+      // Only execute directly offline if explicitly /doctor or if there is no provider access available
+      const isDirectDoctorCmd = isExplicitDoctorCmd || (!hasProviderAccess && isConversationalHealth)
 
       const isExplicitAuditCmd = /^\/(?:audit)\b/i.test(cleanMessage)
       const isConversationalAudit =
         /^(?:audit\s+(?:wiki)?links|check\s+(?:my\s+)?links|find\s+broken\s+links|can\s+you\s+find\s+links|find\s+links|how\s+many\s+files\s+do\s+not\s+have\s+wikilink|orphan\s+notes|unlinked\s+notes|audit\b)/i.test(cleanMessage)
-      const isDirectAuditCmd = isExplicitAuditCmd || (!visibleKey && isConversationalAudit)
+      const isDirectAuditCmd = isExplicitAuditCmd || (!hasProviderAccess && isConversationalAudit)
 
       const isExplicitIndexCmd = /^\/(?:index|query)(?:\s+.*)?$/i.test(cleanMessage)
       const isConversationalIndex =
         /^(?:find\s+(?:me\s+)?(?:all\s+)?(?:the\s+)?tags|all\s+(?:the\s+)?tags|what\s+tags|tags?\s+in\s+(?:the\s+)?workspace|list\s+(?:all\s+)?tags|show\s+(?:me\s+)?(?:all\s+)?tags|notes?\s+with\s+tags?|find\s+notes?\s+tagged|notes?\s+linking\s+to|notes?\s+that\s+link\s+to|backlinks\s+(?:for|to)|which\s+notes?\s+link|which\s+notes?\s+have\s+tags?)(?:\s+.*)?$/i.test(cleanMessage)
 
-      const isDirectIndexCmd = isExplicitIndexCmd || (!visibleKey && isConversationalIndex)
+      const isDirectIndexCmd = isExplicitIndexCmd || (!hasProviderAccess && isConversationalIndex)
 
       if (isDirectIndexCmd) {
         set({
@@ -900,7 +937,7 @@ export const useAIStore = create<AIStore>((set, get) => {
         }
       }
 
-      if (!visibleKey) {
+      if (!hasProviderAccess) {
         // 1. Tag or Query Index capability inquiry
         const isTagQueryCapability =
           /\b(can\s+you\s+find\s+(?:me\s+)?(?:a\s+)?tag\s+or\s+query|can\s+you\s+find\s+(?:me\s+)?(?:a\s+)?tags?|can\s+you\s+query|tell\s+me\s+about\s+(?:lumina\s+)?(?:query\s+)?index|what\s+is\s+(?:lumina\s+)?(?:query\s+)?index)\b/i.test(
@@ -1026,8 +1063,18 @@ export const useAIStore = create<AIStore>((set, get) => {
           : Object.values(vs.snippets || vs.notes || {})
       const allFolders = vs.folders || []
 
-      const mentionedSnippets = resolveMentions(cleanMessage, attachedMentions, allSnippets)
-      const requestedFiles = resolveReferencedFiles(cleanMessage, allSnippets, mentionedSnippets)
+      const mentionedSnippets = resolveMentions(
+        cleanMessage,
+        attachedMentions,
+        allSnippets,
+        allFolders
+      )
+      const requestedFiles = resolveReferencedFiles(
+        cleanMessage,
+        allSnippets,
+        mentionedSnippets,
+        allFolders
+      )
       const { providerType: configuredProviderType } = resolveProviderConfig(settingsObj)
       const isOllamaCreationRequest =
         configuredProviderType === 'ollama' &&

@@ -428,6 +428,7 @@ export function useExplorerOperations({
 
         if (newPath !== renamingFolder) {
           await (window as any).api.renameFolder(renamingFolder, newPath)
+          await useWorkspaceStore.getState().migrateFolderColor(renamingFolder, newPath)
           await loadWorkspace()
         }
       } catch (err) {

@@ -43,6 +43,11 @@ export interface WorkspaceReviewChange {
   action: 'created' | 'updated' | 'deleted' | 'renamed' | 'moved' | 'folder'
   addedWords: number
   removedWords: number
+  noteId?: string
+  title?: string
+  folderId?: string
+  previousContent?: string
+  newContent?: string
 }
 
 export interface ChatSession {

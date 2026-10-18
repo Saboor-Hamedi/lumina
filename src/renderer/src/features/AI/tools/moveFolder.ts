@@ -64,6 +64,9 @@ export const moveFolderTool = aiSdk.tool({
 
       if ((window as any).api?.renameFolder) {
         await (window as any).api.renameFolder(matchedSource, newPath)
+        if (vs.migrateFolderColor) {
+          await vs.migrateFolderColor(matchedSource, newPath)
+        }
       } else {
         return { success: false, error: 'renameFolder API is not available' }
       }

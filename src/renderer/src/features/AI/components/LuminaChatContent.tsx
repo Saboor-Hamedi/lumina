@@ -65,10 +65,11 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
       }))
     )
 
-    const { selectedNote, notes, activeTabId, openLuminaTab } = useWorkspaceStore(
+    const { selectedNote, notes, folders, activeTabId, openLuminaTab } = useWorkspaceStore(
       useShallow((state: any) => ({
         selectedNote: state.selectedNote,
         notes: state.notes || [],
+        folders: state.folders || [],
         activeTabId: state.activeTabId,
         openLuminaTab: state.openLuminaTab
       }))
@@ -83,20 +84,22 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
     const brainDocs = useMemo(() => getBrainDocuments(), [])
 
     const userMentionRegex = useMemo(() => {
+      const folderItems = (folders || []).flatMap((f: string) => [f, f.split('/').pop() || f])
       const list = [...(notes || []), ...brainDocs]
-      if (list.length === 0) return /(@\[[^\]]+\]|@[a-zA-Z0-9_\-./]+)/g
-      const titles = list
-        .map((s: any) => s.title || s.name)
+      const titles = [
+        ...folderItems,
+        ...list.map((s: any) => s.title || s.name)
+      ]
         .filter(Boolean)
         .sort((a: string, b: string) => b.length - a.length)
-        .slice(0, 100)
+        .slice(0, 120)
         .map((t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
 
       if (titles.length > 0) {
         return new RegExp(`(@\\[[^\\]]+\\]|@(?:${titles.join('|')}|[a-zA-Z0-9_\\-./]+))`, 'gi')
       }
       return /(@\[[^\]]+\]|@[a-zA-Z0-9_\-./]+)/g
-    }, [notes, brainDocs])
+    }, [notes, folders, brainDocs])
 
     const [showSessions, setShowSessions] = useState<boolean>(false)
     const [isWorkbenchOpen, setIsWorkbenchOpen] = useState<boolean>(false)

@@ -3,177 +3,286 @@ import { createPortal } from 'react-dom'
 import { PanelLeftClose, PanelLeftOpen, Square, Copy, X, Search } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useTheme } from './hooks/useTheme'
+import type { ThemeDefinition } from './hooks/themeDefinitions'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import '../modals/css/guide.css'
 import '../template/css/template.css'
 import './css/theme.css'
 
-// Rich Theme Card in Sidebar matching Daily Notes (TemplateSidebarItem)
-const ThemeSidebarItem = memo(({ themeData, isActive, isSelected, onSelect }) => {
-  const c = themeData.colors || {}
-  const bgApp = c['--bg-app'] || '#121218'
-  const bgSidebar = c['--bg-sidebar'] || '#16161e'
-  const bgEditor = c['--bg-editor'] || '#1a1a24'
-  const accent = c['--text-accent'] || '#40bafa'
-  const text = c['--text-main'] || '#ffffff'
-  const border = c['--border-dim'] || 'rgba(255,255,255,0.08)'
+export interface ThemeProps {
+  isOpen?: boolean
+  onClose?: () => void
+}
 
-  const isDark =
-    bgApp.toLowerCase().includes('#0') ||
-    bgApp.toLowerCase().includes('#1') ||
-    bgApp.toLowerCase().includes('#2')
+interface ThemeSidebarItemProps {
+  themeData: ThemeDefinition
+  isActive: boolean
+  isSelected: boolean
+  onSelect: (themeId: string) => void
+}
 
-  const handleClick = useCallback(() => {
-    onSelect(themeData.id)
-  }, [onSelect, themeData.id])
+// Lightweight Theme Card in Sidebar — single click changes the entire theme immediately
+const ThemeSidebarItem: React.FC<ThemeSidebarItemProps> = memo(
+  ({ themeData, isActive, isSelected, onSelect }) => {
+    const c = themeData.colors || ({} as Record<string, string>)
+    const bgApp = c['--bg-app'] || '#121218'
+    const bgSidebar = c['--bg-sidebar'] || '#16161e'
+    const bgEditor = c['--bg-editor'] || '#1a1a24'
+    const accent = c['--text-accent'] || '#40bafa'
+    const text = c['--text-main'] || '#ffffff'
+    const border = c['--border-dim'] || 'rgba(255,255,255,0.08)'
 
-  return (
-    <div
-      data-theme-id={themeData.id}
-      className={`template-modal-card ${isSelected ? 'active' : ''}`}
-      onClick={handleClick}
-    >
-      <div className="template-card-header">
-        <div className="template-title-row">
-          <span className="template-modal-name">{themeData.name}</span>
-          {isActive ? (
-            <span
-              className="template-badge"
-              style={{
-                color: '#22c55e',
-                borderColor: 'rgba(34, 197, 94, 0.4)',
-                background: 'rgba(34, 197, 94, 0.1)',
-                fontWeight: 700
-              }}
-            >
-              ACTIVE
-            </span>
-          ) : (
-            <span className="template-badge">
-              {isDark ? 'DARK' : 'LIGHT'}
-            </span>
-          )}
+    const isDark =
+      bgApp.toLowerCase().includes('#0') ||
+      bgApp.toLowerCase().includes('#1') ||
+      bgApp.toLowerCase().includes('#2')
+
+    const handleClick = useCallback(() => {
+      onSelect(themeData.id)
+    }, [onSelect, themeData.id])
+
+    return (
+      <div
+        data-theme-id={themeData.id}
+        className={`template-modal-card ${isSelected ? 'active' : ''}`}
+        onClick={handleClick}
+      >
+        <div className="template-card-header">
+          <div className="template-title-row">
+            <span className="template-modal-name">{themeData.name}</span>
+            {isActive ? (
+              <span
+                className="template-badge"
+                style={{
+                  color: '#22c55e',
+                  borderColor: 'rgba(34, 197, 94, 0.4)',
+                  background: 'rgba(34, 197, 94, 0.1)',
+                  fontWeight: 700
+                }}
+              >
+                ACTIVE
+              </span>
+            ) : (
+              <span className="template-badge">{isDark ? 'DARK' : 'LIGHT'}</span>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div className="template-modal-preview-wrapper">
-        <div
-          className="template-modal-preview"
-          style={{
-            background: bgApp,
-            borderColor: border,
-            padding: '4px'
-          }}
-        >
-          {/* Mini Workspace Window Mockup */}
+        <div className="template-modal-preview-wrapper">
           <div
+            className="template-modal-preview"
             style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              borderRadius: '4px',
-              overflow: 'hidden',
-              border: `1px solid ${border}`,
-              background: bgApp
+              background: bgApp,
+              borderColor: border,
+              padding: '4px'
             }}
           >
-            {/* Titlebar */}
+            {/* Mini Workspace Window Mockup */}
             <div
               style={{
-                height: '12px',
-                background: bgSidebar,
-                borderBottom: `1px solid ${border}`,
+                width: '100%',
+                height: '100%',
                 display: 'flex',
-                alignItems: 'center',
-                padding: '0 5px',
-                gap: '2.5px',
-                flexShrink: 0
+                flexDirection: 'column',
+                borderRadius: '4px',
+                overflow: 'hidden',
+                border: `1px solid ${border}`,
+                background: bgApp
               }}
             >
-              <span style={{ width: '3.5px', height: '3.5px', borderRadius: '50%', background: '#ff5f56' }} />
-              <span style={{ width: '3.5px', height: '3.5px', borderRadius: '50%', background: '#ffbd2e' }} />
-              <span style={{ width: '3.5px', height: '3.5px', borderRadius: '50%', background: '#27c93f' }} />
-              <div style={{ width: '22px', height: '2.5px', borderRadius: '1px', background: text, opacity: 0.25, marginLeft: '3px' }} />
-            </div>
-
-            {/* Body: Sidebar + Editor */}
-            <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-              {/* Sidebar */}
+              {/* Titlebar */}
               <div
                 style={{
-                  width: '32px',
+                  height: '12px',
                   background: bgSidebar,
-                  borderRight: `1px solid ${border}`,
-                  padding: '3px 2px',
+                  borderBottom: `1px solid ${border}`,
                   display: 'flex',
-                  flexDirection: 'column',
+                  alignItems: 'center',
+                  padding: '0 5px',
                   gap: '2.5px',
                   flexShrink: 0
                 }}
               >
-                <div
+                <span
                   style={{
-                    height: '4px',
-                    borderRadius: '1.5px',
-                    background: accent,
-                    opacity: 0.9,
-                    width: '85%'
+                    width: '3.5px',
+                    height: '3.5px',
+                    borderRadius: '50%',
+                    background: '#ff5f56'
                   }}
                 />
-                <div style={{ height: '3px', borderRadius: '1.5px', background: text, opacity: 0.2, width: '70%' }} />
-                <div style={{ height: '3px', borderRadius: '1.5px', background: text, opacity: 0.15, width: '55%' }} />
-              </div>
-
-              {/* Editor */}
-              <div
-                style={{
-                  flex: 1,
-                  background: bgEditor,
-                  padding: '4px 6px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '2.5px',
-                  overflow: 'hidden'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}>
-                  <span style={{ width: '3px', height: '3px', borderRadius: '1px', background: accent }} />
-                  <div style={{ height: '4px', borderRadius: '1px', background: accent, width: '45%' }} />
-                </div>
-                <div style={{ height: '3px', borderRadius: '1px', background: text, opacity: 0.4, width: '80%' }} />
-                <div style={{ height: '3px', borderRadius: '1px', background: text, opacity: 0.25, width: '60%' }} />
+                <span
+                  style={{
+                    width: '3.5px',
+                    height: '3.5px',
+                    borderRadius: '50%',
+                    background: '#ffbd2e'
+                  }}
+                />
+                <span
+                  style={{
+                    width: '3.5px',
+                    height: '3.5px',
+                    borderRadius: '50%',
+                    background: '#27c93f'
+                  }}
+                />
                 <div
                   style={{
-                    marginTop: 'auto',
-                    height: '7px',
-                    borderRadius: '2px',
-                    background: bgApp,
-                    border: `1px solid ${border}`,
+                    width: '22px',
+                    height: '2.5px',
+                    borderRadius: '1px',
+                    background: text,
+                    opacity: 0.25,
+                    marginLeft: '3px'
+                  }}
+                />
+              </div>
+
+              {/* Body: Sidebar + Editor */}
+              <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+                {/* Sidebar */}
+                <div
+                  style={{
+                    width: '32px',
+                    background: bgSidebar,
+                    borderRight: `1px solid ${border}`,
+                    padding: '3px 2px',
                     display: 'flex',
-                    alignItems: 'center',
-                    padding: '0 3px',
-                    gap: '2px'
+                    flexDirection: 'column',
+                    gap: '2.5px',
+                    flexShrink: 0
                   }}
                 >
-                  <div style={{ width: '2.5px', height: '2.5px', borderRadius: '50%', background: accent }} />
-                  <div style={{ height: '2px', borderRadius: '1px', background: accent, opacity: 0.7, width: '35%' }} />
+                  <div
+                    style={{
+                      height: '4px',
+                      borderRadius: '1.5px',
+                      background: accent,
+                      opacity: 0.9,
+                      width: '85%'
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: '3px',
+                      borderRadius: '1.5px',
+                      background: text,
+                      opacity: 0.2,
+                      width: '70%'
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: '3px',
+                      borderRadius: '1.5px',
+                      background: text,
+                      opacity: 0.15,
+                      width: '55%'
+                    }}
+                  />
+                </div>
+
+                {/* Editor */}
+                <div
+                  style={{
+                    flex: 1,
+                    background: bgEditor,
+                    padding: '4px 6px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2.5px',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}>
+                    <span
+                      style={{
+                        width: '3px',
+                        height: '3px',
+                        borderRadius: '1px',
+                        background: accent
+                      }}
+                    />
+                    <div
+                      style={{
+                        height: '4px',
+                        borderRadius: '1px',
+                        background: accent,
+                        width: '45%'
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      height: '3px',
+                      borderRadius: '1px',
+                      background: text,
+                      opacity: 0.4,
+                      width: '80%'
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: '3px',
+                      borderRadius: '1px',
+                      background: text,
+                      opacity: 0.25,
+                      width: '60%'
+                    }}
+                  />
+                  <div
+                    style={{
+                      marginTop: 'auto',
+                      height: '7px',
+                      borderRadius: '2px',
+                      background: bgApp,
+                      border: `1px solid ${border}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '0 3px',
+                      gap: '2px'
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '2.5px',
+                        height: '2.5px',
+                        borderRadius: '50%',
+                        background: accent
+                      }}
+                    />
+                    <div
+                      style={{
+                        height: '2px',
+                        borderRadius: '1px',
+                        background: accent,
+                        opacity: 0.7,
+                        width: '35%'
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  )
-})
+    )
+  }
+)
 
 ThemeSidebarItem.displayName = 'ThemeSidebarItem'
 
+interface ThemeContentProps {
+  themeData?: ThemeDefinition
+  isActive?: boolean
+}
+
 // Dedicated Right Content Preview Pane for the currently selected theme
-const ThemeContent = memo(({ themeData, isActive, onApply }) => {
+const ThemeContent: React.FC<ThemeContentProps> = memo(({ themeData }) => {
   if (!themeData) return null
-  const c = themeData.colors || {}
+  const c = themeData.colors || ({} as Record<string, string>)
 
   const paletteEntries = [
     { label: 'App', key: '--bg-app', val: c['--bg-app'] || '#121218' },
@@ -191,14 +300,24 @@ const ThemeContent = memo(({ themeData, isActive, onApply }) => {
         <div>
           <h2 className="theme-detail-title">{themeData.name}</h2>
           <p className="theme-detail-desc">
-            {themeData.description || 'Ergonomically tuned color palette designed for high legibility and long-session comfort.'}
+            {themeData.description ||
+              'Ergonomically tuned color palette designed for high legibility and long-session comfort.'}
           </p>
         </div>
       </div>
 
       {/* Palette Color Swatches */}
       <div>
-        <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+        <div
+          style={{
+            fontSize: '10px',
+            fontWeight: 600,
+            color: 'var(--text-muted)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            marginBottom: '4px'
+          }}
+        >
           Color Palette
         </div>
         <div className="theme-palette-grid">
@@ -207,7 +326,9 @@ const ThemeContent = memo(({ themeData, isActive, onApply }) => {
               <span className="theme-palette-swatch" style={{ background: p.val }} />
               <div style={{ minWidth: 0, overflow: 'hidden' }}>
                 <div className="theme-palette-label">{p.label}</div>
-                <div className="theme-palette-value" title={p.val}>{p.val}</div>
+                <div className="theme-palette-value" title={p.val}>
+                  {p.val}
+                </div>
               </div>
             </div>
           ))}
@@ -216,7 +337,16 @@ const ThemeContent = memo(({ themeData, isActive, onApply }) => {
 
       {/* Live Realistic UI Mockup */}
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+        <div
+          style={{
+            fontSize: '10px',
+            fontWeight: 600,
+            color: 'var(--text-muted)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            marginBottom: '4px'
+          }}
+        >
           Live Interface Preview
         </div>
         <div
@@ -237,7 +367,14 @@ const ThemeContent = memo(({ themeData, isActive, onApply }) => {
             <span className="theme-mockup-dot" style={{ background: '#ff5f56' }} />
             <span className="theme-mockup-dot" style={{ background: '#ffbd2e' }} />
             <span className="theme-mockup-dot" style={{ background: '#27c93f' }} />
-            <span style={{ fontSize: '10.5px', color: c['--text-muted'] || '#888', marginLeft: '8px', fontWeight: 500 }}>
+            <span
+              style={{
+                fontSize: '10.5px',
+                color: c['--text-muted'] || '#888',
+                marginLeft: '8px',
+                fontWeight: 500
+              }}
+            >
               Lumina Workspace — {themeData.name}
             </span>
           </div>
@@ -260,10 +397,16 @@ const ThemeContent = memo(({ themeData, isActive, onApply }) => {
               >
                 <span>✦ Overview.md</span>
               </div>
-              <div className="theme-mockup-sidebar-item" style={{ color: c['--text-muted'] || '#888' }}>
+              <div
+                className="theme-mockup-sidebar-item"
+                style={{ color: c['--text-muted'] || '#888' }}
+              >
                 <span>✦ Daily Note.md</span>
               </div>
-              <div className="theme-mockup-sidebar-item" style={{ color: c['--text-muted'] || '#888' }}>
+              <div
+                className="theme-mockup-sidebar-item"
+                style={{ color: c['--text-muted'] || '#888' }}
+              >
                 <span>✦ Architecture.md</span>
               </div>
             </div>
@@ -275,11 +418,18 @@ const ThemeContent = memo(({ themeData, isActive, onApply }) => {
                 color: c['--text-main'] || '#fff'
               }}
             >
-              <div style={{ fontSize: '13px', fontWeight: 700, color: c['--text-accent'] || '#40bafa' }}>
+              <div
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: c['--text-accent'] || '#40bafa'
+                }}
+              >
                 # Exploring Lumina
               </div>
               <div style={{ color: c['--text-muted'] || '#888', fontSize: '11px' }}>
-                Lumina features seamless markdown rendering, instant keyboard navigation, and theme customization.
+                Lumina features seamless markdown rendering, instant keyboard navigation, and theme
+                customization.
               </div>
               <div
                 className="theme-mockup-codeblock"
@@ -293,7 +443,10 @@ const ThemeContent = memo(({ themeData, isActive, onApply }) => {
                 <span style={{ color: '#a6e3a1' }}>&apos;{themeData.id}&apos;</span>
                 <br />
                 <span style={{ color: c['--text-accent'] || '#40bafa' }}>console</span>.log(
-                <span style={{ color: c['--text-muted'] || '#888' }}>`Active theme: $&#123;theme&#125;`</span>)
+                <span style={{ color: c['--text-muted'] || '#888' }}>
+                  `Active theme: $&#123;theme&#125;`
+                </span>
+                )
               </div>
             </div>
           </div>
@@ -305,17 +458,16 @@ const ThemeContent = memo(({ themeData, isActive, onApply }) => {
 
 ThemeContent.displayName = 'ThemeContent'
 
-// Main Modal matching Template.jsx & DailyNotes architecture
-export const Theme = ({ isOpen = false, onClose = () => {} }) => {
+export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {} }) => {
   const { theme, setTheme, allThemes } = useTheme()
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedId, setSelectedId] = useState(theme)
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true)
+  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [selectedId, setSelectedId] = useState<string>(theme)
 
-  const isMaximized = useSettingsStore((s) => s.settings.themeModalMaximized ?? false)
-  const containerRef = useRef(null)
-  const sidebarScrollRef = useRef(null)
-  const searchInputRef = useRef(null)
+  const isMaximized = useSettingsStore((s: any) => s.settings?.themeModalMaximized ?? false)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const sidebarScrollRef = useRef<HTMLDivElement | null>(null)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   // Keep selectedId in sync with current theme only when modal opens
   useEffect(() => {
@@ -323,7 +475,7 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
       setSelectedId(theme)
       setSearchQuery('')
     }
-  }, [isOpen])
+  }, [isOpen, theme])
 
   const filteredThemes = useMemo(() => {
     const q = searchQuery.toLowerCase().trim()
@@ -341,7 +493,7 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
   }, [allThemes, selectedId, filteredThemes])
 
   const handleSelect = useCallback(
-    (themeId) => {
+    (themeId: string) => {
       if (!themeId) return
       setSelectedId(themeId)
       setTheme(themeId)
@@ -354,15 +506,15 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
   }, [])
 
   const handleToggleMaximize = useCallback(() => {
-    const { settings, updateSettings } = useSettingsStore.getState()
-    updateSettings({ themeModalMaximized: !(settings.themeModalMaximized ?? false) })
+    const { settings, updateSettings } = useSettingsStore.getState() as any
+    updateSettings({ themeModalMaximized: !(settings?.themeModalMaximized ?? false) })
   }, [])
 
-  // Container-scoped scroll for keyboard navigation only (never scrolls parent modal or window)
-  const scrollToItem = useCallback((idx) => {
+  // Container-scoped scroll for keyboard navigation only
+  const scrollToItem = useCallback((idx: number) => {
     const container = sidebarScrollRef.current
     if (!container) return
-    const cards = container.querySelectorAll('.template-modal-card')
+    const cards = container.querySelectorAll<HTMLElement>('.template-modal-card')
     const el = cards[idx]
     if (!el) return
     const elTop = el.offsetTop
@@ -371,17 +523,16 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
     const containerBottom = containerTop + container.clientHeight
 
     if (elTop < containerTop) {
-      container.scrollTo({ top: elTop - 8, behavior: 'smooth' })
+      container.scrollTo({ top: elTop - 8, behavior: 'auto' })
     } else if (elBottom > containerBottom) {
-      container.scrollTo({ top: elBottom - container.clientHeight + 8, behavior: 'smooth' })
+      container.scrollTo({ top: elBottom - container.clientHeight + 8, behavior: 'auto' })
     }
   }, [])
 
-  // Keyboard navigation matching Template.jsx
   useEffect(() => {
     if (!isOpen) return
 
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
         e.stopPropagation()
@@ -389,12 +540,16 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
         return
       }
 
-      const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'
+      const target = e.target as HTMLElement | null
+      const isInput = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA'
 
       if (e.key === 'ArrowDown') {
         e.preventDefault()
         const currentIndex = filteredThemes.findIndex((t) => t.id === selectedId)
-        const nextIndex = Math.min(filteredThemes.length - 1, (currentIndex === -1 ? 0 : currentIndex) + 1)
+        const nextIndex = Math.min(
+          filteredThemes.length - 1,
+          (currentIndex === -1 ? 0 : currentIndex) + 1
+        )
         if (filteredThemes[nextIndex]) {
           handleSelect(filteredThemes[nextIndex].id)
           scrollToItem(nextIndex)
@@ -426,7 +581,10 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
   if (!isOpen) return null
 
   return createPortal(
-    <div className="nexus-overlay preview-overlay-glass settings-overlay guide-modal-overlay theme-modal-overlay" onClick={onClose}>
+    <div
+      className="nexus-overlay settings-overlay guide-modal-overlay theme-modal-overlay"
+      onClick={onClose}
+    >
       <div
         ref={containerRef}
         className={`settings-modal theme-modal-container template-modal-container modal-container${isMaximized ? ' maximized' : ''}`}
@@ -438,15 +596,16 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
           maxWidth: isMaximized ? 'none' : '94vw',
           minHeight: isMaximized ? 'none' : '480px',
           maxHeight: isMaximized ? 'none' : '78vh',
-          transform: isMaximized ? 'none' : 'translate3d(0px, 0px, 0px)',
-          transition: '0.2s cubic-bezier(0.16, 1, 0.3, 1)',
           boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
           overflow: 'hidden',
           borderRadius: isMaximized ? '0' : '12px'
         }}
       >
         {/* Sleek Header matching Settings modal */}
-        <div className="modal-header theme-modal-header template-modal-header settings-modal-header" style={{ cursor: 'default' }}>
+        <div
+          className="modal-header theme-modal-header template-modal-header settings-modal-header"
+          style={{ cursor: 'default' }}
+        >
           <div className="settings-header-left template-header-left">
             <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
               <button
@@ -463,9 +622,7 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
             </ToolTip>
             <span className="settings-header-title">Theme Gallery</span>
             <span className="settings-header-divider">/</span>
-            <span className="settings-header-subtitle">
-              {selectedTheme?.name || 'Themes'}
-            </span>
+            <span className="settings-header-subtitle">{selectedTheme?.name || 'Themes'}</span>
           </div>
 
           <div className="window-controls settings-header-right template-header-right">
@@ -475,7 +632,11 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
                 onClick={handleToggleMaximize}
                 aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
               >
-                {isMaximized ? <Copy size={13} strokeWidth={2} /> : <Square size={13} strokeWidth={2} />}
+                {isMaximized ? (
+                  <Copy size={13} strokeWidth={2} />
+                ) : (
+                  <Square size={13} strokeWidth={2} />
+                )}
               </button>
             </ToolTip>
             <ToolTip text="Close (Esc)" position="bottom">
@@ -491,8 +652,12 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
         </div>
 
         {/* Main Body: Collapsible Sidebar + Rich Preview Pane */}
-        <div className={`modal-body settings-layout template-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-          <aside className={`sidebar settings-sidebar template-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}>
+        <div
+          className={`modal-body settings-layout template-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}
+        >
+          <aside
+            className={`sidebar settings-sidebar template-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}
+          >
             <div className="template-sidebar-header">
               <div className="template-search-wrapper">
                 <Search size={13} className="template-search-icon" />
@@ -535,20 +700,18 @@ export const Theme = ({ isOpen = false, onClose = () => {} }) => {
                 ))}
 
                 {filteredThemes.length === 0 && (
-                  <div className="template-sidebar-empty">
-                    No matching themes found.
-                  </div>
+                  <div className="template-sidebar-empty">No matching themes found.</div>
                 )}
               </div>
             </div>
           </aside>
 
           {/* Right Preview Pane shifted when sidebar is open */}
-          <div className="content settings-body template-content" style={{ overflow: 'hidden', height: '100%', display: 'flex', padding: 0 }}>
-            <ThemeContent
-              themeData={selectedTheme}
-              isActive={selectedTheme?.id === theme}
-            />
+          <div
+            className="content settings-body template-content"
+            style={{ overflow: 'hidden', height: '100%', display: 'flex', padding: 0 }}
+          >
+            <ThemeContent themeData={selectedTheme} isActive={selectedTheme?.id === theme} />
           </div>
         </div>
       </div>

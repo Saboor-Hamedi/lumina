@@ -66,6 +66,7 @@ export interface WorkspaceStoreState {
   saveNote: (note: Partial<WorkspaceNote> & { id: string }) => Promise<any>
   deleteNote: (id: string, skipConfirm?: boolean) => Promise<void>
   setFolderColor: (folderId: string, color: string | null) => Promise<void>
+  migrateFolderColor: (oldFolderId: string, newFolderId: string) => Promise<void>
   updateNoteSelection: (id: string, selection: any) => void
 
   // Backward compatibility properties & methods
@@ -434,8 +435,12 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
             if (!allSettings || Object.keys(allSettings).length === 0) {
               allSettings = (await (window as any).api.getSetting()) || {}
             }
+            const freshFolderColors = (await (window as any).api?.getSetting?.('folderColors')) || null
             const noteColors = allSettings.noteColors || {}
-            folderColors = allSettings.folderColors || {}
+            folderColors = freshFolderColors || allSettings.folderColors || get().folderColors || {}
+            if (allSettings) {
+              allSettings.folderColors = folderColors
+            }
             merged = rawNotes.map((n: WorkspaceNote) => ({
               ...n,
               color: n.color || noteColors[n.id] || null
@@ -711,17 +716,56 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
   setFolderColor: async (folderId: string, color: string | null) => {
     try {
-      const currentColors = (await (window as any).api.getSetting('folderColors')) || {}
+      const persistedColors = (await (window as any).api?.getSetting?.('folderColors')) || {}
+      const currentColors = { ...persistedColors, ...(get().folderColors || {}) }
       const newColors = { ...currentColors }
       if (color) {
         newColors[folderId] = color
       } else {
         delete newColors[folderId]
       }
+      const settingsObj = useSettingsStore.getState().settings as any
+      if (settingsObj) {
+        settingsObj.folderColors = newColors
+      }
       await (window as any).api.saveSetting('folderColors', newColors)
       set({ folderColors: newColors })
     } catch (err) {
       console.error('[WorkspaceStore] Failed to save folder color', err)
+    }
+  },
+
+  migrateFolderColor: async (oldFolderId: string, newFolderId: string) => {
+    if (!oldFolderId || !newFolderId || oldFolderId === newFolderId) return
+    try {
+      const persistedColors = (await (window as any).api?.getSetting?.('folderColors')) || {}
+      const currentColors = { ...persistedColors, ...(get().folderColors || {}) }
+      const newColors: Record<string, string> = { ...currentColors }
+      let changed = false
+
+      Object.keys(currentColors).forEach((key) => {
+        if (key === oldFolderId) {
+          newColors[newFolderId] = currentColors[key]
+          delete newColors[key]
+          changed = true
+        } else if (key.startsWith(`${oldFolderId}/`)) {
+          const suffix = key.slice(oldFolderId.length)
+          newColors[`${newFolderId}${suffix}`] = currentColors[key]
+          delete newColors[key]
+          changed = true
+        }
+      })
+
+      if (changed) {
+        const settingsObj = useSettingsStore.getState().settings as any
+        if (settingsObj) {
+          settingsObj.folderColors = newColors
+        }
+        await (window as any).api?.saveSetting?.('folderColors', newColors)
+        set({ folderColors: newColors })
+      }
+    } catch (err) {
+      console.error('[WorkspaceStore] Failed to migrate folder color', err)
     }
   },
 
