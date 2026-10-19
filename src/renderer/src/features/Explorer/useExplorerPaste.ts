@@ -42,28 +42,33 @@ export function useExplorerPaste({
   // Listen for clipboard image paste events directly into vault folder
   useEffect(() => {
     const handleExplorerPaste = async (e: ClipboardEvent) => {
-      const activeEl = document.activeElement
+      const activeEl = document.activeElement as HTMLElement | null
+      const targetEl = (e.target as HTMLElement | null) || activeEl
 
       // Guard: Do not intercept pastes intended for text editors, canvas inputs, or AI chat
       if (
         activeEl?.tagName === 'TEXTAREA' ||
         activeEl?.tagName === 'INPUT' ||
-        activeEl?.closest('.cm-editor') ||
-        activeEl?.closest('.ai-chat-input') ||
-        activeEl?.closest('.lumina-canvas-container') ||
-        activeEl?.closest('.lumina-canvas-toolbar')
+        Boolean(activeEl?.isContentEditable) ||
+        Boolean(
+          activeEl?.closest(
+            '.cm-editor, .ProseMirror, .ai-chat-input, .lumina-canvas-container, .lumina-canvas-toolbar'
+          )
+        )
       ) {
         return
       }
 
-      // Verify paste is taking place inside navigation, explorer, or start menu
+      // Verify paste is taking place inside navigation, explorer, sidebar, or start menu
+      const explorerSelector =
+        '.shell-sidebar-left, .explorer-embedded-container, .start-menu-container, .start-menu-body, .start-section, .explorer-modal, .file-explorer, .navigation-tree, .explorer-tree, .explorer-header, .unified-sidebar, .sidebar-scrollable-content, .tree-item, .lumina-sidebar, .lumina-explorer-container'
+
       const isInsideExplorer = Boolean(
-        activeEl?.closest('.lumina-sidebar') ||
-        activeEl?.closest('.lumina-explorer-container') ||
-        activeEl?.closest('.explorer-modal')
+        targetEl?.closest?.(explorerSelector) ||
+        activeEl?.closest?.(explorerSelector)
       )
-      const isCanvasPresent = Boolean(document.querySelector('.lumina-canvas-container'))
-      if (isCanvasPresent && !isInsideExplorer) {
+
+      if (!isInsideExplorer) {
         return
       }
 
@@ -74,51 +79,89 @@ export function useExplorerPaste({
         .filter(Boolean) as File[]
 
       const directFiles = Array.from(e.clipboardData?.files || []).filter((f) =>
-        f.type.startsWith('image/')
+        f.type.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg|bmp|ico)$/i.test(f.name)
       )
 
       const imageFiles = fileFromItems.length > 0 ? fileFromItems : directFiles
 
+      const imagePayloads: { buffer: Uint8Array; filename: string }[] = []
+
       if (imageFiles.length > 0) {
-        e.preventDefault()
-        e.stopPropagation()
-
-        const targetFolder = lastClickedFolder || ''
-
         for (const file of imageFiles) {
           try {
             const arrayBuffer = await file.arrayBuffer()
-            const uint8Array = new Uint8Array(arrayBuffer)
-            const ext = file.type.split('/')[1] || 'png'
+            const ext = file.type ? file.type.split('/')[1] || 'png' : 'png'
             const filename =
               file.name && file.name !== 'image.png' && file.name !== 'image.jpeg'
                 ? file.name
                 : `Pasted image ${Date.now()}.${ext}`
-
-            const api = (window as any).api
-            const result = await api?.saveVaultImage?.(
-              uint8Array,
-              targetFolder,
-              filename
-            )
-
-            await loadWorkspace()
-
-            if (result?.relativePath) {
-              const freshSnippets = (useWorkspaceStore.getState() as any).notes || []
-              const targetSnippet = freshSnippets.find(
-                (s: any) =>
-                  s.relativePath === result.relativePath ||
-                  (s.fileName === result.fileName && (s.folderId || '') === (result.folderId || ''))
-              )
-              if (targetSnippet) {
-                handleSelect(targetSnippet)
-              }
-            }
+            imagePayloads.push({ buffer: new Uint8Array(arrayBuffer), filename })
           } catch (err) {
-            console.error('Failed to paste image to vault:', err)
+            console.error('[useExplorerPaste] Failed reading file buffer:', err)
           }
         }
+      } else if ((window as any).api?.readClipboardImageBuffer) {
+        try {
+          const rawBuffer = await (window as any).api.readClipboardImageBuffer()
+          if (rawBuffer && rawBuffer.length > 0) {
+            const uint8 = rawBuffer instanceof Uint8Array ? rawBuffer : new Uint8Array(rawBuffer)
+            imagePayloads.push({
+              buffer: uint8,
+              filename: `Pasted image ${Date.now()}.png`
+            })
+          }
+        } catch (err) {
+          console.warn('[useExplorerPaste] Failed reading clipboard image buffer:', err)
+        }
+      }
+
+      if (imagePayloads.length === 0) return
+
+      e.preventDefault()
+      e.stopPropagation()
+
+      const targetFolder = lastClickedFolder || ''
+      const api = (window as any).api
+      let savedCount = 0
+
+      for (const payload of imagePayloads) {
+        try {
+          const result = await api?.saveVaultImage?.(
+            payload.buffer,
+            targetFolder,
+            payload.filename
+          )
+
+          await loadWorkspace()
+          savedCount++
+
+          if (result?.relativePath) {
+            const freshSnippets = (useWorkspaceStore.getState() as any).notes || []
+            const targetSnippet = freshSnippets.find(
+              (s: any) =>
+                s.relativePath === result.relativePath ||
+                (s.fileName === result.fileName && (s.folderId || '') === (result.folderId || ''))
+            )
+            if (targetSnippet) {
+              handleSelect(targetSnippet)
+            }
+          }
+        } catch (err) {
+          console.error('[useExplorerPaste] Failed to paste image to vault:', err)
+        }
+      }
+
+      if (savedCount > 0) {
+        window.dispatchEvent(
+          new CustomEvent('show-toast', {
+            detail: {
+              message: targetFolder
+                ? `Pasted image into "${targetFolder}"`
+                : 'Pasted image into vault',
+              type: 'success'
+            }
+          })
+        )
       }
     }
 
@@ -126,13 +169,50 @@ export function useExplorerPaste({
     return () => window.removeEventListener('paste', handleExplorerPaste)
   }, [lastClickedFolder, loadWorkspace, handleSelect])
 
-  const totalSelectedCount = selectedNoteIds.size + selectedFolderIds.size
+  const [pendingDeleteSnapshot, setPendingDeleteSnapshot] = useState<{
+    noteIds: string[]
+    folderIds: string[]
+  } | null>(null)
+
+  const handleSetBulkDeleteModalOpen = useCallback(
+    (open: boolean) => {
+      if (open) {
+        setPendingDeleteSnapshot({
+          noteIds: Array.from(selectedNoteIds),
+          folderIds: Array.from(selectedFolderIds)
+        })
+      } else {
+        setPendingDeleteSnapshot(null)
+      }
+      setBulkDeleteModalOpen(open)
+    },
+    [selectedNoteIds, selectedFolderIds]
+  )
+
+  const effectiveNoteIds = pendingDeleteSnapshot
+    ? pendingDeleteSnapshot.noteIds
+    : Array.from(selectedNoteIds)
+  const effectiveFolderIds = pendingDeleteSnapshot
+    ? pendingDeleteSnapshot.folderIds
+    : Array.from(selectedFolderIds)
+  const totalSelectedCount = effectiveNoteIds.length + effectiveFolderIds.length
 
   // Confirms and executes bulk deletion across multiple folders and notes
   const handleConfirmBulkDelete = useCallback(async () => {
+    const deletedFolderIds = pendingDeleteSnapshot
+      ? pendingDeleteSnapshot.folderIds
+      : Array.from(selectedFolderIds)
+    const deletedSnippetIds = pendingDeleteSnapshot
+      ? pendingDeleteSnapshot.noteIds
+      : Array.from(selectedNoteIds)
+
+    if (deletedFolderIds.length === 0 && deletedSnippetIds.length === 0) {
+      setBulkDeleteModalOpen(false)
+      setPendingDeleteSnapshot(null)
+      return
+    }
+
     try {
-      const deletedFolderIds = Array.from(selectedFolderIds)
-      const deletedSnippetIds = Array.from(selectedNoteIds)
       const api = (window as any).api
 
       if (api?.bulkDelete) {
@@ -163,16 +243,42 @@ export function useExplorerPaste({
 
       clearSelection()
       await loadWorkspace()
+
+      const totalDeleted = deletedFolderIds.length + deletedSnippetIds.length
+      window.dispatchEvent(
+        new CustomEvent('show-toast', {
+          detail: {
+            message: `Deleted ${totalDeleted} ${totalDeleted === 1 ? 'item' : 'items'}`,
+            type: 'success'
+          }
+        })
+      )
     } catch (err) {
-      console.error('Failed to execute bulk deletion:', err)
+      console.error('[useExplorerPaste] Failed to execute bulk deletion:', err)
+      window.dispatchEvent(
+        new CustomEvent('show-toast', {
+          detail: {
+            message: 'Failed to delete selected items',
+            type: 'error'
+          }
+        })
+      )
     } finally {
       setBulkDeleteModalOpen(false)
+      setPendingDeleteSnapshot(null)
     }
-  }, [selectedFolderIds, selectedNoteIds, deleteSnippet, clearSelection, loadWorkspace])
+  }, [
+    pendingDeleteSnapshot,
+    selectedFolderIds,
+    selectedNoteIds,
+    deleteSnippet,
+    clearSelection,
+    loadWorkspace
+  ])
 
   return {
     bulkDeleteModalOpen,
-    setBulkDeleteModalOpen,
+    setBulkDeleteModalOpen: handleSetBulkDeleteModalOpen,
     totalSelectedCount,
     handleConfirmBulkDelete
   }

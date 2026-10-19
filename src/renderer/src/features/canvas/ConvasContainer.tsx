@@ -53,11 +53,13 @@ import './css/canvas-toast.css'
 export interface ConvasContainerProps {
   initialData?: CanvasData
   onChange?: (data: CanvasData) => void
+  isSelected?: boolean
 }
 
 export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   initialData,
-  onChange
+  onChange,
+  isSelected = true
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const { toast, showToast, clearToast } = useToast()
@@ -307,7 +309,8 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     addNode,
     hasCopiedNodes,
     pasteNodes,
-    onToast: showToast
+    onToast: showToast,
+    isActive: isSelected ?? true
   })
 
   /**

@@ -191,7 +191,16 @@ export function useExplorerSelection({
       // Don't clear selection if interacting with explorer popups, dialogs, context menus, or prompts
       if (
         target.closest?.(
-          '[role="menu"], [role="dialog"], [data-radix-popper-content-wrapper], .context-menu, [data-state="open"], .confirm-modal-overlay, .dropdown-menu'
+          '[role="menu"], [role="dialog"], [data-radix-popper-content-wrapper], .context-menu, [data-state="open"], .confirm-modal-overlay, .confirm-overlay, .confirm-modal, .modal-overlay, .modal-container, .dropdown-menu, .modal-backdrop'
+        )
+      ) {
+        return
+      }
+
+      // Never clear selection if any confirmation modal or dialog is currently open in the DOM
+      if (
+        document.querySelector(
+          '.confirm-overlay, .confirm-modal, .confirm-modal-overlay, [role="dialog"][aria-modal="true"]'
         )
       ) {
         return

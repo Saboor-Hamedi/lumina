@@ -29,6 +29,7 @@ export interface UseCanvasPasteOptions {
   hasCopiedNodes: () => boolean
   pasteNodes: () => string[]
   onToast?: (message: string, type: 'success' | 'error' | 'info') => void
+  isActive?: boolean
 }
 
 export function useCanvasPaste({
@@ -40,7 +41,8 @@ export function useCanvasPaste({
   addNode,
   hasCopiedNodes,
   pasteNodes,
-  onToast
+  onToast,
+  isActive = true
 }: UseCanvasPasteOptions) {
   const pasteImagePayload = useCallback(
     async (file: File | null, rawBuffer?: Uint8Array | ArrayBuffer) => {
@@ -151,22 +153,51 @@ export function useCanvasPaste({
   )
 
   useEffect(() => {
+    if (isActive === false) return
+
     const handlePaste = async (e: ClipboardEvent) => {
-      // 1. Do not intercept if user is typing in an active text input or editor
+      // 1. Guard against inactive canvas tab or unmounted container
+      if (!isActive || !containerRef.current) return
+
       const activeEl = document.activeElement as HTMLElement | null
+      const targetEl = (e.target as HTMLElement | null) || activeEl
+
+      // 2. Do not intercept if user is typing in an active text input or editor
       const activeTag = (activeEl?.tagName || '').toLowerCase()
       const isInputActive =
         activeTag === 'input' ||
         activeTag === 'textarea' ||
         Boolean(activeEl?.isContentEditable) ||
-        Boolean(activeEl?.closest?.('[contenteditable="true"], .ProseMirror, .cm-editor, input, textarea'))
+        Boolean(activeEl?.closest?.('[contenteditable="true"], .ProseMirror, .cm-editor, input, textarea, .ai-chat-input'))
 
       if (isInputActive) return
 
-      // 2. Only proceed if canvas container is present
-      if (!containerRef.current) return
+      // 3. Do not intercept if the paste event originates from or focus is within the File Explorer or sidebars
+      const isInsideExplorerOrSidebar = Boolean(
+        targetEl?.closest?.(
+          '.shell-sidebar-left, .shell-sidebar-right, .unified-sidebar, .explorer-embedded-container, .start-menu-container, .explorer-modal, .file-explorer, .navigation-tree, .explorer-tree, .explorer-header, .right-sidebar'
+        ) ||
+        activeEl?.closest?.(
+          '.shell-sidebar-left, .shell-sidebar-right, .unified-sidebar, .explorer-embedded-container, .start-menu-container, .explorer-modal, .file-explorer, .navigation-tree, .explorer-tree, .explorer-header, .right-sidebar'
+        )
+      )
+      if (isInsideExplorerOrSidebar) return
 
-      // 3. If internal canvas nodes were copied, paste them
+      // 4. Ensure canvas container is attached to document and not hidden
+      if (!containerRef.current.isConnected) return
+      if (containerRef.current.style.display === 'none') return
+
+      // 5. Ensure the event is either explicitly targeted at the canvas or default body focus while canvas is active
+      const isTargetingCanvas = Boolean(
+        containerRef.current.contains(targetEl) ||
+        containerRef.current.contains(activeEl) ||
+        targetEl === document.body ||
+        targetEl === document.documentElement ||
+        Boolean(targetEl?.closest?.('.lumina-canvas-container'))
+      )
+      if (!isTargetingCanvas) return
+
+      // 6. If internal canvas nodes were copied, paste them
       if (hasCopiedNodes()) {
         e.preventDefault()
         e.stopPropagation()
@@ -174,7 +205,7 @@ export function useCanvasPaste({
         return
       }
 
-      // 4. Check for clipboard image items or files
+      // 7. Check for clipboard image items or files
       const items = Array.from(e.clipboardData?.items || [])
       const imageItem = items.find((it) => it.kind === 'file' && it.type.startsWith('image/'))
       const directFiles = Array.from(e.clipboardData?.files || []).filter((f) =>
@@ -191,7 +222,7 @@ export function useCanvasPaste({
         return
       }
 
-      // 5. Electron IPC fallback: read image directly from clipboard buffer
+      // 8. Electron IPC fallback: read image directly from clipboard buffer
       if ((window as any).api?.readClipboardImageBuffer) {
         try {
           const buffer = await (window as any).api.readClipboardImageBuffer()
@@ -208,9 +239,10 @@ export function useCanvasPaste({
       }
     }
 
-    window.addEventListener('paste', handlePaste, true)
+    // Register bubbling paste listener so local/sidebar elements have precedence
+    window.addEventListener('paste', handlePaste)
     return () => {
-      window.removeEventListener('paste', handlePaste, true)
+      window.removeEventListener('paste', handlePaste)
     }
-  }, [containerRef, hasCopiedNodes, pasteNodes, pasteImagePayload])
+  }, [isActive, containerRef, hasCopiedNodes, pasteNodes, pasteImagePayload])
 }

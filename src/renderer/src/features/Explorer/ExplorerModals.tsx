@@ -186,7 +186,25 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
           onClose={() => setBulkDeleteModalOpen(false)}
           onConfirm={handleConfirmBulkDelete}
           title={`Delete ${totalSelectedCount} Selected ${totalSelectedCount === 1 ? 'Item' : 'Items'}?`}
-          message={`Are you sure you want to permanently delete ${selectedFolderIds.size > 0 ? `${selectedFolderIds.size} folder${selectedFolderIds.size > 1 ? 's' : ''}` : ''}${selectedFolderIds.size > 0 && selectedNoteIds.size > 0 ? ' and ' : ''}${selectedNoteIds.size > 0 ? `${selectedNoteIds.size} note${selectedNoteIds.size > 1 ? 's' : ''}` : ''} and all nested files? This action cannot be undone.`}
+          message={
+            totalSelectedCount > 0
+              ? `Are you sure you want to permanently delete ${
+                  selectedFolderIds.size > 0
+                    ? `${selectedFolderIds.size} folder${selectedFolderIds.size > 1 ? 's' : ''}`
+                    : ''
+                }${
+                  selectedFolderIds.size > 0 && selectedNoteIds.size > 0 ? ' and ' : ''
+                }${
+                  selectedNoteIds.size > 0
+                    ? `${selectedNoteIds.size} file${selectedNoteIds.size > 1 ? 's' : ''}`
+                    : ''
+                }${
+                  selectedFolderIds.size === 0 && selectedNoteIds.size === 0
+                    ? `${totalSelectedCount} item${totalSelectedCount > 1 ? 's' : ''}`
+                    : ''
+                } and all nested files? This action cannot be undone.`
+              : 'Are you sure you want to permanently delete the selected items? This action cannot be undone.'
+          }
           confirmText="Delete All"
         />
       )}

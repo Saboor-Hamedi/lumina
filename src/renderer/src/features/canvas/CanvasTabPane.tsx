@@ -118,6 +118,7 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = ({
       <CanvasView
         initialData={parsedInitialData}
         onChange={handleCanvasChange}
+        isSelected={isSelected}
       />
     </div>
   )

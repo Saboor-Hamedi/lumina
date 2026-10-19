@@ -68,14 +68,20 @@ const Confirm = ({
   if (!isOpen) return null
 
   return createPortal(
-    <div className="modal-overlay confirm-overlay" onClick={onClose}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-modal-title"
+      className="modal-overlay confirm-overlay confirm-modal-overlay"
+      onClick={onClose}
+    >
       <div
         className={`modal-container confirm-modal ${danger ? 'border-danger' : 'border-accent'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="confirm-header">
           <AlertCircle size={18} className={danger ? 'text-danger' : 'text-accent'} />
-          <h2 className="confirm-title">{title}</h2>
+          <h2 id="confirm-modal-title" className="confirm-title">{title}</h2>
         </div>
         <p className="confirm-message">{message}</p>
 
