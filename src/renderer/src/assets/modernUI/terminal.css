@@ -50,7 +50,7 @@
   gap: 3px;
   width: 24px;
   height: 5px;
-  background: #0c0c0e;
+  background: transparent;
   border: none;
   box-shadow: none;
   opacity: 0.6;
@@ -128,7 +128,7 @@
   gap: 3px;
   width: 5px;
   height: 24px;
-  background: #0c0c0e;
+  background: transparent;
   border: none;
   box-shadow: none;
   opacity: 0.6;
@@ -284,4 +284,21 @@
   width: 0px !important;
   height: 0px !important;
   display: none !important;
+}
+
+body.is-terminal-resizing,
+body.is-terminal-resizing * {
+  user-select: none !important;
+  cursor: ns-resize !important;
+  -webkit-user-select: none !important;
+}
+
+body.is-terminal-resizing iframe,
+body.is-terminal-resizing webview,
+body.is-terminal-resizing canvas,
+body.is-terminal-resizing .workspace-container,
+body.is-terminal-resizing .cm-editor,
+body.is-terminal-resizing .xterm,
+body.is-terminal-resizing .shell-terminal-dock {
+  pointer-events: none !important;
 }

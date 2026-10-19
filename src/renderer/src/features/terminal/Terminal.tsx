@@ -99,14 +99,22 @@ export function Terminal({
 
   const handleStartSessionListResize = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     const startX = e.clientX
     const startW = sessionListWidth
+
+    document.body.classList.add('is-global-resizing')
+    const appShell = document.querySelector('.app-shell')
+    if (appShell) appShell.classList.add('is-resizing')
+
     const onMouseMove = (ev: MouseEvent) => {
       const delta = ev.clientX - startX
       const nextW = Math.max(120, Math.min(350, startW + delta))
       setSessionListWidth(nextW)
     }
     const onMouseUp = () => {
+      document.body.classList.remove('is-global-resizing')
+      if (appShell) appShell.classList.remove('is-resizing')
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('mouseup', onMouseUp)
     }
@@ -179,7 +187,7 @@ export function Terminal({
       className="lumina-terminal"
       style={{
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'row',
         height: '100%',
         width: '100%',
         minHeight: 0,
@@ -188,26 +196,39 @@ export function Terminal({
         fontFamily: '"Cascadia Code", "Cascadia Mono", "JetBrains Mono", "Fira Code", Consolas, "SF Mono", monospace'
       }}
     >
-      {/* ── Top: Unified Full-Width Header (Straight across both Session & Terminal) ── */}
+      {/* ── Left: Sessions Sidebar Column (Header + Sessions List) ── */}
       <div
-        className="lumina-term-unified-header"
+        className="lumina-term-sessions-column"
         style={{
+          width: sessionListWidth,
+          minWidth: sessionListWidth,
+          maxWidth: sessionListWidth,
+          height: '100%',
+          background: 'var(--bg-sidebar, #0e0e11)',
+          borderRight: '1px solid var(--border-dim, rgba(255, 255, 255, 0.08))',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: 32,
-          minHeight: 32,
-          padding: '0 8px',
-          background: '#111114',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          userSelect: 'none',
-          flexShrink: 0,
-          gap: 8,
-          zIndex: 40
+          flexDirection: 'column',
+          overflow: 'hidden',
+          flexShrink: 0
         }}
       >
-        {/* Left: Shell Selector Dropdown + Plus Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        {/* Session Header (Shell Selector Dropdown + Plus Button) */}
+        <div
+          className="lumina-term-session-header"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            height: 32,
+            minHeight: 32,
+            padding: '0 8px',
+            background: 'var(--bg-sidebar, #0e0e11)',
+            borderBottom: '1px solid var(--border-dim, rgba(255, 255, 255, 0.08))',
+            userSelect: 'none',
+            flexShrink: 0,
+            gap: 4,
+            zIndex: 40
+          }}
+        >
           {/* Shell Dropdown Trigger */}
           <div ref={dropdownRef} style={{ position: 'relative' }}>
             <button
@@ -357,141 +378,17 @@ export function Terminal({
           </button>
         </div>
 
-        {/* Center: Clean Spacer */}
-        <div style={{ flex: 1, minWidth: 0 }} />
-
-        {/* Right: Actions (Trash/Kill, Maximize, Close) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
-          <button
-            onClick={handleKillActiveTerminal}
-            title={api.sessions.length <= 1 ? 'Kill and Close Terminal' : 'Kill Terminal'}
-            aria-label="Kill Terminal"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 24,
-              height: 24,
-              borderRadius: 4,
-              background: 'transparent',
-              border: 'none',
-              color: '#a1a1aa',
-              cursor: 'pointer',
-              transition: 'all 0.12s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#ef4444'
-              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = '#a1a1aa'
-              e.currentTarget.style.background = 'transparent'
-            }}
-          >
-            <Trash2 size={13} />
-          </button>
-
-          {onToggleMaximize && (
-            <button
-              onClick={onToggleMaximize}
-              title={isMaximized ? 'Restore Terminal' : 'Maximize Terminal'}
-              aria-label={isMaximized ? 'Restore Terminal' : 'Maximize Terminal'}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 24,
-                height: 24,
-                borderRadius: 4,
-                background: 'transparent',
-                border: 'none',
-                color: '#a1a1aa',
-                cursor: 'pointer',
-                transition: 'all 0.12s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#f4f4f5'
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#a1a1aa'
-                e.currentTarget.style.background = 'transparent'
-              }}
-            >
-              {isMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-            </button>
-          )}
-
-          {onClose && (
-            <button
-              onClick={onClose}
-              title="Close Terminal (Ctrl + J)"
-              aria-label="Close Terminal"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 24,
-                height: 24,
-                borderRadius: 4,
-                background: 'transparent',
-                border: 'none',
-                color: '#a1a1aa',
-                cursor: 'pointer',
-                transition: 'all 0.12s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#f4f4f5'
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#a1a1aa'
-                e.currentTarget.style.background = 'transparent'
-              }}
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── Main Body: Sessions Sidebar on Left, Terminal Viewport on Right ── */}
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'row',
-          overflow: 'hidden'
-        }}
-      >
-        {/* ── Left: Sessions Sidebar ── */}
+        {/* Sessions List Items */}
         <div
-          className="lumina-term-sessions-list"
+          className="lumina-term-sessions-list premium-scroll"
           style={{
-            width: sessionListWidth,
-            minWidth: sessionListWidth,
-            maxWidth: sessionListWidth,
-            height: '100%',
-            background: '#0e0e11',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            flexShrink: 0
+            flex: 1,
+            minHeight: 0,
+            overflowY: 'auto',
+            padding: '4px'
           }}
         >
-          {/* Sessions List Items */}
-          <div
-            className="premium-scroll"
-            style={{
-              flex: 1,
-              minHeight: 0,
-              overflowY: 'auto',
-              padding: '4px'
-            }}
-          >
-            {api.sessions.map((s) => {
+          {api.sessions.map((s) => {
               const isActive = s.id === api.activeId
               const isEditing = editingId === s.id
               const isDragging = draggingId === s.id
@@ -684,8 +581,9 @@ export function Terminal({
           </div>
         </div>
 
-        {/* Right: Active Terminal Viewport */}
+        {/* Right: Active Terminal Viewport Column (Header + Viewport) */}
         <div
+          className="lumina-term-viewport-column"
           style={{
             flex: 1,
             minWidth: 0,
@@ -694,23 +592,150 @@ export function Terminal({
             display: 'flex',
             flexDirection: 'column',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            background: 'var(--bg-editor, #0c0c0e)'
           }}
         >
-          {api.sessions.map((s) => (
-            <TerminalPane
-              key={s.id}
-              session={s}
-              visible={s.id === api.activeId}
-              spawnTransport={spawnTransport ?? ((sess) => createElectronPtyTransport(sess))}
-              onStatus={api.setStatus}
-            />
-          ))}
+          {/* Viewport Header (Actions: Trash/Kill, Maximize, Close) */}
+          <div
+            className="lumina-term-viewport-header"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              height: 32,
+              minHeight: 32,
+              padding: '0 8px',
+              background: 'var(--bg-editor, #0c0c0e)',
+              borderBottom: '1px solid var(--border-dim, rgba(255, 255, 255, 0.08))',
+              userSelect: 'none',
+              flexShrink: 0,
+              gap: 3,
+              zIndex: 40
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }} />
+
+            <button
+              onClick={handleKillActiveTerminal}
+              title={api.sessions.length <= 1 ? 'Kill and Close Terminal' : 'Kill Terminal'}
+              aria-label="Kill Terminal"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 24,
+                height: 24,
+                borderRadius: 4,
+                background: 'transparent',
+                border: 'none',
+                color: '#a1a1aa',
+                cursor: 'pointer',
+                transition: 'all 0.12s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#ef4444'
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#a1a1aa'
+                e.currentTarget.style.background = 'transparent'
+              }}
+            >
+              <Trash2 size={13} />
+            </button>
+
+            {onToggleMaximize && (
+              <button
+                onClick={onToggleMaximize}
+                title={isMaximized ? 'Restore Terminal' : 'Maximize Terminal'}
+                aria-label={isMaximized ? 'Restore Terminal' : 'Maximize Terminal'}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 24,
+                  height: 24,
+                  borderRadius: 4,
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#a1a1aa',
+                  cursor: 'pointer',
+                  transition: 'all 0.12s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#f4f4f5'
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#a1a1aa'
+                  e.currentTarget.style.background = 'transparent'
+                }}
+              >
+                {isMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+              </button>
+            )}
+
+            {onClose && (
+              <button
+                onClick={onClose}
+                title="Close Terminal (Ctrl + J)"
+                aria-label="Close Terminal"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 24,
+                  height: 24,
+                  borderRadius: 4,
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#a1a1aa',
+                  cursor: 'pointer',
+                  transition: 'all 0.12s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#f4f4f5'
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#a1a1aa'
+                  e.currentTarget.style.background = 'transparent'
+                }}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Viewport Content */}
+          <div
+            className="lumina-term-panes-wrapper"
+            style={{
+              flex: 1,
+              minWidth: 0,
+              minHeight: 0,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            {api.sessions.map((s) => (
+              <TerminalPane
+                key={s.id}
+                session={s}
+                visible={s.id === api.activeId}
+                spawnTransport={spawnTransport ?? ((sess) => createElectronPtyTransport(sess))}
+                onStatus={api.setStatus}
+              />
+            ))}
+          </div>
         </div>
       </div>
-    </div>
-  )
-}
+    )
+  }
 
-export default Terminal
+  export default Terminal
 

@@ -272,11 +272,11 @@ export const MainLayout: React.FC = () => {
   const handleToggleTerminalMaximize = useCallback(() => {
     setIsTerminalMaximized((prev) => {
       if (!prev) {
-        // We are maximizing: remember current normal height
+        // Remember current normal height
         previousTerminalHeightRef.current = terminalHeight
         return true
       } else {
-        // We are minimizing / restoring: restore saved height
+        // Restore saved height without jumping
         setTerminalHeight(previousTerminalHeightRef.current || 260)
         return false
       }
@@ -285,23 +285,32 @@ export const MainLayout: React.FC = () => {
 
   const handleStartTerminalResize = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     const startY = e.clientY
-    // If currently maximized, seamlessly convert 80% height to exact pixels first
+    const startH = terminalHeight
+
     if (isTerminalMaximized) {
-      const currentPx = Math.round(window.innerHeight * 0.8)
-      setTerminalHeight(currentPx)
       setIsTerminalMaximized(false)
     }
 
-    const startH = isTerminalMaximized ? Math.round(window.innerHeight * 0.8) : terminalHeight
+    const centerWorkspace = document.querySelector('.shell-center-workspace')
+    const totalH = centerWorkspace ? centerWorkspace.clientHeight : window.innerHeight
+    const minH = 120
+    const maxH = Math.max(minH, totalH - 60)
+
+    document.body.classList.add('is-terminal-resizing')
+    const appShell = document.querySelector('.app-shell')
+    if (appShell) appShell.classList.add('is-resizing')
 
     const onMouseMove = (ev: MouseEvent) => {
       const delta = startY - ev.clientY
-      const nextH = Math.max(120, Math.min(window.innerHeight * 0.85, startH + delta))
+      const nextH = Math.max(minH, Math.min(maxH, Math.round(startH + delta)))
       setTerminalHeight(nextH)
       previousTerminalHeightRef.current = nextH
     }
     const onMouseUp = () => {
+      document.body.classList.remove('is-terminal-resizing')
+      if (appShell) appShell.classList.remove('is-resizing')
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('mouseup', onMouseUp)
     }
@@ -1133,7 +1142,8 @@ export const MainLayout: React.FC = () => {
                   isLeftSidebarOpen={isLeftSidebarOpen}
                   onToggleLeftSidebar={handleToggleLeftSidebar}
                 />
-                {selectedSnippet &&
+                {!isTerminalMaximized &&
+                  selectedSnippet &&
                   activeTabId !== GRAPH_TAB_ID &&
                   activeTabId !== LUMINA_TAB_ID &&
                   openTabs.includes(selectedSnippet.id) &&
@@ -1143,53 +1153,104 @@ export const MainLayout: React.FC = () => {
               </>
             )}
 
-            {isLoading ? (
-              <div
-                className="workspace-container"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  flex: 1,
-                  overflow: 'hidden',
-                  position: 'relative'
-                }}
-              />
-            ) : openTabs.filter(
-                (id: string) =>
-                  id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || snippets.some((s: any) => s.id === id)
-              ).length > 0 ? (
-              <div
-                className="workspace-container"
-                style={{
-                  display: 'flex',
-                  flexDirection: 'row',
-                  flex: 1,
-                  overflow: 'hidden',
-                  position: 'relative'
-                }}
-              >
+            <div
+              className="workspace-editor-dock-area"
+              style={{
+                flex: isTerminalMaximized ? 0 : 1,
+                display: isTerminalMaximized ? 'none' : 'flex',
+                flexDirection: 'column',
+                minHeight: 0,
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              {isLoading ? (
                 <div
+                  className="workspace-container"
                   style={{
-                    position: 'relative',
-                    flex: 1,
                     display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden'
+                    flexDirection: 'row',
+                    flex: 1,
+                    overflow: 'hidden',
+                    position: 'relative'
+                  }}
+                />
+              ) : openTabs.filter(
+                  (id: string) =>
+                    id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || snippets.some((s: any) => s.id === id)
+                ).length > 0 ? (
+                <div
+                  className="workspace-container"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    flex: 1,
+                    overflow: 'hidden',
+                    position: 'relative'
                   }}
                 >
-                  {renderedEditors}
+                  <div
+                    style={{
+                      position: 'relative',
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {renderedEditors}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <GlobalErrorHandler>
-                <Welcome
-                  onNew={handleNew}
-                  onOpenGuide={() => setShowGuideModal(true)}
-                  onOpenDocs={handleOpenDocs}
-                  onLoadStarterWorkspace={handleLoadStarterWorkspace}
-                  onToggleAIChat={handleToggleAIChat}
-                />
-              </GlobalErrorHandler>
+              ) : (
+                <GlobalErrorHandler>
+                  <Welcome
+                    onNew={handleNew}
+                    onOpenGuide={() => setShowGuideModal(true)}
+                    onOpenDocs={handleOpenDocs}
+                    onLoadStarterWorkspace={handleLoadStarterWorkspace}
+                    onToggleAIChat={handleToggleAIChat}
+                  />
+                </GlobalErrorHandler>
+              )}
+            </div>
+
+            {isTerminalOpen && (
+              <>
+                {!isTerminalMaximized && (
+                  <div
+                    className="terminal-resizer top"
+                    title="Drag to resize terminal (double-click to reset 260px)"
+                    onMouseDown={handleStartTerminalResize}
+                    onDoubleClick={() => setTerminalHeight(260)}
+                  >
+                    <div className="resizer-knob-horizontal">
+                      <span className="knob-dot" />
+                      <span className="knob-dot" />
+                      <span className="knob-dot" />
+                    </div>
+                  </div>
+                )}
+                <div
+                  className="shell-terminal-dock"
+                  style={{
+                    height: isTerminalMaximized ? 'auto' : `${terminalHeight}px`,
+                    flex: isTerminalMaximized ? 1 : 'none',
+                    minHeight: isTerminalMaximized ? 0 : 120,
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    position: 'relative',
+                    flexShrink: isTerminalMaximized ? 1 : 0,
+                    zIndex: 20
+                  }}
+                >
+                  <TerminalPanel
+                    onClose={() => setIsTerminalOpen(false)}
+                    isMaximized={isTerminalMaximized}
+                    onToggleMaximize={handleToggleTerminalMaximize}
+                  />
+                </div>
+              </>
             )}
 
             {workspaceDrop.isOver && (
@@ -1200,42 +1261,6 @@ export const MainLayout: React.FC = () => {
               />
             )}
           </div>
-
-          {isTerminalOpen && (
-            <>
-              <div
-                className="terminal-resizer top"
-                title="Drag to resize terminal (double-click to reset 260px)"
-                onMouseDown={handleStartTerminalResize}
-                onDoubleClick={() => setTerminalHeight(260)}
-              >
-                <div className="resizer-knob-horizontal">
-                  <span className="knob-dot" />
-                  <span className="knob-dot" />
-                  <span className="knob-dot" />
-                </div>
-              </div>
-              <div
-                className="shell-terminal-dock"
-                style={{
-                  height: isTerminalMaximized ? '80%' : `${terminalHeight}px`,
-                  minHeight: 120,
-                  width: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  position: 'relative',
-                  flexShrink: 0,
-                  zIndex: 20
-                }}
-              >
-                <TerminalPanel
-                  onClose={() => setIsTerminalOpen(false)}
-                  isMaximized={isTerminalMaximized}
-                  onToggleMaximize={handleToggleTerminalMaximize}
-                />
-              </div>
-            </>
-          )}
         </main>
 
         {isRightSidebarOpen && (
