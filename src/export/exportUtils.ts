@@ -226,9 +226,9 @@ export function setupMermaidRenderer(marked: Marked): void {
  */
 export function convertWikilinks(content?: string, mode: 'span' | 'link' = 'span'): string {
   if (mode === 'link') {
-    return (content || '').replace(/\[\[(.*?)\]\]/g, '<a href="#">$1</a>')
+    return (content || '').replace(/\[\[(.*?)\]\]/g, (_, target) => `<a href="#">${escapeHtml(target)}</a>`)
   }
-  return (content || '').replace(/\[\[(.*?)\]\]/g, '<span class="wikilink">$1</span>')
+  return (content || '').replace(/\[\[(.*?)\]\]/g, (_, target) => `<span class="wikilink">${escapeHtml(target)}</span>`)
 }
 
 /**

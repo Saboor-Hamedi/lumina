@@ -11,7 +11,7 @@
  * ============================================================================
  */
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Image as ImageIcon } from 'lucide-react'
 import { useWorkspaceStore } from '../../../../core/store/workspaceStore'
 
@@ -83,6 +83,16 @@ export const CanvasImagePreview: React.FC<CanvasImagePreviewProps> = ({
   const [imgSrc, setImgSrc] = useState<string | undefined>(() => resolveCandidateSrc(url, relativePath))
   const [loadFailed, setLoadFailed] = useState(false)
   const [fallbackAttempted, setFallbackAttempted] = useState(false)
+  const createdBlobUrlRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (createdBlobUrlRef.current) {
+        URL.revokeObjectURL(createdBlobUrlRef.current)
+        createdBlobUrlRef.current = null
+      }
+    }
+  }, [])
 
   const attemptIpcFallback = useCallback((cleanRel: string) => {
     if (!cleanRel || !(window as any).api?.readAsset) {
@@ -95,12 +105,18 @@ export const CanvasImagePreview: React.FC<CanvasImagePreviewProps> = ({
     ;(window as any).api
       .readAsset(decodedRel)
       .then((res: any) => {
+        if (createdBlobUrlRef.current) {
+          URL.revokeObjectURL(createdBlobUrlRef.current)
+          createdBlobUrlRef.current = null
+        }
         if (res?.dataUrl) {
           setImgSrc(res.dataUrl)
           setLoadFailed(false)
         } else if (res?.buffer) {
           const blob = new Blob([res.buffer], { type: res.mimeType || 'image/png' })
-          setImgSrc(URL.createObjectURL(blob))
+          const blobUrl = URL.createObjectURL(blob)
+          createdBlobUrlRef.current = blobUrl
+          setImgSrc(blobUrl)
           setLoadFailed(false)
         } else if (typeof res === 'string') {
           setImgSrc(res.startsWith('data:') ? res : `data:image/png;base64,${res}`)

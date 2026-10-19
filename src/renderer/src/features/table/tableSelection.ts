@@ -11,6 +11,7 @@ type TableSelectionWrapper = HTMLElement & {
   __clearSelectionVisuals?: () => void
   __getGridSelection?: () => GridSelection | null
   __selectAll?: () => void
+  __cleanupSelection?: () => void
 }
 
 function readModelFromDom(wrap: HTMLElement): TableModel & { alignments: CellAlignment[] } {
@@ -19,7 +20,7 @@ function readModelFromDom(wrap: HTMLElement): TableModel & { alignments: CellAli
   return model as TableModel & { alignments: CellAlignment[] }
 }
 
-export function setupTableSelection(wrap: TableSelectionWrapper, view: EditorView): void {
+export function setupTableSelection(wrap: TableSelectionWrapper, view: EditorView): () => void {
   let isDragging = false
   let startCell: HTMLTableCellElement | null = null
   let endCell: HTMLTableCellElement | null = null
@@ -134,31 +135,28 @@ export function setupTableSelection(wrap: TableSelectionWrapper, view: EditorVie
 
   // Use capture phase on document to guarantee we see the mousedown before any child
   // components (like wikilinks) can stop propagation.
-  document.addEventListener(
-    'mousedown',
-    (e: MouseEvent) => {
-      const target = e.target
-      if (!(target instanceof Element)) return
-      if (e.button !== 0) return // Only left-clicks start selection
-      if (target.closest('.cm-table-drag-handle')) return // Don't conflict with table column/row reorder handles
-      if (!wrap.contains(target)) return // Handled by the window mousedown for outside clicks
+  const handleDocMousedown = (e: MouseEvent) => {
+    const target = e.target
+    if (!(target instanceof Element)) return
+    if (e.button !== 0) return // Only left-clicks start selection
+    if (target.closest('.cm-table-drag-handle')) return // Don't conflict with table column/row reorder handles
+    if (!wrap.contains(target)) return // Handled by the window mousedown for outside clicks
 
-      const cell = target.closest('th, td') as HTMLTableCellElement | null
-      if (!cell) {
-        clearSelectionVisuals()
-        startCell = null
-        endCell = null
-        return
-      }
-
-      // They clicked a cell inside this table wrapper.
+    const cell = target.closest('th, td') as HTMLTableCellElement | null
+    if (!cell) {
       clearSelectionVisuals()
-      isDragging = true
-      startCell = cell
-      endCell = cell
-    },
-    true
-  )
+      startCell = null
+      endCell = null
+      return
+    }
+
+    // They clicked a cell inside this table wrapper.
+    clearSelectionVisuals()
+    isDragging = true
+    startCell = cell
+    endCell = cell
+  }
+  document.addEventListener('mousedown', handleDocMousedown, true)
 
   let lastMouseX = 0
   let lastMouseY = 0
@@ -197,7 +195,7 @@ export function setupTableSelection(wrap: TableSelectionWrapper, view: EditorVie
     }
   }
 
-  window.addEventListener('mousemove', (e: MouseEvent) => {
+  const handleWindowMousemove = (e: MouseEvent) => {
     if (!startCell) return
 
     if ((e.buttons & 1) !== 1) {
@@ -239,9 +237,10 @@ export function setupTableSelection(wrap: TableSelectionWrapper, view: EditorVie
     renderSelection()
     
     if (!autoscrollRaf) autoscrollRaf = requestAnimationFrame(checkAutoscroll)
-  })
+  }
+  window.addEventListener('mousemove', handleWindowMousemove)
 
-  window.addEventListener('mouseup', () => {
+  const handleWindowMouseup = () => {
     isDragging = false
     wrap.classList.remove('cm-table-selecting')
     if (autoscrollRaf) {
@@ -255,9 +254,10 @@ export function setupTableSelection(wrap: TableSelectionWrapper, view: EditorVie
       endCell = null
       clearSelectionVisuals()
     }
-  })
+  }
+  window.addEventListener('mouseup', handleWindowMouseup)
 
-  window.addEventListener('mousedown', (e: MouseEvent) => {
+  const handleWindowMousedown = (e: MouseEvent) => {
     const target = e.target
     if (!(target instanceof Element)) return
     if (target.closest('.cm-atomic-table-menu')) return
@@ -266,9 +266,10 @@ export function setupTableSelection(wrap: TableSelectionWrapper, view: EditorVie
       startCell = null
       endCell = null
     }
-  })
+  }
+  window.addEventListener('mousedown', handleWindowMousedown)
 
-  wrap.addEventListener('keydown', (e: KeyboardEvent) => {
+  const handleWrapKeydown = (e: KeyboardEvent) => {
     if (!hasSelection) {
       // If they press Escape while editing text inside a cell, exit text editing mode and select the cell!
       if (e.key === 'Escape') {
@@ -416,7 +417,8 @@ export function setupTableSelection(wrap: TableSelectionWrapper, view: EditorVie
         endCell = null
       }
     }
-  })
+  }
+  wrap.addEventListener('keydown', handleWrapKeydown)
 
   wrap.tabIndex = -1
 
@@ -468,4 +470,19 @@ export function setupTableSelection(wrap: TableSelectionWrapper, view: EditorVie
     isDragging = false
     renderSelection()
   }
+
+  const cleanup = () => {
+    document.removeEventListener('mousedown', handleDocMousedown, true)
+    window.removeEventListener('mousemove', handleWindowMousemove)
+    window.removeEventListener('mouseup', handleWindowMouseup)
+    window.removeEventListener('mousedown', handleWindowMousedown)
+    wrap.removeEventListener('keydown', handleWrapKeydown)
+    if (autoscrollRaf) {
+      cancelAnimationFrame(autoscrollRaf)
+      autoscrollRaf = null
+    }
+  }
+
+  wrap.__cleanupSelection = cleanup
+  return cleanup
 }

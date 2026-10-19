@@ -1,6 +1,6 @@
 import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
-import { renderMarkdown } from './exportUtils'
+import { renderMarkdown, escapeHtml } from './exportUtils'
 import { withRenderedHtml } from './renderWindow'
 import { stripMermaidScripts } from './mermaidRuntime'
 
@@ -28,7 +28,7 @@ export function buildDocsDocument(title?: string, htmlBody: string = '', tocHtml
   return `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
   <meta charset="utf-8">
-  <title>${title || 'Untitled'}</title>
+  <title>${escapeHtml(title || 'Untitled')}</title>
   <style>
     body {
       font-family: 'Times New Roman', serif;

@@ -2,6 +2,7 @@ import { Marked } from 'marked'
 import { markedHighlight } from 'marked-highlight'
 import hljs from 'highlight.js'
 import { BrowserWindow } from 'electron'
+import { escapeHtml, convertWikilinks } from './exportUtils'
 
 export interface ExportHTMLPayload {
   title?: string
@@ -26,17 +27,18 @@ export const handleExportHTML = async (
       })
     )
 
-    const processedContent = (content || '').replace(/\[\[(.*?)\]\]/g, '<a href="#">$1</a>')
+    const processedContent = convertWikilinks(content || '', 'link')
     const htmlContent = (await marked.parse(processedContent)) as string
+    const safeTitle = escapeHtml(title || 'Untitled')
 
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>${title || 'Untitled'}</title>
+  <title>${safeTitle}</title>
 </head>
 <body>
-  <h1>${title || 'Untitled'}</h1>
+  <h1>${safeTitle}</h1>
   ${htmlContent}
 </body>
 </html>`

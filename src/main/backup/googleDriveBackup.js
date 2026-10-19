@@ -2,6 +2,7 @@ import { backupWorkspaceZip } from './luminaZipBackup'
 import { backupWorkspaceNonZip, backupSingleFile } from './luminaNonZipBackup'
 
 let activeBackupAbortController = null
+let currentBackupPromise = null
 
 /**
  * Aborts any currently active backup or single file push.
@@ -29,22 +30,38 @@ export function cancelBackup() {
  * @param {Electron.WebContents} [sender=null] - Sender for progress events
  */
 export async function backupToDrive(workspacePath, mode = 'zip', sender = null) {
-  // Cancel previous if still running
-  cancelBackup()
+  // Cancel previous and await its settlement if still running
+  if (activeBackupAbortController) {
+    cancelBackup()
+    if (currentBackupPromise) {
+      try {
+        await currentBackupPromise
+      } catch (_) {}
+    }
+  }
 
   activeBackupAbortController = new AbortController()
   const signal = activeBackupAbortController.signal
 
-  try {
-    if (mode === 'folder') {
-      return await backupWorkspaceNonZip(workspacePath, sender, signal)
-    }
-    return await backupWorkspaceZip(workspacePath, sender, signal)
-  } finally {
-    if (activeBackupAbortController?.signal === signal) {
-      activeBackupAbortController = null
+  const run = async () => {
+    try {
+      if (mode === 'folder') {
+        return await backupWorkspaceNonZip(workspacePath, sender, signal)
+      }
+      return await backupWorkspaceZip(workspacePath, sender, signal)
+    } finally {
+      if (activeBackupAbortController?.signal === signal) {
+        activeBackupAbortController = null
+      }
+      if (currentBackupPromise === promise) {
+        currentBackupPromise = null
+      }
     }
   }
+
+  const promise = run()
+  currentBackupPromise = promise
+  return await promise
 }
 
 /**
@@ -57,17 +74,33 @@ export async function backupToDrive(workspacePath, mode = 'zip', sender = null) 
  * @param {Electron.WebContents} [sender=null] - Sender for progress events
  */
 export async function backupFileToDrive(fileInput, workspacePath, sender = null) {
-  cancelBackup()
+  if (activeBackupAbortController) {
+    cancelBackup()
+    if (currentBackupPromise) {
+      try {
+        await currentBackupPromise
+      } catch (_) {}
+    }
+  }
 
   activeBackupAbortController = new AbortController()
   const signal = activeBackupAbortController.signal
 
-  try {
-    return await backupSingleFile(fileInput, workspacePath, sender, signal)
-  } finally {
-    if (activeBackupAbortController?.signal === signal) {
-      activeBackupAbortController = null
+  const run = async () => {
+    try {
+      return await backupSingleFile(fileInput, workspacePath, sender, signal)
+    } finally {
+      if (activeBackupAbortController?.signal === signal) {
+        activeBackupAbortController = null
+      }
+      if (currentBackupPromise === promise) {
+        currentBackupPromise = null
+      }
     }
   }
+
+  const promise = run()
+  currentBackupPromise = promise
+  return await promise
 }
 

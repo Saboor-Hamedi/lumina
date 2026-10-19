@@ -456,7 +456,7 @@ export function setupGoogleAuth(getMainWindow) {
         if (authServer === server) authServer = null
         safeResolve({ error: `Local auth server error: ${err.message}` })
       })
-      server.listen(3000, () => {
+      server.listen(3000, '127.0.0.1', () => {
         shell.openExternal(authUrl)
       })
 

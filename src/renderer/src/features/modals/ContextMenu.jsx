@@ -80,7 +80,7 @@ const MenuItem = ({ opt, onClose }) => {
             ))}
           </span>
         )}
-        {opt.isActive && opt.isActive() && <Check size={14} className="menu-check" />}
+        {opt.isActive && opt.isActive() && !opt.icon && <Check size={14} className="menu-check" />}
         {hasChildren && <ChevronRight size={14} className="menu-submenu-arrow" />}
       </div>
 
@@ -107,7 +107,10 @@ const ContextMenu = ({ x, y, options, onClose }) => {
   const [layout, setLayout] = useState(() => ({ x, y, maxHeight: null, scroll: false }))
 
   useEffect(() => {
-    const handleGlobalClick = () => onClose()
+    const handleGlobalClick = (e) => {
+      if (menuRef.current && menuRef.current.contains(e.target)) return
+      onClose()
+    }
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose()
     }

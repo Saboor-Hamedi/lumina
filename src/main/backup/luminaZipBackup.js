@@ -9,13 +9,62 @@ const BACKUP_FILE_NAME = 'lumina-backup.zip'
 /**
  * Creates a zip archive of the given directory.
  */
-function zipDirectory(sourceDir, outPath) {
+function zipDirectory(sourceDir, outPath, signal = null) {
   return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      return reject(new Error('Backup cancelled'))
+    }
+
     const archive = new ZipArchive({ zlib: { level: 9 } })
     const stream = fs.createWriteStream(outPath)
 
-    stream.on('close', () => resolve())
-    archive.on('error', (err) => reject(err))
+    let isDone = false
+    const cleanup = () => {
+      isDone = true
+      if (signal) {
+        signal.removeEventListener('abort', onAbort)
+      }
+    }
+
+    const onAbort = () => {
+      if (isDone) return
+      cleanup()
+      try {
+        archive.destroy()
+      } catch (_) {}
+      try {
+        stream.destroy(new Error('Backup cancelled'))
+      } catch (_) {}
+      reject(new Error('Backup cancelled'))
+    }
+
+    if (signal) {
+      signal.addEventListener('abort', onAbort, { once: true })
+    }
+
+    stream.on('close', () => {
+      if (isDone) return
+      cleanup()
+      resolve()
+    })
+
+    stream.on('error', (err) => {
+      if (isDone) return
+      cleanup()
+      try {
+        archive.destroy()
+      } catch (_) {}
+      reject(err)
+    })
+
+    archive.on('error', (err) => {
+      if (isDone) return
+      cleanup()
+      try {
+        stream.destroy(err)
+      } catch (_) {}
+      reject(err)
+    })
 
     archive.pipe(stream)
     archive.directory(sourceDir, false)
@@ -136,12 +185,13 @@ export async function backupWorkspaceZip(workspacePath, sender, signal = null) {
       sender.send('index:progress', { type: 'backup', stage: 'scanning', progress: 5 })
     }
 
-    backupFilePath = path.join(app.getPath('temp'), BACKUP_FILE_NAME)
+    const uniqueZipName = `lumina-backup-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.zip`
+    backupFilePath = path.join(app.getPath('temp'), uniqueZipName)
 
     if (signal?.aborted) throw new Error('Backup cancelled')
 
     // 1. Zip the workspace
-    await zipDirectory(workspacePath, backupFilePath)
+    await zipDirectory(workspacePath, backupFilePath, signal)
 
     if (signal?.aborted) throw new Error('Backup cancelled')
 

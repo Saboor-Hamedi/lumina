@@ -9,6 +9,8 @@
  * ============================================================================
  */
 
+import { escapeHtml } from '../exportUtils'
+
 export interface ThemeTokens {
   'bg-app': string
   'bg-panel': string
@@ -150,7 +152,7 @@ export function wrapPreviewDocument(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title}</title>
+  <title>${escapeHtml(title)}</title>
   ${extraHead}
   <style>
 ${css}

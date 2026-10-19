@@ -675,13 +675,15 @@ export class SettingsManager {
         return
       }
 
-      this.lastWrittenData = data
       await fs.mkdir(path.dirname(this.settingsPath), { recursive: true })
       await fs.writeFile(this.settingsPath, data, 'utf8')
+      this.lastWrittenData = data
 
       this.notifyChange()
     } catch (err) {
+      this.lastWrittenData = null
       console.error('[SettingsManager] Failed to save settings:', err)
+      throw err
     } finally {
       this.isWriting = false
     }

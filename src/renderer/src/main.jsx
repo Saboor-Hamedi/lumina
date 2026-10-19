@@ -41,12 +41,22 @@ const bootTheme = () => {
 
 bootTheme()
 
-// Purge any leaked or legacy keys from localStorage, leaving ONLY theme-id and theme-colors
+// Purge any leaked or legacy keys from localStorage, while preserving valid Lumina settings and state
 try {
-  const allowedKeys = new Set(['theme-id', 'theme-colors'])
+  const allowedExactKeys = new Set([
+    'theme-id',
+    'theme-colors',
+    'useBorderLeft',
+    'aiChatModalState'
+  ])
   for (let i = localStorage.length - 1; i >= 0; i--) {
     const key = localStorage.key(i)
-    if (key && !allowedKeys.has(key)) {
+    if (
+      key &&
+      !allowedExactKeys.has(key) &&
+      !key.startsWith('lumina_') &&
+      !key.startsWith('lumina-')
+    ) {
       localStorage.removeItem(key)
     }
   }

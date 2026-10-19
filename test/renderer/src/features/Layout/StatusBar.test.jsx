@@ -139,5 +139,27 @@ describe('StatusBar.jsx', () => {
       expect(screen.queryByText('Details')).not.toBeInTheDocument()
       expect(screen.getByText('Docs')).toBeInTheDocument()
     })
+
+    it('toggles an item back on and appears in the status bar', () => {
+      useWorkspaceStore.setState({
+        selectedSnippet: { id: '1', title: 'Note', code: 'Hello world this is a test note' }
+      })
+      useSettingsStore.setState((state) => ({
+        settings: { ...state.settings, statusBarItems: { words: false, details: false } }
+      }))
+
+      render(<StatusBar {...defaultProps()} />)
+      expect(screen.queryByText(/words/)).not.toBeInTheDocument()
+      expect(screen.queryByText('Details')).not.toBeInTheDocument()
+
+      fireEvent.contextMenu(screen.getByTestId('status-bar'))
+      fireEvent.click(screen.getByText('Word Count'))
+      fireEvent.click(screen.getByText('Details'))
+
+      expect(useSettingsStore.getState().settings.statusBarItems.words).toBe(true)
+      expect(useSettingsStore.getState().settings.statusBarItems.details).toBe(true)
+      expect(screen.getByText(/7 words/)).toBeInTheDocument()
+      expect(screen.getAllByText('Details').length).toBeGreaterThanOrEqual(2)
+    })
   })
 })

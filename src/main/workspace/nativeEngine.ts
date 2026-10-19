@@ -116,12 +116,32 @@ function loadRustCore(): RustCoreModule | null {
 
         // Try direct .node load in folder
         const files = fs.readdirSync(candidatePath)
-        const nodeFile = files.find((f) => f.endsWith('.node'))
-        if (nodeFile) {
-          const directNodePath = path.join(candidatePath, nodeFile)
-          rustCore = require(directNodePath) as RustCoreModule
-          console.log(`[Lumina Native Engine] Loaded direct .node native binary: ${directNodePath}`)
-          return rustCore
+        const nodeFiles = files.filter((f) => f.endsWith('.node'))
+
+        if (process.platform === 'win32') {
+          nodeFiles.sort((a, b) => {
+            const aMsvc = a.includes('msvc') ? -1 : 1
+            const bMsvc = b.includes('msvc') ? -1 : 1
+            return aMsvc - bMsvc
+          })
+        }
+
+        for (const nodeFile of nodeFiles) {
+          try {
+            const directNodePath = path.join(candidatePath, nodeFile)
+            rustCore = require(directNodePath) as RustCoreModule
+            if (rustCore && typeof rustCore.getCoreVersion === 'function') {
+              console.log(
+                `[Lumina Native Engine] Loaded direct .node native binary: ${directNodePath} (${rustCore.getCoreVersion()})`
+              )
+              return rustCore
+            }
+          } catch (binErr) {
+            console.warn(
+              `[Lumina Native Engine] Could not load candidate ${nodeFile}:`,
+              (binErr as any)?.message
+            )
+          }
         }
       }
     } catch (err) {

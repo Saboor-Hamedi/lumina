@@ -18,6 +18,7 @@
  */
 
 import React, { useMemo } from 'react'
+import { Check } from 'lucide-react'
 import ContextMenu from '../modals/ContextMenu'
 import type { StatusBarItemMeta } from './StatusBar'
 
@@ -78,12 +79,17 @@ export const StatusbarMenu: React.FC<StatusbarMenuProps> = ({
       }
       opts.push({ id: `__sec-${group.name}`, type: 'section', label: group.name })
       for (const item of group.items) {
+        const active = isVisible(item.id)
         opts.push({
           id: item.id,
           label: item.label,
-          icon: item.icon,
+          icon: active ? (
+            <Check size={14} className="menu-check" />
+          ) : (
+            <span style={{ width: 14, height: 14, display: 'inline-block' }} />
+          ),
           shortcut: shortcutFor(item.id),
-          isActive: () => isVisible(item.id),
+          isActive: () => active,
           keepOpen: true,
           onClick: () => onToggle(item.id)
         })

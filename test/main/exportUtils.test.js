@@ -89,6 +89,15 @@ describe('exportUtils.convertWikilinks', () => {
   it('converts to anchor in link mode', () => {
     expect(convertWikilinks('See [[Note]]', 'link')).toContain('<a href="#">Note</a>')
   })
+
+  it('escapes HTML special characters in wikilinks to prevent XSS injection', () => {
+    expect(convertWikilinks('See [[<script>alert(1)</script>]]')).toContain(
+      '<span class="wikilink">&lt;script&gt;alert(1)&lt;/script&gt;</span>'
+    )
+    expect(convertWikilinks('See [[" onclick="alert(1)]]', 'link')).toContain(
+      '<a href="#">&quot; onclick=&quot;alert(1)</a>'
+    )
+  })
 })
 
 describe('exportUtils.convertImagesToBase64', () => {

@@ -70,8 +70,6 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
     parallelIndex = 0,
     totalParallel = 1
   }) => {
-    if (!fromNode || !toNode) return null
-
     const [isEditingLabel, setIsEditingLabel] = useState(false)
     const [isHovered, setIsHovered] = useState(false)
     const hoverTimerRef = useRef<number | null>(null)
@@ -132,6 +130,9 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
     const lineStyle: CanvasEdgeLineStyle = edge.lineStyle || 'curved'
 
     const { pathD, midX, midY } = useMemo(() => {
+      if (!fromNode || !toNode) {
+        return { pathD: '', midX: 0, midY: 0 }
+      }
       return calculateEdgePath(
         fromNode,
         edge.fromSide,
@@ -144,20 +145,20 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
         totalParallel
       )
     }, [
-      fromNode.x,
-      fromNode.y,
-      fromNode.width,
-      fromNode.height,
-      fromNode.type,
-      fromNode.shape,
-      (fromNode as any).shapeType,
-      toNode.x,
-      toNode.y,
-      toNode.width,
-      toNode.height,
-      toNode.type,
-      toNode.shape,
-      (toNode as any).shapeType,
+      fromNode?.x,
+      fromNode?.y,
+      fromNode?.width,
+      fromNode?.height,
+      fromNode?.type,
+      fromNode?.shape,
+      (fromNode as any)?.shapeType,
+      toNode?.x,
+      toNode?.y,
+      toNode?.width,
+      toNode?.height,
+      toNode?.type,
+      toNode?.shape,
+      (toNode as any)?.shapeType,
       edge.fromSide,
       edge.toSide,
       lineStyle,
@@ -166,6 +167,8 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
       parallelIndex,
       totalParallel
     ])
+
+    if (!fromNode || !toNode) return null
 
     const targetColor = edge.color || toNode.color || 'default'
 

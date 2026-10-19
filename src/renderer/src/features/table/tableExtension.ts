@@ -716,6 +716,11 @@ export class TableWidget extends WidgetType {
     return true
   }
   destroy(dom: HTMLElement): void {
+    const wrap = dom as any
+    if (typeof wrap?.__cleanupSelection === 'function') {
+      wrap.__cleanupSelection()
+      wrap.__cleanupSelection = undefined
+    }
     disposeCellListeners(dom)
   }
 

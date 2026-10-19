@@ -11,7 +11,7 @@
 import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
 import path from 'path'
-import { renderMarkdown } from './exportUtils'
+import { renderMarkdown, escapeHtml } from './exportUtils'
 import WorkspaceManager from '../main/workspace/workspaceManager'
 import { createZipArchive, type ZipFileEntry } from './zipExporter'
 import { optimizeAssetData, type ImageOptimizationOptions } from './imageOptimizer'
@@ -58,7 +58,7 @@ export async function generateCleanHTML(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${title || 'Untitled'}</title>
+  <title>${escapeHtml(title || 'Untitled')}</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css">
   <style>
     :root {

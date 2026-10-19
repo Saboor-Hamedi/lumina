@@ -256,9 +256,9 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   const toggleItem = useCallback(
     (id: string) => {
       const base = statusBarItems && typeof statusBarItems === 'object' ? statusBarItems : {}
-      updateSetting('statusBarItems', { ...base, [id]: visibleMap[id] === false })
+      updateSetting('statusBarItems', { ...base, [id]: !isVisible(id) })
     },
-    [statusBarItems, visibleMap, updateSetting]
+    [statusBarItems, isVisible, updateSetting]
   )
 
   const shortcutFor = useCallback(
