@@ -36,7 +36,7 @@ export const detectUserIntent = (
   }
 
   const diagnosticPatterns =
-    /(?:^|\s)\/(?:doctor|docker)\b|\b(check yourself|run diagnostics|test (?:your )?health|system health|system check|diagnostics?|check health|health check|tell me about (?:your|you|lumina) health|how is your health|what is your health|you run (?:the )?(?:\/)?(?:doctor|docker)|run (?:the )?(?:doctor|docker)|your health|status of (?:the )?system|system status|how are you performing|check (?:your )?status|(?:check|inspect|diagnose) (?:lumina|the app|this app|the system)|is lumina (?:healthy|okay|ok|working|running)|docker|doctor|lumina health)\b/i
+    /(?:^|\s)\/(?:doctor|docker|diagnose)\b|\b(?:go\s+)?(?:run|check|test|do|start)\s+(?:a\s+)?(?:the\s+)?(?:system\s+)?(?:lumina\s+)?(?:health|doctor|docker|diagnostics?)\b|\b(check yourself|run diagnostics|test (?:your )?health|system health|system check|diagnostics?|check health|health check|tell me about (?:your|you|lumina) health|how is your health|what is your health|you run (?:the )?(?:\/)?(?:doctor|docker)|run (?:the )?(?:doctor|docker)|your health|status of (?:the )?system|system status|how are you performing|check (?:your )?status|(?:check|inspect|diagnose) (?:lumina|the app|this app|the system)|is lumina (?:healthy|okay|ok|working|running)|docker|doctor|lumina health)\b/i
 
   if (diagnosticPatterns.test(clean)) {
     return IntentCategory.DIAGNOSTICS

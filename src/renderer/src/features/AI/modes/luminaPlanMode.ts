@@ -5,7 +5,7 @@ export const luminaPlanMode: AIModeConfig = {
   name: 'Plan',
   description: 'Smart planning, architectural design, outlines, and structured blueprints.',
   temperature: 0.5,
-  max_tokens: 4000,
+  max_tokens: 8192,
   enableTools: false,
   systemAddon: `You are in PLAN MODE.
 In Plan Mode, you CANNOT write, create, update, draft, or delete files or folders in the workspace at all. You have NO workspace writing tools.

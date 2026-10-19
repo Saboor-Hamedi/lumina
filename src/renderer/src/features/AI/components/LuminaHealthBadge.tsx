@@ -56,11 +56,29 @@ export const LuminaHealthBadge: React.FC<LuminaHealthBadgeProps> = React.memo(
       try {
         if (clean.startsWith('{') && clean.endsWith('}')) {
           const parsed = JSON.parse(clean)
+          const metrics = parsed.metrics || {}
           return {
-            ...parsed,
+            ipcLatencyMs: parsed.ipcLatencyMs ?? metrics.ipcMs ?? 2,
+            ipcStatus: parsed.ipcStatus ?? (parsed.status === 'healthy' ? '🟢 Connected' : 'Ready'),
+            totalNotes: parsed.totalNotes ?? metrics.totalNotes ?? 0,
+            totalFolders: parsed.totalFolders ?? metrics.totalFolders ?? 0,
+            openTabsCount: parsed.openTabsCount ?? metrics.openTabs ?? 0,
+            dirtyNotesCount: parsed.dirtyNotesCount ?? metrics.unsavedChanges ?? 0,
+            activeNoteTitle: parsed.activeNoteTitle ?? '',
+            activeProvider: parsed.activeProvider ?? 'deepseek',
+            activeModel: parsed.activeModel ?? metrics.activeModel ?? 'deepseek-chat',
+            activeAIMode: parsed.activeAIMode ?? 'Code',
+            memoryCount: parsed.memoryCount ?? metrics.memoryItems ?? 0,
+            pendingTaskCount: parsed.pendingTaskCount ?? 0,
+            diskVerifyStatus: parsed.diskVerifyStatus ?? '🟢 Verified',
+            writeTimeMs: parsed.writeTimeMs ?? metrics.storageWriteMs ?? 1,
+            readTimeMs: parsed.readTimeMs ?? metrics.storageReadMs ?? 1,
+            jsHeap: parsed.jsHeap ?? (metrics.memoryFootprintMb ? `${metrics.memoryFootprintMb} MB` : 'Optimal'),
+            platformInfo: parsed.platformInfo ?? 'Desktop',
+            checksPassed: parsed.checksPassed ?? (Array.isArray(parsed.checks) ? parsed.checks.filter((c: any) => c.status === 'pass').length : 8),
+            totalChecks: parsed.totalChecks ?? (Array.isArray(parsed.checks) ? parsed.checks.length : 8),
             isChecking: isStreaming || Boolean(parsed.isChecking),
-            checksPassed: parsed.checksPassed ?? 8,
-            totalChecks: parsed.totalChecks ?? 8
+            ...parsed
           }
         }
       } catch (_) {}

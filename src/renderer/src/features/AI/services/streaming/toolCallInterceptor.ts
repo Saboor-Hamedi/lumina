@@ -31,6 +31,11 @@ export interface ParseAndExecuteResult {
  * updateFile, createFile, …) previously leaked because they were missing here.
  */
 export const TOOL_TAG_NAMES = [
+  'lumina-audit',
+  'lumina-health',
+  'lumina-index',
+  'lumina-activity',
+  'lumina-memory',
   'luminaQueryIndex',
   'queryIndex',
   'luminaDiagnoseSystem',
@@ -85,7 +90,7 @@ export const cleanRawToolLeaks = (text?: string): string => {
     .replace(PAIRED_TOOL_TAG_RE, '')
     .replace(LONE_TOOL_TAG_RE, '')
     .replace(
-      /<\/?(?:tool_calls?|invoke|parameter|luminaQueryIndex|queryIndex|luminaDiagnoseSystem|diagnoseSystem|auditWikilinks)[^>]*>/gi,
+      /<\/?(?:tool_calls?|invoke|parameter|lumina-audit|lumina-health|lumina-index|lumina-activity|lumina-memory|luminaQueryIndex|queryIndex|luminaDiagnoseSystem|diagnoseSystem|auditWikilinks)[^>]*>/gi,
       ''
     )
     .replace(
@@ -93,7 +98,12 @@ export const cleanRawToolLeaks = (text?: string): string => {
       ''
     )
     .replace(/limit>\s*\d+\s*<\/limit>/gi, '')
+    .replace(/<[a-zA-Z0-9_-]+"[^>]*>/g, '')
+    .replace(/<[^>]+">\s*/g, '')
     .replace(/(?:^|\s)[a-zA-Z0-9_-]+">\s*/g, ' ')
+    .replace(/\{"totalNotesScanned"[\s\S]*?(?:\n\n|$)/gi, '')
+    .replace(/\{"totalChecks"[\s\S]*?(?:\n\n|$)/gi, '')
+    .replace(/\{"totalWorkspaceNotes"[\s\S]*?(?:\n\n|$)/gi, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }
@@ -230,6 +240,18 @@ export const parseAndExecuteDSML = async (
     await handleToolRun(toolName, params)
   }
 
-  const cleanedText = cleanRawToolLeaks(text)
+  // Regex 4: JSON code block tool invocations ```json { "name": "...", "parameters": { ... } } ```
+  const jsonToolRegex = /```(?:json)?\s*(\{\s*"(?:name|tool|function)"\s*:\s*"([a-zA-Z0-9_-]+)"[\s\S]*?\})\s*```/gi
+  for (const match of text.matchAll(jsonToolRegex)) {
+    const rawJson = match[1]
+    const toolName = match[2].trim()
+    try {
+      const parsed = JSON.parse(rawJson)
+      const params = parsed.parameters || parsed.arguments || parsed.args || parsed.input || {}
+      await handleToolRun(toolName, params)
+    } catch (_) {}
+  }
+
+  const cleanedText = cleanRawToolLeaks(text).replace(jsonToolRegex, '').trim()
   return { cleanedText, didExecute, toolOutputs }
 }

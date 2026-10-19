@@ -137,6 +137,7 @@ export const ChatMessageRow: React.FC<ChatMessageRowProps> = React.memo(
                   imageUrl={msg.imageUrl}
                   imagePrompt={msg.imagePrompt}
                   onCopy={handleCopy}
+                  onSkipThinking={() => useAIStore.getState().skipThinking?.()}
                 />
                 {isLast && isChatLoading && (
                   <div style={{ marginTop: '8px' }}>

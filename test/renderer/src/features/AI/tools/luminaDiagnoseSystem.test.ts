@@ -98,7 +98,20 @@ describe('System Self-Diagnostics & Health Verification (luminaDiagnoseSystem)',
     expect(detectUserIntent('test health')).toBe(IntentCategory.DIAGNOSTICS)
     expect(detectUserIntent('system health')).toBe(IntentCategory.DIAGNOSTICS)
     expect(detectUserIntent('check health')).toBe(IntentCategory.DIAGNOSTICS)
+    expect(detectUserIntent('Go run health')).toBe(IntentCategory.DIAGNOSTICS)
+    expect(detectUserIntent('run health')).toBe(IntentCategory.DIAGNOSTICS)
     expect(detectUserIntent('/doctor')).toBe(IntentCategory.DIAGNOSTICS)
+  })
+
+  it('parses raw diagnostic JSON payload into an interactive health block', async () => {
+    const { parseMessageBlocks } = await import('../../../../../../src/renderer/src/features/AI/services/chatMarkdownParser')
+    const rawMsg = `I'll run a full diagnostic pass on Lumina right now.\n\n{"status":"healthy","timestamp":"2026-10-18T00:00:00.000Z","checks":[{"name":"App Responsiveness","status":"pass","detail":"IPC round-trip 4ms","durationMs":4},{"name":"Workspace Storage","status":"pass","detail":"Read 2ms, Write 3ms on lumina-health.md","durationMs":5},{"name":"Note Editor","status":"pass","detail":"1 open tab, 0 unsaved changes","durationMs":1},{"name":"Workspace Index","status":"pass","detail":"230 notes, 34 folders indexed","durationMs":12},{"name":"AI Engine","status":"pass","detail":"Model ready, memory loaded","durationMs":2},{"name":"Memory Store","status":"pass","detail":"memory.json readable, 4 items","durationMs":1}],"metrics":{"ipcMs":4,"storageReadMs":2,"storageWriteMs":3,"totalNotes":230,"totalFolders":34,"openTabs":1,"unsavedChanges":0,"memoryItems":4,"memoryFootprintMb":148,"activeModel":"DeepSeek"}}`
+    
+    const blocks = parseMessageBlocks(rawMsg)
+    expect(blocks.some((b) => b.type === 'health')).toBe(true)
+    const healthBlock = blocks.find((b) => b.type === 'health')
+    expect(healthBlock).toBeDefined()
+    expect(healthBlock?.content).toContain('"metrics"')
   })
 
   it('includes /doctor in SLASH_COMMANDS configured with Activity icon and /doctor insert text', () => {
@@ -108,7 +121,7 @@ describe('System Self-Diagnostics & Health Verification (luminaDiagnoseSystem)',
     expect(doctorCmd?.insertText).toBe('/doctor')
 
     const mockSetInput = vi.fn()
-    doctorCmd?.action(vi.fn(), { setInput: mockSetInput })
+    doctorCmd?.action?.(vi.fn(), { setInput: mockSetInput })
     expect(mockSetInput).toHaveBeenCalledWith('/doctor')
   })
 })

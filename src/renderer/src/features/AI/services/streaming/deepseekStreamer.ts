@@ -20,6 +20,7 @@
  */
 
 import type { AIModeConfig } from '../../types/ai.types'
+import type { LuminaStreamAbortController } from './luminaAndStreamHeartbeat'
 import {
   buildRealtimeDisplay,
   getToolStatusDescription
@@ -50,11 +51,13 @@ export interface RunDeepSeekStreamParams {
   systemPrompt: string
   finalMessages: any[]
   modeCfg: AIModeConfig
-  controller: AbortController
+  controller: LuminaStreamAbortController | AbortController
   sdkTools: Record<string, any>
+  initialTimeline?: any[]
   onContentUpdate: (content: string) => void
   onThinkingStatusUpdate: (status: string) => void
   onToolActivity?: (toolName: string, args: Record<string, any>, result: any) => void
+  onHeartbeat?: () => void
 }
 
 /**
@@ -68,9 +71,11 @@ export const runDeepSeekStream = async ({
   modeCfg,
   controller,
   sdkTools,
+  initialTimeline,
   onContentUpdate,
   onThinkingStatusUpdate,
-  onToolActivity
+  onToolActivity,
+  onHeartbeat
 }: RunDeepSeekStreamParams): Promise<{ usage: any }> => {
   const { aiSdk: sdk, createDeepseekProvider: createDs } = await ensureAISdk()
 
@@ -95,12 +100,28 @@ export const runDeepSeekStream = async ({
       : undefined
   })
 
-  const timeline: any[] = []
+  const timeline: any[] = initialTimeline ? [...initialTimeline] : []
   let activeToolStatus = ''
   let streamingToolName = ''
   let streamingArgsRaw = ''
   let recordedTarget = ''
   let isParsingModelThink = false
+  let skippedThinking = false
+
+  const streamCtrl = controller as LuminaStreamAbortController
+  if (streamCtrl) {
+    streamCtrl.onSkipThinking = () => {
+      if (skippedThinking) return
+      skippedThinking = true
+      // Preserve isParsingModelThink so incoming reasoning tokens are discarded and never leak into text-delta
+      const thinkSeg = timeline.find((s) => s.type === 'think')
+      if (thinkSeg && !thinkSeg.content.includes('(Thinking skipped by user)')) {
+        thinkSeg.content = (thinkSeg.content.trim() + '\n\n*(Thinking skipped by user)*').trim()
+      }
+      updateDisplay(true)
+      onThinkingStatusUpdate('Proceeding to execution...')
+    }
+  }
 
   const getOrCreateThinkSegment = () => {
     let thinkSeg = timeline.find((s) => s.type === 'think')
@@ -155,6 +176,9 @@ export const runDeepSeekStream = async ({
 
   for await (const chunk of result.fullStream) {
     if (controller.signal.aborted) break
+    try {
+      onHeartbeat?.()
+    } catch (_) {}
     if (!chunk || typeof chunk.type !== 'string') continue
 
     if (chunk.type === 'tool-input-start' || chunk.type === 'tool-call-streaming-start') {
@@ -376,6 +400,7 @@ export const runDeepSeekStream = async ({
         onThinkingStatusUpdate('Synthesizing response...')
       }
     } else if (chunk.type === 'reasoning' || chunk.type === 'reasoning-delta') {
+      if (skippedThinking) continue
       const rDelta = chunk.textDelta || chunk.text || chunk.delta || ''
       if (rDelta) {
         const thinkSeg = getOrCreateThinkSegment()
@@ -388,13 +413,17 @@ export const runDeepSeekStream = async ({
       if (isParsingModelThink) {
         if (delta.includes('</think>')) {
           const [thinkPart, afterPart] = delta.split('</think>')
-          const thinkSeg = getOrCreateThinkSegment()
-          thinkSeg.content += thinkPart
+          if (!skippedThinking) {
+            const thinkSeg = getOrCreateThinkSegment()
+            thinkSeg.content += thinkPart
+          }
           isParsingModelThink = false
           delta = afterPart || ''
         } else {
-          const thinkSeg = getOrCreateThinkSegment()
-          thinkSeg.content += delta
+          if (!skippedThinking) {
+            const thinkSeg = getOrCreateThinkSegment()
+            thinkSeg.content += delta
+          }
           delta = ''
         }
       } else if (delta.includes('<think>')) {
@@ -402,14 +431,20 @@ export const runDeepSeekStream = async ({
         if (beforePart) {
           appendTextDelta(beforePart)
         }
-        const thinkSeg = getOrCreateThinkSegment()
+        isParsingModelThink = true
         if (thinkPart.includes('</think>')) {
           const [innerThink, rest] = thinkPart.split('</think>')
-          thinkSeg.content += (thinkSeg.content ? '\n\n' : '') + innerThink
+          if (!skippedThinking) {
+            const thinkSeg = getOrCreateThinkSegment()
+            thinkSeg.content += (thinkSeg.content ? '\n\n' : '') + innerThink
+          }
+          isParsingModelThink = false
           delta = rest || ''
         } else {
-          thinkSeg.content += (thinkSeg.content ? '\n\n' : '') + thinkPart
-          isParsingModelThink = true
+          if (!skippedThinking) {
+            const thinkSeg = getOrCreateThinkSegment()
+            thinkSeg.content += (thinkSeg.content ? '\n\n' : '') + thinkPart
+          }
           delta = ''
         }
       }
@@ -420,6 +455,8 @@ export const runDeepSeekStream = async ({
           .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
           .replace(/<[｜|][^>]*$/g, '')
           .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*$/gi, '')
+          .replace(/<\/?(?:lumina-audit|lumina-health|lumina-index|lumina-activity|lumina-memory)[^>]*>[\s\S]*?(?:<\/(?:lumina-audit|lumina-health|lumina-index|lumina-activity|lumina-memory)[^>]*>|$)/gi, '')
+          .replace(/<\/?(?:lumina-audit|lumina-health|lumina-index|lumina-activity|lumina-memory)[^>]*>/gi, '')
       }
 
       if (delta) {
@@ -455,6 +492,10 @@ export const runDeepSeekStream = async ({
   onThinkingStatusUpdate('')
 
   try {
+    const finishReason = await result.finishReason.catch(() => null)
+    if (finishReason === 'length') {
+      console.warn('[DeepSeekStreamer] Stream reached token ceiling (finish_reason: length).')
+    }
     const steps = await result.steps
     const toolResults = steps?.flatMap((s: any) => s.toolResults || []) || []
     if (toolResults.length > 0) {
@@ -540,13 +581,18 @@ export const runDeepSeekStream = async ({
   const stripStray = (txt?: string): string => {
     if (!txt) return ''
     const withoutSpecial = txt
-      .replace(/<think>[\s\S]*?<\/think>/gi, '')
-      .replace(/<\/?think>/gi, '')
-      .replace(/<lumina-activity>[\s\S]*?<\/lumina-activity>/gi, '')
-      .replace(/<lumina-memory>[\s\S]*?<\/lumina-memory>/gi, '')
-      .replace(/<lumina-audit>[\s\S]*?<\/lumina-audit>/gi, '')
-      .replace(/<lumina-health>[\s\S]*?<\/lumina-health>/gi, '')
-      .replace(/<lumina-index>[\s\S]*?<\/lumina-index>/gi, '')
+      .replace(/<think[^>]*>[\s\S]*?<\/think[^>]*>/gi, '')
+      .replace(/<\/?think[^>]*>/gi, '')
+      .replace(/<lumina-activity[^>]*>[\s\S]*?<\/lumina-activity[^>]*>/gi, '')
+      .replace(/<\/?lumina-activity[^>]*>/gi, '')
+      .replace(/<lumina-memory[^>]*>[\s\S]*?<\/lumina-memory[^>]*>/gi, '')
+      .replace(/<\/?lumina-memory[^>]*>/gi, '')
+      .replace(/<lumina-audit[^>]*>[\s\S]*?(?:<\/lumina-audit[^>]*>|$)/gi, '')
+      .replace(/<\/?lumina-audit[^>]*>/gi, '')
+      .replace(/<lumina-health[^>]*>[\s\S]*?(?:<\/lumina-health[^>]*>|$)/gi, '')
+      .replace(/<\/?lumina-health[^>]*>/gi, '')
+      .replace(/<lumina-index[^>]*>[\s\S]*?(?:<\/lumina-index[^>]*>|$)/gi, '')
+      .replace(/<\/?lumina-index[^>]*>/gi, '')
     return cleanRawToolLeaks(withoutSpecial)
   }
 

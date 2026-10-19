@@ -5,7 +5,7 @@ export const luminaCreativeMode: AIModeConfig = {
   name: 'Creative',
   description: 'Vivid storytelling, expressive writing, rich analogies, and inventive ideation.',
   temperature: 0.9,
-  max_tokens: 4000,
+  max_tokens: 8192,
   enableTools: true,
   systemAddon: `You are in CREATIVE MODE.
 Your primary role is imaginative writing, engaging storytelling, vivid metaphors, inventive ideation, and crafting compelling narratives.

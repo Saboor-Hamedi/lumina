@@ -5,7 +5,7 @@ export const luminaDeepMode: AIModeConfig = {
   name: 'Deep',
   description: 'In-depth step-by-step reasoning (Chain-of-Thought) and deep analytical synthesis.',
   temperature: 0.6,
-  max_tokens: 4000,
+  max_tokens: 8192,
   enableTools: true,
   systemAddon: `You are in DEEP MODE.
 Your primary role is in-depth, rigorous, step-by-step reasoning (Chain-of-Thought) and comprehensive analysis.

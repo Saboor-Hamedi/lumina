@@ -130,6 +130,47 @@
   color: var(--text-accent);
 }
 
+.chat-thinking-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-skip-thinking-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(var(--text-accent-rgb, 168, 85, 247), 0.12);
+  border: 1px solid rgba(var(--text-accent-rgb, 168, 85, 247), 0.24);
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-size: 10px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-accent);
+  cursor: pointer;
+  transition: all 0.14s ease-out;
+  line-height: 1.4;
+  user-select: none;
+}
+
+.chat-skip-thinking-btn:hover {
+  background: rgba(var(--text-accent-rgb, 168, 85, 247), 0.22);
+  border-color: rgba(var(--text-accent-rgb, 168, 85, 247), 0.45);
+  box-shadow: 0 0 8px rgba(var(--text-accent-rgb, 168, 85, 247), 0.25);
+  transform: translateY(-0.5px);
+}
+
+.chat-skip-thinking-btn:active {
+  transform: translateY(0);
+}
+
+[data-theme='light'] .chat-skip-thinking-btn,
+[data-theme='polaris'] .chat-skip-thinking-btn {
+  background: rgba(var(--text-accent-rgb, 99, 102, 241), 0.1);
+  border-color: rgba(var(--text-accent-rgb, 99, 102, 241), 0.28);
+}
+
 .chat-thinking-chevron {
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   color: var(--text-faint);

@@ -25,6 +25,7 @@ export interface MessageContentProps {
   imageUrl?: string
   imagePrompt?: string
   onCopy?: (content: string) => void
+  onSkipThinking?: () => void
 }
 
 const REMARK_PLUGINS = [remarkGfm]
@@ -45,7 +46,7 @@ const MarkdownBlock: React.FC<{ content: string; components: any }> = React.memo
  * memory badges, reasoning thinking blocks, workspace activities, and Markdown.
  */
 export const MessageContent: React.FC<MessageContentProps> = React.memo(
-  ({ content, isStreaming = false }) => {
+  ({ content, isStreaming = false, onSkipThinking }) => {
     const blocks = useMemo(() => {
       return parseMessageBlocks(content)
     }, [content])
@@ -128,6 +129,7 @@ export const MessageContent: React.FC<MessageContentProps> = React.memo(
                 key={`think-${idx}`}
                 thinkContent={block.content}
                 isStreaming={isStreaming && idx === lastThinkIdx}
+                onSkipThinking={onSkipThinking}
               />
             )
           }

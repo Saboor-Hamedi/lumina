@@ -29,7 +29,9 @@ import {
   runFallbackProviderStream,
   applyLegacyMarkdownBlocks,
   getToolResultThought,
-  getToolStatusDescription
+  getToolStatusDescription,
+  createLuminaStreamController,
+  RollingInactivityHeartbeat
 } from '../services/aiStreamRunner'
 import { detectUserIntent, IntentCategory } from '../services/intentRouter'
 import { getAIMode } from '../modes/index'
@@ -651,6 +653,18 @@ export const useAIStore = create<AIStore>((set, get) => {
       set({ isChatLoading: false, chatController: null })
     },
 
+    skipThinking: () => {
+      const controller = get().chatController as any
+      if (controller && typeof controller.skipThinking === 'function') {
+        controller.skipThinking()
+      } else if (controller) {
+        controller.skipThinkingRequested = true
+        if (typeof controller.onSkipThinking === 'function') {
+          controller.onSkipThinking()
+        }
+      }
+    },
+
     // --- Main Chat Send Message Orchestrator ---
     sendChatMessage: async (
       message: string,
@@ -784,6 +798,7 @@ export const useAIStore = create<AIStore>((set, get) => {
       // Explicit slash commands or offline fallbacks
       const isExplicitDoctorCmd = /^\/(?:doctor|docker|diagnose)\b/i.test(cleanMessage)
       const isConversationalHealth =
+        /^(?:go\s+)?(?:run|check|test|do|start)\s+(?:a\s+)?(?:the\s+)?(?:system\s+)?(?:your|you|lumina\s+)?(?:health|doctor|docker|diagnostics?)(?:\s+.*)?$/i.test(cleanMessage) ||
         /^(?:tell\s+me\s+about\s+(?:your|you|lumina)\s+health|check\s+(?:your\s+)?health|run\s+diagnostics|system\s+health|how\s+is\s+your\s+health)(?:\s+.*)?$/i.test(cleanMessage) ||
         /^(?:you\s+)?run\s+(?:the\s+)?(?:\/)?(?:doctor|docker)(?:\s+.*)?$/i.test(cleanMessage)
 
@@ -905,12 +920,15 @@ export const useAIStore = create<AIStore>((set, get) => {
         set({
           chatMessages: newHistory,
           isChatLoading: true,
-          activeThinkingStatus: 'Auditing workspace wikilinks...'
+          activeThinkingStatus: 'Scanning workspace links & querying index...'
         })
         try {
-          const { auditWikilinksTool } = await import('./index')
-          const res: any = await (auditWikilinksTool.execute as any)({})
-          const data = res?.result || {}
+          const { auditWikilinksTool, luminaQueryIndexTool } = await import('./index')
+          const [auditRes, indexRes] = await Promise.all([
+            (auditWikilinksTool.execute as any)({}),
+            (luminaQueryIndexTool.execute as any)({ limit: 50, sortBy: 'modified' })
+          ])
+          const data = auditRes?.result || {}
           const totalNotes = data.totalNotesScanned ?? 0
           const totalLinks = data.totalLinksFound ?? 0
           const broken = data.brokenLinks || []
@@ -919,7 +937,7 @@ export const useAIStore = create<AIStore>((set, get) => {
           const assistantMsg: ChatMessage = {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: `I'll scan the full workspace graph to find notes that nothing else points to.\n\n<lumina-audit>\n${res?.result ? JSON.stringify(res.result) : (res?.summary || '')}\n</lumina-audit>\n\nHere's what the scan turned up. Out of your ${totalNotes} notes, the graph reports ${orphans.length} files with zero inbound links — meaning no other note points to them with a wikilink. Everything else in your vault is reachable through at least one connection.\n\n${orphans.length > 0 ? `The orphans include: ${orphans.slice(0, 10).map((o: string) => `[[${o}]]`).join(', ')}${orphans.length > 10 ? ` and ${orphans.length - 10} more` : ''}.` : 'Every note in your workspace is connected!'}\n${broken.length > 0 ? `Additionally, found ${broken.length} broken links pointing to missing notes.` : 'No broken link targets found.'}\n\nWant me to draft the exact wikilink lines to add so every orphan gets wired in — and should I also surface any unlinked mentions I found so you can convert them with one click?`,
+            content: `I've analyzed your workspace graph and queried the index in parallel.\n\n<lumina-index>\n${indexRes?.result ? JSON.stringify(indexRes.result) : (indexRes?.summaryMarkdown || indexRes?.summary || '')}\n</lumina-index>\n\n<lumina-audit>\n${auditRes?.result ? JSON.stringify(auditRes.result) : (auditRes?.summary || '')}\n</lumina-audit>\n\nHere's what the parallel scan turned up: scanned ${totalNotes} notes across the index, found ${totalLinks} wikilinks and ${orphans.length} orphan notes.\n\n${orphans.length > 0 ? `The orphans include: ${orphans.slice(0, 10).map((o: string) => `[[${o}]]`).join(', ')}${orphans.length > 10 ? ` and ${orphans.length - 10} more` : ''}.` : 'Every note in your workspace is connected!'}\n${broken.length > 0 ? `Additionally, found ${broken.length} broken links pointing to missing notes.` : 'No broken link targets found.'}\n\nWant me to draft the exact wikilink lines to add so every orphan gets wired in — and should I also surface any unlinked mentions I found so you can convert them with one click?`,
             timestamp: Date.now()
           }
           set({
@@ -1120,8 +1138,18 @@ export const useAIStore = create<AIStore>((set, get) => {
         timestamp: Date.now()
       }
 
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller?.abort(), 180000)
+      const controller = createLuminaStreamController()
+      const heartbeat = new RollingInactivityHeartbeat({
+        inactivityMs: 60000,
+        ceilingMs: 600000,
+        onTimeout: (reason) => {
+          console.warn(`[AIStore] ${reason}`)
+          try {
+            controller.abort()
+          } catch (_) {}
+        }
+      })
+      heartbeat.start()
       const startTime = requestStartedAt
       const reviewChanges: WorkspaceReviewChange[] = []
 
@@ -1315,7 +1343,8 @@ export const useAIStore = create<AIStore>((set, get) => {
             sdkTools,
             onContentUpdate: handleContentUpdate,
             onThinkingStatusUpdate: handleThinkingStatusUpdate,
-            onToolActivity: handleToolActivity
+            onToolActivity: handleToolActivity,
+            onHeartbeat: () => heartbeat.beat()
           })
         } else {
           const fullContent = await runFallbackProviderStream({
@@ -1328,7 +1357,8 @@ export const useAIStore = create<AIStore>((set, get) => {
             sdkTools,
             onContentUpdate: handleContentUpdate,
             onThinkingStatusUpdate: handleThinkingStatusUpdate,
-            onToolActivity: handleToolActivity
+            onToolActivity: handleToolActivity,
+            onHeartbeat: () => heartbeat.beat()
           })
 
           const cleanedContent = await applyLegacyMarkdownBlocks(fullContent, vs, handleToolActivity)
@@ -1395,7 +1425,7 @@ export const useAIStore = create<AIStore>((set, get) => {
           }
         })
       } finally {
-        if (timeoutId) clearTimeout(timeoutId)
+        heartbeat.stop()
         set((state) => {
           const msgs = [...state.chatMessages]
           const responseIndex = msgs.findIndex((msg) => msg.id === assistantMsg.id)

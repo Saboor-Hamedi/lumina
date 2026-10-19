@@ -42,15 +42,36 @@ export const LuminaAuditBadge: React.FC<LuminaAuditBadgeProps> = React.memo(
         }
       } catch (_) {}
 
-      // Fallback: parse numbers from markdown summary table
-      const notesMatch = clean.match(/Total Notes Scanned\s*\|\s*\*?\*?(\d[\d,]*)\*?\*?/i)
-      const linksMatch = clean.match(/Total (?:Wiki)?links (?:Found|Analyzed)\s*\|\s*\*?\*?(\d[\d,]*)\*?\*?/i)
-      const healthyMatch = clean.match(/Valid Connected Links\s*\|\s*\*?\*?(\d[\d,]*)\*?\*?/i)
-      const brokenMatch = clean.match(/Broken \/ Missing Links\s*\|\s*\*?\*?(\d[\d,]*)\*?\*?/i)
-      const orphanMatch = clean.match(/Orphan Notes[^|]*\|\s*\*?\*?(\d[\d,]*)\*?\*?/i)
+      // Fallback: parse numbers from truncated JSON or markdown summary table
+      const jsonNotes = clean.match(/"totalNotesScanned"\s*:\s*(\d+)/i)
+      const jsonLinks = clean.match(/"totalLinksFound"\s*:\s*(\d+)/i)
+      const jsonHealthy = clean.match(/"healthyLinksCount"\s*:\s*(\d+)/i)
+      const jsonBroken = clean.match(/"brokenLinksCount"\s*:\s*(\d+)/i)
+      const jsonOrphans = clean.match(/"orphanNotesCount"\s*:\s*(\d+)/i)
+
+      const notesMatch = jsonNotes || clean.match(/Total Notes Scanned\s*\|\s*\*?\*?(\d[\d,]*)\*?\*?/i)
+      const linksMatch = jsonLinks || clean.match(/Total (?:Wiki)?links (?:Found|Analyzed)\s*\|\s*\*?\*?(\d[\d,]*)\*?\*?/i)
+      const healthyMatch = jsonHealthy || clean.match(/Valid Connected Links\s*\|\s*\*?\*?(\d[\d,]*)\*?\*?/i)
+      const brokenMatch = jsonBroken || clean.match(/Broken \/ Missing Links\s*\|\s*\*?\*?(\d[\d,]*)\*?\*?/i)
+      const orphanMatch = jsonOrphans || clean.match(/Orphan Notes[^|]*\|\s*\*?\*?(\d[\d,]*)\*?\*?/i)
 
       const parseNum = (m: RegExpMatchArray | null) =>
         m ? parseInt(m[1].replace(/,/g, ''), 10) : undefined
+
+      const extractedBrokenLinks: Array<{ sourceNote: string; targetNote: string; folder?: string }> = []
+      const brokenRegex = /\{\s*"sourceNote"\s*:\s*"([^"]+)"\s*,\s*"targetNote"\s*:\s*"([^"]+)"/g
+      for (const m of clean.matchAll(brokenRegex)) {
+        extractedBrokenLinks.push({ sourceNote: m[1], targetNote: m[2] })
+      }
+
+      const extractedOrphans: string[] = []
+      const orphansMatch = clean.match(/"orphanNotes"\s*:\s*\[([^\]]*)\]/i)
+      if (orphansMatch) {
+        const orphanStrRegex = /"([^"]+)"/g
+        for (const om of orphansMatch[1].matchAll(orphanStrRegex)) {
+          extractedOrphans.push(om[1])
+        }
+      }
 
       return {
         totalNotesScanned: parseNum(notesMatch),
@@ -58,7 +79,9 @@ export const LuminaAuditBadge: React.FC<LuminaAuditBadgeProps> = React.memo(
         healthyLinksCount: parseNum(healthyMatch),
         brokenLinksCount: parseNum(brokenMatch),
         orphanNotesCount: parseNum(orphanMatch),
-        isScanning: isStreaming
+        brokenLinks: extractedBrokenLinks.length > 0 ? extractedBrokenLinks : undefined,
+        orphanNotes: extractedOrphans.length > 0 ? extractedOrphans : undefined,
+        isScanning: isStreaming && !jsonNotes
       }
     }, [content, isStreaming])
 

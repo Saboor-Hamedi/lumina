@@ -25,6 +25,7 @@ export interface RunFallbackProviderStreamParams {
   onContentUpdate: (content: string) => void
   onThinkingStatusUpdate: (status: string) => void
   onToolActivity?: (toolName: string, args: Record<string, any>, result: any) => void
+  onHeartbeat?: () => void
 }
 
 export const runFallbackProviderStream = async ({
@@ -123,6 +124,9 @@ export const runFallbackProviderStream = async ({
 
   for await (const chunk of stream) {
     if (controller.signal.aborted) break
+    try {
+      onHeartbeat?.()
+    } catch (_) {}
     if (chunk) {
       fullContent += chunk
       scheduleUpdate()

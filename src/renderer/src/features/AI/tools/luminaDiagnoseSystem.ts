@@ -216,7 +216,7 @@ export const luminaDiagnoseSystemTool = aiSdk.tool({
         summary: `🩺 Health Check Passed: All 8 systems running smoothly (${ipcLatencyMs}ms core response).${saveToDisk ? ' Saved report to lumina-health.md.' : ''}`,
         report: reportMarkdown,
         result: payload,
-        instruction_to_ai: `Health check completed successfully. Respond warmly and conversationally to the user explaining what you inspected (core response speed, workspace storage, notes count, editor synchronization) and what you found. You can include <lumina-health>${JSON.stringify(payload)}</lumina-health> in your response alongside your conversational explanation.`
+        instruction_to_ai: 'Health check completed successfully. The interactive <lumina-health> badge is automatically displayed in the UI. Respond warmly and conversationally to the user explaining what you inspected (core response speed, workspace storage, notes count, editor synchronization) and what you found. DO NOT output raw JSON dumps or duplicate badge tags.'
       }
     } catch (err: any) {
       return {

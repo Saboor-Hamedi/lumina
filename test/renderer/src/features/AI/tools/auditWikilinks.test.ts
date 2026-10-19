@@ -144,6 +144,22 @@ Everything looks well organized!`
     expect(blocks[2].content).toContain('Everything looks well organized!')
   })
 
+  it('parses mangled <lumina-audit"> blocks with truncated JSON in parseMessageBlocks', async () => {
+    const { parseMessageBlocks } = await import(
+      '../../../../../../src/renderer/src/features/AI/services/chatMarkdownParser'
+    )
+
+    const mangledMessage = `Here is your scan report:
+<lumina-audit">{"totalNotesScanned":230,"totalLinksFound":3203,"healthyLinksCount":3183,"brokenLinksCount":20,"orphanNotesCount":14,"brokenLinks":[{"sourceNote":"11 Summary — vocabulary building","targetNote":"enrichment/semester 1/05 Prepositions: Where and`
+
+    const blocks = parseMessageBlocks(mangledMessage)
+    expect(blocks.length).toBe(2)
+    expect(blocks[0].type).toBe('markdown')
+    expect(blocks[0].content).toContain('Here is your scan report:')
+    expect(blocks[1].type).toBe('audit')
+    expect(blocks[1].content).toContain('"totalNotesScanned":230')
+  })
+
   it('buildRealtimeDisplay emits <lumina-audit> for audit timeline segments', async () => {
     const { buildRealtimeDisplay } = await import(
       '../../../../../../src/renderer/src/features/AI/services/aiStreamRunner'

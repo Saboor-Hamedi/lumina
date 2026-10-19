@@ -5,7 +5,7 @@ export const luminaCodeMode: AIModeConfig = {
   name: 'Code',
   description: 'Senior Software Engineer specialized in code implementation, scripts, and software architecture.',
   temperature: 0.2,
-  max_tokens: 4000,
+  max_tokens: 8192,
   enableTools: true,
   systemAddon: `You are in CODE MODE.
 - Output robust, production-ready, clean code and documentation.

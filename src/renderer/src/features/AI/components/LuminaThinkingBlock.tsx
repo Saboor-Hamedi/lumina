@@ -1,18 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Brain, ChevronDown } from 'lucide-react'
+import { Brain, ChevronDown, FastForward } from 'lucide-react'
 import { formatLuminaTime } from './LuminaTimer'
 import '../css/chatThinking.css'
 
 export interface ThinkingBlockProps {
   thinkContent?: string
   isStreaming?: boolean
+  onSkipThinking?: () => void
 }
 
 /**
  * ThinkingBlock renders the collapsible internal monologue / reasoning stream
- * from models (such as DeepSeek-R1), featuring elapsed thought duration and auto-scroll.
+ * from models (such as DeepSeek-R1), featuring elapsed thought duration, auto-scroll,
+ * and a 1-click "Skip thinking" action to bypass prolonged reasoning.
  */
-export const ThinkingBlock: React.FC<ThinkingBlockProps> = React.memo(({ thinkContent, isStreaming = false }) => {
+export const ThinkingBlock: React.FC<ThinkingBlockProps> = React.memo(
+  ({ thinkContent, isStreaming = false, onSkipThinking }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const prevStreamingRef = useRef<boolean>(isStreaming)
   const [elapsed, setElapsed] = useState<number>(0)
@@ -70,6 +73,37 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = React.memo(({ thinkCo
           </span>
         </div>
         <div className="chat-thinking-header-right">
+          {isStreaming && (
+            <span
+              role="button"
+              tabIndex={0}
+              className="chat-skip-thinking-btn"
+              onClick={(e) => {
+                e.stopPropagation()
+                e.preventDefault()
+                if (onSkipThinking) {
+                  onSkipThinking()
+                } else {
+                  try {
+                    // @ts-ignore
+                    window.__lumina_skip_thinking?.()
+                  } catch {}
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.stopPropagation()
+                  e.preventDefault()
+                  onSkipThinking?.()
+                }
+              }}
+              title="Skip reasoning and proceed to response"
+              aria-label="Skip thinking"
+            >
+              <FastForward size={11} />
+              <span>Skip thinking</span>
+            </span>
+          )}
           <ChevronDown
             size={12}
             className={`chat-thinking-chevron ${isOpen ? 'rotated' : ''}`}

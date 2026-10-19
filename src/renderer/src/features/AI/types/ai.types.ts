@@ -167,6 +167,7 @@ export interface AIStoreActions {
   updateMessage: (index: number, updates: Partial<ChatMessage>) => Promise<void>
   clearChat: () => Promise<void>
   cancelChat: () => void
+  skipThinking?: () => void
   sendChatMessage: (
     message: string,
     contextSnippets?: unknown[],

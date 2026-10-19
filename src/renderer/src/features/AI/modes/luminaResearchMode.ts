@@ -5,7 +5,7 @@ export const luminaResearchMode: AIModeConfig = {
   name: 'Research',
   description: 'Deep research, thesis guidance, analysis, and knowledge synthesis with full workspace access.',
   temperature: 0.3,
-  max_tokens: 8000,
+  max_tokens: 8192,
   enableTools: true,
   systemAddon: `You are in RESEARCH MODE.
 - Conduct deep research, provide thesis guidance, perform analysis, and synthesize knowledge with full file and folder creation capabilities.

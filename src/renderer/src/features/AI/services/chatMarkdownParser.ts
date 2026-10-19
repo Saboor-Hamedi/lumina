@@ -336,7 +336,7 @@ export const parseMessageBlocks = (content?: string): MessageBlock[] => {
       .replace(/<[｜|]{1,2}[\s\S]*?[｜|]{1,2}>/g, '')
       .replace(/<[^>]*(?:DSML|tool_calls?)[^>]*>/gi, '')
       .replace(
-        /<\/?(?:tool_calls?|invoke|parameter|luminaQueryIndex|queryIndex|luminaDiagnoseSystem|diagnoseSystem|auditWikilinks)[^>]*>/gi,
+        /<\/?(?:tool_calls?|invoke|parameter|lumina-audit|lumina-health|lumina-index|lumina-activity|lumina-memory|luminaQueryIndex|queryIndex|luminaDiagnoseSystem|diagnoseSystem|auditWikilinks)[^>]*>/gi,
         ''
       )
       .replace(
@@ -344,18 +344,24 @@ export const parseMessageBlocks = (content?: string): MessageBlock[] => {
         ''
       )
       .replace(/limit>\s*\d+\s*<\/limit>/gi, '')
+      .replace(/<[a-zA-Z0-9_-]+"[^>]*>/g, '')
+      .replace(/<[^>]+">\s*/g, '')
       .replace(/(?:^|\s)[a-zA-Z0-9_-]+">\s*/g, ' ')
+      .replace(/\{"totalNotesScanned"[\s\S]*?(?:\n\n|$)/gi, '')
+      .replace(/\{"totalChecks"[\s\S]*?(?:\n\n|$)/gi, '')
+      .replace(/\{"totalWorkspaceNotes"[\s\S]*?(?:\n\n|$)/gi, '')
       .replace(/\n{3,}/g, '\n\n')
       .trim()
 
   const blocks: MessageBlock[] = []
-  const tagRegex = /(?:<think>([\s\S]*?)(?:<\/think>|$))|(?:<lumina-activity>([\s\S]*?)(?:<\/lumina-activity>|$))|(?:<lumina-memory>([\s\S]*?)(?:<\/lumina-memory>|$))|(?:<lumina-audit>([\s\S]*?)(?:<\/lumina-audit>|$))|(?:<lumina-health>([\s\S]*?)(?:<\/lumina-health>|$))|(?:<lumina-index>([\s\S]*?)(?:<\/lumina-index>|$))/gi
+  const tagRegex =
+    /(?:<think[^>]*>([\s\S]*?)(?:<\/think[^>]*>|$))|(?:<lumina-activity[^>]*>([\s\S]*?)(?:<\/lumina-activity[^>]*>|$))|(?:<lumina-memory[^>]*>([\s\S]*?)(?:<\/lumina-memory[^>]*>|$))|(?:<lumina-audit[^>]*>([\s\S]*?)(?:<\/lumina-audit[^>]*>|$))|(?:<lumina-health[^>]*>([\s\S]*?)(?:<\/lumina-health[^>]*>|$))|(?:<lumina-index[^>]*>([\s\S]*?)(?:<\/lumina-index[^>]*>|$))|(?:<<<LUMINA_INDEX_QUERY:([\s\S]*?)>>>)/gi
   let lastIndex = 0
   let match: RegExpExecArray | null
 
   while ((match = tagRegex.exec(content)) !== null) {
     const textBefore = content.slice(lastIndex, match.index)
-    const cleanBefore = stripDSML(textBefore).replace(/<\/?(?:think|lumina-activity|lumina-memory|lumina-audit|lumina-health|lumina-index)>/gi, '').trim()
+    const cleanBefore = stripDSML(textBefore).replace(/<\/?(?:think|lumina-activity|lumina-memory|lumina-audit|lumina-health|lumina-index)[^>]*>/gi, '').trim()
     if (cleanBefore) {
       blocks.push({ type: 'markdown', content: cleanBefore })
     }
@@ -390,13 +396,16 @@ export const parseMessageBlocks = (content?: string): MessageBlock[] => {
       if (indexText) {
         blocks.push({ type: 'index', content: indexText })
       }
+    } else if (match[7] !== undefined) {
+      const rawMarker = `<<<LUMINA_INDEX_QUERY:${match[7]}>>>`
+      blocks.push({ type: 'index', content: rawMarker })
     }
 
     lastIndex = tagRegex.lastIndex
   }
 
   const trailingText = content.slice(lastIndex)
-  const cleanTrailing = stripDSML(trailingText).replace(/<\/?(?:think|lumina-activity|lumina-memory|lumina-audit|lumina-health|lumina-index)>/gi, '').trim()
+  const cleanTrailing = stripDSML(trailingText).replace(/<\/?(?:think|lumina-activity|lumina-memory|lumina-audit|lumina-health|lumina-index)[^>]*>/gi, '').trim()
   if (cleanTrailing) {
     blocks.push({ type: 'markdown', content: cleanTrailing })
   }
@@ -470,6 +479,33 @@ export const parseMessageBlocks = (content?: string): MessageBlock[] => {
 
       blocks.splice(i, 1, ...replacement)
       break
+    }
+  }
+
+  // Fallback for raw health JSON objects without <lumina-health> tags
+  for (let i = 0; i < blocks.length; i++) {
+    if (
+      blocks[i].type === 'markdown' &&
+      (blocks[i].content.includes('{"status":"healthy"') ||
+        blocks[i].content.includes('"checksPassed":') ||
+        blocks[i].content.includes('"ipcLatencyMs":') ||
+        (blocks[i].content.includes('{"checks":[') && blocks[i].content.includes('"metrics":')))
+    ) {
+      const fullText = blocks[i].content
+      const jsonMatch = fullText.match(/\{[\s\S]*?(?:"status"\s*:\s*"healthy"|"checksPassed"|"ipcLatencyMs"|"checks"\s*:\s*\[)[\s\S]*?\}(?:\s*\}|\s*$)/)
+      if (jsonMatch && jsonMatch.index !== undefined) {
+        const before = fullText.slice(0, jsonMatch.index).trim()
+        const healthContent = jsonMatch[0].trim()
+        const after = fullText.slice(jsonMatch.index + jsonMatch[0].length).trim()
+
+        const replacement: MessageBlock[] = []
+        if (before) replacement.push({ type: 'markdown', content: before })
+        replacement.push({ type: 'health', content: healthContent })
+        if (after) replacement.push({ type: 'markdown', content: after })
+
+        blocks.splice(i, 1, ...replacement)
+        break
+      }
     }
   }
 
