@@ -45,9 +45,9 @@ export function Terminal({
   const isWin = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('win')
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
 
-  const availableShells: ShellOption[] = isWin
+  const defaultShellList: ShellOption[] = isWin
     ? [
-        { id: 'bash', label: 'Git Bash / Bash', shell: 'bash.exe' },
+        { id: 'bash', label: 'Git Bash', shell: 'bash.exe' },
         { id: 'powershell', label: 'PowerShell', shell: 'powershell.exe' },
         { id: 'cmd', label: 'Command Prompt', shell: 'cmd.exe' }
       ]
@@ -60,6 +60,32 @@ export function Terminal({
           { id: 'bash', label: 'Bash', shell: '/bin/bash' },
           { id: 'zsh', label: 'Zsh', shell: '/bin/zsh' }
         ]
+
+  const [availableShells, setAvailableShells] = useState<ShellOption[]>(defaultShellList)
+
+  useEffect(() => {
+    const apiBridge = typeof window !== 'undefined' ? (window as any).api : null
+    if (apiBridge?.terminalGetAvailableShells) {
+      apiBridge
+        .terminalGetAvailableShells()
+        .then((profiles: any[]) => {
+          if (Array.isArray(profiles) && profiles.length > 0) {
+            // Keep active and functional shells
+            const mapped: ShellOption[] = profiles
+              .filter((p) => p.isAvailable)
+              .map((p) => ({
+                id: p.id,
+                label: p.label,
+                shell: p.shell
+              }))
+            if (mapped.length > 0) {
+              setAvailableShells(mapped)
+            }
+          }
+        })
+        .catch(() => {})
+    }
+  }, [])
 
   const savedFavoriteShell = settings?.defaultTerminalShell || (isWin ? 'bash.exe' : isMac ? '/bin/zsh' : '/bin/bash')
   const [showShellDropdown, setShowShellDropdown] = useState(false)
@@ -243,21 +269,16 @@ export function Terminal({
                   zIndex: 200
                 }}
               >
-                <div
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.04em',
-                    color: '#71717a',
-                    padding: '4px 8px'
-                  }}
-                >
-                  Favorite Shell (Saved in Settings)
-                </div>
-
                 {availableShells.map((opt) => {
-                  const isFav = savedFavoriteShell.toLowerCase().includes(opt.id)
+                  const currentFav = (savedFavoriteShell || '').toLowerCase()
+                  const isFav =
+                    currentFav === opt.id.toLowerCase() ||
+                    currentFav === opt.shell.toLowerCase() ||
+                    currentFav.endsWith(opt.id.toLowerCase() + '.exe') ||
+                    (opt.id === 'bash' && currentFav.includes('bash')) ||
+                    (opt.id === 'powershell' && currentFav.includes('powershell')) ||
+                    (opt.id === 'cmd' && currentFav.includes('cmd'))
+
                   return (
                     <div
                       key={opt.id}

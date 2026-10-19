@@ -34,6 +34,151 @@ interface ResizePayload {
 
 const activeSessions = new Map<string, ChildProcess>()
 const activeBuffers = new Map<string, string[]>()
+const activeSessionShells = new Map<string, string>()
+
+export interface ShellProfile {
+  id: string
+  label: string
+  shell: string
+  args: string[]
+  env?: Record<string, string>
+  isAvailable: boolean
+}
+
+/**
+ * Discovers supported shells installed on the system safely without launching heavy persistent processes.
+ */
+export async function discoverAvailableShells(): Promise<ShellProfile[]> {
+  const isWin = os.platform() === 'win32'
+  const isMac = os.platform() === 'darwin'
+  const profiles: ShellProfile[] = []
+
+  if (isWin) {
+    // 1. Git Bash (User preferred)
+    const gitBashCandidates = [
+      'C:\\Program Files\\Git\\bin\\bash.exe',
+      'C:\\Program Files\\Git\\usr\\bin\\bash.exe',
+      'C:\\Program Files (x86)\\Git\\bin\\bash.exe',
+      path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Git', 'bin', 'bash.exe'),
+      path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Git', 'bin', 'bash.exe')
+    ]
+    let gitBashPath: string | null = null
+    for (const cand of gitBashCandidates) {
+      if (cand && fs.existsSync(cand)) {
+        gitBashPath = cand
+        break
+      }
+    }
+    if (gitBashPath) {
+      profiles.push({
+        id: 'bash',
+        label: 'Git Bash',
+        shell: gitBashPath,
+        args: ['--login', '-i'],
+        isAvailable: true
+      })
+    }
+
+    // 2. PowerShell (Built-in)
+    const psCandidates = [
+      path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe'),
+      'powershell.exe'
+    ]
+    let psPath = 'powershell.exe'
+    for (const cand of psCandidates) {
+      if (cand && fs.existsSync(cand)) {
+        psPath = cand
+        break
+      }
+    }
+    profiles.push({
+      id: 'powershell',
+      label: 'PowerShell',
+      shell: psPath,
+      args: ['-NoLogo', '-NoExit', '-ExecutionPolicy', 'Bypass'],
+      isAvailable: true
+    })
+
+    // 3. PowerShell 7 (pwsh) if installed
+    const pwshCandidates = [
+      path.join(process.env.ProgramFiles || 'C:\\Program Files', 'PowerShell', '7', 'pwsh.exe'),
+      path.join(process.env.LOCALAPPDATA || '', 'Microsoft', 'PowerShell', '7', 'pwsh.exe')
+    ]
+    let pwshPath: string | null = null
+    for (const cand of pwshCandidates) {
+      if (cand && fs.existsSync(cand)) {
+        pwshPath = cand
+        break
+      }
+    }
+    if (pwshPath) {
+      profiles.push({
+        id: 'pwsh',
+        label: 'PowerShell 7',
+        shell: pwshPath,
+        args: ['-NoLogo', '-NoExit'],
+        isAvailable: true
+      })
+    }
+
+    // 4. Command Prompt (cmd.exe)
+    const cmdCandidates = [
+      path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'cmd.exe'),
+      'cmd.exe'
+    ]
+    let cmdPath = 'cmd.exe'
+    for (const cand of cmdCandidates) {
+      if (cand && fs.existsSync(cand)) {
+        cmdPath = cand
+        break
+      }
+    }
+    profiles.push({
+      id: 'cmd',
+      label: 'Command Prompt',
+      shell: cmdPath,
+      args: [],
+      isAvailable: true
+    })
+
+    // 5. WSL (Validate availability safely)
+    const wslPath = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'wsl.exe')
+    if (fs.existsSync(wslPath)) {
+      profiles.push({
+        id: 'wsl',
+        label: 'WSL (Linux)',
+        shell: wslPath,
+        args: [],
+        isAvailable: false // default false until validated if requested
+      })
+    }
+  } else if (isMac) {
+    // macOS
+    const zshPath = fs.existsSync('/bin/zsh') ? '/bin/zsh' : '/usr/bin/zsh'
+    if (fs.existsSync(zshPath)) {
+      profiles.push({ id: 'zsh', label: 'Zsh', shell: zshPath, args: ['-l'], isAvailable: true })
+    }
+    const bashPath = fs.existsSync('/bin/bash') ? '/bin/bash' : '/usr/bin/bash'
+    if (fs.existsSync(bashPath)) {
+      profiles.push({ id: 'bash', label: 'Bash', shell: bashPath, args: ['-l'], isAvailable: true })
+    }
+  } else {
+    // Linux
+    const shells = [
+      { id: 'bash', label: 'Bash', path: '/bin/bash' },
+      { id: 'zsh', label: 'Zsh', path: '/bin/zsh' },
+      { id: 'fish', label: 'Fish', path: '/usr/bin/fish' },
+      { id: 'sh', label: 'Sh', path: '/bin/sh' }
+    ]
+    for (const s of shells) {
+      if (fs.existsSync(s.path)) {
+        profiles.push({ id: s.id, label: s.label, shell: s.path, args: ['-l'], isAvailable: true })
+      }
+    }
+  }
+
+  return profiles
+}
 
 function resolveShellExecutable(requestedShell?: string): { shell: string; args: string[] } {
   const isWin = os.platform() === 'win32'
@@ -42,6 +187,9 @@ function resolveShellExecutable(requestedShell?: string): { shell: string; args:
   }
 
   if (isWin) {
+    if (/pwsh(\.exe)?$/i.test(requestedShell)) {
+      return { shell: requestedShell, args: ['-NoLogo', '-NoExit'] }
+    }
     if (/powershell(\.exe)?$/i.test(requestedShell)) {
       return { shell: 'powershell.exe', args: ['-NoLogo', '-NoExit', '-ExecutionPolicy', 'Bypass'] }
     }
@@ -58,11 +206,14 @@ function resolveShellExecutable(requestedShell?: string): { shell: string; args:
       ]
       for (const cand of candidates) {
         if (cand && fs.existsSync(cand)) {
-          return { shell: cand, args: ['--login', '-i', '+m'] }
+          return { shell: cand, args: ['--login', '-i'] }
         }
       }
       // If Git Bash is not installed, fallback to powershell.exe so it never fails with Access Denied
       return { shell: 'powershell.exe', args: ['-NoLogo', '-NoExit', '-ExecutionPolicy', 'Bypass'] }
+    }
+    if (/wsl(\.exe)?$/i.test(requestedShell)) {
+      return { shell: 'wsl.exe', args: [] }
     }
     return { shell: requestedShell, args: [] }
   }
@@ -86,6 +237,15 @@ function sanitizeTerminalOutput(chunkStr: string): string {
 }
 
 export function registerTerminalHandlers(getMainWindow: () => BrowserWindow | null): void {
+  // Discover available shells on the host machine
+  ipcMain.handle('terminal:getAvailableShells', async () => {
+    try {
+      return await discoverAvailableShells()
+    } catch {
+      return []
+    }
+  })
+
   // Spawn a new terminal shell session
   ipcMain.handle('terminal:spawn', async (event, payload: SpawnPayload) => {
     const { sessionId, shell: requestedShell, cwd: requestedCwd } = payload || {}
@@ -131,11 +291,13 @@ export function registerTerminalHandlers(getMainWindow: () => BrowserWindow | nu
       })
 
       activeSessions.set(sessionId, proc)
+      activeSessionShells.set(sessionId, shell)
 
       // Always reset buffer for a freshly spawned process
       activeBuffers.set(sessionId, [])
 
-      if (isWin && /powershell(\.exe)?$/i.test(shell)) {
+      const isPs = isWin && /powershell(\.exe)?$/i.test(shell)
+      if (isPs) {
         // Send a gentle wake-up ping to powershell only if buffer remains empty after 500ms
         setTimeout(() => {
           try {
@@ -156,9 +318,30 @@ export function registerTerminalHandlers(getMainWindow: () => BrowserWindow | nu
         sessionBuffers.set(sessionId, buf)
       }
 
+      const isCmd = isWin && /cmd(\.exe)?$/i.test(shell)
+      let initialCmdBuffer = ''
+      let hasExtractedFirstCmdPrompt = false
+
       proc.stdout?.on('data', (chunk: Buffer) => {
         let text = chunk.toString('utf-8')
         text = sanitizeTerminalOutput(text)
+
+        // For CMD: accurately buffer and extract the prompt on line 1, stripping banner & leading newlines
+        if (isCmd && !hasExtractedFirstCmdPrompt) {
+          initialCmdBuffer += text
+          const promptIdx = initialCmdBuffer.indexOf('>')
+          if (promptIdx !== -1) {
+            hasExtractedFirstCmdPrompt = true
+            const lastNl = initialCmdBuffer.lastIndexOf('\n', promptIdx)
+            let promptText = lastNl === -1 ? initialCmdBuffer : initialCmdBuffer.slice(lastNl + 1)
+            promptText = promptText.replace(/^[\r\n]+/, '')
+            text = promptText
+          } else {
+            // Buffer is still accumulating the banner, wait for the '>' character
+            return
+          }
+        }
+
         if (!text || text.length === 0) return
 
         let currentBuf = sessionBuffers.get(sessionId)
@@ -234,9 +417,21 @@ export function registerTerminalHandlers(getMainWindow: () => BrowserWindow | nu
     }
 
     try {
-      // In Windows, standalone \r (sent by xterm on Enter) must be normalized to \r\n for cmd.exe/powershell.exe
       const isWin = os.platform() === 'win32'
-      const normalized = isWin ? data.replace(/\r(?!\n)/g, '\r\n') : data
+      const sessionShell = activeSessionShells.get(sessionId) || ''
+      const isBash = /bash(\.exe)?$/i.test(sessionShell)
+
+      // In Windows, cmd.exe and powershell.exe require \r\n for Enter.
+      // Git Bash (POSIX shell) expects standard \n. Sending \r\n causes duplicate prompts or blank lines.
+      let normalized = data
+      if (isWin) {
+        if (isBash) {
+          normalized = data.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+        } else {
+          normalized = data.replace(/\r(?!\n)/g, '\r\n')
+        }
+      }
+
       proc.stdin.write(normalized)
       return true
     } catch {
@@ -261,6 +456,7 @@ export function registerTerminalHandlers(getMainWindow: () => BrowserWindow | nu
       } catch {}
       activeSessions.delete(sessionId)
       activeBuffers.delete(sessionId)
+      activeSessionShells.delete(sessionId)
       return true
     }
     return false

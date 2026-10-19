@@ -227,6 +227,7 @@ const api = {
   isCapsLockOn: () => electronAPI.ipcRenderer.invoke('system:isCapsLockOn'),
 
   // Terminal Engine API
+  terminalGetAvailableShells: () => electronAPI.ipcRenderer.invoke('terminal:getAvailableShells'),
   terminalSpawn: (payload) => electronAPI.ipcRenderer.invoke('terminal:spawn', payload),
   terminalAttach: (sessionId) => electronAPI.ipcRenderer.invoke('terminal:attach', sessionId),
   terminalWrite: (payload) => electronAPI.ipcRenderer.invoke('terminal:write', payload),

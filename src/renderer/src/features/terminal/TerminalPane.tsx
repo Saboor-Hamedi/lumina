@@ -33,35 +33,34 @@ export function TerminalPane({ session, visible, spawnTransport, onStatus }: Pro
   useEffect(() => {
     onStatus(session.id, 'running')
     if (visible) {
-      const timer = setTimeout(() => focus(), 80)
-      return () => clearTimeout(timer)
+      focus()
     }
   }, [session.id, onStatus, visible, focus])
 
-  // Refocus and re-fit when the tab transitions to visible
+  // Refocus immediately when tab transitions to visible without layout thrashing
   const prevVisibleRef = useRef(visible)
   useEffect(() => {
-    if (visible) {
-      requestAnimationFrame(() => {
-        fit()
-        focus()
-      })
+    if (visible && !prevVisibleRef.current) {
+      focus()
     }
     prevVisibleRef.current = visible
-  }, [visible, focus, fit])
+  }, [visible, focus])
 
   return (
     <div
       className="lumina-term-pane"
       style={{
-        display: visible ? 'flex' : 'none',
+        position: 'absolute',
+        inset: 0,
+        visibility: visible ? 'visible' : 'hidden',
+        pointerEvents: visible ? 'auto' : 'none',
+        zIndex: visible ? 1 : 0,
+        display: 'flex',
         flexDirection: 'column',
-        flex: 1,
-        minHeight: 0,
-        height: '100%',
         width: '100%',
-        position: 'relative',
-        overflow: 'hidden'
+        height: '100%',
+        overflow: 'hidden',
+        background: '#0c0c0e'
       }}
     >
       <div

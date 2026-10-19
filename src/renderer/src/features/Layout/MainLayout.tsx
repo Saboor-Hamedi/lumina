@@ -263,19 +263,43 @@ export const MainLayout: React.FC = () => {
   const [isTerminalOpen, setIsTerminalOpen] = useState(false)
   const [terminalHeight, setTerminalHeight] = useState(260)
   const [isTerminalMaximized, setIsTerminalMaximized] = useState(false)
+  const previousTerminalHeightRef = useRef(260)
 
   const handleToggleTerminal = useCallback(() => {
     setIsTerminalOpen((prev) => !prev)
   }, [])
 
+  const handleToggleTerminalMaximize = useCallback(() => {
+    setIsTerminalMaximized((prev) => {
+      if (!prev) {
+        // We are maximizing: remember current normal height
+        previousTerminalHeightRef.current = terminalHeight
+        return true
+      } else {
+        // We are minimizing / restoring: restore saved height
+        setTerminalHeight(previousTerminalHeightRef.current || 260)
+        return false
+      }
+    })
+  }, [terminalHeight])
+
   const handleStartTerminalResize = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     const startY = e.clientY
-    const startH = terminalHeight
+    // If currently maximized, seamlessly convert 80% height to exact pixels first
+    if (isTerminalMaximized) {
+      const currentPx = Math.round(window.innerHeight * 0.8)
+      setTerminalHeight(currentPx)
+      setIsTerminalMaximized(false)
+    }
+
+    const startH = isTerminalMaximized ? Math.round(window.innerHeight * 0.8) : terminalHeight
+
     const onMouseMove = (ev: MouseEvent) => {
       const delta = startY - ev.clientY
-      const nextH = Math.max(120, Math.min(window.innerHeight * 0.75, startH + delta))
+      const nextH = Math.max(120, Math.min(window.innerHeight * 0.85, startH + delta))
       setTerminalHeight(nextH)
+      previousTerminalHeightRef.current = nextH
     }
     const onMouseUp = () => {
       window.removeEventListener('mousemove', onMouseMove)
@@ -283,7 +307,7 @@ export const MainLayout: React.FC = () => {
     }
     window.addEventListener('mousemove', onMouseMove)
     window.addEventListener('mouseup', onMouseUp)
-  }, [terminalHeight])
+  }, [terminalHeight, isTerminalMaximized])
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [snippetToDelete, setSnippetToDelete] = useState<any>(null)
@@ -1207,7 +1231,7 @@ export const MainLayout: React.FC = () => {
                 <TerminalPanel
                   onClose={() => setIsTerminalOpen(false)}
                   isMaximized={isTerminalMaximized}
-                  onToggleMaximize={() => setIsTerminalMaximized((prev) => !prev)}
+                  onToggleMaximize={handleToggleTerminalMaximize}
                 />
               </div>
             </>
