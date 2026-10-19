@@ -34,6 +34,41 @@
   scrollbar-color: var(--border-subtle, rgba(255, 255, 255, 0.12)) transparent;
 }
 
+/* Integrated xterm & terminal scrollbar - Lumina Premium Scroll */
+.xterm .xterm-viewport,
+.lumina-term-sessions-list {
+  overflow-x: hidden !important;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar,
+.lumina-term-sessions-list::-webkit-scrollbar {
+  width: 6px !important;
+  height: 0px !important;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-track,
+.lumina-term-sessions-list::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-thumb,
+.lumina-term-sessions-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-radius: 9999px !important;
+  border: none !important;
+  transition: background 0.15s ease !important;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-thumb:hover,
+.lumina-term-sessions-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.32) !important;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-corner,
+.lumina-term-sessions-list::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
 /* Explicit Utility Classes */
 .seamless-scrollbar,
 .premium-scrollbar,

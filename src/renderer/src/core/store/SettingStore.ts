@@ -217,7 +217,10 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     emailSidebarWidth: 195,
     emailListWidth: 300,
     emailSidebarOpen: true,
-    emailDetailOpen: true
+    emailDetailOpen: true,
+
+    // Integrated Terminal default shell
+    defaultTerminalShell: 'bash.exe'
   },
 
   isLoading: true,

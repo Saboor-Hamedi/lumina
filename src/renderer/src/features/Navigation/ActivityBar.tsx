@@ -17,7 +17,7 @@
  */
 
 import React, { memo, useState, useEffect } from 'react'
-import { Files, MessageSquare, Network, LayoutDashboard, Palette, Book, Compass } from 'lucide-react'
+import { Files, MessageSquare, Network, LayoutDashboard, Terminal, Palette, Book, Compass } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import DailyNotes from './components/DailyNotes'
 import ActivityBarMail from './components/ActivityBarMail'
@@ -27,6 +27,8 @@ import './css/activitybar.css'
 export interface ActivityBarProps {
   onToggleGraph?: () => void
   onToggleAIChat?: () => void
+  onToggleTerminal?: () => void
+  isTerminalOpen?: boolean
   onOpenTheme?: () => void
   onOpenDocs?: () => void
   onOpenGuide?: () => void
@@ -35,6 +37,8 @@ export interface ActivityBarProps {
 export const ActivityBar: React.FC<ActivityBarProps> = memo(({
   onToggleGraph,
   onToggleAIChat,
+  onToggleTerminal,
+  isTerminalOpen = false,
   onOpenTheme,
   onOpenDocs,
   onOpenGuide
@@ -98,6 +102,14 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
     }
   }
 
+  const handleToggleTerminal = () => {
+    if (onToggleTerminal) {
+      onToggleTerminal()
+    } else {
+      window.dispatchEvent(new CustomEvent('toggle-terminal'))
+    }
+  }
+
   return (
     <aside className="lumina-activity-bar" data-testid="activity-bar" aria-label="Activity Bar">
       <div className="activity-bar-top">
@@ -152,7 +164,19 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
           </button>
         </ToolTip>
 
-        {/* 5. Theme & Look-and-Feel Customizer */}
+        {/* 5. Terminal */}
+        <ToolTip text={`Terminal (${isMac ? '⌘J' : 'Ctrl+J'})`} position="right">
+          <button
+            type="button"
+            className={`activity-bar-btn ${isTerminalOpen ? 'active' : ''}`}
+            onClick={handleToggleTerminal}
+            aria-label="Terminal"
+          >
+            <Terminal size={16} />
+          </button>
+        </ToolTip>
+
+        {/* 6. Theme & Look-and-Feel Customizer */}
         <ToolTip text="Theme Settings" position="right">
           <button
             type="button"

@@ -1,0 +1,7 @@
+export { Terminal, default } from './Terminal'
+export { TerminalPanel } from './TerminalPanel'
+export { TerminalHeader } from './TerminalHeader'
+export { TerminalPane } from './TerminalPane'
+export { TerminalTabs } from './TerminalTabs'
+export { TerminalToolbar } from './TerminalToolbar'
+export * from '../../core/terminal'

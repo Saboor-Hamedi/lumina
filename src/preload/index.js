@@ -1,6 +1,11 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
+try {
+  ipcRenderer.setMaxListeners?.(100)
+  electronAPI.ipcRenderer?.setMaxListeners?.(100)
+} catch (_) {}
+
 const api = {
   getPathForFile: (file) => {
     try {
@@ -219,7 +224,26 @@ const api = {
   listEmailLabels: () => electronAPI.ipcRenderer.invoke('email:listLabels'),
   pauseGlobalShortcuts: () => electronAPI.ipcRenderer.invoke('shortcuts:pause-global'),
   resumeGlobalShortcuts: () => electronAPI.ipcRenderer.invoke('shortcuts:resume-global'),
-  isCapsLockOn: () => electronAPI.ipcRenderer.invoke('system:isCapsLockOn')
+  isCapsLockOn: () => electronAPI.ipcRenderer.invoke('system:isCapsLockOn'),
+
+  // Terminal Engine API
+  terminalSpawn: (payload) => electronAPI.ipcRenderer.invoke('terminal:spawn', payload),
+  terminalAttach: (sessionId) => electronAPI.ipcRenderer.invoke('terminal:attach', sessionId),
+  terminalWrite: (payload) => electronAPI.ipcRenderer.invoke('terminal:write', payload),
+  terminalResize: (payload) => electronAPI.ipcRenderer.invoke('terminal:resize', payload),
+  terminalKill: (sessionId) => electronAPI.ipcRenderer.invoke('terminal:kill', sessionId),
+  onTerminalData: (sessionId, callback) => {
+    const channel = `terminal:data:${sessionId}`
+    const listener = (_, data) => callback(data)
+    electronAPI.ipcRenderer.on(channel, listener)
+    return () => electronAPI.ipcRenderer.removeListener(channel, listener)
+  },
+  onTerminalExit: (sessionId, callback) => {
+    const channel = `terminal:exit:${sessionId}`
+    const listener = (_, code) => callback(code)
+    electronAPI.ipcRenderer.on(channel, listener)
+    return () => electronAPI.ipcRenderer.removeListener(channel, listener)
+  }
 }
 
 // Expose APIs

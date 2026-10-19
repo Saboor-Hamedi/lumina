@@ -169,9 +169,14 @@ export async function initializeAppServices(createWindow: () => Promise<BrowserW
 }
 
 /**
- * Handles graceful flush of settings before application termination.
+ * Handles graceful flush of settings and terminal cleanup before application termination.
  */
 export async function handleBeforeQuit(): Promise<void> {
+  try {
+    const { terminateAllTerminalSessions } = await import('../handlers/terminalHandlers')
+    terminateAllTerminalSessions()
+  } catch (_) {}
+
   try {
     await SettingsManager.flush()
   } catch (_) {}

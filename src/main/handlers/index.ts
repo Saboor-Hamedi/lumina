@@ -31,6 +31,7 @@ import { registerBackupHandlers } from './backupHandlers'
 import { registerMemoryHandlers } from './memoryHandlers'
 import { registerAiHandlers } from './aiHandlers'
 import { registerWorkspaceHandlers } from './workspaceHandlers'
+import { registerTerminalHandlers, terminateAllTerminalSessions } from './terminalHandlers'
 
 export function registerAllIpcHandlers(getMainWindow: () => BrowserWindow | null): void {
   registerSettingsHandlers()
@@ -41,6 +42,7 @@ export function registerAllIpcHandlers(getMainWindow: () => BrowserWindow | null
   registerMemoryHandlers()
   registerAiHandlers()
   registerWorkspaceHandlers(getMainWindow)
+  registerTerminalHandlers(getMainWindow)
 }
 
 export * from './ipcValidation'
@@ -52,3 +54,4 @@ export * from './backupHandlers'
 export * from './memoryHandlers'
 export * from './aiHandlers'
 export * from './workspaceHandlers'
+export * from './terminalHandlers'

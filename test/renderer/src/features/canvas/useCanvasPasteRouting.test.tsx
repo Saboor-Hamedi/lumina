@@ -56,9 +56,9 @@ describe('useCanvasPaste Routing & Focus Isolation', () => {
         viewport: { x: 0, y: 0, zoom: 1 },
         snapToGrid: false,
         addNode: addNodeMock as any,
-        hasCopiedNodes: hasCopiedNodesMock,
-        pasteNodes: pasteNodesMock,
-        onToast: onToastMock,
+        hasCopiedNodes: hasCopiedNodesMock as any,
+        pasteNodes: pasteNodesMock as any,
+        onToast: onToastMock as any,
         isActive: false
       })
     )
@@ -85,9 +85,9 @@ describe('useCanvasPaste Routing & Focus Isolation', () => {
         viewport: { x: 0, y: 0, zoom: 1 },
         snapToGrid: false,
         addNode: addNodeMock as any,
-        hasCopiedNodes: hasCopiedNodesMock,
-        pasteNodes: pasteNodesMock,
-        onToast: onToastMock,
+        hasCopiedNodes: hasCopiedNodesMock as any,
+        pasteNodes: pasteNodesMock as any,
+        onToast: onToastMock as any,
         isActive: true
       })
     )
@@ -115,9 +115,9 @@ describe('useCanvasPaste Routing & Focus Isolation', () => {
         viewport: { x: 0, y: 0, zoom: 1 },
         snapToGrid: false,
         addNode: addNodeMock as any,
-        hasCopiedNodes: hasCopiedNodesMock,
-        pasteNodes: pasteNodesMock,
-        onToast: onToastMock,
+        hasCopiedNodes: hasCopiedNodesMock as any,
+        pasteNodes: pasteNodesMock as any,
+        onToast: onToastMock as any,
         isActive: true
       })
     )

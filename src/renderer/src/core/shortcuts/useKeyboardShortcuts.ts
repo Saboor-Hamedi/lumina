@@ -230,6 +230,18 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
       const userShortcuts = useSettingsStore.getState().settings.shortcuts || {}
       const getKey = (id: string): string => getActiveShortcutKey(id, userShortcuts)
 
+      // When focus is inside the terminal, pass through all typing and keys to the shell,
+      // only intercepting the toggleTerminal shortcut (Ctrl + J) so the user can close the dock.
+      const isInsideTerminal = !!(document.activeElement as HTMLElement)?.closest?.('.xterm, .lumina-terminal, .xterm-helper-textarea')
+      if (isInsideTerminal) {
+        if (matchesShortcut(e, getKey('toggleTerminal')) && shortcutsRef.current.onToggleTerminal) {
+          e.preventDefault()
+          e.stopPropagation()
+          shortcutsRef.current.onToggleTerminal()
+        }
+        return
+      }
+
       // Tab Navigation (Ctrl+Tab / Ctrl+Shift+Tab)
       if (matchesShortcut(e, getKey('previousTab')) && shortcutsRef.current.onPreviousTab) {
         e.preventDefault()
@@ -481,6 +493,25 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
       if (matchesShortcut(e, getKey('toggleSidebar')) && shortcutsRef.current.onToggleSidebar) {
         e.preventDefault()
         shortcutsRef.current.onToggleSidebar()
+        return
+      }
+
+      // Toggle Terminal (Ctrl+J or configured shortcut)
+      const isPrimaryMod = (e.ctrlKey || e.metaKey) && !e.altKey
+      const isDirectCtrlJ = isPrimaryMod && !e.shiftKey && (e.key === 'j' || e.key === 'J' || e.code === 'KeyJ')
+      const isDirectBacktick = isPrimaryMod && !e.shiftKey && (e.key === '`' || e.code === 'Backquote')
+      const isTerminalKey =
+        isDirectCtrlJ ||
+        isDirectBacktick ||
+        matchesShortcut(e, getKey('toggleTerminal')) ||
+        matchesShortcut(e, 'Ctrl + J') ||
+        matchesShortcut(e, 'Ctrl + `') ||
+        matchesShortcut(e, "Ctrl + '")
+      if (isTerminalKey && shortcutsRef.current.onToggleTerminal) {
+        e.preventDefault()
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        shortcutsRef.current.onToggleTerminal()
         return
       }
 

@@ -47,6 +47,7 @@ import RightSidebar from '../Inspector/RightSidebar'
 import Breadcrumbs from '../Breadcrumbs/index'
 import StatusBar from './StatusBar'
 import { useSidebarResize } from './resizeSidebar'
+import { TerminalPanel } from '../terminal/TerminalPanel'
 
 /**
  * GraphTabPane — stable memoized wrapper for the embedded graph tab.
@@ -258,6 +259,31 @@ export const MainLayout: React.FC = () => {
       }
     }
   }, [updateRightSidebarOpen])
+
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false)
+  const [terminalHeight, setTerminalHeight] = useState(260)
+  const [isTerminalMaximized, setIsTerminalMaximized] = useState(false)
+
+  const handleToggleTerminal = useCallback(() => {
+    setIsTerminalOpen((prev) => !prev)
+  }, [])
+
+  const handleStartTerminalResize = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    const startY = e.clientY
+    const startH = terminalHeight
+    const onMouseMove = (ev: MouseEvent) => {
+      const delta = startY - ev.clientY
+      const nextH = Math.max(120, Math.min(window.innerHeight * 0.75, startH + delta))
+      setTerminalHeight(nextH)
+    }
+    const onMouseUp = () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+  }, [terminalHeight])
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [snippetToDelete, setSnippetToDelete] = useState<any>(null)
@@ -568,6 +594,18 @@ export const MainLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleTabNavCapture, true)
   }, [])
 
+  // Event listener for toggle-terminal CustomEvent (from ActivityBar or other buttons)
+  useEffect(() => {
+    const handleToggleTerminalEvent = () => {
+      handleToggleTerminal()
+    }
+
+    window.addEventListener('toggle-terminal', handleToggleTerminalEvent)
+    return () => {
+      window.removeEventListener('toggle-terminal', handleToggleTerminalEvent)
+    }
+  }, [handleToggleTerminal])
+
   useEffect(() => {
     if (activeTab === 'graph') {
       updateRightSidebarOpen(false)
@@ -683,6 +721,7 @@ export const MainLayout: React.FC = () => {
     onToggleGraph: () => setShowGraph(true),
     onToggleAIChat: () => handleToggleAIChat(),
     onToggleSidebar: () => updateLeftSidebarOpen((prev) => !prev),
+    onToggleTerminal: handleToggleTerminal,
     onToggleInspector: handleToggleInspector,
     onToggleOutline: () => {
       if (isRightSidebarOpenRef.current && rightSidebarTabRef.current === 'outline') {
@@ -941,12 +980,16 @@ export const MainLayout: React.FC = () => {
     const handleOpenGraphModalEvent = () => {
       setShowGraph(true)
     }
+    const handleToggleTerminalEvent = () => {
+      handleToggleTerminal()
+    }
     window.addEventListener('open-ask-anything', handleAskAnything as EventListener)
     window.addEventListener('open-ai-chat', handleAIChatEvent)
     window.addEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
     window.addEventListener('trigger-new-canvas', handleNewCanvasEvent)
     window.addEventListener('open-theme-modal', handleOpenThemeEvent)
     window.addEventListener('open-graph-modal', handleOpenGraphModalEvent)
+    window.addEventListener('toggle-terminal', handleToggleTerminalEvent)
 
     // Preload Graph component in background after app mount
     const preloadTimer = setTimeout(() => {
@@ -960,9 +1003,10 @@ export const MainLayout: React.FC = () => {
       window.removeEventListener('trigger-new-canvas', handleNewCanvasEvent)
       window.removeEventListener('open-theme-modal', handleOpenThemeEvent)
       window.removeEventListener('open-graph-modal', handleOpenGraphModalEvent)
+      window.removeEventListener('toggle-terminal', handleToggleTerminalEvent)
       clearTimeout(preloadTimer)
     }
-  }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme])
+  }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme, handleToggleTerminal])
 
   // Stable snippet map — only re-computes when notes change (saves, renames), NOT on tab switch
   const snippetMap = useMemo(() => {
@@ -1026,6 +1070,8 @@ export const MainLayout: React.FC = () => {
       <div className="shell-body">
         <ActivityBar
           onToggleGraph={handleToggleGraph}
+          onToggleTerminal={handleToggleTerminal}
+          isTerminalOpen={isTerminalOpen}
           onOpenTheme={handleOpenTheme}
           onOpenDocs={handleOpenDocs}
           onOpenGuide={() => setShowGuideModal(true)}
@@ -1130,6 +1176,42 @@ export const MainLayout: React.FC = () => {
               />
             )}
           </div>
+
+          {isTerminalOpen && (
+            <>
+              <div
+                className="terminal-resizer top"
+                title="Drag to resize terminal (double-click to reset 260px)"
+                onMouseDown={handleStartTerminalResize}
+                onDoubleClick={() => setTerminalHeight(260)}
+              >
+                <div className="resizer-knob-horizontal">
+                  <span className="knob-dot" />
+                  <span className="knob-dot" />
+                  <span className="knob-dot" />
+                </div>
+              </div>
+              <div
+                className="shell-terminal-dock"
+                style={{
+                  height: isTerminalMaximized ? '80%' : `${terminalHeight}px`,
+                  minHeight: 120,
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  position: 'relative',
+                  flexShrink: 0,
+                  zIndex: 20
+                }}
+              >
+                <TerminalPanel
+                  onClose={() => setIsTerminalOpen(false)}
+                  isMaximized={isTerminalMaximized}
+                  onToggleMaximize={() => setIsTerminalMaximized((prev) => !prev)}
+                />
+              </div>
+            </>
+          )}
         </main>
 
         {isRightSidebarOpen && (

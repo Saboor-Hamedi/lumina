@@ -110,6 +110,7 @@
   transform: scale(1.25);
 }
 
+
 body.is-global-resizing,
 body.is-global-resizing * {
   user-select: none !important;
