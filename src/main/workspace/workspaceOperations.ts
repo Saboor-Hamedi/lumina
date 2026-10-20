@@ -3,6 +3,11 @@ import fsSync from 'fs'
 import path from 'path'
 import matter from 'gray-matter'
 import { WorkspaceMediaManager } from './workspaceMediaManager'
+import {
+  assertSafeWorkspacePath,
+  safeResolveWorkspacePath,
+  isProtectedPath
+} from './workspacePathUtils'
 import type { WorkspaceSnippet } from './workspaceScanner'
 
 export interface BulkDeleteParams {
@@ -217,11 +222,15 @@ export class WorkspaceOperations {
       }
     }
 
+    newFileName = path.basename(newFileName)
     if (!path.extname(newFileName) && !newFileName.startsWith('.')) {
       newFileName = isCanvas ? `${newFileName}.canvas` : `${newFileName}.md`
     }
 
     const relativeFolder = (snippet.folderId || '').replace(/\\/g, '/')
+    if (this.isProtectedPath(relativeFolder)) {
+      throw new Error(`Security Violation: Cannot write note into protected system directory: ${relativeFolder}`)
+    }
 
     // If the note was renamed or moved, delete the previous file
     if (oldSnippet) {
@@ -264,6 +273,13 @@ export class WorkspaceOperations {
       workspacePath,
       path.join(relativeFolder, newFileName)
     )
+
+    if (fsSync.existsSync(finalPath)) {
+      const lstat = await fs.lstat(finalPath)
+      if (lstat.isSymbolicLink()) {
+        throw new Error(`Security Violation: Refusing to write through symbolic link: ${newFileName}`)
+      }
+    }
     const contentChanged = !oldSnippet || oldSnippet.code !== snippet.code
     const newTimestamp =
       snippet.timestamp !== undefined
@@ -331,10 +347,7 @@ export class WorkspaceOperations {
    * Prevents accidental modification or deletion of `.lumina`, `.git`, or dotfiles.
    */
   static isProtectedPath(relPath: string): boolean {
-    if (!relPath) return true
-    const norm = relPath.replace(/\\/g, '/').replace(/^\/+/, '')
-    const segments = norm.split('/')
-    return segments.some((segment) => segment.startsWith('.'))
+    return isProtectedPath(relPath)
   }
 
   /**
@@ -346,19 +359,7 @@ export class WorkspaceOperations {
     relativePath: string,
     allowRoot: boolean = false
   ): string {
-    if (!workspacePath) throw new Error('No workspace open')
-    const root = path.resolve(workspacePath)
-    const resolved = path.resolve(root, relativePath || '')
-    // Case-insensitive comparison on Windows so `C:\W\..` cannot dodge the guard.
-    const isWin = process.platform === 'win32'
-    const cmpRoot = isWin ? root.toLowerCase() : root
-    const cmpResolved = isWin ? resolved.toLowerCase() : resolved
-    const isInside = cmpResolved.startsWith(cmpRoot + path.sep)
-    const isRoot = cmpResolved === cmpRoot
-    if (!isInside && !(allowRoot && isRoot)) {
-      throw new Error(`Security Violation: Path escapes workspace boundaries: ${relativePath}`)
-    }
-    return resolved
+    return assertSafeWorkspacePath(workspacePath, relativePath, allowRoot)
   }
 
   /**
@@ -366,11 +367,7 @@ export class WorkspaceOperations {
    * resolved path escapes the workspace. Useful for best-effort reporting paths.
    */
   private static safeResolve(workspacePath: string, relativePath: string): string | null {
-    try {
-      return this.assertSafeWorkspacePath(workspacePath, relativePath)
-    } catch {
-      return null
-    }
+    return safeResolveWorkspacePath(workspacePath, relativePath)
   }
 
   /**
@@ -626,6 +623,9 @@ export class WorkspaceOperations {
     if (!workspacePath) throw new Error('No workspace open')
     const normalized = (folderPath || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
     if (!normalized) return true
+    if (this.isProtectedPath(normalized)) {
+      throw new Error(`Security Violation: Cannot create protected system folder: ${folderPath}`)
+    }
     const fullPath = this.assertSafeWorkspacePath(workspacePath, normalized)
     await fs.mkdir(fullPath, { recursive: true })
 
@@ -648,6 +648,9 @@ export class WorkspaceOperations {
     newPath: string
   ): Promise<boolean> {
     if (!workspacePath) throw new Error('No workspace open')
+    if (this.isProtectedPath(newPath)) {
+      throw new Error(`Security Violation: Cannot rename folder to protected system path: ${newPath}`)
+    }
     const fullOldPath = this.assertSafeWorkspacePath(workspacePath, oldPath)
     const fullNewPath = this.assertSafeWorkspacePath(workspacePath, newPath)
     await fs.mkdir(path.dirname(fullNewPath), { recursive: true })
@@ -706,12 +709,11 @@ export class WorkspaceOperations {
     const deletedFilePaths: string[] = []
     for (const [id, snippet] of snippetsMap.entries()) {
       if (snippet.folderId === folderPath || snippet.folderId?.startsWith(`${folderPath}/`)) {
-        const sFilePath = path.join(
+        const sFilePath = this.safeResolve(
           workspacePath,
-          snippet.folderId || '',
-          snippet.fileName || `${snippet.title}.md`
+          path.join(snippet.folderId || '', snippet.fileName || `${snippet.title}.md`)
         )
-        deletedFilePaths.push(sFilePath)
+        if (sFilePath) deletedFilePaths.push(sFilePath)
         snippetsMap.delete(id)
       }
     }
@@ -733,6 +735,9 @@ export class WorkspaceOperations {
     }
 
     const normalizedTargetFolder = (targetFolderId || '').replace(/\\/g, '/')
+    if (this.isProtectedPath(normalizedTargetFolder)) {
+      throw new Error(`Security Violation: Cannot import into protected system directory: ${normalizedTargetFolder}`)
+    }
     const targetBaseDir = this.assertSafeWorkspacePath(workspacePath, normalizedTargetFolder, true)
 
     await fs.mkdir(targetBaseDir, { recursive: true })

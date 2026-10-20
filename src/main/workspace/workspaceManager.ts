@@ -6,6 +6,7 @@ import { WorkspaceScanner, safeParseFrontmatter } from './workspaceScanner'
 import type { WorkspaceSnippet, WorkspaceScanResult } from './workspaceScanner'
 import { WorkspaceMediaManager } from './workspaceMediaManager'
 import { WorkspaceOperations } from './workspaceOperations'
+import { assertSafeWorkspacePath } from './workspacePathUtils'
 import type {
   BulkDeleteParams,
   BulkDeleteResult,
@@ -703,9 +704,10 @@ export class WorkspaceManager {
       snippet.relativePath = relPath
     }
 
-    const filePath = path.resolve(this.workspacePath, relPath)
-    const workspaceRoot = path.resolve(this.workspacePath)
-    if (!filePath.startsWith(workspaceRoot + path.sep)) {
+    let filePath: string
+    try {
+      filePath = assertSafeWorkspacePath(this.workspacePath, relPath)
+    } catch {
       throw new Error('Invalid snippet path')
     }
 
@@ -730,9 +732,10 @@ export class WorkspaceManager {
       throw new Error('Snippet not found')
     }
 
-    const filePath = path.resolve(this.workspacePath, snippet.relativePath)
-    const workspaceRoot = path.resolve(this.workspacePath)
-    if (!filePath.startsWith(workspaceRoot + path.sep)) {
+    let filePath: string
+    try {
+      filePath = assertSafeWorkspacePath(this.workspacePath, snippet.relativePath)
+    } catch {
       throw new Error('Invalid snippet path')
     }
 

@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { getDriveUser, driveFetch, escapeDriveQuery } from './driveAuthHelper'
+import { assertSafeWorkspacePath, isProtectedPath } from '../workspace/workspacePathUtils'
 
 // MIME type lookup for common workspace files
 const MIME_TYPES = {
@@ -337,16 +338,13 @@ function resolveFilePaths(fileInput, workspacePath) {
   }
 
   // Containment: never resolve, read, or upload anything outside the workspace.
-  const workspaceRoot = path.resolve(workspacePath)
-  const resolvedFullPath = path.resolve(fullPath)
-  const isWin = process.platform === 'win32'
-  const cmpRoot = isWin ? workspaceRoot.toLowerCase() : workspaceRoot
-  const cmpFull = isWin ? resolvedFullPath.toLowerCase() : resolvedFullPath
-  if (cmpFull !== cmpRoot && !cmpFull.startsWith(cmpRoot + path.sep)) {
-    throw new Error('Access denied: file is outside the workspace')
+  const safeFullPath = assertSafeWorkspacePath(workspacePath, path.relative(workspacePath, fullPath))
+  const cleanRelative = path.relative(workspacePath, safeFullPath).replace(/\\/g, '/')
+  if (isProtectedPath(cleanRelative)) {
+    throw new Error('Access denied: cannot back up protected system files')
   }
 
-  return { fullPath: resolvedFullPath, relativePath: relativePath.replace(/\\/g, '/') }
+  return { fullPath: safeFullPath, relativePath: cleanRelative }
 }
 
 /**

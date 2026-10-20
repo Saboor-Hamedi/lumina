@@ -25,6 +25,7 @@ import electron, { app, protocol, session } from 'electron'
 import path from 'path'
 import fs from 'fs/promises'
 import WorkspaceManager from '../workspace/workspaceManager'
+import { assertSafeWorkspacePath } from '../workspace/workspacePathUtils'
 
 /**
  * Registers custom URL schemes as privileged.
@@ -80,12 +81,11 @@ export function registerAssetProtocol(): void {
         return new Response('Workspace not open', { status: 404 })
       }
 
-      const workspaceRoot = path.resolve(WorkspaceManager.workspacePath)
-      const finalPath = path.resolve(workspaceRoot, relativePath)
-
-      // Strict containment check: prevent path traversal attacks outside workspace
-      if (!finalPath.startsWith(workspaceRoot + path.sep) && finalPath !== workspaceRoot) {
-        console.warn('[Protocol] Blocked path traversal attempt:', relativePath)
+      let finalPath: string
+      try {
+        finalPath = assertSafeWorkspacePath(WorkspaceManager.workspacePath, relativePath, true)
+      } catch (err: any) {
+        console.warn('[Protocol] Blocked path traversal attempt:', relativePath, err.message)
         return new Response('Access Denied: Path Traversal Forbidden', { status: 403 })
       }
 

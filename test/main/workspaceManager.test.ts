@@ -388,5 +388,115 @@ describe('VaultManager', () => {
 
       await fs.rm(srcFile, { force: true })
     })
+
+    it('rejects readAsset with directory traversal', async () => {
+      await expect(
+        VaultManager.readAsset('../../outside.png')
+      ).rejects.toThrow(/escapes workspace|Security Violation/i)
+    })
+
+    it('rejects saveSnippet with escaping folderId', async () => {
+      await expect(
+        VaultManager.saveSnippet({
+          id: 'test-exploit-id',
+          title: 'Exploit',
+          code: 'content',
+          folderId: '../escaped-notes'
+        })
+      ).rejects.toThrow(/escapes workspace|Security Violation/i)
+    })
+
+    it('sanitizes saveSnippet fileName containing directory traversal', async () => {
+      const saved = await VaultManager.saveSnippet({
+        id: 'test-traverse-id',
+        title: 'sneaky',
+        code: 'clean content',
+        fileName: '../../sneaky.md'
+      })
+      expect(saved.fileName).toBe('sneaky.md')
+      expect(saved.relativePath).toBe('sneaky.md')
+
+      const onDisk = path.join(testVaultPath, 'sneaky.md')
+      expect(await fs.access(onDisk).then(() => true).catch(() => false)).toBe(true)
+    })
+
+    it('protects bulkDelete from deleting paths outside workspace', async () => {
+      const outsideFile = path.join(path.dirname(testVaultPath), `lumina-safe-${Date.now()}.txt`)
+      await fs.writeFile(outsideFile, 'keep me safe')
+
+      await VaultManager.bulkDelete({
+        folderIds: ['../escaped-folder'],
+        snippetIds: [`../${path.basename(outsideFile)}`]
+      })
+
+      expect(await fs.access(outsideFile).then(() => true).catch(() => false)).toBe(true)
+      await fs.rm(outsideFile, { force: true })
+    })
+
+    it('rejects saveSnippet targeting protected directories like .git/hooks', async () => {
+      await expect(
+        VaultManager.saveSnippet({
+          id: 'test-git-hook-id',
+          title: 'pre-commit',
+          code: '#!/bin/sh\necho hacked',
+          folderId: '.git/hooks'
+        })
+      ).rejects.toThrow(/protected system directory|Security Violation/i)
+    })
+
+    it('rejects Alternate Data Streams in relative paths', async () => {
+      await expect(
+        VaultManager.readAsset('valid.png:hidden.exe')
+      ).rejects.toThrow(/Alternate Data Stream|Security Violation/i)
+    })
+
+    it('rejects Windows reserved device names', async () => {
+      await expect(
+        VaultManager.readAsset('CON.txt')
+      ).rejects.toThrow(/reserved device name|Security Violation/i)
+
+      await expect(
+        VaultManager.readAsset('NUL.')
+      ).rejects.toThrow(/reserved device name|Security Violation/i)
+    })
+
+    it('rejects multi-pass URL-encoded traversal and null bytes', async () => {
+      await expect(
+        VaultManager.readAsset('%252e%252e%252foutside.png')
+      ).rejects.toThrow(/escapes workspace|Security Violation/i)
+
+      await expect(
+        VaultManager.readAsset('safe.png\0.evil')
+      ).rejects.toThrow(/Null byte|Security Violation/i)
+    })
+
+    it('golden test: permits legitimate complex, accented, literal %, and CJK filenames', async () => {
+      const validSnippet = await VaultManager.saveSnippet({
+        id: 'test-golden-id',
+        title: '测试文档 (v1.0) 50% discount & Notes - Résumé',
+        code: '# Hello world\nContent here',
+        folderId: 'sub/docs'
+      })
+      expect(validSnippet).toBeDefined()
+      expect(validSnippet.folderId).toBe('sub/docs')
+
+      const asset = await VaultManager.readSnippet(validSnippet.id)
+      expect(asset.code).toContain('Hello world')
+
+      // Test user's exact title: "Money%: this is my file name"
+      const userSnippet = await VaultManager.saveSnippet({
+        id: 'test-user-money-id',
+        title: 'Money%: this is my file name',
+        code: '# My Money Note\nTracking 100% of expenses',
+        folderId: 'finance'
+      })
+      expect(userSnippet).toBeDefined()
+      expect(userSnippet.fileName).toBe('Money% this is my file name.md')
+      expect(userSnippet.folderId).toBe('finance')
+
+      const readBack = await VaultManager.readSnippet(userSnippet.id)
+      expect(readBack.title).toBe('Money%: this is my file name')
+      expect(readBack.code).toContain('Tracking 100% of expenses')
+    })
   })
 })

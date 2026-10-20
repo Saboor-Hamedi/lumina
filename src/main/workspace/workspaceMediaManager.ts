@@ -2,6 +2,7 @@ import fs from 'fs/promises'
 import fsSync from 'fs'
 import path from 'path'
 import slugify from 'slugify'
+import { assertSafeWorkspacePath, isProtectedPath } from './workspacePathUtils'
 
 export interface ReadAssetResult {
   buffer: Buffer
@@ -89,22 +90,20 @@ export class WorkspaceMediaManager {
     if (!workspacePath) throw new Error('No workspace open')
 
     const normalizedFolder = (targetFolder || '').replace(/\\/g, '/')
-    const workspaceRoot = path.resolve(workspacePath)
-    const folderPath = path.resolve(workspaceRoot, normalizedFolder)
-    const isWin = process.platform === 'win32'
-    const cmpRoot = isWin ? workspaceRoot.toLowerCase() : workspaceRoot
-    const cmpFolder = isWin ? folderPath.toLowerCase() : folderPath
-    if (cmpFolder !== cmpRoot && !cmpFolder.startsWith(cmpRoot + path.sep)) {
-      throw new Error(`Security Violation: Path escapes workspace boundaries: ${targetFolder}`)
+    if (isProtectedPath(normalizedFolder)) {
+      throw new Error(`Security Violation: Cannot save image into protected system directory: ${targetFolder}`)
     }
+    const folderPath = assertSafeWorkspacePath(workspacePath, normalizedFolder, true)
     try {
       await fs.mkdir(folderPath, { recursive: true })
     } catch (e) {}
 
     const ext = path.extname(name) || '.png'
-    let baseName = name ? path.basename(name, ext) : `Pasted image ${Date.now()}`
+    const rawBase = name ? path.basename(name, ext) : `Pasted image ${Date.now()}`
+    let baseName = rawBase.replace(/[<>:"/\\|?*]/g, '_').trim() || `Pasted image ${Date.now()}`
     let fileName = `${baseName}${ext}`
     let targetPath = path.join(folderPath, fileName)
+    assertSafeWorkspacePath(workspacePath, path.relative(workspacePath, targetPath))
     let counter = 1
 
     while (fsSync.existsSync(targetPath)) {
@@ -150,12 +149,7 @@ export class WorkspaceMediaManager {
     if (!workspacePath) throw new Error('No workspace open')
     try {
       const cleanRel = normalizeAssetPath(relativePath)
-      const workspaceRoot = path.resolve(workspacePath)
-      const finalPath = path.resolve(workspaceRoot, cleanRel)
-
-      if (!finalPath.startsWith(workspaceRoot + path.sep) && finalPath !== workspaceRoot) {
-        throw new Error('Access denied: path traversal detected')
-      }
+      const finalPath = assertSafeWorkspacePath(workspacePath, cleanRel, true)
 
       if (!fsSync.existsSync(finalPath)) {
         // Missing assets are expected and non-fatal; degrade gracefully.
@@ -200,12 +194,7 @@ export class WorkspaceMediaManager {
     if (!workspacePath) throw new Error('No workspace open')
     try {
       const cleanRel = normalizeAssetPath(relativePath)
-      const workspaceRoot = path.resolve(workspacePath)
-      const finalPath = path.resolve(workspaceRoot, cleanRel)
-
-      if (!finalPath.startsWith(workspaceRoot + path.sep) && finalPath !== workspaceRoot) {
-        throw new Error('Access denied: path traversal detected')
-      }
+      const finalPath = assertSafeWorkspacePath(workspacePath, cleanRel, true)
       if (fsSync.existsSync(finalPath)) {
         await fs.unlink(finalPath)
       }
