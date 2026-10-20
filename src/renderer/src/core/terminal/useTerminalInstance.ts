@@ -124,12 +124,14 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
       lineHeight: 1.2,
       letterSpacing: 0,
       smoothScrollDuration: 100,
-      fastScrollModifier: 'alt',
       windowsMode: isWin,
       drawBoldTextInBrightColors: true,
       allowProposedApi: true,
       convertEol: true
-    })
+    } as any)
+    if (isWin && (termInstance as any)?.options) {
+      ;(termInstance as any).options.windowsMode = true
+    }
     const fit = new FitAddon()
     termInstance.loadAddon(fit)
     termInstance.loadAddon(new WebLinksAddon())
@@ -266,11 +268,20 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
     } catch {}
   }, [container, transport])
 
+  const refresh = useCallback(() => {
+    try {
+      if (termRef.current) {
+        termRef.current.refresh(0, Math.max(0, termRef.current.rows - 1))
+      }
+    } catch {}
+  }, [])
+
   return {
     term,
     write: (data: string) => termRef.current?.write(data),
     focus,
     clear,
-    fit
+    fit,
+    refresh
   }
 }

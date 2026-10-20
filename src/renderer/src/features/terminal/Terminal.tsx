@@ -4,14 +4,13 @@ import {
   Plus,
   Trash2,
   X,
-  ChevronDown,
-  Star,
   Edit2,
   Maximize2,
   Minimize2
 } from 'lucide-react'
 import { useTerminalSessions } from '../../core/terminal/useTerminalSessions'
 import { TerminalPane } from './TerminalPane'
+import { TerminalProfile, type ShellOption } from './TerminalProfile'
 import type { TerminalSession } from '../../core/terminal/types'
 import { createElectronPtyTransport, type PtyTransport } from '../../core/terminal/useTerminalInstance'
 import { useSettingStore } from '../../core/store/SettingStore'
@@ -24,12 +23,6 @@ interface TerminalProps {
   /** Optional maximize toggle callback */
   isMaximized?: boolean
   onToggleMaximize?: () => void
-}
-
-interface ShellOption {
-  id: string
-  label: string
-  shell: string
 }
 
 export function Terminal({
@@ -88,14 +81,12 @@ export function Terminal({
   }, [])
 
   const savedFavoriteShell = settings?.defaultTerminalShell || (isWin ? 'bash.exe' : isMac ? '/bin/zsh' : '/bin/bash')
-  const [showShellDropdown, setShowShellDropdown] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draftName, setDraftName] = useState('')
   const [sessionListWidth, setSessionListWidth] = useState(170)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [dragOverId, setDragOverId] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const handleStartSessionListResize = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -128,16 +119,6 @@ export function Terminal({
     }
   }, [editingId])
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowShellDropdown(false)
-      }
-    }
-    window.addEventListener('mousedown', handleClickOutside)
-    return () => window.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
   const handleStartRename = (id: string, currentName: string, e?: React.MouseEvent) => {
     e?.stopPropagation()
     setEditingId(id)
@@ -156,7 +137,6 @@ export function Terminal({
       updateSettings({ defaultTerminalShell: shell } as any)
     }
     api.create({ shell })
-    setShowShellDropdown(false)
   }
 
   const handleSetDefaultShell = (shell: string, e: React.MouseEvent) => {
@@ -229,122 +209,13 @@ export function Terminal({
             zIndex: 40
           }}
         >
-          {/* Shell Dropdown Trigger */}
-          <div ref={dropdownRef} style={{ position: 'relative' }}>
-            <button
-              onClick={() => setShowShellDropdown((prev) => !prev)}
-              title="Select Terminal Shell"
-              aria-label="Select Terminal Shell"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 5,
-                background: 'transparent',
-                border: 'none',
-                color: '#a1a1aa',
-                borderRadius: 4,
-                padding: '3px 6px',
-                fontSize: 11.5,
-                cursor: 'pointer',
-                overflow: 'hidden',
-                transition: 'all 0.12s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#f4f4f5'
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#a1a1aa'
-                e.currentTarget.style.background = 'transparent'
-              }}
-            >
-              <TerminalIcon size={12} style={{ color: '#60a5fa', flexShrink: 0 }} />
-              <span
-                style={{
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  fontWeight: 600,
-                  maxWidth: 120
-                }}
-              >
-                {savedFavoriteShell.split(/[\\/]/).pop()?.replace(/\.exe$/i, '') || 'Terminal'}
-              </span>
-              <ChevronDown size={11} style={{ opacity: 0.6, flexShrink: 0 }} />
-            </button>
-
-            {/* Dropdown Menu */}
-            {showShellDropdown && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 4px)',
-                  left: 0,
-                  width: 210,
-                  background: 'rgba(20, 20, 24, 0.98)',
-                  backdropFilter: 'blur(16px)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  borderRadius: 6,
-                  padding: 4,
-                  boxShadow: '0 12px 28px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05)',
-                  zIndex: 200
-                }}
-              >
-                {availableShells.map((opt) => {
-                  const currentFav = (savedFavoriteShell || '').toLowerCase()
-                  const isFav =
-                    currentFav === opt.id.toLowerCase() ||
-                    currentFav === opt.shell.toLowerCase() ||
-                    currentFav.endsWith(opt.id.toLowerCase() + '.exe') ||
-                    (opt.id === 'bash' && currentFav.includes('bash')) ||
-                    (opt.id === 'powershell' && currentFav.includes('powershell')) ||
-                    (opt.id === 'cmd' && currentFav.includes('cmd'))
-
-                  return (
-                    <div
-                      key={opt.id}
-                      onClick={() => handleSelectShell(opt.shell)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '6px 8px',
-                        borderRadius: 4,
-                        fontSize: 12,
-                        color: isFav ? '#f4f4f5' : '#a1a1aa',
-                        background: 'transparent',
-                        cursor: 'pointer',
-                        transition: 'background 0.1s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'transparent'
-                      }}
-                    >
-                      <span style={{ fontWeight: isFav ? 500 : 400 }}>{opt.label}</span>
-                      <button
-                        onClick={(e) => handleSetDefaultShell(opt.shell, e)}
-                        title={isFav ? 'Current Favorite (Default)' : 'Set as Favorite Shell'}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          cursor: 'pointer',
-                          padding: 2,
-                          color: isFav ? '#fbbf24' : '#52525b',
-                          display: 'flex',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <Star size={13} fill={isFav ? '#fbbf24' : 'none'} />
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+          {/* Shell Profile Selector Dropdown */}
+          <TerminalProfile
+            availableShells={availableShells}
+            savedFavoriteShell={savedFavoriteShell}
+            onSelectShell={handleSelectShell}
+            onSetDefaultShell={handleSetDefaultShell}
+          />
 
           {/* Plus Button: New Terminal */}
           <button

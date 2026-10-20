@@ -196,7 +196,7 @@ export const NativeEngine = {
         relativePath: n.relativePath,
         size: n.size || 0,
         isOversized: Boolean(n.isOversized),
-        ext: n.ext || '',
+        ext: n.ext ? (n.ext.startsWith('.') ? n.ext : `.${n.ext}`) : (n.fileName && n.fileName.includes('.') ? `.${n.fileName.split('.').pop()?.toLowerCase()}` : ''),
         wikilinks: n.wikilinks || []
       }))
 

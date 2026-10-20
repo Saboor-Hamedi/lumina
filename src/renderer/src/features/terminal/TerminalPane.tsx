@@ -24,7 +24,7 @@ export function TerminalPane({ session, visible, spawnTransport, onStatus }: Pro
     [session.id, onStatus]
   )
 
-  const { focus, fit } = useTerminalInstance({
+  const { focus, fit, refresh } = useTerminalInstance({
     container,
     transport,
     onExit: handleExit
@@ -37,14 +37,18 @@ export function TerminalPane({ session, visible, spawnTransport, onStatus }: Pro
     }
   }, [session.id, onStatus, visible, focus])
 
-  // Refocus immediately when tab transitions to visible without layout thrashing
+  // Refocus, refit and redraw immediately when tab transitions to visible to prevent caret lag/overlap
   const prevVisibleRef = useRef(visible)
   useEffect(() => {
     if (visible && !prevVisibleRef.current) {
-      focus()
+      requestAnimationFrame(() => {
+        fit()
+        refresh()
+        focus()
+      })
     }
     prevVisibleRef.current = visible
-  }, [visible, focus])
+  }, [visible, fit, refresh, focus])
 
   return (
     <div
