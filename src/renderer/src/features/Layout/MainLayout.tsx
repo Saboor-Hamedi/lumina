@@ -476,7 +476,11 @@ export const MainLayout: React.FC = () => {
         return
       }
       const key = e.key && e.key.toLowerCase()
-      if ((e.ctrlKey || e.metaKey) && key === 'r' && !e.shiftKey && !e.altKey) {
+      const isRenameShortcut =
+        ((e.ctrlKey || e.metaKey) && key === 'r' && !e.shiftKey && !e.altKey) ||
+        (e.key === 'F2' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey)
+
+      if (isRenameShortcut) {
         e.preventDefault()
         const currentSelectedFolder = useWorkspaceStore.getState().selectedFolder
         if (currentSelectedFolder) {
@@ -497,8 +501,25 @@ export const MainLayout: React.FC = () => {
         }
       }
     }
+
+    const handleOpenRenameModal = (e: Event) => {
+      const customEvent = e as CustomEvent
+      const target = customEvent.detail?.note || customEvent.detail?.item || selectedSnippet
+      if (target) {
+        setRenameModal({
+          isOpen: true,
+          item: target,
+          newName: target.title || target.name || ''
+        })
+      }
+    }
+
     window.addEventListener('keydown', handleRenameShortcut)
-    return () => window.removeEventListener('keydown', handleRenameShortcut)
+    window.addEventListener('open-rename-modal', handleOpenRenameModal)
+    return () => {
+      window.removeEventListener('keydown', handleRenameShortcut)
+      window.removeEventListener('open-rename-modal', handleOpenRenameModal)
+    }
   }, [selectedSnippet, showToast])
 
   // Dedicated direct capturing listener for Canvas Tab (default: Ctrl + Shift + ;)

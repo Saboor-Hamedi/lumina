@@ -15,6 +15,8 @@
  */
 
 export interface ImageOptimizationOptions {
+  /** Whether image optimization is enabled. Default: true */
+  enabled?: boolean
   /** Maximum image width in pixels. Default: 1600 */
   maxWidth?: number
   /** Maximum image height in pixels. Default: 1600 */

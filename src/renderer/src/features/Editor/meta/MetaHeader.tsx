@@ -36,7 +36,10 @@ export const MetaHeader: React.FC<MetaHeaderProps> = React.memo(
     if (!snippet || !showActions) return null
 
     return (
-      <div className="editor-metadata-bar meta-header-bar" style={{ position: 'relative' }}>
+      <div
+        className="editor-metadata-bar meta-header-bar"
+        style={{ position: 'relative', paddingBottom: '8px', marginBottom: '4px' }}
+      >
         <MetaActionBar
           snippet={snippet}
           title={title}

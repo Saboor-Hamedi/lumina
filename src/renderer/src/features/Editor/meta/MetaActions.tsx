@@ -3,7 +3,7 @@ import { Sparkles, Network } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { LearnedButton } from '../../roadmap/ProgressTracker'
 import VoiceButton from '../../voice'
-import DrivePushButton from '../components/DrivePushButton'
+import MetaDrivePush from './MetaDrivePush'
 import type { Snippet } from '../../../core/editor/types'
 
 export interface MetaActionsProps {
@@ -90,7 +90,7 @@ export const MetaActions: React.FC<MetaActionsProps> = React.memo(
         </ToolTip>
 
         <VoiceButton id="editor-voice" />
-        <DrivePushButton snippet={snippet} title={title} isDirty={isDirty} />
+        <MetaDrivePush snippet={snippet} title={title} isDirty={isDirty} />
 
         <ToolTip text="Linked Mentions" position="bottom">
           <button

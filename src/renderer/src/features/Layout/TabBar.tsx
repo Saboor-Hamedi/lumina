@@ -17,16 +17,15 @@
  */
 
 import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react'
+import { X, Pin, MoreHorizontal, ArrowRight, Image, Network, Sparkles, Edit3 } from 'lucide-react'
 import {
-  X,
-  Pin,
-  MoreHorizontal,
-  ArrowRight,
-  Image,
-  Network,
-  Sparkles
-} from 'lucide-react'
-import { DndContext, closestCenter, useSensor, useSensors, PointerSensor, DragEndEvent } from '@dnd-kit/core'
+  DndContext,
+  closestCenter,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  DragEndEvent
+} from '@dnd-kit/core'
 import {
   SortableContext,
   useSortable,
@@ -95,6 +94,13 @@ const SortableTabItem = memo<SortableTabItemProps>(
           {...attributes}
           {...listeners}
           onClick={() => onOpen(id)}
+          onDoubleClick={() => {
+            if (snippet && id !== GRAPH_TAB_ID && id !== LUMINA_TAB_ID) {
+              window.dispatchEvent(
+                new CustomEvent('open-rename-modal', { detail: { note: snippet } })
+              )
+            }
+          }}
           onAuxClick={(e: React.MouseEvent) => e.button === 1 && onClose(e, id)}
           onContextMenu={(e: React.MouseEvent) => onContextMenu(e, id)}
         >
@@ -130,21 +136,21 @@ const SortableTabItem = memo<SortableTabItemProps>(
                 <span className="tab-dirty" />
               </div>
             ) : !isPinned ? (
-                <button
-                  type="button"
-                  className="tab-close-btn"
-                  onMouseDown={(e: React.MouseEvent) => {
-                    e.stopPropagation()
-                    onClose(e, id)
-                  }}
-                  onClick={(e: React.MouseEvent) => {
-                    e.stopPropagation()
-                    onClose(e, id)
-                  }}
-                >
-                  <X size={14} />
-                </button>
-              ) : null}
+              <button
+                type="button"
+                className="tab-close-btn"
+                onMouseDown={(e: React.MouseEvent) => {
+                  e.stopPropagation()
+                  onClose(e, id)
+                }}
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation()
+                  onClose(e, id)
+                }}
+              >
+                <X size={14} />
+              </button>
+            ) : null}
           </div>
         </div>
       </ToolTip>
@@ -228,7 +234,9 @@ export const TabBar: React.FC<TabBarProps> = () => {
     requestAnimationFrame(() => {
       if (!tabbarRef.current) return
 
-      const activeTabElement = tabbarRef.current.querySelector('.workspace-tab.active') as HTMLElement | null
+      const activeTabElement = tabbarRef.current.querySelector(
+        '.workspace-tab.active'
+      ) as HTMLElement | null
       if (activeTabElement) {
         const containerRect = tabbarRef.current.getBoundingClientRect()
         const tabRect = activeTabElement.getBoundingClientRect()
@@ -401,9 +409,7 @@ export const TabBar: React.FC<TabBarProps> = () => {
               onWheel={handleWheel}
               style={{ flex: 1, minWidth: 0 }}
             >
-              <div className="tabs-container">
-                {scrollableTabs.map(renderTab)}
-              </div>
+              <div className="tabs-container">{scrollableTabs.map(renderTab)}</div>
             </div>
           </div>
         </SortableContext>
@@ -422,6 +428,20 @@ export const TabBar: React.FC<TabBarProps> = () => {
             },
             ...(contextMenu.id !== GRAPH_TAB_ID && contextMenu.id !== LUMINA_TAB_ID
               ? [
+                  {
+                    label: 'Rename',
+                    shortcut: 'F2',
+                    icon: <Edit3 size={14} />,
+                    onClick: () => {
+                      const s = snippetMap.get(contextMenu.id)
+                      setContextMenu(null)
+                      if (s) {
+                        window.dispatchEvent(
+                          new CustomEvent('open-rename-modal', { detail: { note: s } })
+                        )
+                      }
+                    }
+                  },
                   {
                     label: 'Change Icon',
                     shortcut: 'Win + Shift + .',

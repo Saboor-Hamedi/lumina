@@ -4,7 +4,8 @@ import {
   MoreVertical,
   Copy,
   FileText,
-  Download
+  Download,
+  Edit3
 } from 'lucide-react'
 import { useToast } from '../../../core/notification'
 import ToastNotification from '../../../core/notification'
@@ -136,6 +137,21 @@ export const EditorMenu: React.FC<EditorMenuProps> = ({
                   right: `${menuPosition.right}px`
                 }}
               >
+                <div
+                  className="dropdown-item"
+                  onClick={() => {
+                    setShowMoreMenu(false)
+                    if (snippet) {
+                      window.dispatchEvent(
+                        new CustomEvent('open-rename-modal', { detail: { note: snippet } })
+                      )
+                    }
+                  }}
+                >
+                  <span className="menu-label">Rename Note</span>
+                  <span className="shortcut-label">F2</span>
+                  <Edit3 size={12} className="menu-icon-right" />
+                </div>
                 <div
                   className="dropdown-item"
                   onClick={() => {

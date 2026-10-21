@@ -202,7 +202,8 @@ const CommandPaletteRow = React.memo(
             else if (item.action === 'chat') onToggleChat?.()
             else if (item.action === 'docs') onToggleDocs?.()
             else if (item.action === 'rename') onRename?.()
-            else if (item.action === 'update') (window as any).electron?.ipcRenderer.send('check-for-updates')
+            else if (item.action === 'update')
+              (window as any).electron?.ipcRenderer.send('check-for-updates')
             else if (item.action === 'reload-window') window.location.reload()
             else if (item.action === 'toggle-type-sound') {
               updateSetting('typeSound', !settings?.typeSound)
@@ -277,7 +278,11 @@ const CommandPaletteRow = React.memo(
               {item.folderId && item.matchType !== 'folder' && (
                 <span className="folder-prefix">{item.folderId}/</span>
               )}
-              <HighlightText text={item.title || 'Untitled'} highlight={query} ranges={item.matchRanges} />
+              <HighlightText
+                text={item.title || 'Untitled'}
+                highlight={query}
+                ranges={item.matchRanges}
+              />
               {item.id && dirtySnippetIds.includes(item.id) && (
                 <div className="dirty-indicator" style={{ marginLeft: '8px' }} />
               )}
@@ -364,14 +369,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
     const previousFocusRef = useRef<Element | null>(null)
     const chatScrollRef = useRef<HTMLDivElement | null>(null)
 
-    const {
-      searchNotes,
-      chatMessages,
-      isChatLoading,
-      cancelChat,
-      sendChatMessage,
-      clearChat
-    } = useAIStore()
+    const { searchNotes, chatMessages, isChatLoading, cancelChat, sendChatMessage, clearChat } =
+      useAIStore()
     const { dirtySnippetIds, folders, selectedSnippet } = useWorkspaceStore(
       useShallow((state) => ({
         dirtySnippetIds: state.dirtyNoteIds || [],
@@ -401,7 +400,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
         setMode((settings?.commandPaletteMode as 'ai' | 'search') || 'search')
         setTimeout(() => inputRef.current?.focus(), 50)
       } else {
-        if (previousFocusRef.current && typeof (previousFocusRef.current as HTMLElement).focus === 'function') {
+        if (
+          previousFocusRef.current &&
+          typeof (previousFocusRef.current as HTMLElement).focus === 'function'
+        ) {
           setTimeout(() => (previousFocusRef.current as HTMLElement)?.focus(), 10)
         }
       }
@@ -508,7 +510,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
         },
         {
           id: 'action-rename',
-          title: 'Note: Rename Note',
+          title: 'Note: Rename',
           matchType: 'action',
           action: 'rename',
           shortcut: 'Ctrl + R'
@@ -703,7 +705,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
-        if (mode === 'search' && filtered.length > 0) setSelectedIndex((prev) => (prev + 1) % filtered.length)
+        if (mode === 'search' && filtered.length > 0)
+          setSelectedIndex((prev) => (prev + 1) % filtered.length)
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
         if (mode === 'search' && filtered.length > 0)
@@ -732,7 +735,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
             else if (item.action === 'docs') onToggleDocs?.()
             else if (item.action === 'rename') onRename?.()
             else if (item.action === 'mail') window.dispatchEvent(new CustomEvent('open-email'))
-            else if (item.action === 'update') (window as any).electron?.ipcRenderer.send('check-for-updates')
+            else if (item.action === 'update')
+              (window as any).electron?.ipcRenderer.send('check-for-updates')
             else if (item.action === 'reload-window') window.location.reload()
             else if (item.action === 'toggle-type-sound') {
               updateSetting('typeSound', !settings?.typeSound)
@@ -803,15 +807,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
 
       if (item.type === 'image') {
         const relPath =
-          item.relativePath ||
-          (item.folderId ? `${item.folderId}/${item.fileName}` : item.fileName)
+          item.relativePath || (item.folderId ? `${item.folderId}/${item.fileName}` : item.fileName)
         return `![${item.title || item.fileName}](${relPath})`
       }
 
       if (item.type === 'pdf') {
         const relPath =
-          item.relativePath ||
-          (item.folderId ? `${item.folderId}/${item.fileName}` : item.fileName)
+          item.relativePath || (item.folderId ? `${item.folderId}/${item.fileName}` : item.fileName)
         return `[📄 ${item.title || item.fileName}](${relPath})`
       }
 
@@ -975,7 +977,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
                           key={item.id || item.action || index}
                           index={index}
                           data={itemData}
-                          ref={(el) => { itemRefs.current[index] = el }}
+                          ref={(el) => {
+                            itemRefs.current[index] = el
+                          }}
                         />
                       ))
                     ) : (
@@ -1014,10 +1018,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
 
                 <div className="palette-preview-col" style={{ width: `${100 - splitRatio}%` }}>
                   {previewContent ? (
-                    <PreviewCommandPalette
-                      content={previewContent}
-                      onClose={onClose}
-                    />
+                    <PreviewCommandPalette content={previewContent} onClose={onClose} />
                   ) : (
                     <div
                       style={{

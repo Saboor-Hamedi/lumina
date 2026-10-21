@@ -32,6 +32,9 @@
 /* Lualine Section A: Mode Badge (NORMAL / VISUAL) — Completely Static & Stationary (Zero Shake) */
 .lualine-mode-badge,
 [data-modern-ui='true'] .lualine-mode-badge {
+  width: 42px !important;
+  min-width: 42px !important;
+  max-width: 42px !important;
   position: relative !important;
   z-index: 10 !important;
   height: 24px !important;
@@ -42,7 +45,7 @@
   background: var(--text-accent, #8b5cf6) !important;
   color: #0b0c10 !important;
   font-weight: 800 !important;
-  font-size: 10px !important;
+  font-size: 8px !important;
   letter-spacing: 0.8px !important;
   text-transform: uppercase !important;
   flex-shrink: 0 !important;
@@ -108,7 +111,9 @@
   align-items: center !important;
   gap: 4px !important;
   cursor: pointer !important;
-  transition: color 0.12s ease, opacity 0.12s ease !important;
+  transition:
+    color 0.12s ease,
+    opacity 0.12s ease !important;
   font-family: inherit !important;
   flex-shrink: 0 !important;
   white-space: nowrap !important;
@@ -203,7 +208,9 @@
   font-size: 10.5px !important;
   font-weight: 500 !important;
   font-family: inherit !important;
-  transition: color 0.12s ease, opacity 0.12s ease !important;
+  transition:
+    color 0.12s ease,
+    opacity 0.12s ease !important;
   flex-shrink: 0 !important;
   white-space: nowrap !important;
   opacity: 0.8 !important;
