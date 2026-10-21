@@ -9,7 +9,7 @@ import type { ToastType } from '../notification'
 export interface UseEditorEventsProps {
   isActive?: boolean
   realViewRef: React.MutableRefObject<EditorView | null>
-  titleRef: React.RefObject<HTMLInputElement | null>
+  titleRef?: React.RefObject<HTMLInputElement | null>
   snippet: Snippet | null
   showToast: (message: string, type?: ToastType) => void
   setShowFindWidget: React.Dispatch<React.SetStateAction<boolean>>
@@ -146,9 +146,13 @@ export function useEditorEvents({
     }
 
     const handleFocusTitleInput = () => {
-      if (!isActiveRef.current || !titleRef.current) return
-      titleRef.current.focus()
-      titleRef.current.select()
+      if (!isActiveRef.current) return
+      if (titleRef?.current) {
+        titleRef.current.focus()
+        titleRef.current.select()
+      } else {
+        handleFocusEditorStart()
+      }
     }
 
     const handleScrollToLine = (e: Event) => {

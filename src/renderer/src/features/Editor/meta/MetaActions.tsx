@@ -1,75 +1,44 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React from 'react'
 import { Sparkles, Network } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
-import InlineGraph from '../../graph/InlineGraph'
-import { useWorkspaceStore } from '../../../core/store/workspaceStore'
-import { useKeyboardShortcuts } from '../../../core/shortcuts'
-import ProgressTracker, { LearnedButton } from '../../roadmap/ProgressTracker'
+import { LearnedButton } from '../../roadmap/ProgressTracker'
 import VoiceButton from '../../voice'
-import DrivePushButton from './DrivePushButton'
+import DrivePushButton from '../components/DrivePushButton'
+import type { Snippet } from '../../../core/editor/types'
+
+export interface MetaActionsProps {
+  snippet?: Snippet | null
+  title?: string
+  isDirty?: boolean
+  onInlineAI?: () => void
+  showLocalGraph: boolean
+  setShowLocalGraph: React.Dispatch<React.SetStateAction<boolean>>
+}
 
 /**
- * EditorActionBar
+ * MetaActions
  *
- * Dedicated component for quick editor action buttons:
+ * Left-side quick action buttons for the editor header:
  * - Ask AI (Ctrl+K)
  * - Voice Input
- * - Google Drive Sync / Push
- * - Linked Mentions / Local Graph toggle
- * - Learned / Roadmap progress
- * - Fallback container for ProgressTracker and EditorMenu when title bar is hidden
+ * - Google Drive Push / Backup
+ * - Local Graph (Linked Mentions) toggle
+ * - Learned / Roadmap status toggle
  */
-export const EditorActionBar = ({
-  snippet,
-  title,
-  isDirty,
-  onInlineAI,
-  editorMenu,
-  showMenuWhenTitleHidden = false
-}) => {
-  const [showLocalGraph, setShowLocalGraph] = useState(false)
-  const containerRef = useRef(null)
+export const MetaActions: React.FC<MetaActionsProps> = React.memo(
+  ({
+    snippet,
+    title = '',
+    isDirty = false,
+    onInlineAI,
+    showLocalGraph,
+    setShowLocalGraph
+  }) => {
+    if (!snippet) return null
 
-  useKeyboardShortcuts({
-    onEscape: showLocalGraph
-      ? () => {
-          setShowLocalGraph(false)
-          return true
-        }
-      : null
-  })
-
-  useEffect(() => {
-    if (!showLocalGraph) return
-
-    const handleOutsideClick = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setShowLocalGraph(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleOutsideClick, true)
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick, true)
-    }
-  }, [showLocalGraph])
-
-  if (!snippet) return null
-
-  return (
-    <div
-      ref={containerRef}
-      className="editor-action-bar"
-      style={{
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100%',
-        margin: '4px 0 2px 0'
-      }}
-    >
+    return (
       <div
+        className="meta-header-actions"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -169,41 +138,11 @@ export const EditorActionBar = ({
           </button>
         </ToolTip>
 
-        <LearnedButton snippet={snippet} />
+        <LearnedButton snippet={snippet} note={snippet} />
       </div>
+    )
+  }
+)
 
-      {showMenuWhenTitleHidden && (
-        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <ProgressTracker snippetId={snippet?.id} />
-          {editorMenu}
-        </div>
-      )}
-
-      {showLocalGraph && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            marginTop: '8px',
-            width: '100%',
-            zIndex: 50,
-            borderRadius: '8px',
-            border: '1px solid var(--border-color, rgba(255,255,255,0.05))',
-            overflow: 'hidden'
-          }}
-        >
-          <InlineGraph
-            focusNodeId={snippet.id}
-            onNavigate={(id) => {
-              useWorkspaceStore.getState().setActiveTabId(id)
-              setShowLocalGraph(false)
-            }}
-          />
-        </div>
-      )}
-    </div>
-  )
-}
-
-export default React.memo(EditorActionBar)
+MetaActions.displayName = 'MetaActions'
+export default MetaActions

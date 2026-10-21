@@ -1,5 +1,6 @@
 import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
+import { safeFileName } from './exportUtils'
 
 export interface ExportTextPayload {
   title?: string
@@ -52,7 +53,7 @@ export const handleExportText = async (
     // Show save dialog
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow as any, {
       title: 'Export as Text File',
-      defaultPath: `${title || 'Untitled'}.txt`,
+      defaultPath: `${safeFileName(title)}.txt`,
       filters: [
         { name: 'Text Files', extensions: ['txt'] },
         { name: 'All Files', extensions: ['*'] }

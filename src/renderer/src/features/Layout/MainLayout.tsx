@@ -831,7 +831,7 @@ export const MainLayout: React.FC = () => {
       setActiveTab('files')
       setShowPalette(false)
       setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('focus-title-input'))
+        window.dispatchEvent(new CustomEvent('focus-editor-start'))
       }, 50)
     } catch (error) {
       console.error('[MainLayout] Failed to create new note:', error)

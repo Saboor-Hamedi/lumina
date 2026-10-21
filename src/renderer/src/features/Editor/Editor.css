@@ -859,26 +859,6 @@
   }
 }
 
-.editor-large-title {
-  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: 19px !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.02em !important;
-  border: none !important;
-  background: transparent !important;
-  color: var(--text-main, #ffffff) !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  line-height: 1.35;
-  width: 100%;
-  outline: none !important;
-  text-align: left;
-  box-sizing: border-box !important;
-  -webkit-appearance: none;
-  appearance: none;
-  transition: color 0.15s ease;
-}
-
 .editor-zoom-hud {
   position: absolute;
   bottom: 24px;
@@ -925,16 +905,6 @@
 @keyframes zoomHudPop {
   0% { transform: scale(0.94); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
-}
-
-.editor-large-title:focus {
-  color: var(--text-main, #ffffff);
-}
-
-.editor-large-title::placeholder {
-  color: var(--text-faint, rgba(255, 255, 255, 0.25));
-  font-weight: 600;
-  opacity: 0.6;
 }
 
 .cm-host-container {

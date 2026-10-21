@@ -38,6 +38,19 @@ export interface TocOptions {
   maxLevel?: number
 }
 
+export function safeFileName(name?: string): string {
+  const cleaned = String(name || 'Untitled')
+    .split('')
+    .filter((ch) => ch.charCodeAt(0) >= 32)
+    .join('')
+    .replace(/[<>:"/\\|?*]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/[. ]+$/g, '')
+    .slice(0, 120)
+  return cleaned || 'Untitled'
+}
+
 export interface TocResult {
   html: string
   toc: string

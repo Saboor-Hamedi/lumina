@@ -1203,7 +1203,7 @@ export const useAIStore = create<AIStore>((set, get) => {
           autoSave: settingsObj?.autoSave !== false,
           cursorStyle: settingsObj?.cursorStyle || 'smooth',
           smoothScrolling: settingsObj?.smoothScrolling !== false,
-          inlineTitle: settingsObj?.inlineTitle !== false,
+
           inlineMetadata: Boolean(settingsObj?.inlineMetadata),
           modernUi: Boolean(settingsObj?.modernUi)
         }

@@ -148,7 +148,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     sortBy: 'name',
     sortDirection: 'asc',
     noteOrder: null, // Array of snippet IDs for custom drag sort order
-    inlineMetadata: false,
+    inlineMetadata: true,
     inlineTitle: true,
     graphTheme: 'default',
     graphNodeSize: 1.5,

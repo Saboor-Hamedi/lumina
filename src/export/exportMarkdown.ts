@@ -1,5 +1,6 @@
 import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
+import { safeFileName } from './exportUtils'
 
 export interface ExportMarkdownPayload {
   title?: string
@@ -23,7 +24,7 @@ export const handleExportMarkdown = async (
     // Show save dialog
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow as any, {
       title: 'Export as Markdown',
-      defaultPath: `${title || 'Untitled'}.md`,
+      defaultPath: `${safeFileName(title)}.md`,
       filters: [
         { name: 'Markdown Files', extensions: ['md', 'markdown'] },
         { name: 'All Files', extensions: ['*'] }

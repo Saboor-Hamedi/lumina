@@ -6,7 +6,7 @@
  * Responsibilities:
  * - Wraps the CodeMirror canvas in `.editor-canvas-wrap`
  * - Renders the context menu and handles right-click events
- * - Integrates inline `EditorMetadata`
+ * - Integrates inline `MetaHeader`
  * - Handles wikilink hover & capture mousedown events
  * - Hardens `<AtomicCodeMirrorEditor>` with `EditorCanvasErrorBoundary`
  * =========================================================================================
@@ -22,7 +22,7 @@ import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { setupWikilinkHover } from './wikilink/hoverWikilink'
 import ContextMenu from '../modals/ContextMenu'
 import { getEditorContextMenuOptions } from './menu'
-import EditorMetadata from './components/EditorMetadata'
+import MetaHeader from './meta/MetaHeader'
 import type { Snippet, EditorHandle } from '../../core/editor/types'
 import type { ToastType } from '../../core/notification'
 import { markExplorerPerf } from '../Explorer/utils/explorerPerf'
@@ -144,8 +144,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
     const editorWrapperRef = useRef<HTMLDivElement | null>(null)
 
-    const inlineTitle = useSettingsStore((state: any) => state.settings?.inlineTitle !== false)
-    const inlineMetadata = useSettingsStore((state: any) => Boolean(state.settings?.inlineMetadata))
+    const inlineMetadata = useSettingsStore((state: any) => state.settings?.inlineMetadata !== false)
 
     useEffect(() => {
       const wrapper = editorWrapperRef.current
@@ -244,31 +243,23 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
             onClose={() => setContextMenu(null)}
           />
         )}
-        {(inlineTitle || inlineMetadata) && (
-          <EditorMetadata
-            {...({
-              titleRef,
-              snippet,
-              onSave,
-              title,
-              setTitle,
-              setIsDirty,
-              isDirty,
-              onInlineAI,
-              editorMenu,
-              showTitle: inlineTitle,
-              showActions: inlineMetadata
-            } as any)}
+        {inlineMetadata ? (
+          <MetaHeader
+            snippet={snippet}
+            title={title}
+            setIsDirty={setIsDirty}
+            isDirty={isDirty}
+            onInlineAI={onInlineAI}
+            editorMenu={editorMenu}
           />
-        )}
+        ) : editorMenu ? (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '4px 0', width: '100%' }}>
+            {editorMenu}
+          </div>
+        ) : null}
         {snippet?.isPartial && (
           <div className="editor-large-note-warning" role="status">
             Showing the first part of this large note. Editing and saving are disabled to protect the workspace.
-          </div>
-        )}
-        {!inlineTitle && !inlineMetadata && editorMenu && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '4px 0', width: '100%' }}>
-            {editorMenu}
           </div>
         )}
 

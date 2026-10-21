@@ -369,6 +369,40 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
   const [batchExportNotes, setBatchExportNotes] = useState<any[] | null>(null)
 
+  // Listen for single-note export events dispatched from note context menus
+  useEffect(() => {
+    const handleOpenExportDialog = async (e: Event) => {
+      const customEvent = e as CustomEvent
+      const targetSnippet = customEvent.detail?.snippet
+      if (!targetSnippet) return
+
+      let content = targetSnippet.content ?? targetSnippet.code ?? ''
+      if (!content && targetSnippet.id && (window as any).api?.readSnippet) {
+        try {
+          const full = await (window as any).api.readSnippet(targetSnippet.id)
+          if (full?.code) {
+            content = full.code
+          }
+        } catch (err) {
+          console.warn('[FileExplorer] Could not load snippet code for export:', err)
+        }
+      }
+
+      setBatchExportNotes([
+        {
+          id: targetSnippet.id,
+          title: targetSnippet.title || targetSnippet.fileName || 'Untitled',
+          content
+        }
+      ])
+    }
+
+    window.addEventListener('open-export-dialog', handleOpenExportDialog)
+    return () => {
+      window.removeEventListener('open-export-dialog', handleOpenExportDialog)
+    }
+  }, [])
+
   // Context menu actions for folders and multi-selections
   const {
     folderContext,
@@ -751,7 +785,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
         isOpen={!!batchExportNotes}
         notes={batchExportNotes || []}
         folderName={
-          lastClickedFolder
+          batchExportNotes && batchExportNotes.length === 1
+            ? batchExportNotes[0].title || 'Note Export'
+            : lastClickedFolder
             ? typeof lastClickedFolder === 'string'
               ? lastClickedFolder.split('/').pop() || 'Folder Export'
               : 'Folder Export'

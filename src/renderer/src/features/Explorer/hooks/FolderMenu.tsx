@@ -70,6 +70,7 @@ export function useFolderContextMenu({
   selectedCount = 0,
   selectedFolderIds,
   selectedNoteIds,
+  selectedNotes = [],
   onRequestBulkDelete
 }: UseFolderContextMenuParams): FolderContextMenuResult {
   const [folderContext, setFolderContext] = useState<FolderContext | null>(null)
@@ -149,9 +150,21 @@ export function useFolderContextMenu({
           const targets = resolveFolderNotes(folderContext.folderId)
           if (targets.length > 0) {
             onExportSelected?.(targets)
+            return
           }
-        } else if (exportNotes.length > 0) {
+        }
+        if (exportNotes && exportNotes.length > 0) {
           onExportSelected?.(exportNotes)
+          return
+        }
+        if (selectedNotes && selectedNotes.length > 0) {
+          onExportSelected?.(
+            selectedNotes.map((n: any) => ({
+              id: n.id,
+              title: n.title || n.fileName || 'Untitled',
+              content: n.content ?? n.code ?? ''
+            }))
+          )
         }
       },
       onClose: () => setFolderContext(null),

@@ -19,6 +19,12 @@ const findDelete = (options: Array<{ label?: string }>) =>
     onClick: () => void
   }
 
+const findExport = (options: Array<{ label?: string }>) =>
+  options.find((o) => typeof o.label === 'string' && o.label === 'Export') as {
+    label: string
+    onClick: () => void
+  }
+
 describe('useFolderContextMenu multi-selection delete', () => {
   it('routes Delete to bulk delete when multiple items are selected', () => {
     const onRequestBulkDelete = vi.fn()
@@ -81,5 +87,56 @@ describe('useFolderContextMenu multi-selection delete', () => {
     const del = findDelete(result.current.contextMenuOptions as Array<{ label?: string }>)
     act(() => del.onClick())
     expect(onRequestBulkDelete).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('useFolderContextMenu export routing', () => {
+  it('exports folder notes when folder is right-clicked', () => {
+    const onExportSelected = vi.fn()
+    const folderNotes = [{ id: 'n1', title: 'Note 1', content: 'body 1' }]
+    const resolveFolderNotes = vi.fn().mockReturnValue(folderNotes)
+
+    const { result } = renderHook(() =>
+      useFolderContextMenu(
+        baseParams({
+          selectedCount: 0,
+          resolveFolderNotes,
+          onExportSelected
+        }) as never
+      )
+    )
+
+    act(() => result.current.handleFolderContextMenu('finance', null))
+    const exp = findExport(result.current.contextMenuOptions as Array<{ label?: string }>)
+    expect(exp).toBeDefined()
+
+    act(() => exp.onClick())
+    expect(resolveFolderNotes).toHaveBeenCalledWith('finance')
+    expect(onExportSelected).toHaveBeenCalledWith(folderNotes)
+  })
+
+  it('falls back to exportNotes when right-clicked item has no folder notes (e.g. root file selected)', () => {
+    const onExportSelected = vi.fn()
+    const exportNotes = [{ id: 'root-note', title: 'Money%', content: 'expenses' }]
+    const resolveFolderNotes = vi.fn().mockReturnValue([])
+
+    const { result } = renderHook(() =>
+      useFolderContextMenu(
+        baseParams({
+          selectedCount: 1,
+          selectedNoteIds: new Set(['root-note']),
+          exportNotes,
+          resolveFolderNotes,
+          onExportSelected
+        }) as never
+      )
+    )
+
+    act(() => result.current.handleFolderContextMenu('root-note', null))
+    const exp = findExport(result.current.contextMenuOptions as Array<{ label?: string }>)
+    expect(exp).toBeDefined()
+
+    act(() => exp.onClick())
+    expect(onExportSelected).toHaveBeenCalledWith(exportNotes)
   })
 })

@@ -198,17 +198,6 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
 
           <div className="settings-row">
             <div className="row-info">
-              <div className="row-label">Note Title Input</div>
-              <div className="row-hint">Show editable title field inside the note editor.</div>
-            </div>
-            <Toggle
-              checked={settings.inlineTitle !== false}
-              onChange={(e) => updateSetting('inlineTitle', e.target.checked)}
-            />
-          </div>
-
-          <div className="settings-row">
-            <div className="row-info">
               <div className="row-label">Editor Action Buttons</div>
               <div className="row-hint">Show quick tool buttons inside the editor header.</div>
             </div>

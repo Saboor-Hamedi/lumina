@@ -11,7 +11,7 @@
 import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
 import path from 'path'
-import { renderMarkdown, escapeHtml } from './exportUtils'
+import { renderMarkdown, escapeHtml, safeFileName } from './exportUtils'
 import WorkspaceManager from '../main/workspace/workspaceManager'
 import { createZipArchive, type ZipFileEntry } from './zipExporter'
 import { optimizeAssetData, type ImageOptimizationOptions } from './imageOptimizer'
@@ -242,7 +242,7 @@ export async function handleExportCleanHTML(
 
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow as any, {
       title: 'Export as Clean HTML',
-      defaultPath: `${title || 'Untitled'}.html`,
+      defaultPath: `${safeFileName(title)}.html`,
       filters: [{ name: 'HTML Document', extensions: ['html', 'htm'] }]
     })
 
@@ -275,7 +275,7 @@ export async function handleExportMarkdownBundle(
     if (!content) throw new Error('No content provided')
 
     const isZipRequested = Boolean(payload.compressZip)
-    const cleanTitle = (title || 'Untitled').replace(/\.(md|markdown)$/i, '')
+    const cleanTitle = safeFileName((title || 'Untitled').replace(/\.(md|markdown)$/i, ''))
     const defaultExt = isZipRequested ? '.zip' : '.md'
     const filters = isZipRequested
       ? [{ name: 'ZIP Archive (*.zip)', extensions: ['zip'] }]

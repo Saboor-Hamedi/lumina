@@ -33,7 +33,7 @@ export interface SafeUserSettings {
   autoSave?: boolean
   cursorStyle?: string
   smoothScrolling?: boolean
-  inlineTitle?: boolean
+
   inlineMetadata?: boolean
   modernUi?: boolean
   activeAIMode?: string

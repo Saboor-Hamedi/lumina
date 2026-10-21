@@ -358,9 +358,9 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
         notes: payloadNotes,
         format: format === 'zip' ? 'markdown' : format,
         toc: includeToc,
-        title: folderName,
+        title: payloadNotes.length === 1 ? payloadNotes[0].title || folderName || 'Untitled' : folderName,
         compressZip: isZip,
-        archiveTitle: folderName || 'Lumina-Notes'
+        archiveTitle: (payloadNotes.length === 1 ? payloadNotes[0].title : folderName) || 'Lumina-Notes'
       })
       if (res?.canceled) {
         setExporting(false)
@@ -569,7 +569,7 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                 <div className="export-source-card">
                   <div className="export-source-card-top">
                     <FileText size={13} className="export-source-icon" />
-                    <span className="export-source-title">{count} Notes Selected</span>
+                    <span className="export-source-title">{count === 1 ? '1 Note Selected' : `${count} Notes Selected`}</span>
                   </div>
                   <div className="export-source-stats">
                     <span>{noteStats.words} words</span>

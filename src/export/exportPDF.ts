@@ -1,6 +1,6 @@
 import { dialog, BrowserWindow } from 'electron'
 import fs from 'fs/promises'
-import { renderMarkdown, escapeHtml } from './exportUtils'
+import { renderMarkdown, escapeHtml, safeFileName } from './exportUtils'
 import { withRenderedHtml } from './renderWindow'
 
 import { ImageOptimizationOptions } from './imageOptimizer'
@@ -500,7 +500,7 @@ export const handleExportPDF = async (
     // Show save dialog FIRST for immediate user feedback
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow as any, {
       title: 'Save PDF',
-      defaultPath: `${title || 'Untitled'}.pdf`,
+      defaultPath: `${safeFileName(title)}.pdf`,
       filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
     })
 
