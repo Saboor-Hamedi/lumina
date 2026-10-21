@@ -43,7 +43,7 @@ const Graph2DInner = forwardRef<any, Graph2DInnerProps>(
 
     return (
       <ForceGraph2D
-        ref={ref}
+        ref={ref as any}
         width={dimensions.width}
         height={dimensions.height}
         graphData={graphData}
@@ -232,8 +232,9 @@ const Graph2DInner = forwardRef<any, Graph2DInnerProps>(
 )
 
 Graph2DInner.displayName = 'Graph2DInner'
+const SafeGraph2DInner = Graph2DInner as any
 
-export interface Graph2DProps {
+export interface Graph2DProps extends Omit<Graph2DInnerProps, 'onWorkerDragStart' | 'onWorkerDrag' | 'onWorkerDragEnd'> {
   dimensions: { width: number; height: number }
   graphData: { nodes: any[]; links: any[] }
   paintNode: (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => void
@@ -269,7 +270,7 @@ const Graph2D = forwardRef<any, Graph2DProps>(function Graph2DWrapper(props, ref
     const linkForce = useSettingsStore.getState().settings.graphLinkForce ?? 0.05
     const centerForce = useSettingsStore.getState().settings.graphCenterForce ?? 0.05
 
-    const safeNodes = props.graphData.nodes.map((n) => ({
+    const safeNodes = props.graphData.nodes.map((n: any) => ({
       id: n.id,
       val: n.val,
       x: n.x,
@@ -277,7 +278,7 @@ const Graph2D = forwardRef<any, Graph2DProps>(function Graph2DWrapper(props, ref
       fx: n.fx,
       fy: n.fy
     }))
-    const safeLinks = props.graphData.links.map((l) => ({
+    const safeLinks = props.graphData.links.map((l: any) => ({
       source: typeof l.source === 'object' ? l.source.id : l.source,
       target: typeof l.target === 'object' ? l.target.id : l.target
     }))
@@ -340,17 +341,17 @@ const Graph2D = forwardRef<any, Graph2DProps>(function Graph2DWrapper(props, ref
   }, [])
 
   return (
-    <Graph2DInner
+    <SafeGraph2DInner
       {...props}
       ref={fgRef}
       onWorkerDragStart={() => workerRef.current?.postMessage({ type: 'DRAG_START' })}
-      onWorkerDrag={(node) =>
+      onWorkerDrag={(node: any) =>
         workerRef.current?.postMessage({
           type: 'DRAG',
           payload: { id: node.id, x: node.x, y: node.y }
         })
       }
-      onWorkerDragEnd={(node, isCentral) => {
+      onWorkerDragEnd={(node: any, isCentral?: boolean) => {
         workerRef.current?.postMessage({
           type: 'DRAG_END',
           payload: { id: node.id, x: node.x, y: node.y, isCentral }

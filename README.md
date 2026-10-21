@@ -4,7 +4,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.0.75-blue" alt="version">
-  <img src="https://img.shields.io/badge/unit%20tests-1180%2B%20passing-success" alt="unit tests">
+  <img src="https://img.shields.io/badge/unit%20tests-1330%2B%20passing-success" alt="unit tests">
   <img src="https://img.shields.io/badge/e2e%20tests-playwright%20verified-blue" alt="e2e tests">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
 </p>

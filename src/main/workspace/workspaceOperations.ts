@@ -323,7 +323,18 @@ export class WorkspaceOperations {
       })
     }
 
-    await fs.writeFile(finalPath, fileContent)
+    // Atomic crash-safe write: write to sibling temporary file, then rename over finalPath
+    const tempFileName = `.tmp-${path.basename(finalPath)}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+    const tempPath = path.join(targetDir, tempFileName)
+    try {
+      await fs.writeFile(tempPath, fileContent, 'utf8')
+      await fs.rename(tempPath, finalPath)
+    } catch {
+      try {
+        await fs.unlink(tempPath)
+      } catch {}
+      await fs.writeFile(finalPath, fileContent, 'utf8')
+    }
 
     const computedRelativePath = relativeFolder ? `${relativeFolder}/${newFileName}` : newFileName
 

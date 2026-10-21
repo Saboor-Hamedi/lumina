@@ -259,7 +259,7 @@ export class WorkspaceScanner {
             name === 'dist' ||
             name === 'build' ||
             name === 'log' ||
-            (entry.isDirectory() && name.startsWith('.'))
+            name.startsWith('.')
           ) {
             continue
           }

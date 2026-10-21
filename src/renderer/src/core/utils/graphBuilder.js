@@ -1,6 +1,6 @@
 import { normalizeWikilinkTarget } from '../i18n'
 
-export const buildGraphData = (snippets) => {
+export const buildGraphData = (snippets, options = {}) => {
   const safeSnippets = Array.isArray(snippets) ? snippets : []
   const nodes = []
   const links = []

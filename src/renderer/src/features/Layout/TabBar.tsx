@@ -429,7 +429,7 @@ export const TabBar: React.FC<TabBarProps> = () => {
             ...(contextMenu.id !== GRAPH_TAB_ID && contextMenu.id !== LUMINA_TAB_ID
               ? [
                   {
-                    label: 'Rename',
+                    label: 'Rename Note',
                     shortcut: 'F2',
                     icon: <Edit3 size={14} />,
                     onClick: () => {

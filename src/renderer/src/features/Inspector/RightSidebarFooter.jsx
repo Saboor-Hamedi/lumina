@@ -5,7 +5,7 @@ import ToolTip from '../../components/atoms/ToolTip'
 import { Composer } from '../AI/Composer'
 import { useAIStore } from '../AI/tools/lumina'
 
-export const RightSidebarFooter = ({ selectedNote, selectedSnippet, rightSidebarTab, onClose }) => {
+export const RightSidebarFooter = ({ selectedNote, selectedSnippet = null, rightSidebarTab, onClose }) => {
   const note = selectedNote || selectedSnippet
   const [copied, setCopied] = useState(false)
   const sendChatMessage = useAIStore((state) => state.sendChatMessage)

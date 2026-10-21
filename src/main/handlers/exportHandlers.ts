@@ -167,7 +167,7 @@ export function registerExportHandlers(getMainWindow: () => BrowserWindow | null
   // Batch export multiple notes to a folder, streaming progress events
   ipcMain.handle('window:export-batch', async (_, payload) => {
     const valid = validateIpc(batchPayloadSchema, payload)
-    if (!BATCH_FORMATS.includes(valid.format)) {
+    if (!BATCH_FORMATS.includes(valid.format as any)) {
       throw new Error(`Unsupported batch format: ${valid.format}`)
     }
 
@@ -178,7 +178,7 @@ export function registerExportHandlers(getMainWindow: () => BrowserWindow | null
       }
     }
 
-    const result = await handleExportBatch(win, valid, send)
+    const result = await handleExportBatch(win, valid as any, send)
     allowPathsFromResult(result)
     return result
   })
@@ -186,7 +186,7 @@ export function registerExportHandlers(getMainWindow: () => BrowserWindow | null
   // Merge multiple notes into a SINGLE file (e.g. one PDF containing all notes)
   ipcMain.handle('window:export-combined', async (_, payload) => {
     const valid = validateIpc(combinedPayloadSchema, payload)
-    if (!COMBINED_FORMATS.includes(valid.format)) {
+    if (!COMBINED_FORMATS.includes(valid.format as any)) {
       throw new Error(`Unsupported combined format: ${valid.format}`)
     }
 

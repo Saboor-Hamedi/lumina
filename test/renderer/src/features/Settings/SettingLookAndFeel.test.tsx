@@ -22,7 +22,7 @@ vi.mock('../../../../../src/renderer/src/core/hooks/useFontSettings', () => ({
   })
 }))
 
-const baseSettings = () => ({
+const baseSettings = (): any => ({
   fontFamily: 'Inter',
   fontSize: 14,
   mirrorMode: true,

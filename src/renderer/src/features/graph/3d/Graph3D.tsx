@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useImperativeHandle } from 'react'
-import ForceGraph3D from 'react-force-graph-3d'
+import ForceGraph3DRaw from 'react-force-graph-3d'
+const ForceGraph3D = ForceGraph3DRaw as any
 import { useSettingsStore } from '../../../core/store/SettingStore'
 import { forceX, forceY } from 'd3-force'
 import { forceCollide } from 'd3-force-3d'

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { CloudUpload, Check, AlertCircle } from 'lucide-react'
-import { useUnsaved, UnsavedIndicator } from '../../../core/hooks/unsave'
+import { useUnsaved, UnsavedIndicator as UnsavedIndicatorRaw } from '../../../core/hooks/unsave'
+const UnsavedIndicator = UnsavedIndicatorRaw as any
 import { useCurrentUser } from '../../../core/hooks/useCurrentUser'
 import ToolTip from '../../../components/atoms/ToolTip'
 import type { Snippet } from '../../../core/editor/types'

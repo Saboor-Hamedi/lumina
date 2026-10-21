@@ -18,7 +18,8 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, RotateCcw } from 'lucide-react'
 import Profile from '../profile/Profile'
-import ModalHeader from '../modals/ModalHeader'
+import ModalHeaderRaw from '../modals/ModalHeader'
+const ModalHeader = ModalHeaderRaw as any
 import { useDraggableModal } from '../../core/utils/useDraggableModal'
 import { useOpacity } from './hooks/useOpacity'
 import { useSettingStore } from '../../core/store/SettingStore'
@@ -451,7 +452,7 @@ export const AccentColor: React.FC<AccentColorProps> = ({
 
   return createPortal(
     <div className="modal-overlay color-modal-overlay" onClick={handleCancel}>
-      <div className="color-modal-container" onClick={(e) => e.stopPropagation()} style={isModal ? dragStyle : undefined}>
+      <div className="color-modal-container" onClick={(e) => e.stopPropagation()} style={isModal ? (dragStyle as React.CSSProperties) : undefined}>
         <ModalHeader
           title={title || 'Select Color'}
           onClose={handleCancel}

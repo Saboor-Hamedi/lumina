@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import SettingAssistant from '../../../../../src/renderer/src/features/Settings/SettingAssistant'
 import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 
-const baseSettings = () => ({
+const baseSettings = (): any => ({
   activeProvider: 'deepseek',
   deepSeekKey: null,
   deepSeekModel: 'deepseek-chat',

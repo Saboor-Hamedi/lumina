@@ -1,10 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 
-export type ToastType = 'success' | 'error' | 'info'
+export type ToastType = 'success' | 'error' | 'info' | 'warning'
 
 export interface ToastItem {
   message: string
   type: ToastType
+  action?: {
+    label: string
+    onClick: () => void
+  }
 }
 
 export interface UseNotificationReturn {

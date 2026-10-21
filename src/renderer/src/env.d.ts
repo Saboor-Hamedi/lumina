@@ -2,6 +2,14 @@
 /// <reference types="react" />
 /// <reference types="react/jsx-runtime" />
 
+declare module 'd3-force-3d'
+declare module 'three' {
+  export const SphereGeometry: any
+  export type MeshBasicMaterial = any
+  export const MeshBasicMaterial: any
+  export const Mesh: any
+}
+
 declare module '*.css' {
   const content: Record<string, string>
   export default content

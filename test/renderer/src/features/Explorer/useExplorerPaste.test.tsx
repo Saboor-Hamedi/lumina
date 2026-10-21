@@ -5,9 +5,9 @@ import { useExplorerPaste } from '../../../../../src/renderer/src/features/Explo
 describe('useExplorerPaste Image Ingestion & Focus Routing', () => {
   let sidebar: HTMLDivElement
   let explorer: HTMLDivElement
-  let loadWorkspaceMock: ReturnType<typeof vi.fn>
-  let handleSelectMock: ReturnType<typeof vi.fn>
-  let clearSelectionMock: ReturnType<typeof vi.fn>
+  let loadWorkspaceMock: any
+  let handleSelectMock: any
+  let clearSelectionMock: any
   let toastEvents: CustomEvent[]
 
   let toastListener: (e: Event) => void

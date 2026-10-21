@@ -359,7 +359,7 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
                       className="session-header-btn"
                       onClick={(e) => {
                         e.stopPropagation()
-                        clearSessionMessages(activeSessionId)
+                        if (activeSessionId) clearSessionMessages(activeSessionId)
                       }}
                       aria-label="Clear Messages"
                     >

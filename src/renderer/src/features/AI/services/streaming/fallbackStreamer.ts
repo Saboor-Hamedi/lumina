@@ -24,7 +24,7 @@ export interface RunFallbackProviderStreamParams {
   sdkTools?: Record<string, any>
   onContentUpdate: (content: string) => void
   onThinkingStatusUpdate: (status: string) => void
-  onToolActivity?: (toolName: string, args: Record<string, any>, result: any) => void
+  onToolActivity?: (toolName: string, args: Record<string, any>, result: any) => void;
   onHeartbeat?: () => void
 }
 
@@ -38,7 +38,8 @@ export const runFallbackProviderStream = async ({
   sdkTools,
   onContentUpdate,
   onThinkingStatusUpdate,
-  onToolActivity
+  onToolActivity,
+  onHeartbeat
 }: RunFallbackProviderStreamParams): Promise<string> => {
   let fullContent = ''
   const activitySummaries: string[] = []

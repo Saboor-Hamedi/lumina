@@ -77,7 +77,7 @@ export function findConflict(combo: string, currentId: string, allShortcuts: Sho
     if (!s || s.id === currentId || seenIds.has(s.id)) continue
     seenIds.add(s.id)
 
-    const candidateKey = s.key || s.defaultKey
+    const candidateKey = ('key' in s && s.key) ? s.key : s.defaultKey
     if (candidateKey && normalizeCombo(candidateKey) === normalized) {
       return true
     }
@@ -366,7 +366,7 @@ export function useShortcutManager() {
     return groups
       .map((group) => {
         const matchingItems = group.items.filter(
-          (item) =>
+          (item: ShortcutItem) =>
             item.label.toLowerCase().includes(q) ||
             item.key.toLowerCase().includes(q)
         )

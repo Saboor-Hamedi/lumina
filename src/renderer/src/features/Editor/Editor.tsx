@@ -432,7 +432,7 @@ export const Editor: React.FC<EditorProps> = memo(
             title={title}
             content={latestCodeRef.current !== undefined ? latestCodeRef.current : snippet?.code}
             snippetId={snippet?.id}
-            timestamp={snippet?.timestamp}
+
           />
 
           {isInlineAIOpen && (
@@ -440,7 +440,7 @@ export const Editor: React.FC<EditorProps> = memo(
               isOpen={isInlineAIOpen}
               onClose={handleCloseInlineAI}
               onInsert={handleInlineAIInsert}
-              cursorPosition={realViewRef.current?.state.selection.main}
+              cursorPosition={realViewRef.current?.state.selection.main.head}
               editorView={realViewRef.current}
               title={title}
             />

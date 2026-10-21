@@ -63,7 +63,7 @@ self.onmessage = (e: MessageEvent) => {
         positionsBuffer[i * 2 + 1] = nodes[i].y || 0
       }
 
-      self.postMessage({ type: 'TICK', positions: positionsBuffer }, [positionsBuffer.buffer])
+      ;(self.postMessage as any)({ type: 'TICK', positions: positionsBuffer }, [positionsBuffer.buffer])
     })
   } else if (type === 'UPDATE_SETTINGS') {
     if (!simulation) return

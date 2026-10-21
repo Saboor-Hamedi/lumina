@@ -15,18 +15,18 @@ import { validateIpc, z } from './ipcValidation'
  * - `backup:cancel`: Cancels an ongoing backup operation gracefully.
  */
 
-const modeSchema = z.string().optional()
+const modeSchema = z.enum(['folder', 'zip']).optional()
 
 export function registerBackupHandlers(): void {
   // Start full workspace backup to Google Drive
   ipcMain.handle('backup:start', (event, mode) => {
     const validMode = validateIpc(modeSchema, mode)
-    return backupToDrive(WorkspaceManager.workspacePath, validMode, event.sender)
+    return backupToDrive(WorkspaceManager.workspacePath || '', validMode, event.sender)
   })
 
   // Backup a single file/note to Google Drive
   ipcMain.handle('backup:file', (event, fileInput) => {
-    return backupFileToDrive(fileInput, WorkspaceManager.workspacePath, event.sender)
+    return backupFileToDrive(fileInput, WorkspaceManager.workspacePath || '', event.sender)
   })
 
   // Cancel any active background backup operation

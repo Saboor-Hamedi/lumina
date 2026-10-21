@@ -3,7 +3,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react'
 import SettingWorkspace from '../../../../../src/renderer/src/features/Settings/SettingWorkspace'
 import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 
-const baseSettings = () => ({
+const baseSettings = (): any => ({
   vaultPath: '/fake/vault',
   workspacePath: null
 })
@@ -35,7 +35,7 @@ describe('SettingWorkspace', () => {
   })
 
   it('shows the default workspace text when no path is set', () => {
-    useSettingsStore.setState({ settings: { vaultPath: null, workspacePath: null } })
+    useSettingsStore.setState({ settings: { vaultPath: null, workspacePath: null } as any })
     render(<SettingWorkspace />)
     expect(screen.getByText('No workspace selected (using default)')).toBeInTheDocument()
   })

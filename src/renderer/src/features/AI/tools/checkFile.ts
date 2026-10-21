@@ -143,7 +143,7 @@ export const checkFileTool = aiSdk.tool({
       const charCount = currentCode.length
 
       const outline = extractHeadingOutline(lines)
-      const outgoingLinks = Array.from(
+      const outgoingLinks: string[] = Array.from(
         new Set(
           (currentCode.match(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g) || []).map((w: string) =>
             w.replace(/^\[\[|\]\]$/g, '').split('|')[0].trim()

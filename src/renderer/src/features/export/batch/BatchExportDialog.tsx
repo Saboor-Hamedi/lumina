@@ -714,7 +714,7 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                         />
                       </div>
                     )}
-                    {mode === 'separate' && format !== 'zip' && (
+                    {mode === 'separate' && (format as string) !== 'zip' && (
                       <div className="export-option-row" onClick={() => setCompressZip((prev) => !prev)}>
                         <div className="export-option-label">
                           <span className="export-option-title">Compress as ZIP Archive</span>

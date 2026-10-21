@@ -1,4 +1,5 @@
-import { ShortcutDefinition, ShortcutGroup, ShortcutMap, DisplayShortcutItem } from './types'
+export type { ShortcutDefinition, ShortcutGroup, ShortcutMap, DisplayShortcutItem } from './types'
+import type { ShortcutDefinition, ShortcutGroup, ShortcutMap, DisplayShortcutItem } from './types'
 
 export type ShortcutItem = DisplayShortcutItem
 

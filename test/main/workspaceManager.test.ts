@@ -22,7 +22,7 @@ describe('VaultManager', () => {
 
   beforeEach(async () => {
     if (VaultManager.watcher) {
-      await VaultManager.watcher.close()
+      await (VaultManager.watcher as any).close()
       VaultManager.watcher = null
     }
     testVaultPath = path.join(os.tmpdir(), `lumina-test-${Date.now()}`)
@@ -38,7 +38,7 @@ describe('VaultManager', () => {
     // rescans that reassign `snippets`, racing save/delete under load (which
     // produced intermittent null results). Disable it for deterministic tests.
     if (VaultManager.watcher) {
-      await VaultManager.watcher.close()
+      await (VaultManager.watcher as any).close()
       VaultManager.watcher = null
     }
     const pendingScan = (VaultManager as any).scanDebounceTimeout
@@ -50,7 +50,7 @@ describe('VaultManager', () => {
 
   afterEach(async () => {
     if (VaultManager.watcher) {
-      await VaultManager.watcher.close()
+      await (VaultManager.watcher as any).close()
       VaultManager.watcher = null
     }
     try {
@@ -70,7 +70,7 @@ describe('VaultManager', () => {
         .catch(() => false)
       expect(exists).toBe(true)
       if (VaultManager.watcher) {
-        await VaultManager.watcher.close()
+        await (VaultManager.watcher as any).close()
         VaultManager.watcher = null
       }
       await fs.rm(newVaultPath, { recursive: true, force: true })

@@ -88,7 +88,7 @@ export const EditorMenu: React.FC<EditorMenuProps> = ({
     <div className="editor-titlebar" style={{ display: 'inline-flex', alignItems: 'center', position: 'relative', top: 'auto', right: 'auto', zIndex: 20 }}>
       <div className="editor-controls" style={{ margin: 0, gap: 0 }}>
         <div className="menu-container">
-          <ToolTip text="More Options (Ctrl+I)" position="bottom-right">
+          <ToolTip text="More Options (Ctrl+I)" position="bottom">
             <button
               className={`icon-btn menu-trigger ${showMoreMenu ? 'active' : ''}`}
               ref={buttonRef}

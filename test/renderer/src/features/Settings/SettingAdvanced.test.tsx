@@ -15,7 +15,7 @@ const baseSettings = () => ({
 describe('SettingAdvanced', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    useSettingsStore.setState({ settings: baseSettings() })
+    useSettingsStore.setState({ settings: baseSettings() as any })
     useUpdateStore.setState({ status: 'idle', progress: null })
     ;(global.window as unknown as { api: { getVersion: () => Promise<string> } }).api = {
       getVersion: vi.fn().mockResolvedValue('1.0.30')

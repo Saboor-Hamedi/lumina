@@ -26,7 +26,7 @@ describe('NoteDetails Component', () => {
     timestamp: 1725264000000,
     language: 'markdown',
     code: 'This note describes the system architecture and state flow.',
-    customIcon: null,
+    customIcon: undefined,
     tags: ['lumina', 'architecture']
   }
 

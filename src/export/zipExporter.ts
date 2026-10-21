@@ -13,6 +13,7 @@
  * ============================================================================
  */
 
+// @ts-ignore
 import * as archiverModule from 'archiver'
 import fs from 'fs'
 import fsPromises from 'fs/promises'

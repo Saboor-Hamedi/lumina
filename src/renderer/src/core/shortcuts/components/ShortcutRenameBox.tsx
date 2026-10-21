@@ -68,7 +68,7 @@ export function findConflict(combo: string, currentId: string, allShortcuts?: Sh
     if (!s || s.id === currentId || seenIds.has(s.id)) continue
     seenIds.add(s.id)
 
-    const candidateKey = s.key || s.defaultKey
+    const candidateKey = ('key' in s && s.key) ? s.key : s.defaultKey
     if (candidateKey && normalizeCombo(candidateKey) === normalized) {
       return true
     }

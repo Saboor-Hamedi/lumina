@@ -3,7 +3,8 @@ import { Calendar } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/SettingStore'
-import Template from '../../template/Template'
+import TemplateRaw from '../../template/Template'
+const Template = TemplateRaw as any
 import { defaultTemplates } from '../../template/hooks/defaultTemplates'
 
 export interface DailyNotesProps {

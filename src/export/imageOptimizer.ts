@@ -41,6 +41,7 @@ export interface OptimizedImageResult {
 }
 
 export const DEFAULT_OPTIONS: Required<ImageOptimizationOptions> = {
+  enabled: true,
   maxWidth: 1600,
   maxHeight: 1600,
   quality: 80,

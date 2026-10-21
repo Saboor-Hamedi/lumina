@@ -127,7 +127,7 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
   const [hoverNode, setHoverNode] = useState<any>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const graphRef = useRef<any>()
+  const graphRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [isEngineReady, setIsEngineReady] = useState(false)
   const [dimensions, setDimensions] = useState({
@@ -460,7 +460,7 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
 
   const paintNode = useCallback(
     (node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-      const isActive = selectedSnippet && node.snippetId === selectedSnippet.id
+      const isActive = Boolean(selectedSnippet && node.snippetId === selectedSnippet.id)
       const isHovered = hoverNode === node
       const baseR = node.val ? Math.min(10, Math.max(3, Math.sqrt(node.val) * 2.8)) : 3
       const r = baseR * graphNodeSize + 3

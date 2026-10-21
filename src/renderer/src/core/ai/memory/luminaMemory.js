@@ -151,6 +151,9 @@ class LuminaMemory {
     return { success: true, summary: `Updated memory to "${cleanNew}"` }
   }
 
+  /**
+   * @param {{ target?: string; category?: string | null; key?: string | null }} options
+   */
   async forgetFact({ target, category = null, key = null }) {
     const mem = await this.getMemory()
 

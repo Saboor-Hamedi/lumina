@@ -19,7 +19,7 @@ const InlineGraph: React.FC<InlineGraphProps> = React.memo(({ focusNodeId, onNav
   const snippets = useWorkspaceStore((s) => s.notes) || []
   const graphTheme = useSettingsStore((s) => s.settings.graphTheme || 'default')
 
-  const graphRef = useRef<any>()
+  const graphRef = useRef<any>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const hasInitialized = useRef(false)
   const draggedNodeRef = useRef<any>(null)

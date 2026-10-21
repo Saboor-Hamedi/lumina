@@ -185,7 +185,7 @@ export const SettingShortcuts: React.FC = () => {
               >
                 {group.title}
               </h4>
-              {group.items.map((item, j) => {
+              {group.items.map((item: any, j: number) => {
                 const isEditingThis = editingShortcutId === item.id
 
                 return (

@@ -271,30 +271,33 @@ export class WorkspaceManager {
       '.avif'
     ])
 
+    const isIgnored = (filePath: string) => {
+      const base = path.basename(filePath)
+      if (base.startsWith('.')) return true
+      const norm = path.resolve(filePath).toLowerCase()
+      const expiry = this.ignoredPaths.get(norm)
+      if (expiry) {
+        if (Date.now() < expiry) return true
+        this.ignoredPaths.delete(norm)
+      }
+      return false
+    }
+
     this.watcher.on('add', (filePath: string) => {
+      if (isIgnored(filePath)) return
       const ext = path.extname(filePath).toLowerCase()
       if (VALID_EXTS.has(ext)) triggerScan()
     })
 
     this.watcher.on('unlink', (filePath: string) => {
-      const norm = path.resolve(filePath).toLowerCase()
-      const expiry = this.ignoredPaths.get(norm)
-      if (expiry) {
-        if (Date.now() < expiry) return
-        this.ignoredPaths.delete(norm)
-      }
+      if (isIgnored(filePath)) return
       triggerScan()
     })
     this.watcher.on('addDir', triggerScan)
     this.watcher.on('unlinkDir', triggerScan)
 
     this.watcher.on('change', (filePath: string) => {
-      const norm = path.resolve(filePath).toLowerCase()
-      const expiry = this.ignoredPaths.get(norm)
-      if (expiry) {
-        if (Date.now() < expiry) return
-        this.ignoredPaths.delete(norm)
-      }
+      if (isIgnored(filePath)) return
       const ext = path.extname(filePath).toLowerCase()
       if (VALID_EXTS.has(ext)) triggerScan()
     })
