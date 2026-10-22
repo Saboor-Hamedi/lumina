@@ -6,6 +6,7 @@
  */
 
 import { htmlToMarkdown, applyRichPasteToView } from '../utils/htmlToMarkdown'
+import { trySmartLinkPaste } from '../utils/smartLinkPaste'
 
 export const selectAll = (view) => {
   if (!view) return
@@ -23,6 +24,10 @@ export const pastePlainText = async (view) => {
   if (!view) return
   try {
     const text = await navigator.clipboard.readText()
+    if (text && trySmartLinkPaste(view, text)) {
+      view.focus()
+      return
+    }
     view.dispatch({
       changes: { from: view.state.selection.main.from, to: view.state.selection.main.to, insert: text }
     })

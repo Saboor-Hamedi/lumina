@@ -89,6 +89,43 @@ export function registerSystemHandlers(getMainWindow: () => BrowserWindow | null
 
   ipcMain.handle('window:close', () => getMainWindow()?.close())
 
+  // Window movement handlers (for Alt + Drag in Zen Mode)
+  ipcMain.handle('window:move-by', (_, payload: { deltaX: number; deltaY: number }) => {
+    try {
+      const win = getMainWindow()
+      if (!win || win.isDestroyed()) return false
+      if (win.isMaximized()) {
+        win.unmaximize()
+      }
+      const [x, y] = win.getPosition()
+      win.setPosition(Math.round(x + (payload?.deltaX || 0)), Math.round(y + (payload?.deltaY || 0)))
+      return true
+    } catch (err) {
+      console.error('[Main] Failed to move window by offset:', err)
+      return false
+    }
+  })
+
+  ipcMain.handle('window:get-position', () => {
+    const win = getMainWindow()
+    return win && !win.isDestroyed() ? win.getPosition() : [0, 0]
+  })
+
+  ipcMain.handle('window:set-position', (_, { x, y }: { x: number; y: number }) => {
+    try {
+      const win = getMainWindow()
+      if (!win || win.isDestroyed()) return false
+      if (win.isMaximized()) {
+        win.unmaximize()
+      }
+      win.setPosition(Math.round(x), Math.round(y))
+      return true
+    } catch (err) {
+      console.error('[Main] Failed to set window position:', err)
+      return false
+    }
+  })
+
   // Temporarily pause global accelerator registration while user rebinds shortcuts in Settings
   ipcMain.handle('shortcuts:pause-global', () => {
     pauseGlobalShortcut()

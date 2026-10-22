@@ -129,6 +129,10 @@ const api = {
   closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
   setWindowOpacity: (opacity) => electronAPI.ipcRenderer.invoke('window:set-opacity', opacity),
   getWindowOpacity: () => electronAPI.ipcRenderer.invoke('window:get-opacity'),
+  moveWindow: (deltaX, deltaY) =>
+    electronAPI.ipcRenderer.invoke('window:move-by', { deltaX, deltaY }),
+  getWindowPosition: () => electronAPI.ipcRenderer.invoke('window:get-position'),
+  setWindowPosition: (x, y) => electronAPI.ipcRenderer.invoke('window:set-position', { x, y }),
   onToggleCommandPalette: (cb) => {
     const listener = () => cb()
     electronAPI.ipcRenderer.on('window:toggle-command-palette', listener)

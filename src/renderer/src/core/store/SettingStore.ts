@@ -26,6 +26,26 @@ export interface RightSidebarGeometry {
   isRightOpen: boolean
 }
 
+export interface ZenModeSettings {
+  enabled: boolean
+  hideTitleBar: boolean
+  hideStatusBar: boolean
+  hideActivityBar: boolean
+  hidePrimarySidebar: boolean
+  hideSecondarySidebar: boolean
+  hideTabs?: boolean
+}
+
+export interface ZenPreState {
+  titleBarVisible?: boolean
+  statusBarVisible?: boolean
+  activityBarVisible?: boolean
+  tabsVisible?: boolean
+  breadcrumbsVisible?: boolean
+  isLeftOpen?: boolean
+  isRightOpen?: boolean
+}
+
 export interface Settings {
   theme: string
   fontSize: number
@@ -85,6 +105,15 @@ export interface Settings {
   sidebar: SidebarGeometry
   rightSidebar: RightSidebarGeometry
 
+  // Component Visibility & Zen Mode
+  titleBarVisible: boolean
+  statusBarVisible: boolean
+  activityBarVisible: boolean
+  tabsVisible?: boolean
+  breadcrumbsVisible?: boolean
+  zenMode: ZenModeSettings
+  zenPreState?: ZenPreState | null
+
   // Modal Window Persistence
   previewModalMaximized: boolean
   settingsModalMaximized: boolean
@@ -117,6 +146,17 @@ export interface SettingStoreState {
   updateSetting: (key: string, value: any) => Promise<void>
   togglePinnedFolder: (folderId: string) => Promise<void>
   updateSettings: (settings: Partial<Settings>) => Promise<void>
+  toggleZenMode: () => Promise<void>
+  enterZenMode: () => Promise<void>
+  exitZenMode: () => Promise<void>
+  toggleTitleBar: () => Promise<void>
+  toggleStatusBar: () => Promise<void>
+  toggleActivityBar: () => Promise<void>
+  toggleTabs: () => Promise<void>
+  toggleBreadcrumbs: () => Promise<void>
+  togglePrimarySidebar: () => Promise<void>
+  toggleSecondarySidebar: () => Promise<void>
+  toggleEditorMetadata: () => Promise<void>
 }
 
 export const useSettingStore = create<SettingStoreState>((set, get) => ({
@@ -200,6 +240,23 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       width: 300,
       isRightOpen: false
     },
+
+    // Component Visibility & Zen Mode Defaults
+    titleBarVisible: true,
+    statusBarVisible: true,
+    activityBarVisible: true,
+    tabsVisible: true,
+    breadcrumbsVisible: true,
+    zenMode: {
+      enabled: false,
+      hideTitleBar: true,
+      hideStatusBar: true,
+      hideActivityBar: true,
+      hidePrimarySidebar: true,
+      hideSecondarySidebar: true,
+      hideTabs: true
+    },
+    zenPreState: null,
 
     // Modal Window Persistence
     previewModalMaximized: false,
@@ -430,7 +487,136 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     } catch (err) {
       console.error(`Failed to save multiple settings:`, err)
     }
+  },
+  toggleTitleBar: async () => {
+    const current = get().settings.titleBarVisible ?? true
+    await get().updateSetting('titleBarVisible', !current)
+  },
+
+  toggleStatusBar: async () => {
+    const current = get().settings.statusBarVisible ?? true
+    await get().updateSetting('statusBarVisible', !current)
+  },
+
+  toggleActivityBar: async () => {
+    const current = get().settings.activityBarVisible ?? true
+    await get().updateSetting('activityBarVisible', !current)
+  },
+
+  toggleTabs: async () => {
+    const current = get().settings.tabsVisible ?? true
+    await get().updateSetting('tabsVisible', !current)
+  },
+
+  toggleBreadcrumbs: async () => {
+    const current = get().settings.breadcrumbsVisible ?? true
+    await get().updateSetting('breadcrumbsVisible', !current)
+  },
+
+  togglePrimarySidebar: async () => {
+    const s = get().settings.sidebar || { width: 260, isLeftOpen: true }
+    await get().updateSetting('sidebar', { ...s, isLeftOpen: !s.isLeftOpen })
+  },
+
+  toggleSecondarySidebar: async () => {
+    const r = get().settings.rightSidebar || { width: 300, isRightOpen: false }
+    await get().updateSetting('rightSidebar', { ...r, isRightOpen: !r.isRightOpen })
+  },
+
+  toggleEditorMetadata: async () => {
+    const current = get().settings.inlineMetadata ?? true
+    await get().updateSetting('inlineMetadata', !current)
+  },
+
+  enterZenMode: async () => {
+    const s = get().settings
+    const zen = s.zenMode || {
+      enabled: false,
+      hideTitleBar: true,
+      hideStatusBar: true,
+      hideActivityBar: true,
+      hidePrimarySidebar: true,
+      hideSecondarySidebar: true,
+      hideTabs: true
+    }
+
+    const preState: ZenPreState = {
+      titleBarVisible: s.titleBarVisible ?? true,
+      statusBarVisible: s.statusBarVisible ?? true,
+      activityBarVisible: s.activityBarVisible ?? true,
+      tabsVisible: s.tabsVisible ?? true,
+      breadcrumbsVisible: s.breadcrumbsVisible ?? true,
+      isLeftOpen: s.sidebar?.isLeftOpen ?? true,
+      isRightOpen: s.rightSidebar?.isRightOpen ?? false
+    }
+
+    const updates: Partial<Settings> = {
+      zenMode: { ...zen, enabled: true },
+      zenPreState: preState,
+      titleBarVisible: false,
+      statusBarVisible: false,
+      activityBarVisible: false,
+      tabsVisible: false,
+      breadcrumbsVisible: false,
+      sidebar: { ...(s.sidebar || { width: 260, isLeftOpen: true }), isLeftOpen: false },
+      rightSidebar: { ...(s.rightSidebar || { width: 300, isRightOpen: false }), isRightOpen: false }
+    }
+
+    await get().updateSettings(updates)
+  },
+
+  exitZenMode: async () => {
+    const s = get().settings
+    const zen = s.zenMode || {
+      enabled: false,
+      hideTitleBar: true,
+      hideStatusBar: true,
+      hideActivityBar: true,
+      hidePrimarySidebar: true,
+      hideSecondarySidebar: true,
+      hideTabs: true
+    }
+    const pre = s.zenPreState
+
+    const updates: Partial<Settings> = {
+      zenMode: { ...zen, enabled: false },
+      zenPreState: null
+    }
+
+    if (pre) {
+      if (pre.titleBarVisible !== undefined) updates.titleBarVisible = pre.titleBarVisible
+      if (pre.statusBarVisible !== undefined) updates.statusBarVisible = pre.statusBarVisible
+      if (pre.activityBarVisible !== undefined) updates.activityBarVisible = pre.activityBarVisible
+      if (pre.tabsVisible !== undefined) updates.tabsVisible = pre.tabsVisible
+      if (pre.breadcrumbsVisible !== undefined) updates.breadcrumbsVisible = pre.breadcrumbsVisible
+      if (pre.isLeftOpen !== undefined) {
+        updates.sidebar = { ...(s.sidebar || { width: 260, isLeftOpen: true }), isLeftOpen: pre.isLeftOpen }
+      }
+      if (pre.isRightOpen !== undefined) {
+        updates.rightSidebar = { ...(s.rightSidebar || { width: 300, isRightOpen: false }), isRightOpen: pre.isRightOpen }
+      }
+    } else {
+      updates.titleBarVisible = true
+      updates.statusBarVisible = true
+      updates.activityBarVisible = true
+      updates.tabsVisible = true
+      updates.breadcrumbsVisible = true
+      updates.sidebar = { ...(s.sidebar || { width: 260, isLeftOpen: true }), isLeftOpen: true }
+      updates.rightSidebar = { ...(s.rightSidebar || { width: 300, isRightOpen: false }), isRightOpen: false }
+    }
+
+    await get().updateSettings(updates)
+  },
+
+  toggleZenMode: async () => {
+    const enabled = get().settings.zenMode?.enabled ?? false
+    if (enabled) {
+      await get().exitZenMode()
+    } else {
+      await get().enterZenMode()
+    }
   }
+
 }))
 
 /**

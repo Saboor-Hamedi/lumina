@@ -3,10 +3,23 @@ import { MainLayout, TitleBar } from './features/Layout'
 import { applyTheme } from './features/theme/hooks/themeDefinitions'
 import GlobalErrorHandler from './components/GlobalErrorHandler'
 import { hideScreenLoader } from './components/screenLoader'
+import { useSettingsStore } from './core/store/SettingStore'
+import { useZenWindowDrag } from './core/hooks/useZenWindowDrag'
 import './assets/globalErrorHandler.css'
 import './assets/modernUI/modernUi.css'
 
 function App() {
+  const isTitleBarVisible = useSettingsStore((state) => {
+    if (state.settings?.zenMode?.enabled) {
+      return state.settings?.titleBarVisible === true
+    }
+    return state.settings?.titleBarVisible !== false
+  })
+  const isZenMode = useSettingsStore(
+    (state) => state.settings?.zenMode?.enabled === true
+  )
+
+  useZenWindowDrag({ enabled: isZenMode })
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme-id') || 'dark'
@@ -43,10 +56,11 @@ function App() {
           flexDirection: 'column',
           height: '100%',
           width: '100%',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          position: 'relative'
         }}
       >
-        <TitleBar />
+        {isTitleBarVisible && <TitleBar />}
         <GlobalErrorHandler>
           <MainLayout />
         </GlobalErrorHandler>

@@ -2,6 +2,7 @@ import { EditorView } from '@codemirror/view'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/SettingStore'
 import { htmlToMarkdown, applyRichPasteToView } from '../../Editor/utils/htmlToMarkdown'
+import { trySmartLinkPaste } from '../../Editor/utils/smartLinkPaste'
 
 export const imageDropExtension = () =>
   EditorView.domEventHandlers({
@@ -137,7 +138,16 @@ export const imageDropExtension = () =>
         return true
       }
 
-      // 3. Rich HTML / Word Paste: convert tables, formatting & extract images
+      // 3. Markdown Link Smart-Paste: When text is selected and a URL is pasted,
+      // transform into [Selected Text](https://url) instead of overwriting the text.
+      const rawText = event.clipboardData?.getData('text/plain') || ''
+      if (rawText && trySmartLinkPaste(view, rawText)) {
+        event.preventDefault()
+        event.stopPropagation()
+        return true
+      }
+
+      // 4. Rich HTML / Word Paste: convert tables, formatting & extract images
       const rawHtml = event.clipboardData?.getData('text/html')
       if (rawHtml && rawHtml.trim()) {
         event.preventDefault()

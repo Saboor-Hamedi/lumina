@@ -60,6 +60,7 @@ export interface KeyboardShortcutHandlers {
   onToggleCanvas?: () => void
   onToggleCanvasDrawer?: () => void
   onToggleTerminal?: () => void
+  onToggleZenMode?: () => void
   onInlineAI?: () => boolean | void
   onFind?: () => void
 }

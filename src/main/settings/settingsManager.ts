@@ -4,6 +4,26 @@ import { app } from 'electron'
 import { GLOBAL_API_KEYS } from './crypto'
 import { AppConfigManager, Shortcuts } from './appConfig'
 
+export interface ZenModeSettings {
+  enabled: boolean
+  hideTitleBar: boolean
+  hideStatusBar: boolean
+  hideActivityBar: boolean
+  hidePrimarySidebar: boolean
+  hideSecondarySidebar: boolean
+  hideTabs?: boolean
+}
+
+export interface ZenPreState {
+  titleBarVisible?: boolean
+  statusBarVisible?: boolean
+  activityBarVisible?: boolean
+  tabsVisible?: boolean
+  breadcrumbsVisible?: boolean
+  isLeftOpen?: boolean
+  isRightOpen?: boolean
+}
+
 export interface Settings {
   shortcuts: Shortcuts
   theme: string
@@ -23,6 +43,13 @@ export interface Settings {
   inlineMetadata: boolean
   sidebar: { width: number; isLeftOpen: boolean }
   rightSidebar: { width: number; isRightOpen: boolean }
+  titleBarVisible: boolean
+  statusBarVisible: boolean
+  activityBarVisible: boolean
+  tabsVisible?: boolean
+  breadcrumbsVisible?: boolean
+  zenMode: ZenModeSettings
+  zenPreState?: ZenPreState | null
   pinnedFolders?: string[]
   folderOrder?: string[]
   expandedFolders?: string[]
@@ -83,6 +110,21 @@ export const DEFAULT_SETTINGS: Settings = {
   inlineMetadata: true,
   sidebar: { width: 260, isLeftOpen: true },
   rightSidebar: { width: 300, isRightOpen: false },
+  titleBarVisible: true,
+  statusBarVisible: true,
+  activityBarVisible: true,
+  tabsVisible: true,
+  breadcrumbsVisible: true,
+  zenMode: {
+    enabled: false,
+    hideTitleBar: true,
+    hideStatusBar: true,
+    hideActivityBar: true,
+    hidePrimarySidebar: true,
+    hideSecondarySidebar: true,
+    hideTabs: true
+  },
+  zenPreState: null,
   enableDevTools: true,
   launchOnStartup: false,
   globalShortcut: 'Ctrl+Space',
@@ -136,6 +178,10 @@ export function formatSettingsJson(settings: Record<string, any>): string {
     {
       title: 'APPEARANCE',
       keys: ['theme', 'translucency', 'windowOpacity', 'modernUi']
+    },
+    {
+      title: 'ZEN_MODE',
+      keys: ['zenMode', 'titleBarVisible', 'statusBarVisible', 'activityBarVisible', 'zenPreState']
     },
     {
       title: 'SIDEBARS',

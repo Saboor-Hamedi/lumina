@@ -20,6 +20,11 @@ describe('SettingStore', () => {
 
     useSettingStore.setState({
       settings: {
+        titleBarVisible: true,
+        statusBarVisible: true,
+        activityBarVisible: true,
+        zenMode: { enabled: false, hideTitleBar: true, hideStatusBar: true, hideActivityBar: true, hidePrimarySidebar: true, hideSecondarySidebar: true },
+        zenPreState: null,
         theme: 'default',
         fontSize: 16,
         fontFamily: 'Inter',

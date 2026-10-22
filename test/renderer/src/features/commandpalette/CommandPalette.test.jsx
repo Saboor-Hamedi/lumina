@@ -26,12 +26,18 @@ vi.mock('../../../../../src/renderer/src/core/store/workspaceStore', () => ({
     })
 }))
 
-vi.mock('../../../../../src/renderer/src/core/store/SettingStore', () => ({
-  useSettingsStore: () => ({
+vi.mock('../../../../../src/renderer/src/core/store/SettingStore', () => {
+  const mockState = {
     settings: { commandPaletteMode: 'search', commandPaletteSplitRatio: 50 },
     updateSetting: vi.fn()
-  })
-}))
+  }
+  const storeFn = (selector) => (typeof selector === 'function' ? selector(mockState) : mockState)
+  storeFn.getState = () => mockState
+  return {
+    useSettingsStore: storeFn,
+    useSettingStore: storeFn
+  }
+})
 
 vi.mock('../../../../../src/renderer/src/core/hooks/useTag', () => ({
   useTag: () => ({ tags: [] })

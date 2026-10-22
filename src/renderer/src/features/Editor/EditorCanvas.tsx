@@ -13,7 +13,7 @@
  */
 
 import React, { useState, useEffect, useRef, useMemo, Component, type ErrorInfo, type ReactNode } from 'react'
-import { AtomicCodeMirrorEditor } from '@atomic-editor/editor'
+import { AtomicCodeMirrorEditor } from './atomic'
 import { languages } from '@codemirror/language-data'
 import type { EditorView } from '@codemirror/view'
 import type { Extension } from '@codemirror/state'

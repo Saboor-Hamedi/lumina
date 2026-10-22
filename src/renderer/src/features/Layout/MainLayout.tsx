@@ -171,16 +171,12 @@ export const MainLayout: React.FC = () => {
   })
   const [, setShowExplorerModal] = useState(false)
   const [showActiveIconPicker, setShowActiveIconPicker] = useState(false)
-  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState<boolean>(() => {
-    const storeVal = (useSettingsStore.getState().settings as any)?.sidebar?.isLeftOpen
-    if (typeof storeVal === 'boolean') return storeVal
-    return true
-  })
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState<boolean>(() => {
-    const storeVal = (useSettingsStore.getState().settings as any)?.rightSidebar?.isRightOpen
-    if (typeof storeVal === 'boolean') return storeVal
-    return false
-  })
+  const isLeftSidebarOpen = useSettingsStore(
+    (state) => state.settings?.sidebar?.isLeftOpen ?? true
+  )
+  const isRightSidebarOpen = useSettingsStore(
+    (state) => state.settings?.rightSidebar?.isRightOpen ?? false
+  )
   const [rightSidebarTab, setRightSidebarTab] = useState<string>('details')
   const rightSidebarTabRef = useRef(rightSidebarTab)
   useEffect(() => {
@@ -192,6 +188,25 @@ export const MainLayout: React.FC = () => {
   const [renameModal, setRenameModal] = useState<RenameModalState>({ isOpen: false, item: null, newName: '' })
   const [, setSavedRightSidebarState] = useState<any>(null)
   const appShellRef = useRef<HTMLDivElement | null>(null)
+
+  const isActivityBarVisible = useSettingsStore(
+    (state) => state.settings?.activityBarVisible !== false
+  )
+  const isStatusBarVisible = useSettingsStore(
+    (state) => state.settings?.statusBarVisible !== false
+  )
+  const isTabsVisible = useSettingsStore((state) => {
+    if (state.settings?.zenMode?.enabled) {
+      return state.settings?.tabsVisible === true
+    }
+    return state.settings?.tabsVisible !== false
+  })
+  const isBreadcrumbsVisible = useSettingsStore((state) => {
+    if (state.settings?.zenMode?.enabled) {
+      return state.settings?.breadcrumbsVisible === true
+    }
+    return state.settings?.breadcrumbsVisible !== false
+  })
 
   const isLeftSidebarOpenRef = useRef(isLeftSidebarOpen)
   const isRightSidebarOpenRef = useRef(isRightSidebarOpen)
@@ -205,9 +220,9 @@ export const MainLayout: React.FC = () => {
   }, [isRightSidebarOpen])
 
   const updateLeftSidebarOpen = useCallback((valOrFn: boolean | ((prev: boolean) => boolean)) => {
-    const next = typeof valOrFn === 'function' ? valOrFn(isLeftSidebarOpenRef.current) : valOrFn
+    const current = useSettingsStore.getState().settings?.sidebar?.isLeftOpen ?? true
+    const next = typeof valOrFn === 'function' ? valOrFn(current) : valOrFn
     isLeftSidebarOpenRef.current = next
-    setIsLeftSidebarOpen(next)
     window.dispatchEvent(new CustomEvent('left-sidebar-toggle', { detail: { open: next } }))
     const currentSidebar = (useSettingsStore.getState().settings as any)?.sidebar || {}
     if (currentSidebar.isLeftOpen !== next) {
@@ -221,9 +236,9 @@ export const MainLayout: React.FC = () => {
   }, [])
 
   const updateRightSidebarOpen = useCallback((valOrFn: boolean | ((prev: boolean) => boolean)) => {
-    const next = typeof valOrFn === 'function' ? valOrFn(isRightSidebarOpenRef.current) : valOrFn
+    const current = useSettingsStore.getState().settings?.rightSidebar?.isRightOpen ?? false
+    const next = typeof valOrFn === 'function' ? valOrFn(current) : valOrFn
     isRightSidebarOpenRef.current = next
-    setIsRightSidebarOpen(next)
     const currentRSidebar = (useSettingsStore.getState().settings as any)?.rightSidebar || {}
     if (currentRSidebar.isRightOpen !== next) {
       useSettingsStore.getState().updateSettings({
@@ -365,7 +380,6 @@ export const MainLayout: React.FC = () => {
           finalLeftOpen = actualSettings.isLeftSidebarOpen
         }
 
-        setIsLeftSidebarOpen(finalLeftOpen)
         isLeftSidebarOpenRef.current = finalLeftOpen
         window.dispatchEvent(
           new CustomEvent('left-sidebar-toggle', { detail: { open: finalLeftOpen } })
@@ -386,7 +400,6 @@ export const MainLayout: React.FC = () => {
           finalRightOpen = actualSettings.isRightSidebarOpen
         }
 
-        setIsRightSidebarOpen(finalRightOpen)
         isRightSidebarOpenRef.current = finalRightOpen
 
         const rawRightWidth =
@@ -648,10 +661,54 @@ export const MainLayout: React.FC = () => {
     return () => window.removeEventListener('keydown', handleTabNavCapture, true)
   }, [])
 
-  // Event listener for toggle-terminal CustomEvent (from ActivityBar or other buttons)
+  // Dedicated capture-phase shortcut listener for Zen Mode (Ctrl + .)
   useEffect(() => {
+    const handleZenCapture = (e: KeyboardEvent) => {
+      if (
+        (window as any).__isRecordingShortcut ||
+        document.querySelector(
+          '.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay'
+        ) ||
+        (document.activeElement &&
+          (document.activeElement as HTMLElement).closest &&
+          (document.activeElement as HTMLElement).closest(
+            '.shortcut-inline-container, .shortcut-modal'
+          ))
+      ) {
+        return
+      }
+
+      const userShortcuts = useSettingsStore.getState().settings.shortcuts || {}
+      const zenKey = userShortcuts.zenMode || 'Ctrl + .'
+
+      if (matchesShortcut(e, zenKey)) {
+        e.preventDefault()
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        const now = Date.now()
+        const last = (window as any).__lastZenDispatch || 0
+        if (now - last < 400) return
+        ;(window as any).__lastZenDispatch = now
+
+        useSettingsStore.getState().toggleZenMode()
+      }
+    }
+
+    window.addEventListener('keydown', handleZenCapture, true)
+    return () => window.removeEventListener('keydown', handleZenCapture, true)
+  }, [])
+
+  // Event listener for toggle-terminal CustomEvent (from ActivityBar or other buttons)
+    useEffect(() => {
     const handleToggleTerminalEvent = () => {
       handleToggleTerminal()
+    }
+    const handleToggleZenModeEvent = () => {
+      useSettingsStore.getState().toggleZenMode()
+    }
+    const handleOpenCommandPaletteMode = () => {
+      setPaletteInitialQuery('>')
+      setShowPalette(true)
     }
 
     window.addEventListener('toggle-terminal', handleToggleTerminalEvent)
@@ -681,6 +738,9 @@ export const MainLayout: React.FC = () => {
     onTogglePalette: () => {
       setPaletteInitialQuery('')
       setShowPalette(true)
+    },
+    onToggleZenMode: () => {
+      useSettingsStore.getState().toggleZenMode()
     },
     onTogglePaletteCommandMode: () => {
       setPaletteInitialQuery('> ')
@@ -1122,14 +1182,16 @@ export const MainLayout: React.FC = () => {
       } as React.CSSProperties}
     >
       <div className="shell-body">
-        <ActivityBar
-          onToggleGraph={handleToggleGraph}
-          onToggleTerminal={handleToggleTerminal}
-          isTerminalOpen={isTerminalOpen}
-          onOpenTheme={handleOpenTheme}
-          onOpenDocs={handleOpenDocs}
-          onOpenGuide={() => setShowGuideModal(true)}
-        />
+        {isActivityBarVisible && (
+          <ActivityBar
+            onToggleGraph={handleToggleGraph}
+            onToggleTerminal={handleToggleTerminal}
+            isTerminalOpen={isTerminalOpen}
+            onOpenTheme={handleOpenTheme}
+            onOpenDocs={handleOpenDocs}
+            onOpenGuide={() => setShowGuideModal(true)}
+          />
+        )}
 
         <aside className="shell-sidebar-left">
           <GlobalErrorHandler>
@@ -1157,13 +1219,16 @@ export const MainLayout: React.FC = () => {
           <div className="shell-center-workspace" {...workspaceDropProps}>
             {(activeTab === 'files' || activeTab === 'search') && (
               <>
-                <TabBar
-                  isSidebarOpen={isRightSidebarOpen}
-                  onToggleSidebar={handleToggleRightSidebar}
-                  isLeftSidebarOpen={isLeftSidebarOpen}
-                  onToggleLeftSidebar={handleToggleLeftSidebar}
-                />
-                {!isTerminalMaximized &&
+                {isTabsVisible && (
+                  <TabBar
+                    isSidebarOpen={isRightSidebarOpen}
+                    onToggleSidebar={handleToggleRightSidebar}
+                    isLeftSidebarOpen={isLeftSidebarOpen}
+                    onToggleLeftSidebar={handleToggleLeftSidebar}
+                  />
+                )}
+                {isBreadcrumbsVisible &&
+                  !isTerminalMaximized &&
                   selectedSnippet &&
                   activeTabId !== GRAPH_TAB_ID &&
                   activeTabId !== LUMINA_TAB_ID &&
@@ -1323,17 +1388,19 @@ export const MainLayout: React.FC = () => {
         )}
       </div>
 
-      <StatusBar
-        onToggleInspector={handleToggleInspector}
-        onSettingsClick={handleOpenSettings}
-        onThemeClick={handleOpenTheme}
-        onDocsClick={handleOpenDocs}
-        onShortcutsClick={() => {
-          setSettingsInitialTab('shortcuts')
-          setShowSettings(true)
-        }}
-        onGuideClick={() => setShowGuideModal(true)}
-      />
+      {isStatusBarVisible && (
+        <StatusBar
+          onToggleInspector={handleToggleInspector}
+          onSettingsClick={handleOpenSettings}
+          onThemeClick={handleOpenTheme}
+          onDocsClick={handleOpenDocs}
+          onShortcutsClick={() => {
+            setSettingsInitialTab('shortcuts')
+            setShowSettings(true)
+          }}
+          onGuideClick={() => setShowGuideModal(true)}
+        />
+      )}
 
       <AppModals
         showSettings={showSettings}

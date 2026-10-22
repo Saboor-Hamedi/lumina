@@ -16,7 +16,8 @@
  */
 
 import React, { useEffect, useMemo, useState, useRef } from 'react'
-import { AtomicCodeMirrorEditor, wikiLinks } from '@atomic-editor/editor'
+import { wikiLinks } from '@atomic-editor/editor'
+import { AtomicCodeMirrorEditor } from '../Editor/atomic'
 import { EditorState, Prec, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { languages } from '@codemirror/language-data'

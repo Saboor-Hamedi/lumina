@@ -1,4 +1,4 @@
-/* Force Restart Timestamp: 24 */
+/* Force Restart Timestamp: 25 */
 import fs from 'fs'
 import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'

@@ -308,11 +308,34 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
         return
       }
 
-      // Command Mode Palette (Ctrl+Shift+P)
-      const commandModeKey = userShortcuts['commandMode'] || 'Ctrl + Shift + P'
-      if (matchesShortcut(e, commandModeKey) && shortcutsRef.current.onTogglePaletteCommandMode) {
+      // Zen Mode (Ctrl + .)
+      if (matchesShortcut(e, getKey('zenMode'))) {
         e.preventDefault()
-        shortcutsRef.current.onTogglePaletteCommandMode()
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        const now = Date.now()
+        const last = (window as any).__lastZenDispatch || 0
+        if (now - last < 400) return
+        ;(window as any).__lastZenDispatch = now
+
+        if (shortcutsRef.current.onToggleZenMode) {
+          shortcutsRef.current.onToggleZenMode()
+        } else {
+          useSettingsStore.getState().toggleZenMode()
+        }
+        return
+      }
+
+      // Command Mode Palette (Ctrl+Shift+P)
+      const commandModeKey = userShortcuts['commandPalette'] || userShortcuts['commandMode'] || 'Ctrl + Shift + P'
+      if (matchesShortcut(e, commandModeKey)) {
+        e.preventDefault()
+        e.stopPropagation()
+        if (shortcutsRef.current.onTogglePaletteCommandMode) {
+          shortcutsRef.current.onTogglePaletteCommandMode()
+        } else if (shortcutsRef.current.onToggleCommandPalette) {
+          shortcutsRef.current.onToggleCommandPalette()
+        }
         return
       }
 

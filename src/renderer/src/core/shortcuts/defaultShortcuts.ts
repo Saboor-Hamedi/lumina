@@ -6,6 +6,7 @@ export type ShortcutItem = DisplayShortcutItem
 export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
   // General
   { id: 'spotlight', label: 'Spotlight (Internal & Global)', defaultKey: 'Ctrl + Space', category: 'General', isGlobal: true },
+  { id: 'commandPalette', label: 'Command Palette', defaultKey: 'Ctrl + Shift + P', category: 'General' },
   { id: 'settings', label: 'Settings', defaultKey: 'Ctrl + ,', category: 'General' },
   { id: 'shortcuts', label: 'Keyboard Shortcuts', defaultKey: 'Ctrl + /', category: 'General' },
   { id: 'quickSearch', label: 'Quick Search', defaultKey: 'Ctrl + P', category: 'General' },
@@ -25,6 +26,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
   { id: 'deleteNote', label: 'Delete Note', defaultKey: 'Ctrl + Shift + D', category: 'File', isDanger: true },
 
   // Navigation
+  { id: 'zenMode', label: 'Toggle Zen Mode', defaultKey: 'Ctrl + .', category: 'Navigation' },
   { id: 'focusBreadcrumbs', label: 'Focus Breadcrumbs', defaultKey: 'Ctrl + Shift + .', category: 'Navigation' },
   { id: 'toggleSidebar', label: 'Toggle Left Sidebar', defaultKey: 'Ctrl + B', category: 'Navigation' },
   { id: 'toggleInspector', label: 'Toggle Right Sidebar', defaultKey: 'Ctrl + I', category: 'Navigation' },

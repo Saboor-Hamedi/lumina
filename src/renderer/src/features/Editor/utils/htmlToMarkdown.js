@@ -14,10 +14,14 @@
  * - DRY Execution: Provides applyRichPasteToView for unified CodeMirror paste handling.
  */
 
+
 /**
  * Automatically converts raw URLs in plain text into Markdown links [url](url),
  * skipping punctuation at the end.
  */
+
+import { trySmartLinkPaste } from './smartLinkPaste'
+
 export function autolinkText(text) {
   if (!text || typeof text !== 'string') return ''
 
@@ -43,6 +47,7 @@ export function autolinkText(text) {
 /**
  * Detects whether an image src is a local filesystem path or file:// URI.
  */
+
 export function isLocalPath(src) {
   if (!src || typeof src !== 'string') return false
   const trimmed = src.trim()
@@ -57,6 +62,7 @@ export function isLocalPath(src) {
 /**
  * Strips Microsoft Word proprietary comments, XML tags, and wrapper fragments.
  */
+
 export function cleanWordHtml(rawHtml) {
   if (!rawHtml || typeof rawHtml !== 'string') return ''
 
@@ -131,6 +137,7 @@ export function cleanWordHtml(rawHtml) {
 /**
  * Converts a base64 data URL to a Uint8Array safely.
  */
+
 function dataUrlToUint8Array(dataUrl) {
   try {
     const base64Index = dataUrl.indexOf(';base64,')
@@ -152,6 +159,7 @@ function dataUrlToUint8Array(dataUrl) {
 /**
  * Detects whether an HTML element represents a Word list item.
  */
+
 function isWordListItem(el) {
   const className = el.className || ''
   return typeof className === 'string' && className.toLowerCase().includes('msolistparagraph')
@@ -161,6 +169,7 @@ function isWordListItem(el) {
  * Detects whether an HTML element represents a Word Table of Contents item,
  * and returns the 1-based hierarchy level (1, 2, 3, etc.).
  */
+
 function getWordTocLevel(el) {
   const className = (el.className || '').toLowerCase()
   if (!className.includes('toc')) return 0
@@ -172,6 +181,7 @@ function getWordTocLevel(el) {
 /**
  * Detects whether an HTML element represents a Bibliography or Reference item.
  */
+
 function isWordReferenceItem(el) {
   const className = (el.className || '').toLowerCase()
   return (
@@ -186,6 +196,7 @@ function isWordReferenceItem(el) {
  * Normalizes text content with Markdown delimiters, ensuring whitespace is not wrapped inside.
  * e.g. "  hello  " wrapped in "**" becomes "  **hello**  "
  */
+
 function wrapFormattedText(text, delimiter) {
   if (!text) return ''
   const trimmed = text.trim()
@@ -201,6 +212,7 @@ function wrapFormattedText(text, delimiter) {
  * Normalizes intra-paragraph text flow by flattening accidental ragged line wraps,
  * multiple spaces, tabs, and Word justification spacers into a clean continuous sentence.
  */
+
 function justifyParagraphText(text) {
   if (!text) return ''
   return text
@@ -212,6 +224,7 @@ function justifyParagraphText(text) {
 /**
  * Recursively converts an HTML DOM element and its children into clean Markdown text.
  */
+
 export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0) {
   const { onSaveImage } = options
 
@@ -517,6 +530,7 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
  * Converts an HTML Table element into a clean, balanced GitHub-Flavored Markdown pipe table.
  * Resolves colspan cell padding, column alignment, and completely eliminates raw <br> tags.
  */
+
 async function convertTableToMarkdown(tableEl, options) {
   const rows = Array.from(tableEl.querySelectorAll('tr'))
   if (rows.length === 0) return ''
@@ -604,6 +618,7 @@ async function convertTableToMarkdown(tableEl, options) {
  * @param {Function} [options.onSaveImage] - Optional callback (uint8Array, filename) => Promise<string>
  * @returns {Promise<string>} Clean Markdown string
  */
+
 export async function htmlToMarkdown(html, options = {}) {
   if (!html || typeof html !== 'string') return ''
 
@@ -649,10 +664,15 @@ export async function htmlToMarkdown(html, options = {}) {
  * @param {Object} [options] - Optional settings
  * @returns {Promise<boolean>} True if rich paste was applied
  */
+
 export async function applyRichPasteToView(view, rawHtml, fallbackText = '', options = {}) {
   if (!view) return false
 
   try {
+    if (fallbackText && trySmartLinkPaste(view, fallbackText)) {
+      return true
+    }
+
     const from = view.state.selection.main.from
     const to = view.state.selection.main.to
 
@@ -717,7 +737,11 @@ export async function applyRichPasteToView(view, rawHtml, fallbackText = '', opt
   } catch (err) {
     console.error('[applyRichPasteToView] Failed to dispatch rich paste:', err)
     if (fallbackText) {
-      const from = view.state.selection.main.from
+      if (fallbackText && trySmartLinkPaste(view, fallbackText)) {
+      return true
+    }
+
+    const from = view.state.selection.main.from
       const to = view.state.selection.main.to
       view.dispatch({
         changes: { from, to, insert: fallbackText },

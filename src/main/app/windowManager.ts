@@ -26,7 +26,7 @@
  *    - Gracefully handles renderer crashes with interactive recovery prompts.
  */
 
-import electron, { app, shell, BrowserWindow, screen, dialog } from 'electron'
+import electron, { app, shell, BrowserWindow, screen, dialog, session } from 'electron'
 import { join } from 'path'
 import SettingsManager from '../settings'
 // @ts-ignore
@@ -73,6 +73,14 @@ export async function createMainWindow(): Promise<BrowserWindow> {
 
   let allowDevTools = !app.isPackaged || (await SettingsManager.get('enableDevTools')) === true
 
+  // In development, flush any stale HTTP cache to prevent Outdated Optimize Dep (504) errors
+  if (!app.isPackaged) {
+    try {
+      await session.fromPartition('persist:main').clearCache().catch(() => {})
+      await session.defaultSession.clearCache().catch(() => {})
+    } catch {}
+  }
+
   mainWindow = new BrowserWindow({
     width: initialWidth,
     height: initialHeight,
@@ -96,7 +104,7 @@ export async function createMainWindow(): Promise<BrowserWindow> {
       webSecurity: app.isPackaged,
       sandbox: false,
       devTools: true,
-      cache: true,
+      cache: app.isPackaged,
       partition: 'persist:main',
       allowRunningInsecureContent: false,
       backgroundThrottling: false,

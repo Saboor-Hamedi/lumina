@@ -8,8 +8,6 @@
   padding-top: 15vh;
   z-index: 9999;
   animation: fadeIn 0.15s ease-out;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
 }
 
 .command-palette-container {
@@ -246,31 +244,42 @@
 }
 
 .palette-footer {
-  padding: 10px 20px;
+  padding: 6px 16px;
   background: var(--bg-sidebar);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-top: 1px solid var(--border-dim);
+  min-height: 28px;
 }
 
 .footer-tip {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  opacity: 0.85;
 }
 
-kbd {
-  background: var(--bg-panel);
-  border: 1px solid var(--border-dim);
-  border-radius: 4px;
-  padding: 1px 6px;
-  font-family: inherit;
+.footer-tip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 10px;
-  font-weight: 700;
-  box-shadow: 0 1px 0 rgba(0,0,0,0.1);
-  color: var(--text-main);
+  color: var(--text-muted);
+}
+
+.footer-tip kbd {
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 500;
+  box-shadow: none;
+  color: var(--text-faint);
 }
 
 .palette-match {
@@ -628,3 +637,108 @@ kbd {
   flex-direction: column;
 }
 
+
+
+/* --- Command Palette & Settings Discovery Additions --- */
+.setting-value-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  background: var(--bg-card, rgba(255, 255, 255, 0.04));
+  color: var(--text-accent);
+  border: 1px solid var(--border-dim);
+  margin-left: 6px;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.setting-category-tag {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-faint);
+  margin-right: 6px;
+  opacity: 0.7;
+}
+
+.command-details-preview {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  overflow-y: auto;
+  color: var(--text-main);
+}
+
+.command-details-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-bottom: 1px solid var(--border-dim);
+  padding-bottom: 10px;
+}
+
+.command-details-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+
+.command-details-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.command-details-cat {
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--text-accent);
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.08);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.command-details-desc {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.command-details-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.command-details-option-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  border-radius: 3px;
+  background: var(--bg-card, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.04));
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.setting-prompt-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.06);
+  border-bottom: 1px solid var(--border-dim);
+  font-size: 11px;
+  color: var(--text-accent);
+  font-weight: 500;
+}
