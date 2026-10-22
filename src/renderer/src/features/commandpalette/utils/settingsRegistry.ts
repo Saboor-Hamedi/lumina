@@ -293,27 +293,12 @@ export const SETTINGS_REGISTRY: LuminaSettingDefinition[] = [
     formatValue: (val) => (val ? 'On' : 'Off')
   },
   {
-    id: 'appearance.translucency',
-    key: 'translucency',
-    title: 'Appearance: Window Translucency',
-    description: 'Enable window acrylic/vibrancy translucency effects.',
-    category: 'Appearance',
-    keywords: ['translucency', 'vibrancy', 'acrylic', 'transparent window', 'blur glass'],
-    type: 'boolean',
-    settingsTab: 'look-and-feel',
-    getValue: (s) => Boolean(s.translucency),
-    setValue: async (val) => {
-      await useSettingsStore.getState().updateSetting('translucency', Boolean(val))
-    },
-    formatValue: (val) => (val ? 'On' : 'Off')
-  },
-  {
     id: 'appearance.windowOpacity',
     key: 'windowOpacity',
     title: 'Appearance: Window Opacity',
     description: 'Overall window opacity level (20% - 100%).',
     category: 'Appearance',
-    keywords: ['window opacity', 'transparency', 'alpha'],
+    keywords: ['window opacity', 'transparency', 'alpha', 'dim'],
     type: 'number',
     min: 20,
     max: 100,
@@ -321,7 +306,7 @@ export const SETTINGS_REGISTRY: LuminaSettingDefinition[] = [
     settingsTab: 'look-and-feel',
     getValue: (s) => Math.round((s.windowOpacity ?? 1.0) * 100),
     setValue: async (val) => {
-      const num = parseInt(val, 10)
+      const num = typeof val === 'number' ? val : parseInt(String(val), 10)
       if (!isNaN(num) && num >= 20 && num <= 100) {
         const floatVal = num / 100
         await useSettingsStore.getState().updateSetting('windowOpacity', floatVal)
@@ -333,7 +318,7 @@ export const SETTINGS_REGISTRY: LuminaSettingDefinition[] = [
     },
     formatValue: (val) => `${val}%`,
     validate: (val) => {
-      const num = parseInt(val, 10)
+      const num = typeof val === 'number' ? val : parseInt(String(val), 10)
       if (isNaN(num) || num < 20 || num > 100) return 'Opacity must be between 20 and 100'
       return true
     }

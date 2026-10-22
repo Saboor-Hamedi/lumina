@@ -248,8 +248,6 @@ describe('Command Palette & Settings Discovery System', () => {
   })
 
   it('opens prompt for number setting and updates value', async () => {
-    vi.spyOn(window, 'prompt').mockReturnValue('22')
-
     render(
       <CommandPalette
         isOpen={true}
@@ -269,6 +267,21 @@ describe('Command Palette & Settings Discovery System', () => {
     const items = Array.from(document.querySelectorAll('.palette-item'))
     const fontItem = items.find((el) => el.textContent?.includes('Font Size'))!
     fireEvent.click(fontItem)
+
+    // Now in inline numeric picker mode: type '22' in the input
+    await waitFor(() => {
+      const input = document.querySelector('.palette-input-wrap input') as HTMLInputElement
+      expect(input).toBeDefined()
+      fireEvent.change(input, { target: { value: '22' } })
+    })
+
+    await waitFor(() => {
+      const option22 = Array.from(document.querySelectorAll('.palette-item')).find((el) =>
+        el.textContent?.includes('22')
+      )
+      expect(option22).toBeDefined()
+      fireEvent.click(option22!)
+    })
 
     await waitFor(() => {
       expect(useSettingStore.getState().settings.fontSize).toBe(22)

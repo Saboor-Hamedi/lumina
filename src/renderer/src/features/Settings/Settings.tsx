@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Square, Copy, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useSettingsStore } from '../../core/store/SettingStore'
@@ -129,12 +130,16 @@ export const Settings: React.FC<SettingsProps> = ({
     }
 
     window.addEventListener('keydown', handleKeyDown, true)
+
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown, true)
     }
   }, [])
 
-  return (
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <div className="nexus-overlay settings-overlay" onClick={onClose}>
       <div
         ref={containerRef}
@@ -227,7 +232,8 @@ export const Settings: React.FC<SettingsProps> = ({
           />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 

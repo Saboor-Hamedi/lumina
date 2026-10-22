@@ -22,6 +22,14 @@ function App() {
   useZenWindowDrag({ enabled: isZenMode })
 
   useEffect(() => {
+    if (isZenMode) {
+      document.documentElement.setAttribute('data-zen-mode', 'true')
+    } else {
+      document.documentElement.removeAttribute('data-zen-mode')
+    }
+  }, [isZenMode])
+
+  useEffect(() => {
     const savedTheme = localStorage.getItem('theme-id') || 'dark'
     applyTheme(savedTheme)
     document.documentElement.setAttribute('data-modern-ui', 'true')
@@ -50,7 +58,7 @@ function App() {
   return (
     <GlobalErrorHandler>
       <div
-        className="lumina-app"
+        className={`lumina-app ${isZenMode ? 'zen-mode' : ''}`}
         style={{
           display: 'flex',
           flexDirection: 'column',

@@ -47,6 +47,18 @@ Your workspace should match how you feel. Choose from over 20 handcrafted dark a
 ### ✉️ Lumina Mail: Draggable Gmail Client
 Check your inbox and reply without context switching. Open your emails directly inside a floating, draggable window via the ActivityBar, compose new messages with file attachments, and attach your current active note as Markdown with a single click.
 
+### 🧘 Instant Zen Mode & Focus Snap
+When you need absolute immersion, press `Ctrl + .` to enter **Zen Mode**:
+- **Zero-Latency Snapshot:** All UI chrome—sidebars, tabs, title bar, status bar, and breadcrumbs—instantly snap away simultaneously with zero pushing or layout delay.
+- **Top Edge Window Dragging:** Reposition your window effortlessly by dragging along the top 28px edge without needing a visible title bar.
+- **Flawless Restoration:** Press `Ctrl + .` again to instantaneously restore your exact previous multi-pane layout.
+
+### ⚡ Universal Command Palette & Inline Settings
+Press `Ctrl + Shift + P` (or type `>` in the search bar) to command Lumina like a pro:
+- **Instant Actions:** Toggle features, switch themes, navigate files, or invoke AI tools with blazing-fast keyboard filtering.
+- **Interactive Inline Settings:** Change settings directly within the palette—toggle switches, pick options from sub-menus, or adjust numeric sliders (like Window Opacity, Font Size, and Typing Volume) with zero dialog boxes or modal interruptions.
+- **Customizable Chrome:** Individually toggle the Title Bar, Status Bar, Activity Bar, Tabs, Breadcrumbs, or Sidebars (`Ctrl + B`) to tailor your workspace layout.
+
 ### 🎨 Infinite Canvas & Visual Ideation
 Step beyond linear text documents into an infinite spatial whiteboard (`.canvas`):
 - **12+ Geometric Vector Shapes:** Add rectangles, flow diamonds, database cylinders, actor stickmen, cloud networks, stars, and speech callout bubbles with live double-click Markdown text editing.

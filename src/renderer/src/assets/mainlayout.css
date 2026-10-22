@@ -48,7 +48,7 @@
   justify-content: center;
   touch-action: none;
   align-self: stretch;
-  transition: width 0.22s cubic-bezier(0.2, 0, 0, 1);
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .sidebar-resizer.closed,
@@ -141,6 +141,19 @@ body.is-global-resizing .cm-editor {
   animation: none !important;
 }
 
+/* Instant Zero-Latency Snap for Zen Mode Transitions */
+html.zen-instant-transition,
+html.zen-instant-transition *,
+body.zen-instant-transition,
+body.zen-instant-transition *,
+[data-zen-mode='true'] .shell-sidebar-left,
+[data-zen-mode='true'] .shell-sidebar-right,
+[data-zen-mode='true'] .sidebar-resizer,
+[data-zen-mode='true'] .shell-main {
+  transition: none !important;
+  animation: none !important;
+}
+
 
 .app-shell.is-resizing .workspace-container {
   contain: layout paint;
@@ -196,8 +209,9 @@ body.is-global-resizing .cm-editor {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  contain: paint;
   will-change: width;
-  transition: width 0.22s cubic-bezier(0.2, 0, 0, 1), border-color 0.22s ease, visibility 0s 0.22s;
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, visibility 0s 0.25s;
   /* NO contain: inline-size — it breaks the inner width lock */
 }
 
@@ -208,7 +222,7 @@ body.is-global-resizing .cm-editor {
   box-shadow: none;
   pointer-events: auto;
   visibility: visible;
-  transition: width 0.22s cubic-bezier(0.2, 0, 0, 1), border-color 0.22s ease, visibility 0s 0s;
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, visibility 0s 0s;
 }
 
 .shell-sidebar-left .unified-sidebar,
@@ -222,6 +236,9 @@ body.is-global-resizing .cm-editor {
   overflow: hidden;
   display: flex !important;
   flex-direction: column !important;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: layout paint;
 }
 
 .shell-sidebar-left .sidebar-header-section,
@@ -267,6 +284,7 @@ body.is-global-resizing .cm-editor {
   position: relative;
   border-radius: 0;
   border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.05));
+  contain: layout style;
 }
 
 
@@ -308,8 +326,9 @@ body.is-global-resizing .cm-editor {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  contain: paint;
   will-change: width;
-  transition: width 0.22s cubic-bezier(0.2, 0, 0, 1), border-color 0.22s ease, visibility 0s 0.22s;
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, visibility 0s 0.25s;
 }
 
 .app-shell.right-open .shell-sidebar-right {
@@ -318,7 +337,7 @@ body.is-global-resizing .cm-editor {
   box-shadow: none;
   pointer-events: auto;
   visibility: visible;
-  transition: width 0.22s cubic-bezier(0.2, 0, 0, 1), border-color 0.22s ease, visibility 0s 0s;
+  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, visibility 0s 0s;
 }
 
 .shell-sidebar-right .inspector-panel,
@@ -332,6 +351,9 @@ body.is-global-resizing .cm-editor {
   overflow: hidden;
   display: flex !important;
   flex-direction: column !important;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: layout paint;
 }
 
 

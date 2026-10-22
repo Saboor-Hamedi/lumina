@@ -108,6 +108,7 @@ export interface PaletteItem {
   currentValue?: any
   searchStr?: string
   isSelectedOption?: boolean
+  disabled?: boolean
   [key: string]: any
 }
 
@@ -311,7 +312,8 @@ const CommandPaletteRow = React.memo(
       return (
         <div
           ref={ref}
-          className={`palette-item ${isSelected ? 'active' : ''} ${isCommand || isSetting ? 'is-action' : ''}`}
+          className={`palette-item ${isSelected ? 'active' : ''} ${isCommand || isSetting ? 'is-action' : ''} ${item.disabled ? 'disabled' : ''}`}
+          style={item.disabled ? { opacity: 0.45, cursor: 'not-allowed' } : undefined}
           onClick={onClick}
           onMouseEnter={onMouseEnter}
         >
@@ -516,7 +518,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
     const filtered: PaletteItem[] = useMemo(() => {
       if (mode === 'ai') return []
 
-      // If activePromptSetting is active (e.g. enum options picker), list its options
+      // If activePromptSetting is active (e.g. enum or number options picker), list its options
       if (activePromptSetting) {
         if (activePromptSetting.type === 'enum' && activePromptSetting.options) {
           const currentVal = activePromptSetting.getValue(useSettingsStore.getState().settings)
@@ -532,6 +534,66 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
               description: opt.description || (opt.value === currentVal ? 'Current selection' : undefined)
             }))
         }
+
+        if (activePromptSetting.type === 'number') {
+          const currentVal = activePromptSetting.getValue(useSettingsStore.getState().settings)
+          const min = activePromptSetting.min ?? 0
+          const max = activePromptSetting.max ?? 100
+          const step = activePromptSetting.step ?? 1
+          const items: PaletteItem[] = []
+          const trimmed = query.trim()
+
+          // If the user typed a custom number in the input box, offer it as a custom action
+          if (trimmed !== '') {
+            const parsed = parseFloat(trimmed)
+            if (!isNaN(parsed)) {
+              const inRange = parsed >= min && parsed <= max
+              items.push({
+                id: `custom-val-${parsed}`,
+                title: inRange
+                  ? `Set ${activePromptSetting.title} to ${activePromptSetting.formatValue ? activePromptSetting.formatValue(parsed) : parsed}`
+                  : `Value ${parsed} is out of range (${min} - ${max})`,
+                matchType: 'setting-option',
+                value: parsed,
+                disabled: !inRange,
+                description: inRange ? 'Press Enter to apply this value' : `Allowed range: ${min} to ${max}`
+              })
+            }
+          }
+
+          // Build a set of clean preset quick-picks
+          const presets: number[] = []
+          if (activePromptSetting.key === 'windowOpacity') {
+            for (let v = 100; v >= 20; v -= 10) presets.push(v)
+          } else {
+            const range = max - min
+            const stepDiv = Math.max(step, range > 50 ? 10 : range > 20 ? 5 : step)
+            for (let v = max; v >= min; v -= stepDiv) {
+              presets.push(Math.round(v * 100) / 100)
+            }
+            if (!presets.includes(min)) presets.push(min)
+          }
+
+          for (const val of presets) {
+            const formatted = activePromptSetting.formatValue
+              ? activePromptSetting.formatValue(val)
+              : String(val)
+            const isSelected = val === currentVal
+            if (!trimmed || formatted.toLowerCase().includes(trimmed.toLowerCase()) || String(val).includes(trimmed)) {
+              items.push({
+                id: `preset-${val}`,
+                title: formatted,
+                matchType: 'setting-option',
+                value: val,
+                isSelectedOption: isSelected,
+                description: isSelected ? 'Current value' : undefined
+              })
+            }
+          }
+
+          return items
+        }
+
         return []
       }
 
@@ -680,7 +742,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
     // Handle Item Execution / Setting Modification
     const executeItem = useCallback(
       async (item: PaletteItem) => {
-        if (!item) return
+        if (!item || item.disabled) return
 
         if (item.action === 'filter') {
           setQuery((item.value || '') + ' ')
@@ -719,36 +781,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
             return
           }
 
-          // Enum setting: enter option sub-picker mode
-          if (settingDef.type === 'enum') {
+          // Enum or Number setting: enter option sub-picker mode
+          if (settingDef.type === 'enum' || settingDef.type === 'number') {
             setActivePromptSetting(settingDef)
             setQuery('')
             setSelectedIndex(0)
-            return
-          }
-
-          // Number setting: prompt with quick number input
-          if (settingDef.type === 'number') {
-            const promptVal = window.prompt(
-              `Enter new value for ${settingDef.title} (${settingDef.min ?? 0} - ${settingDef.max ?? 100}):`,
-              String(curVal)
-            )
-            if (promptVal !== null) {
-              const num = parseFloat(promptVal.trim())
-              if (isNaN(num)) {
-                alert('Invalid number format.')
-                return
-              }
-              if (settingDef.min !== undefined && num < settingDef.min) {
-                alert(`Value must be at least ${settingDef.min}`)
-                return
-              }
-              if (settingDef.max !== undefined && num > settingDef.max) {
-                alert(`Value must be at most ${settingDef.max}`)
-                return
-              }
-              await settingDef.setValue(num)
-            }
             return
           }
 
@@ -912,7 +949,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
                 mode === 'ai'
                   ? 'Ask Lumina anything...'
                   : activePromptSetting
-                    ? `Select option for ${activePromptSetting.title}...`
+                    ? activePromptSetting.type === 'number'
+                      ? `Type value (${activePromptSetting.min ?? 0} - ${activePromptSetting.max ?? 100}) or choose below...`
+                      : `Select option for ${activePromptSetting.title}...`
                     : query.startsWith('>')
                       ? 'Type a command or setting name...'
                       : 'Search notes, commands, and settings... (Type > for commands)'
@@ -962,6 +1001,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
           {activePromptSetting && (
             <div className="setting-prompt-header">
               <span>Configuring: {activePromptSetting.title}</span>
+              {activePromptSetting.type === 'number' && (
+                <span style={{ opacity: 0.7, fontSize: '11px', marginLeft: 8 }}>
+                  (Range: {activePromptSetting.min ?? 0} - {activePromptSetting.max ?? 100})
+                </span>
+              )}
               <span style={{ opacity: 0.6, fontSize: '11px', marginLeft: 'auto' }}>Press ESC to go back</span>
             </div>
           )}

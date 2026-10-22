@@ -39,7 +39,7 @@ export interface Settings {
   openTabs?: string[]
   pinnedTabIds?: string[]
   workspacePath?: string | null
-  translucency: boolean
+  translucency?: boolean
   inlineMetadata: boolean
   sidebar: { width: number; isLeftOpen: boolean }
   rightSidebar: { width: number; isRightOpen: boolean }
@@ -106,7 +106,7 @@ export const DEFAULT_SETTINGS: Settings = {
   autoSave: true,
   cursorStyle: 'smooth',
   smoothScrolling: true,
-  translucency: false,
+
   inlineMetadata: true,
   sidebar: { width: 260, isLeftOpen: true },
   rightSidebar: { width: 300, isRightOpen: false },
@@ -177,7 +177,7 @@ export function formatSettingsJson(settings: Record<string, any>): string {
     },
     {
       title: 'APPEARANCE',
-      keys: ['theme', 'translucency', 'windowOpacity', 'modernUi']
+      keys: ['theme', 'windowOpacity', 'modernUi']
     },
     {
       title: 'ZEN_MODE',

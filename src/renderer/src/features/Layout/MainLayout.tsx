@@ -689,7 +689,17 @@ export const MainLayout: React.FC = () => {
         if (now - last < 400) return
         ;(window as any).__lastZenDispatch = now
 
+        if (typeof document !== 'undefined') {
+          document.documentElement.classList.add('zen-instant-transition')
+        }
         useSettingsStore.getState().toggleZenMode()
+        if (typeof window !== 'undefined') {
+          window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+              document.documentElement.classList.remove('zen-instant-transition')
+            })
+          })
+        }
       }
     }
 

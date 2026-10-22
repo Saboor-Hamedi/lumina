@@ -529,6 +529,10 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
   },
 
   enterZenMode: async () => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.add('zen-instant-transition')
+      document.documentElement.setAttribute('data-zen-mode', 'true')
+    }
     const s = get().settings
     const zen = s.zenMode || {
       enabled: false,
@@ -563,9 +567,20 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     }
 
     await get().updateSettings(updates)
+    if (typeof window !== 'undefined') {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          document.documentElement.classList.remove('zen-instant-transition')
+        })
+      })
+    }
   },
 
   exitZenMode: async () => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.add('zen-instant-transition')
+      document.documentElement.removeAttribute('data-zen-mode')
+    }
     const s = get().settings
     const zen = s.zenMode || {
       enabled: false,
@@ -606,6 +621,13 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     }
 
     await get().updateSettings(updates)
+    if (typeof window !== 'undefined') {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          document.documentElement.classList.remove('zen-instant-transition')
+        })
+      })
+    }
   },
 
   toggleZenMode: async () => {

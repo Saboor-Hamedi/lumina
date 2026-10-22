@@ -8,12 +8,16 @@ Lumina is designed so you can navigate and write smoothly without your hands eve
 
 | Shortcut              | What It Does                                                                                                 |
 | :-------------------- | :----------------------------------------------------------------------------------------------------------- |
+| `Ctrl + Shift + P`    | **Command Palette** — Instant search & execution for all commands, actions, and settings (Type `>` to browse)|
+| `Ctrl + .`            | **Zen Mode** — Instant distraction-free mode (snaps away sidebars, tabs, and chrome; press again to restore) |
+| `Ctrl + B`            | **Toggle Primary Sidebar** — Smoothly slide the file explorer and notes list in or out                      |
 | `Ctrl + Space`        | **Spotlight Search** — Open the quick search bar from anywhere to find a note or ask the AI a question       |
 | `Ctrl + P`            | **Quick Note Switcher** — Quickly jump between your recently opened notes                                    |
 | `Ctrl + Shift + F`    | **Search Everywhere** — Search for any word or sentence across all your notes                                |
 | `Ctrl + Shift + .`    | **Jump to Folder Path** — Browse through notes in the current folder using your arrow keys                   |
 | `Ctrl + Left / Right` | **Navigate Breadcrumb Segments** — Step horizontally between Workspace, Folders, Note, and Outline dropdowns |
-| `Ctrl + G`            | **Open Knowledge Graph** — View your notes as an interactive visual map of connections                       |
+| `Ctrl + G`            | **Open Knowledge Graph** — View your notes as an interactive visual map in a dedicated tab                   |
+| `Ctrl + J` or ``Ctrl + ` ``| **Toggle Terminal** — Open or collapse the built-in terminal drawer                                     |
 | `Ctrl + Tab`          | **Next Tab** — Move to the next open note tab                                                                |
 | `Ctrl + Shift + Tab`  | **Previous Tab** — Move to the previous open note tab                                                        |
 | `Ctrl + W`            | **Close Note Tab** — Close the currently active tab                                                          |
