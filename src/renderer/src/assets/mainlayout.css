@@ -48,14 +48,13 @@
   justify-content: center;
   touch-action: none;
   align-self: stretch;
-  transition: opacity 0.15s ease;
+  transition: width 0.22s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .sidebar-resizer.closed,
 .app-shell.left-closed .sidebar-resizer.left,
 .app-shell.right-closed .sidebar-resizer.right {
   width: 0 !important;
-  opacity: 0 !important;
   pointer-events: none !important;
   overflow: hidden !important;
 }
@@ -189,27 +188,27 @@ body.is-global-resizing .cm-editor {
   height: 100%;
   background: var(--bg-sidebar) !important;
   z-index: 10;
-  border-right: none;
+  border-right: 1px solid transparent;
   box-shadow: none;
   pointer-events: none;
   visibility: hidden;
-  opacity: 0;
   overflow: hidden;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease, visibility 0.2s;
+  will-change: width;
+  transition: width 0.22s cubic-bezier(0.2, 0, 0, 1), border-color 0.22s ease, visibility 0s 0.22s;
   /* NO contain: inline-size — it breaks the inner width lock */
 }
 
 
 .app-shell.left-open .shell-sidebar-left {
   width: var(--left-sidebar-width, 260px);
-  border-right: 1px solid var(--border-dim);
+  border-right-color: var(--border-dim);
   box-shadow: none;
   pointer-events: auto;
   visibility: visible;
-  opacity: 1;
+  transition: width 0.22s cubic-bezier(0.2, 0, 0, 1), border-color 0.22s ease, visibility 0s 0s;
 }
 
 .shell-sidebar-left .unified-sidebar,
@@ -301,25 +300,25 @@ body.is-global-resizing .cm-editor {
   height: 100%;
   background: var(--bg-sidebar) !important;
   z-index: 10;
-  border-left: none;
+  border-left: 1px solid transparent;
   box-shadow: none;
   pointer-events: none;
   visibility: hidden;
-  opacity: 0;
   overflow: hidden;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease, visibility 0.2s;
+  will-change: width;
+  transition: width 0.22s cubic-bezier(0.2, 0, 0, 1), border-color 0.22s ease, visibility 0s 0.22s;
 }
 
 .app-shell.right-open .shell-sidebar-right {
   width: var(--right-sidebar-width, 300px);
-  border-left: 1px solid var(--border-dim);
+  border-left-color: var(--border-dim);
   box-shadow: none;
   pointer-events: auto;
   visibility: visible;
-  opacity: 1;
+  transition: width 0.22s cubic-bezier(0.2, 0, 0, 1), border-color 0.22s ease, visibility 0s 0s;
 }
 
 .shell-sidebar-right .inspector-panel,

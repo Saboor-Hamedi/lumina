@@ -10,8 +10,7 @@
  *     2. Theme Modal (theme picker & custom CSS styling)
  *     3. Lumina AI Chat Modal (floating AI assistant with docking capabilities)
  *     4. Command Palette (quick search, switcher, actions, shortcuts)
- *     5. Graph View Modal (interactive 2D/3D knowledge graph)
- *     6. Documentation & Quick Guide Modals (user help, starter templates)
+ *     5. Documentation & Quick Guide Modals (user help, starter templates)
  *     7. Delete Confirmation Modal (destructive note deletion prompt)
  *     8. Rename Modal (renaming notes and folders)
  *     9. Icon Picker Modal (custom note icon selection)
@@ -53,7 +52,6 @@ const lazyWithRetry = <T extends React.ComponentType<any>>(
 const LuminaChat = lazyWithRetry(() => import('../AI/Lumina'))
 const Settings = lazyWithRetry(() => import('../Settings/Settings'))
 const Documentation = lazyWithRetry(() => import('../Docs/Documentation'))
-const Graph = lazyWithRetry(() => import('../graph/Graph'))
 const Guide = lazyWithRetry(() => import('../modals/Guide'))
 
 export interface RenameModalState {
@@ -84,8 +82,6 @@ export interface AppModalsProps {
   handleNew: () => void
   renameModal: RenameModalState
   setRenameModal: (modal: RenameModalState) => void
-  showGraph: boolean
-  setShowGraph: (val: boolean) => void
   showDocsModal: boolean
   setShowDocsModal: (val: boolean) => void
   showGuideModal: boolean
@@ -125,8 +121,6 @@ export const AppModals: React.FC<AppModalsProps> = ({
   handleNew,
   renameModal,
   setRenameModal,
-  showGraph,
-  setShowGraph,
   showDocsModal,
   setShowDocsModal,
   showGuideModal,
@@ -225,7 +219,7 @@ export const AppModals: React.FC<AppModalsProps> = ({
           setSettingsInitialTab(tab || 'look-and-feel')
           setShowSettings(true)
         }}
-        onToggleGraph={() => setShowGraph(true)}
+        onToggleGraph={() => useWorkspaceStore.getState().openGraphTab()}
         onToggleChat={() => setShowAIChatModal(true)}
         onToggleDocs={() => setShowDocsModal(true)}
         onRename={() => {
@@ -234,28 +228,6 @@ export const AppModals: React.FC<AppModalsProps> = ({
           }
         }}
       />
-
-      {/* Interactive 2D/3D Knowledge Graph */}
-      {showGraph && (
-        <GlobalErrorHandler>
-          <React.Suspense fallback={null}>
-            <Graph
-              isOpen={showGraph}
-              onClose={() => {
-                if (typeof localStorage !== 'undefined') {
-                  localStorage.setItem('lumina_graph_display_mode', 'modal')
-                }
-                setShowGraph(false)
-              }}
-              onNavigate={(snippet: any) => {
-                setSelectedSnippet(snippet)
-                setActiveTab('files')
-                setShowGraph(false)
-              }}
-            />
-          </React.Suspense>
-        </GlobalErrorHandler>
-      )}
 
       {/* Help & Documentation Modal */}
       {showDocsModal && (

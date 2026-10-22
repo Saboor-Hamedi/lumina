@@ -163,7 +163,6 @@ export const MainLayout: React.FC = () => {
   const [showThemeModal, setShowThemeModal] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [paletteInitialQuery, setPaletteInitialQuery] = useState('')
-  const [showGraph, setShowGraph] = useState(false)
   const [showDocsModal, setShowDocsModal] = useState(false)
   const [showGuideModal, setShowGuideModal] = useState(false)
   const [showAIChatModal, setShowAIChatModal] = useState<boolean>(() => {
@@ -800,10 +799,6 @@ export const MainLayout: React.FC = () => {
         setShowPalette(false)
         return true
       }
-      if (showGraph) {
-        setShowGraph(false)
-        return true
-      }
       if (showSettings) {
         setShowSettings(false)
         return true
@@ -832,7 +827,7 @@ export const MainLayout: React.FC = () => {
     },
     onToggleSettings: () => setShowSettings(true),
     onToggleTheme: () => setShowThemeModal(true),
-    onToggleGraph: () => setShowGraph(true),
+    onToggleGraph: () => useWorkspaceStore.getState().openGraphTab(),
     onToggleAIChat: () => handleToggleAIChat(),
     onToggleSidebar: () => updateLeftSidebarOpen((prev) => !prev),
     onToggleTerminal: handleToggleTerminal,
@@ -1052,12 +1047,7 @@ export const MainLayout: React.FC = () => {
   const handleOpenSettings = useCallback(() => setShowSettings(true), [])
   const handleOpenTheme = useCallback(() => setShowThemeModal(true), [])
   const handleToggleGraph = useCallback(() => {
-    const mode = (useSettingsStore.getState().settings as any)?.graphDisplayMode || 'modal'
-    if (mode === 'tab') {
-      useWorkspaceStore.getState().openGraphTab()
-    } else {
-      setShowGraph(true)
-    }
+    useWorkspaceStore.getState().openGraphTab()
   }, [])
   const handleOpenDocs = useCallback(() => setShowDocsModal(true), [])
   const handleToggleExplorerModal = useCallback(() => setShowExplorerModal((prev) => !prev), [])
@@ -1091,8 +1081,8 @@ export const MainLayout: React.FC = () => {
     const handleOpenThemeEvent = () => {
       handleOpenTheme()
     }
-    const handleOpenGraphModalEvent = () => {
-      setShowGraph(true)
+    const handleOpenGraphEvent = () => {
+      useWorkspaceStore.getState().openGraphTab()
     }
     const handleToggleTerminalEvent = () => {
       handleToggleTerminal()
@@ -1102,7 +1092,8 @@ export const MainLayout: React.FC = () => {
     window.addEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
     window.addEventListener('trigger-new-canvas', handleNewCanvasEvent)
     window.addEventListener('open-theme-modal', handleOpenThemeEvent)
-    window.addEventListener('open-graph-modal', handleOpenGraphModalEvent)
+    window.addEventListener('open-graph-modal', handleOpenGraphEvent)
+    window.addEventListener('open-graph-tab', handleOpenGraphEvent)
     window.addEventListener('toggle-terminal', handleToggleTerminalEvent)
 
     // Preload Graph component in background after app mount
@@ -1116,7 +1107,8 @@ export const MainLayout: React.FC = () => {
       window.removeEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
       window.removeEventListener('trigger-new-canvas', handleNewCanvasEvent)
       window.removeEventListener('open-theme-modal', handleOpenThemeEvent)
-      window.removeEventListener('open-graph-modal', handleOpenGraphModalEvent)
+      window.removeEventListener('open-graph-modal', handleOpenGraphEvent)
+      window.removeEventListener('open-graph-tab', handleOpenGraphEvent)
       window.removeEventListener('toggle-terminal', handleToggleTerminalEvent)
       clearTimeout(preloadTimer)
     }
@@ -1424,8 +1416,6 @@ export const MainLayout: React.FC = () => {
         handleNew={handleNew}
         renameModal={renameModal}
         setRenameModal={setRenameModal}
-        showGraph={showGraph}
-        setShowGraph={setShowGraph}
         showDocsModal={showDocsModal}
         setShowDocsModal={setShowDocsModal}
         showGuideModal={showGuideModal}

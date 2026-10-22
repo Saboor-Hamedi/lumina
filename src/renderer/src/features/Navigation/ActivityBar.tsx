@@ -8,7 +8,7 @@
  * - Primary workspace trigger bar providing single-click access to:
  *     1. New Markdown Note creation (`trigger-new-note` event dispatch)
  *     2. Daily Journaling Notes (embedded calendar picker & quick note injector)
- *     3. Knowledge Graph 2D/3D visualization modal
+ *     3. Knowledge Graph 2D/3D visualization tab
  *     4. Infinite Canvas workspace (`trigger-new-canvas` event dispatch)
  *     5. AI Chat assistant docking & floating modal toggler
  *     6. Theme Customization & look-and-feel preferences modal
@@ -22,6 +22,7 @@ import ToolTip from '../../components/atoms/ToolTip'
 import DailyNotes from './components/DailyNotes'
 import ActivityBarMail from './components/ActivityBarMail'
 import { useSettingStore } from '../../core/store/SettingStore'
+import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import './css/activitybar.css'
 
 export interface ActivityBarProps {
@@ -48,6 +49,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState<boolean>(() => {
     return useSettingStore.getState().settings?.sidebar?.isLeftOpen ?? true
   })
+  const isGraphActive = useWorkspaceStore((state) => state.activeTabId === GRAPH_TAB_ID)
 
   useEffect(() => {
     const handleLeftSidebarChange = (e: Event) => {
@@ -144,7 +146,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
         <ToolTip text="Knowledge Graph" position="right">
           <button
             type="button"
-            className="activity-bar-btn"
+            className={`activity-bar-btn ${isGraphActive ? 'active' : ''}`}
             onClick={onToggleGraph}
             aria-label="Knowledge Graph"
           >

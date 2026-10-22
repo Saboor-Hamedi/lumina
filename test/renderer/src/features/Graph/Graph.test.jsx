@@ -65,17 +65,6 @@ vi.mock('../../../../../src/renderer/src/features/graph/GraphThemeSelector', () 
   default: () => <div data-testid="theme-selector" />
 }))
 
-vi.mock('../../../../../src/renderer/src/features/modals/ModalHeader', () => {
-  const ModalHeader = ({ onClose, left, right }) => (
-    <div data-testid="modal-header">
-      {left}
-      {right}
-      <button onClick={onClose}>Close</button>
-    </div>
-  )
-  return { default: ModalHeader }
-})
-
 import { render, screen } from '@testing-library/react'
 import Graph from '../../../../../src/renderer/src/features/graph/Graph'
 import { useWorkspaceStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
@@ -113,20 +102,20 @@ describe('Graph', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('renders modal overlay with header when open', async () => {
-    render(<Graph isOpen={true} onClose={vi.fn()} onNavigate={vi.fn()} />)
-    expect(screen.getByTestId('modal-header')).toBeInTheDocument()
+  it('renders graph and sidebar when open', async () => {
+    render(<Graph isOpen={true} onNavigate={vi.fn()} />)
+    expect(screen.getByTestId('graph-2d')).toBeInTheDocument()
     expect(screen.getByTestId('graph-sidebar')).toBeInTheDocument()
   })
 
   it('renders 2D graph by default', async () => {
-    render(<Graph isOpen={true} onClose={vi.fn()} onNavigate={vi.fn()} />)
+    render(<Graph isOpen={true} onNavigate={vi.fn()} />)
     expect(screen.getByTestId('graph-2d')).toBeInTheDocument()
   })
 
   it('renders 3D graph when 3D mode enabled', async () => {
     useSettingsStore.setState({ settings: { ...useSettingsStore.getState().settings, graph3DMode: true } })
-    render(<Graph isOpen={true} onClose={vi.fn()} onNavigate={vi.fn()} />)
+    render(<Graph isOpen={true} onNavigate={vi.fn()} />)
     expect(screen.getByTestId('graph-3d')).toBeInTheDocument()
   })
 
@@ -136,15 +125,8 @@ describe('Graph', () => {
     expect(screen.getByTestId('graph-sidebar')).toBeInTheDocument()
   })
 
-  it('renders performance panel in modal mode', async () => {
-    render(<Graph isOpen={true} onClose={vi.fn()} onNavigate={vi.fn()} />)
+  it('renders performance panel', async () => {
+    render(<Graph isOpen={true} onNavigate={vi.fn()} />)
     expect(screen.getByTestId('perf-panel')).toBeInTheDocument()
-  })
-
-  it('closes via modal header close button', async () => {
-    const onClose = vi.fn()
-    render(<Graph isOpen={true} onClose={onClose} onNavigate={vi.fn()} />)
-    screen.getByText('Close').click()
-    expect(onClose).toHaveBeenCalled()
   })
 })

@@ -1,23 +1,13 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-import {
-  X,
-  Network,
-  RefreshCw,
-  Layers,
-  ExternalLink,
-  Download,
-  FileCode
-} from 'lucide-react'
 import * as THREE from 'three'
 import Graph3D from './3d/Graph3D'
 import Graph2D from './2d/Graph2D'
-import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useAIStore } from '../AI/tools/lumina'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { usePerformanceStore } from './usePerformanceStore'
 import PerformancePanel from './PerformancePanel'
 import { buildGraphData, buildSemanticLinks } from '../../core/utils/graphBuilder'
-import ToolTip from '../../components/atoms/ToolTip'
 import GraphSidebar from './GraphSidebar'
 import '../canvas/css/canvas-toolbar.css'
 import '../canvas/css/canvas-studio.css'
@@ -132,7 +122,7 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
   const [isEngineReady, setIsEngineReady] = useState(false)
   const [dimensions, setDimensions] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 800,
-    height: typeof window !== 'undefined' ? (embedded ? window.innerHeight : Math.max(200, window.innerHeight * 0.94 - 34)) : 600
+    height: typeof window !== 'undefined' ? window.innerHeight : 600
   })
 
   const handleToggleSidebar = useCallback(() => {
@@ -152,42 +142,6 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
     }
   }, [])
 
-  const handleClose = useCallback(() => {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('lumina_graph_display_mode', 'modal')
-    }
-    onClose?.()
-  }, [onClose])
-
-  const handleOpenAsTab = useCallback(() => {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('lumina_graph_display_mode', 'tab')
-    }
-    onClose?.()
-    useWorkspaceStore.getState().openGraphTab()
-  }, [onClose])
-
-  const handleSwitchToModal = useCallback(() => {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem('lumina_graph_display_mode', 'modal')
-    }
-    useWorkspaceStore.getState().closeTab(GRAPH_TAB_ID)
-    window.dispatchEvent(new CustomEvent('open-graph-modal'))
-  }, [])
-
-  useEffect(() => {
-    if (embedded || !isOpen) return
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        e.stopPropagation()
-        handleClose()
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown, true)
-    return () => window.removeEventListener('keydown', handleKeyDown, true)
-  }, [embedded, isOpen, handleClose])
-
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
@@ -195,14 +149,14 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
         if (rect.width > 0 && rect.height > 0) {
           setDimensions({
             width: rect.width,
-            height: embedded ? rect.height : Math.max(200, rect.height - 34)
+            height: rect.height
           })
           return
         }
       }
       setDimensions({
         width: typeof window !== 'undefined' ? window.innerWidth : 800,
-        height: typeof window !== 'undefined' ? (embedded ? window.innerHeight : Math.max(200, window.innerHeight * 0.94 - 34)) : 600
+        height: typeof window !== 'undefined' ? window.innerHeight : 600
       })
     }
     updateDimensions()
@@ -215,7 +169,7 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
       resizeObserver.disconnect()
       window.removeEventListener('resize', updateDimensions)
     }
-  }, [embedded])
+  }, [])
 
   const [rawGraphData, setRawGraphData] = useState<{ nodes: any[]; links: any[] }>({ nodes: [], links: [] })
   const [isBuildingGraph, setIsBuildingGraph] = useState(true)
@@ -550,398 +504,169 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
     }
   }, [isCentralNode])
 
-  if (!isOpen && !embedded) return null
-
-  if (embedded) {
-    return (
-      <div
-        ref={containerRef}
-        className="nexus-embedded-graph"
-        style={{
-          width: '100%',
-          height: '100%',
-          position: 'relative',
-          overflow: 'hidden'
-        }}
-      >
-        <PerformancePanel onRecenter={handleRecenter} is3DMode={is3DMode} />
-        <div
-          className="nexus-body"
-          style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}
-        >
-          {is3DMode ? (
-            <Graph3D
-              key="3d-graph-embedded"
-              ref={graphRef}
-              width={dimensions.width}
-              height={dimensions.height}
-              graphData={graphData}
-              nodeColor={nodeColorFn}
-              nodeRelSize={4}
-              nodeThreeObject={(node: any) => {
-                const base = node.val ? Math.min(10, Math.max(3, Math.sqrt(node.val) * 2.8)) : 3
-                const r = base * graphNodeSize + 3
-                const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColorFn(node)))
-                mesh.scale.set(r, r, r)
-                return mesh
-              }}
-              linkVisibility={(link: any) => {
-                if (!(window as any)._luminaIsDragging) return true
-                return link.source === hoverNode || link.target === hoverNode
-              }}
-              linkColor={(link: any) => {
-                const isHoverConnected =
-                  hoverNode && (link.source === hoverNode || link.target === hoverNode)
-                const isSelectedConnected =
-                  selectedSnippet &&
-                  (link.source.snippetId === selectedSnippet.id ||
-                    link.target.snippetId === selectedSnippet.id)
-                const isActive = hoverNode ? isHoverConnected : isSelectedConnected
-
-                const { settings } = useSettingsStore.getState()
-                if (isActive) {
-                  const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.85
-                  return `rgba(${themeColors.rgb}, ${highlightOpacity})`
-                }
-
-                if (hoverNode || selectedSnippet) {
-                  const dimOpacity = settings.graphLinkDimOpacity ?? 0.04
-                  return `rgba(${themeColors.rgb}, ${dimOpacity})`
-                }
-
-                return defaultLineColor
-              }}
-              linkWidth={0.5}
-              onNodeHover={(node: any) => setHoverNode(node)}
-              onNodeClick={(node: any) => {
-                if (graphRef.current && is3DMode) {
-                  const distance = 400
-                  const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z)
-                  graphRef.current.cameraPosition(
-                    { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
-                    node,
-                    1000
-                  )
-                }
-
-                setTimeout(() => {
-                  if (node.snippetId) {
-                    const s = snippets.find((sn) => sn.id === node.snippetId)
-                    if (s) onNavigate?.(s)
-                  }
-                }, 150)
-              }}
-              onNodeDrag={() => {
-                if (!(window as any)._luminaIsDragging) {
-                  ;(window as any)._luminaIsDragging = true
-                  usePerformanceStore.getState().setDragging(true)
-                }
-              }}
-              onNodeDragEnd={(node: any) => {
-                ;(window as any)._luminaIsDragging = false
-                usePerformanceStore.getState().setDragging(false)
-                setHoverNode(null)
-                const isCentral = isCentralNode(node)
-                if (isCentral) {
-                  node.fx = null
-                  node.fy = null
-                  node.fz = null
-                } else {
-                  node.fx = node.x
-                  node.fy = node.y
-                  node.fz = node.z
-                  handleNodePositionChanged(node)
-                }
-                if (graphRef.current) graphRef.current.d3ReheatSimulation()
-              }}
-              onRenderFramePre={() => {
-                ;(window as any)._luminaFrameStart = performance.now()
-              }}
-              onRenderFramePost={() => {
-                const now = performance.now()
-                const frameTime = now - ((window as any)._luminaFrameStart || now)
-                const fps = (window as any)._luminaLastFrame
-                  ? 1000 / (now - (window as any)._luminaLastFrame)
-                  : 60
-                ;(window as any)._luminaLastFrame = now
-                usePerformanceStore.getState().updateMetrics({
-                  frameTime,
-                  fps,
-                  nodeCount: graphData?.nodes?.length || 0,
-                  linkCount: graphData?.links?.length || 0
-                })
-              }}
-              backgroundColor="rgba(0,0,0,0)"
-              d3AlphaDecay={0.05}
-              d3VelocityDecay={0.4}
-              showNavInfo={false}
-              linkDirectionalParticles={0}
-              onEngineStop={() => setIsEngineReady(true)}
-            />
-          ) : (
-            <Graph2D
-              key="2d-graph-embedded"
-              ref={graphRef}
-              dimensions={dimensions}
-              graphData={graphData}
-              paintNode={paintNode}
-              hoverNode={hoverNode}
-              setHoverNode={setHoverNode}
-              defaultLineColor={defaultLineColor}
-              onNavigate={onNavigate}
-              setIsEngineReady={setIsEngineReady}
-              onNodePositionChanged={handleNodePositionChanged}
-              isCentralNode={isCentralNode}
-            />
-          )}
-        </div>
-
-        <GraphSidebar
-          isOpen={isSidebarOpen}
-          onToggleExpand={handleToggleSidebar}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          nodeCount={rawGraphData.nodes.length}
-          onRecenter={handleRecenter}
-          is3DMode={is3DMode}
-          onToggle3D={handleToggle3D}
-          onSwitchToModal={handleSwitchToModal}
-          onExportPNG={handleExportPNG}
-          onExportSVG={handleExportSVG}
-          onResetLayout={handleResetLayout}
-        />
-      </div>
-    )
-  }
+  if (isOpen === false) return null
 
   return (
-    <div className="graph-drawer-overlay" onClick={handleClose}>
+    <div
+      ref={containerRef}
+      className="nexus-embedded-graph"
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden'
+      }}
+    >
+      <PerformancePanel onRecenter={handleRecenter} is3DMode={is3DMode} />
       <div
-        ref={containerRef}
-        className="graph-drawer-container"
-        onClick={(e) => e.stopPropagation()}
+        className="nexus-body"
+        style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}
       >
-        <div className="graph-drawer-header" data-testid="modal-header">
-          <div className="graph-drawer-title-group">
-            <div className="graph-drawer-selector-btn">
-              <Network size={14} className="graph-drawer-icon" />
-              <span className="graph-drawer-title">Knowledge Graph</span>
-              <span className="graph-drawer-badge">{rawGraphData.nodes.length} nodes</span>
-            </div>
-          </div>
-
-          <div className="graph-drawer-header-actions">
-            <ToolTip
-              text={is3DMode ? 'Switch to 2D Nexus' : 'Switch to 3D Cosmos'}
-              position="bottom"
-            >
-              <button
-                type="button"
-                className="graph-drawer-action-btn"
-                onClick={handleToggle3D}
-              >
-                <Layers size={13} />
-                <span>{is3DMode ? '3D' : '2D'}</span>
-              </button>
-            </ToolTip>
-
-            <ToolTip text="Export PNG Image" position="bottom">
-              <button
-                type="button"
-                className="graph-drawer-action-btn"
-                onClick={handleExportPNG}
-              >
-                <Download size={14} />
-              </button>
-            </ToolTip>
-
-            <ToolTip text="Export SVG Vector" position="bottom">
-              <button
-                type="button"
-                className="graph-drawer-action-btn"
-                onClick={handleExportSVG}
-              >
-                <FileCode size={14} />
-              </button>
-            </ToolTip>
-
-            <ToolTip text="Recenter Graph" position="bottom">
-              <button
-                type="button"
-                className="graph-drawer-action-btn"
-                onClick={handleRecenter}
-              >
-                <RefreshCw size={14} />
-              </button>
-            </ToolTip>
-
-            <ToolTip text="Open in Editor Tab" position="bottom">
-              <button
-                type="button"
-                className="graph-drawer-action-btn"
-                onClick={handleOpenAsTab}
-              >
-                <ExternalLink size={14} />
-              </button>
-            </ToolTip>
-
-            <ToolTip text="Close Drawer (Esc)" position="bottom">
-              <button
-                type="button"
-                className="graph-drawer-action-btn close-btn"
-                onClick={handleClose}
-                aria-label="Close"
-              >
-                <span className="sr-only" style={{ display: 'none' }}>
-                  Close
-                </span>
-                <X size={14} />
-              </button>
-            </ToolTip>
-          </div>
+        <div className={`graph-initializer ${isEngineReady ? 'ready' : ''}`}>
+          <div className="pulse-ring"></div>
+          <div className="graph-initializer-text">Initializing Physics</div>
         </div>
 
-        <div
-          className="graph-drawer-body"
-          style={{
-            position: 'relative',
-            width: '100%',
-            height: 'calc(100% - 34px)',
-            overflow: 'hidden'
-          }}
-        >
-          <PerformancePanel onRecenter={handleRecenter} is3DMode={is3DMode} />
+        {is3DMode ? (
+          <Graph3D
+            key="3d-graph-embedded"
+            ref={graphRef}
+            width={dimensions.width}
+            height={dimensions.height}
+            graphData={graphData}
+            nodeColor={nodeColorFn}
+            nodeRelSize={4}
+            nodeThreeObject={(node: any) => {
+              const base = node.val ? Math.min(10, Math.max(3, Math.sqrt(node.val) * 2.8)) : 3
+              const r = base * graphNodeSize + 3
+              const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColorFn(node)))
+              mesh.scale.set(r, r, r)
+              return mesh
+            }}
+            linkVisibility={(link: any) => {
+              if (!(window as any)._luminaIsDragging) return true
+              return link.source === hoverNode || link.target === hoverNode
+            }}
+            linkColor={(link: any) => {
+              const isHoverConnected =
+                hoverNode && (link.source === hoverNode || link.target === hoverNode)
+              const isSelectedConnected =
+                selectedSnippet &&
+                (link.source.snippetId === selectedSnippet.id ||
+                  link.target.snippetId === selectedSnippet.id)
+              const isActive = hoverNode ? isHoverConnected : isSelectedConnected
 
-          <div
-            className="nexus-body"
-            style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}
-          >
-            <div className={`graph-initializer ${isEngineReady ? 'ready' : ''}`}>
-              <div className="pulse-ring"></div>
-              <div className="graph-initializer-text">Initializing Physics</div>
-            </div>
+              const { settings } = useSettingsStore.getState()
+              if (isActive) {
+                const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.85
+                return `rgba(${themeColors.rgb}, ${highlightOpacity})`
+              }
 
-            {is3DMode ? (
-              <Graph3D
-                key="3d-graph-modal"
-                ref={graphRef}
-                width={dimensions.width}
-                height={dimensions.height}
-                graphData={graphData}
-                nodeColor={nodeColorFn}
-                nodeRelSize={4}
-                nodeThreeObject={(node: any) => {
-                  const base = node.val ? Math.min(10, Math.max(3, Math.sqrt(node.val) * 2.8)) : 3
-                  const r = base * graphNodeSize + 3
-                  const mesh = new THREE.Mesh(sharedSphereGeometry, getMaterial(nodeColorFn(node)))
-                  mesh.scale.set(r, r, r)
-                  return mesh
-                }}
-                linkVisibility={(link: any) => {
-                  if (!(window as any)._luminaIsDragging) return true
-                  return link.source === hoverNode || link.target === hoverNode
-                }}
-                linkColor={(link: any) => {
-                  const isHoverConnected =
-                    hoverNode && (link.source === hoverNode || link.target === hoverNode)
-                  const isSelectedConnected =
-                    selectedSnippet &&
-                    (link.source.snippetId === selectedSnippet.id ||
-                      link.target.snippetId === selectedSnippet.id)
-                  const isActive = hoverNode ? isHoverConnected : isSelectedConnected
+              if (hoverNode || selectedSnippet) {
+                const dimOpacity = settings.graphLinkDimOpacity ?? 0.04
+                return `rgba(${themeColors.rgb}, ${dimOpacity})`
+              }
 
-                  const { settings } = useSettingsStore.getState()
-                  if (isActive) {
-                    const highlightOpacity = settings.graphLinkHighlightOpacity ?? 0.85
-                    return `rgba(${themeColors.rgb}, ${highlightOpacity})`
-                  }
+              return defaultLineColor
+            }}
+            linkWidth={0.5}
+            onNodeHover={(node: any) => setHoverNode(node)}
+            onNodeClick={(node: any) => {
+              if (graphRef.current && is3DMode) {
+                const distance = 400
+                const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z)
+                graphRef.current.cameraPosition(
+                  { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+                  node,
+                  1000
+                )
+              }
 
-                  if (hoverNode || selectedSnippet) {
-                    const dimOpacity = settings.graphLinkDimOpacity ?? 0.04
-                    return `rgba(${themeColors.rgb}, ${dimOpacity})`
-                  }
-
-                  return defaultLineColor
-                }}
-                linkWidth={0.5}
-                onNodeHover={(node: any) => setHoverNode(node)}
-                onNodeClick={(node: any) => {
-                  if (graphRef.current) {
-                    const distance = 400
-                    const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z)
-                    graphRef.current.cameraPosition(
-                      { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
-                      node,
-                      1000
-                    )
-                  }
-
-                  setTimeout(() => {
-                    if (node.snippetId) {
-                      const s = snippets.find((sn) => sn.id === node.snippetId)
-                      if (s) onNavigate?.(s)
-                    }
-                  }, 150)
-                }}
-                onNodeDrag={() => {
-                  ;(window as any)._luminaIsDragging = true
-                  usePerformanceStore.getState().setDragging(true)
-                }}
-                onNodeDragEnd={(node: any) => {
-                  ;(window as any)._luminaIsDragging = false
-                  usePerformanceStore.getState().setDragging(false)
-                  setHoverNode(null)
-                  const isCentral = isCentralNode(node)
-                  if (isCentral) {
-                    node.fx = null
-                    node.fy = null
-                    node.fz = null
-                  } else {
-                    node.fx = node.x
-                    node.fy = node.y
-                    node.fz = node.z
-                    handleNodePositionChanged(node)
-                  }
-                  if (graphRef.current) graphRef.current.d3ReheatSimulation()
-                }}
-                backgroundColor="rgba(0,0,0,0)"
-                d3AlphaDecay={0.05}
-                d3VelocityDecay={0.4}
-                showNavInfo={false}
-              />
-            ) : (
-              <Graph2D
-                key="2d-graph-modal"
-                ref={graphRef}
-                dimensions={dimensions}
-                graphData={graphData}
-                paintNode={paintNode}
-                hoverNode={hoverNode}
-                setHoverNode={setHoverNode}
-                defaultLineColor={defaultLineColor}
-                onNavigate={onNavigate}
-                setIsEngineReady={setIsEngineReady}
-                onNodePositionChanged={handleNodePositionChanged}
-                isCentralNode={isCentralNode}
-              />
-            )}
-          </div>
-
-          <GraphSidebar
-            isOpen={isSidebarOpen}
-            onToggleExpand={handleToggleSidebar}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            nodeCount={rawGraphData.nodes.length}
-            onRecenter={handleRecenter}
-            is3DMode={is3DMode}
-            onToggle3D={handleToggle3D}
-            onExportPNG={handleExportPNG}
-            onExportSVG={handleExportSVG}
-            onResetLayout={handleResetLayout}
+              setTimeout(() => {
+                if (node.snippetId) {
+                  const s = snippets.find((sn) => sn.id === node.snippetId)
+                  if (s) onNavigate?.(s)
+                }
+              }, 150)
+            }}
+            onNodeDrag={() => {
+              if (!(window as any)._luminaIsDragging) {
+                ;(window as any)._luminaIsDragging = true
+                usePerformanceStore.getState().setDragging(true)
+              }
+            }}
+            onNodeDragEnd={(node: any) => {
+              ;(window as any)._luminaIsDragging = false
+              usePerformanceStore.getState().setDragging(false)
+              setHoverNode(null)
+              const isCentral = isCentralNode(node)
+              if (isCentral) {
+                node.fx = null
+                node.fy = null
+                node.fz = null
+              } else {
+                node.fx = node.x
+                node.fy = node.y
+                node.fz = node.z
+                handleNodePositionChanged(node)
+              }
+              if (graphRef.current) graphRef.current.d3ReheatSimulation()
+            }}
+            onRenderFramePre={() => {
+              ;(window as any)._luminaFrameStart = performance.now()
+            }}
+            onRenderFramePost={() => {
+              const now = performance.now()
+              const frameTime = now - ((window as any)._luminaFrameStart || now)
+              const fps = (window as any)._luminaLastFrame
+                ? 1000 / (now - (window as any)._luminaLastFrame)
+                : 60
+              ;(window as any)._luminaLastFrame = now
+              usePerformanceStore.getState().updateMetrics({
+                frameTime,
+                fps,
+                nodeCount: graphData?.nodes?.length || 0,
+                linkCount: graphData?.links?.length || 0
+              })
+            }}
+            backgroundColor="rgba(0,0,0,0)"
+            d3AlphaDecay={0.05}
+            d3VelocityDecay={0.4}
+            showNavInfo={false}
+            linkDirectionalParticles={0}
+            onEngineStop={() => setIsEngineReady(true)}
           />
-        </div>
+        ) : (
+          <Graph2D
+            key="2d-graph-embedded"
+            ref={graphRef}
+            dimensions={dimensions}
+            graphData={graphData}
+            paintNode={paintNode}
+            hoverNode={hoverNode}
+            setHoverNode={setHoverNode}
+            defaultLineColor={defaultLineColor}
+            onNavigate={onNavigate}
+            setIsEngineReady={setIsEngineReady}
+            onNodePositionChanged={handleNodePositionChanged}
+            isCentralNode={isCentralNode}
+          />
+        )}
       </div>
+
+      <GraphSidebar
+        isOpen={isSidebarOpen}
+        onToggleExpand={handleToggleSidebar}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        nodeCount={rawGraphData.nodes.length}
+        onRecenter={handleRecenter}
+        is3DMode={is3DMode}
+        onToggle3D={handleToggle3D}
+        onExportPNG={handleExportPNG}
+        onExportSVG={handleExportSVG}
+        onResetLayout={handleResetLayout}
+      />
     </div>
   )
 })

@@ -27,7 +27,6 @@ export interface GraphSidebarProps {
   onRecenter?: (e?: any) => void
   is3DMode?: boolean
   onToggle3D?: () => void
-  onSwitchToModal?: () => void
   onExportPNG?: () => void
   onExportSVG?: () => void
   onResetLayout?: () => void
@@ -43,7 +42,6 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
   onRecenter,
   is3DMode,
   onToggle3D,
-  onSwitchToModal,
   onExportPNG,
   onExportSVG,
   onResetLayout
@@ -147,19 +145,6 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
             </button>
           </ToolTip>
         )}
-
-        {onSwitchToModal && (
-          <ToolTip text="Pop out to Modal" position="left">
-            <button
-              type="button"
-              className="lumina-canvas-tool-btn"
-              onClick={onSwitchToModal}
-              aria-label="Open as Modal"
-            >
-              <ExternalLink size={14} />
-            </button>
-          </ToolTip>
-        )}
       </div>
     )
   }
@@ -219,40 +204,6 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          {onSwitchToModal && (
-            <ToolTip text="Pop out to Modal" position="bottom">
-              <button
-                type="button"
-                className="lumina-canvas-studio-header-btn"
-                onClick={onSwitchToModal}
-                aria-label="Open as Modal"
-                style={{
-                  width: '26px',
-                  height: '26px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: '5px',
-                  border: '1px solid var(--border-dim)',
-                  background: 'var(--bg-editor)',
-                  color: 'var(--text-main)',
-                  cursor: 'pointer',
-                  padding: 0
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--text-accent)'
-                  e.currentTarget.style.borderColor = 'var(--text-accent)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--text-main)'
-                  e.currentTarget.style.borderColor = 'var(--border-dim)'
-                }}
-              >
-                <ExternalLink size={13} />
-              </button>
-            </ToolTip>
-          )}
-
           <ToolTip text="Close Sidebar" position="bottom">
             <button
               type="button"
