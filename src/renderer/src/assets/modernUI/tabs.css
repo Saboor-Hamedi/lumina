@@ -262,15 +262,15 @@
   justify-content: center !important;
   margin: 0 !important;
   padding: 0 !important;
-  opacity: 0.35;
+  opacity: 0 !important;
+  pointer-events: none;
   transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
 }
 
 .workspace-tab:hover .tab-close-btn,
-.workspace-tab.active .tab-close-btn,
-[data-modern-ui='true'] .workspace-tab:hover .tab-close-btn,
-[data-modern-ui='true'] .workspace-tab.active .tab-close-btn {
+[data-modern-ui='true'] .workspace-tab:hover .tab-close-btn {
   opacity: 0.75 !important;
+  pointer-events: auto;
 }
 
 .tab-close-btn:hover,
@@ -283,9 +283,9 @@
 /* Breadcrumbs Bar: Clean borderless path line */
 .editor-breadcrumbs-bar,
 [data-modern-ui='true'] .editor-breadcrumbs-bar {
-  height: 26px !important;
-  min-height: 26px !important;
-  max-height: 26px !important;
+  height: 25px !important;
+  min-height: 25px !important;
+  max-height: 25px !important;
   box-sizing: border-box;
   border: none !important;
   border-bottom: none !important;

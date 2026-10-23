@@ -15,7 +15,14 @@ afterEach(() => {
 vi.mock('@atomic-editor/editor', () => ({
   AtomicCodeMirrorEditor: ({ markdownSource }) =>
     React.createElement('div', { 'data-testid': 'atomic-editor' }, markdownSource),
-  wikiLinks: () => []
+  wikiLinks: () => [],
+  inlinePreview: () => [],
+  imageBlocks: () => [],
+  tables: () => [],
+  atomicEditorTheme: [],
+  atomicMarkdownSyntax: [],
+  autoCloseCodeFence: [],
+  extendEmphasisPair: []
 }))
 
 // Mock window.api for Electron

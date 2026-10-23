@@ -57,15 +57,12 @@ export function assertSafeWorkspacePath(
 
   const cleanRel = decodeAndValidatePath(relativePath || '')
 
-  // Reject Alternate Data Streams (colon in relative path on Windows)
-  const isWin = process.platform === 'win32'
-  if (isWin) {
-    const withoutDrive = cleanRel
-      .replace(/^[a-zA-Z]:[/\\]?/, '')
-      .replace(/^\\\\\?\\[a-zA-Z]:[/\\]?/, '')
-    if (withoutDrive.includes(':')) {
-      throw new Error(`Security Violation: Alternate Data Stream detected: ${relativePath}`)
-    }
+  // Reject Alternate Data Streams (colon in relative path)
+  const withoutDrive = cleanRel
+    .replace(/^[a-zA-Z]:[/\\]?/, '')
+    .replace(/^\\\\\?\\[a-zA-Z]:[/\\]?/, '')
+  if (withoutDrive.includes(':')) {
+    throw new Error(`Security Violation: Alternate Data Stream detected: ${relativePath}`)
   }
 
   // Check each segment for Windows reserved device names

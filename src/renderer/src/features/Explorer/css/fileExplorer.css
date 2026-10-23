@@ -833,7 +833,16 @@
   padding: 0;
   border-radius: 4px;
   flex-shrink: 0;
-  transition: all 0.12s ease;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.start-section .tree-item:hover .action-btn,
+.folder-tree-main:hover .action-btn,
+.tree-item:hover .action-btn {
+  opacity: 0.7;
+  pointer-events: auto;
 }
 
 .start-section .tree-item .action-btn:hover,

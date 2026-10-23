@@ -514,15 +514,13 @@
   transition: background 0.15s, color 0.15s, opacity 0.15s;
   width: 100%;
   height: 100%;
-  opacity: 0.35;
-}
-
-.workspace-tab.active .tab-close-btn {
-  opacity: 0.75;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .workspace-tab:hover .tab-close-btn {
   opacity: 0.75;
+  pointer-events: auto;
 }
 
 .tab-close-btn:hover {
@@ -784,15 +782,18 @@
   font-size: 11px;
   font-weight: 500;
   user-select: none;
+  opacity: 0.65;
 }
 
 .meta-action-btn:hover {
+  opacity: 1;
   color: var(--text-main);
   background: rgba(255, 255, 255, 0.05);
   border-color: var(--border-dim);
 }
 
 .meta-action-btn.active {
+  opacity: 1;
   color: var(--text-accent);
   background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.12);
   border-color: rgba(var(--text-accent-rgb, 139, 92, 246), 0.3);
@@ -810,11 +811,13 @@
   padding: 0;
   cursor: pointer;
   color: var(--text-muted);
+  opacity: 0.65;
   transition: all 0.12s ease;
 }
 
 .editor-menu-trigger:hover,
 .editor-menu-trigger.active {
+  opacity: 1;
   color: var(--text-main);
   background: rgba(255, 255, 255, 0.06);
   border-color: var(--border-dim);
