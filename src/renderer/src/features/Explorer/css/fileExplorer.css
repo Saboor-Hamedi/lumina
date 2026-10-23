@@ -3,7 +3,7 @@
   top: 0;
   left: 0;
   right: 0;
-  bottom: 28px; /* Stop exactly above the StatusBar */
+  bottom: 0;
   background: transparent;
   z-index: 9999;
 }

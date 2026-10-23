@@ -191,9 +191,12 @@ export const MainLayout: React.FC = () => {
   const isActivityBarVisible = useSettingsStore(
     (state) => state.settings?.activityBarVisible !== false
   )
-  const isStatusBarVisible = useSettingsStore(
-    (state) => state.settings?.statusBarVisible !== false
-  )
+  const isStatusBarVisible = useSettingsStore((state) => {
+    if (state.settings?.zenMode?.enabled) {
+      return false
+    }
+    return state.settings?.statusBarVisible === true
+  })
   const isTabsVisible = useSettingsStore((state) => {
     if (state.settings?.zenMode?.enabled) {
       return state.settings?.tabsVisible === true
@@ -202,9 +205,9 @@ export const MainLayout: React.FC = () => {
   })
   const isBreadcrumbsVisible = useSettingsStore((state) => {
     if (state.settings?.zenMode?.enabled) {
-      return state.settings?.breadcrumbsVisible === true
+      return false
     }
-    return state.settings?.breadcrumbsVisible !== false
+    return state.settings?.breadcrumbsVisible === true
   })
 
   const isLeftSidebarOpenRef = useRef(isLeftSidebarOpen)

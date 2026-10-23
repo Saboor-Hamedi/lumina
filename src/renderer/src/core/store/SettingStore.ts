@@ -243,10 +243,10 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
 
     // Component Visibility & Zen Mode Defaults
     titleBarVisible: true,
-    statusBarVisible: true,
+    statusBarVisible: false,
     activityBarVisible: true,
     tabsVisible: true,
-    breadcrumbsVisible: true,
+    breadcrumbsVisible: false,
     zenMode: {
       enabled: false,
       hideTitleBar: true,
@@ -494,7 +494,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
   },
 
   toggleStatusBar: async () => {
-    const current = get().settings.statusBarVisible ?? true
+    const current = get().settings.statusBarVisible ?? false
     await get().updateSetting('statusBarVisible', !current)
   },
 
@@ -509,7 +509,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
   },
 
   toggleBreadcrumbs: async () => {
-    const current = get().settings.breadcrumbsVisible ?? true
+    const current = get().settings.breadcrumbsVisible ?? false
     await get().updateSetting('breadcrumbsVisible', !current)
   },
 
@@ -612,10 +612,10 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       }
     } else {
       updates.titleBarVisible = true
-      updates.statusBarVisible = true
+      updates.statusBarVisible = false
       updates.activityBarVisible = true
       updates.tabsVisible = true
-      updates.breadcrumbsVisible = true
+      updates.breadcrumbsVisible = false
       updates.sidebar = { ...(s.sidebar || { width: 260, isLeftOpen: true }), isLeftOpen: true }
       updates.rightSidebar = { ...(s.rightSidebar || { width: 300, isRightOpen: false }), isRightOpen: false }
     }
