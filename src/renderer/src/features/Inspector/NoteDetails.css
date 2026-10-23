@@ -164,6 +164,12 @@
   color: var(--text-main);
 }
 
+.outline-item.active {
+  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.12);
+  color: var(--text-main);
+  font-weight: 500;
+}
+
 .outline-item-content {
   position: relative;
   display: flex;

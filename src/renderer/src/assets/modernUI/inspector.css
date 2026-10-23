@@ -1,9 +1,10 @@
 /* ============================================================
- * AstroNvim Modern UI: Right Sidebar & Inspector Panel
+ * Lumina Right Sidebar & Inspector Panel (Unified Chrome)
  * Flush docked right panel, crisp 1px left border, unified chrome
  * ============================================================ */
 
 /* Right Sidebar Container */
+.app-shell.right-open .shell-sidebar-right,
 [data-modern-ui='true'] .app-shell.right-open .shell-sidebar-right {
   background: var(--bg-sidebar) !important;
   border: none !important;
@@ -16,6 +17,7 @@
   z-index: 5;
 }
 
+.shell-sidebar-right .inspector-panel,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-panel {
   background: transparent !important;
   border: none !important;
@@ -29,6 +31,7 @@
 }
 
 /* Header Tabs: Docked top with 1px bottom border */
+.shell-sidebar-right .panel-header-tabs,
 [data-modern-ui='true'] .shell-sidebar-right .panel-header-tabs {
   height: 32px !important;
   min-height: 32px !important;
@@ -44,7 +47,8 @@
   align-items: stretch;
 }
 
-/* Inspector Tabs: Neovim bufferline tab feel */
+/* Inspector Tabs: Unified bufferline tab feel */
+.shell-sidebar-right .inspector-tab,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-tab {
   height: 100% !important;
   box-sizing: border-box;
@@ -60,11 +64,13 @@
   transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 
+.shell-sidebar-right .inspector-tab:hover,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-tab:hover {
   color: var(--text-main);
   background: rgba(255, 255, 255, 0.03);
 }
 
+.shell-sidebar-right .inspector-tab.active,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-tab.active {
   color: var(--text-main) !important;
   background: rgba(255, 255, 255, 0.05) !important;
@@ -72,6 +78,7 @@
 }
 
 /* Inspector Body Card: Continuous seamless panel */
+.shell-sidebar-right .inspector-body-card,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-body-card {
   flex: 1;
   display: flex;
@@ -85,6 +92,7 @@
   min-height: 0;
 }
 
+.shell-sidebar-right .inspector-sub-header,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-sub-header {
   height: 28px !important;
   min-height: 28px !important;
@@ -97,6 +105,7 @@
 }
 
 /* Inspector Footer Utility Strip */
+.shell-sidebar-right .inspector-footer-section,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section {
   height: 28px !important;
   min-height: 28px !important;
@@ -114,7 +123,8 @@
   flex-shrink: 0;
 }
 
-/* Chat Composer: Neovim command prompt dock */
+/* Chat Composer: Command prompt dock */
+.shell-sidebar-right .inspector-footer-section.is-chat-composer,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer {
   height: auto !important;
   min-height: 110px !important;
@@ -135,12 +145,14 @@
   transition: border-color 0.12s ease;
 }
 
+.shell-sidebar-right .inspector-footer-section.is-chat-composer:focus-within,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer:focus-within {
   border-top-color: var(--text-accent) !important;
   outline: none !important;
   box-shadow: none !important;
 }
 
+.shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-container,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-container {
   padding: 0 !important;
   background: transparent !important;
@@ -150,6 +162,8 @@
   flex-direction: column !important;
 }
 
+.shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-card,
+.shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-card:focus-within,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-card,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section.is-chat-composer .composer-card:focus-within {
   border: none !important;
@@ -162,6 +176,7 @@
   flex: 1 !important;
 }
 
+.shell-sidebar-right .inspector-footer-btn,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-footer-btn {
   display: flex;
   align-items: center;
@@ -177,6 +192,7 @@
   transition: background 0.12s ease, color 0.12s ease;
 }
 
+.shell-sidebar-right .inspector-footer-btn:hover,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-footer-btn:hover {
   background: var(--bg-active);
   color: var(--text-main);

@@ -90,38 +90,16 @@ export const EditorMenu: React.FC<EditorMenuProps> = ({
         <div className="menu-container">
           <ToolTip text="More Options (Ctrl+I)" position="bottom">
             <button
-              className={`icon-btn menu-trigger ${showMoreMenu ? 'active' : ''}`}
+              type="button"
+              className={`icon-btn menu-trigger editor-menu-trigger ${showMoreMenu ? 'active' : ''}`}
               ref={buttonRef}
               onClick={(e) => {
                 e.stopPropagation()
                 setShowMoreMenu(!showMoreMenu)
               }}
-              style={{
-                width: '24px',
-                height: '24px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: showMoreMenu ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
-                border: 'none',
-                borderRadius: '4px',
-                padding: 0,
-                cursor: 'pointer',
-                color: showMoreMenu ? 'var(--text-main, #f8fafc)' : 'var(--text-muted, #94a3b8)',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--text-main, #f8fafc)'
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'
-              }}
-              onMouseLeave={(e) => {
-                if (!showMoreMenu) {
-                  e.currentTarget.style.color = 'var(--text-muted, #94a3b8)'
-                  e.currentTarget.style.background = 'transparent'
-                }
-              }}
+              aria-label="More Options"
             >
-              <MoreVertical size={16} />
+              <MoreVertical size={15} />
             </button>
           </ToolTip>
 

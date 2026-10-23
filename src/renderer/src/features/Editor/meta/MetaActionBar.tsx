@@ -69,14 +69,6 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
       <div
         ref={containerRef}
         className="editor-action-bar meta-action-bar"
-        style={{
-          position: 'relative',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          width: '100%',
-          margin: '4px 0 2px 0'
-        }}
       >
         <MetaActions
           snippet={snippet}

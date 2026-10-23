@@ -152,7 +152,7 @@ VerticalOpacitySlider.displayName = 'VerticalOpacitySlider'
 const QuickControls: React.FC = React.memo(() => {
   const enableDevTools = useSettingStore((s) => s.settings?.enableDevTools ?? true)
   const launchOnStartup = useSettingStore((s) => s.settings?.launchOnStartup ?? false)
-  const modernUi = useSettingStore((s) => s.settings?.modernUi ?? false)
+  const modernUi = useSettingStore((s) => s.settings?.modernUi ?? true)
   const updateSetting = useSettingStore((s) => s.updateSetting)
 
   const handleToggleDevTools = (val?: boolean) => {

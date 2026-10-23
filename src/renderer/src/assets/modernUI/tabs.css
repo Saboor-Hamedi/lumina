@@ -1,13 +1,14 @@
 /* ============================================================
- * AstroNvim Modern UI: Tabs (bufferline.nvim style)
+ * Lumina Tabs (Unified Bufferline Style for Both Normal & Modern UI)
  * Crisp buffer tabs, hairline vertical dividers, accent indicators
  * ============================================================ */
 
 /* Tab Bar Outer Wrapper: Flush edge-to-edge across workspace */
+.tabbar-outer-wrapper,
 [data-modern-ui='true'] .tabbar-outer-wrapper {
-  height: 30px !important;
-  min-height: 30px !important;
-  max-height: 30px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  max-height: 32px !important;
   box-sizing: border-box;
   padding: 0 !important;
   border-radius: 0 !important;
@@ -17,48 +18,63 @@
   background: var(--bg-sidebar) !important;
 }
 
+.tabbar-layout,
+[data-modern-ui='true'] .tabbar-layout {
+  display: flex !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.pinned-tabs-container,
+[data-modern-ui='true'] .pinned-tabs-container {
+  display: flex !important;
+  flex: 0 0 auto !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  border-right: 1px solid var(--border-dim) !important;
+}
+
+.workspace-tabbar,
 [data-modern-ui='true'] .workspace-tabbar {
-  height: 30px !important;
+  height: 100% !important;
   border-radius: 0 !important;
   overflow-x: auto !important;
   overflow-y: hidden !important;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
+  display: flex !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
 }
 
-[data-modern-ui='true'] .tabbar-layout {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-}
-
-[data-modern-ui='true'] .pinned-tabs-container {
-  display: flex;
-  flex: 0 0 auto;
-  overflow: hidden;
-  border-right: 1px solid var(--border-dim);
-}
-
+.workspace-tabbar::-webkit-scrollbar,
 [data-modern-ui='true'] .workspace-tabbar::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
 }
 
+.tabs-container,
 [data-modern-ui='true'] .tabs-container {
-  display: flex;
-  height: 100%;
-  align-items: stretch;
+  display: flex !important;
+  height: 100% !important;
+  align-items: stretch !important;
   border-radius: 0 !important;
 }
 
-/* Individual Buffer Tabs: Neovim Bufferline items */
+/* Individual Buffer Tabs: Unified bufferline items */
+.workspace-tab,
 [data-modern-ui='true'] .workspace-tab {
-  height: 30px !important;
-  min-width: 80px;
-  max-width: 190px;
-  padding: 0 0 0 11px !important;
+  height: 100% !important;
+  min-height: 32px !important;
+  min-width: 90px;
+  max-width: 200px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 4px 0 10px !important;
   border-radius: 0 !important;
   border-right: 1px solid var(--border-dim) !important;
   border-top: none !important;
@@ -67,10 +83,22 @@
   color: var(--text-muted);
   font-size: 12px;
   font-weight: 500;
+  cursor: pointer;
+  position: relative;
   transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
   box-sizing: border-box;
+  flex-shrink: 0 !important;
+  user-select: none;
+  outline: none;
+  -webkit-app-region: no-drag;
+  overflow: hidden !important;
 }
 
+.tabs-container > :first-child .workspace-tab,
+.tabs-container > .workspace-tab:first-child,
+.workspace-tab:first-child,
+.tabs-container > :last-child .workspace-tab,
+.tabs-container > .workspace-tab:last-child,
 [data-modern-ui='true'] .tabs-container > :first-child .workspace-tab,
 [data-modern-ui='true'] .tabs-container > .workspace-tab:first-child,
 [data-modern-ui='true'] .workspace-tab:first-child,
@@ -79,13 +107,69 @@
   border-radius: 0 !important;
 }
 
+/* Tab Context (Icon + Title wrapper) */
+.tab-context,
+[data-modern-ui='true'] .tab-context {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+/* Tab Icon */
+.tab-icon,
+[data-modern-ui='true'] .tab-icon {
+  width: 12px !important;
+  height: 12px !important;
+  flex: 0 0 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 0.75;
+  transition: opacity 0.12s ease, color 0.12s ease;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.workspace-tab.active .tab-icon,
+[data-modern-ui='true'] .workspace-tab.active .tab-icon {
+  opacity: 1 !important;
+  color: var(--text-accent, #a78bfa) !important;
+}
+
+.workspace-tab:hover .tab-icon,
+[data-modern-ui='true'] .workspace-tab:hover .tab-icon {
+  opacity: 1 !important;
+  color: var(--text-main, #f8fafc) !important;
+}
+
+/* Tab Title with robust truncation for long titles */
+.tab-title,
+[data-modern-ui='true'] .tab-title {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  letter-spacing: -0.01em;
+  font-size: 12px;
+  line-height: 1.2;
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  display: block !important;
+  text-align: left;
+}
+
 /* Hover: Subtle background tint */
+.workspace-tab:hover,
 [data-modern-ui='true'] .workspace-tab:hover {
   background: rgba(255, 255, 255, 0.03) !important;
   color: var(--text-main);
 }
 
 /* Active Buffer: Clean contrast background + 2px accent bottom border */
+.workspace-tab.active,
 [data-modern-ui='true'] .workspace-tab.active {
   background: var(--bg-editor, var(--bg-app)) !important;
   color: var(--text-main) !important;
@@ -94,23 +178,41 @@
   box-shadow: none !important;
 }
 
+.workspace-tab.active:hover,
 [data-modern-ui='true'] .workspace-tab.active:hover {
   background: var(--bg-editor, var(--bg-app)) !important;
 }
 
+.workspace-tab.active::before,
+.workspace-tab.active::after,
 [data-modern-ui='true'] .workspace-tab.active::before,
 [data-modern-ui='true'] .workspace-tab.active::after {
   display: none !important;
 }
 
 /* Pinned Tabs: Compact buffer block */
+.workspace-tab.pinned,
 [data-modern-ui='true'] .workspace-tab.pinned {
-  min-width: 36px;
-  max-width: 140px;
+  min-width: 36px !important;
+  max-width: 140px !important;
   padding: 0 8px !important;
+  flex: 0 0 auto !important;
+}
+
+.workspace-tab.pinned .tab-context,
+[data-modern-ui='true'] .workspace-tab.pinned .tab-context {
+  flex: 0 1 auto !important;
+}
+
+.workspace-tab.pinned .tab-actions,
+[data-modern-ui='true'] .workspace-tab.pinned .tab-actions {
+  width: 14px !important;
+  min-width: 14px !important;
+  margin-left: 4px !important;
 }
 
 /* Dirty State (Unsaved Blob): Single clean 7px amber dot */
+.tab-dirty,
 [data-modern-ui='true'] .tab-dirty {
   width: 7px !important;
   height: 7px !important;
@@ -122,41 +224,64 @@
   transition: transform 0.12s ease, background 0.12s ease;
 }
 
+.tab-dirty:hover,
 [data-modern-ui='true'] .tab-dirty:hover {
   background: #f59e0b !important;
   transform: scale(1.15);
 }
 
 /* Tab Actions & Close Button: Flush to far right edge */
+.tab-actions,
 [data-modern-ui='true'] .tab-actions {
-  margin-left: auto !important;
+  margin-left: 4px !important;
   margin-right: 0 !important;
-  width: 22px !important;
+  width: 20px !important;
+  min-width: 20px !important;
   height: 100% !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  flex: 0 0 20px !important;
   flex-shrink: 0 !important;
+  position: relative !important;
+  z-index: 2 !important;
 }
 
+.tab-close-btn,
 [data-modern-ui='true'] .tab-close-btn {
-  width: 100% !important;
-  height: 100% !important;
-  border-radius: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  color: var(--text-muted) !important;
+  cursor: pointer !important;
+  width: 18px !important;
+  height: 18px !important;
+  border-radius: 3px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   margin: 0 !important;
   padding: 0 !important;
-  transition: background 0.12s ease, color 0.12s ease;
+  opacity: 0.35;
+  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
 }
 
+.workspace-tab:hover .tab-close-btn,
+.workspace-tab.active .tab-close-btn,
+[data-modern-ui='true'] .workspace-tab:hover .tab-close-btn,
+[data-modern-ui='true'] .workspace-tab.active .tab-close-btn {
+  opacity: 0.75 !important;
+}
+
+.tab-close-btn:hover,
 [data-modern-ui='true'] .tab-close-btn:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+  opacity: 1 !important;
+  background: rgba(255, 255, 255, 0.12) !important;
   color: var(--text-main) !important;
 }
 
 /* Breadcrumbs Bar: Clean borderless path line */
+.editor-breadcrumbs-bar,
 [data-modern-ui='true'] .editor-breadcrumbs-bar {
   height: 26px !important;
   min-height: 26px !important;

@@ -139,6 +139,8 @@ const SortableTabItem = memo<SortableTabItemProps>(
               <button
                 type="button"
                 className="tab-close-btn"
+                aria-label="Close tab"
+                title="Close tab"
                 onMouseDown={(e: React.MouseEvent) => {
                   e.stopPropagation()
                   onClose(e, id)

@@ -19,6 +19,14 @@ function App() {
     (state) => state.settings?.zenMode?.enabled === true
   )
 
+  const isModernUi = useSettingsStore(
+    (state) => state.settings?.modernUi !== false
+  )
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-modern-ui', String(isModernUi))
+  }, [isModernUi])
+
   useZenWindowDrag({ enabled: isZenMode })
 
   useEffect(() => {
@@ -32,7 +40,6 @@ function App() {
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme-id') || 'dark'
     applyTheme(savedTheme)
-    document.documentElement.setAttribute('data-modern-ui', 'true')
 
     // Smoothly dissolve screen loader once React layout is ready
     hideScreenLoader({ minDuration: 200, fadeDuration: 280 })

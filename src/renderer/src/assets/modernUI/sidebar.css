@@ -122,7 +122,7 @@
 .start-section .tree-item.active,
 [data-modern-ui='true'] .tree-item.active,
 [data-modern-ui='true'] .start-section .tree-item.active {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.12) !important;
   color: var(--text-main) !important;
   font-weight: 500 !important;
   border-left: 2px solid var(--text-accent) !important;

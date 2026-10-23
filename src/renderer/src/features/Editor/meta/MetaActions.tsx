@@ -37,18 +37,11 @@ export const MetaActions: React.FC<MetaActionsProps> = React.memo(
     if (!snippet) return null
 
     return (
-      <div
-        className="meta-header-actions"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          flexWrap: 'wrap',
-          marginLeft: '-6px'
-        }}
-      >
+      <div className="meta-header-actions">
         <ToolTip text="Ask AI (Ctrl+K)" position="bottom">
           <button
+            type="button"
+            className="meta-action-btn"
             onClick={(e) => {
               e.preventDefault()
               if (onInlineAI) {
@@ -57,34 +50,8 @@ export const MetaActions: React.FC<MetaActionsProps> = React.memo(
                 window.dispatchEvent(new CustomEvent('open-inline-ai'))
               }
             }}
-            style={{
-              background: 'transparent',
-              border: '1px solid transparent',
-              borderRadius: '5px',
-              height: '21px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'var(--text-muted, #94a3b8)',
-              transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-              padding: '0 6px',
-              gap: '4px',
-              fontSize: '11px',
-              fontWeight: 400
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--text-main, #f8fafc)'
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--text-muted, #94a3b8)'
-              e.currentTarget.style.background = 'transparent'
-              e.currentTarget.style.borderColor = 'transparent'
-            }}
           >
-            <Sparkles size={11} style={{ opacity: 0.8 }} />
+            <Sparkles size={12} style={{ opacity: 0.85 }} />
             <span>Ask AI</span>
           </button>
         </ToolTip>
@@ -94,46 +61,14 @@ export const MetaActions: React.FC<MetaActionsProps> = React.memo(
 
         <ToolTip text="Linked Mentions" position="bottom">
           <button
+            type="button"
+            className={`meta-action-btn ${showLocalGraph ? 'active' : ''}`}
             onClick={(e) => {
               e.preventDefault()
               setShowLocalGraph(!showLocalGraph)
             }}
-            style={{
-              background: showLocalGraph
-                ? 'rgba(var(--text-accent-rgb, 139, 92, 246), 0.12)'
-                : 'transparent',
-              border: showLocalGraph
-                ? '1px solid rgba(var(--text-accent-rgb, 139, 92, 246), 0.35)'
-                : '1px solid transparent',
-              borderRadius: '5px',
-              height: '21px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: showLocalGraph ? 'var(--text-accent, #a78bfa)' : 'var(--text-muted, #94a3b8)',
-              transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-              padding: '0 6px',
-              gap: '4px',
-              fontSize: '11px',
-              fontWeight: showLocalGraph ? 500 : 400
-            }}
-            onMouseEnter={(e) => {
-              if (!showLocalGraph) {
-                e.currentTarget.style.color = 'var(--text-main, #f8fafc)'
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!showLocalGraph) {
-                e.currentTarget.style.color = 'var(--text-muted, #94a3b8)'
-                e.currentTarget.style.background = 'transparent'
-                e.currentTarget.style.borderColor = 'transparent'
-              }
-            }}
           >
-            <Network size={11} style={{ opacity: showLocalGraph ? 1 : 0.8 }} />
+            <Network size={12} style={{ opacity: showLocalGraph ? 1 : 0.85 }} />
             <span>Local Graph</span>
           </button>
         </ToolTip>
