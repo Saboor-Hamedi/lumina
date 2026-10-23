@@ -57,6 +57,8 @@
   --bg-panel: #161622;
   --bg-editor: var(--bg-app);
   --bg-active: rgba(255, 255, 255, 0.05);
+  --bg-hover: color-mix(in srgb, var(--text-main, #e2e8f0) 8%, transparent);
+  --bg-input: color-mix(in srgb, var(--text-main, #e2e8f0) 3%, transparent);
   --bg-card: #1a1d25;
   --bg-overlay: rgba(0, 0, 0, 0.7);
 

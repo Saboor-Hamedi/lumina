@@ -94,8 +94,8 @@
 .start-menu-search input {
   width: 100%;
   height: 28px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--bg-input, rgba(127, 127, 127, 0.04));
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.06));
   border-radius: 6px;
   padding: 0 10px 0 28px;
   color: var(--text-main, #f8fafc);
@@ -105,7 +105,7 @@
 
 .start-menu-search input:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-input, rgba(127, 127, 127, 0.05));
   border-color: rgba(var(--text-accent-rgb, 139, 92, 246), 0.45);
   box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb, 139, 92, 246), 0.12);
 }
@@ -285,11 +285,11 @@
 /* Segmented Tabs */
 .explorer-segmented-tabs {
   display: flex;
-  background: rgba(0, 0, 0, 0.22);
+  background: var(--bg-input, rgba(127, 127, 127, 0.04));
   padding: 2px;
   margin: 0 8px 8px 8px;
-  border-radius: 7px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.06));
   gap: 2px;
   min-width: 0;
 }
@@ -322,13 +322,13 @@
 
 .segmented-tab:hover {
   color: var(--text-main, #f8fafc);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-hover, rgba(127, 127, 127, 0.08));
 }
 
 .segmented-tab.active {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-active, rgba(255, 255, 255, 0.08));
   color: var(--text-main, #f8fafc);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: none;
 }
 
 .explorer-action-btn {

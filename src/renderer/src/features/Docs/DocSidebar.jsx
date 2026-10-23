@@ -137,11 +137,18 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
             type="text"
             className="docs-search-input"
             placeholder="Search documentation..."
+            aria-label="Search documentation"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           {searchQuery && (
-            <button className="docs-search-clear" onClick={() => setSearchQuery('')} title="Clear search">
+            <button
+              type="button"
+              className="docs-search-clear"
+              onClick={() => setSearchQuery('')}
+              title="Clear search"
+              aria-label="Clear search"
+            >
               <X size={12} />
             </button>
           )}
@@ -156,16 +163,18 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
             </div>
             <div className="docs-sidebar-group-items">
               {generalDocs.map(({ path, name, formattedTitle }) => (
-                <div
+                <button
                   key={path}
+                  type="button"
                   className={`docs-sidebar-item ${selectedDoc === path ? 'active' : ''}`}
                   onClick={() => setSelectedDoc(path)}
+                  aria-current={selectedDoc === path ? 'page' : undefined}
                 >
                   {getDocIcon(path, name)}
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {formattedTitle}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           </div>
@@ -175,10 +184,12 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
           const isCollapsed = Boolean(collapsedFolders[folderKey])
           return (
             <div className="docs-sidebar-group" key={folderKey}>
-              <div
+              <button
+                type="button"
                 className="docs-sidebar-folder"
                 onClick={() => toggleFolder(folderKey)}
                 aria-label={`Toggle ${formatFolderName(folderKey)}`}
+                aria-expanded={!isCollapsed || Boolean(searchQuery)}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
                   <Folder size={14} style={{ color: 'var(--text-accent)', flexShrink: 0 }} />
@@ -194,7 +205,7 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
                       fontWeight: 700,
                       padding: '1px 5px',
                       borderRadius: '2px',
-                      background: 'rgba(255,255,255,0.06)'
+                      background: 'var(--bg-active, rgba(127, 127, 127, 0.12))'
                     }}
                   >
                     {items.length}
@@ -204,21 +215,23 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
                     className={`docs-folder-chevron ${isCollapsed && !searchQuery ? 'collapsed' : ''}`}
                   />
                 </div>
-              </div>
+              </button>
 
               {(!isCollapsed || searchQuery) && (
                 <div className="docs-sidebar-subitems-wrap">
                   {items.map(({ path, name, formattedTitle }) => (
-                    <div
+                    <button
                       key={path}
+                      type="button"
                       className={`docs-sidebar-item docs-sidebar-subitem ${selectedDoc === path ? 'active' : ''}`}
                       onClick={() => setSelectedDoc(path)}
+                      aria-current={selectedDoc === path ? 'page' : undefined}
                     >
                       {getDocIcon(path, name)}
                       <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0, flex: 1 }}>
                         {formattedTitle}
                       </span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}

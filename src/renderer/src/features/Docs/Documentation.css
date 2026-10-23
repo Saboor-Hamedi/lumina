@@ -7,12 +7,12 @@
   max-height: 78vh;
   background: var(--bg-panel, #16161e);
   border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   flex-direction: column;
   box-shadow:
-    0 20px 40px -12px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
+    0 20px 40px -12px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
   overflow: hidden;
   position: relative;
   animation: guideSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -32,7 +32,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 18px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 12px;
   background: var(--bg-panel, #16161e);
   border-bottom: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
   user-select: none;
@@ -44,7 +46,8 @@
 .docs-header-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
 }
 
 .docs-header-active-doc {
@@ -69,38 +72,45 @@
   gap: 5px;
   font-size: 10.5px;
   color: var(--text-muted, #888899);
-  padding: 1.5px 6px;
-  border-radius: 2px;
-  background: var(--bg-card, rgba(255, 255, 255, 0.04));
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.06));
+  padding: 0 4px;
+  border: none;
+  background: transparent;
   cursor: default;
-  transition: all 0.15s ease;
+  transition: color 0.15s ease;
   user-select: none;
 }
 
 .docs-header-stat:hover {
   color: var(--text-main, #ffffff);
-  background: var(--bg-hover, rgba(255, 255, 255, 0.07));
 }
 
 .docs-sidebar-toggle-btn,
 .docs-window-btn {
+  width: 26px;
+  height: 26px;
   background: transparent;
   border: none;
   color: var(--text-muted, #888899);
   cursor: pointer;
-  padding: 6px;
+  padding: 0;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .docs-sidebar-toggle-btn:hover,
 .docs-window-btn:hover {
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  background: var(--bg-hover, rgba(127, 127, 127, 0.1));
   color: var(--text-main, #ffffff);
+}
+
+.docs-modal-header .guide-close-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .docs-container {
@@ -117,34 +127,32 @@
 }
 
 .docs-sidebar {
-  width: 218px;
+  width: 232px;
   background: var(--bg-sidebar, #121218);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  border: none;
+  border-right: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
+  border-radius: 0;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease,
+    border-color 0.18s ease;
   overflow: hidden;
-  position: absolute;
-  left: 10px;
-  top: 10px;
-  bottom: 10px;
-  height: calc(100% - 20px);
-  z-index: 50;
-  backdrop-filter: blur(12px);
+  position: relative;
+  z-index: 1;
 }
 
 .docs-sidebar.closed {
-  transform: translateX(calc(-100% - 20px));
+  width: 0;
   opacity: 0;
+  border-right-color: transparent;
   pointer-events: none;
 }
 
 .docs-sidebar-header {
   padding: 10px 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border-dim, rgba(255, 255, 255, 0.06));
   background: transparent;
 }
 
@@ -182,20 +190,20 @@
 
 .docs-search-input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--bg-card, rgba(127, 127, 127, 0.06));
+  border: 1px solid var(--border-dim, rgba(127, 127, 127, 0.15));
   border-radius: 6px;
   color: var(--text-main);
   padding: 6px 26px 6px 28px;
   font-size: 12px;
   outline: none;
-  transition: all 0.2s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
 .docs-search-input:focus {
-  border-color: rgba(64, 186, 250, 0.5);
-  box-shadow: 0 0 0 2px rgba(64, 186, 250, 0.15);
-  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--text-accent, #8b5cf6);
+  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb, 139, 92, 246), 0.18);
+  background: var(--bg-card, rgba(127, 127, 127, 0.08));
 }
 
 .docs-sidebar-scrollable {
@@ -203,14 +211,26 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 8px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-subtle, rgba(255, 255, 255, 0.12)) transparent;
 }
 
 .docs-sidebar-scrollable::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
+  width: 6px;
+  height: 6px;
+}
+
+.docs-sidebar-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.docs-sidebar-scrollable::-webkit-scrollbar-thumb {
+  background: var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-radius: 6px;
+}
+
+.docs-sidebar-scrollable::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint, rgba(255, 255, 255, 0.28));
 }
 
 .docs-sidebar-group {
@@ -229,8 +249,12 @@
 }
 
 .docs-sidebar-folder {
+  width: 100%;
   height: 28px;
   padding: 0 8px;
+  border: none;
+  background: transparent;
+  font-family: inherit;
   font-size: 12px;
   font-weight: 600;
   color: var(--text-main);
@@ -238,13 +262,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: all 0.12s ease;
+  transition: background-color 0.12s ease, color 0.12s ease;
   user-select: none;
   border-radius: 6px;
+  text-align: left;
+  box-sizing: border-box;
 }
 
 .docs-sidebar-folder:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-hover, rgba(127, 127, 127, 0.1));
   color: var(--text-accent);
 }
 
@@ -258,19 +284,25 @@
 }
 
 .docs-sidebar-item {
+  width: 100%;
   height: 28px;
   padding: 0 8px;
+  border: none;
+  background: transparent;
+  font-family: inherit;
   font-size: 12px;
   font-weight: 500;
   color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: all 0.12s ease;
+  transition: background-color 0.12s ease, color 0.12s ease;
   position: relative;
   border-radius: 6px;
   user-select: none;
   margin: 1px 0;
+  text-align: left;
+  box-sizing: border-box;
 }
 
 .docs-sidebar-subitem {
@@ -279,14 +311,25 @@
 }
 
 .docs-sidebar-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-hover, rgba(127, 127, 127, 0.1));
   color: var(--text-main);
 }
 
 .docs-sidebar-item.active {
-  background: rgba(64, 186, 250, 0.12);
-  color: var(--text-accent, #40bafa);
+  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.1);
+  color: var(--text-accent, #8b5cf6);
   font-weight: 600;
+}
+
+.docs-sidebar-item.active::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--text-accent, #8b5cf6);
 }
 
 .docs-sidebar-subitems-wrap {
@@ -315,12 +358,7 @@
   flex-direction: column;
   position: relative;
   overflow: hidden;
-  transition: margin-left 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   margin-left: 0;
-}
-
-.docs-container.sidebar-open .docs-content {
-  margin-left: 238px;
 }
 
 .docs-container .preview-body {
@@ -329,19 +367,19 @@
   flex: 1 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 24px 32px 56px 32px !important;
+  padding: 26px 32px 48px 32px !important;
   box-sizing: border-box !important;
-  --font-size-editor: 12px !important;
-  --editor-font-size: 12px !important;
-  font-size: 12px !important;
-  line-height: 1.6 !important;
+  --font-size-editor: 13.5px !important;
+  --editor-font-size: 13.5px !important;
+  font-size: 13.5px !important;
+  line-height: 1.65 !important;
 }
 
 .docs-container .cm-editor,
 .docs-container .cm-content,
 .docs-container .cm-line {
-  font-size: 12px !important;
-  line-height: 1.6 !important;
+  font-size: 13.5px !important;
+  line-height: 1.65 !important;
 }
 
 .docs-container p,
@@ -350,39 +388,66 @@
 .docs-container table,
 .docs-container td,
 .docs-container th {
-  font-size: 12px !important;
-  line-height: 1.6 !important;
+  font-size: 13.5px !important;
+  line-height: 1.65 !important;
 }
 
-/* Headings strictly 14px as requested */
-.docs-container h1,
-.docs-container h2,
-.docs-container h3,
-.docs-container h4,
-.docs-container h5,
-.docs-container h6,
+/* Restore a clear heading hierarchy with vertical rhythm.
+   .cm-line has margin/padding forced to 0 by the editor, so rhythm is
+   applied via padding on the heading line itself. */
 .docs-container .cm-line.cm-atomic-h1,
+.docs-container .cm-line:has(.cm-heading1) {
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  line-height: 1.3 !important;
+  letter-spacing: -0.022em !important;
+  padding-top: 22px !important;
+  padding-bottom: 8px !important;
+}
+
 .docs-container .cm-line.cm-atomic-h2,
+.docs-container .cm-line:has(.cm-heading2) {
+  font-size: 19px !important;
+  font-weight: 650 !important;
+  line-height: 1.35 !important;
+  letter-spacing: -0.016em !important;
+  padding-top: 18px !important;
+  padding-bottom: 6px !important;
+}
+
 .docs-container .cm-line.cm-atomic-h3,
+.docs-container .cm-line:has(.cm-heading3) {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  letter-spacing: -0.01em !important;
+  padding-top: 14px !important;
+  padding-bottom: 4px !important;
+}
+
 .docs-container .cm-line.cm-atomic-h4,
+.docs-container .cm-line:has(.cm-heading4) {
+  font-size: 14.5px !important;
+  font-weight: 600 !important;
+  line-height: 1.45 !important;
+  padding-top: 12px !important;
+  padding-bottom: 3px !important;
+}
+
 .docs-container .cm-line.cm-atomic-h5,
 .docs-container .cm-line.cm-atomic-h6,
-.docs-container .cm-line:has(.cm-heading1),
-.docs-container .cm-line:has(.cm-heading2),
-.docs-container .cm-line:has(.cm-heading3),
-.docs-container .cm-line:has(.cm-heading4),
 .docs-container .cm-line:has(.cm-heading5),
-.docs-container .cm-line:has(.cm-heading6),
-.docs-container .cm-heading,
-.docs-container .cm-header {
-  font-size: 14px !important;
-  font-weight: 650 !important;
-  line-height: 1.4 !important;
-  letter-spacing: -0.015em !important;
+.docs-container .cm-line:has(.cm-heading6) {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+  line-height: 1.5 !important;
+  color: var(--text-muted, #94a3b8) !important;
+  padding-top: 10px !important;
+  padding-bottom: 2px !important;
 }
 
 .docs-container .preview-body::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .docs-container .preview-body::-webkit-scrollbar-track {
@@ -390,16 +455,27 @@
 }
 
 .docs-container .preview-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
-  border-radius: 4px;
+  background: var(--scroll-thumb, var(--border-subtle, rgba(255, 255, 255, 0.14)));
+  border-radius: 8px;
 }
 
 .docs-container .preview-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background: var(--text-faint, rgba(255, 255, 255, 0.28));
+}
+
+/* Consistent reading measure in both normal and maximized modes */
+.docs-container .editor-scroller {
+  width: 100% !important;
+  max-width: 760px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
 }
 
 .docs-container .editor-canvas-wrap {
-  padding-top: 0 !important;
+  width: 100% !important;
+  max-width: 760px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
 }
 
 .docs-container .cm-content {
@@ -407,7 +483,8 @@
   margin: 0 !important;
 }
 
-/* Maximize constraints - Keeps reading width centered and constrained to 850px like Preview.jsx */
+/* Maximize constraints - Keep the same reading measure so line length
+   stays comfortable on large screens. */
 .docs-modal-container.maximized .docs-container .preview-body {
   display: flex !important;
   flex-direction: column !important;
@@ -416,23 +493,23 @@
 
 .docs-modal-container.maximized .docs-container .editor-scroller {
   width: 100% !important;
-  max-width: 850px !important;
+  max-width: 760px !important;
   margin: 0 auto !important;
   display: flex !important;
   flex-direction: column !important;
-  align-items: center !important;
+  align-items: stretch !important;
 }
 
 .docs-modal-container.maximized .docs-container .editor-canvas-wrap {
   width: 100% !important;
-  max-width: 850px !important;
+  max-width: 760px !important;
   margin: 0 auto !important;
-  padding: 0 16px 40px 16px !important;
+  padding: 0 !important;
 }
 
 .docs-modal-container.maximized .docs-nav-footer {
   width: 100% !important;
-  max-width: 850px !important;
+  max-width: 760px !important;
   margin-left: auto !important;
   margin-right: auto !important;
 }
@@ -476,7 +553,7 @@
 }
 
 .docs-nav-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-hover, rgba(127, 127, 127, 0.1));
   border-color: var(--text-accent, #8b5cf6);
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
   transform: translateY(-1px);
@@ -542,4 +619,36 @@
   margin-bottom: 16px;
   opacity: 0.4;
   color: var(--text-accent);
+}
+
+/* Keyboard focus visibility (the global :focus-visible reset removes outlines) */
+.docs-sidebar-item:focus-visible,
+.docs-sidebar-folder:focus-visible,
+.docs-search-input:focus-visible,
+.docs-search-clear:focus-visible,
+.docs-sidebar-toggle-btn:focus-visible,
+.docs-window-btn:focus-visible,
+.docs-modal-header .guide-close-btn:focus-visible,
+.docs-nav-btn:focus-visible {
+  outline: 2px solid rgba(var(--text-accent-rgb, 139, 92, 246), 0.55) !important;
+  outline-offset: -2px !important;
+}
+
+/* Responsive: keep the sidebar usable without crushing the reading column */
+@media (max-width: 760px) {
+  .docs-sidebar {
+    width: 208px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .docs-modal-container,
+  .docs-sidebar,
+  .docs-content,
+  .docs-nav-btn,
+  .docs-nav-arrow-left,
+  .docs-nav-arrow-right {
+    animation: none !important;
+    transition: none !important;
+  }
 }

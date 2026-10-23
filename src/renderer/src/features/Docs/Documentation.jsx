@@ -306,8 +306,8 @@ const Documentation = ({ isOpen, onClose }) => {
             </ToolTip>
             <span
               style={{
-                fontSize: '13px',
-                fontWeight: 600,
+                fontSize: '12.5px',
+                fontWeight: 500,
                 color: 'var(--text-main)',
                 letterSpacing: '-0.01em',
                 background: 'transparent',
@@ -321,8 +321,8 @@ const Documentation = ({ isOpen, onClose }) => {
                 <span style={{ opacity: 0.35, color: 'var(--text-muted)', fontSize: '12px' }}>/</span>
                 <span
                   style={{
-                    fontSize: '12px',
-                    fontWeight: 450,
+                    fontSize: '11.5px',
+                    fontWeight: 400,
                     color: 'var(--text-muted)',
                     maxWidth: '240px',
                     overflow: 'hidden',

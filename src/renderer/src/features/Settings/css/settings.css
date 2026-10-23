@@ -59,8 +59,7 @@
 }
 
 /* === CUSTOM HEADER === */
-.modal-header,
-.settings-modal-header {
+.modal-header {
   height: 48px;
   display: flex;
   align-items: center;
@@ -75,16 +74,27 @@
   -webkit-app-region: no-drag !important;
 }
 
+/* Settings header mirrors the Documentation header exactly */
+.settings-container .settings-modal-header {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 12px;
+  background: var(--bg-panel, #16161e);
+  border-bottom: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  z-index: 10;
+}
+
 .settings-header-left {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   -webkit-app-region: no-drag;
 }
 
 .settings-header-title {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 12.5px;
+  font-weight: 500;
   color: var(--text-main);
   letter-spacing: -0.01em;
 }
@@ -92,12 +102,12 @@
 .settings-header-divider {
   opacity: 0.35;
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .settings-header-subtitle {
-  font-size: 11px;
-  font-weight: 450;
+  font-size: 11.5px;
+  font-weight: 400;
   color: var(--text-muted);
   max-width: 240px;
   overflow: hidden;
@@ -146,6 +156,19 @@
   color: #ffffff !important;
 }
 
+.settings-container .settings-modal-header .settings-sidebar-toggle-btn,
+.settings-container .settings-modal-header .settings-window-btn,
+.settings-container .settings-modal-header .settings-close-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+}
+
+.settings-container .settings-modal-header .settings-close-btn:hover {
+  background: var(--bg-hover, rgba(127, 127, 127, 0.1)) !important;
+  color: var(--text-main, #ffffff) !important;
+}
+
 /* === LAYOUT === */
 .modal-body,
 .settings-layout {
@@ -157,6 +180,10 @@
   color: var(--text-main);
   overflow: hidden;
   position: relative;
+}
+
+.settings-container .settings-layout {
+  height: calc(100% - 36px);
 }
 
 /* === SIDEBAR NAVIGATION (LEFT PANE) === */

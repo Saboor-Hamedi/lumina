@@ -73,16 +73,16 @@
   gap: 6px;
   padding: 4px 8px;
   margin: 5px 8px 3px;
-  background: rgba(0, 0, 0, 0.25);
+  background: var(--bg-input, rgba(127, 127, 127, 0.04));
   border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
-  border-radius: 5px;
+  border-radius: 4px;
   flex-shrink: 0;
-  transition: border-color 0.12s ease;
+  transition: border-color 0.12s ease, background-color 0.12s ease;
 }
 
 .bc-outline-search-box:focus-within {
   border-color: var(--text-accent, #8b5cf6);
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--bg-input, rgba(127, 127, 127, 0.05));
 }
 
 .bc-outline-search-icon {

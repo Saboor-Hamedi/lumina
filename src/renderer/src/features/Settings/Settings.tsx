@@ -211,7 +211,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 onClick={onClose}
                 aria-label="Close"
               >
-                <X size={15} strokeWidth={2} />
+                <X size={17} strokeWidth={2} />
               </button>
             </ToolTip>
           </div>

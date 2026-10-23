@@ -1,95 +1,94 @@
 # Keyboard Shortcuts Guide
 
-Lumina is designed so you can navigate and write smoothly without your hands ever leaving the keyboard. Here are the most helpful shortcuts, explained in simple terms.
+Lumina is designed so you can write and move around without your hands leaving the keyboard. You do not need to memorize everything — start with a few and add more over time.
 
 ---
 
 ## 🔍 Finding & Moving Around
 
-| Shortcut              | What It Does                                                                                                 |
-| :-------------------- | :----------------------------------------------------------------------------------------------------------- |
-| `Ctrl + Shift + P`    | **Command Palette** — Instant search & execution for all commands, actions, and settings (Type `>` to browse)|
-| `Ctrl + .`            | **Zen Mode** — Instant distraction-free mode (snaps away sidebars, tabs, and chrome; press again to restore) |
-| `Ctrl + B`            | **Toggle Primary Sidebar** — Smoothly slide the file explorer and notes list in or out                      |
-| `Ctrl + Space`        | **Spotlight Search** — Open the quick search bar from anywhere to find a note or ask the AI a question       |
-| `Ctrl + P`            | **Quick Note Switcher** — Quickly jump between your recently opened notes                                    |
-| `Ctrl + Shift + F`    | **Search Everywhere** — Search for any word or sentence across all your notes                                |
-| `Ctrl + Shift + .`    | **Jump to Folder Path** — Browse through notes in the current folder using your arrow keys                   |
-| `Ctrl + Left / Right` | **Navigate Breadcrumb Segments** — Step horizontally between Workspace, Folders, Note, and Outline dropdowns |
-| `Ctrl + G`            | **Open Knowledge Graph** — View your notes as an interactive visual map in a dedicated tab                   |
-| `Ctrl + J` or ``Ctrl + ` ``| **Toggle Terminal** — Open or collapse the built-in terminal drawer                                     |
-| `Ctrl + Tab`          | **Next Tab** — Move to the next open note tab                                                                |
-| `Ctrl + Shift + Tab`  | **Previous Tab** — Move to the previous open note tab                                                        |
-| `Ctrl + W`            | **Close Note Tab** — Close the currently active tab                                                          |
-| `Escape`              | **Cancel / Close** — Close any open search bar, popup menu, or theme window                                  |
+| Shortcut | What It Does |
+| :--- | :--- |
+| `Ctrl + Space` | **Spotlight** — Opens quick search from anywhere to find a note or ask the AI a question |
+| `Ctrl + Shift + P` | **Command Palette** — Search every action and setting in the app |
+| `Ctrl + P` | **Quick Switcher** — Jump between your recently opened notes |
+| `Ctrl + Shift + F` | **Search Everywhere** — Find a word or sentence across all your notes |
+| `Ctrl + .` | **Zen Mode** — Hide all panels and chrome; press again to restore everything |
+| `Ctrl + B` | **Toggle Left Sidebar** — Slide the file explorer in or out |
+| `Ctrl + I` | **Toggle Right Sidebar** — Show or hide note details and the outline |
+| `Ctrl + Shift + O` | **Outline** — Open the right sidebar directly on the note outline |
+| `Ctrl + G` | **Knowledge Graph** — View your notes as a visual map in its own tab |
+| `Ctrl + J` | **Terminal** — Open or hide the built-in terminal |
+| `Ctrl + Shift + .` | **Breadcrumbs** — Move through your folder path with the arrow keys |
+| `Ctrl + Tab` | **Next Tab** — Go to the next open note |
+| `Ctrl + Shift + Tab` | **Previous Tab** — Go to the previous open note |
+| `Ctrl + 1` … `Ctrl + 9` | **Jump to a Tab** — Open the first through ninth tab directly |
+| `Ctrl + W` | **Close Tab** — Close the note you are viewing |
+| `Escape` | **Cancel** — Close any search bar, menu, or pop-up |
 
 ---
 
 ## 📝 Creating & Organizing Notes
 
-| Shortcut           | What It Does                                                                                |
-| :----------------- | :------------------------------------------------------------------------------------------ |
-| `Ctrl + N`         | **New Note** — Immediately create a fresh, blank note                                       |
-| `Ctrl + S`         | **Save Note** — Ensure your current changes are saved immediately (Lumina also auto-saves!) |
-| `Ctrl + R`         | **Rename Note** — Quickly give your note a new title                                        |
-| `Ctrl + E`         | **Export Note / PDF** — Open the export panel to save as themed PDF, HTML, or Word doc      |
-| `Ctrl + Shift + D` | **Delete Note** — Move the current note to the trash                                        |
-| `Ctrl + Win + .`   | **Change Note Icon** — Pick an expressive icon for your note or tab                         |
+| Shortcut | What It Does |
+| :--- | :--- |
+| `Ctrl + N` | **New Note** — Create a fresh, blank note |
+| `Ctrl + O` | **Open File** — Open a file from your computer |
+| `Ctrl + S` | **Save** — Save right away (Lumina also saves automatically) |
+| `Ctrl + R` | **Rename** — Give the current note or folder a new name |
+| `Ctrl + Shift + E` | **Reveal in Explorer** — Show the current note in the sidebar |
+| `Win + Shift + .` | **Change Icon** — Pick an icon for the current note or tab |
+| `Ctrl + Shift + D` | **Delete Note** — Move the current note to the trash |
+| `Ctrl + Shift + W` | **Close Window** — Close the Lumina window |
 
 ---
 
-## ✍️ Writing, Styling & Dictating
+## ✍️ Writing
 
-| Shortcut           | What It Does                                                              |
-| :----------------- | :------------------------------------------------------------------------ |
-| `Ctrl + B`         | **Bold Text** — Make your selected words **bold**                         |
-| `Ctrl + I`         | **Italic Text** — Make your selected words _italic_                       |
-| `Ctrl + Shift + X` | **Highlight Text** — Highlight important words with color                 |
-| `Ctrl + Shift + C` | **Code / Monospace** — Style text in a clean monospace font               |
-| `Ctrl + Shift + K` | **Insert Link** — Turn highlighted text into a web link                   |
-| `Shift + Alt + V`  | **Voice Dictation** — Turn on speech-to-text to speak your notes out loud |
-| `Ctrl + V`         | **Smart Paste** — Paste formatted text, lists, tables, or images smoothly |
-| `Ctrl + Shift + V` | **Paste Plain Text** — Paste text without any formatting                  |
-| `Alt + Up / Down`  | **Move Line** — Slide the current sentence or paragraph up or down        |
-| `Tab`              | **Indent** — Indent a line or move a checklist item one level deeper      |
-| `Shift + Tab`      | **Outdent** — Pull an indented line back out                              |
+| Shortcut | What It Does |
+| :--- | :--- |
+| `Ctrl + V` | **Paste with Formatting** — Keep lists, tables, and images when pasting |
+| `Ctrl + Shift + V` | **Paste as Plain Text** — Paste without any formatting |
+| `Ctrl + Shift + H` | **Highlight** — Mark important words with a highlight |
+| `Alt + Up / Down` | **Move Line** — Slide the current line up or down |
+| `Tab` | **Indent** — Move a line or checklist item one level deeper |
+| `Shift + Tab` | **Outdent** — Move an indented line back out |
 
 ---
 
 ## 🧠 Working with Your AI Companion
 
-| Shortcut           | What It Does                                                                               |
-| :----------------- | :----------------------------------------------------------------------------------------- |
-| `Ctrl + Shift + \` | **Open AI Chat** — Open your intelligent assistant in the side panel to chat or brainstorm |
-| `Ctrl + K`         | **Quick AI Composer** — Ask the AI to write, rewrite, or polish text right on your page    |
-| `Ctrl + Space`     | **Ask from Anywhere** — Type a question in the Spotlight bar and press `Enter`             |
+| Shortcut | What It Does |
+| :--- | :--- |
+| `Ctrl + Shift + \` | **AI Chat** — Open the assistant in the side panel |
+| `Ctrl + K` | **Quick AI** — Ask the AI to write, rewrite, or polish text in place |
+| `Ctrl + Space` | **Ask from Anywhere** — Type a question in Spotlight and press `Enter` |
 
 ---
 
 ## 🎨 Personalizing Your Space
 
-| Shortcut                 | What It Does                                                                       |
-| :----------------------- | :--------------------------------------------------------------------------------- |
-| `Ctrl + T`               | **Theme Gallery** — Browse and switch between light, dark, and warm reading themes |
-| `Ctrl + ,`               | **Settings** — Open your personal preferences, AI settings, and backups            |
-| `Ctrl + /` or `Ctrl + ?` | **Shortcuts Help** — Show a quick shortcut reminder card on your screen            |
+| Shortcut | What It Does |
+| :--- | :--- |
+| `Ctrl + T` | **Theme Gallery** — Switch between light, dark, and warm reading themes |
+| `Ctrl + ,` | **Settings** — Open your preferences, AI options, and backups |
+| `Ctrl + /` | **Shortcuts Help** — Show a quick reminder card on screen |
+| `Ctrl + D` | **Documentation** — Open this help library |
 
 ---
 
-## 🗺️ Spatial Canvas Shortcuts
+## 🗺️ Spatial Canvas
 
-| Shortcut               | What It Does                                                                                 |
-| :--------------------- | :------------------------------------------------------------------------------------------- |
-| `Ctrl + Enter`         | **Exit Text Edit Mode** — Commit changes and exit text editing inside shapes or sticky notes |
-| `Escape`               | **Cancel / Deselect** — Exit edit mode or deselect active cards and connectors               |
-| `Alt + D`              | **Duplicate Element** — Duplicate the currently selected card or geometric shape             |
-| `Delete` / `Backspace` | **Delete Selection** — Delete selected shapes, cards, or connector lines                     |
-| `Ctrl + A`             | **Select All** — Select all nodes and connectors on the canvas                               |
-| `Space + Drag`         | **Pan Canvas** — Hold Space and drag with the mouse to pan the viewport                      |
-| `Ctrl + Mouse Wheel`   | **Zoom In / Out** — Smoothly zoom canvas view between 10% and 500%                           |
-| `Shift + Mouse Wheel`  | **Pan Horizontally** — Scroll left and right across the canvas plane                         |
+| Shortcut | What It Does |
+| :--- | :--- |
+| `Ctrl + Enter` | **Finish Editing** — Save text inside a shape or sticky note |
+| `Escape` | **Cancel / Deselect** — Leave editing mode or deselect items |
+| `Alt + D` | **Duplicate** — Copy the selected card or shape |
+| `Delete` / `Backspace` | **Delete** — Remove the selected items |
+| `Ctrl + A` | **Select All** — Select everything on the canvas |
+| `Space + Drag` | **Pan** — Move around the canvas |
+| `Ctrl + Mouse Wheel` | **Zoom** — Move closer or farther away |
+| `Shift + Mouse Wheel` | **Scroll Sideways** — Move left and right across the canvas |
 
 ---
 
-> [!TIP]
-> **Helpful Tip for Beginners:** You don't need to memorize all of these! Start with `Ctrl + N` (New Note) and `Ctrl + Space` (Search), and you'll already be flying through Lumina in no time.
+> **Tip:** You do not need all of these. Learn `Ctrl + N` to create a note, `Ctrl + Space` to find anything, and `Ctrl + .` to focus. That is enough to feel at home in Lumina.
