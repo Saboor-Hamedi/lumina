@@ -152,7 +152,7 @@
 }
 .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: color-mix(in srgb, var(--text-accent) 18%, transparent) !important;
-  border-radius: 2px;
+  border-radius: 0 !important;
   transition: none !important;
 }
 .cm-content ::selection {
@@ -327,7 +327,7 @@
   background: transparent;
   width: auto;
   opacity: 1;
-  border-radius: 4px !important;
+  border-radius: 0 !important;
   transition: border-left-color 0.15s ease, border-left-width 0.15s ease !important;
 }
 

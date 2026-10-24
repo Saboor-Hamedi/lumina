@@ -80,6 +80,7 @@ export class CodeBlockHeaderWidget extends WidgetType {
 
     wrap.addEventListener('mousedown', (e) => {
       if ((e.target as HTMLElement | null)?.closest('.mermaid-edit-btn')) return
+      e.preventDefault()
       const pos = view.posAtDOM(wrap)
       if (pos !== null) {
         view.dispatch({
@@ -97,6 +98,7 @@ export class CodeBlockHeaderWidget extends WidgetType {
 
     langLabel.addEventListener('mousedown', (e) => {
       e.stopPropagation()
+      e.preventDefault()
       const pos = view.posAtDOM(wrap)
       if (pos !== null) {
         const line = view.state.doc.lineAt(pos)

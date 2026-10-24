@@ -86,9 +86,22 @@
   user-select: text !important;
 }
 
-.cm-line.cm-atomic-fenced-code.cm-activeLine {
+.cm-line.cm-atomic-fenced-code.cm-activeLine,
+html .cm-line.cm-atomic-fenced-code.cm-activeLine,
+html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code.cm-activeLine,
+html:not([data-use-active-line-border="true"]) .cm-line.cm-atomic-fenced-code.cm-activeLine,
+html[data-use-active-line-border="false"] .cm-line.cm-atomic-fenced-code.cm-activeLine {
   background: var(--bg-panel, rgba(0, 0, 0, 0.15)) !important;
   background-color: var(--bg-panel, rgba(0, 0, 0, 0.15)) !important;
+  border-left: 1px solid var(--border-dim) !important;
+  border-right: 1px solid var(--border-dim) !important;
+  padding: 2px 10px !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  margin: 0 !important;
+  transform: none !important;
   box-shadow: none !important;
   outline: none !important;
 }
@@ -96,6 +109,16 @@
 html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code.cm-activeLine,
 html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code {
   box-shadow: none !important;
+}
+
+/* Eliminate gap at the very beginning of selection background and under cursor */
+.markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
+.cm-selectionBackground {
+  border-radius: 0 !important;
+}
+
+.cm-cursor {
+  border-radius: 0 !important;
 }
 
 /* Prevent native selection from doubling over CodeMirror's selection layer and eliminate ghosting/white halo */
@@ -205,9 +228,22 @@ html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code {
   border-color: var(--border-dim, #e5e7eb) !important;
 }
 
-[data-theme='light'] .cm-line.cm-atomic-fenced-code.cm-activeLine {
+[data-theme='light'] .cm-line.cm-atomic-fenced-code.cm-activeLine,
+[data-theme='light'] html .cm-line.cm-atomic-fenced-code.cm-activeLine,
+[data-theme='light'] html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code.cm-activeLine,
+[data-theme='light'] html:not([data-use-active-line-border="true"]) .cm-line.cm-atomic-fenced-code.cm-activeLine,
+[data-theme='light'] html[data-use-active-line-border="false"] .cm-line.cm-atomic-fenced-code.cm-activeLine {
   background: var(--bg-panel, #f7f7f7) !important;
   background-color: var(--bg-panel, #f7f7f7) !important;
+  border-left: 1px solid var(--border-dim, #e5e7eb) !important;
+  border-right: 1px solid var(--border-dim, #e5e7eb) !important;
+  padding: 2px 10px !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  margin: 0 !important;
+  transform: none !important;
   box-shadow: none !important;
   outline: none !important;
 }
@@ -216,13 +252,20 @@ html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code {
 [data-theme='light'] .cm-line.cm-atomic-fenced-code:last-child {
   background: var(--bg-panel, #f7f7f7) !important;
   border-color: var(--border-dim, #e5e7eb) !important;
+  border-left: 1px solid var(--border-dim, #e5e7eb) !important;
+  border-right: 1px solid var(--border-dim, #e5e7eb) !important;
   color: var(--text-faint, #94a3b8) !important;
+  padding: 2px 10px !important;
 }
 
 [data-theme='light'] .cm-line.cm-atomic-fenced-code:has(+ :not(.cm-atomic-fenced-code)).cm-activeLine,
 [data-theme='light'] .cm-line.cm-atomic-fenced-code:last-child.cm-activeLine {
   background: var(--bg-panel, #f7f7f7) !important;
   background-color: var(--bg-panel, #f7f7f7) !important;
+  border-bottom: 1px solid var(--border-dim, #e5e7eb) !important;
+  border-left: 1px solid var(--border-dim, #e5e7eb) !important;
+  border-right: 1px solid var(--border-dim, #e5e7eb) !important;
+  padding: 2px 10px !important;
   box-shadow: none !important;
 }
 
