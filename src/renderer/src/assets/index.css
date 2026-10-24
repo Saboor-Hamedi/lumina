@@ -71,6 +71,13 @@
   --text-accent-hover: #7c3aed;
   --text-accent-rgb: 139, 92, 246;
 
+  --atomic-editor-fg: var(--text-main);
+  --atomic-editor-fg-muted: var(--text-muted);
+  --atomic-editor-accent: var(--text-accent);
+  --atomic-editor-link: var(--text-accent);
+  --atomic-editor-border: var(--border-dim);
+  --atomic-editor-bg-surface: var(--bg-panel);
+
   --border-dim: rgba(255, 255, 255, 0.06);
   --border-subtle: rgba(255, 255, 255, 0.12);
   --border-card: rgba(255, 255, 255, 0.05);

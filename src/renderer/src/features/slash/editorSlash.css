@@ -127,7 +127,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-active, rgba(255, 255, 255, 0.06));
+  background: var(--bg-active, rgba(125, 125, 125, 0.1));
   border-radius: 2px !important;
   color: var(--text-muted, #94a3b8);
   flex-shrink: 0;
@@ -136,7 +136,7 @@
 
 .editor-slash-item.is-selected .editor-slash-icon-wrap {
   background: var(--text-accent, #a78bfa);
-  color: #ffffff;
+  color: var(--bg-panel, #ffffff);
 }
 
 .editor-slash-content {
@@ -149,12 +149,12 @@
 .editor-slash-label {
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--text-main, #f8fafc);
+  color: var(--text-main);
   line-height: 1.3;
 }
 
 .editor-slash-item.is-selected .editor-slash-label {
-  color: var(--text-main, #ffffff);
+  color: var(--text-main);
 }
 
 .editor-slash-desc {

@@ -39,26 +39,26 @@ export interface AccentColorProps {
 }
 
 const PRESET_PALETTE: readonly string[] = [
-  '#40bafa',
-  '#3b82f6',
-  '#2563eb',
-  '#06b6d4',
-  '#14b8a6',
-  '#10b981',
-  '#22c55e',
-  '#84cc16',
-  '#eab308',
-  '#f59e0b',
-  '#f97316',
-  '#ef4444',
-  '#f43f5e',
-  '#ec4899',
-  '#d946ef',
-  '#a855f7',
-  '#8b5cf6',
-  '#6366f1',
-  '#64748b',
-  '#ffffff'
+  '#2563eb', // Royal Cobalt
+  '#0284c7', // Sky Azure
+  '#0891b2', // Pacific Cyan
+  '#0d9488', // Teal Aegean
+  '#059669', // Emerald Jade
+  '#10b981', // Fresh Mint
+  '#65a30d', // Olive Meadow
+  '#ca8a04', // Antique Brass
+  '#d97706', // Honey Amber
+  '#ea580c', // Tangerine
+  '#e11d48', // Crimson Rose
+  '#f43f5e', // Coral Flame
+  '#db2777', // Blossom Pink
+  '#c026d3', // Fuchsia Orchid
+  '#9333ea', // Amethyst Purple
+  '#7c3aed', // Lumina Violet
+  '#6366f1', // Iris Indigo
+  '#4f46e5', // Deep Twilight
+  '#c2410c', // Warm Terracotta
+  '#475569'  // Slate Steel
 ]
 
 interface PresetSwatchProps {
@@ -280,6 +280,8 @@ export const AccentColor: React.FC<AccentColorProps> = ({
       if (previewProperty && hex) {
         document.documentElement.style.setProperty(previewProperty, hex)
         if (previewProperty === '--text-accent') {
+          document.documentElement.style.setProperty('--atomic-editor-accent', hex)
+          document.documentElement.style.setProperty('--atomic-editor-link', hex)
           const clean = hex.replace('#', '')
           if (clean.length === 6) {
             const r = parseInt(clean.substring(0, 2), 16)

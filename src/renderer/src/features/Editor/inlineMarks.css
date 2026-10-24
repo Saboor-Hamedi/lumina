@@ -11,11 +11,11 @@
 .cm-atomic-strong,
 .cm-strong {
   font-weight: 700;
-  color: var(--atomic-editor-fg, #dcddde);
+  color: var(--atomic-editor-fg, var(--text-main, #dcddde));
 }
 
 .cm-atomic-strong-mark {
-  color: var(--atomic-editor-fg-faint, #666);
+  color: var(--atomic-editor-fg-faint, var(--text-faint, #666));
   font-weight: 700;
 }
 
@@ -26,7 +26,7 @@
 }
 
 .cm-atomic-em-mark {
-  color: var(--atomic-editor-fg-faint, #666);
+  color: var(--atomic-editor-fg-faint, var(--text-faint, #666));
   font-style: italic;
 }
 
@@ -34,11 +34,11 @@
 .cm-atomic-strike,
 .cm-strikethrough {
   text-decoration: line-through;
-  color: var(--atomic-editor-fg-muted, #888);
+  color: var(--atomic-editor-fg-muted, var(--text-muted, #888));
 }
 
 .cm-atomic-strike-mark {
-  color: var(--atomic-editor-fg-faint, #666);
+  color: var(--atomic-editor-fg-faint, var(--text-faint, #666));
   text-decoration: line-through;
 }
 

@@ -9,7 +9,7 @@ const MenuItem = ({ opt, onClose }) => {
   const submenuRef = useRef(null)
   const [isHovered, setIsHovered] = useState(false)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isHovered && hasChildren && itemRef.current && submenuRef.current) {
       const parentRect = itemRef.current.getBoundingClientRect()
       const submenuRect = submenuRef.current.getBoundingClientRect()
@@ -18,6 +18,17 @@ const MenuItem = ({ opt, onClose }) => {
         setIsFlipped(true)
       } else {
         setIsFlipped(false)
+      }
+
+      const overflowBottom = parentRect.top + submenuRect.height - (window.innerHeight - 10)
+      if (overflowBottom > 0) {
+        const targetTop = -overflowBottom - 3
+        const maxShiftUp = -(parentRect.top - 10)
+        submenuRef.current.style.top = `${Math.max(maxShiftUp, targetTop)}px`
+        submenuRef.current.style.bottom = 'auto'
+      } else {
+        submenuRef.current.style.top = '-3px'
+        submenuRef.current.style.bottom = 'auto'
       }
     }
   }, [isHovered, hasChildren])

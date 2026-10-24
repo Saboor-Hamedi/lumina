@@ -157,6 +157,22 @@ export const applyTheme = (themeId: string): void => {
     computedColors[varName] = finalVal
   })
 
+  // Ensure editor and dynamic hover tokens match current theme foreground and accents
+  const textMain = computedColors['--text-main'] || theme.colors['--text-main'] || '#e2e8f0'
+  const textMuted = computedColors['--text-muted'] || theme.colors['--text-muted'] || '#94a3b8'
+  const textAccent = computedColors['--text-accent'] || theme.colors['--text-accent'] || '#8b5cf6'
+  const borderDim = computedColors['--border-dim'] || theme.colors['--border-dim'] || 'rgba(255, 255, 255, 0.06)'
+  const bgPanel = computedColors['--bg-panel'] || theme.colors['--bg-panel'] || '#161622'
+
+  root.style.setProperty('--atomic-editor-fg', textMain)
+  root.style.setProperty('--atomic-editor-fg-muted', textMuted)
+  root.style.setProperty('--atomic-editor-accent', textAccent)
+  root.style.setProperty('--atomic-editor-link', textAccent)
+  root.style.setProperty('--atomic-editor-border', borderDim)
+  root.style.setProperty('--atomic-editor-bg-surface', bgPanel)
+  root.style.setProperty('--bg-hover', `color-mix(in srgb, ${textMain} 8%, transparent)`)
+  root.style.setProperty('--bg-input', `color-mix(in srgb, ${textMain} 4%, transparent)`)
+
   // Set data attribute
   root.setAttribute('data-theme', themeId)
 

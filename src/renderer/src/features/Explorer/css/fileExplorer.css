@@ -526,23 +526,23 @@
 
 .tree-item:hover,
 .start-section .tree-item:hover {
-  background: rgba(255, 255, 255, 0.055);
+  background: var(--bg-hover, color-mix(in srgb, var(--text-main) 7%, transparent));
 }
 
 .tree-item:active,
 .start-section .tree-item:active {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-active, color-mix(in srgb, var(--text-accent) 14%, transparent));
 }
 
 .tree-item.active,
 .start-section .tree-item.active {
-  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.14) !important;
-  color: var(--text-main, #ffffff);
+  background: var(--bg-active, rgba(var(--text-accent-rgb, 139, 92, 246), 0.14)) !important;
+  color: var(--text-main);
 }
 
 .tree-item.active:hover,
 .start-section .tree-item.active:hover {
-  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.18) !important;
+  background: color-mix(in srgb, var(--text-accent) 20%, transparent) !important;
 }
 
 .tree-item .item-icon-wrap,
@@ -560,7 +560,7 @@
 
 .tree-item:hover .item-icon-wrap,
 .start-section .tree-item:hover .item-icon-wrap {
-  color: var(--text-main, #f8fafc);
+  color: var(--text-main);
 }
 
 .tree-item.active .item-icon-wrap,
@@ -586,7 +586,7 @@
   text-overflow: ellipsis;
   font-size: 12px;
   font-weight: 450;
-  color: var(--text-main, #f1f5f9);
+  color: var(--text-main);
   line-height: 1.2;
   display: block;
   width: 100%;
