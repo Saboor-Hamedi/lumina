@@ -151,12 +151,12 @@
   pointer-events: none !important;
 }
 .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
-  background-color: color-mix(in srgb, var(--text-accent) 35%, transparent) !important;
+  background-color: color-mix(in srgb, var(--text-accent) 18%, transparent) !important;
   border-radius: 2px;
   transition: none !important;
 }
 .cm-content ::selection {
-  background: color-mix(in srgb, var(--text-accent) 35%, transparent) !important; 
+  background: color-mix(in srgb, var(--text-accent) 18%, transparent) !important; 
 }
 
 /* Ensure Mermaid diagrams and Images visually reflect Ctrl+A / range selection */
@@ -166,7 +166,7 @@
 .cm-mermaid-widget::selection,
 .cm-image-container::selection,
 .cm-image-container img::selection {
-  background-color: color-mix(in srgb, var(--text-accent) 25%, transparent) !important;
+  background-color: color-mix(in srgb, var(--text-accent) 18%, transparent) !important;
   outline: 1px solid var(--text-accent);
   outline-offset: 1px;
 }
@@ -176,7 +176,7 @@
 }
 
 .cm-mermaid-widget *::selection {
-  background: color-mix(in srgb, var(--text-accent) 35%, transparent) !important;
+  background: color-mix(in srgb, var(--text-accent) 18%, transparent) !important;
 }
 
 .markdown-editor {
@@ -203,7 +203,7 @@
 /* Override cursor color and width from app caret settings */
 .markdown-editor .cm-cursor,
 .cm-cursor {
-  max-height: 1.5em !important;
+  max-height: none !important;
 }
 
 /* --- Table Stability: Fill container 100% without right-side gaps --- */
@@ -778,7 +778,7 @@
   justify-content: center;
   cursor: pointer;
   color: var(--text-muted);
-  transition: all 0.12s ease;
+  transition: all 120ms cubic-bezier(0.16, 1, 0.3, 1);
   padding: 0 7px;
   gap: 5px;
   font-size: 11px;
@@ -1085,16 +1085,17 @@
 
 .native-dropdown-menu {
   position: fixed;
-  min-width: 240px;
+  min-width: 190px;
   max-width: calc(100vw - 16px);
-  background: var(--bg-panel);
-  border: 1px solid var(--border-subtle);
-  border-radius: 2px !important;
-  padding: 4px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  background: color-mix(in srgb, var(--bg-panel) 85%, transparent);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px !important;
+  padding: 3px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   z-index: 100000;
-  backdrop-filter: blur(20px);
-  animation: nativeMenuAppear 0.15s cubic-bezier(0, 0, 0.2, 1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: nativeMenuAppear 0.12s cubic-bezier(0.16, 1, 0.3, 1);
   transform-origin: top right;
   overflow-x: auto;
   overflow-y: hidden;
@@ -1114,13 +1115,13 @@
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 10px;
-  font-size: 12px;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 11.5px;
   color: var(--text-main);
   cursor: pointer;
-  border-radius: 2px !important;
-  transition: background 0.12s ease;
+  border-radius: 4px !important;
+  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
 }
 
@@ -1211,18 +1212,19 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  background: var(--bg-active);
+  background: color-mix(in srgb, var(--text-accent) 6%, transparent);
   color: var(--text-accent);
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-size: 9px;
-  border: 1px solid rgba(var(--text-accent-rgb), 0.15);
-  transition: all 0.2s;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 9.5px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: all 120ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .tag-pill:hover {
-  background: rgba(var(--text-accent-rgb), 0.15);
-  border-color: rgba(var(--text-accent-rgb), 0.3);
+  background: color-mix(in srgb, var(--text-accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--text-accent) 20%, transparent);
 }
 
 .tag-remove {

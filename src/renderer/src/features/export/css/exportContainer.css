@@ -41,19 +41,33 @@
 .export-container {
   display: flex;
   flex-direction: column;
-  width: 880px;
-  height: 74vh;
-  max-width: 95vw;
+  width: 900px;
+  height: 76vh;
+  max-width: 94vw;
   min-height: 480px;
   max-height: 82vh;
   background: var(--bg-panel);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
   border-radius: 12px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
   overflow: hidden;
   color: var(--text-main);
-  animation: exportPop 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  animation: exportPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), height 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.export-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent 5%, var(--text-accent) 30%, var(--text-accent) 70%, transparent 95%);
+  opacity: 0.7;
+  pointer-events: none;
+  z-index: 100;
 }
 
 .export-container.is-maximized {
@@ -66,17 +80,21 @@
   box-shadow: none !important;
 }
 
-/* ---- Header ---- */
+/* ---- Header (Matches Documentation.jsx modal header) ---- */
 .export-header {
-  height: 50px;
+  height: 36px;
+  min-height: 36px;
+  max-height: 36px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
-  background: var(--bg-sidebar);
+  padding: 0 12px;
+  background: var(--bg-panel);
   border-bottom: 1px solid var(--border-dim);
   user-select: none;
+  cursor: default !important;
+  z-index: 10;
 }
 
 .export-header-actions {
@@ -86,85 +104,118 @@
 }
 
 .export-icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: none;
-  border-radius: 7px;
+  border-radius: 6px;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .export-icon-btn:hover:not(:disabled) {
-  background: var(--bg-active);
+  background: var(--bg-hover, rgba(127, 127, 127, 0.1));
   color: var(--text-main);
 }
 
 .export-header-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
-.export-header-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.export-sidebar-toggle-btn {
   width: 26px;
   height: 26px;
-  border-radius: 7px;
-  color: var(--text-accent);
-  background: color-mix(in srgb, var(--text-accent) 12%, transparent);
-  flex-shrink: 0;
-}
-
-.export-header-titles {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  border-radius: 6px;
   display: flex;
-  flex-direction: column;
-  min-width: 0;
-  line-height: 1.2;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.export-header-title {
-  font-size: 13px;
-  font-weight: 600;
+.export-sidebar-toggle-btn:hover {
+  background: var(--bg-hover, rgba(127, 127, 127, 0.1));
   color: var(--text-main);
 }
 
-.export-header-subtitle {
-  font-size: 11px;
+.export-header-title {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+
+.export-header-divider {
+  opacity: 0.35;
   color: var(--text-muted);
-  max-width: 420px;
+  font-size: 12px;
+  user-select: none;
+}
+
+.export-header-subtitle {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--text-muted);
+  max-width: 320px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.export-close {
-  display: inline-flex;
+.export-header-actions,
+.export-header-right {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
+  gap: 6px;
+}
+
+.export-header-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  cursor: default;
+  transition: color 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.export-header-stat:hover {
+  color: var(--text-main);
+}
+
+.export-close {
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: none;
-  border-radius: 7px;
+  border-radius: 6px;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .export-close:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.14);
+  background: rgba(239, 68, 68, 0.15);
   color: #f87171;
 }
 
@@ -195,15 +246,19 @@
 }
 
 .export-formats::-webkit-scrollbar {
-  width: 10px;
+  width: 4px;
 }
 .export-formats::-webkit-scrollbar-track {
   background: transparent;
 }
 .export-formats::-webkit-scrollbar-thumb {
-  background: var(--border-subtle);
-  border-radius: 10px;
-  border: 3px solid var(--bg-sidebar);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  border: none;
+  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.export-formats::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .export-source-card {
@@ -255,22 +310,23 @@
   color: var(--text-faint);
 }
 
-/* Rich format card (subtle & ergonomic) */
+/* Sleek, compact format row (no bulky info/descriptions) */
 .export-format-card {
   display: flex;
-  align-items: flex-start;
-  gap: 11px;
+  align-items: center;
+  gap: 8px;
   width: 100%;
-  padding: 9px 11px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 10px;
   text-align: left;
   border: 1px solid transparent;
-  border-radius: 9px;
+  border-radius: 6px;
   background: transparent;
   color: var(--text-main);
   cursor: pointer;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease;
+  transition: all 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
 
 .export-format-card:hover:not(:disabled) {
@@ -292,13 +348,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-card);
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
   flex-shrink: 0;
-  transition: all 0.15s ease;
+}
+
+.export-format-icon svg {
+  width: 14px;
+  height: 14px;
 }
 
 .export-format-card.active .export-format-icon {
@@ -308,10 +368,11 @@
 
 .export-format-text {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
   min-width: 0;
-  flex: 1;
+  gap: 6px;
 }
 
 .export-format-title-row {
@@ -323,17 +384,20 @@
 }
 
 .export-format-title {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .export-format-ext-pill {
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 600;
   font-family: var(--font-mono, monospace);
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: 3px;
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-muted);
   border: 1px solid var(--border-subtle);
@@ -347,19 +411,17 @@
 }
 
 .export-format-desc {
-  font-size: 11.5px;
-  line-height: 1.4;
-  color: var(--text-muted);
+  display: none !important;
 }
 
-/* ---- Document Options & Toggle Switch ---- */
+/* ---- Document Options & Toggle Switch (Prominently placed at the TOP) ---- */
 .export-options-group {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border-dim);
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-dim);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .export-option-row {
@@ -388,14 +450,13 @@
 }
 
 .export-option-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text-main);
 }
 
 .export-option-desc {
-  font-size: 10.5px;
-  color: var(--text-muted);
+  display: none !important;
 }
 
 /* ---- Preview ---- */
@@ -756,4 +817,12 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Sidebar Toggle State */
+.export-body.sidebar-closed .export-formats {
+  display: none !important;
+}
+.export-body.sidebar-closed .export-preview-pane {
+  flex: 1 1 100% !important;
 }

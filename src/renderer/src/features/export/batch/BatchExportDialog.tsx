@@ -11,14 +11,16 @@ import {
   Layers,
   Files,
   Copy,
-  Maximize2,
-  Minimize2,
+  Square,
+  PanelLeftClose,
+  PanelLeftOpen,
   ChevronDown,
   FileText,
   Check,
   ArrowLeft,
   Archive
 } from 'lucide-react'
+import ToolTip from '../../../components/atoms/ToolTip'
 import { EXPORT_FORMATS, getFormat, type ExportFormat } from '../formats'
 import { PREVIEW_COMPONENTS } from '../previews'
 import Toggle from '../../../components/toggle/Toggle'
@@ -123,6 +125,7 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
   const [format, setFormat] = useState<BatchFormat>(initialFormat)
   const [mode, setMode] = useState<BatchMode>('combined')
   const [isMaximized, setIsMaximized] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [showNotesList, setShowNotesList] = useState(false)
   const [selectedNoteIndex, setSelectedNoteIndex] = useState(0)
   const [exporting, setExporting] = useState(false)
@@ -459,43 +462,65 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <header
-          className="export-header"
+          className="export-header docs-modal-header"
           onDoubleClick={() => setIsMaximized((prev) => !prev)}
+          style={{ cursor: 'default' }}
         >
-          <div className="export-header-left">
-            <span className="export-header-badge">
-              <Download size={14} strokeWidth={2} />
-            </span>
-            <div className="export-header-titles">
-              <span className="export-header-title">Batch Export</span>
-              <span className="export-header-subtitle">
-                {count} {count === 1 ? 'note' : 'notes'} selected
-                {mode === 'separate' && notes[selectedNoteIndex] && (
-                  <> &bull; Previewing: {notes[selectedNoteIndex]?.title || 'Untitled'}</>
+          <div className="docs-header-left export-header-left">
+            <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
+              <button
+                type="button"
+                className="docs-sidebar-toggle-btn export-sidebar-toggle-btn"
+                onClick={() => setIsSidebarOpen((prev) => !prev)}
+                aria-label={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
+              >
+                {isSidebarOpen ? (
+                  <PanelLeftClose size={15} strokeWidth={2} />
+                ) : (
+                  <PanelLeftOpen size={15} strokeWidth={2} />
                 )}
-              </span>
-            </div>
+              </button>
+            </ToolTip>
+            <span className="export-header-title">Batch Export</span>
+            <span className="export-header-divider">/</span>
+            <span className="export-header-subtitle">
+              {count} {count === 1 ? 'note' : 'notes'}
+              {folderName ? ` in ${folderName}` : ''}
+            </span>
           </div>
 
-          <div className="export-header-actions">
-            <button
-              type="button"
-              className="export-icon-btn export-maximize"
-              aria-label={isMaximized ? 'Restore down' : 'Maximize'}
-              title={isMaximized ? 'Restore down' : 'Maximize'}
-              onClick={() => setIsMaximized((prev) => !prev)}
-            >
-              {isMaximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-            </button>
-            <button
-              type="button"
-              className="export-close"
-              aria-label="Close"
-              onClick={onClose}
-              disabled={exporting}
-            >
-              <X size={16} />
-            </button>
+          <div className="docs-header-right export-header-right export-header-actions">
+            <ToolTip text={`${count} notes selected`} position="bottom">
+              <div className="docs-header-stat export-header-stat">
+                <Files size={12} />
+                <span>{count} notes</span>
+              </div>
+            </ToolTip>
+            <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
+              <button
+                type="button"
+                className="docs-window-btn export-icon-btn export-maximize"
+                onClick={() => setIsMaximized((prev) => !prev)}
+                aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
+              >
+                {isMaximized ? (
+                  <Copy size={13} strokeWidth={2} />
+                ) : (
+                  <Square size={13} strokeWidth={2} />
+                )}
+              </button>
+            </ToolTip>
+            <ToolTip text="Close (Esc)" position="bottom">
+              <button
+                type="button"
+                className="guide-close-btn export-close"
+                onClick={onClose}
+                disabled={exporting}
+                aria-label="Close Export (Esc)"
+              >
+                <X size={15} />
+              </button>
+            </ToolTip>
           </div>
         </header>
 
@@ -563,20 +588,41 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
           </div>
         ) : (
           <>
-            <div className="export-body">
-              <aside className="export-formats" aria-label="Export options">
-                {/* Note Source Details Chip (Identical to ExportContainer) */}
-                <div className="export-source-card">
-                  <div className="export-source-card-top">
-                    <FileText size={13} className="export-source-icon" />
-                    <span className="export-source-title">{count === 1 ? '1 Note Selected' : `${count} Notes Selected`}</span>
+            <div className={`export-body ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+              {isSidebarOpen && (
+                <aside className="export-formats" aria-label="Export options">
+                {/* Options / Toggle switches at the TOP */}
+                {((format === 'pdf' || format === 'docs' || format === 'html') || (mode === 'separate' && format !== 'zip')) && (
+                  <div className="export-options-group">
+                    <span className="export-formats-heading">Options</span>
+                    {(format === 'pdf' || format === 'docs' || format === 'html') && (
+                      <div className="export-option-row" onClick={() => setIncludeToc((prev) => !prev)}>
+                        <div className="export-option-label">
+                          <span className="export-option-title">Table of Contents</span>
+                        </div>
+                        <Toggle
+                          checked={includeToc}
+                          onCheckedChange={setIncludeToc}
+                          disabled={exporting}
+                          ariaLabel="Include Table of Contents"
+                        />
+                      </div>
+                    )}
+                    {mode === 'separate' && (format as string) !== 'zip' && (
+                      <div className="export-option-row" onClick={() => setCompressZip((prev) => !prev)}>
+                        <div className="export-option-label">
+                          <span className="export-option-title">Compress as ZIP</span>
+                        </div>
+                        <Toggle
+                          checked={compressZip}
+                          onCheckedChange={setCompressZip}
+                          disabled={exporting}
+                          ariaLabel="Compress as ZIP Archive"
+                        />
+                      </div>
+                    )}
                   </div>
-                  <div className="export-source-stats">
-                    <span>{noteStats.words} words</span>
-                    <span>&bull;</span>
-                    <span>{noteStats.chars} chars</span>
-                  </div>
-                </div>
+                )}
 
                 {/* Destination Mode Segmented Control or Archive Badge */}
                 <span className="export-formats-heading">Destination Mode</span>
@@ -591,7 +637,7 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                       disabled={exporting}
                     >
                       <Layers size={13} strokeWidth={2} />
-                      <span>Merged File</span>
+                      <span>Merged</span>
                     </button>
                     <button
                       type="button"
@@ -602,72 +648,19 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                       disabled={exporting}
                     >
                       <Files size={13} strokeWidth={2} />
-                      <span>Separate Files</span>
+                      <span>Separate</span>
                     </button>
                   </div>
                 ) : (
-                  <div className="batch-zip-mode-badge" role="status">
-                    <Archive size={15} strokeWidth={2} className="batch-zip-mode-icon" />
+                  <div className="batch-zip-mode-badge">
+                    <Archive size={14} strokeWidth={2} className="batch-zip-mode-icon" />
                     <div className="batch-zip-mode-content">
-                      <span className="batch-zip-mode-title">Individual Notes Archive</span>
-                      <span className="batch-zip-mode-desc">
-                        {count} separate .md files inside one .zip
-                      </span>
+                      <span className="batch-zip-mode-title">ZIP Archive</span>
                     </div>
                   </div>
                 )}
 
-                {/* Collapsible Included Notes Drawer */}
-                <div className="batch-notes-drawer">
-                  <button
-                    type="button"
-                    className="batch-notes-drawer-toggle"
-                    onClick={() => setShowNotesList((prev) => !prev)}
-                    aria-expanded={showNotesList}
-                  >
-                    <span className="batch-notes-toggle-left">
-                      <FileText size={13} className="batch-notes-icon" />
-                      <span>Included Notes</span>
-                      <span className="batch-notes-count-badge">{count}</span>
-                    </span>
-                    <ChevronDown
-                      size={14}
-                      className={`batch-chevron ${showNotesList ? 'expanded' : ''}`}
-                    />
-                  </button>
-
-                  {showNotesList && (
-                    <div className="batch-notes-list">
-                      {notes.map((n, idx) => {
-                        const canInspectIndividual = mode === 'separate' || format === 'zip'
-                        const isViewing = canInspectIndividual && selectedNoteIndex === idx
-                        return (
-                          <button
-                            key={n.id || idx}
-                            type="button"
-                            className={`batch-note-row ${isViewing ? 'active' : ''}`}
-                            onClick={() => {
-                              if (canInspectIndividual) setSelectedNoteIndex(idx)
-                            }}
-                            title={
-                              canInspectIndividual
-                                ? `Click to preview "${n.title || 'Untitled'}"`
-                                : n.title || 'Untitled'
-                            }
-                          >
-                            <span className="batch-note-row-idx">{idx + 1}</span>
-                            <span className="batch-note-row-title">{n.title || 'Untitled'}</span>
-                            {isViewing && (
-                              <span className="batch-note-row-pill">Previewing</span>
-                            )}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <span className="export-formats-heading">Available Formats</span>
+                <span className="export-formats-heading">Formats</span>
                 {EXPORT_FORMATS.map((f) => (
                   <button
                     key={f.id}
@@ -688,50 +681,13 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                       {f.icon}
                     </span>
                     <span className="export-format-text">
-                      <span className="export-format-title-row">
-                        <span className="export-format-title">{f.title}</span>
-                        <span className="export-format-ext-pill">{f.ext}</span>
-                      </span>
-                      <span className="export-format-desc">{f.description}</span>
+                      <span className="export-format-title">{f.title}</span>
+                      <span className="export-format-ext-pill">{f.ext}</span>
                     </span>
                   </button>
                 ))}
-
-                {((format === 'pdf' || format === 'docs' || format === 'html') || (mode === 'separate' && format !== 'zip')) && (
-                  <div className="export-options-group">
-                    <span className="export-formats-heading">Options</span>
-                    {(format === 'pdf' || format === 'docs' || format === 'html') && (
-                      <div className="export-option-row" onClick={() => setIncludeToc((prev) => !prev)}>
-                        <div className="export-option-label">
-                          <span className="export-option-title">Include Table of Contents</span>
-                          <span className="export-option-desc">Add navigation index at start</span>
-                        </div>
-                        <Toggle
-                          checked={includeToc}
-                          onCheckedChange={setIncludeToc}
-                          disabled={exporting}
-                          ariaLabel="Include Table of Contents"
-                        />
-                      </div>
-                    )}
-                    {mode === 'separate' && (format as string) !== 'zip' && (
-                      <div className="export-option-row" onClick={() => setCompressZip((prev) => !prev)}>
-                        <div className="export-option-label">
-                          <span className="export-option-title">Compress as ZIP Archive</span>
-                          <span className="export-option-desc">Package notes into a single .zip file</span>
-                        </div>
-                        <Toggle
-                          checked={compressZip}
-                          onCheckedChange={setCompressZip}
-                          disabled={exporting}
-                          ariaLabel="Compress as ZIP Archive"
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
               </aside>
-
+              )}
               <section className="export-preview-pane" aria-label="Preview">
                 <PreviewComponent
                   html={previewData.html}

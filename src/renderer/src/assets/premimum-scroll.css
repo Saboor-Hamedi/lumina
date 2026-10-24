@@ -5,8 +5,8 @@
 
 /* Universal sleek scrollbars across all scrollable containers */
 *::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 4px;
+  height: 4px;
 }
 
 *::-webkit-scrollbar-track {
@@ -14,14 +14,14 @@
 }
 
 *::-webkit-scrollbar-thumb {
-  background: var(--border-subtle, rgba(255, 255, 255, 0.12));
-  border-radius: 10px;
-  border: 3px solid var(--bg-app, #16161e);
-  transition: background 0.2s ease;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  border: none;
+  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: var(--text-faint, rgba(255, 255, 255, 0.28));
+  background: rgba(255, 255, 255, 0.22);
 }
 
 *::-webkit-scrollbar-corner {

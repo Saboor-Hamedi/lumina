@@ -56,15 +56,15 @@
 
 /* Activity bar: 5px gutter separating it from the sidebar / editor */
 [data-modern-ui='true'] .shell-body > .lumina-activity-bar {
-  margin-right: 5px !important;
+  margin-right: 0 !important;
 }
 
 /* Resizers: the 5px gutter between the sidebars and the editor (gutter backdrop
  * shows through); accent highlight on hover keeps the split handle discoverable. */
 [data-modern-ui='true'] .sidebar-resizer {
-  width: 5px;
-  background: transparent;
-  transition: background 0.15s ease, width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 1px !important;
+  background: var(--border-dim) !important;
+  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1), width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 20;
 }
 

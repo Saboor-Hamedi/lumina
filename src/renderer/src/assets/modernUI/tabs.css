@@ -85,7 +85,7 @@
   font-weight: 500;
   cursor: pointer;
   position: relative;
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
   flex-shrink: 0 !important;
   user-select: none;
@@ -129,7 +129,7 @@
   align-items: center !important;
   justify-content: center !important;
   opacity: 0.75;
-  transition: opacity 0.12s ease, color 0.12s ease;
+  transition: opacity 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1);
   line-height: 1;
   vertical-align: middle;
 }
@@ -169,13 +169,15 @@
 }
 
 /* Active Buffer: Clean contrast background + 2px accent bottom border */
+/* Active Buffer: Clean contrast background + refined 1.5px gradient hairline */
 .workspace-tab.active,
 [data-modern-ui='true'] .workspace-tab.active {
   background: var(--bg-editor, var(--bg-app)) !important;
   color: var(--text-main) !important;
   font-weight: 500;
-  border-bottom: 2px solid var(--text-accent) !important;
+  border-bottom: 2px solid transparent !important;
   box-shadow: none !important;
+  position: relative;
 }
 
 .workspace-tab.active:hover,
@@ -184,10 +186,21 @@
 }
 
 .workspace-tab.active::before,
-.workspace-tab.active::after,
-[data-modern-ui='true'] .workspace-tab.active::before,
-[data-modern-ui='true'] .workspace-tab.active::after {
+[data-modern-ui='true'] .workspace-tab.active::before {
   display: none !important;
+}
+
+.workspace-tab.active::after,
+[data-modern-ui='true'] .workspace-tab.active::after {
+  content: '' !important;
+  display: block !important;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent 4%, var(--text-accent) 24%, var(--text-accent) 76%, transparent 96%) !important;
+  pointer-events: none;
 }
 
 /* Pinned Tabs: Compact buffer block */
@@ -264,7 +277,7 @@
   padding: 0 !important;
   opacity: 0 !important;
   pointer-events: none;
-  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+  transition: opacity 120ms cubic-bezier(0.16, 1, 0.3, 1), background 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .workspace-tab:hover .tab-close-btn,

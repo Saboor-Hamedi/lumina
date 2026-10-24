@@ -38,17 +38,28 @@
 
 .sidebar-resizer {
   position: relative;
-  width: 5px;
+  width: 1px !important;
   flex-shrink: 0;
   cursor: ew-resize;
-  background: transparent;
+  background: var(--border-dim) !important;
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
   touch-action: none;
   align-self: stretch;
-  transition: width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1), width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar-resizer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  right: -3px;
+  cursor: ew-resize;
+  z-index: 1;
 }
 
 .sidebar-resizer.closed,
@@ -69,19 +80,7 @@
 
 /* Elegant micro dots centered cleanly inside the 5px gap without border or background */
 .resizer-knob {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  width: 3px;
-  height: 16px;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  opacity: 0.55;
-  transition: opacity 0.15s ease;
-  pointer-events: none;
+  display: none !important;
 }
 
 .resizer-knob .knob-dot {
@@ -95,12 +94,9 @@
   flex-shrink: 0;
 }
 
-.sidebar-resizer:hover .resizer-knob,
-.app-shell.is-resizing .sidebar-resizer .resizer-knob {
-  opacity: 1;
-  background: transparent;
-  border: none;
-  box-shadow: none;
+.sidebar-resizer:hover,
+.app-shell.is-resizing .sidebar-resizer {
+  background: var(--text-accent) !important;
 }
 
 .sidebar-resizer:hover .resizer-knob .knob-dot,

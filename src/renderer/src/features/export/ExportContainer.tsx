@@ -9,11 +9,13 @@ import {
   FileDown,
   RotateCcw,
   Copy,
-  Maximize2,
-  Minimize2,
+  Square,
+  PanelLeftClose,
+  PanelLeftOpen,
   FileText,
   ArrowLeft
 } from 'lucide-react'
+import ToolTip from '../../components/atoms/ToolTip'
 import { EXPORT_FORMATS, getFormat, type ExportFormat } from './formats'
 import { PREVIEW_COMPONENTS } from './previews'
 import Toggle from '../../components/toggle/Toggle'
@@ -93,6 +95,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
 }) => {
   const [format, setFormat] = useState<ExportFormat>(initialFormat)
   const [isMaximized, setIsMaximized] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [includeToc, setIncludeToc] = useState(true)
   const [bundleAssets, setBundleAssets] = useState(false)
   const [compressZip, setCompressZip] = useState(false)
@@ -132,6 +135,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     if (!isOpen) return
     setFormat(initialFormat)
     setIsMaximized(false)
+    setIsSidebarOpen(true)
     setIncludeToc(true)
     setBundleAssets(false)
     setCompressZip(false)
@@ -352,38 +356,68 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <header
-          className="export-header"
+          className="export-header docs-modal-header"
           onDoubleClick={() => setIsMaximized((prev) => !prev)}
+          style={{ cursor: 'default' }}
         >
-          <div className="export-header-left">
-            <span className="export-header-badge">
-              <Download size={14} strokeWidth={2} />
-            </span>
-            <div className="export-header-titles">
-              <span className="export-header-title">Export</span>
-              <span className="export-header-subtitle">{title || 'Untitled'}</span>
-            </div>
+          <div className="docs-header-left export-header-left">
+            <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
+              <button
+                type="button"
+                className="docs-sidebar-toggle-btn export-sidebar-toggle-btn"
+                onClick={() => setIsSidebarOpen((prev) => !prev)}
+                aria-label={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
+              >
+                {isSidebarOpen ? (
+                  <PanelLeftClose size={15} strokeWidth={2} />
+                ) : (
+                  <PanelLeftOpen size={15} strokeWidth={2} />
+                )}
+              </button>
+            </ToolTip>
+            <span className="export-header-title">Export</span>
+            {title && (
+              <>
+                <span className="export-header-divider">/</span>
+                <span className="export-header-subtitle" title={title}>
+                  {title}
+                </span>
+              </>
+            )}
           </div>
 
-          <div className="export-header-actions">
-            <button
-              type="button"
-              className="export-icon-btn export-maximize"
-              aria-label={isMaximized ? 'Restore down' : 'Maximize'}
-              title={isMaximized ? 'Restore down' : 'Maximize'}
-              onClick={() => setIsMaximized((prev) => !prev)}
-            >
-              {isMaximized ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-            </button>
-            <button
-              type="button"
-              className="export-close"
-              aria-label="Close"
-              onClick={onClose}
-              disabled={exporting}
-            >
-              <X size={16} />
-            </button>
+          <div className="docs-header-right export-header-right export-header-actions">
+            <ToolTip text={`${noteStats.words} words • ${noteStats.chars} chars`} position="bottom">
+              <div className="docs-header-stat export-header-stat">
+                <FileText size={12} />
+                <span>{noteStats.words} words</span>
+              </div>
+            </ToolTip>
+            <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
+              <button
+                type="button"
+                className="docs-window-btn export-icon-btn export-maximize"
+                onClick={() => setIsMaximized((prev) => !prev)}
+                aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
+              >
+                {isMaximized ? (
+                  <Copy size={13} strokeWidth={2} />
+                ) : (
+                  <Square size={13} strokeWidth={2} />
+                )}
+              </button>
+            </ToolTip>
+            <ToolTip text="Close (Esc)" position="bottom">
+              <button
+                type="button"
+                className="guide-close-btn export-close"
+                onClick={onClose}
+                disabled={exporting}
+                aria-label="Close Export (Esc)"
+              >
+                <X size={15} />
+              </button>
+            </ToolTip>
           </div>
         </header>
 
@@ -445,56 +479,17 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
           </div>
         ) : (
           <>
-            <div className="export-body">
-              <aside className="export-formats" aria-label="Export format">
-                {/* Note Source Details Chip */}
-                <div className="export-source-card">
-                  <div className="export-source-card-top">
-                    <FileText size={13} className="export-source-icon" />
-                    <span className="export-source-title">{title || 'Untitled'}</span>
-                  </div>
-                  <div className="export-source-stats">
-                    <span>{noteStats.words} words</span>
-                    <span>&bull;</span>
-                    <span>{noteStats.chars} chars</span>
-                  </div>
-                </div>
-
-                <span className="export-formats-heading">Available Formats</span>
-                {EXPORT_FORMATS.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    className={`export-format-card ${format === f.id ? 'active' : ''}`}
-                    aria-pressed={format === f.id}
-                    onClick={() => setFormat(f.id)}
-                    disabled={exporting}
-                    style={{ '--card-accent': f.accent } as React.CSSProperties}
-                  >
-                    <span
-                      className="export-format-icon"
-                      style={{ color: format === f.id ? f.accent : 'var(--text-muted)' }}
-                    >
-                      {f.icon}
-                    </span>
-                    <span className="export-format-text">
-                      <span className="export-format-title-row">
-                        <span className="export-format-title">{f.title}</span>
-                        <span className="export-format-ext-pill">{f.ext}</span>
-                      </span>
-                      <span className="export-format-desc">{f.description}</span>
-                    </span>
-                  </button>
-                ))}
-
+            <div className={`export-body ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+              {isSidebarOpen && (
+                <aside className="export-formats" aria-label="Export format">
+                {/* Options / Toggle switches at the TOP */}
                 <div className="export-options-group">
                   <span className="export-formats-heading">Options</span>
 
                   {(format === 'pdf' || format === 'docs' || format === 'html') && (
                     <div className="export-option-row" onClick={() => setIncludeToc((prev) => !prev)}>
                       <div className="export-option-label">
-                        <span className="export-option-title">Include Table of Contents</span>
-                        <span className="export-option-desc">Add navigation index at start</span>
+                        <span className="export-option-title">Table of Contents</span>
                       </div>
                       <Toggle
                         checked={includeToc}
@@ -509,8 +504,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
                     <>
                       <div className="export-option-row" onClick={() => setBundleAssets((prev) => !prev)}>
                         <div className="export-option-label">
-                          <span className="export-option-title">Bundle Referenced Media</span>
-                          <span className="export-option-desc">Include local images & media</span>
+                          <span className="export-option-title">Bundle Media</span>
                         </div>
                         <Toggle
                           checked={bundleAssets}
@@ -526,8 +520,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
                       {bundleAssets && (
                         <div className="export-option-row" onClick={() => setCompressZip((prev) => !prev)}>
                           <div className="export-option-label">
-                            <span className="export-option-title">Compress as ZIP Archive</span>
-                            <span className="export-option-desc">Package note & assets into .zip</span>
+                            <span className="export-option-title">Compress as ZIP</span>
                           </div>
                           <Toggle
                             checked={compressZip}
@@ -548,7 +541,6 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
                     <div className="export-option-row" onClick={() => setOptimizeImages((prev) => !prev)}>
                       <div className="export-option-label">
                         <span className="export-option-title">Optimize Images</span>
-                        <span className="export-option-desc">Resize & compress to reduce size</span>
                       </div>
                       <Toggle
                         checked={optimizeImages}
@@ -559,8 +551,32 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
                     </div>
                   )}
                 </div>
-              </aside>
 
+                <span className="export-formats-heading">Formats</span>
+                {EXPORT_FORMATS.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className={`export-format-card ${format === f.id ? 'active' : ''}`}
+                    aria-pressed={format === f.id}
+                    onClick={() => setFormat(f.id)}
+                    disabled={exporting}
+                    style={{ '--card-accent': f.accent } as React.CSSProperties}
+                  >
+                    <span
+                      className="export-format-icon"
+                      style={{ color: format === f.id ? f.accent : 'var(--text-muted)' }}
+                    >
+                      {f.icon}
+                    </span>
+                    <span className="export-format-text">
+                      <span className="export-format-title">{f.title}</span>
+                      <span className="export-format-ext-pill">{f.ext}</span>
+                    </span>
+                  </button>
+                ))}
+              </aside>
+              )}
               <section className="export-preview-pane" aria-label="Preview">
                 {hasContent ? (
                   <PreviewComponent

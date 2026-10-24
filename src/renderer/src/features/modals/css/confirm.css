@@ -43,7 +43,7 @@
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 2px;
+  height: 1.5px;
   width: 100%;
   opacity: 0.8;
   pointer-events: none;
@@ -54,7 +54,7 @@
 }
 
 .confirm-modal.border-accent::after {
-  background: radial-gradient(ellipse at center, var(--text-accent) 0%, transparent 70%);
+  background: linear-gradient(90deg, transparent 5%, var(--text-accent) 30%, var(--text-accent) 70%, transparent 95%);
 }
 
 .confirm-header {

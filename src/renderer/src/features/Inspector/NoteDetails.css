@@ -235,39 +235,58 @@
 }
 
 .panel-header-tabs .inspector-tab {
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 12px;
-  gap: 6px;
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 12px;
-  cursor: pointer;
-  position: relative;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  flex-shrink: 0;
-  user-select: none;
-  box-sizing: border-box;
-}
-
-.panel-header-tabs .inspector-tab::after {
-  display: none !important;
+  height: 100% !important;
+  min-height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 12px !important;
+  gap: 6px !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-right: 1px solid var(--border-dim) !important;
+  border-bottom: 2px solid transparent !important;
+  background: transparent !important;
+  color: var(--text-muted) !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  position: relative !important;
+  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  flex-shrink: 0 !important;
+  user-select: none !important;
+  box-sizing: border-box !important;
+  outline: none !important;
 }
 
 .panel-header-tabs .inspector-tab:hover {
-  background: var(--bg-active);
-  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: var(--text-main) !important;
 }
 
 .panel-header-tabs .inspector-tab.active {
-  background: var(--bg-panel, var(--bg-sidebar)) !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
   color: var(--text-main) !important;
-  font-weight: 600;
-  border-bottom: 2px solid var(--text-accent) !important;
+  font-weight: 500 !important;
+  border-bottom: 2px solid transparent !important;
+  box-shadow: none !important;
+  position: relative !important;
+}
+
+.panel-header-tabs .inspector-tab.active:hover {
+  background: var(--bg-editor, var(--bg-app)) !important;
+}
+
+.panel-header-tabs .inspector-tab.active::after {
+  content: '' !important;
+  display: block !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 1.5px !important;
+  background: linear-gradient(90deg, transparent 4%, var(--text-accent) 24%, var(--text-accent) 76%, transparent 96%) !important;
+  pointer-events: none !important;
 }
 
 .inspector-sub-header {

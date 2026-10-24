@@ -112,12 +112,12 @@
   gap: 4px !important;
   cursor: pointer !important;
   transition:
-    color 0.12s ease,
-    opacity 0.12s ease !important;
+    color 120ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 120ms cubic-bezier(0.16, 1, 0.3, 1) !important;
   font-family: inherit !important;
   flex-shrink: 0 !important;
   white-space: nowrap !important;
-  opacity: 0.8 !important;
+  opacity: 0.6 !important;
   box-sizing: border-box !important;
 }
 
@@ -209,11 +209,11 @@
   font-weight: 500 !important;
   font-family: inherit !important;
   transition:
-    color 0.12s ease,
-    opacity 0.12s ease !important;
+    color 120ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 120ms cubic-bezier(0.16, 1, 0.3, 1) !important;
   flex-shrink: 0 !important;
   white-space: nowrap !important;
-  opacity: 0.8 !important;
+  opacity: 0.6 !important;
   box-sizing: border-box !important;
 }
 
@@ -252,4 +252,10 @@
   background: transparent !important;
   color: var(--text-main) !important;
   opacity: 1 !important;
+}
+
+/* Subtle brightening on status-bar hover */
+.status-bar:hover .status-bar-item,
+[data-modern-ui='true'] .status-bar:hover .status-bar-item {
+  opacity: 0.9 !important;
 }

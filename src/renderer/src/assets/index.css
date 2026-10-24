@@ -180,6 +180,20 @@
   max-height: 90vh;
   margin: auto; /* Force center */
   box-shadow: var(--shadow-modal);
+  position: relative;
+}
+
+.modal-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent 5%, var(--text-accent) 30%, var(--text-accent) 70%, transparent 95%);
+  opacity: 0.65;
+  pointer-events: none;
+  z-index: 100;
 }
 
 @keyframes modalScaleIn {
