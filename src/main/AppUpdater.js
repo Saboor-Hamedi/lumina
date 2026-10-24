@@ -88,10 +88,15 @@ class AppUpdater {
       this.sendStatusToWindow('idle')
     })
 
+    autoUpdater.on('before-quit-for-update', () => {
+      this.sendStatusToWindow('installing')
+    })
+
     ipcMain.removeHandler('update:install')
     ipcMain.handle('update:install', () => {
-      // isSilent = true, isForceRunAfter = true
-      autoUpdater.quitAndInstall(true, true)
+      // isSilent = false (show installer UI so installation is visible), isForceRunAfter = true
+      this.sendStatusToWindow('installing')
+      autoUpdater.quitAndInstall(false, true)
     })
 
     ipcMain.on('check-for-updates', () => {

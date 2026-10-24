@@ -139,19 +139,20 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  box-shadow: none;
+  background: var(--bg-active) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-dim) !important;
+  box-shadow: none !important;
 }
 
 .header-action-btn:hover {
-  border: none;
-  background: var(--text-accent, #8b5cf6);
-  color: #ffffff;
-  box-shadow: none;
+  background: var(--bg-hover) !important;
+  color: var(--text-accent, #a78bfa) !important;
+  border-color: var(--text-accent, #a78bfa) !important;
+  box-shadow: none !important;
   transform: none;
-  font-weight: 600;
+  font-weight: 500;
+  filter: none !important;
 }
 
 .header-action-btn:active {
@@ -159,61 +160,66 @@
 }
 
 .header-action-btn.is-up-to-date {
-  color: #10b981;
-  border: none;
-  background: transparent;
+  color: #10b981 !important;
+  border: 1px solid var(--border-dim) !important;
+  background: var(--bg-active) !important;
 }
 
 .header-action-btn.is-up-to-date:hover {
-  background: #10b981;
-  border: none;
-  color: #ffffff;
-  box-shadow: none;
-  transform: none;
+  background: var(--bg-hover) !important;
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+  box-shadow: none !important;
 }
 
 .header-action-btn.error-btn {
-  color: var(--color-error, #ef4444);
-  border: none;
-  background: transparent;
+  color: var(--color-error, #ef4444) !important;
+  border: 1px solid var(--border-dim) !important;
+  background: var(--bg-active) !important;
 }
 
 .header-action-btn.error-btn:hover {
-  background: var(--color-error, #ef4444);
-  border: none;
-  color: #ffffff;
-  box-shadow: none;
-  transform: none;
+  background: var(--bg-hover) !important;
+  border-color: var(--color-error, #ef4444) !important;
+  color: var(--color-error, #ef4444) !important;
+  box-shadow: none !important;
 }
 
-.header-action-btn.update-download-btn {
-  background: var(--text-accent, #6366f1);
-  color: #ffffff;
-  border: none;
-  box-shadow: none;
+.header-action-btn.update-download-btn,
+.header-action-btn.update-ready-btn,
+.header-action-btn.check-update-btn {
+  background: var(--bg-active) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-dim) !important;
+  box-shadow: none !important;
 }
 
-.header-action-btn.update-download-btn:hover {
-  filter: brightness(1.1);
-  transform: none;
-}
-
-.header-action-btn.update-ready-btn {
-  background: #10b981;
-  color: #ffffff;
-  border: none;
-  box-shadow: none;
-}
-
-.header-action-btn.update-ready-btn:hover {
-  filter: brightness(1.1);
-  transform: none;
+.header-action-btn.update-download-btn:hover,
+.header-action-btn.update-ready-btn:hover,
+.header-action-btn.check-update-btn:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-accent, #a78bfa) !important;
+  border-color: var(--text-accent, #a78bfa) !important;
+  box-shadow: none !important;
+  filter: none !important;
 }
 
 .header-action-btn.checking-btn,
-.header-action-btn.downloading-btn {
+.header-action-btn.downloading-btn,
+.header-action-btn.installing-btn {
   opacity: 0.85;
   cursor: default;
+  background: var(--bg-active) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-dim) !important;
+}
+
+.header-action-btn.checking-btn:hover,
+.header-action-btn.downloading-btn:hover,
+.header-action-btn.installing-btn:hover {
+  background: var(--bg-active) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-dim) !important;
 }
 
 .footer-right-info {
@@ -419,47 +425,32 @@
   border-color: var(--text-accent);
 }
 
-.update-download-btn {
-  background: var(--text-accent, #6366f1) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
-}
-
-.update-download-btn:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.45);
-}
-
-.update-ready-btn {
-  background: #10b981 !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
-}
-
-.update-ready-btn:hover {
-  filter: brightness(1.1);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.45);
-}
-
-.downloading-btn,
-.checking-btn {
-  background: var(--bg-active) !important;
-  color: var(--text-main) !important;
-  border: 0.5px solid var(--border-subtle) !important;
-}
-
+.update-download-btn,
+.update-ready-btn,
 .check-update-btn {
   background: var(--bg-active) !important;
   color: var(--text-main) !important;
   border: 1px solid var(--border-dim) !important;
+  box-shadow: none !important;
 }
 
+.update-download-btn:hover,
+.update-ready-btn:hover,
 .check-update-btn:hover {
   background: var(--bg-hover) !important;
   color: var(--text-accent, #a78bfa) !important;
   border-color: var(--text-accent, #a78bfa) !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.downloading-btn,
+.checking-btn,
+.installing-btn {
+  background: var(--bg-active) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-dim) !important;
+  box-shadow: none !important;
 }
 
 .spin-animation {

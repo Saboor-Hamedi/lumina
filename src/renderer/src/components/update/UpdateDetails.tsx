@@ -187,6 +187,13 @@ export const UpdateDetails: React.FC = () => {
           : 0
     const safePercent = isNaN(percentValue) ? 0 : Math.round(percentValue)
 
+    if (status === 'installing') {
+      return {
+        triggerIcon: <Loader2 size={13} strokeWidth={2.2} className="spin-animation" />,
+        triggerTooltip: 'Installing update...',
+        triggerClass: 'has-update is-downloading'
+      }
+    }
     if (status === 'ready') {
       return {
         triggerIcon: <CheckCircle2 size={13} strokeWidth={2.2} />,

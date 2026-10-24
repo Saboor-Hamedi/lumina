@@ -71,6 +71,15 @@ const UpdateHeader = ({
               <CheckCircle2 size={12} />
               <span>Restart & Install</span>
             </button>
+          ) : status === 'installing' ? (
+            <button
+              className="header-action-btn installing-btn"
+              disabled
+              style={{ cursor: 'default' }}
+            >
+              <Loader2 size={12} className="spin-animation" />
+              <span>Installing...</span>
+            </button>
           ) : status === 'checking' ? (
             <button
               className="header-action-btn checking-btn"

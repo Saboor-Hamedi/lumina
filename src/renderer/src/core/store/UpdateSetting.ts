@@ -17,6 +17,7 @@ export type UpdateStatus =
   | 'not-available'
   | 'downloading'
   | 'ready'
+  | 'installing'
   | 'error'
 
 export interface UpdateInfo {
@@ -81,6 +82,9 @@ export const useUpdateSettingStore = create<UpdateSettingState>((set, get) => ({
           case 'ready':
             set({ status: 'ready', updateInfo: data, progress: null, lastChecked: Date.now() })
             break
+          case 'installing':
+            set({ status: 'installing' })
+            break
           case 'error':
             set({ status: 'error', error: data, lastChecked: Date.now() })
             break
@@ -132,6 +136,7 @@ export const useUpdateSettingStore = create<UpdateSettingState>((set, get) => ({
   },
 
   install: async () => {
+    set({ status: 'installing' })
     const api = (window as any).api
     await api?.quitAndInstall?.()
   }
