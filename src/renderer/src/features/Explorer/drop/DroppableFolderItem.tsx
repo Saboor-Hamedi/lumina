@@ -235,25 +235,7 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
         </div>
         <div className="item-meta-right">
           {!isExpanded && !isRenaming && item.count !== undefined && item.count > 0 && (
-            <span
-              style={{
-                fontSize: '8px',
-                lineHeight: '10px',
-                color: 'var(--text-accent)',
-                background: 'transparent',
-                border: 'none',
-                padding: '0px 4px',
-                borderRadius: '6px',
-                marginRight: '4px',
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minWidth: '14px',
-                height: '13px',
-                opacity: 0.8
-              }}
-            >
+            <span className="folder-item-count">
               {item.count}
             </span>
           )}

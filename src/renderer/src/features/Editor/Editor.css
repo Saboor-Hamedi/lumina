@@ -114,23 +114,25 @@
 .cm-inline-mention {
   display: inline !important;
   color: var(--text-accent) !important;
-  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.1) !important;
-  border-radius: 2px !important;
-  padding: 1px 4px !important;
+  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.08) !important;
+  border-radius: 3px !important;
+  padding: 1px 5px !important;
   margin: 0 !important;
-  font-weight: 500 !important;
+  font-weight: 450 !important;
+  opacity: 0.85;
   text-decoration: none !important;
   cursor: pointer !important;
   white-space: nowrap !important;
   box-decoration-break: clone !important;
   -webkit-box-decoration-break: clone !important;
-  transition: background 0.15s ease !important;
+  transition: opacity 0.15s ease, background 0.15s ease !important;
   vertical-align: baseline !important;
 }
 
 .cm-inline-tag:hover,
 .cm-inline-mention:hover {
-  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.2) !important;
+  opacity: 1 !important;
+  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.18) !important;
   text-decoration: none !important;
 }
 

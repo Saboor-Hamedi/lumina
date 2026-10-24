@@ -23,7 +23,7 @@
   border: 1px solid var(--border-card, var(--border-dim));
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   width: 100%;
   box-sizing: border-box;
@@ -31,7 +31,7 @@
 
 .composer-card:focus-within {
   border-color: var(--border-card, var(--border-dim)) !important;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: none !important;
   outline: none !important;
 }
 
@@ -151,6 +151,11 @@
   padding: 0;
   transition: all 0.15s ease;
   flex-shrink: 0;
+  opacity: 0.65;
+}
+
+.composer-plus-btn:hover {
+  opacity: 1;
 }
 
 .composer-plus-btn:hover {
@@ -176,7 +181,7 @@
   flex-shrink: 1;
   min-width: 0;
   max-width: 90px;
-  opacity: 0.8;
+  opacity: 0.65;
 }
 
 .model-pill:hover {
@@ -418,3 +423,15 @@
 
 
 
+
+/* Muted resting state for composer voice dictation */
+.composer-card .voice-trigger-btn {
+  opacity: 0.65;
+  transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.composer-card .voice-trigger-btn:hover,
+.composer-card .voice-trigger-btn.recording,
+.composer-card .voice-trigger-btn.transcribing {
+  opacity: 1;
+}
