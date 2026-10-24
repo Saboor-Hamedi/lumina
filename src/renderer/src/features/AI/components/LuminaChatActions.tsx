@@ -385,7 +385,8 @@ export const ChatActions: React.FC<ChatActionsProps> = ({
           )}
         </div>
       )}
-      <div className="chat-action-buttons">
+      <div className="chat-response-footer">
+        <div className="chat-action-buttons">
         <button
           onClick={handleCopyClick}
           title={copied ? 'Copied!' : 'Copy Response'}
@@ -417,6 +418,7 @@ export const ChatActions: React.FC<ChatActionsProps> = ({
             {timeStr}
           </span>
         )}
+      </div>
       </div>
     </div>
   )

@@ -44,7 +44,7 @@ export const ChatMessageRow: React.FC<ChatMessageRowProps> = React.memo(
       <div
         className={`chat-row ${msg.role}`}
         style={{
-          marginBottom: '6px',
+          marginBottom: msg.role === 'user' ? '10px' : '20px',
           display: 'flex',
           flexDirection: 'row',
           gap: '6px',

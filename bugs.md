@@ -1,215 +1,120 @@
-act(() => {
-/* fire events that update state _/
-});
-/_ assert on the output */
+# Lumina UI Refinement — Conversation Polish, Typography, and Visual Hierarchy
 
-This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+## Objective
 
-stderr | test/renderer/src/components/Version.test.jsx > Version > handles API rejection gracefully
-Error: fail
-at /Users/runner/work/lumina/lumina/test/renderer/src/components/Version.test.jsx:32:62
-at file:///Users/runner/work/lumina/lumina/node_modules/@vitest/runner/dist/chunk-artifact.js:302:11
-at file:///Users/runner/work/lumina/lumina/node_modules/@vitest/runner/dist/chunk-artifact.js:1903:26
-at file:///Users/runner/work/lumina/lumina/node_modules/@vitest/runner/dist/chunk-artifact.js:2326:20
-at new Promise (<anonymous>)
-at runWithCancel (file:///Users/runner/work/lumina/lumina/node_modules/@vitest/runner/dist/chunk-artifact.js:2323:10)
-at file:///Users/runner/work/lumina/lumina/node_modules/@vitest/runner/dist/chunk-artifact.js:2305:20
-at new Promise (<anonymous>)
-at runWithTimeout (file:///Users/runner/work/lumina/lumina/node_modules/@vitest/runner/dist/chunk-artifact.js:2272:10)
-at file:///Users/runner/work/lumina/lumina/node_modules/@vitest/runner/dist/chunk-artifact.js:2956:64
+Continue refining Lumina's existing UI based on the latest screenshots. Focus specifically on the AI Agent conversation, workspace-operation cards, note-editor typography, and consistency between these two experiences.
 
-✓ test/renderer/src/components/Version.test.jsx (4 tests) 77ms
-✓ test/renderer/src/features/Explorer/sortableListItemMemo.test.ts (3 tests) 4ms
-✓ test/renderer/src/core/hooks/stringUtils.test.js (6 tests) 3ms
-✓ test/renderer/src/features/Editor/menu/insertActions.test.js (3 tests) 6ms
-✓ test/renderer/src/features/Editor/components/EditorZoomHud.test.tsx (3 tests) 54ms
-Error: Not implemented: HTMLCanvasElement.prototype.getContext (without installing the canvas npm package)
-at module.exports (/Users/runner/work/lumina/lumina/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
-✓ test/renderer/src/core/terminal/useTerminalInstance.test.ts (1 test) 3ms
-at HTMLCanvasElementImpl.getContext (/Users/runner/work/lumina/lumina/node_modules/jsdom/lib/jsdom/living/nodes/HTMLCanvasElement-impl.js:42:5)
-at HTMLCanvasElement.getContext (/Users/runner/work/lumina/lumina/node_modules/jsdom/lib/jsdom/living/generated/HTMLCanvasElement.js:131:58)
-at /Users/runner/work/lumina/lumina/node_modules/@xterm/xterm/lib/xterm.js:1:139326
-at Object.4103 (/Users/runner/work/lumina/lumina/node_modules/@xterm/xterm/lib/xterm.js:1:140546)
-at i (/Users/runner/work/lumina/lumina/node_modules/@xterm/xterm/lib/xterm.js:1:483379)
-at Object.1433 (/Users/runner/work/lumina/lumina/node_modules/@xterm/xterm/lib/xterm.js:1:83991)
-at i (/Users/runner/work/lumina/lumina/node_modules/@xterm/xterm/lib/xterm.js:1:483379)
-at Object.3955 (/Users/runner/work/lumina/lumina/node_modules/@xterm/xterm/lib/xterm.js:1:71362)
-at i (/Users/runner/work/lumina/lumina/node_modules/@xterm/xterm/lib/xterm.js:1:483379) undefined
-✓ test/renderer/src/features/AI/tools/diagnoseSystem.test.ts (5 tests) 37ms
+The previous refinement made some spacing changes, but the overall interface still needs more visual polish.
 
-⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+**The goal is a premium, lightweight AI knowledge workspace—not a VS Code clone and not a generic Markdown editor.**
 
-Test Files 3 failed | 167 passed (170)
-FAIL test/main/workspaceManager.test.ts > VaultManager > path containment > rejects Alternate Data Streams in relative paths
-Tests 6 failed | 1362 passed (1368)
-AssertionError: promise resolved "null" instead of rejecting
-Start at 03:53:53
+## 1. AI Agent Conversation
 
-Duration 57.12s (transform 4.59s, setup 14.32s, import 23.73s, tests 16.95s, environment 42.24s)
+Refine the conversation's visual flow without changing its functionality.
 
-- Expected:
+- Establish consistent spacing between user messages, assistant responses, and separate conversation turns.
+- Keep related paragraphs visually connected.
+- Distinguish user messages from assistant responses without oversized chat bubbles or excessive background contrast.
+- Align message feedback actions and timestamps consistently.
+- Reduce unnecessary visual separation between related response elements.
+- Preserve readable text, Markdown formatting, links, lists, and inline file mentions.
+- Ensure the latest messages and conversation controls are never accidentally clipped.
 
-Error {
+The conversation should feel continuous, calm, and easy to scan.
 
-"message": "rejected promise",
-Error: AssertionError: promise resolved "null" instead of rejecting
+## 2. Workspace-Operation Cards
 
-- Expected:
-  Error {
-  "message": "rejected promise",
-  }
+Refine the existing cards, including `Created 1 note` and `Workspace Changes`.
 
-* Received:
-  null
+- Reduce excessive visual emphasis from borders and nested backgrounds.
+- Use subtle separators and consistent internal spacing.
+- Establish a clear hierarchy between the operation title, affected files, status, and available actions.
+- Make file and folder references easy to recognize.
+- Keep status indicators readable but secondary.
+- Preserve expand/collapse behavior, operation details, Undo actions, and all existing interactions.
 
-❯ test/main/workspaceManager.test.ts:450:7
+Do not remove these cards or replace them with plain text. They are an important part of Lumina's AI-agent experience.
 
-}
+## 3. Note-Editor Typography
 
-- Received:
-  null
+Improve the visual hierarchy of the rendered document without changing its underlying content or editing behavior.
 
-❯ test/main/workspaceManager.test.ts:450:7
-448| await expect(
-449| VaultManager.readAsset('valid.png:hidden.exe')
-450| ).rejects.toThrow(/Alternate Data Stream|Security Violation/i)
-| ^
-451| })
-452|
+- Make document titles the primary visual anchor.
+- Differentiate headings, body text, metadata, links, and secondary information more deliberately.
+- Reduce unnecessary boldness where multiple elements currently compete for attention.
+- Establish consistent paragraph spacing and line height.
+- Keep document content readable and information-dense.
+- Preserve Markdown formatting, internal links, mentions, code blocks, tables, images, diagrams, and embedded content.
 
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+Do not simply shrink all text. Improve hierarchy, readability, and proportional relationships.
 
-FAIL test/renderer/src/features/Docs/Documentation.test.jsx > Documentation Component Suite > Documentation.jsx Modal > renders modal header, title, and badges when open
-FAIL test/renderer/src/features/Docs/Documentation.test.jsx > Documentation Component Suite > Documentation.jsx Modal > toggles sidebar on toggle button click
-FAIL test/renderer/src/features/Docs/Documentation.test.jsx > Documentation Component Suite > Documentation.jsx Modal > toggles maximize window on window button click
-FAIL test/renderer/src/features/Docs/Documentation.test.jsx > Documentation Component Suite > Documentation.jsx Modal > calls onClose when close button or overlay is clicked
-FAIL test/renderer/src/features/template/Template.test.tsx > Template.jsx > navigates templates using arrow keys and applies with Enter
-Error: [vitest] No "extendEmphasisPair" export is defined on the "@atomic-editor/editor" mock. Did you forget to return it from "vi.mock"?
-If you need to partially mock a module, you can use "importOriginal" helper inside:
+## 4. Breadcrumbs and Document Actions
 
-vi.mock(import("@atomic-editor/editor"), async (importOriginal) => {
-const actual = await importOriginal()
-return {
-...actual,
-// your mocked methods
-}
-})
+- Keep breadcrumbs useful but visually secondary to the document.
+- Ensure document actions remain accessible without competing with the title and content.
+- Maintain consistent alignment, spacing, icon sizing, and active states.
+- Avoid adding another permanent toolbar or removing existing functionality.
 
-❯ src/renderer/src/features/Editor/atomic/AtomicCodeMirrorEditor.tsx:114:11
-112| highlightActiveLine(),
-113| closeBrackets(),
-114| extendEmphasisPair,
-| ^
-115| autoCloseCodeFence,
-116| EditorView.lineWrapping,
-❯ Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:28656:20
-❯ runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:1048:13
-❯ commitHookEffectListMount node_modules/react-dom/cjs/react-dom-client.development.js:13748:29
-❯ commitHookPassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:13835:11
-❯ commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:16906:13
-❯ recursivelyTraversePassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:16851:13
-❯ commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:17183:11
+## 5. Consistency Between AI and Editor
 
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+The AI Agent and note editor should feel like two integrated experiences within Lumina.
 
-Error: Error: [vitest] No "extendEmphasisPair" export is defined on the "@atomic-editor/editor" mock. Did you forget to return it from "vi.mock"?
-If you need to partially mock a module, you can use "importOriginal" helper inside:
+Standardize where appropriate:
 
-vi.mock(import("@atomic-editor/editor"), async (importOriginal) => {
-const actual = await importOriginal()
-return {
-...actual,
-// your mocked methods
-}
-})
+- Typography hierarchy.
+- Spacing between related elements.
+- Icon alignment and sizing.
+- Contextual action styling.
+- Hover, focus, and selected states.
+- Surface treatments for operation cards and embedded content.
 
-❯ src/renderer/src/features/Editor/atomic/AtomicCodeMirrorEditor.tsx:114:11
-❯ Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:28656:20
-❯ runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:1048:13
-❯ commitHookEffectListMount node_modules/react-dom/cjs/react-dom-client.development.js:13748:29
-❯ commitHookPassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:13835:11
-❯ commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:16906:13
-❯ recursivelyTraversePassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:16851:13
-❯ commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:17183:11
+Do not force both interfaces to look identical. Their layouts should reflect their different purposes while sharing the same design language.
 
-Error: Error: [vitest] No "extendEmphasisPair" export is defined on the "@atomic-editor/editor" mock. Did you forget to return it from "vi.mock"?
-If you need to partially mock a module, you can use "importOriginal" helper inside:
+## 6. Preserve Existing UI and Features
 
-vi.mock(import("@atomic-editor/editor"), async (importOriginal) => {
-const actual = await importOriginal()
-return {
-...actual,
-// your mocked methods
-}
-})
+Do not redesign or unnecessarily modify:
 
-❯ src/renderer/src/features/Editor/atomic/AtomicCodeMirrorEditor.tsx:114:11
-❯ Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:28656:20
-❯ runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:1048:13
-❯ commitHookEffectListMount node_modules/react-dom/cjs/react-dom-client.development.js:13748:29
-❯ commitHookPassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:13835:11
-❯ commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:16906:13
-❯ recursivelyTraversePassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:16851:13
-❯ commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:17183:11
+- Title bar and window controls.
+- Activity bar and navigation.
+- File explorer layout and behavior.
+- Existing right-sidebar functionality.
+- Themes and accent-color customization.
+- Vim mode and its indicators.
+- Keyboard shortcuts and settings.
+- Existing editor and AI Agent capabilities.
 
-Error: Error: [vitest] No "extendEmphasisPair" export is defined on the "@atomic-editor/editor" mock. Did you forget to return it from "vi.mock"?
-If you need to partially mock a module, you can use "importOriginal" helper inside:
+Do not treat functional UI elements as clutter merely because they occupy screen space.
 
-vi.mock(import("@atomic-editor/editor"), async (importOriginal) => {
-const actual = await importOriginal()
-return {
-...actual,
-// your mocked methods
-}
-})
+## 7. Performance and Architecture
 
-❯ src/renderer/src/features/Editor/atomic/AtomicCodeMirrorEditor.tsx:114:11
-❯ Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:28656:20
-❯ runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:1048:13
-❯ commitHookEffectListMount node_modules/react-dom/cjs/react-dom-client.development.js:13748:29
-❯ commitHookPassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:13835:11
-❯ commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:16906:13
-❯ recursivelyTraversePassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:16851:13
-❯ commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:17183:11
+Lumina already handles large workspaces efficiently. Performance must not regress.
 
-Error: Error: [vitest] No "extendEmphasisPair" export is defined on the "@atomic-editor/editor" mock. Did you forget to return it from "vi.mock"?
-If you need to partially mock a module, you can use "importOriginal" helper inside:
+- Avoid unnecessary component re-renders and remounts.
+- Preserve existing caching, memoization, virtualization, and state-management optimizations.
+- Keep editor navigation, scrolling, and tab switching responsive.
+- Preserve AI streaming, conversation history, and workspace operations.
+- Avoid expensive layout recalculations and broad global CSS overrides.
+- Reuse existing design tokens and components where appropriate.
+- Make targeted changes rather than rewriting working systems.
 
-vi.mock(import("@atomic-editor/editor"), async (importOriginal) => {
-const actual = await importOriginal()
-return {
-...actual,
-// your mocked methods
-}
-})
+## 8. Implementation and Verification
 
-❯ src/renderer/src/features/Editor/atomic/AtomicCodeMirrorEditor.tsx:114:11
-❯ Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:28656:20
-❯ runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:1048:13
-❯ commitHookEffectListMount node_modules/react-dom/cjs/react-dom-client.development.js:13748:29
-❯ commitHookPassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:13835:11
-❯ commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:16906:13
-❯ recursivelyTraversePassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:16851:13
-❯ commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:17183:11
+1. Inspect the latest screenshots and current implementation.
+2. Identify specific typography and visual-hierarchy problems before modifying code.
+3. Refine the AI conversation first, followed by workspace-operation cards and note-editor typography.
+4. Verify the result against the original screenshots.
+5. Test short and long conversations, operation cards, long documents, internal links, editor scrolling, and different window sizes.
+6. Run relevant tests, type checks, and the production build.
+7. Compare performance against the existing baseline.
 
-Error: Error: [vitest] No "extendEmphasisPair" export is defined on the "@atomic-editor/editor" mock. Did you forget to return it from "vi.mock"?
-If you need to partially mock a module, you can use "importOriginal" helper inside:
+Check specifically for clipped messages, unexpected layout shifts, inaccessible actions, and regressions in editor or AI behavior.
 
-vi.mock(import("@atomic-editor/editor"), async (importOriginal) => {
-const actual = await importOriginal()
-return {
-...actual,
-// your mocked methods
-}
-})
+## Definition of Done
 
-❯ src/renderer/src/features/Editor/atomic/AtomicCodeMirrorEditor.tsx:114:11
-❯ Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:28656:20
-❯ runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:1048:13
-❯ commitHookEffectListMount node_modules/react-dom/cjs/react-dom-client.development.js:13748:29
-❯ commitHookPassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:13835:11
-❯ commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:16906:13
-❯ recursivelyTraversePassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:16851:13
-❯ commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:17183:11
+The result should feel more polished and cohesive, with clearer typography, a more natural conversation flow, and less visual emphasis on secondary elements.
 
-Error: Process completed with exit code 1.
+All existing functionality must remain intact, and performance must remain at least consistent with the baseline.
+
+Report the actual changes made, files modified, tests executed, and any remaining issues.
+
+**Scope restriction:** Focus only on conversation flow, workspace-operation cards, typography, and visual hierarchy. Do not redesign unrelated parts of Lumina or introduce new features.

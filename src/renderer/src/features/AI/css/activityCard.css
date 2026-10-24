@@ -20,7 +20,7 @@ lumina-activity {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: 12px;
   padding: 2px 6px;
   border-radius: 4px;
   background: transparent;
@@ -178,7 +178,7 @@ lumina-activity {
   justify-content: space-between;
   padding: 3px 6px;
   border-radius: 4px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-main, #e5e5e5);
   user-select: none;
@@ -232,7 +232,7 @@ lumina-activity {
   justify-content: space-between;
   padding: 2.5px 6px;
   border-radius: 4px;
-  font-size: 11.5px;
+  font-size: 12px;
   transition: background 0.12s ease;
   gap: 8px;
   position: relative;
@@ -276,7 +276,7 @@ lumina-activity {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 11.5px;
+  font-size: 12px;
 }
 
 .lumina-activity-item-link {
@@ -287,7 +287,7 @@ lumina-activity {
   align-items: center;
   gap: 4px;
   font-weight: 450;
-  font-size: 11.5px;
+  font-size: 12px;
   text-decoration: none;
   white-space: nowrap;
   overflow: hidden;

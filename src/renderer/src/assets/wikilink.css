@@ -15,19 +15,21 @@
   overflow-wrap: break-word !important;
   color: var(--text-accent, #40bafa) !important;
   text-decoration: underline !important;
+  text-decoration-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.35) !important;
   text-decoration-thickness: 1px !important;
   text-underline-offset: 3px !important;
   cursor: pointer !important;
   user-select: text !important;
   -webkit-user-select: text !important;
   border-radius: 2px !important;
-  transition: color 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, opacity 0.15s ease, text-decoration-color 0.15s ease;
 }
 
 .cm-atomic-wiki-link:hover,
 .cm-atomic-wiki-link-resolved:hover {
   color: var(--text-accent-hover, #60a5fa) !important;
-  background-color: var(--bg-modifier-hover, rgba(96, 165, 250, 0.15)) !important;
+  text-decoration-color: var(--text-accent, #40bafa) !important;
+  background-color: var(--bg-modifier-hover, rgba(96, 165, 250, 0.12)) !important;
   opacity: 1 !important;
 }
 

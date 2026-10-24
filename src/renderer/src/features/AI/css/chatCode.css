@@ -25,20 +25,20 @@
 }
 
 .chat-code-block {
-  margin: 10px 0;
-  border-radius: 5px;
+  margin: 8px 0 10px;
+  border-radius: 6px;
   background: var(--bg-app);
-  border: 1px solid var(--border-subtle, var(--border-dim));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
   overflow: hidden;
   max-width: 100%;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  box-shadow: none;
 }
 
 [data-theme='light'] .chat-code-block,
 [data-theme='porcelain'] .chat-code-block {
   background: var(--bg-card, #eae6dd) !important;
   border-color: var(--border-card, #e0dcd4) !important;
-  box-shadow: 0 1px 3px rgba(44, 42, 38, 0.08) !important;
+  box-shadow: none !important;
 }
 
 .chat-code-header {

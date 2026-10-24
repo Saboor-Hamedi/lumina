@@ -584,7 +584,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 450;
   color: var(--text-main, #f1f5f9);
   line-height: 1.2;
@@ -646,7 +646,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-main, #f1f5f9);
   line-height: 1.2;
@@ -729,7 +729,7 @@
   border: 1px solid transparent;
   border-radius: 0;
   color: var(--text-main);
-  font-size: 12.5px;
+  font-size: 12px;
   height: 24px;
   box-sizing: border-box;
   transition: all 0.15s ease;
@@ -1004,7 +1004,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
-  font-size: 12.5px;
+  font-size: 12px;
 }
 
 /* Tabs */

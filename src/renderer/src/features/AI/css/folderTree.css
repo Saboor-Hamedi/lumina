@@ -3,13 +3,13 @@
  */
 
 .lumina-folder-tree-card {
-  margin: 8px 0 12px;
+  margin: 6px 0 8px;
   border-radius: 6px;
-  background: var(--bg-card, rgba(255, 255, 255, 0.03));
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: var(--bg-card, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
   overflow: hidden;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
   width: 100%;
   max-width: none;
   animation: fadeInFolderTreeCard 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -19,7 +19,7 @@
 [data-theme='porcelain'] .lumina-folder-tree-card {
   background: var(--bg-card, #eae6dd) !important;
   border-color: var(--border-card, #e0dcd4) !important;
-  box-shadow: 0 1px 3px rgba(44, 42, 38, 0.08) !important;
+  box-shadow: none !important;
 }
 
 /* Minimal, sleek header matching code blocks */
@@ -32,8 +32,8 @@
   cursor: pointer;
   user-select: none;
   gap: 8px;
-  background: var(--bg-panel, rgba(255, 255, 255, 0.02));
-  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  background: transparent;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.05));
   font-family: var(--font-editor, 'Inter', sans-serif);
   font-size: 11px;
   color: var(--text-faint);
@@ -159,14 +159,14 @@
 
 /* Tree Body Structure */
 .lumina-folder-tree-body {
-  padding: 8px 12px;
+  padding: 6px 10px;
   font-family: var(--font-mono, monospace);
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.5;
   color: var(--text-main, #e2e8f0);
   overflow-x: auto;
   white-space: pre;
-  background: rgba(0, 0, 0, 0.1);
+  background: transparent;
 }
 
 [data-theme='light'] .lumina-folder-tree-body,
@@ -247,6 +247,7 @@
 
 .lumina-folder-tree-label {
   white-space: pre;
+  font-size: 12px;
   transition: color 0.14s ease-out;
 }
 
@@ -313,32 +314,36 @@
 .lumina-folder-tree-action-badge {
   font-size: 9.5px;
   font-weight: 500;
-  padding: 1px 5px;
+  padding: 0 4px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.05);
+  background: transparent;
   color: var(--text-faint, #94a3b8);
-  letter-spacing: 0.01em;
+  letter-spacing: 0.02em;
 }
 
 .lumina-folder-tree-action-badge.action-created {
   color: #4ade80;
-  background: rgba(74, 222, 128, 0.1);
+  background: transparent;
+  opacity: 0.9;
 }
 
 .lumina-folder-tree-action-badge.action-updated {
   color: #60a5fa;
-  background: rgba(96, 165, 250, 0.1);
+  background: transparent;
+  opacity: 0.9;
 }
 
 .lumina-folder-tree-action-badge.action-deleted {
   color: #f87171;
-  background: rgba(248, 113, 113, 0.1);
+  background: transparent;
+  opacity: 0.9;
 }
 
 .lumina-folder-tree-action-badge.action-renamed,
 .lumina-folder-tree-action-badge.action-moved {
   color: #c084fc;
-  background: rgba(192, 132, 252, 0.1);
+  background: transparent;
+  opacity: 0.9;
 }
 
 .lumina-folder-tree-diff {
