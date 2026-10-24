@@ -120,7 +120,7 @@
   flex: 1;
   overflow-y: hidden; /* Let Virtuoso handle scroll */
   overflow-x: hidden !important;
-  padding: 0 14px 0 0px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -137,7 +137,7 @@
 }
 
 .explorer-embedded-container .start-menu-body {
-  padding: 0 12px 0 2px;
+  padding: 0 0.5px 0 0;
   overflow-x: hidden !important;
   box-sizing: border-box;
 }
@@ -157,7 +157,7 @@
 
 /* Custom Scrollbar for Body */
 .start-menu-body::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 .start-menu-body::-webkit-scrollbar:horizontal {
   display: none !important;
@@ -167,11 +167,18 @@
   background: transparent;
 }
 .start-menu-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 4px;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 3px;
+  transition: background-color 0.2s ease-out;
+}
+.unified-sidebar:hover .start-menu-body::-webkit-scrollbar-thumb,
+.shell-sidebar-left:hover .start-menu-body::-webkit-scrollbar-thumb,
+.start-menu-container:hover .start-menu-body::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb, var(--border-subtle, rgba(255, 255, 255, 0.25))) !important;
 }
 .start-menu-body::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--text-muted, rgba(255, 255, 255, 0.5)) !important;
 }
 
 .explorer-embedded-container *::-webkit-scrollbar:horizontal,
@@ -181,29 +188,80 @@
   height: 0px !important;
 }
 
-[data-virtuoso-scroller='true'] {
+/* Virtualized list & Sidebar scrollers: invisible by default, reveals on hover with ease-out */
+[data-virtuoso-scroller='true'],
+.unified-sidebar [data-virtuoso-scroller='true'],
+.explorer-embedded-container [data-virtuoso-scroller='true'],
+.start-menu-container [data-virtuoso-scroller='true'],
+.explorer-embedded-container .recommended-list,
+.unified-sidebar .recommended-list {
   overflow-x: hidden !important;
   overflow-y: auto !important;
   scrollbar-width: thin;
-  scrollbar-color: var(--text-faint, rgba(255, 255, 255, 0.28)) transparent;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease-out;
 }
 
-[data-virtuoso-scroller='true']::-webkit-scrollbar {
-  width: 6px;
+[data-virtuoso-scroller='true']::-webkit-scrollbar,
+.unified-sidebar [data-virtuoso-scroller='true']::-webkit-scrollbar,
+.explorer-embedded-container [data-virtuoso-scroller='true']::-webkit-scrollbar,
+.start-menu-container [data-virtuoso-scroller='true']::-webkit-scrollbar,
+.explorer-embedded-container .recommended-list::-webkit-scrollbar,
+.unified-sidebar .recommended-list::-webkit-scrollbar {
+  width: 5px;
 }
 
-[data-virtuoso-scroller='true']::-webkit-scrollbar-track {
+[data-virtuoso-scroller='true']::-webkit-scrollbar-track,
+.unified-sidebar [data-virtuoso-scroller='true']::-webkit-scrollbar-track,
+.explorer-embedded-container [data-virtuoso-scroller='true']::-webkit-scrollbar-track,
+.start-menu-container [data-virtuoso-scroller='true']::-webkit-scrollbar-track,
+.explorer-embedded-container .recommended-list::-webkit-scrollbar-track,
+.unified-sidebar .recommended-list::-webkit-scrollbar-track {
   background: transparent;
 }
 
-[data-virtuoso-scroller='true']::-webkit-scrollbar-thumb {
-  background: var(--border-subtle, rgba(255, 255, 255, 0.25));
-  border-radius: 4px;
-  transition: background 0.15s ease;
+/* Thumb invisible by default */
+[data-virtuoso-scroller='true']::-webkit-scrollbar-thumb,
+.unified-sidebar [data-virtuoso-scroller='true']::-webkit-scrollbar-thumb,
+.explorer-embedded-container [data-virtuoso-scroller='true']::-webkit-scrollbar-thumb,
+.start-menu-container [data-virtuoso-scroller='true']::-webkit-scrollbar-thumb,
+.explorer-embedded-container .recommended-list::-webkit-scrollbar-thumb,
+.unified-sidebar .recommended-list::-webkit-scrollbar-thumb {
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 3px;
+  transition: background-color 0.2s ease-out;
 }
 
-[data-virtuoso-scroller='true']::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted, rgba(255, 255, 255, 0.5));
+/* Hover reveal on hover over the sidebar or explorer container */
+.unified-sidebar:hover [data-virtuoso-scroller='true'],
+.unified-sidebar:hover .recommended-list,
+.shell-sidebar-left:hover [data-virtuoso-scroller='true'],
+.shell-sidebar-left:hover .recommended-list,
+.explorer-embedded-container:hover [data-virtuoso-scroller='true'],
+.explorer-embedded-container:hover .recommended-list,
+.start-menu-container:hover [data-virtuoso-scroller='true'] {
+  scrollbar-color: var(--scroll-thumb, var(--border-subtle, rgba(255, 255, 255, 0.25))) transparent;
+}
+
+.unified-sidebar:hover [data-virtuoso-scroller='true']::-webkit-scrollbar-thumb,
+.unified-sidebar:hover .recommended-list::-webkit-scrollbar-thumb,
+.shell-sidebar-left:hover [data-virtuoso-scroller='true']::-webkit-scrollbar-thumb,
+.shell-sidebar-left:hover .recommended-list::-webkit-scrollbar-thumb,
+.explorer-embedded-container:hover [data-virtuoso-scroller='true']::-webkit-scrollbar-thumb,
+.explorer-embedded-container:hover .recommended-list::-webkit-scrollbar-thumb,
+.start-menu-container:hover [data-virtuoso-scroller='true']::-webkit-scrollbar-thumb {
+  background-color: var(--scroll-thumb, var(--border-subtle, rgba(255, 255, 255, 0.25))) !important;
+}
+
+/* Hovering directly on the thumb */
+[data-virtuoso-scroller='true']::-webkit-scrollbar-thumb:hover,
+.unified-sidebar [data-virtuoso-scroller='true']::-webkit-scrollbar-thumb:hover,
+.explorer-embedded-container [data-virtuoso-scroller='true']::-webkit-scrollbar-thumb:hover,
+.start-menu-container [data-virtuoso-scroller='true']::-webkit-scrollbar-thumb:hover,
+.explorer-embedded-container .recommended-list::-webkit-scrollbar-thumb:hover,
+.unified-sidebar .recommended-list::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-muted, rgba(255, 255, 255, 0.5)) !important;
 }
 
 /* Sections */
