@@ -34,7 +34,7 @@ import {
   EditorEvent,
   EditorExtensions
 } from '../../core/editor'
-import { EditorSlash } from '../slash'
+import { EditorSlash, type SlashState } from '../slash'
 import EditorCreatedAt from './components/EditorCreatedAt'
 import EditorZoomHud from './components/EditorZoomHud'
 import { ExportContainer } from '../export'
@@ -58,15 +58,6 @@ export interface EditorProps {
   onGraphClick?: () => void
 }
 
-interface SlashState {
-  isOpen: boolean
-  query?: string
-  coords?: { top: number; left: number }
-  selectedIndex?: number
-  view?: EditorView
-  from?: number
-  to?: number
-}
 
 export const Editor: React.FC<EditorProps> = memo(
   ({

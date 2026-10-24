@@ -1,15 +1,72 @@
 /**
- * editorSlashExtension.js
- * 
- * CodeMirror 6 Extension that coordinates slash command triggers, caret positioning,
- * and high-precedence keymap interception for arrow keys, Enter, and Escape.
+ * @file editorSlashExtension.ts
+ * @description CodeMirror 6 extension coordinating slash triggers, cursor coordinates, and keymap interception.
+ * Provides high-precedence listeners for ArrowUp, ArrowDown, Enter, Tab, and Escape keys.
+ * @module features/slash/utils/editorSlashExtension
  */
 
-import { Prec } from '@codemirror/state'
-import { ViewPlugin, keymap } from '@codemirror/view'
+import { Prec, type Extension } from '@codemirror/state'
+import { ViewPlugin, keymap, type EditorView, type ViewUpdate } from '@codemirror/view'
 import { filterSlashCommands } from './slashCommands'
 
-export function createEditorSlashPlugin({ onSlashStateChange, slashHandlerRef }) {
+/**
+ * Screen pixel coordinates for positioning the slash palette directly under the cursor.
+ */
+export interface SlashCoords {
+  top: number
+  bottom: number
+  left: number
+  right: number
+}
+
+/**
+ * Global slash state structure communicated to React layer.
+ */
+export interface SlashState {
+  isOpen: boolean
+  query?: string
+  from?: number
+  to?: number
+  selectedIndex?: number
+  coords?: SlashCoords
+  view?: EditorView
+}
+
+/**
+ * Imperative slash handler stored in ref for zero-latency keyboard interception.
+ */
+export interface SlashHandler {
+  isOpen: boolean
+  selectedIndex: number
+  query: string
+  from: number
+  to: number
+  onArrowDown: () => void
+  onArrowUp: () => void
+  onEnter: () => boolean
+  onClose: () => void
+}
+
+/**
+ * Props for initializing the CodeMirror editor slash plugin.
+ */
+export interface CreateEditorSlashPluginProps {
+  onSlashStateChange:
+    | React.Dispatch<React.SetStateAction<SlashState>>
+    | ((state: SlashState | ((prev: SlashState) => SlashState)) => void)
+  slashHandlerRef?: React.MutableRefObject<SlashHandler | any>
+}
+
+/**
+ * Factory function creating CodeMirror 6 extension bundle for the slash command palette.
+ *
+ * @param props - Configuration callbacks and ref bindings
+ * @returns Array of CodeMirror extensions [high-precedence keymap, view plugin]
+ */
+export function createEditorSlashPlugin({
+  onSlashStateChange,
+  slashHandlerRef
+}: CreateEditorSlashPluginProps): Extension[] {
   const slashKeymap = Prec.highest(
     keymap.of([
       {
@@ -65,7 +122,11 @@ export function createEditorSlashPlugin({ onSlashStateChange, slashHandlerRef })
 
   const plugin = ViewPlugin.fromClass(
     class {
-      constructor(view) {
+      view: EditorView
+      pendingCheck: number | null
+      selectedIndex: number
+
+      constructor(view: EditorView) {
         this.view = view
         this.pendingCheck = null
         this.selectedIndex = 0
@@ -73,7 +134,7 @@ export function createEditorSlashPlugin({ onSlashStateChange, slashHandlerRef })
         this.scheduleCheck(view)
       }
 
-      initSlashHandler(view) {
+      initSlashHandler(view: EditorView): void {
         if (!slashHandlerRef) return
         slashHandlerRef.current = {
           isOpen: false,
@@ -87,7 +148,7 @@ export function createEditorSlashPlugin({ onSlashStateChange, slashHandlerRef })
             if (filtered.length > 0) {
               this.selectedIndex = (this.selectedIndex + 1) % filtered.length
               slashHandlerRef.current.selectedIndex = this.selectedIndex
-              onSlashStateChange((prev) => ({
+              onSlashStateChange((prev: SlashState) => ({
                 ...prev,
                 selectedIndex: this.selectedIndex
               }))
@@ -99,7 +160,7 @@ export function createEditorSlashPlugin({ onSlashStateChange, slashHandlerRef })
             if (filtered.length > 0) {
               this.selectedIndex = (this.selectedIndex - 1 + filtered.length) % filtered.length
               slashHandlerRef.current.selectedIndex = this.selectedIndex
-              onSlashStateChange((prev) => ({
+              onSlashStateChange((prev: SlashState) => ({
                 ...prev,
                 selectedIndex: this.selectedIndex
               }))
@@ -139,7 +200,7 @@ export function createEditorSlashPlugin({ onSlashStateChange, slashHandlerRef })
         }
       }
 
-      update(update) {
+      update(update: ViewUpdate): void {
         if (update.docChanged || update.selectionSet) {
           const state = update.view.state
           const sel = state.selection?.main
@@ -159,7 +220,7 @@ export function createEditorSlashPlugin({ onSlashStateChange, slashHandlerRef })
         }
       }
 
-      scheduleCheck(view) {
+      scheduleCheck(view: EditorView): void {
         if (this.pendingCheck) {
           cancelAnimationFrame(this.pendingCheck)
         }
@@ -168,7 +229,7 @@ export function createEditorSlashPlugin({ onSlashStateChange, slashHandlerRef })
         })
       }
 
-      destroy() {
+      destroy(): void {
         if (this.pendingCheck) {
           cancelAnimationFrame(this.pendingCheck)
         }
@@ -177,8 +238,8 @@ export function createEditorSlashPlugin({ onSlashStateChange, slashHandlerRef })
         }
       }
 
-      checkSlash(view) {
-        if (!view || view.isDestroyed) return
+      checkSlash(view: EditorView): void {
+        if (!view || (view as any).isDestroyed) return
         const state = view.state
         const sel = state.selection?.main
         if (!sel || !sel.empty) {
@@ -198,21 +259,13 @@ export function createEditorSlashPlugin({ onSlashStateChange, slashHandlerRef })
           const slashIdx = textBefore.lastIndexOf('/')
           const slashFrom = line.from + slashIdx
           const slashTo = sel.head
-          const filtered = filterSlashCommands(query)
-
-          if (filtered.length === 0) {
-            if (slashHandlerRef?.current) {
-              slashHandlerRef.current.isOpen = false
-            }
-            onSlashStateChange({ isOpen: false })
-            return
-          }
 
           if (slashHandlerRef?.current?.query !== query) {
             this.selectedIndex = 0
           }
 
           try {
+            // Anchor coordinates directly to the exact position of the '/' character
             const coords = view.coordsAtPos(slashFrom) || view.coordsAtPos(sel.head)
             if (coords) {
               if (slashHandlerRef?.current) {

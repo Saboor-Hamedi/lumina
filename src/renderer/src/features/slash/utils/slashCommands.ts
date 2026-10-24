@@ -1,36 +1,62 @@
 /**
- * slashCommands.js
- * 
- * Declarative, extensible registry of all Editor Slash Commands in Lumina.
- * DRY architecture supporting categorized icons, aliases, keywords, and execute handlers.
+ * @file slashCommands.ts
+ * @description Declarative registry and execution handlers for all Editor Slash Commands in Lumina.
+ * Designed with strict DRY principles, full TypeScript types, categorized icons, keywords, and safe ranges.
+ * @module features/slash/utils/slashCommands
  */
 
+import type { EditorView } from '@codemirror/view'
+
+/**
+ * Categorization constants for slash commands.
+ */
 export const SLASH_CATEGORIES = {
   BASIC: 'Basic Blocks',
   RICH: 'Media & Components',
   AI_TOOLS: 'AI & Automation'
+} as const
+
+export type SlashCategory = (typeof SLASH_CATEGORIES)[keyof typeof SLASH_CATEGORIES]
+
+/**
+ * Definition interface for an executable slash command.
+ */
+export interface SlashCommand {
+  /** Unique command identifier */
+  id: string
+  /** Human-readable display label */
+  label: string
+  /** Searchable keywords and aliases */
+  keywords: string[]
+  /** Brief description explaining the command's effect */
+  desc: string
+  /** Lucide icon identifier mapped in EditorSlash */
+  icon: string
+  /** Group category for section headers */
+  category: SlashCategory
+  /** Execution callback modifying the CodeMirror editor state */
+  execute: (view: EditorView, from: number, to: number) => void
 }
 
-function safeRange(view, from, to) {
+/**
+ * Clamps replacement bounds within the safe length of the document.
+ *
+ * @param view - Target CodeMirror EditorView instance
+ * @param from - Desired starting index for replacement
+ * @param to - Desired ending index for replacement
+ * @returns Safe `{ from, to }` character offsets
+ */
+export function safeRange(view: EditorView, from: number, to: number): { from: number; to: number } {
   const len = view?.state?.doc?.length ?? 0
   const safeFrom = Math.max(0, Math.min(typeof from === 'number' ? from : len, len))
   const safeTo = Math.max(safeFrom, Math.min(typeof to === 'number' ? to : safeFrom, len))
   return { from: safeFrom, to: safeTo }
 }
 
-export function filterSlashCommands(query) {
-  const q = (query || '').toLowerCase().trim()
-  if (!q) return EDITOR_SLASH_COMMANDS
-
-  return EDITOR_SLASH_COMMANDS.filter((cmd) => {
-    const matchLabel = cmd.label.toLowerCase().includes(q)
-    const matchDesc = cmd.desc.toLowerCase().includes(q)
-    const matchKeywords = cmd.keywords?.some((k) => k.toLowerCase().includes(q))
-    return matchLabel || matchDesc || matchKeywords
-  })
-}
-
-export const EDITOR_SLASH_COMMANDS = [
+/**
+ * Master catalog of all available slash commands in Lumina Editor.
+ */
+export const EDITOR_SLASH_COMMANDS: SlashCommand[] = [
   // --- BASIC BLOCKS ---
   {
     id: 'h1',
@@ -188,7 +214,8 @@ export const EDITOR_SLASH_COMMANDS = [
     category: SLASH_CATEGORIES.RICH,
     execute: (view, from, to) => {
       const range = safeRange(view, from, to)
-      const tableTemplate = '| Column 1 | Column 2 | Column 3 |\n| :--- | :--- | :--- |\n| Item 1 | Details | Value |\n| Item 2 | Details | Value |\n'
+      const tableTemplate =
+        '| Column 1 | Column 2 | Column 3 |\n| :--- | :--- | :--- |\n| Item 1 | Details | Value |\n| Item 2 | Details | Value |\n'
       view.dispatch({
         changes: { from: range.from, to: range.to, insert: tableTemplate },
         selection: { anchor: range.from + tableTemplate.length }
@@ -277,14 +304,16 @@ export const EDITOR_SLASH_COMMANDS = [
       const range = safeRange(view, from, to)
       view.dispatch({ changes: { from: range.from, to: range.to, insert: '' } })
       view.focus()
-      window.dispatchEvent(new CustomEvent('open-inline-lumina', {
-        detail: { mode: 'generate' }
-      }))
+      window.dispatchEvent(
+        new CustomEvent('open-inline-lumina', {
+          detail: { mode: 'generate' }
+        })
+      )
     }
   },
   {
     id: 'date',
-    label: 'Today\'s Date',
+    label: "Today's Date",
     keywords: ['date', 'today', 'now', 'day', 'calendar'],
     desc: 'Insert current YYYY-MM-DD',
     icon: 'Calendar',
@@ -341,14 +370,12 @@ export const EDITOR_SLASH_COMMANDS = [
     category: SLASH_CATEGORIES.AI_TOOLS,
     execute: (view, from, to) => {
       const range = safeRange(view, from, to)
-      // Erase the slash query text from editor
       view.dispatch({
         changes: { from: range.from, to: range.to, insert: '' },
         selection: { anchor: range.from }
       })
-      // Trigger Google Login
-      if (window.api?.loginWithGoogle) {
-        window.api.loginWithGoogle('736587690312-33s4trbiculu5dvctb92lkl6njgc14ae.apps.googleusercontent.com')
+      if ((window as any).api?.loginWithGoogle) {
+        ;(window as any).api.loginWithGoogle('736587690312-33s4trbiculu5dvctb92lkl6njgc14ae.apps.googleusercontent.com')
       } else {
         window.dispatchEvent(new CustomEvent('open-google-login'))
       }
@@ -363,13 +390,29 @@ export const EDITOR_SLASH_COMMANDS = [
     category: SLASH_CATEGORIES.AI_TOOLS,
     execute: (view, from, to) => {
       const range = safeRange(view, from, to)
-      // Erase the slash query text from editor
       view.dispatch({
         changes: { from: range.from, to: range.to, insert: '' },
         selection: { anchor: range.from }
       })
-      // Trigger Email Modal
       window.dispatchEvent(new CustomEvent('open-email'))
     }
   }
 ]
+
+/**
+ * Filters commands against user query based on labels, descriptions, and keywords.
+ *
+ * @param query - Raw query text typed immediately following the '/' prefix
+ * @returns Filtered array of matching SlashCommand objects
+ */
+export function filterSlashCommands(query: string): SlashCommand[] {
+  const q = (query || '').toLowerCase().trim()
+  if (!q) return EDITOR_SLASH_COMMANDS
+
+  return EDITOR_SLASH_COMMANDS.filter((cmd) => {
+    const matchLabel = cmd.label.toLowerCase().includes(q)
+    const matchDesc = cmd.desc.toLowerCase().includes(q)
+    const matchKeywords = cmd.keywords?.some((k) => k.toLowerCase().includes(q))
+    return matchLabel || matchDesc || matchKeywords
+  })
+}

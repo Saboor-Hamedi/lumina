@@ -1,12 +1,13 @@
 /**
- * EditorSlash.jsx
- * 
- * Native, zero-friction inline slash command palette for the Lumina Markdown Editor.
- * Focus remains 100% in the editor while typing; CodeMirror keymap coordinates seamless
- * arrow browsing, selection, and instant markdown replacement.
+ * @file EditorSlash.tsx
+ * @description Native, zero-friction inline slash command palette for the Lumina Markdown Editor.
+ * Rendered directly into document.body portal so coordinates accurately position
+ * right below the typed '/' character without being skewed by editor transformations.
+ * @module features/slash/EditorSlash
  */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Search,
   Heading1,
@@ -31,10 +32,14 @@ import {
   Globe,
   Mail
 } from 'lucide-react'
-import { EDITOR_SLASH_COMMANDS, filterSlashCommands } from './slashCommands'
-import './editorSlash.css'
+import { filterSlashCommands, type SlashCommand } from './utils/slashCommands'
+import type { SlashCoords, SlashHandler } from './utils/editorSlashExtension'
+import './css/editorSlash.css'
 
-const ICON_MAP = {
+/**
+ * Lucide icon component dictionary mapping icon names from command registry.
+ */
+const ICON_MAP: Record<string, ReactNode> = {
   Heading1: <Heading1 size={13} />,
   Heading2: <Heading2 size={13} />,
   Heading3: <Heading3 size={13} />,
@@ -57,20 +62,44 @@ const ICON_MAP = {
   Mail: <Mail size={13} />
 }
 
-export const EditorSlash = ({
+/**
+ * Props for the EditorSlash component.
+ */
+export interface EditorSlashProps {
+  /** Whether the slash palette is currently visible */
+  isOpen: boolean
+  /** Filter query typed immediately after '/' */
+  query?: string
+  /** Screen bounding coordinates of the triggered '/' character */
+  coords?: SlashCoords
+  /** Active selection index for keyboard navigation */
+  selectedIndex?: number
+  /** Callback executed when a slash command is selected */
+  onSelect: (command: SlashCommand) => void
+  /** Callback executed when the menu is closed without selection */
+  onClose?: () => void
+  /** Imperative handler reference shared with CodeMirror view plugin */
+  slashHandlerRef?: React.MutableRefObject<SlashHandler | any>
+}
+
+/**
+ * EditorSlash Component
+ *
+ * Renders an inline, floating command palette directly underneath the cursor.
+ */
+export const EditorSlash: React.FC<EditorSlashProps> = ({
   isOpen,
   query = '',
   coords,
   selectedIndex: propSelectedIndex = 0,
   onSelect,
-  onClose,
   slashHandlerRef
 }) => {
-  const [selectedIndex, setSelectedIndex] = useState(propSelectedIndex)
-  const menuRef = useRef(null)
-  const selectedItemRef = useRef(null)
+  const [selectedIndex, setSelectedIndex] = useState<number>(propSelectedIndex)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const selectedItemRef = useRef<HTMLDivElement | null>(null)
 
-  // Filter commands fuzzily based on the live query typed in CodeMirror
+  // Filter commands in real time based on the live query typed after '/'
   const filteredCommands = useMemo(() => filterSlashCommands(query), [query])
 
   // Sync selection index with CodeMirror's live navigation
@@ -97,31 +126,33 @@ export const EditorSlash = ({
   const spaceBelow = window.innerHeight - coords.bottom
   const spaceAbove = coords.top
 
-  // Smart flip: flip ABOVE if space below is tight and space above has more clearance
+  // Smart vertical flip: flip ABOVE if space below is too small
   const shouldFlipAbove = spaceBelow < popupHeight + 16 && spaceAbove > spaceBelow
 
   const top = shouldFlipAbove
     ? Math.max(12, coords.top - popupHeight - 4)
     : Math.min(window.innerHeight - popupHeight - 12, coords.bottom + 4)
 
-  // Align left position precisely flush with the '/' character
+  // Align horizontally flush with the exact position of the '/' character
   let left = coords.left
   if (left + popupWidth > window.innerWidth - 16) {
     left = Math.max(16, window.innerWidth - popupWidth - 16)
   }
   if (left < 16) left = 16
 
-  const style = {
+  const style: React.CSSProperties = {
+    position: 'fixed',
     top: `${Math.round(top)}px`,
-    left: `${Math.round(left)}px`
+    left: `${Math.round(left)}px`,
+    zIndex: 999999
   }
 
-  // Group commands by category for neat UI presentation
-  let currentCategory = null
+  // Group commands by category for clear visual separation
+  let currentCategory: string | null = null
 
-  return (
+  return createPortal(
     <div className="editor-slash-palette" style={style} ref={menuRef}>
-      {/* Clean Live Filter Indicator */}
+      {/* Live Filter Indicator */}
       <div className="editor-slash-search-row">
         <Search size={12} className="editor-slash-search-icon" />
         <span className="editor-slash-search-text">
@@ -170,7 +201,8 @@ export const EditorSlash = ({
           })
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
