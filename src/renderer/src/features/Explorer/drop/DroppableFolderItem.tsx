@@ -14,6 +14,7 @@ export interface DroppableFolderItemProps {
   }
   isExpanded: boolean
   onToggle: (id: string, e?: React.MouseEvent) => void
+  onSelect?: (id: string, e?: React.MouseEvent) => void
   onContextMenu: (id: string, e: React.MouseEvent) => void
   folderColor?: string | null
   isRenaming?: boolean
@@ -35,6 +36,7 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
   item,
   isExpanded,
   onToggle,
+  onSelect,
   onContextMenu,
   folderColor,
   isRenaming,
@@ -136,6 +138,7 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
     <div
       ref={setDroppableRef}
       className="folder-tree-item"
+      data-folder-id={item.id}
       style={{
         position: 'relative',
         opacity: isDragging ? 0.5 : 1
@@ -161,6 +164,16 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
             return
           }
           if (e.button !== 0) return
+          if (!isRenaming) {
+            if (onSelect) {
+              onSelect(item.id, e)
+            } else {
+              onToggle(item.id, e)
+            }
+          }
+        }}
+        onDoubleClick={(e) => {
+          if (e.button !== 0) return
           if (!isRenaming) onToggle(item.id, e)
         }}
         onContextMenu={(e) => {
@@ -169,7 +182,24 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
           onContextMenu(item.id, e)
         }}
       >
-        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 14, height: 14, flexShrink: 0 }}>
+        <span
+          className="folder-chevron-btn"
+          onClick={(e) => {
+            e.stopPropagation()
+            if (!isRenaming) onToggle(item.id, e)
+          }}
+          title={isExpanded ? 'Collapse Folder' : 'Expand Folder'}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 18,
+            height: 18,
+            flexShrink: 0,
+            cursor: 'pointer',
+            borderRadius: '3px'
+          }}
+        >
           {isExpanded ? (
             <ChevronDown size={14} className="folder-chevron" />
           ) : (

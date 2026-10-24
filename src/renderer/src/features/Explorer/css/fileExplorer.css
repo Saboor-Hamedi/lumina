@@ -896,6 +896,32 @@
   transition: all 0.12s ease-out;
 }
 
+.folder-chevron-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.folder-chevron-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-main, #ffffff);
+}
+
+.folder-chevron-btn .folder-chevron {
+  color: var(--text-muted, #94a3b8);
+  transition: transform 0.12s ease, color 0.12s ease;
+}
+
+.folder-chevron-btn:hover .folder-chevron {
+  color: var(--text-main, #ffffff);
+}
+
 .folder-tree-main.folder-over .folder-chevron,
 .folder-tree-main.folder-over .folder-icon-color {
   color: var(--text-accent, #40bafa) !important;

@@ -18,7 +18,7 @@
  * - The explorer only re-renders when the user explicitly clicks a file (handleNoteClick changes selectedNoteIds).
  */
 
-import React, { useCallback } from 'react'
+import React, { useCallback, useRef, useLayoutEffect } from 'react'
 import { Virtuoso } from 'react-virtuoso'
 import { FileText, Folder, LayoutDashboard } from 'lucide-react'
 import { useDroppable } from '@dnd-kit/core'
@@ -211,6 +211,57 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
   handleExternalDrop
 }) => {
   countExplorerPerfRender('ExplorerVirtuosoList')
+  const scrollerElementRef = useRef<HTMLElement | null>(null)
+  const collapseAnchorRef = useRef<{ folderId: string; topOffset: number } | null>(null)
+
+  const handleToggleFolder = useCallback(
+    (folderId: string, e?: any) => {
+      try {
+        const scroller =
+          scrollerElementRef.current ||
+          (document.querySelector('[data-virtuoso-scroller="true"]') as HTMLElement | null)
+        const folderEl = document.querySelector(
+          `[data-folder-id="${CSS.escape(folderId)}"]`
+        ) as HTMLElement | null
+        if (folderEl && scroller) {
+          const folderRect = folderEl.getBoundingClientRect()
+          const scrollerRect = scroller.getBoundingClientRect()
+          collapseAnchorRef.current = {
+            folderId,
+            topOffset: folderRect.top - scrollerRect.top
+          }
+        }
+      } catch {}
+
+      beginExplorerPerf('folder', folderId)
+      toggleFolder(folderId, e)
+    },
+    [toggleFolder]
+  )
+
+  useLayoutEffect(() => {
+    if (!collapseAnchorRef.current) return
+    const { folderId, topOffset } = collapseAnchorRef.current
+    collapseAnchorRef.current = null
+
+    try {
+      const scroller =
+        scrollerElementRef.current ||
+        (document.querySelector('[data-virtuoso-scroller="true"]') as HTMLElement | null)
+      const folderEl = document.querySelector(
+        `[data-folder-id="${CSS.escape(folderId)}"]`
+      ) as HTMLElement | null
+      if (folderEl && scroller) {
+        const newTopOffset =
+          folderEl.getBoundingClientRect().top - scroller.getBoundingClientRect().top
+        const diff = newTopOffset - topOffset
+        if (Math.abs(diff) > 0.5) {
+          scroller.scrollTop += diff
+        }
+      }
+    } catch {}
+  }, [flatTree])
+
   // Memoized row content renderer
   // IMPORTANT: selectedSnippetId and selectedNoteIds are read from REFS (not reactive deps)
   // so that switching tabs does not invalidate this callback and re-render all Virtuoso rows.
@@ -312,14 +363,9 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
               onExternalDragEnter={(e) => handleExternalDragEnter(e, item.id)}
               onExternalDragOver={(e) => handleExternalDragOver(e, item.id)}
               onExternalDrop={(e) => handleExternalDrop(e, item.id)}
-              onToggle={(id, e) => {
-                if (e?.ctrlKey || e?.metaKey || e?.shiftKey) {
-                  if (e) handleFolderClick(id, index, e)
-                } else {
-                  beginExplorerPerf('folder', id)
-                  if (e) handleFolderClick(id, index, e)
-                  toggleFolder(id, e)
-                }
+              onToggle={handleToggleFolder}
+              onSelect={(id, e) => {
+                if (e) handleFolderClick(id, index, e)
               }}
               onContextMenu={(id, e) => {
                 if (e.shiftKey || e.ctrlKey || e.metaKey) {
@@ -478,6 +524,9 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
           ) : (
             <Virtuoso
               ref={virtuosoRef}
+              scrollerRef={(el) => {
+                scrollerElementRef.current = el as HTMLElement | null
+              }}
               className="premimum-scrollbar"
               style={{
                 flex: 1,
