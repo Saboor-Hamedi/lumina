@@ -1,7 +1,18 @@
 import React, { useRef, useEffect } from 'react'
 import { Search, X, Check, Plus } from 'lucide-react'
+import type { TemplateItem } from './utils/useTemplate'
 
-const renderMiniPreview = (template) => {
+export interface TemplateSidebarProps {
+  templates?: TemplateItem[]
+  selectedId: string
+  onSelect: (id: string) => void
+  onApply: (template?: TemplateItem) => void
+  searchQuery: string
+  setSearchQuery: (query: string) => void
+  isOpen?: boolean
+}
+
+const renderMiniPreview = (template: TemplateItem): React.ReactNode => {
   if (template.id === 'blank') {
     return (
       <div className="template-mini-blank">
@@ -133,7 +144,7 @@ const renderMiniPreview = (template) => {
   )
 }
 
-const TemplateSidebar = ({
+const TemplateSidebar: React.FC<TemplateSidebarProps> = ({
   templates = [],
   selectedId,
   onSelect,
@@ -142,9 +153,9 @@ const TemplateSidebar = ({
   setSearchQuery,
   isOpen = true
 }) => {
-  const searchInputRef = useRef(null)
-  const activeItemRef = useRef(null)
-  const scrollContainerRef = useRef(null)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const activeItemRef = useRef<HTMLDivElement | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const el = activeItemRef.current
@@ -163,7 +174,13 @@ const TemplateSidebar = ({
   }, [selectedId])
 
   return (
-    <aside className={`template-sidebar ${isOpen ? 'open' : 'closed'}`}>
+    <aside
+      className={`template-sidebar ${isOpen ? 'open' : 'closed'}`}
+      style={{
+        width: isOpen ? '240px' : '0',
+        minWidth: isOpen ? '240px' : '0'
+      }}
+    >
       <div className="template-sidebar-header">
         <div className="template-search-wrapper">
           <Search size={13} className="template-search-icon" />
@@ -178,6 +195,7 @@ const TemplateSidebar = ({
           />
           {searchQuery && (
             <button
+              type="button"
               className="template-search-clear"
               onClick={() => setSearchQuery('')}
               aria-label="Clear search"

@@ -8,6 +8,7 @@ import { useSettingsStore } from '../../core/store/SettingStore'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import '../modals/css/guide.css'
 import '../Docs/Documentation.css'
+import '../template/css/template.css'
 import './css/theme.css'
 
 export interface ThemeProps {
@@ -22,7 +23,7 @@ interface ThemeSidebarItemProps {
   onSelect: (themeId: string) => void
 }
 
-// Lightweight, ergonomic Theme Card in Flat Sidebar
+// Full-height Theme Card with Mini Workspace Preview matching Template cards
 const ThemeSidebarItem: React.FC<ThemeSidebarItemProps> = memo(
   ({ themeData, isActive, isSelected, onSelect }) => {
     const c = themeData.colors || ({} as Record<string, string>)
@@ -30,6 +31,8 @@ const ThemeSidebarItem: React.FC<ThemeSidebarItemProps> = memo(
     const bgSidebar = c['--bg-sidebar'] || '#16161e'
     const bgEditor = c['--bg-editor'] || '#1a1a24'
     const accent = c['--text-accent'] || '#40bafa'
+    const text = c['--text-main'] || '#ffffff'
+    const border = c['--border-dim'] || 'rgba(255,255,255,0.08)'
 
     const isDark =
       bgApp.toLowerCase().includes('#0') ||
@@ -43,37 +46,227 @@ const ThemeSidebarItem: React.FC<ThemeSidebarItemProps> = memo(
     return (
       <div
         data-theme-id={themeData.id}
-        className={`theme-sidebar-card template-modal-card ${isSelected ? 'selected active' : ''} ${isActive ? 'current' : ''}`}
+        className={`template-modal-card theme-sidebar-card ${isSelected ? 'selected active' : ''} ${isActive ? 'current' : ''}`}
         onClick={handleClick}
       >
-        <div className="theme-sidebar-card-header">
-          <span className="theme-sidebar-card-name" title={themeData.name}>
-            {themeData.name}
-          </span>
-          {isActive ? (
-            <span className="theme-sidebar-badge active">ACTIVE</span>
-          ) : (
-            <span className="theme-sidebar-badge">{isDark ? 'DARK' : 'LIGHT'}</span>
-          )}
+        <div className="template-card-header">
+          <div className="template-title-row">
+            <span className="template-modal-name">{themeData.name}</span>
+            {isActive ? (
+              <span
+                className="template-badge"
+                style={{
+                  color: '#22c55e',
+                  borderColor: 'rgba(34, 197, 94, 0.4)',
+                  background: 'rgba(34, 197, 94, 0.1)',
+                  fontWeight: 700
+                }}
+              >
+                ACTIVE
+              </span>
+            ) : (
+              <span className="template-badge">{isDark ? 'DARK' : 'LIGHT'}</span>
+            )}
+          </div>
         </div>
 
-        <div className="theme-sidebar-card-swatches">
-          <div className="theme-swatch-bar" style={{ background: bgApp }}>
-            <span
-              className="theme-swatch-section"
-              style={{ background: bgSidebar }}
-              title={`Sidebar: ${bgSidebar}`}
-            />
-            <span
-              className="theme-swatch-section"
-              style={{ background: bgEditor }}
-              title={`Editor: ${bgEditor}`}
-            />
-            <span
-              className="theme-swatch-section accent"
-              style={{ background: accent }}
-              title={`Accent: ${accent}`}
-            />
+        <div className="template-modal-preview-wrapper">
+          <div
+            className="template-modal-preview"
+            style={{
+              background: bgApp,
+              borderColor: border,
+              padding: '4px'
+            }}
+          >
+            {/* Mini Workspace Window Mockup */}
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                borderRadius: '4px',
+                overflow: 'hidden',
+                border: `1px solid ${border}`,
+                background: bgApp
+              }}
+            >
+              {/* Titlebar */}
+              <div
+                style={{
+                  height: '12px',
+                  background: bgSidebar,
+                  borderBottom: `1px solid ${border}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 5px',
+                  gap: '2.5px',
+                  flexShrink: 0
+                }}
+              >
+                <span
+                  style={{
+                    width: '3.5px',
+                    height: '3.5px',
+                    borderRadius: '50%',
+                    background: '#ff5f56'
+                  }}
+                />
+                <span
+                  style={{
+                    width: '3.5px',
+                    height: '3.5px',
+                    borderRadius: '50%',
+                    background: '#ffbd2e'
+                  }}
+                />
+                <span
+                  style={{
+                    width: '3.5px',
+                    height: '3.5px',
+                    borderRadius: '50%',
+                    background: '#27c93f'
+                  }}
+                />
+                <div
+                  style={{
+                    width: '22px',
+                    height: '2.5px',
+                    borderRadius: '1px',
+                    background: text,
+                    opacity: 0.25,
+                    marginLeft: '3px'
+                  }}
+                />
+              </div>
+
+              {/* Body: Sidebar + Editor */}
+              <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+                {/* Mini Sidebar */}
+                <div
+                  style={{
+                    width: '32px',
+                    background: bgSidebar,
+                    borderRight: `1px solid ${border}`,
+                    padding: '3px 2px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2.5px',
+                    flexShrink: 0
+                  }}
+                >
+                  <div
+                    style={{
+                      height: '4px',
+                      borderRadius: '1.5px',
+                      background: accent,
+                      opacity: 0.9,
+                      width: '85%'
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: '3px',
+                      borderRadius: '1.5px',
+                      background: text,
+                      opacity: 0.2,
+                      width: '70%'
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: '3px',
+                      borderRadius: '1.5px',
+                      background: text,
+                      opacity: 0.15,
+                      width: '55%'
+                    }}
+                  />
+                </div>
+
+                {/* Mini Editor */}
+                <div
+                  style={{
+                    flex: 1,
+                    background: bgEditor,
+                    padding: '4px 6px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '2.5px',
+                    overflow: 'hidden'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}>
+                    <span
+                      style={{
+                        width: '3px',
+                        height: '3px',
+                        borderRadius: '1px',
+                        background: accent
+                      }}
+                    />
+                    <div
+                      style={{
+                        height: '4px',
+                        borderRadius: '1px',
+                        background: accent,
+                        width: '45%'
+                      }}
+                    />
+                  </div>
+                  <div
+                    style={{
+                      height: '3px',
+                      borderRadius: '1px',
+                      background: text,
+                      opacity: 0.4,
+                      width: '80%'
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: '3px',
+                      borderRadius: '1px',
+                      background: text,
+                      opacity: 0.25,
+                      width: '60%'
+                    }}
+                  />
+                  <div
+                    style={{
+                      marginTop: 'auto',
+                      height: '7px',
+                      borderRadius: '2px',
+                      background: bgApp,
+                      border: `1px solid ${border}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '0 3px',
+                      gap: '2px'
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '2.5px',
+                        height: '2.5px',
+                        borderRadius: '50%',
+                        background: accent
+                      }}
+                    />
+                    <div
+                      style={{
+                        height: '2px',
+                        borderRadius: '1px',
+                        background: accent,
+                        opacity: 0.7,
+                        width: '35%'
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -316,7 +509,7 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
         const container = sidebarScrollRef.current
         if (!container) return
         const activeCard = container.querySelector<HTMLElement>(
-          '.theme-sidebar-card.selected, .theme-sidebar-card.active'
+          '.template-modal-card.selected, .template-modal-card.active'
         )
         if (activeCard) {
           activeCard.scrollIntoView({ block: 'nearest' })
@@ -361,7 +554,7 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
   const scrollToItem = useCallback((idx: number) => {
     const container = sidebarScrollRef.current
     if (!container) return
-    const cards = container.querySelectorAll<HTMLElement>('.theme-sidebar-card')
+    const cards = container.querySelectorAll<HTMLElement>('.template-modal-card')
     const el = cards[idx]
     if (el) {
       el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
@@ -516,8 +709,8 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
           <aside
             className={`docs-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}
             style={{
-              width: isSidebarOpen ? '232px' : '0',
-              minWidth: isSidebarOpen ? '232px' : '0'
+              width: isSidebarOpen ? '240px' : '0',
+              minWidth: isSidebarOpen ? '240px' : '0'
             }}
           >
             {/* Search Header */}
@@ -565,7 +758,7 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
                 {filteredThemes.length} {filteredThemes.length === 1 ? 'Theme' : 'Themes'}
               </div>
 
-              <div className="theme-sidebar-grid">
+              <div className="template-modal-grid">
                 {filteredThemes.map((t) => (
                   <ThemeSidebarItem
                     key={t.id}

@@ -8,6 +8,7 @@ import SettingTabs, { SETTINGS_TAB_ORDER } from './SettingTabs'
 import SettingPanel from './SettingPanel'
 import { useModalDrag } from './hook/useModalDrag'
 import type { SettingsProps, SettingsTabId } from './types'
+import '../Docs/Documentation.css'
 import './css/settings.css'
 
 const TAB_LABELS: Record<SettingsTabId, string> = {
@@ -161,17 +162,18 @@ export const Settings: React.FC<SettingsProps> = ({
           borderRadius: isMaximized ? '0' : '12px'
         }}
       >
-        {/* Modal Window Header */}
+        {/* Modal Window Header - matching Documentation / mother modal */}
         <div
-          className="modal-header settings-modal-header"
+          className="modal-header settings-modal-header docs-modal-header"
           onMouseDown={handleModalHeaderMouseDown}
+          onDoubleClick={handleToggleMaximize}
           style={{ cursor: isMaximized ? 'default' : 'grab' }}
         >
-          <div className="settings-header-left">
+          <div className="settings-header-left docs-header-left">
             <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
               <button
                 type="button"
-                className="settings-sidebar-toggle-btn"
+                className="docs-sidebar-toggle-btn settings-sidebar-toggle-btn"
                 onClick={handleToggleSidebar}
                 aria-label={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
               >
@@ -189,11 +191,11 @@ export const Settings: React.FC<SettingsProps> = ({
             </span>
           </div>
 
-          <div className="window-controls settings-header-right">
+          <div className="window-controls settings-header-right docs-header-right">
             <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
               <button
                 type="button"
-                className="control-icon control-maximize settings-window-btn"
+                className="docs-window-btn settings-window-btn"
                 onClick={handleToggleMaximize}
                 aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
               >
@@ -207,11 +209,11 @@ export const Settings: React.FC<SettingsProps> = ({
             <ToolTip text="Close (Esc)" position="bottom">
               <button
                 type="button"
-                className="control-icon control-close settings-close-btn"
+                className="guide-close-btn settings-close-btn"
                 onClick={onClose}
                 aria-label="Close"
               >
-                <X size={17} strokeWidth={2} />
+                <X size={17} />
               </button>
             </ToolTip>
           </div>

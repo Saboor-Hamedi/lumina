@@ -4,22 +4,31 @@ import { PanelLeftClose, PanelLeftOpen, Square, Copy, X, Check } from 'lucide-re
 import ToolTip from '../../components/atoms/ToolTip'
 import TemplateSidebar from './TemplateSidebar'
 import TemplateContent from './TemplateContent'
-import useTemplate from './hooks/useTemplate'
+import useTemplate, { type TemplateItem } from './utils/useTemplate'
 import { useSettingsStore } from '../../core/store/SettingStore'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import '../modals/css/guide.css'
+import '../Docs/Documentation.css'
 import '../preview/preview.css'
 import './css/template.css'
 
-const Template = ({
+export interface TemplateProps {
+  isOpen?: boolean
+  onClose?: () => void
+  templates?: TemplateItem[]
+  onSelectTemplate?: (template: TemplateItem) => void
+}
+
+export const Template: React.FC<TemplateProps> = ({
   isOpen = false,
   onClose = () => {},
   templates,
   onSelectTemplate = () => {}
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const isMaximized = useSettingsStore((s) => s.settings.templateModalMaximized ?? false)
+  const isMaximized = useSettingsStore((s: any) => s.settings?.templateModalMaximized ?? false)
 
-  const containerRef = useRef(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   const {
     searchQuery,
@@ -35,20 +44,24 @@ const Template = ({
     onClose
   })
 
+  // Esc key closes modal cleanly via Lumina's global shortcut manager
+  useKeyboardShortcuts({
+    onEscape: () => {
+      if (isOpen && onClose) {
+        onClose()
+        return true
+      }
+      return false
+    }
+  })
+
   // Keyboard navigation
   useEffect(() => {
     if (!isOpen) return
 
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        e.stopPropagation()
-        onClose()
-        return
-      }
-
-      // If typing in search input, don't hijack up/down unless necessary
-      const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA'
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      const isInput = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA'
 
       if (e.key === 'ArrowDown') {
         e.preventDefault()
@@ -65,28 +78,26 @@ const Template = ({
           setSelectedId(filteredTemplates[prevIndex].id)
         }
       } else if (e.key === 'Enter' && !e.shiftKey) {
-        if (!isInput || e.target.classList.contains('template-search-input')) {
+        if (!isInput || target?.classList.contains('template-search-input')) {
           e.preventDefault()
           handleApply()
         }
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown, { capture: true })
-    document.addEventListener('keydown', handleKeyDown, { capture: true })
+    window.addEventListener('keydown', handleKeyDown)
     return () => {
-      window.removeEventListener('keydown', handleKeyDown, { capture: true })
-      document.removeEventListener('keydown', handleKeyDown, { capture: true })
+      window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [isOpen, onClose, filteredTemplates, selectedId, handleApply, setSelectedId])
+  }, [isOpen, filteredTemplates, selectedId, handleApply, setSelectedId])
 
   const handleToggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => !prev)
   }, [])
 
   const handleToggleMaximize = useCallback(() => {
-    const { settings, updateSettings } = useSettingsStore.getState()
-    updateSettings({ templateModalMaximized: !(settings.templateModalMaximized ?? false) })
+    const { settings, updateSettings } = useSettingsStore.getState() as any
+    updateSettings({ templateModalMaximized: !(settings?.templateModalMaximized ?? false) })
   }, [])
 
   if (!isOpen) return null
@@ -95,31 +106,20 @@ const Template = ({
     <div className="guide-modal-overlay" onClick={onClose}>
       <div
         ref={containerRef}
-        className={`template-modal-container modal-container${isMaximized ? ' maximized' : ''}`}
+        className={`docs-modal-container template-modal-container${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          flexDirection: 'column',
-          width: isMaximized ? '100vw' : '900px',
-          height: isMaximized ? '100vh' : '76vh',
-          maxWidth: isMaximized ? 'none' : '94vw',
-          minHeight: isMaximized ? 'none' : '480px',
-          maxHeight: isMaximized ? 'none' : '78vh',
-          transform: isMaximized ? 'none' : 'translate3d(0px, 0px, 0px)',
-          transition: '0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          boxShadow: 'rgba(0, 0, 0, 0.6) 0px 30px 60px',
-          overflow: 'hidden',
-          borderRadius: isMaximized ? '0' : '12px'
-        }}
       >
-        {/* Header */}
+        {/* Header - exactly identical to Documentation / mother modal */}
         <div
-          className="template-modal-header"
+          className="docs-modal-header template-modal-header"
+          onDoubleClick={handleToggleMaximize}
           style={{ cursor: 'default' }}
         >
-          <div className="template-header-left">
+          <div className="docs-header-left template-header-left">
             <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
               <button
-                className="template-sidebar-toggle-btn"
+                type="button"
+                className="docs-sidebar-toggle-btn template-sidebar-toggle-btn"
                 onClick={handleToggleSidebar}
                 aria-label={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
               >
@@ -130,15 +130,45 @@ const Template = ({
                 )}
               </button>
             </ToolTip>
-            <span className="template-header-title">Templates</span>
-            <span className="template-header-divider">/</span>
-            <span className="template-header-subtitle template-header-active-pill">
-              {selectedTemplate?.title?.replace(/\.md$/, '') || 'Blank Note'}
+            <span
+              style={{
+                fontSize: '12.5px',
+                fontWeight: 500,
+                color: 'var(--text-main)',
+                letterSpacing: '-0.01em',
+                background: 'transparent',
+                padding: 0
+              }}
+            >
+              Templates
             </span>
+            {selectedTemplate && (
+              <>
+                <span style={{ opacity: 0.35, color: 'var(--text-muted)', fontSize: '12px' }}>/</span>
+                <span
+                  className="template-header-active-pill"
+                  style={{
+                    fontSize: '11.5px',
+                    fontWeight: 400,
+                    color: 'var(--text-muted)',
+                    maxWidth: '240px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    background: 'transparent',
+                    padding: 0
+                  }}
+                  title={selectedTemplate?.title?.replace(/\.md$/, '')}
+                >
+                  {selectedTemplate?.title?.replace(/\.md$/, '') || 'Blank Note'}
+                </span>
+              </>
+            )}
           </div>
 
-          <div className="template-header-right">
+          <div className="docs-header-right template-header-right">
             <button
+              type="button"
               className="template-header-apply-btn"
               onClick={() => handleApply(selectedTemplate)}
               aria-label="Use selected template"
@@ -148,7 +178,8 @@ const Template = ({
             </button>
             <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
               <button
-                className="template-window-btn"
+                type="button"
+                className="docs-window-btn template-window-btn"
                 onClick={handleToggleMaximize}
                 aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
               >
@@ -161,18 +192,19 @@ const Template = ({
             </ToolTip>
             <ToolTip text="Close (Esc)" position="bottom">
               <button
-                className="template-window-btn"
+                type="button"
+                className="guide-close-btn"
                 onClick={onClose}
                 aria-label="Close Templates (Esc)"
               >
-                <X size={15} />
+                <X size={17} />
               </button>
             </ToolTip>
           </div>
         </div>
 
-        {/* Content Container */}
-        <div className={`template-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
+        {/* Content Container: Flat Docked Sidebar + Content */}
+        <div className={`docs-container template-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
           <TemplateSidebar
             templates={filteredTemplates}
             selectedId={selectedId}

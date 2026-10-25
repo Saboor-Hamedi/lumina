@@ -8,7 +8,7 @@ const sampleTemplates = [
   { id: 'meeting-notes', title: 'Meeting Notes.md', code: '# 👥 Meeting\n\nNotes' }
 ]
 
-describe('Template.jsx', () => {
+describe('Template.tsx', () => {
   const defaultProps = () => ({
     isOpen: true,
     onClose: vi.fn(),

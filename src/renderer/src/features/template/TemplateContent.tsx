@@ -1,8 +1,14 @@
 import React from 'react'
 import { Check, Plus } from 'lucide-react'
 import { PreviewCommandPalette } from '../commandpalette'
+import type { TemplateItem } from './utils/useTemplate'
 
-const TemplateContent = ({ template, onApply }) => {
+export interface TemplateContentProps {
+  template?: TemplateItem | null
+  onApply: (template?: TemplateItem) => void
+}
+
+const TemplateContent: React.FC<TemplateContentProps> = ({ template, onApply }) => {
   const isBlank = !template || template.id === 'blank' || !template.code
 
   return (
@@ -18,8 +24,9 @@ const TemplateContent = ({ template, onApply }) => {
               Start fresh with a clean, empty note. No predefined headings, tables, or boilerplate.
             </p>
             <button
+              type="button"
               className="template-primary-btn"
-              onClick={() => onApply(template)}
+              onClick={() => onApply(template || undefined)}
               style={{ marginTop: '16px' }}
             >
               <Check size={14} strokeWidth={2.5} />
@@ -29,9 +36,7 @@ const TemplateContent = ({ template, onApply }) => {
         </div>
       ) : (
         <div className="template-preview-wrapper">
-          <PreviewCommandPalette
-            content={template.code}
-          />
+          <PreviewCommandPalette content={template.code} />
         </div>
       )}
     </div>

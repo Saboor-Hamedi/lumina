@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
-import RawTemplateSidebar from '../../../../../src/renderer/src/features/template/TemplateSidebar'
-const TemplateSidebar = RawTemplateSidebar as React.ComponentType<any>
+import TemplateSidebar from '../../../../../src/renderer/src/features/template/TemplateSidebar'
+
 
 const mockTemplates = [
   {
@@ -33,7 +33,7 @@ const mockTemplates = [
   }
 ]
 
-describe('TemplateSidebar.jsx', () => {
+describe('TemplateSidebar.tsx', () => {
   const defaultProps = {
     templates: mockTemplates,
     selectedId: 'blank',
