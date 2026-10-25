@@ -144,7 +144,22 @@ export function registerExportHandlers(getMainWindow: () => BrowserWindow | null
     let previewMarkdown = valid.content || ''
     if (valid.notes && valid.notes.length > 0) {
       previewMarkdown = valid.notes
-        .map((n) => `# ${n.title || 'Untitled'}\n\n${(n.content || '').trim()}`)
+        .map((n) => {
+          const content = (n.content || '').trim()
+          const noteTitle = (n.title || '').trim()
+          if (noteTitle) {
+            const firstLine = content.split(/\r?\n/)[0].trim()
+            const matchH = firstLine.match(/^#+\s*(.+)$/)
+            if (matchH && matchH[1].trim().toLowerCase() === noteTitle.toLowerCase()) {
+              return content
+            }
+            if (firstLine.startsWith('#')) {
+              return content
+            }
+            return `# ${noteTitle}\n\n${content}`
+          }
+          return content
+        })
         .join('\n\n---\n\n')
     }
 

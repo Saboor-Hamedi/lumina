@@ -245,7 +245,9 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
 
     const previewTitle =
       !isSeparate
-        ? folderName || 'Combined Export'
+        ? count === 1
+          ? notes?.[0]?.title || folderName || 'Export'
+          : folderName || 'Combined Export'
         : notes?.[selectedNoteIndex]?.title || notes?.[0]?.title || 'Untitled'
 
     const payloadNotes =
@@ -492,11 +494,12 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
                 )}
               </button>
             </ToolTip>
-            <span className="export-header-title">Batch Export</span>
+            <span className="export-header-title">{count === 1 ? 'Export' : 'Batch Export'}</span>
             <span className="export-header-divider">/</span>
             <span className="export-header-subtitle">
-              {count} {count === 1 ? 'note' : 'notes'}
-              {folderName ? ` in ${folderName}` : ''}
+              {count === 1
+                ? (notes?.[0]?.title || folderName || 'Note')
+                : `${count} notes${folderName && folderName !== 'Combined Export' && folderName !== 'Folder Export' ? ` in ${folderName}` : ''}`}
             </span>
           </div>
 

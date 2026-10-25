@@ -58,7 +58,18 @@ describe('exportUtils.generateTOC', () => {
   })
 
   it('escapes heading text in the table of contents', () => {
-    const { toc } = generateTOC('<h1>Tom & Jerry</h1>')
+    const { toc } = generateTOC('<h1>Tom & Jerry</h1><h2>Adventures</h2>')
+    expect(toc).toContain('Tom &amp; Jerry')
+  })
+
+  it('suppresses table of contents when headings are below minEntries', () => {
+    const { toc, count } = generateTOC('<h1>Only One Heading</h1>')
+    expect(count).toBe(1)
+    expect(toc).toBe('')
+  })
+
+  it('honors minEntries override when explicitly requested', () => {
+    const { toc } = generateTOC('<h1>Tom & Jerry</h1>', { minEntries: 1 })
     expect(toc).toContain('Tom &amp; Jerry')
   })
 })

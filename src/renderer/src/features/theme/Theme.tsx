@@ -1,12 +1,13 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react'
 import { createPortal } from 'react-dom'
-import { PanelLeftClose, PanelLeftOpen, Square, Copy, X, Search } from 'lucide-react'
+import { Palette, PanelLeftClose, PanelLeftOpen, Square, Copy, X, Search } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useTheme } from './hooks/useTheme'
 import type { ThemeDefinition } from './hooks/themeDefinitions'
 import { useSettingsStore } from '../../core/store/SettingStore'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 import '../modals/css/guide.css'
-import '../template/css/template.css'
+import '../Docs/Documentation.css'
 import './css/theme.css'
 
 export interface ThemeProps {
@@ -21,7 +22,7 @@ interface ThemeSidebarItemProps {
   onSelect: (themeId: string) => void
 }
 
-// Lightweight Theme Card in Sidebar — single click changes the entire theme immediately
+// Lightweight, ergonomic Theme Card in Flat Sidebar
 const ThemeSidebarItem: React.FC<ThemeSidebarItemProps> = memo(
   ({ themeData, isActive, isSelected, onSelect }) => {
     const c = themeData.colors || ({} as Record<string, string>)
@@ -29,8 +30,6 @@ const ThemeSidebarItem: React.FC<ThemeSidebarItemProps> = memo(
     const bgSidebar = c['--bg-sidebar'] || '#16161e'
     const bgEditor = c['--bg-editor'] || '#1a1a24'
     const accent = c['--text-accent'] || '#40bafa'
-    const text = c['--text-main'] || '#ffffff'
-    const border = c['--border-dim'] || 'rgba(255,255,255,0.08)'
 
     const isDark =
       bgApp.toLowerCase().includes('#0') ||
@@ -44,227 +43,37 @@ const ThemeSidebarItem: React.FC<ThemeSidebarItemProps> = memo(
     return (
       <div
         data-theme-id={themeData.id}
-        className={`template-modal-card ${isSelected ? 'active' : ''}`}
+        className={`theme-sidebar-card template-modal-card ${isSelected ? 'selected active' : ''} ${isActive ? 'current' : ''}`}
         onClick={handleClick}
       >
-        <div className="template-card-header">
-          <div className="template-title-row">
-            <span className="template-modal-name">{themeData.name}</span>
-            {isActive ? (
-              <span
-                className="template-badge"
-                style={{
-                  color: '#22c55e',
-                  borderColor: 'rgba(34, 197, 94, 0.4)',
-                  background: 'rgba(34, 197, 94, 0.1)',
-                  fontWeight: 700
-                }}
-              >
-                ACTIVE
-              </span>
-            ) : (
-              <span className="template-badge">{isDark ? 'DARK' : 'LIGHT'}</span>
-            )}
-          </div>
+        <div className="theme-sidebar-card-header">
+          <span className="theme-sidebar-card-name" title={themeData.name}>
+            {themeData.name}
+          </span>
+          {isActive ? (
+            <span className="theme-sidebar-badge active">ACTIVE</span>
+          ) : (
+            <span className="theme-sidebar-badge">{isDark ? 'DARK' : 'LIGHT'}</span>
+          )}
         </div>
 
-        <div className="template-modal-preview-wrapper">
-          <div
-            className="template-modal-preview"
-            style={{
-              background: bgApp,
-              borderColor: border,
-              padding: '4px'
-            }}
-          >
-            {/* Mini Workspace Window Mockup */}
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                borderRadius: '4px',
-                overflow: 'hidden',
-                border: `1px solid ${border}`,
-                background: bgApp
-              }}
-            >
-              {/* Titlebar */}
-              <div
-                style={{
-                  height: '12px',
-                  background: bgSidebar,
-                  borderBottom: `1px solid ${border}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '0 5px',
-                  gap: '2.5px',
-                  flexShrink: 0
-                }}
-              >
-                <span
-                  style={{
-                    width: '3.5px',
-                    height: '3.5px',
-                    borderRadius: '50%',
-                    background: '#ff5f56'
-                  }}
-                />
-                <span
-                  style={{
-                    width: '3.5px',
-                    height: '3.5px',
-                    borderRadius: '50%',
-                    background: '#ffbd2e'
-                  }}
-                />
-                <span
-                  style={{
-                    width: '3.5px',
-                    height: '3.5px',
-                    borderRadius: '50%',
-                    background: '#27c93f'
-                  }}
-                />
-                <div
-                  style={{
-                    width: '22px',
-                    height: '2.5px',
-                    borderRadius: '1px',
-                    background: text,
-                    opacity: 0.25,
-                    marginLeft: '3px'
-                  }}
-                />
-              </div>
-
-              {/* Body: Sidebar + Editor */}
-              <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
-                {/* Sidebar */}
-                <div
-                  style={{
-                    width: '32px',
-                    background: bgSidebar,
-                    borderRight: `1px solid ${border}`,
-                    padding: '3px 2px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2.5px',
-                    flexShrink: 0
-                  }}
-                >
-                  <div
-                    style={{
-                      height: '4px',
-                      borderRadius: '1.5px',
-                      background: accent,
-                      opacity: 0.9,
-                      width: '85%'
-                    }}
-                  />
-                  <div
-                    style={{
-                      height: '3px',
-                      borderRadius: '1.5px',
-                      background: text,
-                      opacity: 0.2,
-                      width: '70%'
-                    }}
-                  />
-                  <div
-                    style={{
-                      height: '3px',
-                      borderRadius: '1.5px',
-                      background: text,
-                      opacity: 0.15,
-                      width: '55%'
-                    }}
-                  />
-                </div>
-
-                {/* Editor */}
-                <div
-                  style={{
-                    flex: 1,
-                    background: bgEditor,
-                    padding: '4px 6px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '2.5px',
-                    overflow: 'hidden'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px', width: '100%' }}>
-                    <span
-                      style={{
-                        width: '3px',
-                        height: '3px',
-                        borderRadius: '1px',
-                        background: accent
-                      }}
-                    />
-                    <div
-                      style={{
-                        height: '4px',
-                        borderRadius: '1px',
-                        background: accent,
-                        width: '45%'
-                      }}
-                    />
-                  </div>
-                  <div
-                    style={{
-                      height: '3px',
-                      borderRadius: '1px',
-                      background: text,
-                      opacity: 0.4,
-                      width: '80%'
-                    }}
-                  />
-                  <div
-                    style={{
-                      height: '3px',
-                      borderRadius: '1px',
-                      background: text,
-                      opacity: 0.25,
-                      width: '60%'
-                    }}
-                  />
-                  <div
-                    style={{
-                      marginTop: 'auto',
-                      height: '7px',
-                      borderRadius: '2px',
-                      background: bgApp,
-                      border: `1px solid ${border}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '0 3px',
-                      gap: '2px'
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '2.5px',
-                        height: '2.5px',
-                        borderRadius: '50%',
-                        background: accent
-                      }}
-                    />
-                    <div
-                      style={{
-                        height: '2px',
-                        borderRadius: '1px',
-                        background: accent,
-                        opacity: 0.7,
-                        width: '35%'
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+        <div className="theme-sidebar-card-swatches">
+          <div className="theme-swatch-bar" style={{ background: bgApp }}>
+            <span
+              className="theme-swatch-section"
+              style={{ background: bgSidebar }}
+              title={`Sidebar: ${bgSidebar}`}
+            />
+            <span
+              className="theme-swatch-section"
+              style={{ background: bgEditor }}
+              title={`Editor: ${bgEditor}`}
+            />
+            <span
+              className="theme-swatch-section accent"
+              style={{ background: accent }}
+              title={`Accent: ${accent}`}
+            />
           </div>
         </div>
       </div>
@@ -280,7 +89,7 @@ interface ThemeContentProps {
 }
 
 // Dedicated Right Content Preview Pane for the currently selected theme
-const ThemeContent: React.FC<ThemeContentProps> = memo(({ themeData }) => {
+const ThemeContent: React.FC<ThemeContentProps> = memo(({ themeData, isActive }) => {
   if (!themeData) return null
   const c = themeData.colors || ({} as Record<string, string>)
 
@@ -298,7 +107,25 @@ const ThemeContent: React.FC<ThemeContentProps> = memo(({ themeData }) => {
       {/* Top Header */}
       <div className="theme-detail-header">
         <div>
-          <h2 className="theme-detail-title">{themeData.name}</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 className="theme-detail-title">{themeData.name}</h2>
+            {isActive && (
+              <span
+                style={{
+                  fontSize: '9.5px',
+                  fontWeight: 700,
+                  color: '#22c55e',
+                  background: 'rgba(34, 197, 94, 0.12)',
+                  border: '1px solid rgba(34, 197, 94, 0.4)',
+                  borderRadius: '3px',
+                  padding: '1.5px 6px',
+                  letterSpacing: '0.04em'
+                }}
+              >
+                CURRENTLY APPLIED
+              </span>
+            )}
+          </div>
           <p className="theme-detail-desc">
             {themeData.description ||
               'Ergonomically tuned color palette designed for high legibility and long-session comfort.'}
@@ -315,7 +142,7 @@ const ThemeContent: React.FC<ThemeContentProps> = memo(({ themeData }) => {
             color: 'var(--text-muted)',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
-            marginBottom: '4px'
+            marginBottom: '6px'
           }}
         >
           Color Palette
@@ -344,7 +171,7 @@ const ThemeContent: React.FC<ThemeContentProps> = memo(({ themeData }) => {
             color: 'var(--text-muted)',
             textTransform: 'uppercase',
             letterSpacing: '0.05em',
-            marginBottom: '4px'
+            marginBottom: '6px'
           }}
         >
           Live Interface Preview
@@ -469,11 +296,32 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
   const sidebarScrollRef = useRef<HTMLDivElement | null>(null)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
-  // Keep selectedId in sync with current theme only when modal opens
+  // Esc key closes modal cleanly via Lumina's global shortcut manager
+  useKeyboardShortcuts({
+    onEscape: () => {
+      if (isOpen && onClose) {
+        onClose()
+        return true
+      }
+      return false
+    }
+  })
+
+  // Synchronize on open and scroll active theme into view
   useEffect(() => {
     if (isOpen) {
       setSelectedId(theme)
       setSearchQuery('')
+      setTimeout(() => {
+        const container = sidebarScrollRef.current
+        if (!container) return
+        const activeCard = container.querySelector<HTMLElement>(
+          '.theme-sidebar-card.selected, .theme-sidebar-card.active'
+        )
+        if (activeCard) {
+          activeCard.scrollIntoView({ block: 'nearest' })
+        }
+      }, 50)
     }
   }, [isOpen, theme])
 
@@ -510,36 +358,21 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
     updateSettings({ themeModalMaximized: !(settings?.themeModalMaximized ?? false) })
   }, [])
 
-  // Container-scoped scroll for keyboard navigation only
   const scrollToItem = useCallback((idx: number) => {
     const container = sidebarScrollRef.current
     if (!container) return
-    const cards = container.querySelectorAll<HTMLElement>('.template-modal-card')
+    const cards = container.querySelectorAll<HTMLElement>('.theme-sidebar-card')
     const el = cards[idx]
-    if (!el) return
-    const elTop = el.offsetTop
-    const elBottom = elTop + el.offsetHeight
-    const containerTop = container.scrollTop
-    const containerBottom = containerTop + container.clientHeight
-
-    if (elTop < containerTop) {
-      container.scrollTo({ top: elTop - 8, behavior: 'auto' })
-    } else if (elBottom > containerBottom) {
-      container.scrollTo({ top: elBottom - container.clientHeight + 8, behavior: 'auto' })
+    if (el) {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
     }
   }, [])
 
+  // Keyboard navigation (Arrow keys up/down)
   useEffect(() => {
     if (!isOpen) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        e.stopPropagation()
-        onClose()
-        return
-      }
-
       const target = e.target as HTMLElement | null
       const isInput = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA'
 
@@ -570,46 +403,32 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown, { capture: true })
-    document.addEventListener('keydown', handleKeyDown, { capture: true })
+    window.addEventListener('keydown', handleKeyDown)
     return () => {
-      window.removeEventListener('keydown', handleKeyDown, { capture: true })
-      document.removeEventListener('keydown', handleKeyDown, { capture: true })
+      window.removeEventListener('keydown', handleKeyDown)
     }
   }, [isOpen, onClose, filteredThemes, selectedId, handleSelect, scrollToItem])
 
   if (!isOpen) return null
 
   return createPortal(
-    <div
-      className="nexus-overlay settings-overlay guide-modal-overlay theme-modal-overlay"
-      onClick={onClose}
-    >
+    <div className="guide-modal-overlay" onClick={onClose}>
       <div
         ref={containerRef}
-        className={`settings-modal theme-modal-container template-modal-container modal-container${isMaximized ? ' maximized' : ''}`}
+        className={`docs-modal-container${isMaximized ? ' maximized' : ''}`}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          flexDirection: 'column',
-          width: isMaximized ? '100vw' : '900px',
-          height: isMaximized ? '100vh' : '76vh',
-          maxWidth: isMaximized ? 'none' : '94vw',
-          minHeight: isMaximized ? 'none' : '480px',
-          maxHeight: isMaximized ? 'none' : '78vh',
-          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
-          overflow: 'hidden',
-          borderRadius: isMaximized ? '0' : '12px'
-        }}
       >
-        {/* Sleek Header matching Settings modal */}
+        {/* Header - exactly identical to Documentation / mother modal */}
         <div
-          className="modal-header theme-modal-header template-modal-header settings-modal-header"
+          className="docs-modal-header"
+          onDoubleClick={handleToggleMaximize}
           style={{ cursor: 'default' }}
         >
-          <div className="settings-header-left template-header-left">
+          <div className="docs-header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
               <button
-                className="control-icon settings-sidebar-toggle-btn template-sidebar-toggle-btn"
+                type="button"
+                className="docs-sidebar-toggle-btn"
                 onClick={handleToggleSidebar}
                 aria-label={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
               >
@@ -620,15 +439,55 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
                 )}
               </button>
             </ToolTip>
-            <span className="settings-header-title">Theme Gallery</span>
-            <span className="settings-header-divider">/</span>
-            <span className="settings-header-subtitle">{selectedTheme?.name || 'Themes'}</span>
+            <span
+              style={{
+                fontSize: '12.5px',
+                fontWeight: 500,
+                color: 'var(--text-main)',
+                letterSpacing: '-0.01em',
+                background: 'transparent',
+                padding: 0
+              }}
+            >
+              Theme Gallery
+            </span>
+            {selectedTheme && (
+              <>
+                <span style={{ opacity: 0.35, color: 'var(--text-muted)', fontSize: '12px' }}>/</span>
+                <span
+                  style={{
+                    fontSize: '11.5px',
+                    fontWeight: 400,
+                    color: 'var(--text-muted)',
+                    maxWidth: '240px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    background: 'transparent',
+                    padding: 0
+                  }}
+                  title={selectedTheme.name}
+                >
+                  {selectedTheme.name}
+                </span>
+              </>
+            )}
           </div>
 
-          <div className="window-controls settings-header-right template-header-right">
+          <div className="docs-header-right">
+            <ToolTip
+              text={`${filteredThemes.length} ${filteredThemes.length === 1 ? 'theme' : 'themes'}`}
+              position="bottom"
+            >
+              <div className="docs-header-stat">
+                <Palette size={12} />
+                <span>{filteredThemes.length} themes</span>
+              </div>
+            </ToolTip>
             <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
               <button
-                className="control-icon control-maximize settings-window-btn template-window-btn"
+                type="button"
+                className="docs-window-btn"
                 onClick={handleToggleMaximize}
                 aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
               >
@@ -641,30 +500,34 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
             </ToolTip>
             <ToolTip text="Close (Esc)" position="bottom">
               <button
-                className="control-icon control-close settings-close-btn template-window-btn"
+                type="button"
+                className="guide-close-btn"
                 onClick={onClose}
                 aria-label="Close"
               >
-                <X size={15} strokeWidth={2} />
+                <X size={17} />
               </button>
             </ToolTip>
           </div>
         </div>
 
-        {/* Main Body: Collapsible Sidebar + Rich Preview Pane */}
-        <div
-          className={`modal-body settings-layout template-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}
-        >
+        {/* Modal Body: Flat Seamless Docked Sidebar + Right Rich Preview */}
+        <div className={`docs-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
           <aside
-            className={`sidebar settings-sidebar template-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}
+            className={`docs-sidebar ${isSidebarOpen ? 'open' : 'closed'}`}
+            style={{
+              width: isSidebarOpen ? '232px' : '0',
+              minWidth: isSidebarOpen ? '232px' : '0'
+            }}
           >
-            <div className="template-sidebar-header">
-              <div className="template-search-wrapper">
-                <Search size={13} className="template-search-icon" />
+            {/* Search Header */}
+            <div className="docs-sidebar-header">
+              <div className="docs-search-wrapper">
+                <Search size={13} className="docs-search-icon" />
                 <input
                   ref={searchInputRef}
                   type="text"
-                  className="template-search-input"
+                  className="docs-search-input"
                   placeholder="Search themes..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -673,7 +536,8 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
                 />
                 {searchQuery && (
                   <button
-                    className="template-search-clear"
+                    type="button"
+                    className="docs-search-clear"
                     onClick={() => setSearchQuery('')}
                     aria-label="Clear search"
                   >
@@ -683,12 +547,25 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
               </div>
             </div>
 
-            <div ref={sidebarScrollRef} className="template-sidebar-scrollable">
-              <div className="template-sidebar-count">
+            {/* Scrollable Themes List */}
+            <div
+              ref={sidebarScrollRef}
+              className="docs-sidebar-scrollable"
+            >
+              <div
+                style={{
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  color: 'var(--text-faint, rgba(255, 255, 255, 0.4))',
+                  padding: '2px 4px 6px 4px',
+                  fontWeight: 700,
+                  letterSpacing: '0.8px'
+                }}
+              >
                 {filteredThemes.length} {filteredThemes.length === 1 ? 'Theme' : 'Themes'}
               </div>
 
-              <div className="template-modal-grid">
+              <div className="theme-sidebar-grid">
                 {filteredThemes.map((t) => (
                   <ThemeSidebarItem
                     key={t.id}
@@ -700,16 +577,33 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
                 ))}
 
                 {filteredThemes.length === 0 && (
-                  <div className="template-sidebar-empty">No matching themes found.</div>
+                  <div
+                    style={{
+                      padding: '24px 12px',
+                      fontSize: '12px',
+                      color: 'var(--text-muted)',
+                      textAlign: 'center'
+                    }}
+                  >
+                    No matching themes found.
+                  </div>
                 )}
               </div>
             </div>
           </aside>
 
-          {/* Right Preview Pane shifted when sidebar is open */}
+          {/* Right Preview Pane */}
           <div
-            className="content settings-body template-content"
-            style={{ overflow: 'hidden', height: '100%', display: 'flex', padding: 0 }}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              minHeight: 0,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              background: 'var(--bg-app)'
+            }}
           >
             <ThemeContent themeData={selectedTheme} isActive={selectedTheme?.id === theme} />
           </div>

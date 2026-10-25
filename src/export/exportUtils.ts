@@ -36,6 +36,7 @@ export interface RenderMarkdownResult {
 export interface TocOptions {
   title?: string
   maxLevel?: number
+  minEntries?: number
 }
 
 export function safeFileName(name?: string): string {
@@ -249,7 +250,7 @@ export function convertWikilinks(content?: string, mode: 'span' | 'link' = 'span
  * HTML. Each entry links to an anchor inserted before its heading.
  */
 export function generateTOC(html?: string, opts: TocOptions = {}): TocResult {
-  const { maxLevel = 3 } = opts
+  const { maxLevel = 3, minEntries = 2 } = opts
   if (!html || typeof html !== 'string') {
     return { html: html || '', toc: '', count: 0 }
   }
@@ -271,8 +272,8 @@ export function generateTOC(html?: string, opts: TocOptions = {}): TocResult {
     return `<h${level}${attrs} id="${id}">${inner}</h${level}>`
   })
 
-  if (entries.length === 0) {
-    return { html: htmlWithAnchors, toc: '', count: 0 }
+  if (entries.length < minEntries) {
+    return { html: htmlWithAnchors, toc: '', count: entries.length }
   }
 
   const items = entries
