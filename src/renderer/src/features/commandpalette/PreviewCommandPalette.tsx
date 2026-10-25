@@ -64,6 +64,20 @@ export const PreviewCommandPalette: React.FC<PreviewCommandPaletteProps> = React
       }
     }, [content])
 
+    useEffect(() => {
+      const el = scrollerRef.current
+      if (!el) return
+
+      const onWheel = (e: WheelEvent) => {
+        if (el.scrollHeight > el.clientHeight && e.defaultPrevented) {
+          el.scrollTop += e.deltaY
+        }
+      }
+
+      el.addEventListener('wheel', onWheel, { passive: true })
+      return () => el.removeEventListener('wheel', onWheel)
+    }, [])
+
     const handleLinkClick = useMemo(
       () => async (url: string): Promise<void> => {
         if (customLinkHandler) {
@@ -151,13 +165,99 @@ export const PreviewCommandPalette: React.FC<PreviewCommandPaletteProps> = React
         style={{
           overflowY: 'auto',
           overflowX: 'hidden',
-          flex: 1,
+          flex: '1 1 0%',
           height: '100%',
+          maxHeight: '100%',
+          minHeight: 0,
+          display: 'block',
           padding: '16px 12px',
-          background: 'var(--bg-app)'
+          background: 'var(--bg-app)',
+          boxSizing: 'border-box'
         }}
       >
         <style>{`
+          .preview-body.markdown-editor {
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            height: 100% !important;
+            max-height: 100% !important;
+            min-height: 0 !important;
+            display: block !important;
+            scrollbar-width: thin;
+            scrollbar-color: transparent transparent;
+            transition: scrollbar-color 0.2s ease-out;
+            padding-right: 0.5px;
+            box-sizing: border-box !important;
+          }
+          .preview-body.markdown-editor:hover,
+          .palette-preview-col:hover .preview-body.markdown-editor,
+          .preview-modal-container:hover .preview-body.markdown-editor,
+          .template-preview-wrapper:hover .preview-body.markdown-editor {
+            scrollbar-color: var(--scroll-thumb, var(--border-subtle, rgba(255, 255, 255, 0.25))) transparent;
+          }
+          .preview-body.markdown-editor::-webkit-scrollbar {
+            width: 5px !important;
+            height: 5px !important;
+          }
+          .preview-body.markdown-editor::-webkit-scrollbar-track {
+            background: transparent !important;
+          }
+          .preview-body.markdown-editor::-webkit-scrollbar-thumb {
+            background-color: transparent !important;
+            border: none !important;
+            border-radius: 3px !important;
+            transition: background-color 0.2s ease-out;
+          }
+          .preview-body.markdown-editor:hover::-webkit-scrollbar-thumb,
+          .palette-preview-col:hover .preview-body.markdown-editor::-webkit-scrollbar-thumb,
+          .preview-modal-container:hover .preview-body.markdown-editor::-webkit-scrollbar-thumb,
+          .template-preview-wrapper:hover .preview-body.markdown-editor::-webkit-scrollbar-thumb {
+            background-color: var(--scroll-thumb, var(--border-subtle, rgba(255, 255, 255, 0.25))) !important;
+          }
+          .preview-body.markdown-editor::-webkit-scrollbar-thumb:hover {
+            background-color: var(--text-muted, rgba(255, 255, 255, 0.5)) !important;
+          }
+          .preview-body .editor-scroller {
+            overflow: visible !important;
+            overflow-y: visible !important;
+            overflow-x: visible !important;
+            height: auto !important;
+            max-height: none !important;
+            min-height: 100% !important;
+            flex: none !important;
+            display: block !important;
+            width: 100% !important;
+          }
+          .preview-body .editor-canvas-wrap {
+            width: 100% !important;
+            max-width: 850px !important;
+            height: auto !important;
+            min-height: 100% !important;
+            max-height: none !important;
+            overflow: visible !important;
+            flex: none !important;
+            display: block !important;
+            margin: 0 auto !important;
+            padding: 0 8px 32px 8px !important;
+            box-sizing: border-box !important;
+          }
+          .preview-body .atomic-cm-editor {
+            height: auto !important;
+            overflow: visible !important;
+            display: block !important;
+          }
+          .preview-body .cm-editor {
+            height: auto !important;
+            overflow: visible !important;
+            display: block !important;
+          }
+          .preview-body .cm-scroller {
+            overflow: visible !important;
+            overflow-y: visible !important;
+            overflow-x: visible !important;
+            height: auto !important;
+            display: block !important;
+          }
           .preview-body .cm-table-ui-header,
           .preview-body .cm-table-ui-delete-btn,
           .preview-body .cm-table-ui-drag-handle {
@@ -167,14 +267,8 @@ export const PreviewCommandPalette: React.FC<PreviewCommandPaletteProps> = React
             border-top-left-radius: 6px !important;
             border-top-right-radius: 6px !important;
           }
-          .preview-body .editor-canvas-wrap {
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 auto !important;
-            padding: 0 8px 24px 8px !important;
-          }
         `}</style>
-        <div className="editor-scroller" style={{ overflow: 'visible', height: 'auto', padding: 0 }}>
+        <div className="editor-scroller" style={{ overflow: 'visible', height: 'auto', minHeight: '100%', flex: 'none', display: 'block', padding: 0 }}>
           <div
             className="editor-canvas-wrap"
             style={{ maxWidth: '100%', width: '100%', margin: '0 auto', padding: '0 8px 24px 8px' }}

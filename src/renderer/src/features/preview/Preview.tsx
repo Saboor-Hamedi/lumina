@@ -201,33 +201,57 @@ export const Preview: React.FC<PreviewProps> = ({
         }}
       >
         <div
-          className="preview-modal-header"
+          className="preview-modal-header docs-modal-header"
           onMouseDown={handleModalHeaderMouseDown}
           style={{ cursor: isMaximized ? 'default' : 'grab' }}
         >
-          <div className="preview-header-left">
-            <span className="preview-header-title">
+          <div className="preview-header-left docs-header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span
+              style={{
+                fontSize: '12.5px',
+                fontWeight: 500,
+                color: 'var(--text-main)',
+                letterSpacing: '-0.01em',
+                background: 'transparent',
+                padding: 0
+              }}
+            >
               Preview
             </span>
             {title && (
               <>
-                <span className="preview-header-divider">/</span>
-                <span className="preview-header-subtitle" title={title}>
+                <span style={{ opacity: 0.35, color: 'var(--text-muted)', fontSize: '12px' }}>/</span>
+                <span
+                  style={{
+                    fontSize: '11.5px',
+                    fontWeight: 400,
+                    color: 'var(--text-muted)',
+                    maxWidth: '240px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    background: 'transparent',
+                    padding: 0
+                  }}
+                  title={title}
+                >
                   {title}
                 </span>
               </>
             )}
           </div>
 
-          <div className="preview-header-right">
-            <div className="preview-header-stat">
-              <FileText size={12} />
-              <span>{wordCount} words</span>
-            </div>
+          <div className="preview-header-right docs-header-right">
+            <ToolTip text={`${wordCount} words`} position="bottom">
+              <div className="preview-header-stat docs-header-stat">
+                <FileText size={12} />
+                <span>{wordCount} words</span>
+              </div>
+            </ToolTip>
             <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
               <button
                 type="button"
-                className="preview-window-btn"
+                className="preview-window-btn docs-window-btn"
                 onClick={handleToggleMaximize}
                 aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
               >
@@ -241,7 +265,7 @@ export const Preview: React.FC<PreviewProps> = ({
             <ToolTip text="Close (Esc)" position="bottom">
               <button
                 type="button"
-                className="preview-close-btn"
+                className="preview-close-btn docs-window-btn guide-close-btn"
                 onClick={onClose}
                 aria-label="Close Preview (Esc)"
               >
@@ -249,9 +273,7 @@ export const Preview: React.FC<PreviewProps> = ({
               </button>
             </ToolTip>
           </div>
-        </div>
-
-        <PreviewCommandPalette content={liveContent} onClose={onClose} />
+        </div><PreviewCommandPalette content={liveContent} onClose={onClose} />
       </div>
     </div>,
     document.getElementById('modal-root') || document.body

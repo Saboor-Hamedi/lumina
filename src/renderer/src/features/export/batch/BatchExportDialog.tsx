@@ -24,6 +24,7 @@ import ToolTip from '../../../components/atoms/ToolTip'
 import { EXPORT_FORMATS, getFormat, type ExportFormat } from '../formats'
 import { PREVIEW_COMPONENTS } from '../previews'
 import Toggle from '../../../components/toggle/Toggle'
+import { useKeyboardShortcuts } from '../../../core/shortcuts'
 import '../css/exportContainer.css'
 import '../css/batchExportDialog.css'
 
@@ -420,7 +421,17 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
     if (p) (window as any).api?.showItemInFolder?.(p)
   }, [result])
 
-  // Escape closes (unless mid-export).
+  // Register Escape with Lumina's global shortcut stack (Engineering Std #5)
+  useKeyboardShortcuts({
+    onEscape: isOpen && !exporting
+      ? () => {
+          onClose()
+          return true
+        }
+      : undefined
+  })
+
+  // Escape closes fallback (unless mid-export).
   useEffect(() => {
     if (!isOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {

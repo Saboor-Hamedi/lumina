@@ -1,1 +1,6 @@
-export { default, Breadcrumbs } from './components/Breadcrumbs'
+export { default, Breadcrumbs } from './Breadcrumbs'
+export type { BreadcrumbsProps } from './Breadcrumbs'
+export { BreadcrumbDropdown } from './BreadcrumbDropdown'
+export type { BreadcrumbDropdownProps, DropdownItem } from './BreadcrumbDropdown'
+export { BreadcrumbOutlineDropdown } from './BreadcrumbOutlineDropdown'
+export type { BreadcrumbOutlineDropdownProps } from './BreadcrumbOutlineDropdown'

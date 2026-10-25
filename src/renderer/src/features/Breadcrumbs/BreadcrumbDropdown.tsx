@@ -1,3 +1,10 @@
+/**
+ * ============================================================================
+ * Lumina Breadcrumb Dropdown Navigation (`BreadcrumbDropdown.tsx`)
+ * Modern, High-Performance, VS Code-Superior Folder & File Picker
+ * ============================================================================
+ */
+
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import {
@@ -14,20 +21,71 @@ import {
   Image as ImageIcon,
   LayoutGrid
 } from 'lucide-react'
-import { useWorkspaceStore } from '../../../core/store/workspaceStore'
-import ToolTip from '../../../components/atoms/ToolTip'
+import { useWorkspaceStore, WorkspaceNote } from '../../core/store/workspaceStore'
+import type { FolderInput } from './utils/breadcrumbUtils'
+import ToolTip from '../../components/atoms/ToolTip'
 import {
   getChildFolders,
   getChildNotes,
   getFolderPath,
   isRootPath,
   normalizePath,
-  createUntitledSnippet
-} from '../hooks/breadcrumbUtils'
-import { rankSnippets } from '../../../core/utils/searchRanker'
-import '../css/BreadcrumbDropdown.css'
+  createUntitledSnippet,
+  SnippetItem
+} from './utils/breadcrumbUtils'
+import { rankSnippets } from '../../core/utils/searchRanker'
+import './css/BreadcrumbDropdown.css'
 
-const getFileIcon = (fileName = '') => {
+/**
+ * Props for the {@link BreadcrumbDropdown} component.
+ */
+export interface BreadcrumbDropdownProps {
+  /** Parent folder ID for sibling exploration; null indicates workspace root */
+  parentFolderId?: string | null
+  /** Currently active note or folder ID */
+  currentId?: string | null
+  /** Bounding box of the anchor breadcrumb button for floating layout calculation */
+  anchorRect?: {
+    top: number
+    bottom: number
+    left: number
+    right: number
+    width?: number
+    height?: number
+  } | null
+  /** Callback to close the dropdown */
+  onClose: () => void
+}
+
+/**
+ * Represents a folder entry in the dropdown list.
+ */
+export interface DropdownFolderItem {
+  id: string
+  name: string
+  kind: 'folder'
+  itemCount: number
+  folderPath?: string
+}
+
+/**
+ * Represents a note entry in the dropdown list.
+ */
+export interface DropdownNoteItem {
+  id: string
+  name: string
+  kind: 'note'
+  snippet: SnippetItem
+  folderName?: string
+  relativePath?: string
+}
+
+export type DropdownItem = DropdownFolderItem | DropdownNoteItem
+
+/**
+ * Helper to determine corresponding icon for files based on file extension.
+ */
+const getFileIcon = (fileName = ''): React.ReactElement => {
   const ext = fileName.slice(fileName.lastIndexOf('.')).toLowerCase()
   if (ext === '.canvas') {
     return <LayoutGrid size={13} className="bc-icon-canvas" />
@@ -38,20 +96,31 @@ const getFileIcon = (fileName = '') => {
   return <FileText size={13} className="bc-icon-note" />
 }
 
-const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) => {
-  const folders = useWorkspaceStore((state) => state.folders) || []
-  const snippets = useWorkspaceStore((state) => state.notes || state.snippets) || []
-  const setSelectedSnippet = useWorkspaceStore((state) => state.setSelectedNote || state.setSelectedSnippet)
-  const saveSnippet = useWorkspaceStore((state) => state.saveNote || state.saveSnippet)
+/**
+ * Interactive floating dropdown facilitating sibling folder traversal, instant file searching,
+ * and quick-action note creation docked directly beneath breadcrumb segments.
+ */
+export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
+  parentFolderId,
+  currentId,
+  anchorRect,
+  onClose
+}) => {
+  const folders = (useWorkspaceStore((state) => state.folders) || []) as FolderInput[]
+  const notes = (useWorkspaceStore((state) => state.notes) || []) as WorkspaceNote[]
+  const setSelectedNote = useWorkspaceStore((state) => state.setSelectedNote)
+  const saveNote = useWorkspaceStore((state) => state.saveNote)
 
-  // Navigation stack: array of folder IDs
-  const [stack, setStack] = useState(() => [isRootPath(parentFolderId) ? null : normalizePath(parentFolderId)])
-  const currentFolderId = stack[stack.length - 1]
+  // Navigation stack: array of folder IDs (null represents workspace root)
+  const [stack, setStack] = useState<(string | null)[]>(() => [
+    isRootPath(parentFolderId) ? null : normalizePath(parentFolderId)
+  ])
+  const currentFolderId = stack[stack.length - 1] ?? null
   const isInitialLevel = stack.length === 1
 
   const [searchQuery, setSearchQuery] = useState('')
   const [pathCopied, setPathCopied] = useState(false)
-  const [activeNoteId, setActiveNoteId] = useState(currentId)
+  const [activeNoteId, setActiveNoteId] = useState<string | null | undefined>(currentId)
 
   // Reset navigation stack and search query when parentFolderId changes
   useEffect(() => {
@@ -61,9 +130,9 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
     setActiveNoteId(currentId)
   }, [parentFolderId, currentId])
 
-  const listRef = useRef(null)
-  const dropdownRef = useRef(null)
-  const searchInputRef = useRef(null)
+  const listRef = useRef<HTMLUListElement | null>(null)
+  const dropdownRef = useRef<HTMLDivElement | null>(null)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   // Current folder trail for the header breadcrumb bar
   const headerTrail = useMemo(() => {
@@ -74,22 +143,30 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
   // Direct child folders and notes of the currently inspected folder
   const { allFolders, allNotes } = useMemo(() => {
     const rawFolders = getChildFolders(currentFolderId, folders)
-    const rawNotes = getChildNotes(currentFolderId, snippets)
+    const rawNotes = getChildNotes(currentFolderId, notes as SnippetItem[])
 
-    const enrichedFolders = rawFolders.map((f) => {
+    const enrichedFolders: DropdownFolderItem[] = rawFolders.map((f) => {
       const subFolders = getChildFolders(f.id, folders)
-      const subNotes = getChildNotes(f.id, snippets)
+      const subNotes = getChildNotes(f.id, notes as SnippetItem[])
       return {
         ...f,
+        kind: 'folder' as const,
         itemCount: subFolders.length + subNotes.length
       }
     })
 
-    return { allFolders: enrichedFolders, allNotes: rawNotes }
-  }, [currentFolderId, folders, snippets])
+    const enrichedNotes: DropdownNoteItem[] = rawNotes.map((n) => ({
+      id: n.id,
+      name: n.name,
+      kind: 'note' as const,
+      snippet: n.snippet
+    }))
+
+    return { allFolders: enrichedFolders, allNotes: enrichedNotes }
+  }, [currentFolderId, folders, notes])
 
   // Filtered items based on search query — consolidated with CommandPalette search engine
-  const items = useMemo(() => {
+  const items = useMemo<DropdownItem[]>(() => {
     const q = searchQuery.trim()
     if (!q) {
       return [...allFolders, ...allNotes]
@@ -97,48 +174,50 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
 
     const lowerQ = q.toLowerCase()
 
-    // 1. Matched folders across the entire workspace/vault
-    const matchedFolders = (folders || [])
+    // 1. Matched folders across the entire workspace
+    const matchedFolders: DropdownFolderItem[] = folders
       .filter((f) => {
-        const name = (f.name || '').toLowerCase()
-        const id = (f.id || '').toLowerCase()
+        const name = (typeof f === 'string' ? f : f.name || '').toLowerCase()
+        const id = (typeof f === 'string' ? f : f.id || '').toLowerCase()
         return name.includes(lowerQ) || id.includes(lowerQ)
       })
       .map((f) => {
-        const subFolders = getChildFolders(f.id, folders)
-        const subNotes = getChildNotes(f.id, snippets)
+        const folderId = typeof f === 'string' ? f : f.id
+        const folderName = typeof f === 'string' ? f.split('/').pop() || f : f.name || f.id
+        const subFolders = getChildFolders(folderId, folders)
+        const subNotes = getChildNotes(folderId, notes as SnippetItem[])
         return {
-          id: f.id,
-          name: f.name,
-          kind: 'folder',
+          id: folderId,
+          name: folderName,
+          kind: 'folder' as const,
           itemCount: subFolders.length + subNotes.length,
-          folderPath: f.id
+          folderPath: folderId
         }
       })
 
     // 2. High-power ranked snippets across the entire workspace via rankSnippets
-    const { results } = rankSnippets(snippets || [], q)
-    const matchedNotes = results.map((s) => {
+    const { results } = rankSnippets(notes as any[], q)
+    const matchedNotes: DropdownNoteItem[] = results.map((s: any) => {
       const folderName = s.folderId ? s.folderId.split('/').pop() : ''
-      const rawSnippet = (snippets || []).find((orig) => orig.id === s.id) || s
+      const rawSnippet = notes.find((orig) => orig.id === s.id) || (s as any)
       return {
         id: s.id,
         name: s.title || s.fileName || 'Untitled',
-        kind: 'note',
-        snippet: rawSnippet,
-        folderName: folderName,
+        kind: 'note' as const,
+        snippet: rawSnippet as SnippetItem,
+        folderName,
         relativePath: s.relativePath || s.folderId || ''
       }
     })
 
     return [...matchedFolders, ...matchedNotes]
-  }, [allFolders, allNotes, searchQuery, folders, snippets])
+  }, [allFolders, allNotes, searchQuery, folders, notes])
 
-  const [activeIndex, setActiveIndex] = useState(() => {
+  const [activeIndex, setActiveIndex] = useState<number>(() => {
     if (isInitialLevel && currentId) {
       const initialFolder = isRootPath(parentFolderId) ? null : normalizePath(parentFolderId)
       const rawFolders = getChildFolders(initialFolder, folders)
-      const rawNotes = getChildNotes(initialFolder, snippets)
+      const rawNotes = getChildNotes(initialFolder, notes as SnippetItem[])
       const all = [...rawFolders, ...rawNotes]
       const idx = all.findIndex((it) => it.id === currentId)
       return idx >= 0 ? idx : 0
@@ -161,13 +240,13 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
 
   // Scroll active item into view
   useLayoutEffect(() => {
-    const el = listRef.current?.children[activeIndex]
+    const el = listRef.current?.children[activeIndex] as HTMLElement | undefined
     if (el && typeof el.scrollIntoView === 'function') {
       el.scrollIntoView({ block: 'nearest' })
     }
   }, [activeIndex])
 
-  const drillIn = useCallback((folderId) => {
+  const drillIn = useCallback((folderId: string) => {
     setStack((prev) => [...prev, normalizePath(folderId)])
     setSearchQuery('')
   }, [])
@@ -177,65 +256,70 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
     setSearchQuery('')
   }, [])
 
-  const jumpToStackIndex = useCallback((index) => {
+  const jumpToStackIndex = useCallback((index: number) => {
     setStack((prev) => prev.slice(0, index + 1))
     setSearchQuery('')
   }, [])
 
   const handleSelectNote = useCallback(
-    (snippet, keepOpen = false) => {
-      if (snippet) {
-        setSelectedSnippet(snippet)
+    (snippet: SnippetItem, keepOpen = false) => {
+      if (snippet && setSelectedNote) {
+        setSelectedNote(snippet as any)
         setActiveNoteId(snippet.id)
       }
       if (!keepOpen) {
         onClose()
       }
     },
-    [setSelectedSnippet, onClose]
+    [setSelectedNote, onClose]
   )
 
   const handleActivate = useCallback(
-    (item, isEnterKey = false) => {
+    (item: DropdownItem, isEnterKey = false) => {
       if (!item) return
       if (item.kind === 'folder') {
         drillIn(item.id)
       } else {
-        const keepOpen = Boolean(searchQuery.trim()) || isEnterKey && Boolean(searchQuery)
+        const keepOpen = Boolean(searchQuery.trim()) || (isEnterKey && Boolean(searchQuery))
         handleSelectNote(item.snippet, keepOpen)
       }
     },
     [drillIn, handleSelectNote, searchQuery]
   )
 
-  const handleCopyCurrentPath = useCallback(async (e) => {
-    e.stopPropagation()
-    const pathText = isRootPath(currentFolderId) ? '/' : currentFolderId
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(pathText)
-      }
-      setPathCopied(true)
-      setTimeout(() => setPathCopied(false), 1600)
-    } catch {}
-  }, [currentFolderId])
+  const handleCopyCurrentPath = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation()
+      const pathText = isRootPath(currentFolderId) ? '/' : currentFolderId || '/'
+      try {
+        if (navigator?.clipboard?.writeText) {
+          await navigator.clipboard.writeText(pathText)
+        }
+        setPathCopied(true)
+        setTimeout(() => setPathCopied(false), 1600)
+      } catch {}
+    },
+    [currentFolderId]
+  )
 
   const handleCreateNoteInFolder = useCallback(
-    async (folderId, e) => {
+    async (folderId: string | null, e?: React.MouseEvent) => {
       if (e) e.stopPropagation()
-      const newSnippet = createUntitledSnippet(folderId, snippets)
-      if (saveSnippet) {
-        await saveSnippet(newSnippet)
+      const newSnippet = createUntitledSnippet(folderId ?? undefined, notes as SnippetItem[])
+      if (saveNote) {
+        await saveNote(newSnippet as any)
       }
-      setSelectedSnippet(newSnippet)
+      if (setSelectedNote) {
+        setSelectedNote(newSnippet as any)
+      }
       onClose()
     },
-    [snippets, saveSnippet, setSelectedSnippet, onClose]
+    [notes, saveNote, setSelectedNote, onClose]
   )
 
   // Keyboard navigation
   useEffect(() => {
-    const onKey = (e) => {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
         e.stopPropagation()
@@ -262,7 +346,12 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
         }
       } else if (e.key === 'ArrowLeft' || (e.key === 'Backspace' && !searchQuery)) {
         if (e.ctrlKey || e.metaKey) return
-        if (stack.length > 1 && (!searchInputRef.current || document.activeElement !== searchInputRef.current || !searchQuery)) {
+        if (
+          stack.length > 1 &&
+          (!searchInputRef.current ||
+            document.activeElement !== searchInputRef.current ||
+            !searchQuery)
+        ) {
           e.preventDefault()
           drillOut()
         }
@@ -275,8 +364,8 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
 
   // Close on outside pointer interaction
   useEffect(() => {
-    const onPointerDown = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+    const onPointerDown = (e: PointerEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         onClose()
       }
     }
@@ -284,12 +373,12 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
     return () => document.removeEventListener('pointerdown', onPointerDown, { capture: true })
   }, [onClose])
 
-  // Floating portal layout calculation
-  const style = useMemo(() => {
+  // Floating portal layout calculation (docked 3px under breadcrumb segment)
+  const style = useMemo<React.CSSProperties>(() => {
     if (!anchorRect) return {}
     const width = 320
     const maxH = 340
-    const gap = 5
+    const gap = 3
 
     let top = anchorRect.bottom + gap
     let left = anchorRect.left
@@ -341,7 +430,10 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
           </ToolTip>
         )}
 
-        <div className="bc-trail" title={isRootPath(currentFolderId) ? 'Workspace' : currentFolderId}>
+        <div
+          className="bc-trail"
+          title={isRootPath(currentFolderId) ? 'Workspace' : currentFolderId || 'Workspace'}
+        >
           <button
             type="button"
             className={`bc-trail-item${isRootPath(currentFolderId) ? ' active' : ''}`}
@@ -371,9 +463,7 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
 
         <div className="bc-header-actions">
           <ToolTip text={`${items.length} items`} position="bottom">
-            <span className="bc-count-pill">
-              {items.length}
-            </span>
+            <span className="bc-count-pill">{items.length}</span>
           </ToolTip>
           <ToolTip text="New note in folder" position="bottom">
             <button
@@ -440,6 +530,7 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
             const isActive = idx === activeIndex
             const isCurrent = item.id === highlightId
             const isFolder = item.kind === 'folder'
+            const noteItem = !isFolder ? (item as DropdownNoteItem) : null
 
             return (
               <li
@@ -461,7 +552,7 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
                   {isFolder ? (
                     <Folder size={13} className="bc-icon-folder" />
                   ) : (
-                    getFileIcon(item.name || item.snippet?.fileName)
+                    getFileIcon(item.name || noteItem?.snippet?.fileName)
                   )}
                 </span>
 
@@ -469,9 +560,12 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
                   {item.name}
                 </span>
 
-                {item.folderName && Boolean(searchQuery.trim()) && (
-                  <span className="bc-item-folder-badge" title={item.relativePath || item.folderName}>
-                    {item.folderName}
+                {noteItem?.folderName && Boolean(searchQuery.trim()) && (
+                  <span
+                    className="bc-item-folder-badge"
+                    title={noteItem.relativePath || noteItem.folderName}
+                  >
+                    {noteItem.folderName}
                   </span>
                 )}
 
@@ -494,9 +588,7 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
                       </button>
                     </ToolTip>
                     {item.itemCount > 0 && (
-                      <span className="bc-item-subcount">
-                        {item.itemCount}
-                      </span>
+                      <span className="bc-item-subcount">{item.itemCount}</span>
                     )}
                     <ChevronRight size={12} className="bc-item-chevron-icon" />
                   </span>
@@ -511,4 +603,5 @@ const BreadcrumbDropdown = ({ parentFolderId, currentId, anchorRect, onClose }) 
   )
 }
 
+BreadcrumbDropdown.displayName = 'BreadcrumbDropdown'
 export default React.memo(BreadcrumbDropdown)

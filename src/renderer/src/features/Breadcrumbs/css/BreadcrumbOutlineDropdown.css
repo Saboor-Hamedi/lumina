@@ -13,7 +13,7 @@
   user-select: none;
   overflow: hidden;
   backdrop-filter: blur(12px);
-  animation: bcOutlineFadeIn 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: bcOutlineFadeIn 0.14s cubic-bezier(0.16, 1, 0.3, 1);
   width: 320px;
   max-height: 340px;
 }
@@ -21,11 +21,11 @@
 @keyframes bcOutlineFadeIn {
   from {
     opacity: 0;
-    transform: translateY(-3px) scale(0.985);
+    transform: translateY(-2px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -124,7 +124,7 @@
 .bc-outline-search-clear:hover {
   opacity: 1;
   color: var(--text-main, #f8fafc);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-hover, rgba(125, 125, 125, 0.1));
 }
 
 .bc-outline-items-list {
@@ -159,9 +159,13 @@
   transition: all 0.08s ease;
 }
 
-.bc-outline-item:hover,
+.bc-outline-item:hover {
+  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
+  color: var(--text-main, #f8fafc);
+}
+
 .bc-outline-item.is-active {
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  background: var(--bg-active, rgba(125, 125, 125, 0.12));
   color: var(--text-main, #f8fafc);
 }
 

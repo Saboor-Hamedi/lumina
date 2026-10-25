@@ -1079,7 +1079,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
                 </div>
 
                 {/* Details / Preview Column */}
-                <div className="palette-preview-col" style={{ width: `${100 - splitRatio}%` }}>
+                <div className="palette-preview-col" style={{ width: `${100 - splitRatio}%`, height: '100%', maxHeight: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                   {selectedItem?.matchType === 'command' && selectedItem.command ? (
                     <div className="command-details-preview">
                       <div className="command-details-header">
@@ -1170,7 +1170,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
                       <p className="palette-ai-empty-desc">
                         Conversational intelligence grounded in your private workspace. Ask questions, brainstorm, or explore notes.
                       </p>
-                      {!isModelReady && (
+                      {!isModelReady && modelLoadingProgress > 0 && (
                         <div className="palette-model-status-card">
                           <div className="palette-model-status-header">
                             <span className="palette-status-pulse"></span>

@@ -90,13 +90,23 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease-out;
 }
 
-/* Custom 6px thin scrollbar matching editor */
+/* Custom 5px thin hover-reveal scrollbar matching sidebar */
 .backlinks-scroll-area::-webkit-scrollbar,
 .outline-scroll-area::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
+}
+
+.backlinks-scroll-area::-webkit-scrollbar:horizontal,
+.outline-scroll-area::-webkit-scrollbar:horizontal {
+  display: none !important;
+  height: 0px !important;
 }
 
 .backlinks-scroll-area::-webkit-scrollbar-track,
@@ -106,13 +116,37 @@
 
 .backlinks-scroll-area::-webkit-scrollbar-thumb,
 .outline-scroll-area::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: transparent !important;
+  border: none !important;
   border-radius: 3px;
+  transition: background-color 0.2s ease-out;
+}
+
+.shell-sidebar-right:hover .backlinks-scroll-area,
+.shell-sidebar-right:hover .outline-scroll-area,
+.inspector-panel:hover .backlinks-scroll-area,
+.inspector-panel:hover .outline-scroll-area,
+.backlinks-container:hover .backlinks-scroll-area,
+.note-outline-container:hover .outline-scroll-area,
+.backlinks-scroll-area:hover,
+.outline-scroll-area:hover {
+  scrollbar-color: var(--scroll-thumb, var(--border-subtle, rgba(255, 255, 255, 0.25))) transparent;
+}
+
+.shell-sidebar-right:hover .backlinks-scroll-area::-webkit-scrollbar-thumb,
+.shell-sidebar-right:hover .outline-scroll-area::-webkit-scrollbar-thumb,
+.inspector-panel:hover .backlinks-scroll-area::-webkit-scrollbar-thumb,
+.inspector-panel:hover .outline-scroll-area::-webkit-scrollbar-thumb,
+.backlinks-container:hover .backlinks-scroll-area::-webkit-scrollbar-thumb,
+.note-outline-container:hover .outline-scroll-area::-webkit-scrollbar-thumb,
+.backlinks-scroll-area:hover::-webkit-scrollbar-thumb,
+.outline-scroll-area:hover::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb, var(--border-subtle, rgba(255, 255, 255, 0.25))) !important;
 }
 
 .backlinks-scroll-area::-webkit-scrollbar-thumb:hover,
 .outline-scroll-area::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--text-muted, rgba(255, 255, 255, 0.5)) !important;
 }
 
 /* --- Section Headers --- */
@@ -173,8 +207,8 @@
   font-weight: 500;
   padding: 1px 6px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #6B7280;
+  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
+  color: var(--text-faint, #6B7280);
 }
 
 .backlinks-groups-list,
@@ -186,16 +220,16 @@
 
 /* --- Backlink Note Group Card --- */
 .backlinks-note-group {
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.05));
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--bg-panel, rgba(255, 255, 255, 0.015));
   overflow: hidden;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .backlinks-note-group:hover {
   border-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.2);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-hover, rgba(255, 255, 255, 0.03));
 }
 
 .backlinks-note-header {
@@ -210,7 +244,7 @@
 }
 
 .backlinks-note-header:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-hover, rgba(125, 125, 125, 0.06));
 }
 
 .backlinks-note-title-wrap {
@@ -233,7 +267,7 @@
 .backlinks-folder-badge {
   font-size: 9px;
   color: #6B7280;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-hover, rgba(125, 125, 125, 0.06));
   padding: 1px 5px;
   border-radius: 3px;
   white-space: nowrap;
@@ -277,7 +311,7 @@
 }
 
 .backlinks-mention-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
   color: var(--text-main, #f8fafc);
 }
 
@@ -319,7 +353,7 @@
 }
 
 .outline-item-card:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
 }
 
 /* Active heading: subtle left border accent + background tint */

@@ -8,8 +8,51 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden !important;
-  padding: 0;
+  padding: 0 0.5px 0 0;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease-out;
 }
+
+.details-modal-body::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.details-modal-body::-webkit-scrollbar:horizontal {
+  display: none !important;
+  height: 0px !important;
+}
+
+.details-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.details-modal-body::-webkit-scrollbar-thumb {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 3px;
+  transition: background-color 0.2s ease-out;
+}
+
+.shell-sidebar-right:hover .details-modal-body,
+.inspector-panel:hover .details-modal-body,
+.details-modal-body:hover {
+  scrollbar-color: var(--scroll-thumb, var(--border-subtle, rgba(255, 255, 255, 0.25))) transparent;
+}
+
+.shell-sidebar-right:hover .details-modal-body::-webkit-scrollbar-thumb,
+.inspector-panel:hover .details-modal-body::-webkit-scrollbar-thumb,
+.details-modal-body:hover::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb, var(--border-subtle, rgba(255, 255, 255, 0.25))) !important;
+}
+
+.details-modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted, rgba(255, 255, 255, 0.5)) !important;
+}
+
+
 
 .properties-container {
   padding: 12px 14px;
@@ -85,7 +128,7 @@
 }
 
 .property-row.is-copyable:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-hover, rgba(125, 125, 125, 0.06));
 }
 
 .property-copy-icon {

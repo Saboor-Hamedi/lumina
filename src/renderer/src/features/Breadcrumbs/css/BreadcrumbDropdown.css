@@ -20,7 +20,7 @@
   user-select: none;
   overflow: hidden;
   backdrop-filter: blur(12px);
-  animation: bcDropdownFadeIn 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: bcDropdownFadeIn 0.14s cubic-bezier(0.16, 1, 0.3, 1);
   width: 320px;
   max-height: 340px;
 }
@@ -28,11 +28,11 @@
 @keyframes bcDropdownFadeIn {
   from {
     opacity: 0;
-    transform: translateY(-3px) scale(0.985);
+    transform: translateY(-2px);
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateY(0);
   }
 }
 
@@ -65,7 +65,7 @@
 }
 
 .bc-nav-btn:hover {
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
   color: var(--text-main, #f8fafc);
 }
 
@@ -171,7 +171,7 @@
 }
 
 .bc-header-icon-btn:hover {
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
   color: var(--text-main, #f8fafc);
 }
 
@@ -238,7 +238,7 @@
 .bc-search-clear:hover {
   opacity: 1;
   color: var(--text-main, #f8fafc);
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--bg-hover, rgba(125, 125, 125, 0.1));
 }
 
 .bc-search-hints {
@@ -293,9 +293,13 @@
   transition: all 0.08s ease;
 }
 
-.bc-list-item:hover,
+.bc-list-item:hover {
+  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
+  color: var(--text-main, #f8fafc);
+}
+
 .bc-list-item.is-active {
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  background: var(--bg-active, rgba(125, 125, 125, 0.12));
   color: var(--text-main, #f8fafc);
 }
 

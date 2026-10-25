@@ -63,7 +63,7 @@
 .breadcrumb-item:hover {
   opacity: 1;
   color: var(--text-main, #f8fafc);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
 }
 
 .breadcrumb-item.active {
@@ -85,7 +85,7 @@
 
 .breadcrumb-item.bc-open {
   color: var(--text-main, #f8fafc);
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  background: var(--bg-active, rgba(125, 125, 125, 0.12));
 }
 
 .breadcrumb-separator {

@@ -80,31 +80,35 @@ async function launchOnce(vaultPath) {
 
   async function cleanup() {
     try {
-      // app.close() can crash Electron with a Windows fast-fail (0xC0000409) when
-      // apps are launched back-to-back. Quitting from inside the main process is
-      // the reliable way to shut down cleanly.
       await appInstance.evaluate(({ app }) => app.quit())
     } catch {}
+
+    const proc = appInstance.process()
+    if (proc && proc.exitCode === null) {
+      await new Promise((resolve) => {
+        const timer = setTimeout(() => {
+          try {
+            proc.kill('SIGKILL')
+          } catch {}
+          resolve()
+        }, 2000)
+        proc.once('exit', () => {
+          clearTimeout(timer)
+          resolve()
+        })
+      })
+    }
+
     try {
-      await fs.rm(vaultPath, { recursive: true, force: true })
-    } catch {}
-    try {
-      await fs.rm(userDataPath, { recursive: true, force: true })
+      await appInstance.close().catch(() => {})
     } catch {}
 
-    // Deterministically wait for the process to fully exit instead of a fixed
-    // sleep. Racing a fresh launch against a half-dead process is what triggers
-    // 0xC0000409 (Windows fast-fail / stack-buffer-overrun) on back-to-back
-    // launches. Timeout guards against a process that never exits.
-    const proc = appInstance.process()
-    await new Promise((resolve) => {
-      if (!proc || proc.exitCode !== null) return resolve()
-      const timer = setTimeout(resolve, 5000)
-      proc.once('exit', () => {
-        clearTimeout(timer)
-        resolve()
-      })
-    })
+    try {
+      await fs.rm(vaultPath, { recursive: true, force: true }).catch(() => {})
+    } catch {}
+    try {
+      await fs.rm(userDataPath, { recursive: true, force: true }).catch(() => {})
+    } catch {}
   }
 
   return { app: appInstance, page, workspacePath: vaultPath, vaultPath, cleanup }

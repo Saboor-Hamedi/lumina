@@ -1,32 +1,100 @@
+/**
+ * ============================================================================
+ * Lumina Editor Breadcrumbs Bar (`Breadcrumbs.tsx`)
+ * Modern, high-performance, docked navigation bar with interactive breadcrumb
+ * segments, table of contents outline support, drag-and-drop, and path copying.
+ * ============================================================================
+ */
+
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Folder, ChevronRight, FileText, Database, Copy, Check, Hash } from 'lucide-react'
-import { useWorkspaceStore } from '../../../core/store/workspaceStore'
-import ToolTip from '../../../components/atoms/ToolTip'
+import { useWorkspaceStore, WorkspaceNote } from '../../core/store/workspaceStore'
+import ToolTip from '../../components/atoms/ToolTip'
 import BreadcrumbDropdown from './BreadcrumbDropdown'
 import BreadcrumbOutlineDropdown from './BreadcrumbOutlineDropdown'
 import {
   getFolderPath,
   extractHeadings,
   findActiveHeading,
-  normalizePath
-} from '../hooks/breadcrumbUtils'
-import '../css/Breadcrumbs.css'
+  normalizePath,
+  FolderPathItem,
+  HeadingItem,
+  SnippetItem,
+  FolderInput
+} from './utils/breadcrumbUtils'
+import './css/Breadcrumbs.css'
 
-export const Breadcrumbs = ({ snippet, className = '' }) => {
-  const folders = useWorkspaceStore((state) => state.folders) || []
-  const snippets = useWorkspaceStore((state) => state.notes || state.snippets) || []
-  const selectedSnippet = useWorkspaceStore((state) => state.selectedNote || state.selectedSnippet)
-  const saveSnippet = useWorkspaceStore((state) => state.saveNote || state.saveSnippet)
-  const currentSnippet = snippet || selectedSnippet
+/**
+ * Props for the {@link Breadcrumbs} navigation component.
+ */
+export interface BreadcrumbsProps {
+  /** Optional note/snippet to render breadcrumbs for; defaults to selectedNote */
+  snippet?: WorkspaceNote | SnippetItem | null
+  /** Optional CSS class name appended to the container */
+  className?: string
+}
+
+/**
+ * State representing an active sibling/folder navigation dropdown portal.
+ */
+interface DropdownState {
+  parentFolderId: string | null
+  currentId: string | null
+  activeSegmentKey: string
+  anchorRect: {
+    top: number
+    bottom: number
+    left: number
+    right: number
+    width?: number
+    height?: number
+  }
+}
+
+/**
+ * State representing an active heading outline dropdown portal.
+ */
+interface OutlineDropdownState {
+  anchorRect: {
+    top: number
+    bottom: number
+    left: number
+    right: number
+    width?: number
+    height?: number
+  }
+}
+
+/**
+ * Interactive segment definition used for keyboard-driven sequential navigation.
+ */
+interface BreadcrumbSegment {
+  key: string
+  type: 'workspace' | 'folder' | 'note' | 'outline'
+  parentFolderId?: string | null
+  currentId?: string | null
+}
+
+/**
+ * Docked editor breadcrumbs bar enabling workspace hierarchy exploration,
+ * in-context outline inspection, drag-and-drop movement, and fast path clipboard actions.
+ */
+export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '' }) => {
+  const folders = (useWorkspaceStore((state) => state.folders) || []) as FolderInput[]
+  const notes = (useWorkspaceStore((state) => state.notes) || []) as WorkspaceNote[]
+  const selectedNote = useWorkspaceStore((state) => state.selectedNote)
+  const saveNote = useWorkspaceStore((state) => state.saveNote)
+  const currentSnippet = (snippet || selectedNote) as SnippetItem | null
 
   const [copied, setCopied] = useState(false)
-  const [dropdown, setDropdown] = useState(null)
-  const [outlineDropdown, setOutlineDropdown] = useState(null)
-  const [dragOverTarget, setDragOverTarget] = useState(null)
-  const [cursorLine, setCursorLine] = useState(1)
+  const [dropdown, setDropdown] = useState<DropdownState | null>(null)
+  const [outlineDropdown, setOutlineDropdown] = useState<OutlineDropdownState | null>(null)
+  const [dragOverTarget, setDragOverTarget] = useState<string | null>(null)
+  const [cursorLine, setCursorLine] = useState<number>(1)
 
+  // Listen to editor cursor position changes for dynamic outline heading detection
   useEffect(() => {
-    const handleCursorPos = (e) => {
+    const handleCursorPos = (e: any) => {
       if (e.detail && (!e.detail.snippetId || e.detail.snippetId === currentSnippet?.id)) {
         setCursorLine(e.detail.line || 1)
       }
@@ -36,25 +104,25 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
   }, [currentSnippet?.id])
 
   // Extract all Markdown headings from the current document
-  const headings = useMemo(() => {
+  const headings = useMemo<HeadingItem[]>(() => {
     return extractHeadings(currentSnippet?.code || '')
   }, [currentSnippet?.code])
 
   // Compute the active heading corresponding to the cursor position
-  const activeHeading = useMemo(() => {
+  const activeHeading = useMemo<HeadingItem | null>(() => {
     return findActiveHeading(headings, cursorLine)
   }, [headings, cursorLine])
 
   // Resolve hierarchical folder chain from root down to note's immediate folder
-  const folderPath = useMemo(() => {
+  const folderPath = useMemo<FolderPathItem[]>(() => {
     return getFolderPath(currentSnippet?.folderId, folders)
   }, [currentSnippet?.folderId, folders])
 
   // Ordered list of interactive breadcrumb segments for linear keyboard navigation
-  const segments = useMemo(() => {
+  const segments = useMemo<BreadcrumbSegment[]>(() => {
     if (!currentSnippet) return []
     const rootTargetId = folderPath[0]?.id ?? currentSnippet.id
-    const list = [
+    const list: BreadcrumbSegment[] = [
       {
         key: '__workspace__',
         type: 'workspace',
@@ -87,20 +155,28 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
     return list
   }, [currentSnippet, folderPath, activeHeading])
 
-  const openDropdown = useCallback((e, parentFolderId, currentId, activeSegmentKey) => {
-    const rect = e.currentTarget.getBoundingClientRect()
-    setOutlineDropdown(null)
-    setDropdown({
-      parentFolderId: parentFolderId ?? null,
-      currentId: currentId ?? null,
-      activeSegmentKey,
-      anchorRect: rect
-    })
-  }, [])
+  const openDropdown = useCallback(
+    (
+      e: React.MouseEvent<HTMLButtonElement>,
+      parentFolderId: string | null | undefined,
+      currentId: string | null | undefined,
+      activeSegmentKey: string
+    ) => {
+      const rect = e.currentTarget.getBoundingClientRect()
+      setOutlineDropdown(null)
+      setDropdown({
+        parentFolderId: parentFolderId ?? null,
+        currentId: currentId ?? null,
+        activeSegmentKey,
+        anchorRect: rect
+      })
+    },
+    []
+  )
 
   const closeDropdown = useCallback(() => setDropdown(null), [])
 
-  const openOutlineDropdown = useCallback((e) => {
+  const openOutlineDropdown = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
     setDropdown(null)
     setOutlineDropdown({ anchorRect: rect })
@@ -109,7 +185,7 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
   const closeOutlineDropdown = useCallback(() => setOutlineDropdown(null), [])
 
   const navigateSegment = useCallback(
-    (direction) => {
+    (direction: number) => {
       if (!segments.length) return
       const currentKey = outlineDropdown
         ? '__outline__'
@@ -136,8 +212,8 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
       } else {
         setOutlineDropdown(null)
         setDropdown({
-          parentFolderId: targetSegment.parentFolderId,
-          currentId: targetSegment.currentId,
+          parentFolderId: targetSegment.parentFolderId ?? null,
+          currentId: targetSegment.currentId ?? null,
           activeSegmentKey: targetSegment.key,
           anchorRect: rect
         })
@@ -150,7 +226,7 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
   useEffect(() => {
     if (!dropdown && !outlineDropdown) return
 
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       const isCmdOrCtrl = e.ctrlKey || e.metaKey
       if (isCmdOrCtrl && e.key === 'ArrowLeft') {
         e.preventDefault()
@@ -167,19 +243,22 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
   }, [dropdown, outlineDropdown, navigateSegment])
 
-  const handleCopyPath = useCallback(async (e) => {
-    e.stopPropagation()
-    const fullPath =
-      currentSnippet?.relativePath ||
-      [...folderPath.map((f) => f.name), currentSnippet?.title || 'Untitled'].join('/')
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(fullPath)
-      }
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1800)
-    } catch {}
-  }, [currentSnippet, folderPath])
+  const handleCopyPath = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation()
+      const fullPath =
+        (typeof currentSnippet?.relativePath === 'string' ? currentSnippet.relativePath : '') ||
+        [...folderPath.map((f) => f.name), currentSnippet?.title || 'Untitled'].join('/')
+      try {
+        if (navigator?.clipboard?.writeText) {
+          await navigator.clipboard.writeText(fullPath)
+        }
+        setCopied(true)
+        setTimeout(() => setCopied(false), 1800)
+      } catch {}
+    },
+    [currentSnippet, folderPath]
+  )
 
   const folderPathRef = useRef(folderPath)
   folderPathRef.current = folderPath
@@ -200,7 +279,7 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
       setDropdown({
         parentFolderId: lastFolderId,
         currentId: targetId,
-        activeSegmentKey: targetId,
+        activeSegmentKey: targetId || '__workspace__',
         anchorRect: rect
       })
     }
@@ -213,34 +292,34 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
   }, [])
 
   // Drag and drop onto folder segments
-  const handleDragOver = useCallback((e, targetKey) => {
+  const handleDragOver = useCallback((e: React.DragEvent, targetKey: string) => {
     e.preventDefault()
     e.stopPropagation()
     e.dataTransfer.dropEffect = 'move'
     setDragOverTarget(targetKey)
   }, [])
 
-  const handleDragLeave = useCallback((e, targetKey) => {
+  const handleDragLeave = useCallback((e: React.DragEvent, targetKey: string) => {
     e.preventDefault()
     e.stopPropagation()
     setDragOverTarget((prev) => (prev === targetKey ? null : prev))
   }, [])
 
   const handleDrop = useCallback(
-    async (e, targetFolderId) => {
+    async (e: React.DragEvent, targetFolderId: string | null) => {
       e.preventDefault()
       e.stopPropagation()
       setDragOverTarget(null)
 
       const raw = e.dataTransfer.getData('application/lumina-snippet')
-      if (raw && saveSnippet) {
+      if (raw && saveNote) {
         try {
           const droppedSnippet = JSON.parse(raw)
           if (droppedSnippet && droppedSnippet.id) {
             const nextFolderId = targetFolderId ? normalizePath(targetFolderId) : ''
             if (droppedSnippet.folderId !== nextFolderId) {
               const updated = { ...droppedSnippet, folderId: nextFolderId }
-              await saveSnippet(updated)
+              await saveNote(updated)
               window.dispatchEvent(
                 new CustomEvent('show-toast', {
                   detail: {
@@ -256,12 +335,14 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
         }
       }
     },
-    [saveSnippet]
+    [saveNote]
   )
 
   if (!currentSnippet) return null
-  if (Array.isArray(snippets) && snippets.length === 0 && !snippet) return null
-  if (Array.isArray(snippets) && snippets.length > 0 && !snippets.some((s) => s.id === currentSnippet.id)) return null
+  if (Array.isArray(notes) && notes.length === 0 && !snippet) return null
+  if (Array.isArray(notes) && notes.length > 0 && !notes.some((s) => s.id === currentSnippet.id)) {
+    return null
+  }
 
   const rootTargetId = folderPath[0]?.id ?? currentSnippet.id
   const isWorkspaceOpen = dropdown?.activeSegmentKey === '__workspace__'
@@ -402,4 +483,5 @@ export const Breadcrumbs = ({ snippet, className = '' }) => {
   )
 }
 
+Breadcrumbs.displayName = 'Breadcrumbs'
 export default React.memo(Breadcrumbs)

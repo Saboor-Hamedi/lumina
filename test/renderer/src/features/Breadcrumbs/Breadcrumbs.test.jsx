@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 import { render, screen, fireEvent, act } from '@testing-library/react'
-import { Breadcrumbs } from '../../../../../src/renderer/src/features/Breadcrumbs/components/Breadcrumbs'
+import { Breadcrumbs } from '../../../../../src/renderer/src/features/Breadcrumbs/Breadcrumbs'
 
 const mockSnippet = {
   id: 's1',
@@ -12,7 +12,7 @@ const mockSnippet = {
 
 const mockSaveSnippet = vi.fn()
 
-vi.mock('../../../../../src/renderer/src/features/Breadcrumbs/components/BreadcrumbDropdown', () => ({
+vi.mock('../../../../../src/renderer/src/features/Breadcrumbs/BreadcrumbDropdown', () => ({
   default: ({ parentFolderId, currentId, onClose }) => (
     <div
       data-testid="bc-dropdown"
@@ -24,7 +24,7 @@ vi.mock('../../../../../src/renderer/src/features/Breadcrumbs/components/Breadcr
   )
 }))
 
-vi.mock('../../../../../src/renderer/src/features/Breadcrumbs/components/BreadcrumbOutlineDropdown', () => ({
+vi.mock('../../../../../src/renderer/src/features/Breadcrumbs/BreadcrumbOutlineDropdown', () => ({
   default: ({ headings, onClose }) => (
     <div data-testid="bc-outline-dropdown" data-count={headings.length}>
       <button onClick={onClose}>close-outline</button>

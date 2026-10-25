@@ -383,6 +383,70 @@ body.zen-instant-transition *,
   height: 0px !important;
 }
 
+/* Right sidebar sleek hover-reveal scrollbars matching explorer */
+.shell-sidebar-right .chat-messages-scroll-area,
+.shell-sidebar-right .chat-messages-container,
+.shell-sidebar-right .lumina-session-scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease-out;
+  padding-right: 0.5px;
+  box-sizing: border-box;
+}
+
+.shell-sidebar-right .chat-messages-scroll-area::-webkit-scrollbar,
+.shell-sidebar-right .chat-messages-container::-webkit-scrollbar,
+.shell-sidebar-right .lumina-session-scrollable::-webkit-scrollbar {
+  width: 5px !important;
+  height: 5px !important;
+}
+
+.shell-sidebar-right .chat-messages-scroll-area::-webkit-scrollbar-track,
+.shell-sidebar-right .chat-messages-container::-webkit-scrollbar-track,
+.shell-sidebar-right .lumina-session-scrollable::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.shell-sidebar-right .chat-messages-scroll-area::-webkit-scrollbar-thumb,
+.shell-sidebar-right .chat-messages-container::-webkit-scrollbar-thumb,
+.shell-sidebar-right .lumina-session-scrollable::-webkit-scrollbar-thumb {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 3px !important;
+  transition: background-color 0.2s ease-out;
+}
+
+.shell-sidebar-right:hover .chat-messages-scroll-area,
+.shell-sidebar-right:hover .chat-messages-container,
+.shell-sidebar-right:hover .lumina-session-scrollable,
+.inspector-panel:hover .chat-messages-scroll-area,
+.inspector-panel:hover .chat-messages-container,
+.inspector-panel:hover .lumina-session-scrollable,
+.shell-sidebar-right .chat-messages-scroll-area:hover,
+.shell-sidebar-right .chat-messages-container:hover,
+.shell-sidebar-right .lumina-session-scrollable:hover {
+  scrollbar-color: var(--scroll-thumb, var(--border-subtle, rgba(255, 255, 255, 0.25))) transparent;
+}
+
+.shell-sidebar-right:hover .chat-messages-scroll-area::-webkit-scrollbar-thumb,
+.shell-sidebar-right:hover .chat-messages-container::-webkit-scrollbar-thumb,
+.shell-sidebar-right:hover .lumina-session-scrollable::-webkit-scrollbar-thumb,
+.inspector-panel:hover .chat-messages-scroll-area::-webkit-scrollbar-thumb,
+.inspector-panel:hover .chat-messages-container::-webkit-scrollbar-thumb,
+.inspector-panel:hover .lumina-session-scrollable::-webkit-scrollbar-thumb,
+.shell-sidebar-right .chat-messages-scroll-area:hover::-webkit-scrollbar-thumb,
+.shell-sidebar-right .chat-messages-container:hover::-webkit-scrollbar-thumb,
+.shell-sidebar-right .lumina-session-scrollable:hover::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb, var(--border-subtle, rgba(255, 255, 255, 0.25))) !important;
+}
+
+.shell-sidebar-right .chat-messages-scroll-area::-webkit-scrollbar-thumb:hover,
+.shell-sidebar-right .chat-messages-container::-webkit-scrollbar-thumb:hover,
+.shell-sidebar-right .lumina-session-scrollable::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted, rgba(255, 255, 255, 0.5)) !important;
+}
+
+
 
 
 /* Legacy panel-tab styles (kept for backward compatibility if needed) */
