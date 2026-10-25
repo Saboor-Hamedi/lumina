@@ -17,10 +17,10 @@ export const dracula: ThemeDefinition = {
     '--text-faint': '#707896',
     '--text-accent': '#bd93f9',
     '--text-accent-rgb': '189, 147, 249',
-    '--border-dim': '#2c2e3d',
-    '--border-subtle': '#393c50',
-    '--border-main': '#4c5069',
-    '--border-card': '#393c50',
+    '--border-dim': 'rgba(255, 255, 255, 0.06)',
+    '--border-subtle': 'rgba(189, 147, 249, 0.14)',
+    '--border-main': 'rgba(189, 147, 249, 0.24)',
+    '--border-card': 'rgba(255, 255, 255, 0.08)',
     '--scroll-thumb': '#44475a',
     '--scroll-track': '#191a21',
     '--icon-primary': '#bd93f9',
@@ -29,10 +29,10 @@ export const dracula: ThemeDefinition = {
     '--icon-danger': '#ff5555',
     '--icon-love': '#ff79c6',
     '--caret-width': '2px',
-    '--caret-color': '#ff79c6',
+    '--caret-color': '#bd93f9',
     '--shadow-soft': 'rgba(0, 0, 0, 0.35)',
     '--glow-accent': 'rgba(189, 147, 249, 0.18)'
   }
 }
 
-export default dracula;
+export default dracula

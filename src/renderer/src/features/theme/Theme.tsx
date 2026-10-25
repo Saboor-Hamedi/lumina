@@ -460,7 +460,7 @@ const ThemeContent: React.FC<ThemeContentProps> = memo(({ themeData, isActive })
                 }}
               >
                 <span style={{ color: c['--text-accent'] || '#40bafa' }}>const</span> theme ={' '}
-                <span style={{ color: '#a6e3a1' }}>&apos;{themeData.id}&apos;</span>
+                <span style={{ color: c['--icon-secondary'] || c['--text-accent'] || '#a6e3a1' }}>&apos;{themeData.id}&apos;</span>
                 <br />
                 <span style={{ color: c['--text-accent'] || '#40bafa' }}>console</span>.log(
                 <span style={{ color: c['--text-muted'] || '#888' }}>
