@@ -3,6 +3,7 @@ import { Mic, X, Loader2, AlertCircle, Square } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import type { VoiceModalProps } from './types'
+import { useKeyboardShortcuts } from '../../core/shortcuts'
 
 export const VoiceModal: React.FC<VoiceModalProps> = ({
   isOpen,
@@ -48,6 +49,19 @@ export const VoiceModal: React.FC<VoiceModalProps> = ({
     window.addEventListener('mouseup', handleMouseUp)
   }
 
+  useKeyboardShortcuts({
+    onEscape: () => {
+      if (isOpen) {
+        if (isRecording) {
+          onStopRecording()
+        }
+        onClose()
+        return true
+      }
+      return false
+    }
+  })
+
   if (!isOpen) return null
 
   const bars = [0.25, 0.45, 0.7, 0.9, 1.0, 0.9, 0.7, 0.45, 0.25]
@@ -83,15 +97,36 @@ export const VoiceModal: React.FC<VoiceModalProps> = ({
       style={computedStyle}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="voice-popover-header" onMouseDown={handleHeaderMouseDown} style={{ cursor: 'grab' }}>
-        <div className="voice-popover-title-row">
-          <span className="voice-popover-title">Lumina voice detection</span>
+      <div className="docs-modal-header voice-popover-header" onMouseDown={handleHeaderMouseDown} style={{ cursor: 'grab' }}>
+        <div className="docs-header-left voice-popover-title-row" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span
+            style={{
+              fontSize: '12.5px',
+              fontWeight: 500,
+              color: 'var(--text-main)',
+              letterSpacing: '-0.01em'
+            }}
+          >
+            Voice
+          </span>
+          <span style={{ opacity: 0.35, color: 'var(--text-muted)', fontSize: '12px' }}>/</span>
+          <span
+            style={{
+              fontSize: '11.5px',
+              fontWeight: 400,
+              color: 'var(--text-muted)'
+            }}
+          >
+            {isRecording ? 'Listening...' : isTranscribing ? 'Transcribing...' : 'Detection'}
+          </span>
         </div>
 
-        <div className="voice-header-actions">
-          <button type="button" className="voice-control-close" onClick={handleCloseClick} title="Close">
-            <X size={13} strokeWidth={2} />
-          </button>
+        <div className="docs-header-right voice-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <ToolTip text="Close (Esc)" position="bottom">
+            <button type="button" className="docs-sidebar-toggle-btn guide-close-btn" onClick={handleCloseClick} aria-label="Close">
+              <X size={14} />
+            </button>
+          </ToolTip>
         </div>
       </div>
 

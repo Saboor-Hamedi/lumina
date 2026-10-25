@@ -3,7 +3,20 @@ import { X, AlertTriangle } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import './css/promptModal.css'
 
-const PromptModal = ({
+export interface PromptModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  onDiscard?: () => void
+  title: string
+  message: string
+  confirmLabel?: string
+  discardLabel?: string
+  cancelLabel?: string
+  type?: 'warning' | 'danger' | 'info'
+}
+
+export const PromptModal: React.FC<PromptModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
@@ -30,14 +43,33 @@ const PromptModal = ({
   return (
     <div className="modal-overlay prompt-overlay" onClick={onClose}>
       <div className="modal-container prompt-container" onClick={(e) => e.stopPropagation()}>
-        <header className="pane-header">
-          <div className="modal-title-stack">
-            <AlertTriangle size={16} className={`prompt-icon-${type}`} />
-            <span>{title}</span>
+        <header className="pane-header docs-modal-header">
+          <div
+            className="modal-title-stack docs-header-left"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <AlertTriangle size={15} className={`prompt-icon-${type}`} />
+            <span
+              style={{
+                fontSize: '12.5px',
+                fontWeight: 500,
+                color: 'var(--text-main)',
+                letterSpacing: '-0.01em'
+              }}
+            >
+              {title}
+            </span>
           </div>
-          <button className="modal-close" onClick={onClose}>
-            <X size={18} />
-          </button>
+          <div className="docs-header-right">
+            <button
+              type="button"
+              className="docs-sidebar-toggle-btn guide-close-btn modal-close"
+              onClick={onClose}
+              aria-label="Close"
+            >
+              <X size={14} />
+            </button>
+          </div>
         </header>
 
         <div className="prompt-body">

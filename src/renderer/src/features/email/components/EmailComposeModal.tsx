@@ -4,6 +4,7 @@ import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { EmailComposeDraft, EmailAttachment } from '../types'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { insertMarkdownSyntax, renderEmailBody } from '../services/emailMarkdownService'
+import { useKeyboardShortcuts } from '../../../core/shortcuts'
 
 /**
  * Props for the EmailComposeModal component
@@ -53,6 +54,17 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const selectedNote = useWorkspaceStore((s) => s.selectedNote)
 
+  useKeyboardShortcuts({
+    onEscape: () => {
+      if (isOpen) {
+        onClose()
+        return true
+      }
+      return false
+    }
+  })
+
+
   if (!isOpen) return null
 
   const handleAttachCurrentNote = () => {
@@ -77,19 +89,47 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
   return (
     <div className="email-compose-overlay" onClick={onClose}>
       <div className="email-compose-card" onClick={(e) => e.stopPropagation()}>
-        {/* Header (Exact 34px aligned with other headers) */}
-        <div className="email-compose-header">
-          <span className="email-compose-title">New Message</span>
-          <ToolTip text="Close draft" position="bottom">
-            <button
-              type="button"
-              className="email-pane-toggle-btn"
-              onClick={onClose}
-              aria-label="Close compose"
+        {/* Header - unified with mother modal titlebar */}
+        <div className="docs-modal-header email-compose-header">
+          <div className="docs-header-left email-compose-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span
+              style={{
+                fontSize: '12.5px',
+                fontWeight: 500,
+                color: 'var(--text-main)',
+                letterSpacing: '-0.01em'
+              }}
             >
-              <X size={13} />
-            </button>
-          </ToolTip>
+              Compose
+            </span>
+            <span style={{ opacity: 0.35, color: 'var(--text-muted)', fontSize: '12px' }}>/</span>
+            <span
+              style={{
+                fontSize: '11.5px',
+                fontWeight: 400,
+                color: 'var(--text-muted)',
+                maxWidth: '280px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {draft.subject ? draft.subject : 'New Message'}
+            </span>
+          </div>
+
+          <div className="docs-header-right" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <ToolTip text="Close draft (Esc)" position="bottom">
+              <button
+                type="button"
+                className="docs-sidebar-toggle-btn guide-close-btn"
+                onClick={onClose}
+                aria-label="Close compose"
+              >
+                <X size={14} />
+              </button>
+            </ToolTip>
+          </div>
         </div>
 
         {/* Fields */}
