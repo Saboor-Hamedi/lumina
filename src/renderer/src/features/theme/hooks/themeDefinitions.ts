@@ -112,7 +112,7 @@ const hexToRgb = (hex: string): string | null => {
  *
  * @param themeId - Theme identifier
  */
-export const applyTheme = (themeId: string): void => {
+export const applyTheme = (themeId: string, resetCustomAccent = false): void => {
   const theme = getTheme(themeId)
   const root = document.documentElement
 
@@ -131,7 +131,10 @@ export const applyTheme = (themeId: string): void => {
       if (parsed.caretWidth && parsed.caretWidth !== '2px') {
         customCaretWidth = parsed.caretWidth
       }
-      if (parsed.themeAccentColor && typeof parsed.themeAccentColor === 'string' && parsed.themeAccentColor.trim() !== '') {
+      if (resetCustomAccent) {
+        delete parsed.themeAccentColor
+        localStorage.setItem('theme-colors', JSON.stringify(parsed))
+      } else if (parsed.themeAccentColor && typeof parsed.themeAccentColor === 'string' && parsed.themeAccentColor.trim() !== '') {
         customThemeAccentColor = parsed.themeAccentColor
       }
     }
@@ -181,6 +184,6 @@ export const applyTheme = (themeId: string): void => {
   localStorage.setItem('lumina_active_theme_colors', JSON.stringify(computedColors))
 
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('theme-changed', { detail: { themeId, colors: computedColors } }))
+    window.dispatchEvent(new CustomEvent('theme-changed', { detail: { themeId, colors: computedColors, accentColor: computedColors['--text-accent'], resetCustomAccent } }))
   }
 }

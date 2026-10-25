@@ -24,14 +24,14 @@ const TAB_LABELS: Record<SettingsTabId, string> = {
  * Maps incoming initialTab strings to a valid SettingsTabId
  */
 const mapInitialTab = (tab?: string): SettingsTabId => {
-  if (!tab) return 'look-and-feel'
+  if (!tab) return 'workspace'
   if (['workspace', 'vault'].includes(tab)) return 'workspace'
   if (['look-and-feel', 'appearance', 'type', 'general'].includes(tab)) return 'look-and-feel'
   if (tab === 'shortcuts') return 'shortcuts'
   if (['ai', 'assistant'].includes(tab)) return 'assistant'
   if (['memory', 'ai-memory'].includes(tab)) return 'memory'
   if (['graph', 'advanced'].includes(tab)) return 'advanced'
-  return 'look-and-feel'
+  return 'workspace'
 }
 
 /**
@@ -42,7 +42,7 @@ const mapInitialTab = (tab?: string): SettingsTabId => {
 export const Settings: React.FC<SettingsProps> = ({
   onClose,
   onOpenTheme,
-  initialTab = 'look-and-feel'
+  initialTab = 'workspace'
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTabId>(() => mapInitialTab(initialTab))
   const isMaximized = useSettingsStore((s) => s.settings.settingsModalMaximized ?? false)

@@ -480,6 +480,16 @@ export class SettingsManager {
       await this.appConfig.save()
     }
 
+    // Sync theme with app_config.json
+    if (workspaceSettings.theme) {
+      if (this.appConfig.theme !== workspaceSettings.theme) {
+        this.appConfig.theme = workspaceSettings.theme
+        needsAppConfigSave = true
+      }
+    } else if (this.appConfig.theme && this.appConfig.theme !== 'dark') {
+      workspaceSettings.theme = this.appConfig.theme
+    }
+
     this.cache = {
       ...DEFAULT_SETTINGS,
       ...workspaceSettings,
@@ -578,6 +588,18 @@ export class SettingsManager {
       this.cache[key] = value
     }
 
+    if (key === 'theme') {
+      const themeVal = (value as string) || 'dark'
+      this.appConfig.theme = themeVal
+      if (this.cache) {
+        delete (this.cache as any).themeAccentColor
+        if (this.cache.cursor && typeof this.cache.cursor === 'object') {
+          delete (this.cache.cursor as any).themeAccentColor
+        }
+      }
+      await this.appConfig.save()
+    }
+
     if (key === 'shortcuts') {
       this.appConfig.shortcuts = (value as Shortcuts) || {}
       await this.appConfig.save()
@@ -633,6 +655,14 @@ export class SettingsManager {
         }
         if (k === 'shortcuts') {
           this.appConfig.shortcuts = (v as Shortcuts) || {}
+          globalKeyChanged = true
+        }
+        if (k === 'theme' && typeof v === 'string') {
+          this.appConfig.theme = v || 'dark'
+          delete (current as any).themeAccentColor
+          if (current.cursor && typeof current.cursor === 'object') {
+            delete (current.cursor as any).themeAccentColor
+          }
           globalKeyChanged = true
         }
       }

@@ -380,8 +380,12 @@ export const useFontSettings = (): FontSettings => {
             : ''
         setCaretColor(stateCaretColor)
 
+        const themeDefaultAccent =
+          getTheme(themeName).colors['--text-accent'] || '#40bafa'
         const stateThemeAccentColor =
-          savedThemeAccentColor && savedThemeAccentColor.trim() !== '' ? savedThemeAccentColor : ''
+          savedThemeAccentColor && savedThemeAccentColor.trim() !== '' && savedThemeAccentColor.toLowerCase() !== themeDefaultAccent.toLowerCase()
+            ? savedThemeAccentColor
+            : ''
         setThemeAccentColor(stateThemeAccentColor)
         if (stateThemeAccentColor) {
           root.style.setProperty('--text-accent', stateThemeAccentColor)
@@ -583,8 +587,31 @@ export const useFontSettings = (): FontSettings => {
     }
     window.addEventListener('caret-style-update', handleCaretUpdate)
 
+    const handleThemeUpdate = (e: any) => {
+      if (e.detail?.resetCustomAccent) {
+        setThemeAccentColor('')
+        setBaseColors((prev) => {
+          const next = { ...prev }
+          delete next.themeAccentColor
+          return next
+        })
+        try {
+          const s = localStorage.getItem('theme-colors')
+          if (s) {
+            const parsed = JSON.parse(s)
+            delete parsed.themeAccentColor
+            localStorage.setItem('theme-colors', JSON.stringify(parsed))
+          }
+        } catch {}
+      } else if (e.detail?.accentColor) {
+        setThemeAccentColor(e.detail.accentColor)
+      }
+    }
+    window.addEventListener('theme-changed', handleThemeUpdate)
+
     return () => {
       window.removeEventListener('caret-style-update', handleCaretUpdate)
+      window.removeEventListener('theme-changed', handleThemeUpdate)
       if (settingsChangedUnsubscribe) {
         settingsChangedUnsubscribe()
       }
@@ -674,6 +701,9 @@ export const useFontSettings = (): FontSettings => {
     (next: Record<string, any>) => {
       try {
         const merged = { ...baseColors, ...next }
+        if (!merged.themeAccentColor) {
+          delete merged.themeAccentColor
+        }
         setBaseColors(merged)
 
         if (persistDebounceRef.current) {
@@ -692,16 +722,18 @@ export const useFontSettings = (): FontSettings => {
               caretWidthValue = parseInt(DEFAULTS.CARET_WIDTH.replace('px', ''), 10)
             }
 
-            const cursorSettings = {
+            const cursorSettings: any = {
               caretWidth: caretWidthValue,
               caretStyle: merged.caretStyle,
               caretColor: merged.caretColor,
-              themeAccentColor: merged.themeAccentColor,
               useBorderLeft: merged.useBorderLeft !== undefined ? merged.useBorderLeft : true,
               editorFontFamily: merged.editorFontFamily,
               editorFontSize: merged.editorFontSize,
               previewFontFamily: merged.previewFontFamily,
               previewFontSize: merged.previewFontSize
+            }
+            if (merged.themeAccentColor) {
+              cursorSettings.themeAccentColor = merged.themeAccentColor
             }
 
             const api = (window as any).api
@@ -846,7 +878,24 @@ export const useFontSettings = (): FontSettings => {
       if (accentDebounceRef.current) clearTimeout(accentDebounceRef.current)
       accentDebounceRef.current = setTimeout(() => {
         setThemeAccentColor(rawColor)
-        persistTheme({ themeAccentColor: rawColor })
+        if (!rawColor) {
+          setBaseColors((prev) => {
+            const next = { ...prev }
+            delete next.themeAccentColor
+            return next
+          })
+          try {
+            const s = localStorage.getItem('theme-colors')
+            if (s) {
+              const parsed = JSON.parse(s)
+              delete parsed.themeAccentColor
+              localStorage.setItem('theme-colors', JSON.stringify(parsed))
+            }
+          } catch {}
+          persistTheme({ themeAccentColor: null })
+        } else {
+          persistTheme({ themeAccentColor: rawColor })
+        }
       }, 50)
     },
     [persistTheme]

@@ -146,8 +146,8 @@
 .control-icon:hover,
 .settings-sidebar-toggle-btn:hover,
 .settings-window-btn:hover {
-  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
-  color: var(--text-main, #ffffff);
+  background: var(--bg-hover, var(--bg-active, rgba(125, 125, 125, 0.1)));
+  color: var(--text-main);
 }
 
 .control-close:hover,
@@ -165,8 +165,8 @@
 }
 
 .settings-container .settings-modal-header .settings-close-btn:hover {
-  background: var(--bg-hover, rgba(127, 127, 127, 0.1)) !important;
-  color: var(--text-main, #ffffff) !important;
+  background: var(--bg-hover, var(--bg-active, rgba(125, 125, 125, 0.1))) !important;
+  color: var(--text-main) !important;
 }
 
 /* === LAYOUT === */
@@ -279,14 +279,19 @@
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  background: var(--bg-hover, var(--bg-active, rgba(125, 125, 125, 0.08)));
+  color: var(--text-main);
 }
 
 .nav-item.active {
-  background: rgba(var(--text-accent-rgb, 99, 102, 241), 0.12);
+  background: rgba(var(--text-accent-rgb, 99, 102, 241), 0.14);
   color: var(--text-accent, #818cf8);
   font-weight: 600;
+}
+
+.nav-item.active:hover {
+  background: rgba(var(--text-accent-rgb, 99, 102, 241), 0.20);
+  color: var(--text-accent, #818cf8);
 }
 
 /* === PANE HEADER === */
@@ -337,8 +342,9 @@
 }
 
 .btn-secondary:hover {
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--bg-hover, var(--bg-active, rgba(125, 125, 125, 0.1)));
+  border-color: var(--border-subtle, var(--border-dim));
+  color: var(--text-main);
 }
 
 .btn-danger {
@@ -513,7 +519,7 @@ input.settings-select:focus,
 
 .dropdown:hover,
 .settings-select:hover {
-  border-color: rgba(255, 255, 255, 0.22);
+  border-color: var(--border-main, var(--border-subtle));
 }
 
 .dropdown:focus,
@@ -593,15 +599,15 @@ input.settings-select:focus,
 /* Value Badge */
 .value-badge,
 .range-wrap span {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-input, var(--bg-active, rgba(125, 125, 125, 0.08)));
   padding: 3px 6px;
   border-radius: 4px;
   font-size: 11px;
   font-family: var(--font-mono, monospace);
-  color: var(--text-main, #fff);
+  color: var(--text-main);
   min-width: 38px;
   text-align: center;
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--border-dim, rgba(125, 125, 125, 0.15));
   box-sizing: border-box;
 }
 
@@ -619,8 +625,9 @@ input.settings-select:focus,
 }
 
 .btn:hover {
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--bg-hover, var(--bg-active, rgba(125, 125, 125, 0.1)));
+  border-color: var(--border-subtle, var(--border-dim));
+  color: var(--text-main);
 }
 
 /* --- Caret Color Controls --- */
@@ -815,14 +822,14 @@ input.settings-select:focus,
 }
 
 .settings-subtab:hover {
-  color: var(--text-main, #fff);
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-main);
+  background: var(--bg-hover, var(--bg-active, rgba(125, 125, 125, 0.08)));
 }
 
 .settings-subtab.active {
-  color: var(--text-main, #fff);
+  color: var(--text-main);
   background: var(--bg-panel, #2d2d3f);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 1px 3px var(--shadow-soft, rgba(0, 0, 0, 0.15));
   font-weight: 600;
 }
 
@@ -865,7 +872,7 @@ input.settings-select:focus,
 .settings-update-header-title {
   font-size: 11px;
   font-weight: 600;
-  color: var(--text-main, #fff);
+  color: var(--text-main);
   letter-spacing: -0.01em;
 }
 

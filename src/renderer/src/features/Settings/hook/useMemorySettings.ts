@@ -25,6 +25,8 @@ export function useMemorySettings() {
   const [editingFactIndex, setEditingFactIndex] = useState<number | null>(null)
   const [editingFactValue, setEditingFactValue] = useState<string>('')
 
+  const [isConfirmingReset, setIsConfirmingReset] = useState<boolean>(false)
+  const resetConfirmTimerRef = useRef<NodeJS.Timeout | null>(null)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isInitialLoad = useRef<boolean>(true)
   const { showToast } = useToast()
@@ -56,6 +58,7 @@ export function useMemorySettings() {
     loadData()
     return () => {
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+      if (resetConfirmTimerRef.current) clearTimeout(resetConfirmTimerRef.current)
     }
   }, [loadData])
 
@@ -218,12 +221,43 @@ export function useMemorySettings() {
   }, [editingFactValue, memory.facts, loadData, showToast])
 
   const handleClearAll = useCallback(async () => {
-    if (window.confirm('Are you sure you want to clear all learned memory? This will reset memory.json.')) {
-      await luminaMemory.clearAllMemory()
-      await loadData()
-      showToast('Memory reset')
+    if (!isConfirmingReset) {
+      setIsConfirmingReset(true)
+      if (resetConfirmTimerRef.current) clearTimeout(resetConfirmTimerRef.current)
+      resetConfirmTimerRef.current = setTimeout(() => {
+        setIsConfirmingReset(false)
+      }, 3500)
+      return
     }
-  }, [loadData, showToast])
+
+    if (resetConfirmTimerRef.current) {
+      clearTimeout(resetConfirmTimerRef.current)
+      resetConfirmTimerRef.current = null
+    }
+    setIsConfirmingReset(false)
+
+    // Clear any pending user profile debounce so it does not conflict with reset
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+      saveTimeoutRef.current = null
+    }
+
+    // Immediately reset React state synchronously for 0ms lag
+    setMemory({
+      user: { name: '', role: '', bio: '' },
+      preferences: [],
+      facts: []
+    })
+
+    // Reset memory in background without blocking inputs or setting isLoading
+    try {
+      await luminaMemory.clearAllMemory()
+      showToast('AI memory reset successfully')
+    } catch (err) {
+      console.error('[useMemorySettings] Failed to reset memory:', err)
+      showToast('Failed to reset memory')
+    }
+  }, [isConfirmingReset, showToast])
 
   return {
     memory,
@@ -251,6 +285,7 @@ export function useMemorySettings() {
     handleStartEditFact,
     handleCancelEditFact,
     handleSaveEditFact,
-    handleClearAll
+    handleClearAll,
+    isConfirmingReset
   }
 }

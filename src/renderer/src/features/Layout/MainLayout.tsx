@@ -156,7 +156,7 @@ export const MainLayout: React.FC = () => {
   const { workspaceDrop, workspaceDropProps } = useWorkspaceDrop()
 
   useTypingSound()
-  const [settingsInitialTab, setSettingsInitialTab] = useState('look-and-feel')
+  const [settingsInitialTab, setSettingsInitialTab] = useState('workspace')
 
   const [activeTab, setActiveTab] = useState('files')
   const [showSettings, setShowSettings] = useState(false)

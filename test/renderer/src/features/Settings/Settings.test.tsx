@@ -33,9 +33,9 @@ describe('Settings', () => {
     expect(screen.getByText('Settings')).toBeInTheDocument()
   })
 
-  it('shows the look-and-feel pane by default', () => {
+  it('shows the workspace pane by default', () => {
     render(<Settings {...defaultProps()} />)
-    expect(screen.getByTestId('pane-look-and-feel')).toBeInTheDocument()
+    expect(screen.getByTestId('pane-workspace')).toBeInTheDocument()
     expect(screen.queryByTestId('pane-assistant')).not.toBeInTheDocument()
     expect(screen.queryByTestId('pane-advanced')).not.toBeInTheDocument()
   })
@@ -96,9 +96,9 @@ describe('Settings', () => {
       expect(screen.getByTestId('pane-advanced')).toBeInTheDocument()
     })
 
-    it('falls back to look-and-feel for unknown tabs', () => {
+    it('falls back to workspace for unknown tabs', () => {
       render(<Settings {...defaultProps()} initialTab="unknown" />)
-      expect(screen.getByTestId('pane-look-and-feel')).toBeInTheDocument()
+      expect(screen.getByTestId('pane-workspace')).toBeInTheDocument()
     })
   })
 
@@ -141,7 +141,7 @@ describe('Settings', () => {
   it('calls onOpenTheme when the theme gallery is requested', () => {
     const props = defaultProps()
     render(<Settings {...props} />)
-    expect(screen.getByTestId('pane-look-and-feel')).toBeInTheDocument()
+    expect(screen.getByTestId('pane-workspace')).toBeInTheDocument()
     expect(props.onOpenTheme).toBeDefined()
   })
 

@@ -34,6 +34,7 @@ export class AppConfigManager {
   public globalApiKeys: Record<string, any> = {}
   public shortcuts: Shortcuts = {}
   public lastWorkspacePath: string | null = null
+  public theme: string = 'dark'
   public workspace: WorkspaceConfig = {
     lastWorkspaceOpened: null,
     path: null,
@@ -72,6 +73,10 @@ export class AppConfigManager {
       }
       const shortcuts = cfg?.shortcuts || {}
       this.shortcuts = typeof shortcuts === 'object' && shortcuts !== null ? shortcuts : {}
+
+      if (cfg?.theme && typeof cfg.theme === 'string') {
+        this.theme = cfg.theme
+      }
 
       const ws = cfg?.workspace || {}
       const resolvedPath =
@@ -169,6 +174,7 @@ export class AppConfigManager {
 
       const merged: any = {
         ...existing,
+        theme: this.theme || existing.theme || 'dark',
         workspace: {
           lastWorkspaceOpened: this.workspace.lastWorkspaceOpened,
           path: this.workspace.path,

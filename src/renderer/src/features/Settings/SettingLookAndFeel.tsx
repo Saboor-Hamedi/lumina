@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Palette, Type, MousePointer } from 'lucide-react'
 import AccentColor from '../theme/AccentColor'
+import { getTheme } from '../theme/hooks/themeDefinitions'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 import Toggle from '../../components/toggle'
@@ -83,6 +84,7 @@ type LookSubTab = 'appearance' | 'typography' | 'cursor'
 
 export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTheme }) => {
   const { settings, updateSetting } = useSettingsStore()
+  const currentThemeAccent = getTheme(settings.theme || 'dark').colors['--text-accent'] || '#52b788'
   const [activeSubTab, setActiveSubTab] = useState<LookSubTab>('appearance')
 
   const {
@@ -178,7 +180,7 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
             <div className="caret-color-controls">
               <ColorPickerInput
                 initialColor={themeAccentColor}
-                defaultColor="#40bafa"
+                defaultColor={currentThemeAccent}
                 onColorChange={updateThemeAccentColor}
                 previewProperty="--text-accent"
                 title="Choose Theme Accent Color"

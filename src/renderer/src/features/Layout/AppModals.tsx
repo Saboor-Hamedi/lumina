@@ -171,7 +171,7 @@ export const AppModals: React.FC<AppModalsProps> = ({
           <Settings
             onClose={() => {
               setShowSettings(false)
-              setSettingsInitialTab('look-and-feel')
+              setSettingsInitialTab('workspace')
             }}
             onOpenTheme={() => {
               setShowSettings(false)

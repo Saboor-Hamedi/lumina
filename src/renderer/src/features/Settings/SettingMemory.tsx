@@ -35,7 +35,8 @@ export const SettingMemory: React.FC = () => {
     handleStartEditFact,
     handleCancelEditFact,
     handleSaveEditFact,
-    handleClearAll
+    handleClearAll,
+    isConfirmingReset
   } = useMemorySettings()
 
   return (
@@ -60,11 +61,20 @@ export const SettingMemory: React.FC = () => {
           <button
             type="button"
             onClick={handleClearAll}
-            title="Reset memory.json"
-            className="btn btn-secondary btn-danger"
+            title={isConfirmingReset ? 'Click again to permanently reset memory.json' : 'Reset memory.json'}
+            className={`btn btn-secondary btn-danger ${isConfirmingReset ? 'pulse-opacity' : ''}`}
+            style={
+              isConfirmingReset
+                ? {
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.18)',
+                    color: '#fca5a5'
+                  }
+                : undefined
+            }
           >
             <Trash2 size={12} />
-            <span>Reset All</span>
+            <span>{isConfirmingReset ? 'Confirm Reset?' : 'Reset All'}</span>
           </button>
         </div>
       </div>

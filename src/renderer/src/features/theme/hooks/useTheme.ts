@@ -52,13 +52,23 @@ export const useTheme = (): UseThemeReturn => {
     setCurrentTheme(target)
     localStorage.setItem('theme-id', target)
     // applyThemeUtil handles caret color from theme definition
-    applyThemeUtil(target)
+    applyThemeUtil(target, true)
 
     // Debounce the setting store update and disk IPC write so rapid switching is buttery smooth
     if (saveThemeTimer) clearTimeout(saveThemeTimer)
     saveThemeTimer = setTimeout(() => {
       try {
         useSettingStore.getState().updateSetting('theme', target).catch(() => {})
+        const api = (window as any).api
+        if (api?.saveTheme) {
+          api.saveTheme(target).catch(() => {})
+        }
+        api?.getSetting?.('cursor').then((currCursor: any) => {
+          if (currCursor && typeof currCursor === 'object' && currCursor.themeAccentColor) {
+            delete currCursor.themeAccentColor
+            api.saveSetting('cursor', currCursor).catch(() => {})
+          }
+        }).catch(() => {})
       } catch {
         // Ignore if store is inaccessible
       }

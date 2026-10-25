@@ -21,6 +21,7 @@ import Profile from '../profile/Profile'
 import ModalHeader from '../modals/ModalHeader'
 import { useDraggableModal } from '../../core/utils/useDraggableModal'
 import { useOpacity } from './hooks/useOpacity'
+import { getTheme } from './hooks/themeDefinitions'
 import { useSettingStore } from '../../core/store/SettingStore'
 import Toggle from '../../components/toggle'
 import './css/accentcolor.css'
@@ -206,9 +207,17 @@ export const AccentColor: React.FC<AccentColorProps> = ({
   title = 'Accent Color',
   variant = 'modal'
 }) => {
+  const activeThemeAccent = useMemo(() => {
+    if (typeof document !== 'undefined') {
+      const themeId = document.documentElement.getAttribute('data-theme') || 'dark'
+      return getTheme(themeId).colors['--text-accent'] || defaultColor || '#52b788'
+    }
+    return defaultColor || '#52b788'
+  }, [defaultColor, isOpen])
+
   const startColor = useMemo(
-    () => initialColor || defaultColor || '#40bafa',
-    [initialColor, defaultColor]
+    () => initialColor || activeThemeAccent,
+    [initialColor, activeThemeAccent]
   )
 
   const [localColor, setLocalColor] = useState<string>(() => {
@@ -245,15 +254,15 @@ export const AccentColor: React.FC<AccentColorProps> = ({
 
   useEffect(() => {
     if (!isOpen) return
-    const col = initialColor || defaultColor || '#40bafa'
-    const formatted = col.startsWith('#') ? col : `#${col}`
+    const col = initialColor || activeThemeAccent
+    const formatted = col ? (col.startsWith('#') ? col : `#${col}`) : ''
     setLocalColor(formatted)
     localColorRef.current = formatted
     initialColorRef.current = formatted
 
     const idx = PRESET_PALETTE.findIndex((p) => p.toLowerCase() === formatted.toLowerCase())
     setFocusedIndex(idx !== -1 ? idx : 0)
-  }, [isOpen, initialColor, defaultColor])
+  }, [isOpen, initialColor, activeThemeAccent])
 
   useEffect(() => {
     if (!isOpen || variant !== 'dropdown') return
@@ -274,6 +283,30 @@ export const AccentColor: React.FC<AccentColorProps> = ({
 
   const applyColor = useCallback(
     (hex: string, persist = false) => {
+      if (!hex) {
+        setLocalColor('')
+        localColorRef.current = ''
+        if (previewProperty) {
+          const fallback = activeThemeAccent
+          document.documentElement.style.setProperty(previewProperty, fallback)
+          if (previewProperty === '--text-accent') {
+            document.documentElement.style.setProperty('--atomic-editor-accent', fallback)
+            document.documentElement.style.setProperty('--atomic-editor-link', fallback)
+            const clean = fallback.replace('#', '')
+            if (clean.length === 6) {
+              const r = parseInt(clean.substring(0, 2), 16)
+              const g = parseInt(clean.substring(2, 4), 16)
+              const b = parseInt(clean.substring(4, 6), 16)
+              document.documentElement.style.setProperty('--text-accent-rgb', `${r}, ${g}, ${b}`)
+            }
+          }
+        }
+        if (persist) {
+          onSelect?.('')
+        }
+        return
+      }
+
       setLocalColor(hex)
       localColorRef.current = hex
       if (previewProperty && hex) {
@@ -299,7 +332,7 @@ export const AccentColor: React.FC<AccentColorProps> = ({
         onSelect?.(hex)
       }
     },
-    [previewProperty, onSelect]
+    [previewProperty, onSelect, activeThemeAccent]
   )
 
   useEffect(() => {
@@ -379,12 +412,12 @@ export const AccentColor: React.FC<AccentColorProps> = ({
   if (!isOpen) return null
 
   const handleDone = () => {
-    onSelect?.(localColorRef.current || defaultColor)
+    onSelect?.(localColorRef.current || '')
     onClose?.()
   }
 
   const handleReset = () => {
-    applyColor(defaultColor, true)
+    applyColor('', true)
   }
 
   if (variant === 'dropdown') {
@@ -440,7 +473,7 @@ export const AccentColor: React.FC<AccentColorProps> = ({
           />
           <div
             className="color-picker-hex-preview"
-            style={{ backgroundColor: localColor || defaultColor }}
+            style={{ backgroundColor: localColor || activeThemeAccent }}
           />
         </div>
 
@@ -492,17 +525,27 @@ export const AccentColor: React.FC<AccentColorProps> = ({
               />
               <div
                 className="color-picker-hex-preview"
-                style={{ backgroundColor: localColor || defaultColor }}
+                style={{ backgroundColor: localColor || activeThemeAccent }}
               />
             </div>
           </div>
 
-          <div className="color-picker-modal-actions">
+          <div className="color-picker-modal-actions" style={{ display: 'flex', gap: '8px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleReset}
+              title="Reset accent to match current theme"
+              style={{ flex: 1, fontSize: '12px', padding: '7px 0', fontWeight: '500', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            >
+              <RotateCcw size={12} />
+              <span>Theme Default</span>
+            </button>
             <button
               type="button"
               className="btn btn-primary"
               onClick={handleDone}
-              style={{ width: '100%', fontSize: '12px', padding: '7px 0', fontWeight: '600' }}
+              style={{ flex: 1, fontSize: '12px', padding: '7px 0', fontWeight: '600' }}
             >
               Done
             </button>
