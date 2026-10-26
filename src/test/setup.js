@@ -35,6 +35,7 @@ global.window.api = {
   deleteSnippet: vi.fn(),
   confirmDelete: vi.fn(),
   closeWindow: vi.fn(),
+  quitApp: vi.fn(),
   getSetting: vi.fn(),
   saveSetting: vi.fn(),
   setTranslucency: vi.fn(),

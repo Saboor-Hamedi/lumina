@@ -127,6 +127,7 @@ const api = {
   },
   openDevTools: () => electronAPI.ipcRenderer.invoke('window:open-devtools'),
   closeWindow: () => electronAPI.ipcRenderer.invoke('window:close'),
+  quitApp: () => electronAPI.ipcRenderer.invoke('app:quit'),
   setWindowOpacity: (opacity) => electronAPI.ipcRenderer.invoke('window:set-opacity', opacity),
   getWindowOpacity: () => electronAPI.ipcRenderer.invoke('window:get-opacity'),
   moveWindow: (deltaX, deltaY) =>

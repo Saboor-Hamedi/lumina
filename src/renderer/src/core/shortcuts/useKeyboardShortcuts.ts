@@ -494,6 +494,14 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
         return
       }
 
+      // Close the App (Quit)
+      if (matchesShortcut(e, getKey('quitApp')) && shortcutsRef.current.onQuitApp) {
+        e.preventDefault()
+        e.stopPropagation()
+        shortcutsRef.current.onQuitApp()
+        return
+      }
+
       // AI Chat
       if (matchesShortcut(e, getKey('aiChat')) && shortcutsRef.current.onToggleAIChat) {
         e.preventDefault()

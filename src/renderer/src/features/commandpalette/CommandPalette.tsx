@@ -65,7 +65,8 @@ import {
   RotateCw,
   Code,
   ArrowUpCircle,
-  FolderSync
+  FolderSync,
+  Power
 } from 'lucide-react'
 import { scoreFuzzy, FuzzyMatchRange } from '../../core/utils/fuzzyScorer'
 import { getHighlightRegex } from '../../core/utils/searchRanker'
@@ -194,6 +195,8 @@ function renderCommandIcon(iconName?: string) {
       return <ArrowRight size={18} className="item-icon action-icon" />
     case 'ArrowLeft':
       return <ArrowLeft size={18} className="item-icon action-icon" />
+    case 'Power':
+      return <Power size={18} className="item-icon action-icon" />
     case 'X':
       return <X size={18} className="item-icon action-icon" />
     case 'Bot':
@@ -620,6 +623,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
             matches.push({ ...item, score: 200 })
           } else if (item.searchStr && item.searchStr.includes(cleanQ)) {
             matches.push({ ...item, score: 100 })
+          } else if (
+            item.searchStr &&
+            cleanQ.includes(' ') &&
+            cleanQ.split(/\s+/).every((tok) => item.searchStr!.includes(tok))
+          ) {
+            matches.push({ ...item, score: 95 })
           } else {
             fallbackFuzzy.push(item)
           }
@@ -674,6 +683,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
           matches.push({ ...item, score: 180 })
         } else if (item.searchStr && item.searchStr.includes(cleanQ)) {
           matches.push({ ...item, score: 90 })
+        } else if (
+          item.searchStr &&
+          cleanQ.includes(' ') &&
+          cleanQ.split(/\s+/).every((tok) => item.searchStr!.includes(tok))
+        ) {
+          matches.push({ ...item, score: 85 })
         }
       }
 

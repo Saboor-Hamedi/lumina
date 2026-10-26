@@ -53,19 +53,11 @@ const ThemeSidebarItem: React.FC<ThemeSidebarItemProps> = memo(
           <div className="template-title-row">
             <span className="template-modal-name">{themeData.name}</span>
             {isActive ? (
-              <span
-                className="template-badge"
-                style={{
-                  color: '#22c55e',
-                  borderColor: 'rgba(34, 197, 94, 0.4)',
-                  background: 'rgba(34, 197, 94, 0.1)',
-                  fontWeight: 700
-                }}
-              >
+              <span className="theme-badge active">
                 ACTIVE
               </span>
             ) : (
-              <span className="template-badge">{isDark ? 'DARK' : 'LIGHT'}</span>
+              <span className="theme-badge">{isDark ? 'DARK' : 'LIGHT'}</span>
             )}
           </div>
         </div>
@@ -305,13 +297,13 @@ const ThemeContent: React.FC<ThemeContentProps> = memo(({ themeData, isActive })
             {isActive && (
               <span
                 style={{
-                  fontSize: '9.5px',
-                  fontWeight: 700,
+                  fontSize: '8px',
+                  fontWeight: 600,
                   color: '#22c55e',
-                  background: 'rgba(34, 197, 94, 0.12)',
-                  border: '1px solid rgba(34, 197, 94, 0.4)',
+                  background: 'rgba(34, 197, 94, 0.08)',
+                  border: '1px solid rgba(34, 197, 94, 0.25)',
                   borderRadius: '3px',
-                  padding: '1.5px 6px',
+                  padding: '1px 5px',
                   letterSpacing: '0.04em'
                 }}
               >
@@ -478,11 +470,97 @@ const ThemeContent: React.FC<ThemeContentProps> = memo(({ themeData, isActive })
 
 ThemeContent.displayName = 'ThemeContent'
 
+
+export type ThemeCategory = 'all' | 'dark' | 'nature' | 'warm' | 'cyber' | 'cosmic' | 'light'
+
+const LIGHT_THEMES = new Set(['light', 'parchment', 'porcelain', 'rosePineDawn'])
+
+const NATURE_THEMES = new Set([
+  'darkForest',
+  'bambooGrove',
+  'everforest',
+  'woodland',
+  'matchaLatte',
+  'paddy_emerald',
+  'mintCondition',
+  'copperPatina'
+])
+
+const WARM_THEMES = new Set([
+  'autumnLeaves',
+  'coffeeHouse',
+  'desertDusk',
+  'sunset',
+  'volcanic',
+  'amberGlow',
+  'emberGlow',
+  'gruvbox'
+])
+
+const CYBER_THEMES = new Set([
+  'cyberpunk',
+  'neonDistrict',
+  'retroTerminal',
+  'synthwave',
+  'aura',
+  'edgeDark',
+  'obsidian',
+  'shadesOfPurple'
+])
+
+const COSMIC_THEMES = new Set([
+  'celestial',
+  'deepOcean',
+  'deepSpace',
+  'galaxyDrift',
+  'moonlight',
+  'moonlightSonata',
+  'stormCloud',
+  'winterFrost'
+])
+
+const getThemeCategory = (id: string): ThemeCategory => {
+  if (LIGHT_THEMES.has(id)) return 'light'
+  if (NATURE_THEMES.has(id)) return 'nature'
+  if (WARM_THEMES.has(id)) return 'warm'
+  if (CYBER_THEMES.has(id)) return 'cyber'
+  if (COSMIC_THEMES.has(id)) return 'cosmic'
+  return 'dark'
+}
+
+const CATEGORY_CHIPS: { id: ThemeCategory; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'dark', label: 'Dark' },
+  { id: 'nature', label: 'Nature' },
+  { id: 'warm', label: 'Warm' },
+  { id: 'cyber', label: 'Cyber' },
+  { id: 'cosmic', label: 'Cosmic' },
+  { id: 'light', label: 'Light' }
+]
+
 export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {} }) => {
   const { theme, setTheme, allThemes } = useTheme()
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true)
   const [searchQuery, setSearchQuery] = useState<string>('')
+  const [selectedCategory, setSelectedCategory] = useState<ThemeCategory>('all')
   const [selectedId, setSelectedId] = useState<string>(theme)
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<ThemeCategory, number> = {
+      all: allThemes.length,
+      dark: 0,
+      nature: 0,
+      warm: 0,
+      cyber: 0,
+      cosmic: 0,
+      light: 0
+    }
+    allThemes.forEach((t) => {
+      const cat = getThemeCategory(t.id)
+      counts[cat] = (counts[cat] || 0) + 1
+    })
+    return counts
+  }, [allThemes])
 
   const isMaximized = useSettingsStore((s: any) => s.settings?.themeModalMaximized ?? false)
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -519,15 +597,19 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
   }, [isOpen, theme])
 
   const filteredThemes = useMemo(() => {
+    let list = allThemes
+    if (selectedCategory !== 'all') {
+      list = list.filter((t) => getThemeCategory(t.id) === selectedCategory)
+    }
     const q = searchQuery.toLowerCase().trim()
-    if (!q) return allThemes
-    return allThemes.filter(
+    if (!q) return list
+    return list.filter(
       (t) =>
         t.name.toLowerCase().includes(q) ||
         t.id.toLowerCase().includes(q) ||
         (t.description && t.description.toLowerCase().includes(q))
     )
-  }, [allThemes, searchQuery])
+  }, [allThemes, selectedCategory, searchQuery])
 
   const selectedTheme = useMemo(() => {
     return allThemes.find((t) => t.id === selectedId) || filteredThemes[0] || allThemes[0]
@@ -738,6 +820,25 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
                   </button>
                 )}
               </div>
+            </div>
+
+            {/* Category Filter Chips */}
+            <div className="theme-category-chips">
+              {CATEGORY_CHIPS.map((chip) => {
+                const isChipActive = selectedCategory === chip.id
+                const count = categoryCounts[chip.id] || 0
+                return (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    onClick={() => setSelectedCategory(chip.id)}
+                    className={`theme-chip-btn ${isChipActive ? 'active' : ''}`}
+                  >
+                    <span>{chip.label}</span>
+                    <span className="theme-chip-count">{count}</span>
+                  </button>
+                )
+              })}
             </div>
 
             {/* Scrollable Themes List */}

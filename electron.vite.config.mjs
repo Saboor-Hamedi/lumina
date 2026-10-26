@@ -1,7 +1,7 @@
 /* Force Restart Timestamp: 25 */
 import fs from 'fs'
 import { resolve } from 'path'
-import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import { defineConfig, externalizeDepsPlugin, loadEnv } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 
@@ -109,6 +109,14 @@ function tsDevServerPlugin() {
 
 export default defineConfig(({ mode }) => ({
   main: {
+    define: {
+      __LUMINA_GOOGLE_CLIENT_SECRET__: JSON.stringify(
+        loadEnv(mode, process.cwd(), '').GOOGLE_CLIENT_SECRET ||
+          loadEnv(mode, process.cwd(), '').VITE_GOOGLE_CLIENT_SECRET ||
+          process.env.GOOGLE_CLIENT_SECRET ||
+          ''
+      )
+    },
     plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {

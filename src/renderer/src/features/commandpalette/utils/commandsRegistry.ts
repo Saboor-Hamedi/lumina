@@ -422,5 +422,61 @@ export const COMMANDS_REGISTRY: LuminaCommand[] = [
     execute: (ctx) => {
       ctx.onToggleDocs?.()
     }
+  },
+  {
+    id: 'window.close',
+    title: 'Window: Close Window',
+    category: 'Application',
+    shortcut: 'Ctrl + Shift + W',
+    keywords: [
+      'windows close',
+      'close window',
+      'window close',
+      'close windows',
+      'close',
+      'exit window',
+      'dismiss window',
+      'hide window'
+    ],
+    iconName: 'X',
+    execute: () => {
+      const winApi = (window as any).api
+      if (winApi?.closeWindow) {
+        winApi.closeWindow()
+      } else {
+        window.close()
+      }
+    }
+  },
+  {
+    id: 'application.quit',
+    title: 'Application: Close the App',
+    category: 'Application',
+    shortcut: 'Ctrl + Q',
+    keywords: [
+      'close the app',
+      'close app',
+      'quit app',
+      'quit lumina',
+      'exit app',
+      'exit lumina',
+      'quit',
+      'exit',
+      'close',
+      'shutdown',
+      'terminate',
+      'kill'
+    ],
+    iconName: 'Power',
+    execute: () => {
+      const winApi = (window as any).api
+      if (winApi?.quitApp) {
+        winApi.quitApp()
+      } else if (winApi?.closeWindow) {
+        winApi.closeWindow()
+      } else {
+        window.close()
+      }
+    }
   }
 ]

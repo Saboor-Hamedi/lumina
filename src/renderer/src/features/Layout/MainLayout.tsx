@@ -881,6 +881,16 @@ export const MainLayout: React.FC = () => {
         console.error('[MainLayout] Close window API not available')
       }
     },
+    onQuitApp: () => {
+      const winApi = (window as any).api
+      if (winApi?.quitApp) {
+        winApi.quitApp()
+      } else if (winApi?.closeWindow) {
+        winApi.closeWindow()
+      } else {
+        window.close()
+      }
+    },
     onNextTab: () => {
       const tabs = useWorkspaceStore.getState().openTabs || []
       if (tabs.length === 0) return

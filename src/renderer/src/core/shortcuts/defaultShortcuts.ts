@@ -23,6 +23,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
   { id: 'changeIcon', label: 'Change Note / Tab Icon', defaultKey: 'Win + Shift + .', category: 'File' },
   { id: 'closeTab', label: 'Close Tab', defaultKey: 'Ctrl + W', category: 'File' },
   { id: 'closeWindow', label: 'Close Window', defaultKey: 'Ctrl + Shift + W', category: 'File' },
+  { id: 'quitApp', label: 'Close the App (Quit)', defaultKey: 'Ctrl + Q', category: 'File' },
   { id: 'deleteNote', label: 'Delete Note', defaultKey: 'Ctrl + Shift + D', category: 'File', isDanger: true },
 
   // Navigation

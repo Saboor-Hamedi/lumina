@@ -326,4 +326,58 @@ describe('Command Palette & Settings Discovery System', () => {
       expect(preview).not.toBeNull()
     })
   })
+
+  it('finds and executes Window: Close Window when searching ">windows close"', async () => {
+    const mockCloseWindow = vi.fn()
+    window.api.closeWindow = mockCloseWindow
+
+    render(
+      <CommandPalette
+        isOpen={true}
+        onClose={vi.fn()}
+        items={[]}
+        onSelect={vi.fn()}
+        initialQuery=">windows close"
+      />
+    )
+
+    await waitFor(() => {
+      const items = Array.from(document.querySelectorAll('.palette-item'))
+      const windowItem = items.find((el) => el.textContent?.includes('Close Window'))
+      expect(windowItem).toBeDefined()
+    })
+
+    const items = Array.from(document.querySelectorAll('.palette-item'))
+    const windowItem = items.find((el) => el.textContent?.includes('Close Window'))!
+    fireEvent.click(windowItem)
+
+    expect(mockCloseWindow).toHaveBeenCalledTimes(1)
+  })
+
+  it('finds and executes Application: Close the App when searching ">close the app"', async () => {
+    const mockQuitApp = vi.fn()
+    window.api.quitApp = mockQuitApp
+
+    render(
+      <CommandPalette
+        isOpen={true}
+        onClose={vi.fn()}
+        items={[]}
+        onSelect={vi.fn()}
+        initialQuery=">close the app"
+      />
+    )
+
+    await waitFor(() => {
+      const items = Array.from(document.querySelectorAll('.palette-item'))
+      const appItem = items.find((el) => el.textContent?.includes('Close the App'))
+      expect(appItem).toBeDefined()
+    })
+
+    const items = Array.from(document.querySelectorAll('.palette-item'))
+    const appItem = items.find((el) => el.textContent?.includes('Close the App'))!
+    fireEvent.click(appItem)
+
+    expect(mockQuitApp).toHaveBeenCalledTimes(1)
+  })
 })

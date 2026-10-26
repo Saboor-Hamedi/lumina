@@ -49,10 +49,30 @@ export const useTheme = (): UseThemeReturn => {
       target = themeObj.id
     }
 
-    setCurrentTheme(target)
-    localStorage.setItem('theme-id', target)
-    // applyThemeUtil handles caret color from theme definition
-    applyThemeUtil(target, true)
+    const apply = () => {
+      setCurrentTheme(target)
+      localStorage.setItem('theme-id', target)
+      // applyThemeUtil handles caret color from theme definition
+      applyThemeUtil(target, true)
+    }
+
+    // Hardware-accelerated smooth view transition when supported
+    if (
+      typeof document !== 'undefined' &&
+      'startViewTransition' in document &&
+      typeof (document as any).startViewTransition === 'function' &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      try {
+        ;(document as any).startViewTransition(() => {
+          apply()
+        })
+      } catch {
+        apply()
+      }
+    } else {
+      apply()
+    }
 
     // Debounce the setting store update and disk IPC write so rapid switching is buttery smooth
     if (saveThemeTimer) clearTimeout(saveThemeTimer)

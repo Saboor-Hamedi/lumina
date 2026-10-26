@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { Book, Search, FileText, ChevronDown, Folder, X, Keyboard, Code2 } from 'lucide-react'
 
 const formatDocTitle = (name) => {
@@ -56,6 +56,24 @@ const getDocIcon = (path, name) => {
 const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [collapsedFolders, setCollapsedFolders] = useState({})
+  const activeItemRef = useRef(null)
+  const scrollContainerRef = useRef(null)
+
+  useEffect(() => {
+    const el = activeItemRef.current
+    const container = scrollContainerRef.current
+    if (!el || !container) return
+    const elTop = el.offsetTop
+    const elBottom = elTop + el.offsetHeight
+    const containerTop = container.scrollTop
+    const containerBottom = containerTop + container.clientHeight
+
+    if (elTop < containerTop) {
+      container.scrollTo({ top: elTop - 8, behavior: 'smooth' })
+    } else if (elBottom > containerBottom) {
+      container.scrollTo({ top: elBottom - container.clientHeight + 8, behavior: 'smooth' })
+    }
+  }, [selectedDoc])
 
   const toggleFolder = (folderKey) => {
     setCollapsedFolders((prev) => ({
@@ -155,7 +173,7 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
         </div>
       </div>
 
-      <div className="docs-sidebar-scrollable">
+      <div ref={scrollContainerRef} className="docs-sidebar-scrollable">
         {generalDocs.length > 0 && (
           <div className="docs-sidebar-group">
             <div className="docs-sidebar-group-title">
@@ -166,6 +184,7 @@ const DocSidebar = ({ docs, selectedDoc, setSelectedDoc, isOpen = true }) => {
                 <button
                   key={path}
                   type="button"
+                  ref={selectedDoc === path ? activeItemRef : null}
                   className={`docs-sidebar-item ${selectedDoc === path ? 'active' : ''}`}
                   onClick={() => setSelectedDoc(path)}
                   aria-current={selectedDoc === path ? 'page' : undefined}

@@ -274,6 +274,41 @@ const Documentation = ({ isOpen, onClose }) => {
     return { words, minutes }
   }, [content])
 
+  const flatDocList = useMemo(() => {
+    return Object.keys(docs || {})
+      .filter((p) => !p.startsWith('specs/') && !['refrences.md', 'lumina.md', 'scope.md'].includes(p.split('/').pop().toLowerCase()))
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+  }, [docs])
+
+  // Keyboard navigation parity (ArrowDown / ArrowUp)
+  useEffect(() => {
+    if (!isOpen) return
+
+    const handleKeyDown = (e) => {
+      const target = e.target
+      const isInput = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA'
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        const currentIndex = flatDocList.indexOf(selectedDoc)
+        const nextIndex = Math.min(flatDocList.length - 1, (currentIndex === -1 ? 0 : currentIndex) + 1)
+        if (flatDocList[nextIndex]) {
+          setSelectedDoc(flatDocList[nextIndex])
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        const currentIndex = flatDocList.indexOf(selectedDoc)
+        const prevIndex = Math.max(0, (currentIndex === -1 ? 0 : currentIndex) - 1)
+        if (flatDocList[prevIndex]) {
+          setSelectedDoc(flatDocList[prevIndex])
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, flatDocList, selectedDoc, setSelectedDoc])
+
   if (!isOpen) return null
 
   return (
@@ -288,6 +323,7 @@ const Documentation = ({ isOpen, onClose }) => {
       >
         <div
           className="docs-modal-header"
+          onDoubleClick={handleToggleMaximize}
           style={{ cursor: 'default' }}
         >
           <div className="docs-header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

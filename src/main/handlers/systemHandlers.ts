@@ -6,6 +6,8 @@ import { pauseGlobalShortcut, resumeGlobalShortcut } from '../shortcuts/useGloba
 import { validateIpc, z } from './ipcValidation'
 import { isAllowedPath } from '../security/allowedPaths'
 import SettingsManager from '../settings'
+// @ts-ignore
+import { setAppQuitting } from './useTrayIcon'
 
 /**
  * ============================================================================
@@ -88,6 +90,18 @@ export function registerSystemHandlers(getMainWindow: () => BrowserWindow | null
   })
 
   ipcMain.handle('window:close', () => getMainWindow()?.close())
+
+  // Quit the entire application
+  ipcMain.handle('app:quit', () => {
+    try {
+      setAppQuitting(true)
+      app.quit()
+      return true
+    } catch (err) {
+      console.error('[Main] Failed to quit app:', err)
+      return false
+    }
+  })
 
   // Window movement handlers (for Alt + Drag in Zen Mode)
   ipcMain.handle('window:move-by', (_, payload: { deltaX: number; deltaY: number }) => {
