@@ -70,6 +70,26 @@ try {
   console.log(`Version: ${version}`)
   console.log(`Tag:     ${tagName}\n`)
 
+  // Automatically sync GOOGLE_CLIENT_SECRET from local .env to GitHub Actions Secrets if gh CLI is available
+  try {
+    if (fs.existsSync('.env')) {
+      const envContent = fs.readFileSync('.env', 'utf8')
+      const match = envContent.match(/^\s*GOOGLE_CLIENT_SECRET\s*=\s*(.+)\s*$/m)
+      if (match && match[1]) {
+        const secretVal = match[1].trim().replace(/^['"]|['"]$/g, '')
+        if (secretVal) {
+          console.log(`🔐 Syncing GOOGLE_CLIENT_SECRET to GitHub Actions Secrets...`)
+          execSync('gh secret set GOOGLE_CLIENT_SECRET', {
+            input: secretVal,
+            stdio: ['pipe', 'inherit', 'inherit']
+          })
+        }
+      }
+    }
+  } catch {
+    console.warn(`⚠️ Could not auto-sync GOOGLE_CLIENT_SECRET via gh CLI. Ensure it is set in GitHub Repo Secrets.`)
+  }
+
   // Stage and commit all uncommitted changes including the version bump
   const status = execSync('git status --porcelain', { encoding: 'utf8' }).trim()
   if (status) {

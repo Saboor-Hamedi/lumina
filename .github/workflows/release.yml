@@ -41,6 +41,9 @@ jobs:
         run: npm run test:run
 
       - name: Build Application
+        env:
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
         run: npm run build
 
       - name: Publish Release Artifacts
