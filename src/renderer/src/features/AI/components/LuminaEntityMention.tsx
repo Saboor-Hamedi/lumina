@@ -14,7 +14,7 @@ import {
   ExternalLink
 } from 'lucide-react'
 // @ts-ignore
-import { getSnippetIcon } from '../../Icons/FileIcon'
+import { getSnippetIcon, ChromePdfIcon } from '../../Icons/FileIcon'
 import {
   resolveWorkspaceEntity,
   navigateToWorkspaceEntity,
@@ -73,10 +73,9 @@ export const renderResolvedEntityIcon = (
 
   if (entity.type === 'pdf') {
     return (
-      <BookText
+      <ChromePdfIcon
         size={size}
         className="chat-mention-icon pdf-icon"
-        style={colorStyle}
       />
     )
   }

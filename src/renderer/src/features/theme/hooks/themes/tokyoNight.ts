@@ -30,6 +30,7 @@ export const tokyoNight: ThemeDefinition = {
     '--icon-love': '#bb9af7',
     '--caret-width': '2px',
     '--caret-color': '#7aa2f7',
+    '--folder-color': '#7aa2f7',
     '--shadow-soft': 'rgba(0, 0, 0, 0.35)',
     '--glow-accent': 'rgba(122, 162, 247, 0.15)'
   }

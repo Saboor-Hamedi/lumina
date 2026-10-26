@@ -296,7 +296,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
               }}
             >
               {item.kind === 'folder' ? (
-                <Folder size={14} fill="#e8a825" color="#e8a825" className="folder-icon-color" />
+                <Folder size={14} strokeWidth={1.5} color="var(--folder-color, #dcb67a)" fill="rgba(220, 182, 122, 0.16)" className="folder-icon-color" />
               ) : item.kind === 'canvas' ? (
                 <LayoutDashboard size={14} className="icon-blue" />
               ) : (

@@ -755,7 +755,7 @@
 .meta-action-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   width: 100%;
   margin: 2px 0;
   gap: 8px;
@@ -764,6 +764,7 @@
 .meta-header-actions {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   flex-wrap: wrap;
 }
@@ -1954,9 +1955,197 @@ html[data-use-active-line-border="false"] .cm-activeLine {
   background-color: rgba(56, 189, 248, 0.2) !important;
 }
 
-/* Dracula & Tokyo Night Atmospheric Depth */
-[data-theme='dracula'] .cm-cursor,
-[data-theme='tokyoNight'] .cm-cursor,
+/* Tokyo Night Atmospheric Glow */
+[data-theme='tokyoNight'] .cm-cursor {
+  border-left-color: var(--caret-color, #7aa2f7) !important;
+  filter: drop-shadow(0 0 2.5px rgba(122, 162, 247, 0.65)) drop-shadow(0 0 6px rgba(122, 162, 247, 0.25));
+}
+[data-theme='tokyoNight'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
+[data-theme='tokyoNight'] .cm-content ::selection {
+  background-color: rgba(122, 162, 247, 0.2) !important;
+}
+[data-theme='tokyoNight'] .cm-scroller::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb, #3b4261);
+}
+[data-theme='tokyoNight'] .cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: #545c7e;
+}
+
+/* Dracula Gothic Neon Depth */
+[data-theme='dracula'] .cm-cursor {
+  border-left-color: var(--caret-color, #bd93f9) !important;
+  filter: drop-shadow(0 0 2.5px rgba(189, 147, 249, 0.7)) drop-shadow(0 0 7px rgba(189, 147, 249, 0.25));
+}
+[data-theme='dracula'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
+[data-theme='dracula'] .cm-content ::selection {
+  background-color: rgba(189, 147, 249, 0.22) !important;
+}
+[data-theme='dracula'] .cm-scroller::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb, #44475a);
+}
+[data-theme='dracula'] .cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: #6272a4;
+}
+
+/* Nord Arctic Frost Depth */
+[data-theme='nord'] .cm-cursor {
+  border-left-color: var(--caret-color, #88c0d0) !important;
+  filter: drop-shadow(0 0 2.5px rgba(136, 192, 208, 0.65));
+}
+[data-theme='nord'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
+[data-theme='nord'] .cm-content ::selection {
+  background-color: rgba(136, 192, 208, 0.18) !important;
+}
+[data-theme='nord'] .cm-scroller::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb, #434c5e);
+}
+[data-theme='nord'] .cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: #4c566a;
+}
+
+/* Catppuccin & Gruvbox Atmospheric Depth */
 [data-theme='catppuccin'] .cm-cursor {
   filter: drop-shadow(0 0 2.5px var(--glow-accent, rgba(var(--text-accent-rgb), 0.4)));
+}
+[data-theme='catppuccin'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
+[data-theme='catppuccin'] .cm-content ::selection {
+  background-color: rgba(245, 194, 231, 0.18) !important;
+}
+[data-theme='gruvbox'] .cm-cursor {
+  filter: drop-shadow(0 0 2px rgba(250, 189, 47, 0.5));
+}
+[data-theme='gruvbox'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
+[data-theme='gruvbox'] .cm-content ::selection {
+  background-color: rgba(250, 189, 47, 0.16) !important;
+}
+
+/* ==========================================================================
+   Editor Top Tools (Progress Tracker & More Option 3-Dots)
+   ========================================================================== */
+.editor-top-tools-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 2px 0 4px 0;
+  width: 100%;
+  height: 24px;
+  box-sizing: border-box;
+}
+
+/* Push editor canvas down when meta bar floats at top so title is NEVER occluded */
+.markdown-editor.meta-pos-top .editor-scroller {
+  padding-top: 34px !important;
+}
+
+/* Offset creation timer when meta bar floats at top so they never collide */
+.markdown-editor.meta-pos-top .editor-created-at-banner {
+  top: 32px !important;
+}
+
+/* Push editor canvas up when meta bar floats at bottom */
+.markdown-editor.meta-pos-bottom .editor-scroller {
+  padding-bottom: 38px !important;
+}
+
+/* ==========================================================================
+   Floating Editor Meta Action Bar (Ultra-compact 22px, sleek unobtrusive pill)
+   ========================================================================== */
+.meta-floating-container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 45;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
+}
+
+.meta-floating-bottom {
+  bottom: 8px;
+}
+
+.meta-floating-top {
+  top: 5px;
+}
+
+.meta-floating-container .editor-metadata-bar {
+  pointer-events: auto;
+  margin: 0 !important;
+  padding: 2px 4px !important;
+  height: 22px !important;
+  box-sizing: border-box;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: 5px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: auto !important;
+}
+
+.meta-floating-container .meta-action-bar {
+  width: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 2px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.meta-floating-container .meta-header-actions {
+  width: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+}
+
+/* Razor-straight alignment across all action buttons in meta header */
+.meta-header-actions .meta-action-btn,
+.meta-header-actions .voice-trigger-btn,
+.meta-header-actions button {
+  height: 18px !important;
+  min-height: 18px !important;
+  max-height: 18px !important;
+  line-height: 18px !important;
+  font-size: 10px !important;
+  padding: 0 5px !important;
+  margin: 0 !important;
+  border-radius: 3px !important;
+  border: 1px solid transparent !important;
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  white-space: nowrap !important;
+  gap: 3px !important;
+  flex-shrink: 0 !important;
+}
+
+.meta-header-actions .meta-action-btn:hover,
+.meta-header-actions .voice-trigger-btn:hover,
+.meta-header-actions button:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.meta-header-actions .meta-action-btn svg,
+.meta-header-actions .voice-trigger-btn svg,
+.meta-header-actions button svg {
+  width: 10.5px !important;
+  height: 10.5px !important;
+  flex-shrink: 0 !important;
+  display: inline-block !important;
+  vertical-align: middle !important;
 }

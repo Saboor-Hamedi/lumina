@@ -32,6 +32,7 @@ export type ThemeColorKey =
   | '--caret-color'
   | '--shadow-soft'
   | '--glow-accent'
+  | '--folder-color'
 
 export type ThemeColors = Partial<Record<ThemeColorKey, string>> & Record<
   | '--bg-app'
@@ -142,8 +143,14 @@ export const applyTheme = (themeId: string, resetCustomAccent = false): void => 
     // Ignore parse errors, use theme defaults
   }
 
+  // Apply folder color (custom theme folder color, primary icon tint, or VS Code amber)
+  const folderColor = theme.colors['--folder-color'] || theme.colors['--icon-primary'] || '#dcb67a'
+  root.style.setProperty('--folder-color', folderColor)
+
   // Apply new theme variables directly (setProperty automatically overrides previous values)
-  const computedColors: Record<string, string> = {}
+  const computedColors: Record<string, string> = {
+    '--folder-color': folderColor
+  }
   Object.entries(theme.colors).forEach(([varName, value]) => {
     let finalVal = value
     if (varName === '--caret-color' && customCaretColor) {

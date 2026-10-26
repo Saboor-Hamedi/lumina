@@ -14,6 +14,8 @@ export interface MetaActionBarProps {
   editorMenu?: React.ReactNode
   showMenu?: boolean
   showMenuWhenTitleHidden?: boolean
+  showTools?: boolean
+  position?: 'bottom' | 'top' | 'inline'
 }
 
 /**
@@ -32,7 +34,9 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
     onInlineAI,
     editorMenu,
     showMenu = true,
-    showMenuWhenTitleHidden = true
+    showTools = true,
+    showMenuWhenTitleHidden = true,
+    position = 'inline'
   }) => {
     const [showLocalGraph, setShowLocalGraph] = useState(false)
     const containerRef = useRef<HTMLDivElement | null>(null)
@@ -79,7 +83,7 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
           setShowLocalGraph={setShowLocalGraph}
         />
 
-        {shouldShowMenu && (
+        {shouldShowMenu && showTools !== false && (
           <MetaTools
             snippet={snippet}
             editorMenu={editorMenu}
@@ -90,13 +94,16 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
           <div
             style={{
               position: 'absolute',
-              top: '100%',
-              left: 0,
-              marginTop: '8px',
-              width: '100%',
+              ...(position === 'bottom'
+                ? { bottom: 'calc(100% + 10px)', top: 'auto' }
+                : { top: 'calc(100% + 8px)', bottom: 'auto' }),
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 'min(420px, 90vw)',
               zIndex: 50,
               borderRadius: '8px',
-              border: '1px solid var(--border-color, rgba(255,255,255,0.05))',
+              border: '1px solid var(--border-color, rgba(255,255,255,0.12))',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
               overflow: 'hidden'
             }}
           >

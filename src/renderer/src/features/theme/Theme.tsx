@@ -23,6 +23,73 @@ interface ThemeSidebarItemProps {
   onSelect: (themeId: string) => void
 }
 
+export type ThemeCategory = 'all' | 'dark' | 'nature' | 'warm' | 'cyber' | 'cosmic' | 'light'
+
+const LIGHT_THEMES = new Set(['light', 'parchment', 'porcelain', 'rosePineDawn'])
+
+const NATURE_THEMES = new Set([
+  'darkForest',
+  'bambooGrove',
+  'everforest',
+  'woodland',
+  'matchaLatte',
+  'paddy_emerald',
+  'mintCondition',
+  'copperPatina'
+])
+
+const WARM_THEMES = new Set([
+  'autumnLeaves',
+  'coffeeHouse',
+  'desertDusk',
+  'sunset',
+  'volcanic',
+  'amberGlow',
+  'emberGlow',
+  'gruvbox'
+])
+
+const CYBER_THEMES = new Set([
+  'cyberpunk',
+  'neonDistrict',
+  'retroTerminal',
+  'synthwave',
+  'aura',
+  'edgeDark',
+  'obsidian',
+  'shadesOfPurple'
+])
+
+const COSMIC_THEMES = new Set([
+  'celestial',
+  'deepOcean',
+  'deepSpace',
+  'galaxyDrift',
+  'moonlight',
+  'moonlightSonata',
+  'stormCloud',
+  'winterFrost'
+])
+
+export const getThemeCategory = (id: string): ThemeCategory => {
+  if (LIGHT_THEMES.has(id)) return 'light'
+  if (NATURE_THEMES.has(id)) return 'nature'
+  if (WARM_THEMES.has(id)) return 'warm'
+  if (CYBER_THEMES.has(id)) return 'cyber'
+  if (COSMIC_THEMES.has(id)) return 'cosmic'
+  return 'dark'
+}
+
+const CATEGORY_CHIPS: { id: ThemeCategory; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'dark', label: 'Dark' },
+  { id: 'nature', label: 'Nature' },
+  { id: 'warm', label: 'Warm' },
+  { id: 'cyber', label: 'Cyber' },
+  { id: 'cosmic', label: 'Cosmic' },
+  { id: 'light', label: 'Light' }
+]
+
 // Full-height Theme Card with Mini Workspace Preview matching Template cards
 const ThemeSidebarItem: React.FC<ThemeSidebarItemProps> = memo(
   ({ themeData, isActive, isSelected, onSelect }) => {
@@ -57,7 +124,7 @@ const ThemeSidebarItem: React.FC<ThemeSidebarItemProps> = memo(
                 ACTIVE
               </span>
             ) : (
-              <span className="theme-badge">{isDark ? 'DARK' : 'LIGHT'}</span>
+              <span className="theme-badge">{getThemeCategory(themeData.id).toUpperCase()}</span>
             )}
           </div>
         </div>
@@ -470,74 +537,6 @@ const ThemeContent: React.FC<ThemeContentProps> = memo(({ themeData, isActive })
 
 ThemeContent.displayName = 'ThemeContent'
 
-
-export type ThemeCategory = 'all' | 'dark' | 'nature' | 'warm' | 'cyber' | 'cosmic' | 'light'
-
-const LIGHT_THEMES = new Set(['light', 'parchment', 'porcelain', 'rosePineDawn'])
-
-const NATURE_THEMES = new Set([
-  'darkForest',
-  'bambooGrove',
-  'everforest',
-  'woodland',
-  'matchaLatte',
-  'paddy_emerald',
-  'mintCondition',
-  'copperPatina'
-])
-
-const WARM_THEMES = new Set([
-  'autumnLeaves',
-  'coffeeHouse',
-  'desertDusk',
-  'sunset',
-  'volcanic',
-  'amberGlow',
-  'emberGlow',
-  'gruvbox'
-])
-
-const CYBER_THEMES = new Set([
-  'cyberpunk',
-  'neonDistrict',
-  'retroTerminal',
-  'synthwave',
-  'aura',
-  'edgeDark',
-  'obsidian',
-  'shadesOfPurple'
-])
-
-const COSMIC_THEMES = new Set([
-  'celestial',
-  'deepOcean',
-  'deepSpace',
-  'galaxyDrift',
-  'moonlight',
-  'moonlightSonata',
-  'stormCloud',
-  'winterFrost'
-])
-
-const getThemeCategory = (id: string): ThemeCategory => {
-  if (LIGHT_THEMES.has(id)) return 'light'
-  if (NATURE_THEMES.has(id)) return 'nature'
-  if (WARM_THEMES.has(id)) return 'warm'
-  if (CYBER_THEMES.has(id)) return 'cyber'
-  if (COSMIC_THEMES.has(id)) return 'cosmic'
-  return 'dark'
-}
-
-const CATEGORY_CHIPS: { id: ThemeCategory; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'dark', label: 'Dark' },
-  { id: 'nature', label: 'Nature' },
-  { id: 'warm', label: 'Warm' },
-  { id: 'cyber', label: 'Cyber' },
-  { id: 'cosmic', label: 'Cosmic' },
-  { id: 'light', label: 'Light' }
-]
-
 export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {} }) => {
   const { theme, setTheme, allThemes } = useTheme()
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true)
@@ -751,12 +750,12 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
 
           <div className="docs-header-right">
             <ToolTip
-              text={`${filteredThemes.length} ${filteredThemes.length === 1 ? 'theme' : 'themes'}`}
+              text={selectedTheme?.description || selectedTheme?.name || 'Theme Gallery'}
               position="bottom"
             >
               <div className="docs-header-stat">
                 <Palette size={12} />
-                <span>{filteredThemes.length} themes</span>
+                <span>{selectedTheme?.name || 'Themes'}</span>
               </div>
             </ToolTip>
             <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
@@ -826,7 +825,6 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
             <div className="theme-category-chips">
               {CATEGORY_CHIPS.map((chip) => {
                 const isChipActive = selectedCategory === chip.id
-                const count = categoryCounts[chip.id] || 0
                 return (
                   <button
                     key={chip.id}
@@ -835,7 +833,6 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
                     className={`theme-chip-btn ${isChipActive ? 'active' : ''}`}
                   >
                     <span>{chip.label}</span>
-                    <span className="theme-chip-count">{count}</span>
                   </button>
                 )
               })}
@@ -856,7 +853,7 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
                   letterSpacing: '0.8px'
                 }}
               >
-                {filteredThemes.length} {filteredThemes.length === 1 ? 'Theme' : 'Themes'}
+                {selectedCategory === 'all' ? 'All Curated Themes' : `${CATEGORY_CHIPS.find((c) => c.id === selectedCategory)?.label || ''} Themes`}
               </div>
 
               <div className="template-modal-grid">

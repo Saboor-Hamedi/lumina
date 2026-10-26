@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { FileText, Loader } from 'lucide-react'
+import { ChromePdfIcon } from '../Icons/FileIcon'
 import { PDFToolbar } from './PDFToolbar'
 import './css/pdfViewerTab.css'
 
@@ -147,7 +148,7 @@ export const PDFViewerTab = ({ snippet }) => {
       {/* Error state */}
       {!loading && error && (
         <div className="pdf-viewer-error">
-          <FileText size={28} />
+          <ChromePdfIcon size={28} />
           <span>{error}</span>
         </div>
       )}

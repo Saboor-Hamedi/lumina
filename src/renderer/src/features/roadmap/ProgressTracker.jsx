@@ -63,20 +63,10 @@ export function LearnedButton({ snippet, note: propNote }) {
     <ToolTip text={isLearned ? 'Mark as Not Learned' : 'Mark as Learned'} position="bottom">
       <button
         onClick={toggleLearned}
+        className="meta-action-btn"
         style={{
-          background: 'transparent',
-          border: '1px solid transparent',
-          borderRadius: '5px',
-          height: '21px',
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
           cursor: 'pointer',
           color: isLearned ? 'var(--text-main, #f8fafc)' : 'var(--text-muted, #94a3b8)',
-          transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-          padding: '0 6px',
-          gap: '4px',
-          fontSize: '11px',
           fontWeight: isLearned ? 500 : 400
         }}
         onMouseEnter={(e) => {

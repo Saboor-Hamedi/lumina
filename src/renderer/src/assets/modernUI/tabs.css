@@ -164,7 +164,7 @@
 /* Hover: Subtle background tint */
 .workspace-tab:hover,
 [data-modern-ui='true'] .workspace-tab:hover {
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: var(--bg-hover, rgba(125, 125, 125, 0.06)) !important;
   color: var(--text-main);
 }
 
@@ -280,17 +280,27 @@
   transition: opacity 120ms cubic-bezier(0.16, 1, 0.3, 1), background 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Active Tab: Always visibly display the close button */
+.workspace-tab.active .tab-close-btn,
+[data-modern-ui='true'] .workspace-tab.active .tab-close-btn {
+  opacity: 0.7 !important;
+  pointer-events: auto !important;
+}
+
 .workspace-tab:hover .tab-close-btn,
 [data-modern-ui='true'] .workspace-tab:hover .tab-close-btn {
   opacity: 0.75 !important;
-  pointer-events: auto;
+  pointer-events: auto !important;
 }
 
 .tab-close-btn:hover,
-[data-modern-ui='true'] .tab-close-btn:hover {
+.workspace-tab.active .tab-close-btn:hover,
+[data-modern-ui='true'] .tab-close-btn:hover,
+[data-modern-ui='true'] .workspace-tab.active .tab-close-btn:hover {
   opacity: 1 !important;
-  background: rgba(255, 255, 255, 0.12) !important;
+  background: var(--bg-hover, rgba(125, 125, 125, 0.16)) !important;
   color: var(--text-main) !important;
+  border-radius: 4px !important;
 }
 
 /* Breadcrumbs Bar: Clean borderless path line */

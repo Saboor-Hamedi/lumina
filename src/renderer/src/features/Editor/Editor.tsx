@@ -27,6 +27,7 @@ import { EditorCanvas } from './EditorCanvas'
 import { useToast } from '../../core/notification'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import { countExplorerPerfRender, finishExplorerPerfPaint, markExplorerPerf } from '../Explorer/utils/explorerPerf'
 import {
   useZoom,
@@ -36,6 +37,7 @@ import {
 } from '../../core/editor'
 import { EditorSlash, type SlashState } from '../slash'
 import EditorCreatedAt from './components/EditorCreatedAt'
+import MetaHeader from './meta/MetaHeader'
 import EditorZoomHud from './components/EditorZoomHud'
 import { ExportContainer } from '../export'
 
@@ -67,6 +69,8 @@ export const Editor: React.FC<EditorProps> = memo(
     isActive = true
   }) => {
     countExplorerPerfRender('Editor', snippet?.id)
+    const inlineMetadata = useSettingsStore((s: any) => s.settings?.inlineMetadata !== false)
+    const metaPosition = useSettingsStore((s: any) => s.settings?.metaPosition || 'bottom')
     const { toast, showToast, clearToast } = useToast()
     const [isPreviewOpen, setIsPreviewOpen] = useState(false)
     const [showFindWidget, setShowFindWidget] = useState(false)
@@ -349,7 +353,7 @@ export const Editor: React.FC<EditorProps> = memo(
 
     return (
       <div
-        className="markdown-editor mode-source"
+        className={`markdown-editor mode-source meta-pos-${metaPosition}`}
         ref={zoomContainerRef}
         style={{
           display: 'flex',
@@ -447,7 +451,39 @@ export const Editor: React.FC<EditorProps> = memo(
             cancelText="Keep My Edits"
           />
 
-          <EditorCanvas
+          {inlineMetadata && metaPosition !== 'inline' && snippet && (
+          <div
+            className={`meta-floating-container meta-floating-${metaPosition}`}
+            data-testid="meta-floating-container"
+          >
+            <MetaHeader
+              snippet={snippet}
+              title={title}
+              setIsDirty={setIsDirty}
+              isDirty={isDirty}
+              onInlineAI={() => setIsInlineAIOpen(true)}
+              position={metaPosition}
+              showTools={false}
+              showMenu={false}
+              editorMenu={
+                <EditorMenu
+                  title={title}
+                  snippet={snippet}
+                  setSelectedSnippet={setSelectedNote}
+                  isDirty={isDirty}
+                  isSaving={isSaving}
+                  onSave={handleSave}
+                  onToggleInspector={onToggleInspector}
+                  onInlineAI={() => setIsInlineAIOpen(true)}
+                  onPreview={() => setIsPreviewOpen(true)}
+                  onOpenExportDialog={() => setIsExportDialogOpen(true)}
+                />
+              }
+            />
+          </div>
+        )}
+
+        <EditorCanvas
             snippet={snippet}
             editorKey={editorKey}
             handleMarkdownChange={handleMarkdownChange}

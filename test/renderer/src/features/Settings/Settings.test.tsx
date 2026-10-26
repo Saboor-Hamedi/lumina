@@ -17,6 +17,9 @@ vi.mock('../../../../../src/renderer/src/features/Settings/SettingWorkspace', ()
 vi.mock('../../../../../src/renderer/src/features/Settings/SettingAdvanced', () => ({
   default: () => <div data-testid="pane-advanced">Advanced Pane</div>
 }))
+vi.mock('../../../../../src/renderer/src/features/Settings/SettingMeta', () => ({
+  default: () => <div data-testid="pane-meta">Meta Pane</div>
+}))
 
 describe('Settings', () => {
   const defaultProps = () => ({

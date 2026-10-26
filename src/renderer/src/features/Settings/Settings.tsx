@@ -18,7 +18,8 @@ const TAB_LABELS: Record<SettingsTabId, string> = {
   assistant: 'AI Assistant',
   memory: 'AI Memory',
   advanced: 'Advanced',
-  update: 'Updates'
+  update: 'Updates',
+  meta: 'Meta Bar'
 }
 
 /**

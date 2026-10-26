@@ -30,6 +30,7 @@ export const dracula: ThemeDefinition = {
     '--icon-love': '#ff79c6',
     '--caret-width': '2px',
     '--caret-color': '#bd93f9',
+    '--folder-color': '#bd93f9',
     '--shadow-soft': 'rgba(0, 0, 0, 0.35)',
     '--glow-accent': 'rgba(189, 147, 249, 0.18)'
   }

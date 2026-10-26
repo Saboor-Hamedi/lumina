@@ -222,14 +222,16 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
             {isExpanded ? (
               <FolderOpen
                 size={14}
-                fill={folderColor || '#e8a825'}
-                color={folderColor || '#e8a825'}
+                strokeWidth={1.5}
+                color={folderColor || 'var(--folder-color, #dcb67a)'}
+                fill={folderColor ? `${folderColor}2e` : 'rgba(220, 182, 122, 0.2)'}
               />
             ) : (
               <Folder
                 size={14}
-                fill={folderColor || '#e8a825'}
-                color={folderColor || '#e8a825'}
+                strokeWidth={1.5}
+                color={folderColor || 'var(--folder-color, #dcb67a)'}
+                fill={folderColor ? `${folderColor}24` : 'rgba(220, 182, 122, 0.16)'}
               />
             )}
           </span>

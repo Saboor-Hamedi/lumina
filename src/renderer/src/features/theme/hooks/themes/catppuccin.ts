@@ -30,6 +30,7 @@ export const catppuccin: ThemeDefinition = {
     '--icon-love': '#f5c2e7',
     '--caret-width': '2px',
     '--caret-color': '#89b4fa',
+    '--folder-color': '#f9e2af',
     '--shadow-soft': 'rgba(0, 0, 0, 0.3)',
     '--glow-accent': 'rgba(137, 180, 250, 0.15)'
   }

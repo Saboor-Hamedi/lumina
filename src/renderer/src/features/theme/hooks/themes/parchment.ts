@@ -31,7 +31,8 @@ export const parchment: ThemeDefinition = {
     '--caret-width': '2px',
     '--caret-color': '#9c4310',
     '--shadow-soft': 'rgba(43, 33, 22, 0.08)',
-    '--glow-accent': 'rgba(156, 67, 16, 0.18)'
+    '--glow-accent': 'rgba(156, 67, 16, 0.18)',
+    '--folder-color': '#b45309'
   }
 }
 

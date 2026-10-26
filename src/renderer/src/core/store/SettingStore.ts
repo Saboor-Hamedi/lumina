@@ -62,6 +62,7 @@ export interface Settings {
   sortDirection: string
   noteOrder: string[] | null
   inlineMetadata: boolean
+  metaPosition?: 'bottom' | 'top' | 'inline'
   inlineTitle: boolean
   graphTheme: string
   graphNodeSize: number
@@ -189,6 +190,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     sortDirection: 'asc',
     noteOrder: null, // Array of snippet IDs for custom drag sort order
     inlineMetadata: true,
+    metaPosition: 'bottom',
     inlineTitle: true,
     graphTheme: 'default',
     graphNodeSize: 1.5,

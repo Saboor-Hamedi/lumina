@@ -85,7 +85,7 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
 
       return (
         <div className="external-drop-pill" style={{ pointerEvents: 'none', userSelect: 'none' }}>
-          <Folder size={14} className="external-drop-icon" fill="#e8a825" color="#e8a825" />
+          <Folder size={14} strokeWidth={1.5} color="var(--folder-color, #dcb67a)" fill="rgba(220, 182, 122, 0.16)" className="external-drop-icon" />
           <span className="external-drop-text">{label}</span>
         </div>
       )

@@ -23,6 +23,7 @@ import { setupWikilinkHover } from './wikilink/hoverWikilink'
 import ContextMenu from '../modals/ContextMenu'
 import { getEditorContextMenuOptions } from './menu'
 import MetaHeader from './meta/MetaHeader'
+import ProgressTracker from '../roadmap/ProgressTracker'
 import type { Snippet, EditorHandle } from '../../core/editor/types'
 import type { ToastType } from '../../core/notification'
 import { markExplorerPerf } from '../Explorer/utils/explorerPerf'
@@ -145,6 +146,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
     const editorWrapperRef = useRef<HTMLDivElement | null>(null)
 
     const inlineMetadata = useSettingsStore((state: any) => state.settings?.inlineMetadata !== false)
+    const metaPosition = useSettingsStore((state: any) => state.settings?.metaPosition || 'bottom')
 
     useEffect(() => {
       const wrapper = editorWrapperRef.current
@@ -243,20 +245,23 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
             onClose={() => setContextMenu(null)}
           />
         )}
-        {inlineMetadata ? (
+        {inlineMetadata && metaPosition === 'inline' ? (
           <MetaHeader
+            position="inline"
             snippet={snippet}
             title={title}
             setIsDirty={setIsDirty}
             isDirty={isDirty}
             onInlineAI={onInlineAI}
             editorMenu={editorMenu}
+            showTools={true}
           />
-        ) : editorMenu ? (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '4px 0', width: '100%' }}>
+        ) : (
+          <div className="editor-top-tools-bar">
+            <ProgressTracker snippetId={snippet?.id} noteId={snippet?.id} />
             {editorMenu}
           </div>
-        ) : null}
+        )}
         {snippet?.isPartial && (
           <div className="editor-large-note-warning" role="status">
             Showing the first part of this large note. Editing and saving are disabled to protect the workspace.

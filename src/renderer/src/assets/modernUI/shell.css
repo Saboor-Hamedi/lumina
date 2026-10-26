@@ -8,8 +8,8 @@
  * as the gutter backdrop so the gaps read as clear separations. Modern UI only —
  * the normal UI stays flush (see mainlayout.css). */
 [data-modern-ui='true'] .lumina-app {
-  gap: 5px !important;
-  padding: 5px !important;
+  gap: 2px !important;
+  padding: 2px !important;
   background: var(--bg-activitybar);
   box-sizing: border-box;
 }
@@ -21,7 +21,7 @@
   min-height: 0;
   min-width: 0;
   padding: 0 !important;
-  gap: 5px !important;
+  gap: 2px !important;
   background: var(--bg-activitybar);
   box-sizing: border-box;
   width: 100%;

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { FolderOpen, ChevronDown, ChevronUp } from 'lucide-react'
+import { ChromePdfIcon } from '../Icons/FileIcon'
 
 export const PDFToolbar = ({ snippet, onOpenInFolder }) => {
   const [isExpanded, setIsExpanded] = useState(true)
@@ -15,6 +16,7 @@ export const PDFToolbar = ({ snippet, onOpenInFolder }) => {
     <div className={`pdf-viewer-toolbar ${isExpanded ? 'expanded' : 'collapsed'}`}>
       {isExpanded && (
         <div className="pdf-viewer-toolbar-content">
+          <ChromePdfIcon size={14} />
           {snippet?.size && (
             <span className="pdf-viewer-badge">{formatFileSize(snippet.size)}</span>
           )}

@@ -30,6 +30,7 @@ export const rosePine: ThemeDefinition = {
     '--icon-love': '#c4a7e7',
     '--caret-width': '2px',
     '--caret-color': '#ebbcba',
+    '--folder-color': '#ea9a97',
     '--shadow-soft': 'rgba(0, 0, 0, 0.35)',
     '--glow-accent': 'rgba(235, 188, 186, 0.15)'
   }

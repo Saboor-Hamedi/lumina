@@ -31,7 +31,8 @@ export const celestial: ThemeDefinition = {
     '--caret-width': '2px',
     '--caret-color': '#facc15',
     '--shadow-soft': 'rgba(5, 7, 14, 0.45)',
-    '--glow-accent': 'rgba(250, 204, 21, 0.28)'
+    '--glow-accent': 'rgba(250, 204, 21, 0.28)',
+    '--folder-color': '#e5c07b'
   }
 }
 

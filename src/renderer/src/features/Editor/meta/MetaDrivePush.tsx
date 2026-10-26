@@ -198,14 +198,8 @@ export const MetaDrivePush: React.FC<MetaDrivePushProps> = ({
           ref={btnRef}
           onClick={handlePush}
           disabled={justPushed}
+          className="meta-action-btn"
           style={{
-            background: 'transparent',
-            border: '1px solid transparent',
-            borderRadius: '5px',
-            height: '21px',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
             position: 'relative',
             cursor: justPushed ? 'default' : 'pointer',
             color: justPushed
@@ -218,9 +212,6 @@ export const MetaDrivePush: React.FC<MetaDrivePushProps> = ({
                     ? 'var(--text-main, #f8fafc)'
                     : 'var(--text-muted, #94a3b8)',
             transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-            padding: '0 6px',
-            gap: '4px',
-            fontSize: '11px',
             fontWeight: isDirty ? 500 : 400
           }}
           onMouseEnter={(e) => {

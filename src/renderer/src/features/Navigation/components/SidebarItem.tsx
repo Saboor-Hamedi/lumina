@@ -271,7 +271,7 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
   const getIcon = () => {
     if (snippet.itemType === 'folder') {
       return (
-        <Folder size={14} fill="var(--text-accent)" color="var(--text-accent)" className="item-icon" />
+        <Folder size={14} strokeWidth={1.5} color={snippet.color || "var(--folder-color, #dcb67a)"} fill={snippet.color ? `${snippet.color}24` : "rgba(220, 182, 122, 0.16)"} className="item-icon" />
       )
     }
     return getSnippetIcon(snippet, 14, 'item-icon')

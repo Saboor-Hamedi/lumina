@@ -291,32 +291,34 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 7px;
+  padding: 3px 10px;
   border-radius: 999px;
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text-muted, #94a3b8);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  background: var(--bg-card, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  transition: all 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
 }
 
 .theme-chip-btn:hover {
-  color: var(--text-main, #f8fafc);
-  background: var(--bg-hover, rgba(255, 255, 255, 0.06));
-  border-color: var(--border-dim, rgba(255, 255, 255, 0.12));
+  color: var(--text-main);
+  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
+  border-color: var(--border-subtle);
+  transform: translateY(-0.5px);
 }
 
 .theme-chip-btn.active {
-  color: var(--text-accent, #40bafa);
-  background: var(--bg-active, rgba(64, 186, 250, 0.1));
-  border-color: var(--text-accent, #40bafa);
+  color: var(--text-accent);
+  background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.12);
+  border-color: var(--text-accent);
   font-weight: 600;
-  box-shadow: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .theme-chip-count {

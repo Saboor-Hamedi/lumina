@@ -30,6 +30,7 @@ export const nord: ThemeDefinition = {
     '--icon-love': '#b48ead',
     '--caret-width': '2px',
     '--caret-color': '#88c0d0',
+    '--folder-color': '#88c0d0',
     '--shadow-soft': 'rgba(0, 0, 0, 0.3)',
     '--glow-accent': 'rgba(136, 192, 208, 0.15)'
   }

@@ -30,6 +30,7 @@ export const gruvbox: ThemeDefinition = {
     '--icon-love': '#b16286',
     '--caret-width': '2px',
     '--caret-color': '#d79921',
+    '--folder-color': '#fabd2f',
     '--shadow-soft': 'rgba(0, 0, 0, 0.3)',
     '--glow-accent': 'rgba(215, 153, 33, 0.15)'
   }

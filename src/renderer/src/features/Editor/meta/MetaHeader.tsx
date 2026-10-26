@@ -14,6 +14,8 @@ export interface MetaHeaderProps {
   showTitle?: boolean
   showActions?: boolean
   showMenu?: boolean
+  showTools?: boolean
+  position?: 'bottom' | 'top' | 'inline'
 }
 
 /**
@@ -31,17 +33,21 @@ export const MetaHeader: React.FC<MetaHeaderProps> = React.memo(
     onInlineAI,
     editorMenu,
     showActions = true,
-    showMenu = true
+    showMenu = true,
+    showTools = true,
+    position = 'inline'
   }) => {
     if (!snippet || !showActions) return null
 
     return (
       <div
         className="editor-metadata-bar meta-header-bar"
-        style={{ position: 'relative', paddingBottom: '8px', marginBottom: '4px' }}
+        style={position === 'inline' ? { position: 'relative', paddingBottom: '8px', marginBottom: '4px' } : undefined}
       >
         <MetaActionBar
+          position={position}
           snippet={snippet}
+          showTools={showTools}
           title={title}
           isDirty={isDirty}
           onInlineAI={onInlineAI}

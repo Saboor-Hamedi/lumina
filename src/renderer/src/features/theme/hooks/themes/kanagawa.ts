@@ -30,6 +30,7 @@ export const kanagawa: ThemeDefinition = {
     '--icon-love': '#d27e99',
     '--caret-width': '2px',
     '--caret-color': '#7e9cd8',
+    '--folder-color': '#e6c384',
     '--shadow-soft': 'rgba(0, 0, 0, 0.35)',
     '--glow-accent': 'rgba(126, 156, 216, 0.15)'
   }

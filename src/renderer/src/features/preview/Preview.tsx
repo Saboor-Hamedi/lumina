@@ -203,6 +203,7 @@ export const Preview: React.FC<PreviewProps> = ({
         <div
           className="preview-modal-header docs-modal-header"
           onMouseDown={handleModalHeaderMouseDown}
+          onDoubleClick={handleToggleMaximize}
           style={{ cursor: isMaximized ? 'default' : 'grab' }}
         >
           <div className="preview-header-left docs-header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

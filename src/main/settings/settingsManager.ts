@@ -41,6 +41,7 @@ export interface Settings {
   workspacePath?: string | null
   translucency?: boolean
   inlineMetadata: boolean
+  metaPosition?: 'bottom' | 'top' | 'inline'
   sidebar: { width: number; isLeftOpen: boolean }
   rightSidebar: { width: number; isRightOpen: boolean }
   titleBarVisible: boolean
@@ -108,6 +109,7 @@ export const DEFAULT_SETTINGS: Settings = {
   smoothScrolling: true,
 
   inlineMetadata: true,
+  metaPosition: 'bottom',
   sidebar: { width: 260, isLeftOpen: true },
   rightSidebar: { width: 300, isRightOpen: false },
   titleBarVisible: true,

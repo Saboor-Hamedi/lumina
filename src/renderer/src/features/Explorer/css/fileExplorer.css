@@ -783,24 +783,23 @@
 
 .inline-create-input,
 .inline-rename-input {
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 0;
+  background: var(--bg-card, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
+  border-radius: 4px;
   color: var(--text-main);
   font-size: 12px;
   height: 24px;
   box-sizing: border-box;
-  transition: all 0.15s ease;
-  padding: 0 2px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  padding: 0 6px;
   width: 100%;
 }
 
 .inline-create-input:focus,
 .inline-rename-input:focus {
-  border: none;
-  border-bottom: 1px solid var(--text-accent);
+  border: 1px solid var(--text-accent);
   outline: none;
-  box-shadow: none;
+  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb, 64, 186, 250), 0.25);
 }
 
 .inline-create-input::placeholder,
@@ -963,11 +962,12 @@
   flex-shrink: 0;
   cursor: pointer;
   border-radius: 3px;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  background: transparent !important;
+  transition: color 0.12s ease;
 }
 
 .folder-chevron-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: transparent !important;
   color: var(--text-main, #ffffff);
 }
 

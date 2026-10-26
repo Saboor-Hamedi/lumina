@@ -199,16 +199,7 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
             </div>
           </div>
 
-          <div className="settings-row">
-            <div className="row-info">
-              <div className="row-label">Editor Action Buttons</div>
-              <div className="row-hint">Show quick tool buttons inside the editor header.</div>
-            </div>
-            <Toggle
-              checked={settings.inlineMetadata !== false}
-              onChange={(e) => updateSetting('inlineMetadata', e.target.checked)}
-            />
-          </div>
+
         </section>
       </div>
 

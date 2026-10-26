@@ -30,6 +30,7 @@ export const everforest: ThemeDefinition = {
     '--icon-love': '#d699b6',
     '--caret-width': '2px',
     '--caret-color': '#a7c080',
+    '--folder-color': '#a7c080',
     '--shadow-soft': 'rgba(0, 0, 0, 0.3)',
     '--glow-accent': 'rgba(167, 192, 128, 0.15)'
   }
