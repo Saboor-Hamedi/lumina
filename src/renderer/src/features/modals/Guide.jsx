@@ -443,7 +443,7 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
     <div className="guide-modal-overlay" onClick={onClose}>
       <div className={`guide-modal-container${isMaximized ? ' maximized' : ''}`} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="guide-modal-header" style={{ cursor: 'default' }}>
+        <div className="guide-modal-header docs-modal-header" onDoubleClick={handleToggleMaximize} style={{ cursor: 'default' }}>
           <div className="guide-header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span
               style={{
@@ -485,7 +485,7 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
             )}
             <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
               <button
-                className="guide-window-btn"
+                className="docs-window-btn guide-window-btn"
                 onClick={handleToggleMaximize}
                 aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
               >

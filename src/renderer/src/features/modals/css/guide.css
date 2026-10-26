@@ -65,10 +65,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 18px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 12px;
+  background: var(--bg-panel, #16161e);
   border-bottom: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
-  flex-shrink: 0;
   user-select: none;
+  flex-shrink: 0;
+  z-index: 10;
+  cursor: default !important;
 }
 
 .guide-header-left {
@@ -99,11 +104,13 @@
 
 .guide-window-btn,
 .guide-close-btn {
+  width: 26px;
+  height: 26px;
   background: transparent;
   border: none;
   color: var(--text-muted, #888899);
   cursor: pointer;
-  padding: 6px;
+  padding: 0;
   border-radius: 6px;
   display: flex;
   align-items: center;

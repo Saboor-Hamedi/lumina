@@ -17,10 +17,10 @@ export const parchment: ThemeDefinition = {
     '--text-faint': '#91806b',
     '--text-accent': '#9c4310',
     '--text-accent-rgb': '156, 67, 16',
-    '--border-dim': '#ded4bc',
-    '--border-subtle': '#cfc3a6',
+    '--border-dim': '#e0d6be',
+    '--border-subtle': '#d1c5a8',
     '--border-main': '#b4a584',
-    '--border-card': '#d8cdb2',
+    '--border-card': '#dbd0b6',
     '--scroll-thumb': '#c4b796',
     '--scroll-track': '#ebe3ce',
     '--icon-primary': '#9c4310',
@@ -31,7 +31,7 @@ export const parchment: ThemeDefinition = {
     '--caret-width': '2px',
     '--caret-color': '#9c4310',
     '--shadow-soft': 'rgba(43, 33, 22, 0.08)',
-    '--glow-accent': 'rgba(156, 67, 16, 0.12)'
+    '--glow-accent': 'rgba(156, 67, 16, 0.18)'
   }
 }
 

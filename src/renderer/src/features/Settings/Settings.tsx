@@ -17,7 +17,8 @@ const TAB_LABELS: Record<SettingsTabId, string> = {
   shortcuts: 'Shortcuts',
   assistant: 'AI Assistant',
   memory: 'AI Memory',
-  advanced: 'Advanced'
+  advanced: 'Advanced',
+  update: 'Updates'
 }
 
 /**
@@ -31,6 +32,7 @@ const mapInitialTab = (tab?: string): SettingsTabId => {
   if (['ai', 'assistant'].includes(tab)) return 'assistant'
   if (['memory', 'ai-memory'].includes(tab)) return 'memory'
   if (['graph', 'advanced'].includes(tab)) return 'advanced'
+  if (['update', 'updates'].includes(tab)) return 'update'
   return 'workspace'
 }
 

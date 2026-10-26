@@ -1867,3 +1867,96 @@ html[data-use-active-line-border="false"] .cm-activeLine {
   box-shadow: none !important;
 }
 
+
+/* ==========================================================================
+   Multi-Theme Writing Atmosphere & Caret Physics
+   Enhances writing tactile feel without altering DOM layout, selection flow,
+   or AI streaming tokens
+   ========================================================================== */
+
+/* Universal Caret Soft Ambient Glow */
+.markdown-editor .cm-cursor,
+.markdown-editor .cm-dropCursor,
+.cm-cursor,
+.cm-dropCursor {
+  border-left-color: var(--caret-color, var(--text-accent)) !important;
+  border-left-width: var(--caret-width, 2px) !important;
+  filter: drop-shadow(0 0 2px var(--glow-accent, rgba(var(--text-accent-rgb), 0.3)));
+  pointer-events: none !important;
+}
+
+/* Universal Harmonic Selection */
+.markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
+.cm-content ::selection {
+  background-color: color-mix(in srgb, var(--text-accent) 18%, transparent) !important;
+}
+
+.cm-selectionMatch {
+  background-color: color-mix(in srgb, var(--text-accent) 22%, transparent) !important;
+  border-radius: 2px;
+}
+
+/* Parchment Manuscript Atmosphere */
+[data-theme='parchment'] .cm-cursor {
+  border-left-color: var(--caret-color, #9c4310) !important;
+  filter: drop-shadow(0 0 1.8px rgba(156, 67, 16, 0.45));
+}
+
+[data-theme='parchment'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
+[data-theme='parchment'] .cm-content ::selection {
+  background-color: rgba(156, 67, 16, 0.16) !important;
+}
+
+[data-theme='parchment'] .cm-selectionMatch {
+  background-color: rgba(156, 67, 16, 0.22) !important;
+  border-radius: 2px;
+}
+
+[data-theme='parchment'] .cm-scroller::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb, #c4b796);
+}
+
+[data-theme='parchment'] .cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: #b5a681;
+}
+
+/* Celestial Cosmic Starlight Atmosphere */
+[data-theme='celestial'] .cm-cursor {
+  border-left-color: var(--caret-color, #facc15) !important;
+  filter: drop-shadow(0 0 2.5px rgba(250, 204, 21, 0.65)) drop-shadow(0 0 7px rgba(250, 204, 21, 0.22));
+}
+
+[data-theme='celestial'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
+[data-theme='celestial'] .cm-content ::selection {
+  background-color: rgba(250, 204, 21, 0.16) !important;
+}
+
+[data-theme='celestial'] .cm-selectionMatch {
+  background-color: rgba(250, 204, 21, 0.24) !important;
+  border-radius: 2px;
+}
+
+[data-theme='celestial'] .cm-scroller::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb, #2d3754);
+}
+
+[data-theme='celestial'] .cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: #3e4a74;
+}
+
+/* Cyberpunk Neon Atmosphere */
+[data-theme='cyberpunk'] .cm-cursor {
+  filter: drop-shadow(0 0 3px rgba(var(--text-accent-rgb), 0.85)) drop-shadow(0 0 8px rgba(var(--text-accent-rgb), 0.35));
+}
+
+[data-theme='cyberpunk'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
+[data-theme='cyberpunk'] .cm-content ::selection {
+  background-color: rgba(56, 189, 248, 0.2) !important;
+}
+
+/* Dracula & Tokyo Night Atmospheric Depth */
+[data-theme='dracula'] .cm-cursor,
+[data-theme='tokyoNight'] .cm-cursor,
+[data-theme='catppuccin'] .cm-cursor {
+  filter: drop-shadow(0 0 2.5px var(--glow-accent, rgba(var(--text-accent-rgb), 0.4)));
+}

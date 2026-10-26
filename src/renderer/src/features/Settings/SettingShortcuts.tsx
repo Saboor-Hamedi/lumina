@@ -48,12 +48,13 @@ export const SettingShortcuts: React.FC = () => {
                 fontWeight: 600,
                 fontFamily: 'inherit',
                 color: 'var(--text-main, #f1f5f9)',
-                background: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                padding: '2px 6px',
-                borderRadius: '4px',
+                background: 'var(--bg-card, rgba(0, 0, 0, 0.15))',
+                border: '1px solid var(--border-dim)',
+                borderBottom: '2px solid var(--border-subtle)',
+                padding: '2px 7px',
+                borderRadius: '5px',
                 lineHeight: 1.2,
-                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.12)',
                 userSelect: 'none'
               }}
             >
@@ -105,22 +106,22 @@ export const SettingShortcuts: React.FC = () => {
             style={{
               width: '100%',
               height: '34px',
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              borderRadius: '7px',
-              padding: filterQuery ? '0 32px 0 32px' : '0 12px 0 32px',
+              background: 'var(--bg-input, var(--bg-card))',
+              border: '1px solid var(--border-dim)',
+              borderRadius: '8px',
+              padding: filterQuery ? '0 32px 0 34px' : '0 12px 0 34px',
               color: 'var(--text-main, #f8fafc)',
               fontSize: '12px',
               outline: 'none',
               transition: 'all 0.15s ease'
             }}
             onFocus={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(var(--text-accent-rgb, 139, 92, 246), 0.5)'
+              e.currentTarget.style.borderColor = 'var(--text-accent)'
               e.currentTarget.style.boxShadow =
-                '0 0 0 2px rgba(var(--text-accent-rgb, 139, 92, 246), 0.12)'
+                '0 0 0 3px rgba(var(--text-accent-rgb), 0.16)'
             }}
             onBlur={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'
+              e.currentTarget.style.borderColor = 'var(--border-dim)'
               e.currentTarget.style.boxShadow = 'none'
             }}
           />

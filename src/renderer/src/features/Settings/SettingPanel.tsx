@@ -6,6 +6,7 @@ import SettingMemory from './SettingMemory'
 import SettingShortcuts from './SettingShortcuts'
 import SettingWorkspace from './SettingWorkspace'
 import SettingAdvanced from './SettingAdvanced'
+import SettingUpdate from './SettingUpdate'
 
 /**
  * SettingPanel Component
@@ -22,6 +23,7 @@ export const SettingPanel: React.FC<SettingPanelProps> = ({ activeTab, onOpenThe
         {activeTab === 'assistant' && <SettingAssistant />}
         {activeTab === 'memory' && <SettingMemory />}
         {activeTab === 'advanced' && <SettingAdvanced />}
+        {activeTab === 'update' && <SettingUpdate />}
       </div>
     </main>
   )

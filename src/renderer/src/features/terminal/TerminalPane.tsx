@@ -64,7 +64,7 @@ export function TerminalPane({ session, visible, spawnTransport, onStatus }: Pro
         width: '100%',
         height: '100%',
         overflow: 'hidden',
-        background: '#0c0c0e'
+        background: 'var(--bg-editor, var(--bg-app, #0c0c0e))'
       }}
     >
       <div
@@ -78,7 +78,7 @@ export function TerminalPane({ session, visible, spawnTransport, onStatus }: Pro
           width: '100%',
           position: 'relative',
           overflow: 'hidden',
-          background: '#0c0c0e'
+          background: 'var(--bg-editor, var(--bg-app, #0c0c0e))'
         }}
       />
     </div>

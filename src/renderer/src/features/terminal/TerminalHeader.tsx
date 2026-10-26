@@ -56,8 +56,8 @@ export function TerminalHeader({
         height: 32,
         minHeight: 32,
         padding: '0 8px',
-        background: '#121214',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.07)',
+        background: 'var(--bg-panel, var(--bg-sidebar, #121214))',
+        borderBottom: '1px solid var(--border-dim, rgba(255, 255, 255, 0.07))',
         userSelect: 'none',
         flexShrink: 0
       }}
@@ -95,8 +95,8 @@ export function TerminalHeader({
                 borderRadius: 4,
                 fontSize: 12,
                 cursor: 'pointer',
-                color: isActive ? '#f4f4f5' : '#82828c',
-                background: isActive ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
+                color: isActive ? 'var(--text-main, #f4f4f5)' : 'var(--text-muted, #82828c)',
+                background: isActive ? 'var(--bg-card, var(--bg-active, rgba(255, 255, 255, 0.08)))' : 'transparent',
                 fontWeight: isActive ? 500 : 400,
                 maxWidth: 160,
                 flexShrink: 0,

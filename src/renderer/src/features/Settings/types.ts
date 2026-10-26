@@ -10,6 +10,7 @@ export type SettingsTabId =
   | 'assistant'
   | 'memory'
   | 'advanced'
+  | 'update'
 
 export interface SettingsProps {
   /** Callback triggered when user dismisses the settings dialog */

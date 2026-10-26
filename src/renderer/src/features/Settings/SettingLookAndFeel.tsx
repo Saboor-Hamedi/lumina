@@ -168,7 +168,8 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
               <div className="row-hint">Color themes and palette gallery.</div>
             </div>
             <button className="btn btn-secondary" onClick={handleOpenTheme} type="button">
-              Theme Gallery
+              <Palette size={13} style={{ color: 'var(--text-accent)' }} />
+              <span>Theme Gallery</span>
             </button>
           </div>
 

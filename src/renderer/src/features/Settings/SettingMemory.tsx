@@ -88,7 +88,7 @@ export const SettingMemory: React.FC = () => {
           </h3>
         </div>
 
-        <div className="settings-block" style={{ padding: '16px', background: 'var(--bg-primary, rgba(255, 255, 255, 0.02))', borderRadius: '6px' }}>
+        <div className="settings-block" style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '10px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {/* User Name */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
@@ -107,7 +107,7 @@ export const SettingMemory: React.FC = () => {
             </div>
 
             {/* Role / Occupation */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.04)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '10px', borderTop: '1px solid var(--border-dim)' }}>
               <div className="row-info">
                 <div className="row-label">Role / Occupation</div>
                 <div className="row-hint">Tailors explanations and complexity to your background.</div>
@@ -132,7 +132,7 @@ export const SettingMemory: React.FC = () => {
             </div>
 
             {/* Bio / Context */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '10px', borderTop: '1px solid rgba(255, 255, 255, 0.04)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '10px', borderTop: '1px solid var(--border-dim)' }}>
               <div className="row-info">
                 <div className="row-label">Bio / Context</div>
                 <div className="row-hint">Key background details, current projects, or focus areas.</div>
@@ -186,7 +186,7 @@ export const SettingMemory: React.FC = () => {
           Custom instructions, tone, and answer formatting.
         </p>
 
-        <div className="settings-block" style={{ padding: '16px', background: 'var(--bg-primary, rgba(255, 255, 255, 0.02))', borderRadius: '6px' }}>
+        <div className="settings-block" style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '10px' }}>
           <form onSubmit={handleAddPreference} style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
             <input
               type="text"
@@ -222,8 +222,7 @@ export const SettingMemory: React.FC = () => {
                     justifyContent: 'space-between',
                     padding: '8px 12px',
                     borderRadius: '5px',
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    background: 'var(--bg-input, var(--bg-card))', border: '1px solid var(--border-dim)',
                     fontSize: '12px',
                     color: 'var(--text-main, #f8fafc)',
                     gap: '8px'
@@ -342,7 +341,7 @@ export const SettingMemory: React.FC = () => {
           Context, constraints, and project background.
         </p>
 
-        <div className="settings-block" style={{ padding: '16px', background: 'var(--bg-primary, rgba(255, 255, 255, 0.02))', borderRadius: '6px' }}>
+        <div className="settings-block" style={{ padding: '16px', background: 'var(--bg-card)', border: '1px solid var(--border-card)', borderRadius: '10px' }}>
           <form onSubmit={handleAddFact} style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
             <input
               type="text"
@@ -380,8 +379,7 @@ export const SettingMemory: React.FC = () => {
                       justifyContent: 'space-between',
                       padding: '8px 12px',
                       borderRadius: '5px',
-                      background: 'rgba(255, 255, 255, 0.03)',
-                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      background: 'var(--bg-input, var(--bg-card))', border: '1px solid var(--border-dim)',
                       fontSize: '12px',
                       color: 'var(--text-main, #f8fafc)',
                       gap: '8px'

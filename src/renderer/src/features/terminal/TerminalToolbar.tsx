@@ -11,8 +11,8 @@ interface Props {
 
 const btnStyle: React.CSSProperties = {
   background: 'transparent',
-  border: '1px solid #27272a',
-  color: '#a1a1aa',
+  border: '1px solid var(--border-dim, #27272a)',
+  color: 'var(--text-muted, #a1a1aa)',
   borderRadius: 6,
   padding: '5px 10px',
   fontSize: 12,
@@ -46,8 +46,8 @@ export function TerminalToolbar({ session, onAction }: Props) {
         alignItems: 'center',
         gap: 8,
         padding: '8px 12px',
-        borderBottom: '1px solid #1f1f22',
-        background: '#141416',
+        borderBottom: '1px solid var(--border-dim, #1f1f22)',
+        background: 'var(--bg-panel, var(--bg-sidebar, #141416))',
         flexShrink: 0
       }}
     >
@@ -62,9 +62,9 @@ export function TerminalToolbar({ session, onAction }: Props) {
             if (e.key === 'Escape') setEditing(false)
           }}
           style={{
-            background: '#0e0e10',
-            border: '1px solid #3f3f46',
-            color: '#e4e4e7',
+            background: 'var(--bg-editor, var(--bg-card, #0e0e10))',
+            border: '1px solid var(--border-subtle, #3f3f46)',
+            color: 'var(--text-main, #e4e4e7)',
             borderRadius: 6,
             padding: '4px 8px',
             fontSize: 13,

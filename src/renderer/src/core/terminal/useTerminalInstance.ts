@@ -7,7 +7,7 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import '@xterm/xterm/css/xterm.css'
-import { DEFAULT_FONT_SIZE, DEFAULT_SCROLLBACK, TERMINAL_FONT, XTERM_THEME } from './constants'
+import { DEFAULT_FONT_SIZE, DEFAULT_SCROLLBACK, TERMINAL_FONT, XTERM_THEME, getActiveTerminalTheme } from './constants'
 import type { TerminalSession } from './types'
 
 /** Minimal transport contract — implement for node-pty, WS, SSH, Electron IPC, etc. */
@@ -116,7 +116,7 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
     const termInstance = new Terminal({
       fontFamily: TERMINAL_FONT,
       fontSize: DEFAULT_FONT_SIZE,
-      theme: XTERM_THEME,
+      theme: getActiveTerminalTheme(),
       scrollback: DEFAULT_SCROLLBACK,
       cursorBlink: true,
       cursorStyle: 'block',
@@ -201,10 +201,42 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
       ro.observe(container)
     }
 
+
+    // Dynamically react to Lumina theme changes
+    const applyActiveTheme = () => {
+      try {
+        if ((termInstance as any)?.options) {
+          ;(termInstance as any).options.theme = getActiveTerminalTheme()
+        }
+      } catch {}
+    }
+
+    window.addEventListener('theme-changed', applyActiveTheme)
+    window.addEventListener('theme-accent-changed', applyActiveTheme)
+
+    let themeObserver: MutationObserver | null = null
+    if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+      themeObserver = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          if (m.attributeName === 'data-theme' || m.attributeName === 'style') {
+            applyActiveTheme()
+            break
+          }
+        }
+      })
+      themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme', 'style']
+      })
+    }
+
     return () => {
       cancelAnimationFrame(raf)
       clearTimeout(timer)
       ro?.disconnect()
+      window.removeEventListener('theme-changed', applyActiveTheme)
+      window.removeEventListener('theme-accent-changed', applyActiveTheme)
+      themeObserver?.disconnect()
       termInstance.dispose()
       setTerm(null)
       fitRef.current = null

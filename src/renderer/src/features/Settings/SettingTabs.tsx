@@ -1,5 +1,5 @@
 import React from 'react'
-import { Folder, Palette, Keyboard, Sparkles, Brain, SlidersHorizontal } from 'lucide-react'
+import { Folder, Palette, Keyboard, Sparkles, Brain, SlidersHorizontal, RefreshCw } from 'lucide-react'
 import type { SettingTabsProps, SettingsTabId } from './types'
 
 export interface TabItem {
@@ -20,7 +20,8 @@ export const SETTINGS_TABS: TabItem[] = [
   { id: 'shortcuts', label: 'Shortcuts', icon: Keyboard, dividerAfter: true },
   { id: 'assistant', label: 'AI Assistant', icon: Sparkles },
   { id: 'memory', label: 'AI Memory', icon: Brain },
-  { id: 'advanced', label: 'Advanced', icon: SlidersHorizontal }
+  { id: 'advanced', label: 'Advanced', icon: SlidersHorizontal },
+  { id: 'update', label: 'Updates', icon: RefreshCw }
 ]
 
 /** Tab IDs in navigational order */

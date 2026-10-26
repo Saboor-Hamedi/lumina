@@ -20,8 +20,8 @@ export function TerminalTabs({ sessions, activeId, onSelect, onClose, onCreate }
         alignItems: 'center',
         gap: 2,
         padding: '6px 8px 0',
-        background: '#0e0e10',
-        borderBottom: '1px solid #1f1f22',
+        background: 'var(--bg-panel, var(--bg-sidebar, #0e0e10))',
+        borderBottom: '1px solid var(--border-dim, #1f1f22)',
         overflowX: 'auto',
         flexShrink: 0
       }}
@@ -42,8 +42,8 @@ export function TerminalTabs({ sessions, activeId, onSelect, onClose, onCreate }
               borderRadius: '6px 6px 0 0',
               fontSize: 12.5,
               cursor: 'pointer',
-              color: active ? '#e4e4e7' : '#71717a',
-              background: active ? '#141416' : 'transparent',
+              color: active ? 'var(--text-main, #e4e4e7)' : 'var(--text-muted, #71717a)',
+              background: active ? 'var(--bg-editor, var(--bg-app, #141416))' : 'transparent',
               borderBottom: active ? '1px solid #141416' : '1px solid transparent',
               maxWidth: 200,
               minWidth: 0,

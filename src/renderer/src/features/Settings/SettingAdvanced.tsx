@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import { SlidersHorizontal, Share2 } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import Toggle from '../../components/toggle'
-import SettingUpdateBar from './SettingUpdateBar'
 
 type AdvancedSubTab = 'system' | 'graph'
 
@@ -22,7 +21,7 @@ export const SettingAdvanced: React.FC = () => {
   }
 
   return (
-    <div className="settings-pane settings-pane-with-sticky-footer">
+    <div className="settings-pane">
       <div className="settings-pane-header">
         <div className="settings-pane-header-info">
           <h2 className="settings-pane-title">Advanced</h2>
@@ -171,9 +170,6 @@ export const SettingAdvanced: React.FC = () => {
           </section>
         </div>
       </div>
-
-      {/* Extracted Bottom Fixed Sticky Update Bar */}
-      <SettingUpdateBar />
     </div>
   )
 }

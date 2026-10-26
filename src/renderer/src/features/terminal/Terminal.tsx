@@ -171,7 +171,7 @@ export function Terminal({
         height: '100%',
         width: '100%',
         minHeight: 0,
-        background: '#0c0c0e',
+        background: 'var(--bg-editor, var(--bg-app, #0c0c0e))',
         overflow: 'hidden',
         fontFamily: '"Cascadia Code", "Cascadia Mono", "JetBrains Mono", "Fira Code", Consolas, "SF Mono", monospace'
       }}
@@ -309,12 +309,12 @@ export function Terminal({
                     fontSize: 11.5,
                     cursor: isDragging ? 'grabbing' : 'pointer',
                     marginBottom: 2,
-                    color: isActive ? '#f4f4f5' : '#8a8a93',
+                    color: isActive ? 'var(--text-main, #f4f4f5)' : 'var(--text-muted, #8a8a93)',
                     background: isActive ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
-                    borderLeft: isActive ? '2px solid #8b5cf6' : '2px solid transparent',
+                    borderLeft: isActive ? '2px solid var(--text-accent, #8b5cf6)' : '2px solid transparent',
                     fontWeight: isActive ? 500 : 400,
                     opacity: isDragging ? 0.35 : 1,
-                    boxShadow: isDragOver ? '0 -1px 0 0 #8b5cf6' : undefined,
+                    boxShadow: isDragOver ? '0 -1px 0 0 var(--text-accent, #8b5cf6)' : undefined,
                     transition: 'background 0.1s ease, color 0.1s ease, opacity 0.1s ease'
                   }}
                   onMouseEnter={(e) => {

@@ -161,7 +161,7 @@
 /* Modern UI Overrides */
 [data-modern-ui='true'] .shell-terminal-dock {
   border-top: none !important;
-  background: #0c0c0e !important;
+  background: var(--bg-editor, var(--bg-app, #0c0c0e)) !important;
   box-sizing: border-box;
 }
 
@@ -210,7 +210,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: #0c0c0e;
+  background: var(--bg-editor, var(--bg-app, #0c0c0e));
 }
 
 .lumina-term-container {
@@ -219,7 +219,7 @@
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
-  background: #0c0c0e;
+  background: var(--bg-editor, var(--bg-app, #0c0c0e));
   padding: 4px 6px;
 }
 
@@ -236,8 +236,9 @@
 .lumina-term-container .xterm,
 .lumina-term-container .xterm .xterm-screen,
 .lumina-term-container .xterm .xterm-viewport {
-  background-color: #0c0c0e !important;
-  background: #0c0c0e !important;
+  background-color: var(--bg-editor, var(--bg-app, #0c0c0e)) !important;
+  background: var(--bg-editor, var(--bg-app, #0c0c0e)) !important;
+  color: var(--text-main) !important;
 }
 
 .lumina-term-container .xterm,
@@ -252,7 +253,7 @@
   overflow-x: hidden !important;
   overflow-y: auto !important;
   scrollbar-width: thin !important;
-  scrollbar-color: rgba(255, 255, 255, 0.16) transparent !important;
+  scrollbar-color: var(--scroll-thumb, rgba(125, 125, 125, 0.2)) transparent !important;
 }
 
 .lumina-term-container .xterm .xterm-viewport::-webkit-scrollbar {
@@ -265,14 +266,14 @@
 }
 
 .lumina-term-container .xterm .xterm-viewport::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.16) !important;
+  background: var(--scroll-thumb, rgba(125, 125, 125, 0.2)) !important;
   border-radius: 9999px !important;
   border: none !important;
   transition: background 0.15s ease !important;
 }
 
 .lumina-term-container .xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.35) !important;
+  background: var(--scroll-thumb, rgba(125, 125, 125, 0.4)) !important;
 }
 
 .lumina-term-container .xterm .xterm-viewport::-webkit-scrollbar-corner {
