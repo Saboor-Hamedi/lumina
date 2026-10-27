@@ -5,6 +5,7 @@ build
 .DS_Store
 .eslintcache
 *.log*
+plan.md
 
 .env
 .env*
@@ -21,4 +22,3 @@ test/e2e/report/
 # Rust build artifacts
 target/
 crates/**/target/
-

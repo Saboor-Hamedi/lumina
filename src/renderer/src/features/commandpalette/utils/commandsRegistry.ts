@@ -117,6 +117,47 @@ export const COMMANDS_REGISTRY: LuminaCommand[] = [
     }
   },
   {
+    id: 'view.metaPositionFloatTop',
+    title: 'Meta: Float top',
+    category: 'View',
+    keywords: ['meta', 'float top', 'meta float top', 'action bar top', 'header', 'position', 'meta panel'],
+    iconName: 'PanelTop',
+    execute: async () => {
+      await useSettingsStore.getState().updateSetting('metaPosition', 'top')
+    }
+  },
+  {
+    id: 'view.metaPositionFloatBottom',
+    title: 'Meta: Float bottom',
+    category: 'View',
+    keywords: ['meta', 'float bottom', 'float buttom', 'meta float bottom', 'meta float buttom', 'footer', 'position', 'meta panel'],
+    iconName: 'PanelBottom',
+    execute: async () => {
+      await useSettingsStore.getState().updateSetting('metaPosition', 'bottom')
+    }
+  },
+  {
+    id: 'view.metaPositionInline',
+    title: 'Meta: Inline',
+    category: 'View',
+    keywords: ['meta', 'inline', 'meta inline', 'action bar inline', 'document', 'position', 'meta panel'],
+    iconName: 'Layout',
+    execute: async () => {
+      await useSettingsStore.getState().updateSetting('metaPosition', 'inline')
+    }
+  },
+  {
+    id: 'view.toggleLocalGraph',
+    title: 'View: Toggle Local Graph',
+    category: 'View',
+    shortcut: 'Alt + G',
+    keywords: ['local graph', 'graph', 'linked mentions', 'backlinks', 'toggle', 'inline graph'],
+    iconName: 'Network',
+    execute: async () => {
+      window.dispatchEvent(new CustomEvent('toggle-local-graph'))
+    }
+  },
+  {
     id: 'view.toggleTerminal',
     title: 'View: Toggle Terminal',
     category: 'View',

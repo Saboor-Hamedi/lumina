@@ -845,6 +845,9 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
             >
               <div
                 style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                   fontSize: '10px',
                   textTransform: 'uppercase',
                   color: 'var(--text-faint, rgba(255, 255, 255, 0.4))',
@@ -853,7 +856,8 @@ export const Theme: React.FC<ThemeProps> = ({ isOpen = false, onClose = () => {}
                   letterSpacing: '0.8px'
                 }}
               >
-                {selectedCategory === 'all' ? 'All Curated Themes' : `${CATEGORY_CHIPS.find((c) => c.id === selectedCategory)?.label || ''} Themes`}
+                <span>{selectedCategory === 'all' ? 'All Curated Themes' : `${CATEGORY_CHIPS.find((c) => c.id === selectedCategory)?.label || ''} Themes`}</span>
+                <span>{filteredThemes.length} {filteredThemes.length === 1 ? 'Theme' : 'Themes'}</span>
               </div>
 
               <div className="template-modal-grid">

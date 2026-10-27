@@ -1,4 +1,4 @@
-/* Force Restart Timestamp: 25 */
+/* Force Restart Timestamp: 26 */
 import fs from 'fs'
 import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin, loadEnv } from 'electron-vite'
@@ -20,6 +20,8 @@ function tsDevServerPlugin() {
       str.includes('features\\Navigation') ||
       str.includes('features/Explorer') ||
       str.includes('features\\Explorer') ||
+      str.includes('features/media') ||
+      str.includes('features\\media') ||
       str.includes('features/AI') ||
       str.includes('features\\AI') ||
       str.includes('features/profile') ||

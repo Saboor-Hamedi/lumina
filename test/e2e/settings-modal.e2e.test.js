@@ -87,7 +87,8 @@ test('AI Assistant shows the friendly provider labels', async () => {
 test('Advanced tab renders updates and workspace sections', async () => {
   await openSettings()
   await modal().getByRole('button', { name: 'Advanced' }).click()
-  await expect(modal().getByText('System Integration')).toBeVisible()
+  await expect(modal().getByText('System Integration', { exact: true })).toBeVisible()
+  await modal().getByRole('tab', { name: 'Graph' }).click()
   await expect(modal().getByText('Graph Visualization')).toBeVisible()
 })
 

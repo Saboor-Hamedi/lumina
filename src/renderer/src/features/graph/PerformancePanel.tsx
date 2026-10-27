@@ -9,6 +9,7 @@ export interface PerformancePanelProps {
 }
 
 export const PerformancePanel: React.FC<PerformancePanelProps> = ({
+  compact = false,
   is3DMode = false,
   onRecenter
 }) => {
@@ -41,30 +42,39 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
     <div
       style={{
         position: 'absolute',
-        top: '12px',
+        top: compact ? '8px' : '12px',
         left: '50%',
         transform: 'translateX(-50%)',
         background: 'var(--bg-panel, #18181b)',
         color: 'var(--text-main, #f8fafc)',
         fontFamily: 'monospace',
-        padding: '4px 8px 4px 12px',
+        padding: compact ? '2px 8px' : '4px 8px 4px 12px',
         borderRadius: '6px',
-        fontSize: '11px',
+        fontSize: compact ? '10px' : '11px',
         zIndex: 300,
         border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
         boxShadow: '0 1px 4px rgba(0, 0, 0, 0.06)',
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
-        pointerEvents: 'auto'
+        gap: compact ? '8px' : '12px',
+        pointerEvents: 'auto',
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
+        boxSizing: 'border-box'
       }}
     >
-      <span>FPS: {localMetrics.fps.toFixed(1)}</span>
-      <span style={{ color: 'var(--text-muted)' }}>{localMetrics.frameTime.toFixed(1)}ms</span>
-      <span style={{ color: 'var(--text-muted)' }}>
-        N: {localMetrics.nodeCount} | L: {localMetrics.linkCount}
+      <span style={{ flexShrink: 0 }}>
+        {compact ? `${Math.round(localMetrics.fps)} FPS` : `FPS: ${localMetrics.fps.toFixed(1)}`}
       </span>
-      {is3DMode && <span style={{ color: 'var(--text-accent)' }}>[GPU]</span>}
+      <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>
+        {compact ? `${localMetrics.frameTime.toFixed(1)}ms` : `${localMetrics.frameTime.toFixed(1)}ms`}
+      </span>
+      <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>
+        {compact
+          ? `${localMetrics.nodeCount}N · ${localMetrics.linkCount}L`
+          : `N: ${localMetrics.nodeCount} | L: ${localMetrics.linkCount}`}
+      </span>
+      {is3DMode && <span style={{ color: 'var(--text-accent)', flexShrink: 0 }}>[GPU]</span>}
 
       {onRecenter && (
         <button
@@ -79,8 +89,9 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
             justifyContent: 'center',
             cursor: 'pointer',
             color: 'var(--text-main)',
-            padding: '4px',
-            marginLeft: '4px',
+            padding: compact ? '2px 3px' : '4px',
+            marginLeft: '2px',
+            flexShrink: 0,
             transition: 'all 0.2s'
           }}
           onMouseEnter={(e) => {
@@ -92,7 +103,7 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
             e.currentTarget.style.color = 'var(--text-main)'
           }}
         >
-          <Target size={12} />
+          <Target size={compact ? 11 : 12} />
         </button>
       )}
     </div>

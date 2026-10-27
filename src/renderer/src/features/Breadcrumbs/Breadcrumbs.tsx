@@ -105,8 +105,16 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '
 
   // Extract all Markdown headings from the current document
   const headings = useMemo<HeadingItem[]>(() => {
+    // Only parse headings for markdown text, never for binary media files (PDFs, images)
+    const isBinaryMedia =
+      currentSnippet?.type === 'pdf' ||
+      currentSnippet?.type === 'image' ||
+      /\.(pdf|png|jpe?g|gif|webp|svg|bmp|ico|mp4|webm|mp3|wav|ogg)$/i.test(
+        currentSnippet?.fileName || currentSnippet?.title || ''
+      )
+    if (isBinaryMedia) return []
     return extractHeadings(currentSnippet?.code || '')
-  }, [currentSnippet?.code])
+  }, [currentSnippet?.code, currentSnippet?.type, currentSnippet?.fileName, currentSnippet?.title])
 
   // Compute the active heading corresponding to the cursor position
   const activeHeading = useMemo<HeadingItem | null>(() => {

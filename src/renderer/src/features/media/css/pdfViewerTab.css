@@ -14,14 +14,38 @@
   overflow: hidden;
 }
 
+/* PDF Frame Wrapper with Filter Themes */
+.pdf-viewer-frame-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-editor, #121214);
+  transition: filter 0.2s ease;
+}
+
 /* Native PDF iframe — fills all available space */
 .pdf-viewer-frame {
-  flex: 1;
   width: 100%;
   height: 100%;
   border: none;
   display: block;
   background: transparent;
+}
+
+.pdf-viewer-frame-wrapper.theme-original {
+  filter: none;
+}
+
+/* Dark mode (Direct clean invert so white PDF pages seamlessly match dark theme) */
+.pdf-viewer-frame-wrapper.theme-dark,
+.pdf-viewer-frame-wrapper.theme-invert {
+  filter: invert(1);
+}
+
+/* Sepia warm paper mode: ideal for long-form reading */
+.pdf-viewer-frame-wrapper.theme-sepia {
+  filter: sepia(0.38) contrast(0.95) brightness(0.92);
 }
 
 /* Loading / error states */
@@ -45,7 +69,7 @@
   color: var(--text-accent, #6366f1);
 }
 
-/* Floating toolbar — matches image viewer style */
+/* Floating toolbar — matches image viewer style in the bottom-right corner */
 .pdf-viewer-toolbar {
   position: absolute;
   bottom: 20px;
@@ -113,6 +137,44 @@
 .pdf-viewer-btn:hover {
   background: var(--bg-active, rgba(255, 255, 255, 0.08));
   color: var(--text-main, #ffffff);
+}
+
+/* Theme Switcher Segmented Control in Floating Toolbar */
+.pdf-theme-switch-group {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 5px;
+  padding: 2px;
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
+  gap: 2px;
+}
+
+.pdf-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  height: 22px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pdf-theme-btn:hover {
+  color: var(--text-main, #ffffff);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pdf-theme-btn.active {
+  background: var(--bg-active, rgba(255, 255, 255, 0.15));
+  color: var(--text-main, #ffffff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .pdf-viewer-badge {

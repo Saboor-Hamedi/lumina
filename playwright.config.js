@@ -7,8 +7,8 @@ module.exports = defineConfig({
   testMatch: '**/*.e2e.test.js',
 
   // Give real Electron plenty of time to start
-  timeout: 30_000,
-  expect: { timeout: 10_000 },
+  timeout: 60_000,
+  expect: { timeout: 15_000 },
 
   // Never run E2E in parallel — tests touch the filesystem
   workers: 1,

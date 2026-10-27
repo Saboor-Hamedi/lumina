@@ -2058,7 +2058,7 @@ html[data-use-active-line-border="false"] .cm-activeLine {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 45;
+  z-index: 100;
   pointer-events: none;
   display: flex;
   justify-content: center;
@@ -2191,6 +2191,42 @@ html[data-use-active-line-border="false"] .cm-activeLine {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+/* ==========================================================================
+   Meta Graph Popover Animation (Item 2)
+   ========================================================================== */
+@keyframes metaGraphPopoverFadeBottom {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+@keyframes metaGraphPopoverFadeTop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+.meta-graph-popover {
+  animation: metaGraphPopoverFadeBottom 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+  transform-origin: bottom center;
+}
+
+.meta-graph-popover.pos-top {
+  animation: metaGraphPopoverFadeTop 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top center;
 }
 
 /* ==========================================================================

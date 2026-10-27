@@ -42,11 +42,15 @@ async function launchApp() {
     } catch (err) {
       lastError = err
       if (attempt < maxAttempts) {
-        console.warn(`[launch] Electron launch attempt ${attempt} failed, retrying...`)
-        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
+        console.warn(`[launch] Electron launch attempt ${attempt} failed (${err?.message || err}), retrying...`)
+        await new Promise((resolve) => setTimeout(resolve, 1500 * attempt))
       }
     }
   }
+
+  try {
+    await fs.rm(vaultPath, { recursive: true, force: true }).catch(() => {})
+  } catch {}
 
   throw lastError
 }
@@ -57,61 +61,77 @@ async function launchOnce(vaultPath) {
   // are relaunched back-to-back.
   const userDataPath = await fs.mkdtemp(path.join(os.tmpdir(), 'lumina-e2e-ud-'))
 
-  const appInstance = await electron.launch({
-    args: [MAIN_ENTRY],
-    env: {
-      ...process.env,
-      NODE_ENV: 'test',
-      LUMINA_TEST_WORKSPACE: vaultPath,
-      LUMINA_TEST_VAULT: vaultPath,
-      LUMINA_TEST_USERDATA: userDataPath,
-      ELECTRON_DISABLE_GPU: '1'
-    },
-    timeout: 20_000
-  })
+  let appInstance
+  try {
+    appInstance = await electron.launch({
+      args: [
+        '--no-sandbox',
+        '--disable-gpu',
+        `--user-data-dir=${userDataPath}`,
+        MAIN_ENTRY
+      ],
+      env: {
+        ...process.env,
+        NODE_ENV: 'test',
+        LUMINA_TEST_WORKSPACE: vaultPath,
+        LUMINA_TEST_VAULT: vaultPath,
+        LUMINA_TEST_USERDATA: userDataPath,
+        ELECTRON_DISABLE_GPU: '1'
+      },
+      timeout: 25_000
+    })
 
-  // Wait for main window
-  const page = await appInstance.firstWindow()
+    // Wait for main window
+    const page = await appInstance.firstWindow({ timeout: 25_000 })
 
-  // Wait until JS has executed and React has rendered
-  await page.waitForLoadState('load')
-  // networkidle ensures React has finished its initial render cycle
-  await page.waitForLoadState('networkidle').catch(() => {})
+    // Wait until JS has executed and React has loaded DOM
+    await page.waitForLoadState('domcontentloaded')
 
-  async function cleanup() {
-    try {
-      await appInstance.evaluate(({ app }) => app.quit())
-    } catch {}
+    async function cleanup() {
+      try {
+        await appInstance.evaluate(({ app }) => app.quit())
+      } catch {}
 
-    const proc = appInstance.process()
-    if (proc && proc.exitCode === null) {
-      await new Promise((resolve) => {
-        const timer = setTimeout(() => {
-          try {
-            proc.kill('SIGKILL')
-          } catch {}
-          resolve()
-        }, 2000)
-        proc.once('exit', () => {
-          clearTimeout(timer)
-          resolve()
+      const proc = appInstance.process()
+      if (proc && proc.exitCode === null) {
+        await new Promise((resolve) => {
+          const timer = setTimeout(() => {
+            try {
+              proc.kill('SIGKILL')
+            } catch {}
+            resolve()
+          }, 2000)
+          proc.once('exit', () => {
+            clearTimeout(timer)
+            resolve()
+          })
         })
-      })
+      }
+
+      try {
+        await appInstance.close().catch(() => {})
+      } catch {}
+
+      try {
+        await fs.rm(vaultPath, { recursive: true, force: true }).catch(() => {})
+      } catch {}
+      try {
+        await fs.rm(userDataPath, { recursive: true, force: true }).catch(() => {})
+      } catch {}
     }
 
-    try {
-      await appInstance.close().catch(() => {})
-    } catch {}
-
-    try {
-      await fs.rm(vaultPath, { recursive: true, force: true }).catch(() => {})
-    } catch {}
+    return { app: appInstance, page, workspacePath: vaultPath, vaultPath, cleanup }
+  } catch (err) {
+    if (appInstance) {
+      try {
+        await appInstance.close().catch(() => {})
+      } catch {}
+    }
     try {
       await fs.rm(userDataPath, { recursive: true, force: true }).catch(() => {})
     } catch {}
+    throw err
   }
-
-  return { app: appInstance, page, workspacePath: vaultPath, vaultPath, cleanup }
 }
 
 /**

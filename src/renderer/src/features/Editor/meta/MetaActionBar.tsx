@@ -45,16 +45,38 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
     const [showLocalGraph, setShowLocalGraph] = useState(false)
     const [showMoreDropdown, setShowMoreDropdown] = useState(false)
     const containerRef = useRef<HTMLDivElement | null>(null)
+    const graphTriggerRef = useRef<HTMLButtonElement | null>(null)
 
     useKeyboardShortcuts({
       onEscape: (showLocalGraph || showMoreDropdown)
         ? () => {
+            const wasGraphOpen = showLocalGraph
             setShowLocalGraph(false)
             setShowMoreDropdown(false)
+            if (wasGraphOpen) {
+              setTimeout(() => {
+                graphTriggerRef.current?.focus()
+              }, 10)
+            }
             return true
           }
-        : null
+        : null,
+      onToggleLocalGraph: () => {
+        setShowMoreDropdown(false)
+        setShowLocalGraph((prev) => !prev)
+      }
     })
+
+    useEffect(() => {
+      const handleToggle = () => {
+        setShowMoreDropdown(false)
+        setShowLocalGraph((prev) => !prev)
+      }
+      window.addEventListener('toggle-local-graph', handleToggle)
+      return () => {
+        window.removeEventListener('toggle-local-graph', handleToggle)
+      }
+    }, [])
 
     useEffect(() => {
       if (!showLocalGraph && !showMoreDropdown) return
@@ -93,6 +115,7 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
           onInlineAI={onInlineAI}
           showLocalGraph={showLocalGraph}
           setShowLocalGraph={setShowLocalGraph}
+          graphTriggerRef={graphTriggerRef}
           showMoreDropdown={showMoreDropdown}
           setShowMoreDropdown={setShowMoreDropdown}
           position={position}
@@ -108,11 +131,12 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
           />
         )}
 
-        {/* Local Graph Popover: Opens in smart parallel direction */}
+        {/* Local Graph Popover: Opens in smart parallel direction with smooth entry animation */}
         {showLocalGraph && (
           <div
             role="dialog"
             aria-label="Linked Mentions Local Graph"
+            className={`meta-graph-popover ${position === 'top' ? 'pos-top' : ''}`}
             style={{
               position: 'absolute',
               ...(position === 'bottom'
@@ -120,11 +144,16 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
                 : { top: 'calc(100% + 8px)', bottom: 'auto' }),
               left: '50%',
               transform: 'translateX(-50%)',
-              width: 'min(420px, 90vw)',
-              zIndex: 50,
+              width: position === 'inline' ? 'min(480px, 92vw)' : '100%',
+              minWidth: position === 'inline' ? 'min(420px, 90vw)' : '100%',
+              maxWidth: '92vw',
+              background: 'var(--bg-panel, #18181c)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              zIndex: 1000,
               borderRadius: '8px',
-              border: '1px solid var(--border-color, rgba(255,255,255,0.12))',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+              border: '1px solid var(--border-color, rgba(255,255,255,0.14))',
+              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.25)',
               overflow: 'hidden'
             }}
           >

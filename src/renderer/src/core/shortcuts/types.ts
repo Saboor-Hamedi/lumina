@@ -52,6 +52,7 @@ export interface KeyboardShortcutHandlers {
   onToggleInspector?: () => void
   onToggleOutline?: () => void
   onToggleGraph?: () => void
+  onToggleLocalGraph?: () => void
   onCloseTab?: () => void
   onCloseWindow?: () => void
   onQuitApp?: () => void

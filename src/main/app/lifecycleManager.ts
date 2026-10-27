@@ -27,6 +27,7 @@
 
 import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
+import os from 'os'
 import fs from 'fs/promises'
 import WorkspaceManager from '../workspace/workspaceManager'
 import SettingsManager from '../settings'
@@ -60,6 +61,19 @@ export async function autoRepairIndexedDB(): Promise<void> {
 /**
  * Determines the startup workspace path across test, persisted config, and legacy paths.
  */
+function getSafeDocumentsPath(): string {
+  try {
+    return app.getPath('documents')
+  } catch {
+    try {
+      const home = app.getPath('home') || os.homedir()
+      return join(home, 'Documents')
+    } catch {
+      return os.tmpdir()
+    }
+  }
+}
+
 export async function resolveStartupWorkspacePath(userDataPath: string): Promise<string> {
   let savedWorkspacePath: string | null = null
 
@@ -81,8 +95,9 @@ export async function resolveStartupWorkspacePath(userDataPath: string): Promise
     }
   }
 
-  const oldDefaultPath = join(app.getPath('documents'), 'Lumina Vault')
-  const newDefaultPath = join(app.getPath('documents'), 'lumina')
+  const documentsDir = getSafeDocumentsPath()
+  const oldDefaultPath = join(documentsDir, 'Lumina Vault')
+  const newDefaultPath = join(documentsDir, 'lumina')
 
   if (!savedWorkspacePath || savedWorkspacePath === oldDefaultPath) {
     savedWorkspacePath = newDefaultPath
@@ -117,7 +132,7 @@ export async function initializeAppServices(createWindow: () => Promise<BrowserW
     console.warn('[Main] BrainIndexer init warning:', err)
   )
 
-  const workspaceInitPromise = WorkspaceManager.init(startupWorkspacePath, app.getPath('documents'))
+  const workspaceInitPromise = WorkspaceManager.init(startupWorkspacePath, getSafeDocumentsPath())
 
   // Ensure IndexedDB LevelDB caches are healthy before creating window
   await autoRepairIndexedDB()

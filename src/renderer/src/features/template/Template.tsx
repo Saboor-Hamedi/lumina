@@ -131,6 +131,7 @@ export const Template: React.FC<TemplateProps> = ({
               </button>
             </ToolTip>
             <span
+              className="template-header-title"
               style={{
                 fontSize: '12.5px',
                 fontWeight: 500,

@@ -478,6 +478,18 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
         return
       }
 
+      // Local Graph (Alt + G or custom)
+      if (matchesShortcut(e, getKey('localGraph'))) {
+        e.preventDefault()
+        e.stopPropagation()
+        if (shortcutsRef.current.onToggleLocalGraph) {
+          shortcutsRef.current.onToggleLocalGraph()
+        } else {
+          window.dispatchEvent(new CustomEvent('toggle-local-graph'))
+        }
+        return
+      }
+
       // Close Tab
       if (matchesShortcut(e, getKey('closeTab')) && shortcutsRef.current.onCloseTab) {
         e.preventDefault()

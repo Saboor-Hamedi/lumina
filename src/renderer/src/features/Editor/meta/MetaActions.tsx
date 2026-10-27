@@ -1,9 +1,10 @@
 import React, { useRef, useEffect, useCallback } from 'react'
-import { Sparkles, Network, MoreHorizontal, Edit3, FileText, Copy, Download, Layout } from 'lucide-react'
+import { Sparkles, Network, MoreHorizontal, Edit3, FileText, Copy, Download, Layout, SlidersHorizontal, Check } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import ProgressTracker, { LearnedButton } from '../../roadmap/ProgressTracker'
 import VoiceButton from '../../voice'
 import MetaDrivePush from './MetaDrivePush'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 import type { Snippet } from '../../../core/editor/types'
 
 export interface MetaActionsProps {
@@ -13,6 +14,7 @@ export interface MetaActionsProps {
   onInlineAI?: () => void
   showLocalGraph: boolean
   setShowLocalGraph: React.Dispatch<React.SetStateAction<boolean>>
+  graphTriggerRef?: React.RefObject<HTMLButtonElement | null>
   showMoreDropdown: boolean
   setShowMoreDropdown: React.Dispatch<React.SetStateAction<boolean>>
   position?: 'bottom' | 'top' | 'inline'
@@ -40,6 +42,7 @@ export const MetaActions: React.FC<MetaActionsProps> = React.memo(
     onInlineAI,
     showLocalGraph,
     setShowLocalGraph,
+    graphTriggerRef,
     showMoreDropdown,
     setShowMoreDropdown,
     position = 'bottom',
@@ -94,6 +97,7 @@ export const MetaActions: React.FC<MetaActionsProps> = React.memo(
 
     if (!snippet) return null
     const tooltipPos = position === 'bottom' ? 'top' : 'bottom'
+    const localGraphKey = useSettingsStore((s) => s.settings?.shortcuts?.['localGraph']) || 'Alt + G'
 
     return (
       <div className="meta-header-actions">
@@ -118,8 +122,9 @@ export const MetaActions: React.FC<MetaActionsProps> = React.memo(
         <VoiceButton id="editor-voice" />
         <MetaDrivePush snippet={snippet} title={title} isDirty={isDirty} />
 
-        <ToolTip text="Linked Mentions" position={tooltipPos}>
+        <ToolTip text={`Linked Mentions (${localGraphKey})`} position={tooltipPos}>
           <button
+            ref={graphTriggerRef}
             type="button"
             className={`meta-action-btn ${showLocalGraph ? 'active' : ''}`}
             onClick={(e) => {
@@ -342,6 +347,34 @@ export const MetaActions: React.FC<MetaActionsProps> = React.memo(
                 <span className="menu-label">Toggle Details</span>
                 <span className="shortcut-label">Ctrl+I</span>
                 <Layout size={13} className="menu-icon-right" />
+              </div>
+
+              <div className="dropdown-divider" role="separator" />
+
+              <div
+                role="menuitem"
+                tabIndex={0}
+                className="dropdown-item"
+                onClick={() => {
+                  const current = useSettingsStore.getState().settings?.metaPosition || 'bottom'
+                  const next = current === 'bottom' ? 'top' : current === 'top' ? 'inline' : 'bottom'
+                  useSettingsStore.getState().updateSetting('metaPosition', next)
+                  setShowMoreDropdown(false)
+                }}
+                onKeyDown={(e) =>
+                  handleItemKeyDown(e, () => {
+                    const current = useSettingsStore.getState().settings?.metaPosition || 'bottom'
+                    const next = current === 'bottom' ? 'top' : current === 'top' ? 'inline' : 'bottom'
+                    useSettingsStore.getState().updateSetting('metaPosition', next)
+                    setShowMoreDropdown(false)
+                  })
+                }
+              >
+                <span className="menu-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <span>Placement: {position === 'top' ? 'Float Top' : position === 'inline' ? 'Inline' : 'Float Bottom'}</span>
+                  <Check size={12} style={{ color: 'var(--text-accent, #a78bfa)', strokeWidth: 2.5 }} />
+                </span>
+                <SlidersHorizontal size={13} className="menu-icon-right" />
               </div>
             </div>
           )}

@@ -21,6 +21,15 @@ describe('ShortcutRenameBox.tsx', () => {
     expect(isConflict).toBe(true)
   })
 
+  it('differentiates Alt+G (Local Graph) from Ctrl+G (Graph View)', () => {
+    expect(normalizeCombo('Alt + G')).toBe('alt+g')
+    expect(normalizeCombo('Ctrl + G')).toBe('ctrl+g')
+    // Alt + G does not conflict with Graph View (Ctrl + G)
+    expect(findConflict('Alt + G', 'localGraph')).toBe(false)
+    // Conflicting combo matches
+    expect(findConflict('Alt + G', 'otherAction')).toBe(true)
+  })
+
   it('renders modal when open', () => {
     const item = {
       id: 'canvasDrawer',

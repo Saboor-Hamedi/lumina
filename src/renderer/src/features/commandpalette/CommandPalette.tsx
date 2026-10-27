@@ -231,6 +231,7 @@ function renderCommandIcon(iconName?: string) {
     case 'Network':
       return <Network size={18} className="item-icon action-icon" />
     case 'Square':
+    case 'Layout':
       return <Square size={18} className="item-icon action-icon" />
     default:
       return <Zap size={18} className="item-icon action-icon" />
@@ -312,6 +313,16 @@ const CommandPaletteRow = React.memo(
         settingDisplayVal = item.settingDef.formatValue ? item.settingDef.formatValue(cur) : String(cur)
       }
 
+      const isMetaPlacementCommand = Boolean(
+        item.id && ['view.metaPositionFloatTop', 'view.metaPositionFloatBottom', 'view.metaPositionInline'].includes(item.id)
+      )
+      const currentMetaPosition = isMetaPlacementCommand ? (useSettingsStore.getState().settings?.metaPosition || 'bottom') : null
+      const isCurrentMetaCommand = Boolean(
+        (item.id === 'view.metaPositionFloatTop' && currentMetaPosition === 'top') ||
+        (item.id === 'view.metaPositionFloatBottom' && currentMetaPosition === 'bottom') ||
+        (item.id === 'view.metaPositionInline' && currentMetaPosition === 'inline')
+      )
+
       return (
         <div
           ref={ref}
@@ -374,9 +385,26 @@ const CommandPaletteRow = React.memo(
                 {isDirty && <div className="dirty-indicator" style={{ marginLeft: '8px' }} />}
               </div>
 
-              <div className="item-meta-right" style={{ flexShrink: 0, marginLeft: '8px', display: 'flex', alignItems: 'center' }}>
+              <div className="item-meta-right" style={{ flexShrink: 0, marginLeft: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {isSetting && settingDisplayVal !== undefined && (
                   <span className="setting-value-badge">{settingDisplayVal}</span>
+                )}
+                {isCurrentMetaCommand && (
+                  <span
+                    className="setting-value-badge"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      color: 'var(--text-accent, #a78bfa)',
+                      borderColor: 'rgba(167, 139, 250, 0.3)',
+                      fontWeight: 600,
+                      fontSize: '11px'
+                    }}
+                  >
+                    <Check size={12} strokeWidth={2.5} />
+                    <span>Active</span>
+                  </span>
                 )}
                 {item.shortcut ? (
                   <div className="palette-shortcut">
@@ -1100,6 +1128,28 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
                       <div className="command-details-header">
                         <div className="command-details-badge-row">
                           <span className="command-details-cat">{selectedItem.command.category}</span>
+                          {Boolean(
+                            (selectedItem.command.id === 'view.metaPositionFloatTop' && (useSettingsStore.getState().settings?.metaPosition || 'bottom') === 'top') ||
+                            (selectedItem.command.id === 'view.metaPositionFloatBottom' && (useSettingsStore.getState().settings?.metaPosition || 'bottom') === 'bottom') ||
+                            (selectedItem.command.id === 'view.metaPositionInline' && (useSettingsStore.getState().settings?.metaPosition || 'bottom') === 'inline')
+                          ) && (
+                            <span
+                              className="setting-value-badge"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                marginLeft: '8px',
+                                color: 'var(--text-accent, #a78bfa)',
+                                borderColor: 'rgba(167, 139, 250, 0.3)',
+                                fontSize: '11px',
+                                fontWeight: 600
+                              }}
+                            >
+                              <Check size={11} strokeWidth={2.5} />
+                              Active
+                            </span>
+                          )}
                           {selectedItem.command.shortcut && (
                             <div className="palette-shortcut" style={{ marginLeft: 'auto' }}>
                               {selectedItem.command.shortcut.split('+').map((key, i) => (
@@ -1243,3 +1293,4 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
 
 CommandPalette.displayName = 'CommandPalette'
 export default CommandPalette
+

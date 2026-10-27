@@ -52,6 +52,35 @@ describe('PDFViewerTab Component', () => {
     expect(screen.getByText('PDF')).toBeInTheDocument()
   })
 
+  it('allows switching PDF themes (original, dark, sepia, invert)', async () => {
+    const snippet = {
+      id: 'pdf-theme-test',
+      title: 'document.pdf',
+      fileName: 'document.pdf',
+      relativePath: 'document.pdf',
+      type: 'pdf',
+      size: 1024
+    } as unknown as Snippet
+
+    render(<PDFViewerTab snippet={snippet} />)
+
+    await waitFor(() => {
+      const wrapper = document.querySelector('.pdf-viewer-frame-wrapper')
+      expect(wrapper).toBeInTheDocument()
+    })
+
+    const wrapper = document.querySelector('.pdf-viewer-frame-wrapper')
+    expect(wrapper).toHaveClass('theme-dark')
+
+    const sepiaBtn = screen.getByLabelText('Set theme to Sepia Tone')
+    fireEvent.click(sepiaBtn)
+    expect(wrapper).toHaveClass('theme-sepia')
+
+    const origBtn = screen.getByLabelText('Set theme to Original')
+    fireEvent.click(origBtn)
+    expect(wrapper).toHaveClass('theme-original')
+  })
+
   it('displays error state when snippet has no valid file path', () => {
     const snippet = {
       id: 'pdf-error',
