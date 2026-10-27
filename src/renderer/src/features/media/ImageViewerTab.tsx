@@ -9,34 +9,52 @@ import {
   FolderOpen,
   Image as ImageIcon
 } from 'lucide-react'
-// Hooks & styles
 import { copyImageToClipboard } from './hooks/imageClipboard'
+import type { Snippet } from '../../core/editor/types'
 import './css/imageViewTab.css'
 
-export const ImageViewerTab = ({ snippet }) => {
+export interface ImageViewerTabProps {
+  snippet?: Partial<Snippet> | any
+}
+
+interface ImageDimensions {
+  width: number
+  height: number
+}
+
+/**
+ * ImageViewerTab
+ *
+ * High-performance workspace image viewer:
+ * - Direct `asset://local/...` binary stream with zero base64 decoding lag
+ * - Fallback to `window.api.readAsset` IPC
+ * - Interactive panning, smooth wheel zoom, and fit-to-screen controls
+ * - One-click clipboard copy
+ */
+export const ImageViewerTab: React.FC<ImageViewerTabProps> = ({ snippet }) => {
   const relPath =
     snippet?.relativePath ||
     (snippet?.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet?.fileName)
 
   // Direct asset:// streaming URL (zero IPC base64 overhead)
-  const assetUrl = React.useMemo(() => {
+  const assetUrl = useMemo(() => {
     if (!relPath) return null
     const clean = String(relPath).replace(/^[/\\]+/, '').replace(/\\/g, '/')
     const encodedSegments = clean.split('/').map(encodeURIComponent).join('/')
     return `asset://local/${encodedSegments}`
   }, [relPath])
 
-  const [imageSrc, setImageSrc] = useState(() => assetUrl)
+  const [imageSrc, setImageSrc] = useState<string | null>(() => assetUrl)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
   const [fallbackAttempted, setFallbackAttempted] = useState(false)
   const [scale, setScale] = useState(1)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
-  const [dimensions, setDimensions] = useState(null)
+  const [dimensions, setDimensions] = useState<ImageDimensions | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const containerRef = useRef(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
   const dragStartRef = useRef({ x: 0, y: 0 })
   const posStartRef = useRef({ x: 0, y: 0 })
 
@@ -56,20 +74,21 @@ export const ImageViewerTab = ({ snippet }) => {
     setImageSrc(assetUrl)
   }, [relPath, assetUrl])
 
-  const handleImageLoad = (e) => {
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     setLoading(false)
+    const target = e.currentTarget
     setDimensions({
-      width: e.target.naturalWidth,
-      height: e.target.naturalHeight
+      width: target.naturalWidth,
+      height: target.naturalHeight
     })
   }
 
   const handleImageError = () => {
     // If protocol stream fails, gracefully fallback once to IPC readAsset
-    if (!fallbackAttempted && window.api?.readAsset && relPath) {
+    if (!fallbackAttempted && (window as any).api?.readAsset && relPath) {
       setFallbackAttempted(true)
-      window.api.readAsset(relPath)
-        .then((res) => {
+      ;(window as any).api.readAsset(relPath)
+        .then((res: any) => {
           if (res?.dataUrl) {
             setImageSrc(res.dataUrl)
           } else if (res) {
@@ -79,7 +98,7 @@ export const ImageViewerTab = ({ snippet }) => {
             setLoading(false)
           }
         })
-        .catch((err) => {
+        .catch((err: any) => {
           console.error('[ImageViewerTab] Fallback readAsset error:', err)
           setError('Failed to load image from workspace')
           setLoading(false)
@@ -114,7 +133,7 @@ export const ImageViewerTab = ({ snippet }) => {
     setPosition({ x: 0, y: 0 })
   }, [dimensions])
 
-  const handleWheel = useCallback((e) => {
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault()
     const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85
     setScale((prev) => {
@@ -123,7 +142,7 @@ export const ImageViewerTab = ({ snippet }) => {
     })
   }, [])
 
-  const handleMouseDown = useCallback((e) => {
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0) return
     setIsDragging(true)
     dragStartRef.current = { x: e.clientX, y: e.clientY }
@@ -131,7 +150,7 @@ export const ImageViewerTab = ({ snippet }) => {
   }, [position])
 
   const handleMouseMove = useCallback(
-    (e) => {
+    (e: React.MouseEvent<HTMLDivElement>) => {
       if (!isDragging) return
       const dx = e.clientX - dragStartRef.current.x
       const dy = e.clientY - dragStartRef.current.y
@@ -172,11 +191,11 @@ export const ImageViewerTab = ({ snippet }) => {
 
   const handleOpenInFolder = useCallback(() => {
     const relFolder = snippet?.folderId || ''
-    const openFn = window.api?.openWorkspaceFolder || window.api?.openVaultFolder
+    const openFn = (window as any).api?.openWorkspaceFolder || (window as any).api?.openVaultFolder
     openFn?.(relFolder)
   }, [snippet?.folderId])
 
-  const formatFileSize = (bytes) => {
+  const formatFileSize = (bytes?: number) => {
     if (!bytes) return ''
     if (bytes < 1024) return `${bytes} B`
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -218,7 +237,7 @@ export const ImageViewerTab = ({ snippet }) => {
           <div className="image-viewer-error">{error}</div>
         ) : (
           <img
-            src={imageSrc}
+            src={imageSrc || ''}
             alt={snippet?.title || 'Workspace Image'}
             className="image-viewer-img"
             onLoad={handleImageLoad}

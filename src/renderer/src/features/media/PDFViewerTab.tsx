@@ -1,15 +1,20 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { FileText, Loader } from 'lucide-react'
+import { Loader } from 'lucide-react'
 import { ChromePdfIcon } from '../Icons/FileIcon'
 import { PDFToolbar } from './PDFToolbar'
+import type { Snippet } from '../../core/editor/types'
 import './css/pdfViewerTab.css'
+
+export interface PDFViewerTabProps {
+  snippet?: Partial<Snippet> | any
+}
 
 /**
  * Module-level Blob URL cache.
  * Keyed by relativePath so switching between PDF tabs is 100% instant (0ms delay)
  * without re-fetching or re-decoding.
  */
-const pdfBlobCache = new Map()
+const pdfBlobCache = new Map<string, string>()
 
 /**
  * PDFViewerTab
@@ -17,17 +22,17 @@ const pdfBlobCache = new Map()
  * Renders workspace PDFs using Chromium's native PDF engine via blob URLs.
  * High-performance architecture:
  *   1. Checks in-memory cache for instant 0ms tab switching.
- *   2. Fetches binary directly via `asset://local/...` (zero IPC serialization overhead).
- *   3. Falls back gracefully to `window.api.readAsset` if needed.
+ *   2. Reads binary directly via Electron IPC `window.api.readAsset` (zero web-network restrictions or unknown scheme warnings).
+ *   3. Falls back gracefully to `fetch(assetUrl)` if IPC is unavailable.
  *   4. Feeds the blob URL to the <iframe> so Chromium renders it natively without
  *      triggering Windows external protocol dialogs.
  */
-export const PDFViewerTab = ({ snippet }) => {
+export const PDFViewerTab: React.FC<PDFViewerTabProps> = ({ snippet }) => {
   const relPath =
     snippet?.relativePath ||
     (snippet?.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet?.fileName)
 
-  // Direct asset:// URL for zero-copy binary streaming
+  // Direct asset:// URL for zero-copy binary streaming fallback
   const assetUrl = useMemo(() => {
     if (!relPath) return null
     const clean = String(relPath).replace(/^[/\\]+/, '').replace(/\\/g, '/')
@@ -36,9 +41,9 @@ export const PDFViewerTab = ({ snippet }) => {
   }, [relPath])
 
   // If already cached, start with the cached blob URL immediately (0ms delay)
-  const [blobUrl, setBlobUrl] = useState(() => (relPath ? pdfBlobCache.get(relPath) || null : null))
-  const [loading, setLoading] = useState(() => !pdfBlobCache.has(relPath))
-  const [error, setError] = useState(null)
+  const [blobUrl, setBlobUrl] = useState<string | null>(() => (relPath ? pdfBlobCache.get(relPath) || null : null))
+  const [loading, setLoading] = useState<boolean>(() => !pdfBlobCache.has(relPath || ''))
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!relPath) {
@@ -49,7 +54,7 @@ export const PDFViewerTab = ({ snippet }) => {
 
     // Already cached — no work needed!
     if (pdfBlobCache.has(relPath)) {
-      setBlobUrl(pdfBlobCache.get(relPath))
+      setBlobUrl(pdfBlobCache.get(relPath) || null)
       setLoading(false)
       return
     }
@@ -59,29 +64,15 @@ export const PDFViewerTab = ({ snippet }) => {
     setError(null)
 
     const loadBlob = async () => {
-      let blob = null
+      let blob: Blob | null = null
 
-      // Strategy 1: Fetch directly from custom asset:// protocol (zero-copy binary stream)
-      if (assetUrl) {
+      // Strategy 1: Direct IPC readAsset (fastest, zero web-fetch scheme restriction)
+      if ((window as any).api?.readAsset) {
         try {
-          const res = await fetch(assetUrl)
-          if (res.ok) {
-            blob = await res.blob()
-          }
-        } catch {
-          // Protocol fetch fallback
-        }
-      }
-
-      // Strategy 2: Fallback to IPC readAsset if protocol is unavailable
-      if (!blob && window.api?.readAsset) {
-        try {
-          const asset = await window.api.readAsset(relPath)
+          const asset = await (window as any).api.readAsset(relPath)
           if (asset?.buffer) {
-            // Direct zero-copy binary buffer without string serialization overhead
             blob = new Blob([asset.buffer], { type: 'application/pdf' })
           } else if (asset?.base64) {
-            // Efficient base64 to Uint8Array decoding fallback
             const binary = atob(asset.base64)
             const len = binary.length
             const bytes = new Uint8Array(len)
@@ -89,7 +80,19 @@ export const PDFViewerTab = ({ snippet }) => {
             blob = new Blob([bytes], { type: 'application/pdf' })
           }
         } catch (err) {
-          console.error('[PDFViewerTab] readAsset fallback error:', err)
+          console.warn('[PDFViewerTab] readAsset IPC error:', err)
+        }
+      }
+
+      // Strategy 2: Fallback to custom asset:// protocol fetch if IPC was unavailable or failed
+      if (!blob && assetUrl) {
+        try {
+          const res = await fetch(assetUrl)
+          if (res.ok) {
+            blob = await res.blob()
+          }
+        } catch (fetchErr) {
+          console.warn('[PDFViewerTab] asset protocol fetch error:', fetchErr)
         }
       }
 
@@ -106,9 +109,11 @@ export const PDFViewerTab = ({ snippet }) => {
         // Evict oldest entries if cache exceeds 6 PDFs to prevent memory bloat
         while (pdfBlobCache.size >= 6) {
           const oldestKey = pdfBlobCache.keys().next().value
-          const oldUrl = pdfBlobCache.get(oldestKey)
-          if (oldUrl) URL.revokeObjectURL(oldUrl)
-          pdfBlobCache.delete(oldestKey)
+          if (oldestKey) {
+            const oldUrl = pdfBlobCache.get(oldestKey)
+            if (oldUrl) URL.revokeObjectURL(oldUrl)
+            pdfBlobCache.delete(oldestKey)
+          }
         }
 
         const url = URL.createObjectURL(blob)
@@ -131,7 +136,7 @@ export const PDFViewerTab = ({ snippet }) => {
   /** Open the containing folder in the system explorer */
   const handleOpenInFolder = useCallback(() => {
     const relFolder = snippet?.folderId || ''
-    const openFn = window.api?.openWorkspaceFolder || window.api?.openVaultFolder
+    const openFn = (window as any).api?.openWorkspaceFolder || (window as any).api?.openVaultFolder
     openFn?.(relFolder)
   }, [snippet?.folderId])
 

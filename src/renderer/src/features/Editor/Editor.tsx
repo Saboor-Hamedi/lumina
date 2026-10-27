@@ -465,6 +465,9 @@ export const Editor: React.FC<EditorProps> = memo(
               position={metaPosition}
               showTools={false}
               showMenu={false}
+              onPreview={() => setIsPreviewOpen(true)}
+              onOpenExportDialog={() => setIsExportDialogOpen(true)}
+              onToggleInspector={onToggleInspector}
               editorMenu={
                 <EditorMenu
                   title={title}
@@ -498,6 +501,9 @@ export const Editor: React.FC<EditorProps> = memo(
             isDirty={isDirty}
             showToast={showToast}
             onInlineAI={() => setIsInlineAIOpen(true)}
+            onPreview={() => setIsPreviewOpen(true)}
+            onOpenExportDialog={() => setIsExportDialogOpen(true)}
+            onToggleInspector={onToggleInspector}
             editorMenu={
               <EditorMenu
                 title={title}

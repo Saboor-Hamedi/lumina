@@ -16,6 +16,9 @@ export interface MetaHeaderProps {
   showMenu?: boolean
   showTools?: boolean
   position?: 'bottom' | 'top' | 'inline'
+  onPreview?: () => void
+  onOpenExportDialog?: () => void
+  onToggleInspector?: () => void
 }
 
 /**
@@ -33,9 +36,11 @@ export const MetaHeader: React.FC<MetaHeaderProps> = React.memo(
     onInlineAI,
     editorMenu,
     showActions = true,
-    showMenu = true,
     showTools = true,
-    position = 'inline'
+    position = 'inline',
+    onPreview,
+    onOpenExportDialog,
+    onToggleInspector
   }) => {
     if (!snippet || !showActions) return null
 
@@ -52,7 +57,9 @@ export const MetaHeader: React.FC<MetaHeaderProps> = React.memo(
           isDirty={isDirty}
           onInlineAI={onInlineAI}
           editorMenu={editorMenu}
-          showMenu={showMenu}
+          onPreview={onPreview}
+          onOpenExportDialog={onOpenExportDialog}
+          onToggleInspector={onToggleInspector}
         />
       </div>
     )

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import InlineGraph from '../../graph/InlineGraph'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../../core/shortcuts'
@@ -16,15 +16,18 @@ export interface MetaActionBarProps {
   showMenuWhenTitleHidden?: boolean
   showTools?: boolean
   position?: 'bottom' | 'top' | 'inline'
+  onPreview?: () => void
+  onOpenExportDialog?: () => void
+  onToggleInspector?: () => void
 }
 
 /**
  * MetaActionBar
  *
- * Dedicated component for quick editor action buttons and controls:
- * - Quick Actions: Ask AI, Voice, Drive Push, Local Graph toggle, Learned button
- * - Tools: Progress tracker, Note options menu
- * - Inline Local Graph portal
+ * Dedicated component for quick editor action buttons and anchored dropdown:
+ * - Quick Actions: Ask AI, Voice, Drive Push, Local Graph toggle, Learned button, Progress badge
+ * - Options Dropdown: Anchored directly to the Options button on the right side
+ * - Inline Local Graph popover
  */
 export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
   ({
@@ -33,29 +36,33 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
     isDirty = false,
     onInlineAI,
     editorMenu,
-    showMenu = true,
-    showTools = true,
-    showMenuWhenTitleHidden = true,
-    position = 'inline'
+    showTools = false,
+    position = 'bottom',
+    onPreview,
+    onOpenExportDialog,
+    onToggleInspector
   }) => {
     const [showLocalGraph, setShowLocalGraph] = useState(false)
+    const [showMoreDropdown, setShowMoreDropdown] = useState(false)
     const containerRef = useRef<HTMLDivElement | null>(null)
 
     useKeyboardShortcuts({
-      onEscape: showLocalGraph
+      onEscape: (showLocalGraph || showMoreDropdown)
         ? () => {
             setShowLocalGraph(false)
+            setShowMoreDropdown(false)
             return true
           }
         : null
     })
 
     useEffect(() => {
-      if (!showLocalGraph) return
+      if (!showLocalGraph && !showMoreDropdown) return
 
       const handleOutsideClick = (e: MouseEvent) => {
         if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
           setShowLocalGraph(false)
+          setShowMoreDropdown(false)
         }
       }
 
@@ -63,15 +70,20 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
       return () => {
         document.removeEventListener('mousedown', handleOutsideClick, true)
       }
-    }, [showLocalGraph])
+    }, [showLocalGraph, showMoreDropdown])
+
+    const handleGraphNavigate = useCallback((id: string) => {
+      useWorkspaceStore.getState().setActiveTabId(id)
+      setShowLocalGraph(false)
+    }, [])
 
     if (!snippet) return null
-
-    const shouldShowMenu = showMenu || showMenuWhenTitleHidden
 
     return (
       <div
         ref={containerRef}
+        role="region"
+        aria-label="Note Actions Bar"
         className="editor-action-bar meta-action-bar"
       >
         <MetaActions
@@ -81,17 +93,26 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
           onInlineAI={onInlineAI}
           showLocalGraph={showLocalGraph}
           setShowLocalGraph={setShowLocalGraph}
+          showMoreDropdown={showMoreDropdown}
+          setShowMoreDropdown={setShowMoreDropdown}
+          position={position}
+          onPreview={onPreview}
+          onOpenExportDialog={onOpenExportDialog}
+          onToggleInspector={onToggleInspector}
         />
 
-        {shouldShowMenu && showTools !== false && (
+        {showTools && editorMenu && (
           <MetaTools
             snippet={snippet}
             editorMenu={editorMenu}
           />
         )}
 
+        {/* Local Graph Popover: Opens in smart parallel direction */}
         {showLocalGraph && (
           <div
+            role="dialog"
+            aria-label="Linked Mentions Local Graph"
             style={{
               position: 'absolute',
               ...(position === 'bottom'
@@ -109,10 +130,7 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
           >
             <InlineGraph
               focusNodeId={snippet.id}
-              onNavigate={(id: string) => {
-                useWorkspaceStore.getState().setActiveTabId(id)
-                setShowLocalGraph(false)
-              }}
+              onNavigate={handleGraphNavigate}
             />
           </div>
         )}

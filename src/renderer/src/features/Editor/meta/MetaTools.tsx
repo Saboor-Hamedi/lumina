@@ -1,5 +1,4 @@
 import React from 'react'
-import ProgressTracker from '../../roadmap/ProgressTracker'
 import type { Snippet } from '../../../core/editor/types'
 
 export interface MetaToolsProps {
@@ -11,7 +10,6 @@ export interface MetaToolsProps {
  * MetaTools
  *
  * Right-side quick tools for the editor header:
- * - Roadmap Progress Tracker
  * - Note Dropdown Menu (Export, Preview, Settings)
  */
 export const MetaTools: React.FC<MetaToolsProps> = React.memo(({ snippet, editorMenu }) => {
@@ -27,7 +25,6 @@ export const MetaTools: React.FC<MetaToolsProps> = React.memo(({ snippet, editor
         gap: '6px'
       }}
     >
-      <ProgressTracker snippetId={snippet?.id} noteId={snippet?.id} />
       {editorMenu}
     </div>
   )

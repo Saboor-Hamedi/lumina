@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import React from 'react'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { PDFViewerTab } from '../../../../../src/renderer/src/features/media/PDFViewerTab'
+import type { Snippet } from '../../../../../src/renderer/src/core/editor/types'
 
 describe('PDFViewerTab Component', () => {
   const originalCreateObjectURL = window.URL.createObjectURL
@@ -14,8 +15,8 @@ describe('PDFViewerTab Component', () => {
     window.fetch = vi.fn().mockResolvedValue({
       ok: true,
       blob: () => Promise.resolve(new Blob(['fake-pdf'], { type: 'application/pdf' }))
-    })
-    window.api = {
+    } as any)
+    ;(window as any).api = {
       openWorkspaceFolder: vi.fn(),
       openVaultFolder: vi.fn(),
       readAsset: vi.fn()
@@ -37,7 +38,7 @@ describe('PDFViewerTab Component', () => {
       relativePath: 'manual.pdf',
       type: 'pdf',
       size: 1024
-    }
+    } as unknown as Snippet
 
     render(<PDFViewerTab snippet={snippet} />)
 
@@ -56,7 +57,7 @@ describe('PDFViewerTab Component', () => {
       id: 'pdf-error',
       title: 'invalid',
       type: 'pdf'
-    }
+    } as unknown as Snippet
 
     render(<PDFViewerTab snippet={snippet} />)
     expect(screen.getByText(/Invalid file path/i)).toBeInTheDocument()
@@ -64,7 +65,7 @@ describe('PDFViewerTab Component', () => {
 
   it('calls openWorkspaceFolder when toolbar folder button is clicked', () => {
     const openFolderMock = vi.fn()
-    window.api.openWorkspaceFolder = openFolderMock
+    ;(window as any).api.openWorkspaceFolder = openFolderMock
 
     const snippet = {
       id: 'pdf-folder',
@@ -74,7 +75,7 @@ describe('PDFViewerTab Component', () => {
       relativePath: 'research/document.pdf',
       type: 'pdf',
       size: 2048
-    }
+    } as unknown as Snippet
 
     render(<PDFViewerTab snippet={snippet} />)
 
@@ -92,7 +93,7 @@ describe('PDFViewerTab Component', () => {
       relativePath: 'document.pdf',
       type: 'pdf',
       size: 1024
-    }
+    } as unknown as Snippet
 
     render(<PDFViewerTab snippet={snippet} />)
 

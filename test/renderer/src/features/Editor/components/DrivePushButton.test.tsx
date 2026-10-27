@@ -3,18 +3,19 @@ import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { DrivePushButton } from '../../../../../../src/renderer/src/features/Editor/components/DrivePushButton'
 import * as currentUserHook from '../../../../../../src/renderer/src/core/hooks/useCurrentUser'
+import type { Snippet } from '../../../../../../src/renderer/src/core/editor/types'
 
-describe('DrivePushButton.jsx', () => {
+describe('DrivePushButton', () => {
   const sampleSnippet = {
     id: 'note-123',
     title: 'My Architecture Spec',
-    content: 'Notes body'
-  }
+    code: 'Notes body'
+  } as unknown as Snippet
 
   beforeEach(() => {
     vi.clearAllMocks()
-    global.window.api = {
-      ...global.window.api,
+    ;(global.window as any).api = {
+      ...(global.window as any).api,
       backupFile: vi.fn(),
       cancelBackup: vi.fn(),
       saveSnippet: vi.fn()
@@ -37,7 +38,7 @@ describe('DrivePushButton.jsx', () => {
     vi.spyOn(currentUserHook, 'useCurrentUser').mockReturnValue({
       isLoggedIn: false,
       user: null
-    })
+    } as any)
 
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
     render(<DrivePushButton snippet={sampleSnippet} />)
@@ -59,15 +60,15 @@ describe('DrivePushButton.jsx', () => {
     vi.spyOn(currentUserHook, 'useCurrentUser').mockReturnValue({
       isLoggedIn: true,
       user: { name: 'Test User' }
-    })
-    global.window.api.backupFile.mockResolvedValue({ success: true })
+    } as any)
+    ;(global.window as any).api.backupFile.mockResolvedValue({ success: true })
 
     render(<DrivePushButton snippet={sampleSnippet} />)
     const btn = screen.getByRole('button')
     fireEvent.click(btn)
 
     await waitFor(() => {
-      expect(global.window.api.backupFile).toHaveBeenCalledWith(
+      expect((global.window as any).api.backupFile).toHaveBeenCalledWith(
         expect.objectContaining({
           id: 'note-123',
           title: 'My Architecture Spec'

@@ -23,7 +23,6 @@ import { setupWikilinkHover } from './wikilink/hoverWikilink'
 import ContextMenu from '../modals/ContextMenu'
 import { getEditorContextMenuOptions } from './menu'
 import MetaHeader from './meta/MetaHeader'
-import ProgressTracker from '../roadmap/ProgressTracker'
 import type { Snippet, EditorHandle } from '../../core/editor/types'
 import type { ToastType } from '../../core/notification'
 import { markExplorerPerf } from '../Explorer/utils/explorerPerf'
@@ -122,6 +121,9 @@ export interface EditorCanvasProps {
   showToast?: (message: string, type?: ToastType) => void
   onInlineAI?: any
   editorMenu?: ReactNode
+  onPreview?: () => void
+  onOpenExportDialog?: () => void
+  onToggleInspector?: () => void
 }
 
 export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
@@ -140,7 +142,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
     isDirty,
     showToast,
     onInlineAI,
-    editorMenu
+    editorMenu,
+    onPreview,
+    onOpenExportDialog,
+    onToggleInspector
   }) => {
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
     const editorWrapperRef = useRef<HTMLDivElement | null>(null)
@@ -253,15 +258,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
             setIsDirty={setIsDirty}
             isDirty={isDirty}
             onInlineAI={onInlineAI}
-            editorMenu={editorMenu}
-            showTools={true}
+            onPreview={onPreview}
+            onOpenExportDialog={onOpenExportDialog}
+            onToggleInspector={onToggleInspector}
+            showTools={false}
+            showMenu={false}
           />
-        ) : (
-          <div className="editor-top-tools-bar">
-            <ProgressTracker snippetId={snippet?.id} noteId={snippet?.id} />
-            {editorMenu}
-          </div>
-        )}
+        ) : null}
         {snippet?.isPartial && (
           <div className="editor-large-note-warning" role="status">
             Showing the first part of this large note. Editing and saving are disabled to protect the workspace.

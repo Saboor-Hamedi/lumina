@@ -19,12 +19,8 @@ const ExternalDropOverlay: React.FC<ExternalDropOverlayProps> = ({
     <div className="external-drop-overlay">
       <div className="external-drop-pill">
         <Icon size={14} className="external-drop-icon" />
-        <span className="external-drop-text">
-          {label || `Drop into ${targetName}`}
-        </span>
-        {count && count > 1 ? (
-          <span className="external-drop-badge">{count}</span>
-        ) : null}
+        <span className="external-drop-text">{label || `Drop into ${targetName}`}</span>
+        {count && count > 1 ? <span className="external-drop-badge">{count}</span> : null}
       </div>
     </div>
   )

@@ -145,57 +145,67 @@ export function LearningTrackBadge({ snippetId, noteId: propNoteId }) {
   const tooltipText = `Progress: ${stats.percentage}% (${stats.learned}/${stats.total})`
 
   return (
-    <ToolTip text={tooltipText} position="left">
+    <ToolTip text={tooltipText} position="bottom">
       <div
+        className="learning-track-badge"
         style={{
           display: 'inline-flex',
-          flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
-          gap: '3px',
-          padding: '2px 4px',
+          gap: '5px',
+          padding: '0 6px',
+          height: '22px',
+          width: '64px',
+          minWidth: '64px',
+          maxWidth: '64px',
           borderRadius: '4px',
           userSelect: 'none',
           cursor: 'default',
-          background: 'transparent'
+          background: 'rgba(255, 255, 255, 0.04)',
+          border: '1px solid rgba(255, 255, 255, 0.07)',
+          boxSizing: 'border-box',
+          flexShrink: 0,
+          overflow: 'hidden'
         }}
       >
-        <span
-          style={{
-            fontSize: '9.5px',
-            fontWeight: 500,
-            fontVariantNumeric: 'tabular-nums',
-            letterSpacing: '-0.02em',
-            color: stats.percentage > 0 ? 'var(--text-accent, #a78bfa)' : 'var(--text-muted, #94a3b8)',
-            lineHeight: 1
-          }}
-        >
-          {stats.percentage}%
-        </span>
         <div
           style={{
-            width: '2.5px',
-            height: '20px',
-            background: 'rgba(255, 255, 255, 0.08)',
+            width: '26px',
+            minWidth: '26px',
+            maxWidth: '26px',
+            height: '4px',
+            background: 'rgba(255, 255, 255, 0.1)',
             borderRadius: '2px',
             overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            position: 'relative'
+            position: 'relative',
+            flexShrink: 0
           }}
         >
           <div
             style={{
-              width: '100%',
-              height: `${stats.percentage}%`,
-              background: 'linear-gradient(to top, var(--text-accent, #8b5cf6), #a78bfa)',
+              width: `${Math.min(100, Math.max(0, stats.percentage))}%`,
+              maxWidth: '100%',
+              height: '100%',
+              background: 'linear-gradient(to right, var(--text-accent, #8b5cf6), #a78bfa)',
               borderRadius: '2px',
-              boxShadow: stats.percentage > 0 ? '0 0 4px rgba(167, 139, 250, 0.4)' : 'none',
-              transition: 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
             }}
           />
         </div>
+        <span
+          style={{
+            fontSize: '10px',
+            fontWeight: 600,
+            fontVariantNumeric: 'tabular-nums',
+            letterSpacing: '-0.02em',
+            color: stats.percentage > 0 ? 'var(--text-accent, #a78bfa)' : 'var(--text-muted, #94a3b8)',
+            lineHeight: 1,
+            width: '25px',
+            textAlign: 'right',
+            flexShrink: 0
+          }}
+        >
+          {stats.percentage}%
+        </span>
       </div>
     </ToolTip>
   )
