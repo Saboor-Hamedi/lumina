@@ -106,9 +106,9 @@ export function combinedDefaultName(notes: Array<{ title?: string }>, format: st
  */
 export async function buildCombinedSections(
   notes: Array<{ title?: string; content: string }>,
-  opts: { mermaid?: boolean; toc?: boolean } = {}
+  opts: { mermaid?: boolean; toc?: boolean; onProgress?: (current: number, total: number, title: string) => void } = {}
 ): Promise<CombinedSectionsResult> {
-  const { mermaid = false, toc: showToc = false } = opts
+  const { mermaid = false, toc: showToc = false, onProgress } = opts
   const sections: string[] = []
   const tocItems: string[] = []
   const ids: string[] = []
@@ -140,6 +140,7 @@ export async function buildCombinedSections(
     sections.push(
       `<section class="note" id="${id}"${pageBreak}>${bodyHtml}</section>`
     )
+    onProgress?.(i + 1, notes.length + 1, title)
   }
 
   const toc =
@@ -310,12 +311,13 @@ export async function handleExportCombined(
   const docTitle = payload.title || (notes.length === 1 ? notes[0]?.title || 'Untitled' : 'Combined Export')
   const showToc = payload.toc ?? false
 
-  onProgress?.({ phase: 'start', current: 0, total: notes.length, title: 'Preparing…' })
+  onProgress?.({ phase: 'start', current: 0, total: notes.length + 1, title: 'Preparing…' })
 
   if (format === 'pdf') {
     const { html: sectionsHtml, toc } = await buildCombinedSections(notes, {
       mermaid: true,
-      toc: showToc
+      toc: showToc,
+      onProgress: (current, total, title) => onProgress?.({ phase: 'rendering', current, total, title })
     })
     const html = buildPDFDocument(docTitle, sectionsHtml, toc)
     const data = await renderPdfBuffer(html)
@@ -323,7 +325,8 @@ export async function handleExportCombined(
   } else if (format === 'docs') {
     const { html: sectionsHtml, toc } = await buildCombinedSections(notes, {
       mermaid: true,
-      toc: showToc
+      toc: showToc,
+      onProgress: (current, total, title) => onProgress?.({ phase: 'rendering', current, total, title })
     })
     const html = buildDocsDocument(docTitle, sectionsHtml, toc)
     const clean = await renderDocsHtml(html)
@@ -331,15 +334,18 @@ export async function handleExportCombined(
   } else if (format === 'html') {
     const { html: sectionsHtml, toc } = await buildCombinedSections(notes, {
       mermaid: false,
-      toc: showToc
+      toc: showToc,
+      onProgress: (current, total, title) => onProgress?.({ phase: 'rendering', current, total, title })
     })
     await fs.writeFile(filePath, buildCombinedHTMLDocument(docTitle, sectionsHtml, toc), 'utf-8')
   } else if (format === 'markdown') {
+    notes.forEach((note, index) => onProgress?.({ phase: 'merging', current: index + 1, total: notes.length + 1, title: note.title || 'Untitled' }))
     await fs.writeFile(filePath, buildCombinedMarkdown(notes), 'utf-8')
   } else {
+    notes.forEach((note, index) => onProgress?.({ phase: 'merging', current: index + 1, total: notes.length + 1, title: note.title || 'Untitled' }))
     await fs.writeFile(filePath, await buildCombinedText(notes), 'utf-8')
   }
 
-  onProgress?.({ phase: 'complete', current: notes.length, total: notes.length })
+  onProgress?.({ phase: 'complete', current: notes.length + 1, total: notes.length + 1 })
   return { success: true, filePath, total: notes.length, combined: true }
 }

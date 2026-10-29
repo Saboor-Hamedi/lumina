@@ -48,7 +48,8 @@ describe('LuminaWorkbench & AI Usage Tracking', () => {
     expect(screen.getByText('Money Spent')).toBeInTheDocument()
     expect(screen.getByText('AI Time Used')).toBeInTheDocument()
 
-    expect(screen.getAllByText('3,000').length).toBeGreaterThan(0)
+    const tokenValue = screen.getByText('Tokens Spent').parentElement?.parentElement?.querySelector('.card-value')
+    expect(tokenValue?.textContent?.replace(/\D/g, '')).toBe('3000')
     expect(screen.getByText('5s')).toBeInTheDocument()
   })
 

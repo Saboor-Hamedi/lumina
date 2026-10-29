@@ -13,29 +13,37 @@ import { renderMarkdown } from '../exportUtils'
 import { themeVarsCss, basePreviewCss, wrapPreviewDocument, isLightTheme } from './themeTokens'
 
 const DOCUMENT_CSS = `
-    .doc { width: 100%; max-width: 840px; margin: 0 auto; }
+    .doc { width: 100%; max-width: 840px; margin: 0 auto; font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; }
     h1, h2, h3, h4, h5, h6 {
       color: var(--text-main);
       font-weight: 700;
       line-height: 1.3;
-      margin: 1.6em 0 0.6em;
+      margin: 12pt 0 6pt;
     }
-    h1 { font-size: 1.9em; margin-top: 0; }
-    h2 { font-size: 1.45em; }
-    h3 { font-size: 1.2em; }
-    h4 { font-size: 1.05em; color: var(--text-muted); }
-    p { margin: 0 0 1em; color: var(--text-main); text-align: justify; text-justify: inter-word; hyphens: auto; }
+    h1 { font-size: 14pt; margin-top: 0; }
+    h2 { font-size: 12pt; padding-bottom: 2pt; border-bottom: none; }
+    h3, h4 { font-size: 12pt; }
+    h4 { color: var(--text-muted); }
+    p { margin: 6pt 0; color: var(--text-main); text-align: justify; text-justify: inter-word; hyphens: auto; }
     ul, ol { margin: 0 0 1em; padding-left: 1.5em; }
     li { margin: 0.25em 0; }
     hr { border: none; height: 1px; background: var(--border-card); margin: 1.8em 0; }
     code {
       font-family: var(--font-mono);
       font-size: 0.88em;
-      background: var(--bg-card);
+      background: transparent;
       color: var(--text-accent);
-      border: 1px solid var(--border-card);
-      border-radius: 4px;
-      padding: 2px 6px;
+      border: 0;
+      padding: 0;
+    }
+    article.doc code:not(pre code) {
+      background: transparent !important;
+      background-color: transparent !important;
+      color: var(--text-accent) !important;
+      border: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      padding: 0 !important;
     }
     pre {
       background: var(--bg-panel);
@@ -57,42 +65,39 @@ const DOCUMENT_CSS = `
       color: var(--text-main);
     }
     blockquote {
-      border-left: 3px solid var(--text-accent);
-      background: var(--bg-panel);
-      border-radius: 0 6px 6px 0;
-      padding: 10px 16px;
-      margin: 1.2em 0;
+      border: none !important;
+      border-left: none !important;
+      background: transparent;
+      padding: 0 0 0 12pt;
+      margin: 6pt 0;
       color: var(--text-muted);
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 1.4em 0;
-      font-size: 0.92em;
-      table-layout: auto;
+      margin: 12pt auto;
+      font-size: 10pt;
+      table-layout: fixed;
       word-break: break-word;
-      border-top: 1.5px solid var(--border-subtle);
-      border-bottom: 1.5px solid var(--border-subtle);
+      border: 1px solid var(--border-subtle);
     }
     thead { display: table-header-group; }
     tr { break-inside: avoid; }
     th, td {
-      border: none;
-      padding: 9px 14px;
+      border: 1px solid var(--border-card);
+      padding: 1pt 3pt;
       text-align: left;
       word-break: break-word;
       overflow-wrap: anywhere;
       vertical-align: top;
-      line-height: 1.5;
+      line-height: 1.1;
     }
+    th p, td p { margin: 0 !important; line-height: 1.1; }
     th {
-      background: transparent;
+      background: var(--bg-panel);
       color: var(--text-main);
-      font-weight: 600;
-      font-size: 0.86em;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border-bottom: 1px solid var(--border-card);
+      font-weight: 700;
+      font-size: 10pt;
     }
     tbody tr {
       border-bottom: 1px solid color-mix(in srgb, var(--border-dim) 50%, transparent);
@@ -140,13 +145,13 @@ const DOCUMENT_CSS = `
     }
     .wikilink { color: var(--text-accent); font-weight: 500; }
     .toc {
-      background: var(--bg-panel);
-      border: 1px solid var(--border-card);
-      border-radius: 8px;
-      padding: 14px 18px;
+      background: transparent;
+      border: 0;
+      border-radius: 0;
+      padding: 0;
       margin: 0 0 1.6em;
     }
-    .toc-title { font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); margin: 0 0 0.6em; border: none; padding: 0; }
+    .toc-title { font-size: 14pt; font-weight: 700; color: var(--text-main); margin: 0 0 6pt; border: none; border-bottom: 1px solid var(--border-card); padding: 0 0 4pt; }
     .toc-list { list-style: none; padding-left: 0; margin: 0; }
     .toc-list li { margin: 0.2em 0; }
     .toc-l2 { padding-left: 1.1em; }

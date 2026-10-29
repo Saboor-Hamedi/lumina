@@ -27,6 +27,7 @@ import Toggle from '../../../components/toggle/Toggle'
 import { useKeyboardShortcuts } from '../../../core/shortcuts'
 import '../css/exportContainer.css'
 import '../css/batchExportDialog.css'
+import { makePreviewKey } from '../previewKey'
 
 export type BatchFormat = ExportFormat
 /** 'combined' = one merged file; 'separate' = one file per note. */
@@ -133,7 +134,6 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
   const [progress, setProgress] = useState<ProgressState | null>(null)
   const [result, setResult] = useState<BatchResult | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [previewHtml, setPreviewHtml] = useState('')
   const [previewLoading, setPreviewLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [themeTick, setThemeTick] = useState(0)
@@ -187,8 +187,19 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
 
   const [includeToc, setIncludeToc] = useState(true)
   const [compressZip, setCompressZip] = useState(false)
-  const [previewData, setPreviewData] = useState<{ html: string; pdfBase64?: string }>({ html: '' })
-  const previewCacheRef = useRef<Map<string, { html: string; pdfBase64?: string }>>(new Map())
+  const [previewData, setPreviewData] = useState<{ key: string; html: string; pdfBase64?: string }>({ key: '', html: '' })
+  const previewCacheRef = useRef<Map<string, { key: string; html: string; pdfBase64?: string }>>(new Map())
+  const isSeparatePreview = mode === 'separate' || format === 'zip'
+  const activePreviewTitle = isSeparatePreview
+    ? activeNoteTitle
+    : count === 1 ? (notes?.[0]?.title || folderName || 'Export') : (folderName || 'Combined Export')
+  const activePreviewKey = useMemo(
+    () => makePreviewKey([
+      format, mode, selectedNoteIndex, includeToc, activePreviewTitle, previewMarkdown, themeTick,
+      JSON.stringify((notes || []).map((note) => [note.id, note.title, note.content ?? note.code ?? '']))
+    ]),
+    [format, mode, selectedNoteIndex, includeToc, activePreviewTitle, previewMarkdown, themeTick, notes]
+  )
 
   // Reset transient state each time the dialog opens.
   useEffect(() => {
@@ -204,6 +215,9 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
       setProgress(null)
       setResult(null)
       setError(null)
+      setPreviewData({ key: '', html: '' })
+      setPreviewLoading(Boolean(notes?.length))
+      requestIdRef.current++
       setCopied(false)
       previewCacheRef.current.clear()
     }
@@ -228,12 +242,13 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
     if (!isOpen || result) return
     const api = (window as any).api
     if (!api?.exportPreview || !previewMarkdown) {
-      setPreviewData({ html: '' })
+      setPreviewData({ key: '', html: '' })
+      setPreviewLoading(false)
       return
     }
 
-    const isSeparate = mode === 'separate' || format === 'zip'
-    const cacheKey = `${format}:${isSeparate ? 'separate' : 'combined'}:${isSeparate ? selectedNoteIndex : 'all'}:${includeToc ? 'toc' : 'notoc'}`
+    const isSeparate = isSeparatePreview
+    const cacheKey = activePreviewKey
     if (previewCacheRef.current.has(cacheKey)) {
       setPreviewData(previewCacheRef.current.get(cacheKey)!)
       setPreviewLoading(false)
@@ -271,7 +286,7 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
     }).then((res: any) => {
       if (!isMounted || requestId !== requestIdRef.current) return
       if (res && typeof res.html === 'string') {
-        const data = { html: res.html }
+        const data = { key: cacheKey, html: res.html }
         previewCacheRef.current.set(cacheKey, data)
         setPreviewData(data)
       }
@@ -281,32 +296,10 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
       setPreviewLoading(false)
     })
 
-    // Pre-warm remaining formats for instant 0ms switching
-    const otherFormats: BatchFormat[] = (['pdf', 'docs', 'html', 'markdown', 'text'] as BatchFormat[]).filter(
-      (f) => f !== format
-    )
-    for (const f of otherFormats) {
-      const otherKey = `${f}:${isSeparate ? 'separate' : 'combined'}:${isSeparate ? selectedNoteIndex : 'all'}:${includeToc ? 'toc' : 'notoc'}`
-      if (!previewCacheRef.current.has(otherKey)) {
-        api.exportPreview({
-          format: f,
-          title: previewTitle,
-          content: previewMarkdown,
-          theme: readThemeTokens(),
-          toc: includeToc,
-          notes: payloadNotes
-        }).then((res: any) => {
-          if (res?.html) {
-            previewCacheRef.current.set(otherKey, { html: res.html })
-          }
-        }).catch(() => {})
-      }
-    }
-
     return () => {
       isMounted = false
     }
-  }, [isOpen, format, mode, previewMarkdown, result, notes, selectedNoteIndex, includeToc, folderName, themeTick])
+  }, [isOpen, format, mode, previewMarkdown, result, notes, selectedNoteIndex, includeToc, folderName, themeTick, activePreviewKey, isSeparatePreview])
 
   // Subscribe to batch progress while exporting.
   useEffect(() => {
@@ -704,16 +697,24 @@ export const BatchExportDialog: React.FC<BatchExportDialogProps> = ({
               )}
               <section className="export-preview-pane" aria-label="Preview">
                 <PreviewComponent
-                  html={previewData.html}
+                  html={previewData.key === activePreviewKey ? previewData.html : ''}
                   pdfBase64={previewData.pdfBase64}
                   title={mode === 'separate' || format === 'zip' ? activeNoteTitle : folderName}
-                  loading={previewLoading}
+                  loading={previewLoading || previewData.key !== activePreviewKey}
                   error={error}
                 />
                 {exporting && (
                   <div className="batch-progress" aria-live="polite">
                     <div className="batch-progress-label">
-                      <span>{mode === 'combined' ? 'Merging notes…' : 'Exporting…'}</span>
+                      <span>
+                        {mode === 'combined'
+                          ? progress?.title
+                            ? `Merging: ${progress.title}`
+                            : 'Preparing merged document…'
+                          : progress?.title
+                            ? `Exporting: ${progress.title}`
+                            : 'Preparing export…'}
+                      </span>
                       <span>{percent}%</span>
                     </div>
                     <div

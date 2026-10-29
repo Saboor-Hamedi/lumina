@@ -167,9 +167,10 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
           if (!isRenaming) {
             if (onSelect) {
               onSelect(item.id, e)
-            } else {
-              onToggle(item.id, e)
             }
+            // A plain click on the folder row should behave like its chevron.
+            // Modifier clicks remain selection-only for range/multi-select.
+            if (!e.ctrlKey && !e.metaKey && !e.shiftKey) onToggle(item.id, e)
           }
         }}
         onDoubleClick={(e) => {

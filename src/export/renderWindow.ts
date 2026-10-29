@@ -20,7 +20,7 @@ import { resolveMermaidPath, mermaidCdnFallback, injectMermaidScript } from './m
  * Resolves once the document signals `mermaid-done` (or after a hard timeout),
  * so a stuck diagram can never hang an export.
  */
-async function waitForMermaid(win: BrowserWindow, timeoutMs = 6000): Promise<void> {
+async function waitForMermaid(win: BrowserWindow, timeoutMs = 15000): Promise<void> {
   try {
     await win.webContents.executeJavaScript(`
       new Promise((resolve) => {

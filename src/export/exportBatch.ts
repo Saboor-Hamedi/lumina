@@ -17,7 +17,9 @@ import { generateCleanHTML } from './exportBundle.js'
 // @ts-ignore
 import { generatePDFHTML, PDF_PRINT_OPTIONS } from './exportPDF.js'
 // @ts-ignore
-import { buildDocsDocument } from './exportDocs.js'
+import { generateDocsHTML } from './exportDocs.js'
+import { withRenderedHtml } from './renderWindow.js'
+import { stripMermaidScripts } from './mermaidRuntime.js'
 import { createZipArchive, type ZipFileEntry } from './zipExporter'
 
 export const BATCH_FORMATS = ['html', 'pdf', 'docs', 'markdown', 'text', 'zip'] as const
@@ -117,8 +119,7 @@ function htmlToPlainText(html: string): string {
 async function writeOne(
   note: { id: string; title: string; content: string },
   format: BatchFormat,
-  outputDir: string,
-  printWin: BrowserWindow | null
+  outputDir: string
 ): Promise<string> {
   const title = note.title || 'Untitled'
   const content = note.content || ''
@@ -131,58 +132,19 @@ async function writeOne(
       return filePath
     }
     case 'pdf': {
-      if (!printWin) throw new Error('Print window not initialized for PDF export')
       const filePath = await uniquePath(outputDir, base, '.pdf')
       const html = await generatePDFHTML(title, content)
-      await printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
-      await printWin.webContents.executeJavaScript(`
-        new Promise((resolve) => {
-          if (document.body.classList.contains('mermaid-done')) {
-            setTimeout(resolve, 300);
-          } else {
-            const observer = new MutationObserver(() => {
-              if (document.body.classList.contains('mermaid-done')) {
-                observer.disconnect();
-                setTimeout(resolve, 300);
-              }
-            });
-            observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-            setTimeout(resolve, 3000);
-          }
-        })
-      `)
-      const pdfData = await printWin.webContents.printToPDF(PDF_PRINT_OPTIONS)
+      const pdfData = await withRenderedHtml(html, (win) => win.webContents.printToPDF(PDF_PRINT_OPTIONS))
       await fs.writeFile(filePath, pdfData)
       return filePath
     }
     case 'docs': {
-      if (!printWin) throw new Error('Print window not initialized for DOCS export')
       const filePath = await uniquePath(outputDir, base, '.doc')
-      const html = await buildDocsDocument(title, content)
-      await printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
-      await printWin.webContents.executeJavaScript(`
-        new Promise((resolve) => {
-          if (document.body.classList.contains('mermaid-done')) {
-            setTimeout(resolve, 300);
-          } else {
-            const observer = new MutationObserver(() => {
-              if (document.body.classList.contains('mermaid-done')) {
-                observer.disconnect();
-                setTimeout(resolve, 300);
-              }
-            });
-            observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-            setTimeout(resolve, 5000);
-          }
-        })
-      `)
-      const rendered = await printWin.webContents.executeJavaScript(
-        'document.documentElement.outerHTML'
-      )
-      const cleanHtml = String(rendered || '').replace(
-        /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-        ''
-      )
+      const html = await generateDocsHTML(title, content)
+      const cleanHtml = await withRenderedHtml(html, async (win) => {
+        const rendered = await win.webContents.executeJavaScript('document.documentElement.outerHTML')
+        return stripMermaidScripts(String(rendered || ''))
+      })
       await fs.writeFile(filePath, cleanHtml, 'utf-8')
       return filePath
     }
@@ -265,81 +227,66 @@ export async function handleExportBatch(
     outputDir = picked.filePaths[0]
   }
 
-  const needsPrintWindow = format === 'pdf' || format === 'docs'
-  let printWin: BrowserWindow | null = null
   const succeeded: Array<{ id: string; title: string; filePath: string }> = []
   const failed: Array<{ id: string; title: string; error: string }> = []
 
-  try {
-    if (needsPrintWindow) {
-      printWin = new BrowserWindow({
-        show: false,
-        webPreferences: { nodeIntegration: false, contextIsolation: true }
-      })
-    }
+  for (let i = 0; i < normalizedNotes.length; i++) {
+    const note = normalizedNotes[i]
+    const title = note.title
+    onProgress?.({ phase: 'start', current: i + 1, total: normalizedNotes.length, title })
 
-    for (let i = 0; i < normalizedNotes.length; i++) {
-      const note = normalizedNotes[i]
-      const title = note.title
-      onProgress?.({ phase: 'start', current: i + 1, total: normalizedNotes.length, title })
-
-      try {
-        const filePath = await writeOne(note, format, outputDir, printWin)
-        succeeded.push({ id: note.id, title, filePath })
-        onProgress?.({
-          phase: 'done',
-          current: i + 1,
-          total: normalizedNotes.length,
-          title,
-          filePath
-        })
-      } catch (err: any) {
-        console.error('[exportBatch] Failed to export note:', title, err)
-        failed.push({ id: note.id, title, error: err?.message || String(err) })
-        onProgress?.({
-          phase: 'error',
-          current: i + 1,
-          total: normalizedNotes.length,
-          title,
-          error: err?.message || String(err)
-        })
-      }
-    }
-
-    // If zip mode was requested, bundle all files into the archive
-    if (zipTargetFilePath && tempBatchDir && succeeded.length > 0) {
+    try {
+      const filePath = await writeOne(note, format, outputDir)
+      succeeded.push({ id: note.id, title, filePath })
       onProgress?.({
-        phase: 'start',
-        current: normalizedNotes.length,
+        phase: 'done',
+        current: i + 1,
         total: normalizedNotes.length,
-        title: 'Compressing archive…'
+        title,
+        filePath
       })
-
-      const zipEntries: ZipFileEntry[] = []
-      for (const item of succeeded) {
-        try {
-          const fileData = await fs.readFile(item.filePath)
-          zipEntries.push({
-            name: path.basename(item.filePath),
-            data: fileData
-          })
-        } catch (e) {
-          console.error('[exportBatch] Failed to read file for zip archive:', item.filePath, e)
-        }
-      }
-
-      await createZipArchive(zipTargetFilePath, zipEntries, {
-        comment: `Lumina Batch Export (${succeeded.length} notes)`
+    } catch (err: any) {
+      console.error('[exportBatch] Failed to export note:', title, err)
+      failed.push({ id: note.id, title, error: err?.message || String(err) })
+      onProgress?.({
+        phase: 'error',
+        current: i + 1,
+        total: normalizedNotes.length,
+        title,
+        error: err?.message || String(err)
       })
+    }
+  }
 
+  // If zip mode was requested, bundle all files into the archive
+  if (zipTargetFilePath && tempBatchDir && succeeded.length > 0) {
+    onProgress?.({
+      phase: 'start',
+      current: normalizedNotes.length,
+      total: normalizedNotes.length,
+      title: 'Compressing archive…'
+    })
+
+    const zipEntries: ZipFileEntry[] = []
+    for (const item of succeeded) {
       try {
-        await fs.rm(tempBatchDir, { recursive: true, force: true })
-      } catch {}
+        const fileData = await fs.readFile(item.filePath)
+        zipEntries.push({
+          name: path.basename(item.filePath),
+          data: fileData
+        })
+      } catch (e) {
+        console.error('[exportBatch] Failed to read file for zip archive:', item.filePath, e)
+      }
     }
-  } finally {
-    if (printWin && printWin.isDestroyed?.() !== true) {
-      printWin.close()
-    }
+
+    await createZipArchive(zipTargetFilePath, zipEntries, {
+      comment: `Lumina Batch Export (${succeeded.length} notes)`
+    })
+
+    try {
+      await fs.rm(tempBatchDir, { recursive: true, force: true })
+    } catch {}
   }
 
   onProgress?.({

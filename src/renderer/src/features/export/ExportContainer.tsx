@@ -21,6 +21,7 @@ import { PREVIEW_COMPONENTS } from './previews'
 import Toggle from '../../components/toggle/Toggle'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import './css/exportContainer.css'
+import { makePreviewKey } from './previewKey'
 
 /** CSS custom properties read from the app to theme the preview iframe. */
 const PREVIEW_THEME_KEYS = [
@@ -101,7 +102,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
   const [bundleAssets, setBundleAssets] = useState(false)
   const [compressZip, setCompressZip] = useState(false)
   const [optimizeImages, setOptimizeImages] = useState(true)
-  const [previewData, setPreviewData] = useState<{ html: string; pdfBase64?: string }>({ html: '' })
+  const [previewData, setPreviewData] = useState<{ key: string; html: string; pdfBase64?: string }>({ key: '', html: '' })
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
@@ -109,7 +110,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
   const [copied, setCopied] = useState(false)
   const [themeTick, setThemeTick] = useState(0)
   const requestIdRef = useRef(0)
-  const previewCacheRef = useRef<Map<string, { html: string; pdfBase64?: string }>>(new Map())
+  const previewCacheRef = useRef<Map<string, { key: string; html: string; pdfBase64?: string }>>(new Map())
 
   useEffect(() => {
     const onThemeChange = () => {
@@ -122,6 +123,10 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
 
   const activeFormat = useMemo(() => getFormat(format), [format])
   const PreviewComponent = PREVIEW_COMPONENTS[format]
+  const activePreviewKey = useMemo(
+    () => makePreviewKey([format, title, content, includeToc, themeTick]),
+    [format, title, content, includeToc, themeTick]
+  )
 
   // Note statistics
   const noteStats = useMemo(() => {
@@ -142,6 +147,9 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     setCompressZip(false)
     setOptimizeImages(true)
     setPreviewError(null)
+    setPreviewData({ key: '', html: '' })
+    setPreviewLoading(Boolean(content))
+    requestIdRef.current++
     setSuccess(null)
     setExporting(false)
     setCopied(false)
@@ -157,12 +165,13 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
   useEffect(() => {
     if (!isOpen || success) return
     if (!content) {
-      setPreviewData({ html: '' })
+      setPreviewData({ key: '', html: '' })
+      setPreviewLoading(false)
       setPreviewError(null)
       return
     }
 
-    const cacheKey = `${format}:${includeToc ? 'toc' : 'notoc'}`
+    const cacheKey = activePreviewKey
     if (previewCacheRef.current.has(cacheKey)) {
       setPreviewData(previewCacheRef.current.get(cacheKey)!)
       setPreviewLoading(false)
@@ -173,7 +182,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     const api = (window as any).api
     if (!api?.exportPreview) {
       setPreviewLoading(false)
-      setPreviewData({ html: '' })
+      setPreviewData({ key: '', html: '' })
       setPreviewError('Preview is unavailable in this build.')
       return
     }
@@ -195,7 +204,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
       if (!res || typeof res.html !== 'string') {
         throw new Error('Preview generation returned no content')
       }
-      const data = { html: res.html }
+      const data = { key: cacheKey, html: res.html }
       previewCacheRef.current.set(cacheKey, data)
       setPreviewData(data)
       if (res.truncated) {
@@ -209,31 +218,10 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
       setPreviewLoading(false)
     })
 
-    // Pre-warm remaining formats in background for zero-latency instant switching
-    const otherFormats: ExportFormat[] = (['pdf', 'docs', 'html', 'markdown', 'text'] as ExportFormat[]).filter(
-      (f) => f !== format
-    )
-    for (const f of otherFormats) {
-      const otherKey = `${f}:${includeToc ? 'toc' : 'notoc'}`
-      if (!previewCacheRef.current.has(otherKey)) {
-        api.exportPreview({
-          format: f,
-          title,
-          content,
-          theme: readThemeTokens(),
-          toc: includeToc
-        }).then((res: any) => {
-          if (res?.html) {
-            previewCacheRef.current.set(otherKey, { html: res.html })
-          }
-        }).catch(() => {})
-      }
-    }
-
     return () => {
       isMounted = false
     }
-  }, [isOpen, format, title, content, success, includeToc, themeTick])
+  }, [isOpen, format, title, content, success, includeToc, themeTick, activePreviewKey])
 
   const handleExport = useCallback(async () => {
     const api = (window as any).api
@@ -591,10 +579,10 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
               <section className="export-preview-pane" aria-label="Preview">
                 {hasContent ? (
                   <PreviewComponent
-                    html={previewData.html}
+                    html={previewData.key === activePreviewKey ? previewData.html : ''}
                     pdfBase64={previewData.pdfBase64}
                     title={title}
-                    loading={previewLoading}
+                    loading={previewLoading || previewData.key !== activePreviewKey}
                     error={previewError}
                   />
                 ) : (

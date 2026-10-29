@@ -214,24 +214,31 @@
   bottom: 12px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 10px 12px;
-  background: color-mix(in srgb, var(--bg-panel) 96%, transparent);
-  border: 1px solid var(--border-card);
-  border-radius: 8px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  gap: 4px;
+  padding: 7px 9px;
+  background: color-mix(in srgb, var(--bg-panel) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-card) 55%, transparent);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   z-index: 10;
 }
 
 .batch-progress-label {
   display: flex;
   justify-content: space-between;
-  font-size: 11px;
+  gap: 10px;
+  font-size: 10px;
   color: var(--text-muted);
 }
 
+.batch-progress-label > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .batch-progress-track {
-  height: 4px;
+  height: 3px;
   width: 100%;
   background: var(--bg-active);
   border-radius: 999px;

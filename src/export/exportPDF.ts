@@ -135,10 +135,11 @@ export function buildPDFDocument(
       background: #0b0d12;
     }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.65;
+      font-family: 'Times New Roman', Times, serif;
+      line-height: 1.5;
       color: #1e293b;
-      font-size: 10.5pt;
+      font-size: 12pt;
+      text-align: justify;
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
       padding: 40px 48px;
@@ -184,26 +185,28 @@ export function buildPDFDocument(
     h1, h2, h3, h4, h5, h6 {
       color: #0f172a;
       font-weight: 700;
-      line-height: 1.3;
+      line-height: 1.25;
       page-break-after: avoid;
       break-after: avoid;
     }
     h1 {
-      font-size: 20pt;
+      font-size: 14pt;
       margin-top: 0;
-      margin-bottom: 12pt;
-      color: #0f172a;
-    }
-    h2 {
-      font-size: 15pt;
-      margin-top: 18pt;
-      margin-bottom: 8pt;
+      margin-bottom: 6pt;
       color: #1e293b;
     }
-    h3 { font-size: 12.5pt; margin-top: 14pt; margin-bottom: 6pt; color: #334155; }
-    h4 { font-size: 11pt; margin-top: 12pt; margin-bottom: 4pt; color: #475569; }
+    h2 {
+      font-size: 12pt;
+      margin-top: 12pt;
+      margin-bottom: 6pt;
+      padding-bottom: 2pt;
+      border-bottom: none;
+      color: #1e293b;
+    }
+    h3 { font-size: 12pt; margin: 12pt 0 6pt; color: #334155; }
+    h4 { font-size: 12pt; margin: 12pt 0 6pt; color: #475569; }
     p {
-      margin-bottom: 11pt;
+      margin: 6pt 0;
       color: #334155;
       text-align: justify;
       text-justify: inter-word;
@@ -212,14 +215,21 @@ export function buildPDFDocument(
       widows: 3;
     }
     code {
-      font-family: 'Consolas', 'Fira Code', 'Courier New', monospace;
-      font-size: 9.5pt;
-      background-color: #eef2f7;
-      color: #b91c4a;
-      padding: 2px 5px;
-      border-radius: 4px;
-      border: 1px solid #e2e8f0;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 10pt;
+      background: transparent;
+      color: #e11d48;
+      border: 0;
+      padding: 0;
       word-break: break-word;
+    }
+    code:not(pre code) {
+      background: transparent !important;
+      background-color: transparent !important;
+      color: #e11d48 !important;
+      border: 0 !important;
+      box-shadow: none !important;
+      padding: 0 !important;
     }
     pre {
       background: #f8fafc;
@@ -251,50 +261,47 @@ export function buildPDFDocument(
       line-height: 1.5;
     }
     blockquote {
-      border-left: 3.5px solid #6366f1;
-      background-color: #f8fafc;
-      padding: 10px 16px;
-      margin: 12pt 0;
+      border: none !important;
+      border-left: none !important;
+      background: transparent;
+      padding: 0 0 0 12pt;
+      margin: 6pt 0;
       color: #475569;
       font-style: italic;
-      border-radius: 0 6px 6px 0;
       page-break-inside: avoid;
       break-inside: avoid;
     }
     table {
       border-collapse: collapse;
-      margin: 16pt 0;
+      margin: 12pt auto;
       width: 100%;
       max-width: 100%;
-      table-layout: auto;
-      font-size: 9.5pt;
+      table-layout: fixed;
+      font-size: 10pt;
       word-break: break-word;
       break-inside: auto;
-      border-top: 1.5pt solid #334155;
-      border-bottom: 1.5pt solid #334155;
+      border: 1px solid #94a3b8;
     }
     thead { display: table-header-group; }
     tr { break-inside: avoid; page-break-inside: avoid; }
     th, td {
-      border: none;
-      padding: 8pt 12pt;
+      border: 1px solid #cbd5e1;
+      padding: 1pt 3pt;
       text-align: left;
       word-break: break-word;
       overflow-wrap: anywhere;
       vertical-align: top;
-      line-height: 1.5;
+      line-height: 1.1;
     }
+    th p, td p { margin: 0 !important; line-height: 1.1; }
     th {
-      background: transparent;
-      font-weight: 600;
-      color: #0f172a;
-      font-size: 9pt;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border-bottom: 1pt solid #94a3b8;
+      background: #f1f5f9;
+      font-weight: 700;
+      color: #1e293b;
+      font-size: 10pt;
     }
     tbody tr {
-      border-bottom: 0.5pt solid #e2e8f0;
+      border-bottom: 1px solid #cbd5e1;
     }
     tbody tr:last-child {
       border-bottom: none;
@@ -317,7 +324,7 @@ export function buildPDFDocument(
       display: flex;
       justify-content: center;
       align-items: center;
-      margin: 14pt 0;
+      margin: 6pt auto;
       page-break-inside: avoid;
       break-inside: avoid;
     }
@@ -361,7 +368,7 @@ export function buildPDFDocument(
       text-decoration: underline;
     }
     ul, ol {
-      margin: 10pt 0;
+      margin: 6pt 0;
       padding-left: 22pt;
       color: #334155;
     }
@@ -370,16 +377,16 @@ export function buildPDFDocument(
     }
     hr {
       border: 0;
-      height: 1px;
-      background: #e2e8f0;
-      margin: 18pt 0;
+      height: 0;
+      background: transparent;
+      margin: 6pt 0;
     }
     .toc {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-radius: 6px;
-      padding: 14pt 18pt;
-      margin: 0 0 18pt 0;
+      padding: 14px 18px;
+      margin: 0 0 18px 0;
       page-break-inside: avoid;
       break-inside: avoid;
     }
@@ -388,7 +395,7 @@ export function buildPDFDocument(
       margin-top: 0;
       margin-bottom: 8pt;
       padding-bottom: 0;
-      border-bottom: none;
+      border: none;
       color: #0f172a;
     }
     .toc-list {
@@ -410,7 +417,7 @@ export function buildPDFDocument(
       text-decoration: underline;
     }
     .note-title {
-      font-size: 17pt;
+      font-size: 16pt;
       color: #0f172a;
       margin: 0 0 10pt;
     }
@@ -419,8 +426,10 @@ export function buildPDFDocument(
       background: #f8fafc;
       border: 1px solid #e2e8f0;
       border-radius: 6px;
-      padding: 12pt 18pt;
-      margin: 0 0 18pt 0;
+      padding: 12px 18px;
+      margin: 0 0 18px 0;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .combined-toc-title {
       font-size: 13pt;
@@ -437,9 +446,9 @@ export function buildPDFDocument(
     }
     @media screen {
       .note[data-page-break='true'] {
-        margin-top: 48px;
-        padding-top: 36px;
-        border-top: 1px dashed #cbd5e1;
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
       }
     }
   </style>

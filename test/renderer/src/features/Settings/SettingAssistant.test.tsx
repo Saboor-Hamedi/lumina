@@ -26,8 +26,8 @@ describe('SettingAssistant', () => {
 
     const select = screen.getByDisplayValue('DeepSeek (Default)')
     expect(select).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'OpenAI (GPT-4o)' })).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'Anthropic (Claude 3.5)' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'OpenAI' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Anthropic (Claude)' })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Ollama (Local / Offline)' })).toBeInTheDocument()
   })
 
@@ -79,10 +79,10 @@ describe('SettingAssistant', () => {
 
   it('updates the deepseek model selection', () => {
     render(<SettingAssistant />)
-    fireEvent.change(screen.getByDisplayValue('DeepSeek Chat (V3)'), {
-      target: { value: 'deepseek-reasoner' }
+    fireEvent.change(screen.getByDisplayValue('DeepSeek V4.1 Flash 1017'), {
+      target: { value: 'deepseek-v4-pro' }
     })
-    expect(useSettingsStore.getState().settings.deepSeekModel).toBe('deepseek-reasoner')
+    expect(useSettingsStore.getState().settings.deepSeekModel).toBe('deepseek-v4-pro')
   })
 
   it('saves the openai key trimmed or null', () => {
