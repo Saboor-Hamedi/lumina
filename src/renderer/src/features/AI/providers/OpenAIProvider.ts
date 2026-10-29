@@ -1,6 +1,7 @@
 import { BaseProvider } from './BaseProvider'
 import type { ProviderConfig } from '../types/ai.types'
 import type { ChatMessageParam, ChatStreamOptions } from './BaseProvider'
+import { getDefaultModel } from './modelCatalog'
 
 function toOpenAITools(tools: Record<string, any> = {}) {
   return Object.entries(tools).flatMap(([name, tool]) => {
@@ -33,6 +34,19 @@ function serializeOpenAIToolResult(result: unknown): string {
   }
 }
 
+function toResponsesTools(tools: Record<string, any> = {}) {
+  return Object.entries(tools).flatMap(([name, tool]) => {
+    const schema = tool?.inputSchema?.jsonSchema || tool?.inputSchema
+    if (!tool?.execute || !schema || typeof schema !== 'object') return []
+    return [{ type: 'function', name, description: tool.description || name, parameters: schema }]
+  })
+}
+
+function getOpenAIModelGeneration(model: string): number {
+  const match = /^gpt-(\d+)/i.exec(model)
+  return match ? Number(match[1]) : 0
+}
+
 /**
  * OpenAI Provider.
  * Streams chat completions and multi-step tool calls using OpenAI's /v1/chat/completions SSE endpoint.
@@ -41,7 +55,7 @@ export class OpenAIProvider extends BaseProvider {
   constructor(config: ProviderConfig = {}) {
     super(config)
     this.baseUrl = 'https://api.openai.com/v1/chat/completions'
-    this.defaultModel = 'gpt-4o'
+    this.defaultModel = getDefaultModel('openai') || 'gpt-4o'
     this.id = 'openai'
     this.name = 'OpenAI'
   }
@@ -62,12 +76,23 @@ export class OpenAIProvider extends BaseProvider {
     const conversation: any[] = [...messages]
     const maxSteps = 8
 
+    const model = options.model || this.defaultModel
+    // OpenAI's GPT-6 family requires the Responses API for function calling.
+    // Route that family there so tools continue to work with the newest models.
+    if (getOpenAIModelGeneration(model) >= 6) {
+      yield* this.responsesChatStream(messages, options, sdkTools, openAITools.length ? toResponsesTools(sdkTools) : [])
+      return
+    }
+
     for (let step = 0; step < maxSteps; step++) {
+      const model = options.model || this.defaultModel
+      const isReasoningModel = getOpenAIModelGeneration(model) >= 5 || /^o\d/i.test(model)
       const bodyPayload: Record<string, any> = {
-        model: options.model || this.defaultModel,
+        model,
         messages: conversation,
-        temperature: options.temperature ?? 0.7,
-        max_tokens: options.max_tokens || 4096,
+        ...(isReasoningModel ? {} : { temperature: options.temperature ?? 0.7 }),
+        [isReasoningModel ? 'max_completion_tokens' : 'max_tokens']:
+          options.max_tokens || 4096,
         stream: true
       }
       if (openAITools.length > 0) {
@@ -160,6 +185,85 @@ export class OpenAIProvider extends BaseProvider {
           content: serializeOpenAIToolResult(toolResult)
         })
       }
+    }
+  }
+
+  private async *responsesChatStream(
+    messages: ChatMessageParam[],
+    options: ChatStreamOptions,
+    sdkTools: Record<string, any>,
+    responseTools: any[]
+  ): AsyncGenerator<string, void, unknown> {
+    const onToolActivity = options.onToolActivity as
+      | ((toolName: string, args: Record<string, any>, result: any) => void)
+      | undefined
+    let input: any[] = messages.map((message) => ({
+      role: message.role,
+      content: message.content
+    }))
+    for (let step = 0; step < 8; step++) {
+      const bodyPayload: Record<string, any> = {
+        model: options.model || this.defaultModel,
+        input,
+        max_output_tokens: options.max_tokens || 4096,
+        stream: true,
+        store: false
+      }
+      if (responseTools.length) bodyPayload.tools = responseTools
+
+      const response = await fetch('https://api.openai.com/v1/responses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.config.apiKey}`
+        },
+        body: JSON.stringify(bodyPayload),
+        signal: options.signal
+      })
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`OpenAI Responses API Error (${response.status}): ${errorText}`)
+      }
+
+      let completedResponse: any = null
+      for await (const event of this.parseSSE(response)) {
+        if (event.type === 'response.output_text.delta' && event.delta) yield event.delta
+        if (event.type === 'response.completed') completedResponse = event.response
+        if (event.type === 'response.failed') {
+          throw new Error(event.response?.error?.message || 'OpenAI response failed')
+        }
+        if (event.type === 'error') throw new Error(event.message || 'OpenAI response stream failed')
+      }
+      if (!completedResponse) throw new Error('OpenAI stream ended before a completed response was received')
+
+      const calls = (completedResponse.output || []).filter((item: any) => item.type === 'function_call')
+      if (!calls.length) return
+
+      const toolOutputs: any[] = []
+      for (const call of calls) {
+        let args: Record<string, any> = {}
+        try {
+          args = call.arguments ? JSON.parse(call.arguments) : {}
+        } catch {
+          args = {}
+        }
+        onToolActivity?.(call.name, args, null)
+        let result: any = { success: false, error: `Unknown tool: ${call.name}` }
+        if (sdkTools[call.name]?.execute) {
+          try {
+            result = await sdkTools[call.name].execute(args)
+          } catch (error: any) {
+            result = { success: false, error: error?.message || String(error) }
+          }
+        }
+        onToolActivity?.(call.name, args, result)
+        toolOutputs.push({
+          type: 'function_call_output',
+          call_id: call.call_id,
+          output: serializeOpenAIToolResult(result)
+        })
+      }
+      input = [...input, ...(completedResponse.output || []), ...toolOutputs]
     }
   }
 }

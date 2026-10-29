@@ -98,6 +98,8 @@ const api = {
     return () => electronAPI.ipcRenderer.removeListener('settings:changed', listener)
   },
   getOllamaModels: (rawUrl) => electronAPI.ipcRenderer.invoke('ollama:getModels', rawUrl),
+  listAIProviderModels: (provider, apiKey) =>
+    electronAPI.ipcRenderer.invoke('ai:listModels', { provider, apiKey }),
   chatOllama: (payload) => electronAPI.ipcRenderer.invoke('ollama:chat', payload),
   startOllamaChat: (payload) => ipcRenderer.send('ollama:chat-stream', payload),
   cancelOllamaChat: (requestId) => ipcRenderer.send('ollama:chat-cancel', requestId),

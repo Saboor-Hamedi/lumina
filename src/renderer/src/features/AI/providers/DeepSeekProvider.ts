@@ -1,5 +1,6 @@
 import { BaseProvider } from './BaseProvider'
 import type { ProviderConfig } from '../types/ai.types'
+import { getDefaultModel } from './modelCatalog'
 import type { ChatMessageParam, ChatStreamOptions } from './BaseProvider'
 
 /**
@@ -10,7 +11,7 @@ export class DeepSeekProvider extends BaseProvider {
   constructor(config: ProviderConfig = {}) {
     super(config)
     this.baseUrl = 'https://api.deepseek.com/chat/completions'
-    this.defaultModel = 'deepseek-chat'
+    this.defaultModel = getDefaultModel('deepseek') || 'deepseek-chat'
     this.id = 'deepseek'
     this.name = 'DeepSeek'
   }

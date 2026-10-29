@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import Toggle from '../../components/toggle'
+import { AI_MODEL_CATALOG, getDefaultModel, getProviderModels } from '../AI/providers/modelCatalog'
 
 const POPULAR_OLLAMA_MODELS = [
   'phi:latest',
@@ -30,11 +31,135 @@ function getOllamaBaseUrl(rawUrl: string): string {
  * API keys, endpoint URLs, Groq speech dictation, and local AI index preferences.
  */
 export const SettingAssistant: React.FC = () => {
-  const { settings, updateSetting } = useSettingsStore()
+  const { settings, updateSetting, updateSettings } = useSettingsStore()
 
   const [ollamaModels, setOllamaModels] = useState<string[]>([])
   const [isLoadingOllama, setIsLoadingOllama] = useState<boolean>(false)
   const [isCustomModel, setIsCustomModel] = useState<boolean>(false)
+  const [cloudModels, setCloudModels] = useState<Record<string, { id: string; name: string }[]>>({})
+  const [cloudModelLoading, setCloudModelLoading] = useState(false)
+  const [cloudModelError, setCloudModelError] = useState<string | null>(null)
+  const discoveryRequest = useRef(0)
+
+  const fetchCloudModels = useCallback(async (provider: string, apiKey: string) => {
+    const api = (window as any)?.api
+    if (!api || typeof api.listAIProviderModels !== 'function' || !apiKey) return
+    const requestId = ++discoveryRequest.current
+    setCloudModelLoading(true)
+    setCloudModelError(null)
+    try {
+      const result = await api.listAIProviderModels(provider, apiKey)
+      if (requestId !== discoveryRequest.current) return
+      if (!result?.ok || !Array.isArray(result.models)) {
+        setCloudModelError(result?.error || 'Could not load models from this provider.')
+        return
+      }
+      const models = result.models.map((item: { id: string; name?: string }) => {
+        const known = AI_MODEL_CATALOG.find((entry) => entry.provider === provider && entry.id === item.id)
+        return { id: item.id, name: known?.name || item.name || item.id }
+      })
+      setCloudModels((current) => ({ ...current, [provider]: models }))
+      if (!models.length) {
+        setCloudModelError('This provider returned no conversational models for this key.')
+        return
+      }
+      const currentSettings = useSettingsStore.getState().settings
+      const availableModels = {
+        ...(currentSettings.aiAvailableModelsByProvider || {}),
+        [provider]: models.map((model: { id: string }) => model.id)
+      }
+      const savedModel = currentSettings.aiModelsByProvider?.[provider] ||
+        (currentSettings.activeModelProvider === provider ? currentSettings.activeModel : null) ||
+        (provider === 'deepseek' && !['deepseek-chat', 'deepseek-reasoner'].includes(currentSettings.deepSeekModel)
+          ? currentSettings.deepSeekModel
+          : null)
+      const selected = models.some((model: { id: string }) => model.id === savedModel)
+        ? savedModel
+        : models.find((model: { id: string }) => model.id === getDefaultModel(provider))?.id || models[0]?.id
+      if (selected) {
+        const nextModelMap = { ...(currentSettings.aiModelsByProvider || {}), [provider]: selected }
+        updateSettings({
+          aiModelsByProvider: nextModelMap,
+          aiAvailableModelsByProvider: availableModels,
+          ...(currentSettings.activeProvider === provider ? {
+            activeModelProvider: provider,
+            activeModel: selected,
+            ...(provider === 'deepseek' ? { deepSeekModel: selected } : {})
+          } : {})
+        })
+      }
+    } catch (error: any) {
+      if (requestId !== discoveryRequest.current) return
+      setCloudModelError(error?.message || 'Could not load models from this provider.')
+    } finally {
+      if (requestId === discoveryRequest.current) setCloudModelLoading(false)
+    }
+  }, [updateSettings])
+
+  const selectCloudModel = useCallback((provider: string, model: string) => {
+    const next = { ...(settings.aiModelsByProvider || {}), [provider]: model }
+    updateSettings({
+      aiModelsByProvider: next,
+      activeProvider: provider,
+      activeModelProvider: provider,
+      activeModel: model,
+      ...(provider === 'deepseek' ? { deepSeekModel: model } : {})
+    })
+  }, [settings.aiModelsByProvider, updateSettings])
+
+  const modelsFor = (provider: string) =>
+    cloudModels[provider] !== undefined ? cloudModels[provider] : getProviderModels(provider)
+
+  const selectedModelFor = (provider: string) => {
+    const models = modelsFor(provider)
+    const saved = settings.aiModelsByProvider?.[provider] ||
+      (settings.activeModelProvider === provider ? settings.activeModel : null) ||
+      (provider === 'deepseek' ? settings.deepSeekModel : null)
+    if (saved && models.some((model) => model.id === saved)) return saved
+    return models.find((model) => model.id === getDefaultModel(provider))?.id || models[0]?.id || ''
+  }
+
+  // Migrate the previous shared model selection into a provider-scoped value.
+  useEffect(() => {
+    const provider = settings.activeProvider || 'deepseek'
+    if (settings.activeModel && !settings.aiModelsByProvider?.[provider] &&
+      (!settings.activeModelProvider || settings.activeModelProvider === provider)) {
+      updateSetting('aiModelsByProvider', { ...(settings.aiModelsByProvider || {}), [provider]: settings.activeModel })
+      updateSetting('activeModelProvider', provider)
+    }
+  }, [settings.activeProvider, settings.activeModel, settings.activeModelProvider, settings.aiModelsByProvider, updateSetting])
+
+  // Move installations still pointing at retired DeepSeek aliases to the
+  // current API model ID while preserving explicitly selected custom IDs.
+  useEffect(() => {
+    const legacyDeepSeekIds = ['deepseek-chat', 'deepseek-reasoner']
+    if (
+      (settings.activeProvider || 'deepseek') === 'deepseek' &&
+      legacyDeepSeekIds.includes(settings.activeModel || settings.deepSeekModel || '')
+    ) {
+      const currentModel = getDefaultModel('deepseek')!
+      updateSetting('aiModelsByProvider', { ...(settings.aiModelsByProvider || {}), deepseek: currentModel })
+      updateSetting('activeModelProvider', 'deepseek')
+      updateSetting('activeModel', currentModel)
+      updateSetting('deepSeekModel', currentModel)
+    }
+  }, [settings.activeProvider, settings.activeModel, settings.deepSeekModel, settings.aiModelsByProvider, updateSetting])
+
+  useEffect(() => {
+    const provider = settings.activeProvider
+    setCloudModelError(null)
+    const apiKey = provider === 'deepseek' ? settings.deepSeekKey :
+      provider === 'openai' ? settings.openaiKey :
+        provider === 'anthropic' ? settings.anthropicKey : null
+    if (provider && apiKey) {
+      const timer = setTimeout(() => fetchCloudModels(provider, apiKey), 500)
+      return () => {
+        clearTimeout(timer)
+        discoveryRequest.current += 1
+        setCloudModelLoading(false)
+      }
+    }
+  }, [settings.activeProvider, settings.deepSeekKey, settings.openaiKey, settings.anthropicKey, fetchCloudModels])
 
   /**
    * Fetches installed models from local Ollama (/api/tags) via Main Process IPC or direct fetch
@@ -148,20 +273,31 @@ export const SettingAssistant: React.FC = () => {
             value={settings.activeProvider || 'deepseek'}
             onChange={(e) => {
               const newProvider = e.target.value
-              updateSetting('activeProvider', newProvider)
               if (newProvider === 'ollama') {
                 const modelToUse = settings.ollamaModel || 'phi:latest'
-                updateSetting('ollamaModel', modelToUse)
-                updateSetting('activeModel', modelToUse)
-              } else if (newProvider === 'deepseek') {
-                updateSetting('activeModel', settings.deepSeekModel || 'deepseek-chat')
+                updateSettings({
+                  activeProvider: newProvider,
+                  ollamaModel: modelToUse,
+                  activeModelProvider: 'ollama',
+                  activeModel: modelToUse
+                })
+              } else if (getDefaultModel(newProvider)) {
+                const model = selectedModelFor(newProvider)
+                updateSettings({
+                  activeProvider: newProvider,
+                  activeModelProvider: newProvider,
+                  activeModel: model,
+                  ...(newProvider === 'deepseek' ? { deepSeekModel: model } : {})
+                })
+              } else {
+                updateSetting('activeProvider', newProvider)
               }
             }}
             className="settings-select"
           >
             <option value="deepseek">DeepSeek (Default)</option>
-            <option value="openai">OpenAI (GPT-4o)</option>
-            <option value="anthropic">Anthropic (Claude 3.5)</option>
+            <option value="openai">OpenAI</option>
+            <option value="anthropic">Anthropic (Claude)</option>
             <option value="ollama">Ollama (Local / Offline)</option>
           </select>
         </div>
@@ -198,15 +334,15 @@ export const SettingAssistant: React.FC = () => {
             <div className="row-info">
               <div className="row-label">Model</div>
             </div>
-            <select
-              value={settings.deepSeekModel || 'deepseek-chat'}
-              onChange={(e) => updateSetting('deepSeekModel', e.target.value)}
-              className="settings-select"
-            >
-              <option value="deepseek-chat">DeepSeek Chat (V3)</option>
-              <option value="deepseek-reasoner">DeepSeek Reasoner (R1)</option>
-            </select>
+            <div style={{ display: 'flex', gap: 8, minWidth: 240 }}>
+              <select value={selectedModelFor('deepseek')}
+                onChange={(e) => selectCloudModel('deepseek', e.target.value)} className="settings-select" disabled={!modelsFor('deepseek').length}>
+                {modelsFor('deepseek').map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}
+              </select>
+              <button type="button" onClick={() => fetchCloudModels('deepseek', settings.deepSeekKey || '')} disabled={!settings.deepSeekKey || cloudModelLoading} className="settings-select" title="Refresh models from DeepSeek" style={{ minWidth: 86, cursor: settings.deepSeekKey ? 'pointer' : 'not-allowed' }}>{cloudModelLoading ? 'Loading…' : 'Refresh'}</button>
+            </div>
           </div>
+          {cloudModelError && <div className="settings-row"><div className="row-hint" role="status">{cloudModelError}. The saved catalog is still available.</div></div>}
         </section>
       )}
 
@@ -218,7 +354,7 @@ export const SettingAssistant: React.FC = () => {
             <div className="row-info">
               <div className="row-label">Connect an AI (optional)</div>
               <div className="row-hint">
-                Requires GPT-4o access (starts with sk-...){' '}
+                OpenAI API key (starts with sk-...). Model availability depends on your account.{' '}
                 <a
                   href="https://platform.openai.com/api-keys"
                   target="_blank"
@@ -237,6 +373,16 @@ export const SettingAssistant: React.FC = () => {
               placeholder="sk-..."
             />
           </div>
+          <div className="settings-row">
+            <div className="row-info"><div className="row-label">Model</div></div>
+            <div style={{ display: 'flex', gap: 8, minWidth: 240 }}>
+              <select className="settings-select" value={selectedModelFor('openai')} onChange={(e) => selectCloudModel('openai', e.target.value)} disabled={!modelsFor('openai').length}>
+                {modelsFor('openai').map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}
+              </select>
+              <button type="button" onClick={() => fetchCloudModels('openai', settings.openaiKey || '')} disabled={!settings.openaiKey || cloudModelLoading} className="settings-select" title="Refresh models from OpenAI" style={{ minWidth: 86, cursor: settings.openaiKey ? 'pointer' : 'not-allowed' }}>{cloudModelLoading ? 'Loading…' : 'Refresh'}</button>
+            </div>
+          </div>
+          {cloudModelError && <div className="settings-row"><div className="row-hint" role="status">{cloudModelError}. The saved catalog is still available.</div></div>}
         </section>
       )}
 
@@ -248,7 +394,7 @@ export const SettingAssistant: React.FC = () => {
             <div className="row-info">
               <div className="row-label">Connect an AI (optional)</div>
               <div className="row-hint">
-                Claude 3.5 Sonnet key (starts with sk-ant-...){' '}
+                Anthropic API key (starts with sk-ant-...). Model availability depends on your account.{' '}
                 <a
                   href="https://console.anthropic.com/"
                   target="_blank"
@@ -267,6 +413,16 @@ export const SettingAssistant: React.FC = () => {
               placeholder="sk-ant-..."
             />
           </div>
+          <div className="settings-row">
+            <div className="row-info"><div className="row-label">Model</div></div>
+            <div style={{ display: 'flex', gap: 8, minWidth: 240 }}>
+              <select className="settings-select" value={selectedModelFor('anthropic')} onChange={(e) => selectCloudModel('anthropic', e.target.value)} disabled={!modelsFor('anthropic').length}>
+                {modelsFor('anthropic').map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}
+              </select>
+              <button type="button" onClick={() => fetchCloudModels('anthropic', settings.anthropicKey || '')} disabled={!settings.anthropicKey || cloudModelLoading} className="settings-select" title="Refresh models from Anthropic" style={{ minWidth: 86, cursor: settings.anthropicKey ? 'pointer' : 'not-allowed' }}>{cloudModelLoading ? 'Loading…' : 'Refresh'}</button>
+            </div>
+          </div>
+          {cloudModelError && <div className="settings-row"><div className="row-hint" role="status">{cloudModelError}. The saved catalog is still available.</div></div>}
         </section>
       )}
 

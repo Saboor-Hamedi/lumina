@@ -17,6 +17,10 @@ import { resolveAllowedOllamaUrl } from '../security/ollamaUrl'
  */
 
 const getModelsSchema = z.string().optional()
+const cloudModelsSchema = z.object({
+  provider: z.enum(['deepseek', 'openai', 'anthropic']),
+  apiKey: z.string().min(1).max(4096)
+})
 const chatPayloadSchema = z.object({
   url: z.string().optional(),
   model: z.string().optional(),
@@ -26,6 +30,65 @@ const chatPayloadSchema = z.object({
 }).passthrough()
 
 export function registerAiHandlers(): void {
+  // Discover model IDs from fixed first-party endpoints. API keys are only
+  // forwarded to the selected provider and are never persisted or logged here.
+  ipcMain.handle('ai:listModels', async (_, payload) => {
+    try {
+      const { provider, apiKey } = validateIpc(cloudModelsSchema, payload)
+      const endpoints = {
+        deepseek: 'https://api.deepseek.com/models',
+        openai: 'https://api.openai.com/v1/models',
+        anthropic: 'https://api.anthropic.com/v1/models?limit=1000'
+      }
+      const headers: Record<string, string> = { Accept: 'application/json' }
+      if (provider === 'anthropic') {
+        headers['x-api-key'] = apiKey
+        headers['anthropic-version'] = '2023-06-01'
+      } else {
+        headers.Authorization = `Bearer ${apiKey}`
+      }
+
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 12000)
+      try {
+        const providerFetch = typeof net?.fetch === 'function' ? net.fetch.bind(net) : fetch
+        const rows: any[] = []
+        let nextUrl: string | null = endpoints[provider]
+        let page = 0
+        while (nextUrl && page < 10) {
+          const response = await providerFetch(nextUrl, {
+            method: 'GET', headers, signal: controller.signal
+          })
+          if (!response.ok) {
+            const detail = (await response.text().catch(() => '')).slice(0, 700)
+            return { ok: false, error: `Provider returned HTTP ${response.status}${detail ? `: ${detail}` : ''}`, models: [] }
+          }
+          const body = await response.json() as any
+          const pageRows = Array.isArray(body?.data) ? body.data : Array.isArray(body?.models) ? body.models : []
+          rows.push(...pageRows)
+          page += 1
+          nextUrl = provider === 'anthropic' && body?.has_more && body?.last_id
+            ? `https://api.anthropic.com/v1/models?limit=1000&after_id=${encodeURIComponent(body.last_id)}`
+            : null
+        }
+        const models = rows.flatMap((item: any) => {
+          const id = typeof item === 'string' ? item : item?.id || item?.model
+          if (!id || typeof id !== 'string') return []
+          // OpenAI's endpoint also returns image, speech, embedding, and other
+          // non-chat models. Keep this picker limited to conversational models.
+          if (provider === 'openai' && !/^(?:ft:)?(?:gpt-|o\d)/i.test(id)) return []
+          if (provider === 'openai' && /(?:image|audio|realtime|transcri|tts|embed|moderation|deep-research)/i.test(id)) return []
+          return [{ id, name: typeof item?.display_name === 'string' ? item.display_name : typeof item?.name === 'string' ? item.name : id }]
+        })
+        return { ok: true, models }
+      } finally {
+        clearTimeout(timeoutId)
+      }
+    } catch (err: any) {
+      return { ok: false, error: err?.message || 'Failed to discover provider models', models: [] }
+    }
+  })
+
   // Query installed models from local Ollama instance with multi-endpoint fallback
   ipcMain.handle('ollama:getModels', async (_, rawUrl) => {
     try {

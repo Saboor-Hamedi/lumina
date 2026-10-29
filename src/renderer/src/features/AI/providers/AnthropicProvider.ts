@@ -1,6 +1,7 @@
 import { BaseProvider } from './BaseProvider'
 import type { ProviderConfig } from '../types/ai.types'
 import type { ChatMessageParam, ChatStreamOptions } from './BaseProvider'
+import { getDefaultModel } from './modelCatalog'
 
 function toAnthropicTools(tools: Record<string, any> = {}) {
   return Object.entries(tools).flatMap(([name, tool]) => {
@@ -38,7 +39,7 @@ export class AnthropicProvider extends BaseProvider {
   constructor(config: ProviderConfig = {}) {
     super(config)
     this.baseUrl = 'https://api.anthropic.com/v1/messages'
-    this.defaultModel = 'claude-3-5-sonnet-20240620'
+    this.defaultModel = getDefaultModel('anthropic') || 'claude-3-5-sonnet-20240620'
     this.id = 'anthropic'
     this.name = 'Anthropic'
   }

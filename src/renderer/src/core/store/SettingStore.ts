@@ -76,6 +76,9 @@ export interface Settings {
   huggingFaceKey: string | null
   activeProvider: string
   activeModel: string | null
+  activeModelProvider: string | null
+  aiModelsByProvider: Record<string, string> | null
+  aiAvailableModelsByProvider: Record<string, string[]> | null
   activeAIMode: string
   aiChatDisplayMode: string
   openaiKey: string | null
@@ -200,12 +203,15 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
 
     // AI Settings - loaded from app_config via settings IPC
     deepSeekKey: null,
-    deepSeekModel: 'deepseek-chat',
+    deepSeekModel: 'deepseek-flash',
     huggingFaceKey: null,
 
     // Multi-Provider Support
     activeProvider: 'deepseek',
     activeModel: null,
+    activeModelProvider: null,
+    aiModelsByProvider: null,
+    aiAvailableModelsByProvider: null,
     activeAIMode: 'Code',
     aiChatDisplayMode: 'sidebar',
     openaiKey: null,

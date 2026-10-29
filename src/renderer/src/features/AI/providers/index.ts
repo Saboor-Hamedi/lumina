@@ -3,6 +3,7 @@ import { DeepSeekProvider } from './DeepSeekProvider'
 import { OpenAIProvider } from './OpenAIProvider'
 import { AnthropicProvider } from './AnthropicProvider'
 import { OllamaProvider } from './OllamaProvider'
+import { getDefaultModel, getProviderModels } from './modelCatalog'
 import type { ProviderConfig, ResolvedProviderConfig } from '../types/ai.types'
 
 export interface ProviderMeta {
@@ -38,7 +39,20 @@ export class AIProviderFactory {
 
 export function resolveProviderConfig(settingsObj: Record<string, any> = {}): ResolvedProviderConfig {
   const providerType = settingsObj.activeProvider || 'deepseek'
-  let activeModel: string | null = settingsObj.activeModel || null
+  const providerModel = settingsObj.aiModelsByProvider?.[providerType] ||
+    (settingsObj.activeModelProvider === providerType ? settingsObj.activeModel : null)
+  const discoveredModelIds = settingsObj.aiAvailableModelsByProvider?.[providerType]
+  const fallbackModelIds = getProviderModels(providerType).map((model) => model.id)
+  const defaultForProvider = Array.isArray(discoveredModelIds)
+    ? discoveredModelIds[0] || null
+    : getDefaultModel(providerType)
+  const isKnownModel = (model: string | null | undefined) => {
+    if (!model) return false
+    return Array.isArray(discoveredModelIds)
+      ? discoveredModelIds.includes(model)
+      : fallbackModelIds.includes(model)
+  }
+  let activeModel: string | null = isKnownModel(providerModel) ? providerModel! : null
   let apiKey: string | null =
     settingsObj.deepSeekKey ||
     (import.meta as any).env?.VITE_DEEPSEEK_KEY ||
@@ -46,17 +60,23 @@ export function resolveProviderConfig(settingsObj: Record<string, any> = {}): Re
 
   if (providerType === 'openai') {
     apiKey = settingsObj.openaiKey || null
-    if (!activeModel) activeModel = 'gpt-4o'
+    if (!activeModel) activeModel = defaultForProvider
   } else if (providerType === 'anthropic') {
     apiKey = settingsObj.anthropicKey || null
-    if (!activeModel) activeModel = 'claude-3-5-sonnet-20241022'
+    if (!activeModel) activeModel = defaultForProvider
   } else if (providerType === 'ollama') {
     apiKey = 'unused'
     // activeModel is shared across providers and can contain a stale cloud
     // model after switching providers. Ollama has its own explicit selection.
     activeModel = settingsObj.ollamaModel || 'llama3'
   } else if (providerType === 'deepseek') {
-    if (!activeModel) activeModel = settingsObj.deepSeekModel || 'deepseek-chat'
+    if (!activeModel) {
+      const savedDeepSeekModel = settingsObj.deepSeekModel
+      activeModel = ['deepseek-chat', 'deepseek-reasoner'].includes(savedDeepSeekModel) ||
+        !isKnownModel(savedDeepSeekModel)
+        ? defaultForProvider
+        : savedDeepSeekModel
+    }
   }
 
   return {
