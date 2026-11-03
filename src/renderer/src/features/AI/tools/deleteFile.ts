@@ -1,5 +1,6 @@
 import * as aiSdk from 'ai'
 import type { AIToolExecutionResult } from '../types/ai.types'
+import { confirmWorkspaceChange } from './confirmWorkspaceChange'
 
 interface DeleteFileInput {
   title: string
@@ -94,6 +95,13 @@ export const deleteFileTool = aiSdk.tool({
       const deletedFolder = target.folderId || ''
       const previousContent = target.code || ''
       const removedWords = previousContent.trim() ? previousContent.trim().split(/\s+/).length : 0
+      const targetPath = [deletedFolder, deletedTitle].filter(Boolean).join('/')
+      const confirmed = await confirmWorkspaceChange(
+        'delete',
+        targetPath,
+        `This permanently removes the note and its contents. You can restore it from the response's Workspace Changes review.`
+      )
+      if (!confirmed) return { success: false, error: 'Deletion cancelled; the note was not changed.', cancelled: true }
       const deleteAction = vs.deleteNote || vs.deleteSnippet
       if (deleteAction) {
         await deleteAction(target.id, true)

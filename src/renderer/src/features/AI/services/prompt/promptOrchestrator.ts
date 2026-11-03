@@ -203,6 +203,8 @@ export const buildSystemPrompt = async ({
     vaultContext.forEach((ctx, i) => {
       systemPrompt += `[${i + 1}] source: ${ctx.file}\n${ctx.text}\n\n`
     })
+    systemPrompt +=
+      'When workspace knowledge supports a factual claim in your answer, cite the relevant provided source inline as a clickable wikilink (for example, [[Folder/Note Title|Note Title]]). Use only source names listed above; do not invent citations. If the retrieved notes do not support a claim, say so plainly instead of implying the workspace confirms it.\n'
   }
 
   // ── Lumina Built-in Product Knowledge Base ─────────────────────────────────

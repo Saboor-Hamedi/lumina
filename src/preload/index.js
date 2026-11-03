@@ -116,6 +116,7 @@ const api = {
 
   // Dialogs
   confirmDelete: (msg) => electronAPI.ipcRenderer.invoke('confirm-delete', msg),
+  confirmWorkspaceChange: (payload) => electronAPI.ipcRenderer.invoke('confirm-workspace-change', payload),
   openFile: () => electronAPI.ipcRenderer.invoke('dialog:openFile'),
 
   // Window controls

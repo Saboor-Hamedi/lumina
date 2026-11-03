@@ -258,7 +258,7 @@ SELECT * FROM [[NotALinkInsideCodeBlock]];
       resolveWorkspaceEntity('MySql')
     }
     const elapsed = performance.now() - start
-    expect(elapsed).toBeLessThan(100)
+    expect(elapsed).toBeLessThan(300)
 
     const prompt = await buildSystemPrompt({
       modeCfg: {

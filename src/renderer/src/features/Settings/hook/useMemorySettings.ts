@@ -69,13 +69,18 @@ export function useMemorySettings() {
       const cleanRole = (userObj.role || '').trim()
       const cleanBio = (userObj.bio || '').trim()
 
-      const mem = await luminaMemory.getMemory()
+      const current = await luminaMemory.getMemory()
+      const mem = { ...current, user: { ...current.user } }
       mem.user = {
         name: cleanName || null,
         role: cleanRole || null,
         bio: cleanBio || null
       }
-      await luminaMemory.persist()
+      if (!(await luminaMemory.persist(mem))) {
+        setSaveStatus('error')
+        showToast('Failed to auto-save profile')
+        return
+      }
       setSaveStatus('saved')
       setTimeout(() => setSaveStatus(null), 1800)
     } catch (err) {
@@ -112,7 +117,11 @@ export function useMemorySettings() {
       return
     }
 
-    await luminaMemory.saveFact({ fact: clean, category: 'preferences' })
+    const result = await luminaMemory.saveFact({ fact: clean, category: 'preferences' })
+    if (result && !result.success) {
+      showToast(result.error || 'Failed to save preference')
+      return
+    }
     setNewPref('')
     await loadData()
     showToast('Preference saved')
@@ -120,7 +129,11 @@ export function useMemorySettings() {
 
   const handleRemovePreference = useCallback(async (prefText: string) => {
     if (!prefText) return
-    await luminaMemory.forgetFact({ target: prefText, category: 'preferences' })
+    const result = await luminaMemory.forgetFact({ target: prefText, category: 'preferences' })
+    if (result && !result.success) {
+      showToast(result.error || 'Failed to remove preference')
+      return
+    }
     await loadData()
     showToast('Preference removed')
   }, [loadData, showToast])
@@ -142,7 +155,11 @@ export function useMemorySettings() {
       return
     }
 
-    await luminaMemory.saveFact({ fact: clean, category: 'facts' })
+    const result = await luminaMemory.saveFact({ fact: clean, category: 'facts' })
+    if (result && !result.success) {
+      showToast(result.error || 'Failed to save memory')
+      return
+    }
     setNewFact('')
     await loadData()
     showToast('Learned fact saved')
@@ -151,7 +168,11 @@ export function useMemorySettings() {
   const handleRemoveFact = useCallback(async (factItem: string | FactItem) => {
     const text = typeof factItem === 'string' ? factItem : factItem?.text
     if (!text) return
-    await luminaMemory.forgetFact({ target: text, category: 'facts' })
+    const result = await luminaMemory.forgetFact({ target: text, category: 'facts' })
+    if (result && !result.success) {
+      showToast(result.error || 'Failed to remove memory')
+      return
+    }
     await loadData()
     showToast('Memory item removed')
   }, [loadData, showToast])
@@ -180,7 +201,11 @@ export function useMemorySettings() {
       return
     }
 
-    await luminaMemory.updateFact({ oldFact: oldVal, newFact: clean, category: 'preferences' })
+    const result = await luminaMemory.updateFact({ oldFact: oldVal, newFact: clean, category: 'preferences' })
+    if (result && !result.success) {
+      showToast(result.error || 'Failed to update preference')
+      return
+    }
     setEditingPrefIndex(null)
     setEditingPrefValue('')
     await loadData()
@@ -213,7 +238,11 @@ export function useMemorySettings() {
       return
     }
 
-    await luminaMemory.updateFact({ oldFact: oldVal, newFact: clean, category: 'facts' })
+    const result = await luminaMemory.updateFact({ oldFact: oldVal, newFact: clean, category: 'facts' })
+    if (result && !result.success) {
+      showToast(result.error || 'Failed to update memory')
+      return
+    }
     setEditingFactIndex(null)
     setEditingFactValue('')
     await loadData()
@@ -251,13 +280,18 @@ export function useMemorySettings() {
 
     // Reset memory in background without blocking inputs or setting isLoading
     try {
-      await luminaMemory.clearAllMemory()
+      const result = await luminaMemory.clearAllMemory()
+      if (result && !result.success) {
+        showToast(result.error || 'Failed to reset memory')
+        await loadData()
+        return
+      }
       showToast('AI memory reset successfully')
     } catch (err) {
       console.error('[useMemorySettings] Failed to reset memory:', err)
       showToast('Failed to reset memory')
     }
-  }, [isConfirmingReset, showToast])
+  }, [isConfirmingReset, showToast, loadData])
 
   return {
     memory,

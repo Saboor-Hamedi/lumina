@@ -139,6 +139,21 @@ export const ChatMessageRow: React.FC<ChatMessageRowProps> = React.memo(
                   onCopy={handleCopy}
                   onSkipThinking={() => useAIStore.getState().skipThinking?.()}
                 />
+                {msg.role === 'assistant' && Boolean(msg.sources?.length) && (
+                  <div className="lumina-workspace-sources" aria-label="Workspace notes provided as context">
+                    <span className="lumina-workspace-sources-label">Workspace context</span>
+                    {Array.from(new Set(msg.sources || [])).map((source) => {
+                      const label = source.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, '') || source
+                      return (
+                        <LuminaEntityMention
+                          key={source}
+                          target={source.replace(/\.(?:md|markdown)$/i, '')}
+                          label={label}
+                        />
+                      )
+                    })}
+                  </div>
+                )}
                 {isLast && isChatLoading && (
                   <div style={{ marginTop: '8px' }}>
                     <ThinkingIndicator
@@ -174,6 +189,7 @@ export const ChatMessageRow: React.FC<ChatMessageRowProps> = React.memo(
       prevProps.msg.isGenerating === nextProps.msg.isGenerating &&
       prevProps.msg.rating === nextProps.msg.rating &&
       prevProps.msg.timestamp === nextProps.msg.timestamp &&
+      prevProps.msg.sources?.join('|') === nextProps.msg.sources?.join('|') &&
       prevProps.isLast === nextProps.isLast &&
       prevProps.isChatLoading === nextProps.isChatLoading &&
       prevProps.activeThinkingStatus === nextProps.activeThinkingStatus &&

@@ -979,3 +979,22 @@
 .lumina-activity-file-meta span {
   background: transparent !important;
 }
+
+.lumina-workspace-sources {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 8px;
+  margin: 5px 0 2px;
+  color: var(--text-faint);
+  font-size: 10px;
+}
+
+.lumina-workspace-sources-label {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.lumina-workspace-sources .chat-entity-mention {
+  font-size: inherit;
+}

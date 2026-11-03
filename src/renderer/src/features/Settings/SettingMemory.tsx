@@ -169,6 +169,11 @@ export const SettingMemory: React.FC = () => {
                   Saved automatically
                 </span>
               )}
+              {saveStatus === 'error' && (
+                <span role="alert" style={{ color: '#ef4444' }}>
+                  Could not save changes
+                </span>
+              )}
             </div>
           </div>
         </div>

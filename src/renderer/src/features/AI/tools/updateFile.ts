@@ -1,5 +1,6 @@
 import * as aiSdk from 'ai'
 import type { AIToolExecutionResult } from '../types/ai.types'
+import { confirmWorkspaceChange } from './confirmWorkspaceChange'
 
 interface SingleEditHunk {
   sectionHeader?: string
@@ -740,6 +741,29 @@ export const updateFileTool = aiSdk.tool({
     // Auto-heal duplicate consecutive headings if any were created
     newCode = newCode.replace(/^(#{1,6}\s+[^\r\n]+)\r?\n+(?:\1\r?\n*)+/gm, '$1\n\n')
 
+    const newWordCounts = new Map<string, number>()
+    for (const word of newCode.match(/\S+/g) || []) {
+      const key = word.toLocaleLowerCase()
+      newWordCounts.set(key, (newWordCounts.get(key) || 0) + 1)
+    }
+    const oldWordCounts = new Map<string, number>()
+    for (const word of currentCode.match(/\S+/g) || []) {
+      const key = word.toLocaleLowerCase()
+      oldWordCounts.set(key, (oldWordCounts.get(key) || 0) + 1)
+    }
+    let removedWords = 0
+    for (const [word, count] of oldWordCounts) {
+      removedWords += Math.max(0, count - (newWordCounts.get(word) || 0))
+    }
+    if (removedWords > 0) {
+      const confirmed = await confirmWorkspaceChange(
+        'replace',
+        [target.folderId, target.title].filter(Boolean).join('/'),
+        `This edit removes or replaces existing text (up to ${removedWords} word${removedWords === 1 ? '' : 's'}). You can review and undo the completed edit from Workspace Changes.`
+      )
+      if (!confirmed) return { success: false, error: 'Edit cancelled; the note was not changed.', cancelled: true }
+    }
+
     const isCurrentlySelected = vs.selectedNote?.id === target.id
 
     try {
@@ -776,23 +800,9 @@ export const updateFileTool = aiSdk.tool({
 
     // Compare the full before/after documents so targeted edits report replaced
     // words as both removals and additions, even when the total length is equal.
-    const getWordCounts = (value: string) => {
-      const counts = new Map<string, number>()
-      for (const word of value.match(/\S+/g) || []) {
-        const key = word.toLowerCase()
-        counts.set(key, (counts.get(key) || 0) + 1)
-      }
-      return counts
-    }
-    const oldWordCounts = getWordCounts(currentCode)
-    const newWordCounts = getWordCounts(newCode)
     let addedWords = 0
-    let removedWords = 0
     for (const [word, count] of newWordCounts) {
       addedWords += Math.max(0, count - (oldWordCounts.get(word) || 0))
-    }
-    for (const [word, count] of oldWordCounts) {
-      removedWords += Math.max(0, count - (newWordCounts.get(word) || 0))
     }
 
     const diffBadge = `(+${addedWords}${removedWords > 0 ? `, -${removedWords}` : ''})`

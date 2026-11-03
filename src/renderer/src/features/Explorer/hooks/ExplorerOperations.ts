@@ -186,9 +186,11 @@ export function useExplorerOperations({
 
   const [creating, setCreating] = useState<CreatingState | null>(null)
   const [creatingValue, setCreatingValue] = useState('')
+  const isSubmittingCreationRef = useRef(false)
 
   const [renamingFolder, setRenamingFolder] = useState<string | null>(null)
   const [renamingValue, setRenamingValue] = useState('')
+  const isSubmittingRenameRef = useRef(false)
 
   useEffect(() => {
     if (creating && flatTree && flatTree.length > 0) {
@@ -319,31 +321,43 @@ export function useExplorerOperations({
 
   const submitCreation = useCallback(
     async (value?: string) => {
+      if (isSubmittingCreationRef.current) return
+      isSubmittingCreationRef.current = true
+
       const valToUse = typeof value === 'string' ? value : creatingValue
       if (!creating || !valToUse.trim()) {
         setCreating(null)
+        setCreatingValue('')
+        isSubmittingCreationRef.current = false
         return
       }
 
       const sanitizedName = valToUse.trim().replace(/[<>:"/\\|?*]/g, '')
       if (!sanitizedName) {
         setCreating(null)
+        setCreatingValue('')
+        isSubmittingCreationRef.current = false
         return
       }
 
+      const currentCreating = creating
+      setCreating(null)
+      setCreatingValue('')
+
       try {
-        if (creating.type === 'folder') {
-          const folderPath = creating.parentId
-            ? `${creating.parentId}/${sanitizedName}`
+        if (currentCreating.type === 'folder') {
+          const folderPath = currentCreating.parentId
+            ? `${currentCreating.parentId}/${sanitizedName}`
             : sanitizedName
           await (window as any).api.createFolder(folderPath)
           setExpandedFolders((prev) => new Set(prev).add(folderPath))
           await loadWorkspace()
-        } else if (creating.type === 'canvas') {
+        } else if (currentCreating.type === 'canvas') {
+          const cleanCanvasName = sanitizedName.replace(/\.canvas$/i, '') || sanitizedName
           const newId = crypto.randomUUID
             ? crypto.randomUUID()
             : Math.random().toString(36).substring(2, 15)
-          const folderId = creating.parentId || ''
+          const folderId = currentCreating.parentId || ''
           const defaultCanvasData = {
             nodes: [
               {
@@ -363,8 +377,8 @@ export function useExplorerOperations({
           }
           const newSnippet: Snippet = {
             id: newId,
-            title: sanitizedName,
-            fileName: `${sanitizedName}.canvas`,
+            title: cleanCanvasName,
+            fileName: `${cleanCanvasName}.canvas`,
             code: JSON.stringify(defaultCanvasData, null, 2),
             language: 'canvas',
             type: 'canvas',
@@ -378,13 +392,15 @@ export function useExplorerOperations({
           if (folderId) setExpandedFolders((prev) => new Set(prev).add(folderId))
           handleSelect(newSnippet)
         } else {
+          const cleanTitle = sanitizedName.replace(/\.md$/i, '') || sanitizedName
           const newId = crypto.randomUUID
             ? crypto.randomUUID()
             : Math.random().toString(36).substring(2, 15)
-          const folderId = creating.parentId || ''
+          const folderId = currentCreating.parentId || ''
           const newSnippet: Snippet = {
             id: newId,
-            title: sanitizedName,
+            title: cleanTitle,
+            fileName: `${cleanTitle}.md`,
             code: '',
             language: 'markdown',
             tags: '',
@@ -399,44 +415,68 @@ export function useExplorerOperations({
         }
       } catch (err) {
         console.error('Failed to create item:', err)
+      } finally {
+        setSidebarFocus(null)
+        setTimeout(() => {
+          isSubmittingCreationRef.current = false
+        }, 150)
       }
-      setCreating(null)
-      setCreatingValue('')
-      setSidebarFocus(null)
     },
     [creating, creatingValue, folderOrder, updateSetting, loadWorkspace, saveNote, handleSelect, setSidebarFocus, setExpandedFolders]
   )
 
   const submitRename = useCallback(
     async (value?: string) => {
+      if (isSubmittingRenameRef.current) return
+      isSubmittingRenameRef.current = true
+
       const valToUse = typeof value === 'string' ? value : renamingValue
       if (!renamingFolder || !valToUse.trim()) {
         setRenamingFolder(null)
+        setRenamingValue('')
+        isSubmittingRenameRef.current = false
         return
       }
 
       const sanitizedName = valToUse.trim().replace(/[<>:"/\\|?*]/g, '')
       if (!sanitizedName) {
         setRenamingFolder(null)
+        setRenamingValue('')
+        isSubmittingRenameRef.current = false
         return
       }
 
+      const currentRenamingFolder = renamingFolder
+      setRenamingFolder(null)
+      setRenamingValue('')
+
       try {
-        const parts = renamingFolder.split('/')
+        const parts = currentRenamingFolder.split('/')
         parts[parts.length - 1] = sanitizedName
         const newPath = parts.join('/')
 
-        if (newPath !== renamingFolder) {
-          await (window as any).api.renameFolder(renamingFolder, newPath)
-          await useWorkspaceStore.getState().migrateFolderColor(renamingFolder, newPath)
+        if (newPath !== currentRenamingFolder) {
+          await (window as any).api.renameFolder(currentRenamingFolder, newPath)
+          await useWorkspaceStore.getState().migrateFolderColor(currentRenamingFolder, newPath)
+          setExpandedFolders((prev) => {
+            const next = new Set(prev)
+            if (next.has(currentRenamingFolder)) {
+              next.delete(currentRenamingFolder)
+              next.add(newPath)
+            }
+            return next
+          })
           await loadWorkspace()
         }
       } catch (err) {
         console.error('Rename failed:', err)
+      } finally {
+        setTimeout(() => {
+          isSubmittingRenameRef.current = false
+        }, 150)
       }
-      setRenamingFolder(null)
     },
-    [renamingFolder, renamingValue, loadWorkspace]
+    [renamingFolder, renamingValue, loadWorkspace, setExpandedFolders]
   )
 
   return {

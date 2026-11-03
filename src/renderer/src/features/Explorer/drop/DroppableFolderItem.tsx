@@ -242,8 +242,17 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
               className="inline-create-input"
               defaultValue={renameValue}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') submitRename((e.target as HTMLInputElement).value)
-                if (e.key === 'Escape') cancelRename()
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  submitRename((e.target as HTMLInputElement).value)
+                  ;(e.target as HTMLInputElement).blur()
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  cancelRename()
+                }
               }}
               onBlur={(e) => submitRename((e.target as HTMLInputElement).value)}
               onClick={(e) => e.stopPropagation()}

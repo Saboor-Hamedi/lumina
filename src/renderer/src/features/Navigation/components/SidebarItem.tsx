@@ -130,6 +130,7 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
   const [showIconPicker, setShowIconPicker] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const renameInputRef = useRef<HTMLInputElement | null>(null)
+  const isRenamingInFlightRef = useRef(false)
 
   useEffect(() => {
     if (isRenaming && renameInputRef.current) {
@@ -138,6 +139,9 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
   }, [isRenaming])
 
   const handleRename = async () => {
+    if (isRenamingInFlightRef.current) return
+    isRenamingInFlightRef.current = true
+    try {
     const trimmed = renameValue.trim()
     if (trimmed && trimmed !== snippet.title) {
       const api = (window as any).api
@@ -221,7 +225,12 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
         await saveSnippet({ ...snippet, title: trimmed })
       }
     }
-    setIsRenaming(false)
+    } finally {
+      setIsRenaming(false)
+      setTimeout(() => {
+        isRenamingInFlightRef.current = false
+      }, 150)
+    }
   }
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -372,7 +381,12 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
             onChange={(e) => setRenameValue(e.target.value)}
             onBlur={handleRename}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') handleRename()
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                e.stopPropagation()
+                handleRename()
+                ;(e.target as HTMLInputElement).blur()
+              }
               if (e.key === 'Escape') {
                 setIsRenaming(false)
                 setRenameValue(snippet.title)
@@ -441,7 +455,12 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
           onChange={(e) => setRenameValue(e.target.value)}
           onBlur={handleRename}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleRename()
+            if (e.key === 'Enter') {
+              e.preventDefault()
+              e.stopPropagation()
+              handleRename()
+              ;(e.target as HTMLInputElement).blur()
+            }
             if (e.key === 'Escape') {
               setIsRenaming(false)
               setRenameValue(snippet.title)

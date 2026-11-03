@@ -4,6 +4,7 @@ out
 build
 .DS_Store
 .eslintcache
+.cache/
 *.log*
 plan.md
 

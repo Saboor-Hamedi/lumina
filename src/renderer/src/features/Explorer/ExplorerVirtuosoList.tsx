@@ -307,8 +307,17 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
                 className="inline-create-input"
                 defaultValue={context.creatingValue}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') context.submitCreation((e.target as HTMLInputElement).value)
-                  if (e.key === 'Escape') context.setCreating(null)
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    context.submitCreation((e.target as HTMLInputElement).value)
+                    ;(e.target as HTMLInputElement).blur()
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    context.setCreating(null)
+                  }
                 }}
                 onBlur={(e) => context.submitCreation((e.target as HTMLInputElement).value)}
                 onClick={(e) => e.stopPropagation()}

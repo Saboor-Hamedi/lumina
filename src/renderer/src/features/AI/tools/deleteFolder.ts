@@ -1,5 +1,6 @@
 import * as aiSdk from 'ai'
 import type { AIToolExecutionResult } from '../types/ai.types'
+import { confirmWorkspaceChange } from './confirmWorkspaceChange'
 
 interface DeleteFolderInput {
   path: string
@@ -33,6 +34,17 @@ export const deleteFolderTool = aiSdk.tool({
       const notes = (Array.isArray(vs.notes) && vs.notes.length > 0 ? vs.notes : vs.snippets) || []
       const knownFolders = collectWorkspaceFolders(notes, vs.folders || [])
       const cleanPath = matchFolderByQuery(rawPath, knownFolders) || rawPath
+
+      const itemCount = notes.filter((note: any) => {
+        const folder = String(note?.folderId || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
+        return folder === cleanPath || folder.startsWith(`${cleanPath}/`)
+      }).length
+      const confirmed = await confirmWorkspaceChange(
+        'delete',
+        cleanPath,
+        `This permanently removes the folder and its ${itemCount} note${itemCount === 1 ? '' : 's'}.`
+      )
+      if (!confirmed) return { success: false, error: 'Folder deletion cancelled; nothing was changed.', cancelled: true }
 
       if ((window as any).api?.deleteFolder) {
         await (window as any).api.deleteFolder(cleanPath)

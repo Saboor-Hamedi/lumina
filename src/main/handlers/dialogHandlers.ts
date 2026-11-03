@@ -12,6 +12,11 @@ import { validateIpc, z } from './ipcValidation'
  */
 
 const messageSchema = z.string().optional()
+const workspaceChangeSchema = z.object({
+  action: z.enum(['delete', 'clear', 'replace']),
+  target: z.string().min(1).max(300),
+  details: z.string().max(500).optional()
+})
 
 export function registerDialogHandlers(): void {
   // Show native folder selection dialog
@@ -30,6 +35,23 @@ export function registerDialogHandlers(): void {
       cancelId: 0,
       title: 'Confirm Delete',
       message: validMessage || 'Delete this item?',
+      noLink: true
+    })
+    return res.response === 1
+  })
+
+  ipcMain.handle('confirm-workspace-change', async (_, payload) => {
+    const valid = validateIpc(workspaceChangeSchema, payload)
+    const actionLabels = { delete: 'Delete', clear: 'Clear', replace: 'Apply changes' } as const
+    const titles = { delete: 'Confirm note deletion', clear: 'Confirm content clearing', replace: 'Review content replacement' } as const
+    const res = await dialog.showMessageBox({
+      type: 'warning',
+      buttons: ['Cancel', actionLabels[valid.action]],
+      defaultId: 0,
+      cancelId: 0,
+      title: titles[valid.action],
+      message: `Lumina wants to ${valid.action} content in "${valid.target}".`,
+      detail: valid.details,
       noLink: true
     })
     return res.response === 1

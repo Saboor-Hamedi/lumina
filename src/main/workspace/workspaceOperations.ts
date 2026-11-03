@@ -187,6 +187,13 @@ export class WorkspaceOperations {
         ext.toLowerCase() === '.markdown' ||
         ext.toLowerCase() === '.mdx')
 
+    const appendExtIfMissing = (baseTitle: string, targetExt: string) => {
+      if (!baseTitle) return `Untitled${targetExt}`
+      return baseTitle.toLowerCase().endsWith(targetExt.toLowerCase())
+        ? baseTitle
+        : `${baseTitle}${targetExt}`
+    }
+
     let newFileName = snippet.fileName
 
     if (oldSnippet) {
@@ -200,13 +207,13 @@ export class WorkspaceOperations {
       if (fileNameExplicitlyChanged) {
         newFileName = snippet.fileName
       } else if (titleChanged && (isMarkdown || isCanvas)) {
-        newFileName = `${cleanedTitle}${ext}`
+        newFileName = appendExtIfMissing(cleanedTitle, ext)
       } else if (!newFileName) {
-        newFileName = `${cleanedTitle}${ext}`
+        newFileName = appendExtIfMissing(cleanedTitle, ext)
       }
     } else {
       if (!newFileName) {
-        newFileName = `${cleanedTitle}${ext}`
+        newFileName = appendExtIfMissing(cleanedTitle, ext)
       } else if (isMarkdown || isCanvas) {
         const fileBase = path.basename(newFileName, ext)
         if (
@@ -217,7 +224,7 @@ export class WorkspaceOperations {
             cleanedTitle.toLowerCase() !== 'untitled' &&
             fileBase.toLowerCase() !== cleanedTitle.toLowerCase())
         ) {
-          newFileName = `${cleanedTitle}${ext}`
+          newFileName = appendExtIfMissing(cleanedTitle, ext)
         }
       }
     }

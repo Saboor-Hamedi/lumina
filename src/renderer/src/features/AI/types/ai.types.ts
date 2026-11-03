@@ -35,6 +35,8 @@ export interface ChatMessage {
   }
   responseTimeMs?: number
   reviewChanges?: WorkspaceReviewChange[]
+  /** Workspace note paths supplied as context for this assistant response. */
+  sources?: string[]
   [key: string]: unknown
 }
 

@@ -36,6 +36,7 @@ import {
 import { detectUserIntent, IntentCategory } from '../services/intentRouter'
 import { getAIMode } from '../modes/index'
 import { AIProviderFactory, resolveProviderConfig } from '../providers/index'
+import { extractMemoryCapture, luminaMemory } from '../../../core/ai/memory/luminaMemory'
 import type {
   AIStore,
   AIUsageStats,
@@ -118,7 +119,7 @@ function recordWorkspaceReviewChange(
   const previousContent =
     typeof result.previousContent === 'string'
       ? result.previousContent
-      : action === 'updated' && typeof note?.code === 'string'
+      : (action === 'updated' || action === 'deleted') && typeof note?.code === 'string'
         ? note.code
         : undefined
   const newContent =
@@ -789,6 +790,15 @@ export const useAIStore = create<AIStore>((set, get) => {
       const currentMessages = get().chatMessages || []
       const newHistory = [...currentMessages, userMsg]
 
+      // High-confidence profile and preference statements are saved locally;
+      // remembering must not depend on a model deciding to call a tool.
+      let automaticMemorySummary = ''
+      const automaticCapture = extractMemoryCapture(cleanMessage)
+      if (automaticCapture) {
+        const saved = await luminaMemory.saveFact(automaticCapture)
+        if (saved.success) automaticMemorySummary = saved.summary || 'Saved a detail to memory.'
+      }
+
       // Strip /brain prefix so questions naturally query the indexed knowledge base
       if (/^\/brain(?:\s+.*)?$/i.test(cleanMessage)) {
         const rawTopic = cleanMessage.replace(/^\/brain\s*/i, '').trim()
@@ -1065,6 +1075,24 @@ export const useAIStore = create<AIStore>((set, get) => {
           } catch (_) {}
         }
 
+        if (automaticMemorySummary) {
+          const memoryOnlyReply: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: `<lumina-memory>${automaticMemorySummary}</lumina-memory>`,
+            timestamp: Date.now(),
+            responseTimeMs: Date.now() - requestStartedAt
+          }
+          set({
+            chatMessages: [...newHistory, memoryOnlyReply],
+            isChatLoading: false,
+            activeThinkingStatus: '',
+            chatError: null
+          })
+          await get().saveChatHistory()
+          return
+        }
+
         set({
           chatMessages: newHistory,
           chatError: 'Missing API Key. Please configure it in Settings > Assistant.'
@@ -1131,11 +1159,18 @@ export const useAIStore = create<AIStore>((set, get) => {
         } catch (_) {}
       }
 
+      const contextSources = Array.from(new Set([
+        ...mentionedSnippets.map((item: any) => [item.folderId, item.title].filter(Boolean).join('/')),
+        ...requestedFiles.map((item: any) => item.title || item.file || item.path || ''),
+        ...contextSnippets.map((item: any) => [item.folderId, item.title].filter(Boolean).join('/'))
+      ].map((source) => String(source || '').trim()).filter(Boolean)))
+
       const assistantMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: '',
-        timestamp: Date.now()
+        content: automaticMemorySummary ? `<lumina-memory>${automaticMemorySummary}</lumina-memory>` : '',
+        timestamp: Date.now(),
+        sources: contextSources
       }
 
       const controller = createLuminaStreamController()
@@ -1166,6 +1201,16 @@ export const useAIStore = create<AIStore>((set, get) => {
           isOllamaCreationRequest || isCompactOllamaConversation || isOllamaProductQuestion
           ? { vaultContext: [], vaultAccessNote: 'No workspace retrieval is needed for this request.' }
           : await retrieveWorkspaceRAG(cleanMessage)
+        const workspaceSources = Array.from(new Set([
+          ...contextSources,
+          ...vaultContext.map((item) => item.file)
+        ].map((source) => String(source || '').trim()).filter(Boolean)))
+        assistantMsg.sources = workspaceSources
+        set({
+          chatMessages: get().chatMessages.map((item) =>
+            item.id === assistantMsg.id ? { ...item, sources: workspaceSources } : item
+          )
+        })
         const modeCfg = getAIMode(mode)
         const activeEditorNote = vs.selectedNote || vs.selectedSnippet
         const detectedIntent = detectUserIntent(
@@ -1208,7 +1253,7 @@ export const useAIStore = create<AIStore>((set, get) => {
           modernUi: Boolean(settingsObj?.modernUi)
         }
 
-        const systemPrompt = await buildSystemPrompt({
+        const baseSystemPrompt = await buildSystemPrompt({
           modeCfg,
           mentionedSnippets,
           requestedFiles,
@@ -1225,17 +1270,22 @@ export const useAIStore = create<AIStore>((set, get) => {
           activeTheme,
           userSettings: safeSettings
         })
+        const alreadySavedMemoryInstruction = automaticMemorySummary
+          ? `\n\nAUTOMATIC MEMORY CAPTURE: The app has already saved a high-confidence detail from this user message (${automaticMemorySummary}). Do not call a memory tool for that same detail. Continue answering the user's request normally, and do not claim additional memory changes.`
+          : ''
+        const systemPrompt = `${baseSystemPrompt}${alreadySavedMemoryInstruction}`
 
         const { providerType, activeModel, apiKey, baseUrl } =
           resolveProviderConfig(settingsObj)
         const provider = AIProviderFactory.createProvider(providerType, { apiKey, baseUrl })
-        const providerSystemPrompt = isOllamaCreationRequest
+        const providerSystemPromptBase = isOllamaCreationRequest
           ? `You are Lumina, an assistant that can create items in this workspace using the provided tools. Follow the user's requested name and content. Create files at the workspace root unless the user explicitly names a destination folder. The workspace root is an empty folder value; never create a folder named "root" to mean the root. Invoke createFile for every requested file and createFolder only for folders the user explicitly requested. Confirm only after the tool succeeds. If native tools are unavailable, emit exact <createFile title="Name" folder="">content</createFile> or <createFolder path="Folder"></createFolder> blocks.`
           : isCompactOllamaConversation
             ? `You are Lumina, a helpful conversational assistant. Active mode: ${modeCfg.name}. ${modeCfg.systemAddon || ''}\nAnswer the user's actual question directly in plain language. Keep responses concise unless the user asks for detail. Never claim to change workspace files unless a workspace tool has actually succeeded. Never reveal credentials, API keys, or secrets.`
           : providerType === 'ollama'
           ? `${systemPrompt}\n\nLOCAL TOOL-CALL COMPATIBILITY:\nLumina provides workspace tools inside this chat. Never say you cannot access external tools, systems, files, or Ollama. If a requested file's content is included in this prompt, read and answer from it directly. Otherwise call readFile with the requested file title/path before answering. Use provided native tools whenever available. If this model cannot issue native tool calls, you MUST still perform requested workspace creation by emitting exact fallback blocks: <createFolder path="Folder/Path"></createFolder> and <createFile title="Note Title" folder="Folder/Path">complete markdown content</createFile>. Omit the folder attribute for root-level notes. Emit one createFile block per requested note. Do not merely describe the files in chat.`
           : systemPrompt
+        const providerSystemPrompt = `${providerSystemPromptBase}${alreadySavedMemoryInstruction}`
 
         const finalMessages = newHistory
           .filter((m) => m.role !== 'system' && (m.content || m.role === 'user'))
@@ -1315,10 +1365,13 @@ export const useAIStore = create<AIStore>((set, get) => {
         }
 
         const handleContentUpdate = (content: string) => {
+          const displayContent = automaticMemorySummary && !content.includes('<lumina-memory>')
+            ? `<lumina-memory>${automaticMemorySummary}</lumina-memory>${content ? `\n\n${content}` : ''}`
+            : content
           set((state) => {
             const msgs = [...state.chatMessages]
             if (msgs.length > 0) {
-              msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content }
+              msgs[msgs.length - 1] = { ...msgs[msgs.length - 1], content: displayContent }
             }
             return { chatMessages: msgs }
           })
