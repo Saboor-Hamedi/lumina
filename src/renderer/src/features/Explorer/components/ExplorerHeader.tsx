@@ -155,7 +155,7 @@ export const ExplorerHeader: React.FC<ExplorerHeaderProps> = ({
             }}
           >
             <NotebookText size={12} />
-            <span>All Notes</span>
+            <span className="tab-label">Note</span>
           </button>
         </ToolTip>
         <ToolTip text="Favorites" position="bottom">
@@ -168,7 +168,7 @@ export const ExplorerHeader: React.FC<ExplorerHeaderProps> = ({
             }}
           >
             <Star size={12} />
-            <span>Favorites</span>
+            <span className="tab-label">Favorite</span>
           </button>
         </ToolTip>
       </div>

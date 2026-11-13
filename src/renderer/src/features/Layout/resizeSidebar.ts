@@ -21,12 +21,12 @@ import { useSettingsStore } from '../../core/store/SettingStore'
 
 // Boundary Constants (in pixels)
 export const CLOSE_DRAG_THRESHOLD = 140
-export const MIN_LEFT_WIDTH = 180
-export const DEFAULT_LEFT_WIDTH = 260
+export const MIN_LEFT_WIDTH = 130
+export const DEFAULT_LEFT_WIDTH = 150
 export const MAX_LEFT_WIDTH = 600
 
-export const MIN_RIGHT_WIDTH = 200
-export const DEFAULT_RIGHT_WIDTH = 300
+export const MIN_RIGHT_WIDTH = 130
+export const DEFAULT_RIGHT_WIDTH = 150
 export const MAX_RIGHT_WIDTH = 750
 
 export type SidebarSide = 'left' | 'right'
@@ -181,6 +181,9 @@ export function useSidebarResize({
       const onMouseMove = (moveEvent: MouseEvent) => {
         const activeSide = resizingSideRef.current
         if (!activeSide) return
+
+        // Stop any text/image drag / selection that propagates from sidebar items
+        moveEvent.preventDefault()
 
         const shell = appShellRef.current
         if (!shell) return

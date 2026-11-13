@@ -390,7 +390,7 @@ export const MainLayout: React.FC = () => {
         const rawLeftWidth =
           legacySidebar.width || legacySidebar.leftWidth || actualSettings.leftWidth
         if (rawLeftWidth) {
-          const clampedLeft = Math.min(600, Math.max(180, Number(rawLeftWidth)))
+          const clampedLeft = Math.min(600, Math.max(130, Number(rawLeftWidth)))
           setLeftWidth(clampedLeft)
         }
 
@@ -407,7 +407,7 @@ export const MainLayout: React.FC = () => {
         const rawRightWidth =
           legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth
         if (rawRightWidth) {
-          const clampedRight = Math.min(750, Math.max(200, Number(rawRightWidth)))
+          const clampedRight = Math.min(750, Math.max(130, Number(rawRightWidth)))
           setRightWidth(clampedRight)
         }
       } catch (err) {
@@ -1189,12 +1189,12 @@ export const MainLayout: React.FC = () => {
     <div
       ref={appShellRef}
       className={`app-shell ${isLeftSidebarOpen ? 'left-open' : 'left-closed'} ${isRightSidebarOpen ? 'right-open' : 'right-closed'}`}
-      style={{
-        '--left-sidebar-width': `${leftWidth}px`,
-        '--left-sidebar-content-width': `${Math.max(180, leftWidth)}px`,
-        '--right-sidebar-width': `${rightWidth}px`,
-        '--right-sidebar-content-width': `${Math.max(200, rightWidth)}px`
-      } as React.CSSProperties}
+        style={{
+          '--left-sidebar-width': `${leftWidth}px`,
+          '--left-sidebar-content-width': `${Math.max(130, leftWidth)}px`,
+          '--right-sidebar-width': `${rightWidth}px`,
+          '--right-sidebar-content-width': `${Math.max(130, rightWidth)}px`
+        } as React.CSSProperties}
     >
       <div className="shell-body">
         {isActivityBarVisible && (
@@ -1215,15 +1215,15 @@ export const MainLayout: React.FC = () => {
         </aside>
         <div
           className={`sidebar-resizer left ${isLeftSidebarOpen ? 'open' : 'closed'}`}
-          title="Double-click to reset default width (260px)"
+          title="Double-click to reset default width (150px)"
           onMouseDown={(e) => handleStartResize('left', e)}
           onDoubleClick={(e) => {
             if (!isLeftSidebarOpen) return
             e.preventDefault()
             e.stopPropagation()
-            handleResetSidebar('left')
+           handleResetSidebar('left')
           }}
-        >
+          >
           <div className="resizer-knob">
             <span className="knob-dot" />
             <span className="knob-dot" />
@@ -1367,7 +1367,7 @@ export const MainLayout: React.FC = () => {
         {isRightSidebarOpen && (
           <div
             className="sidebar-resizer right open"
-            title="Double-click to reset default width (300px)"
+            title="Double-click to reset default width (150px)"
             onMouseDown={(e) => handleStartResize('right', e)}
             onDoubleClick={(e) => {
               e.preventDefault()

@@ -358,13 +358,13 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  height: 25px;
-  padding: 0 6px;
+  height: 23px;
+  padding: 0 5px;
   border-radius: 5px;
   border: none;
   background: transparent;
   color: var(--text-muted, #94a3b8);
-  font-size: 11.5px;
+  font-size: 10px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -376,6 +376,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap !important;
+}
+
+.segmented-tab .tab-label {
+  font-size: 10px !important;
+  font-weight: 500 !important;
 }
 
 .segmented-tab:hover {
@@ -411,6 +416,16 @@
 }
 
 @container sidebar (max-width: 225px) {
+  .segmented-tab span {
+    display: none !important;
+  }
+  .segmented-tab {
+    padding: 0 4px !important;
+    justify-content: center !important;
+  }
+}
+
+@container sidebar (max-width: 160px) {
   .segmented-tab span {
     display: none !important;
   }
@@ -642,7 +657,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 450;
   color: var(--text-main);
   line-height: 1.2;
@@ -704,7 +719,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text-main, #f1f5f9);
   line-height: 1.2;
