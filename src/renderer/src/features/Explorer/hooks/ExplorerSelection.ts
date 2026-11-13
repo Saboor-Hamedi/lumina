@@ -186,6 +186,13 @@ export function useExplorerSelection({
   useEffect(() => {
     const handleOutsideInteraction = (e: Event) => {
       const target = e.target as HTMLElement | null
+
+      // While a sidebar resizer is being dragged, never mutate selection state —
+      // the drag gesture is not a click; the pointer may pass over explorer items.
+      if (document.body.classList.contains('is-global-resizing')) {
+        return
+      }
+
       if (!target) return
 
       // Don't clear selection if interacting with explorer popups, dialogs, context menus, or prompts

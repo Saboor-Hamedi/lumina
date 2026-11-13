@@ -49,7 +49,7 @@
   background: transparent;
   border: none;
   color: var(--text-main, #e2e8f0);
-  font-size: 11px;
+  font-size: 10px;
   width: 100%;
   outline: none;
 }
@@ -183,7 +183,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -256,7 +256,7 @@
 }
 
 .backlinks-note-title {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
   color: var(--text-main, #f1f5f9);
   white-space: nowrap;
@@ -305,7 +305,7 @@
   cursor: pointer;
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.03);
   transition: background 0.15s ease, color 0.15s ease;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.45;
   color: var(--text-muted, #94a3b8);
 }
@@ -316,7 +316,7 @@
 }
 
 .backlinks-line-num {
-  font-size: 10.5px;
+  font-size: 10px;
   font-family: var(--font-mono, 'JetBrains Mono', Consolas, monospace);
   color: #6B7280;
   flex-shrink: 0;
@@ -386,26 +386,26 @@
   transition: color 0.15s ease;
 }
 
-/* H1: Bold, slightly larger (14px), accent color */
+/* H1: Bold, accent color */
 .outline-item-card.level-1 .outline-heading-title {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-accent, #40bafa);
 }
 
-/* H2: Regular weight, standard size (13px), main/muted text color */
+/* H2: Regular weight, standard size, main text color */
 .outline-item-card.level-2 .outline-heading-title {
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 500;
   color: var(--text-main, #f1f5f9);
 }
 
-/* H3+: Indented + smaller (12px), more muted */
+/* H3+: Indented, more muted */
 .outline-item-card.level-3 .outline-heading-title,
 .outline-item-card.level-4 .outline-heading-title,
 .outline-item-card.level-5 .outline-heading-title,
 .outline-item-card.level-6 .outline-heading-title {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 400;
   color: var(--text-muted, #94a3b8);
 }
@@ -441,7 +441,7 @@
   text-align: center;
   gap: 8px;
   color: #9CA3AF;
-  font-size: 11.5px;
+  font-size: 10px;
   font-style: italic;
 }
 

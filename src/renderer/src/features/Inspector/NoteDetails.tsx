@@ -56,14 +56,14 @@ const PropertyRow: React.FC<PropertyRowProps> = ({
       onClick={copyable ? handleCopy : undefined}
     >
       <div className="property-name">
-        <Icon size={14} className="property-icon" style={{ color: iconColor }} />
+        <Icon size={10} className="property-icon" style={{ color: iconColor }} />
         <span>{name}</span>
       </div>
       <div className="property-value-wrapper">
         <span className={`property-value ${isDimmed ? 'is-dimmed' : ''}`}>{value}</span>
         {copyable && (
           <span className="property-copy-icon">
-            {copied ? <Check size={12} /> : <Copy size={12} />}
+            {copied ? <Check size={10} /> : <Copy size={10} />}
           </span>
         )}
       </div>

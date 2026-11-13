@@ -97,12 +97,14 @@
 }
 
 .sidebar-resizer:hover,
-.app-shell.is-resizing .sidebar-resizer {
+.app-shell.is-resizing-left .sidebar-resizer.left,
+.app-shell.is-resizing-right .sidebar-resizer.right {
   background: var(--text-accent) !important;
 }
 
 .sidebar-resizer:hover .resizer-knob .knob-dot,
-.app-shell.is-resizing .sidebar-resizer .resizer-knob .knob-dot {
+.app-shell.is-resizing-left .sidebar-resizer.left .resizer-knob .knob-dot,
+.app-shell.is-resizing-right .sidebar-resizer.right .resizer-knob .knob-dot {
   background: var(--text-accent, #a78bfa);
   transform: scale(1.25);
 }
@@ -130,9 +132,7 @@ body.is-global-resizing webview,
 body.is-global-resizing canvas,
 body.is-global-resizing .cm-editor,
 body.is-global-resizing .cm-content,
-body.is-global-resizing .cm-sizer,
-body.is-global-resizing .sidebar-resizer,
-body.is-global-resizing .resizer-knob {
+body.is-global-resizing .cm-sizer {
   pointer-events: auto !important;
 }
 
@@ -143,7 +143,15 @@ body.is-global-resizing .sidebar-scrollable-content,
 body.is-global-resizing .explorer-embedded-container,
 body.is-global-resizing .tree-item,
 body.is-global-resizing .folder-tree-main,
-body.is-global-resizing .segmented-tab {
+body.is-global-resizing .segmented-tab,
+body.is-global-resizing .shell-sidebar-right,
+body.is-global-resizing .shell-sidebar-right *,
+body.is-global-resizing .inspector-panel,
+body.is-global-resizing .backlinks-container,
+body.is-global-resizing .note-outline-container,
+body.is-global-resizing .details-modal-body,
+body.is-global-resizing .panel-header-tabs,
+body.is-global-resizing .inspector-tab {
   pointer-events: none !important;
 }
 
@@ -198,7 +206,20 @@ body.zen-instant-transition *,
   user-select: none !important;
 }
 
-.app-shell.is-resizing .sidebar-resizer {
+.app-shell.is-resizing-left .sidebar-resizer.left,
+.app-shell.is-resizing-right .sidebar-resizer.right {
+  pointer-events: auto !important;
+}
+
+/* While resizing one sidebar, suppress hover highlights on the idle knob */
+body.is-global-resizing .sidebar-resizer {
+  pointer-events: none !important;
+}
+
+body.is-global-resizing .app-shell.is-resizing-left .sidebar-resizer.left,
+body.is-global-resizing .app-shell.is-resizing-right .sidebar-resizer.right,
+body.is-global-resizing.is-global-resizing-left .sidebar-resizer.left,
+body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   pointer-events: auto !important;
 }
 

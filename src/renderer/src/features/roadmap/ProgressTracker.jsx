@@ -160,8 +160,8 @@ export function LearningTrackBadge({ snippetId, noteId: propNoteId }) {
           borderRadius: '4px',
           userSelect: 'none',
           cursor: 'default',
-          background: 'rgba(255, 255, 255, 0.04)',
-          border: '1px solid rgba(255, 255, 255, 0.07)',
+          background: 'transparent',
+          border: '1px solid transparent',
           boxSizing: 'border-box',
           flexShrink: 0,
           overflow: 'hidden'

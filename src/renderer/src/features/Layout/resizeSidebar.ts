@@ -157,8 +157,10 @@ export function useSidebarResize({
       if (shellEl) {
         shellRectRef.current = shellEl.getBoundingClientRect()
         shellEl.classList.add('is-resizing')
+        shellEl.classList.add(`is-resizing-${side}`)
       }
       document.body.classList.add('is-global-resizing')
+      document.body.classList.add(`is-global-resizing-${side}`)
 
       const startClientX = e.clientX
       let measuredStartWidth = side === 'left' ? leftWidth : rightWidth
@@ -284,8 +286,10 @@ export function useSidebarResize({
         }
 
         document.body.classList.remove('is-global-resizing')
+        document.body.classList.remove('is-global-resizing-left', 'is-global-resizing-right')
         if (shell) {
           shell.classList.remove('is-resizing')
+          shell.classList.remove('is-resizing-left', 'is-resizing-right')
         }
       }
 
@@ -341,6 +345,7 @@ export function useSidebarResize({
   useEffect(() => {
     return () => {
       document.body.classList.remove('is-global-resizing')
+      document.body.classList.remove('is-global-resizing-left', 'is-global-resizing-right')
     }
   }, [])
 
