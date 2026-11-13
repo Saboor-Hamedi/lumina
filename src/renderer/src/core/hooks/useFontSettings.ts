@@ -171,9 +171,10 @@ export const useFontSettings = (): FontSettings => {
 
         const api = (window as any).api
         let allSettings: any = null
+        let cursorSettings: any = {}
         try {
           allSettings = await api?.getSetting?.()
-          const cursorSettings =
+          cursorSettings =
             (allSettings && allSettings.cursor) || (await api?.getSetting?.('cursor')) || {}
 
           if (
@@ -227,12 +228,12 @@ export const useFontSettings = (): FontSettings => {
                         allSettings.borderLeft !== 'hidden'
                       : true,
               editorFontFamily:
-                (cursorSettings && cursorSettings.editorFontFamily) ||
                 (allSettings && allSettings.fontFamily) ||
+                (cursorSettings && cursorSettings.editorFontFamily) ||
                 colors.editorFontFamily,
               editorFontSize:
-                (cursorSettings && cursorSettings.editorFontSize) ||
                 (allSettings && allSettings.fontSize) ||
+                (cursorSettings && cursorSettings.editorFontSize) ||
                 colors.editorFontSize,
               previewFontFamily:
                 (cursorSettings && cursorSettings.previewFontFamily) ||
@@ -413,6 +414,25 @@ export const useFontSettings = (): FontSettings => {
           themeAccentColor: stateThemeAccentColor,
           useBorderLeft: colors.useBorderLeft !== undefined ? colors.useBorderLeft : true
         }
+        if (cursorSettings && typeof cursorSettings === 'object' && Object.keys(cursorSettings).length > 0) {
+          const correctedFontSize = isNaN(es) ? DEFAULTS.FONT_SIZE : es
+          const needsFontSizeFix = Number(cursorSettings.editorFontSize) !== Number(correctedFontSize)
+          const needsFamilyFix =
+            !!ef && !!cursorSettings.editorFontFamily && cursorSettings.editorFontFamily !== ef
+          if (needsFontSizeFix || needsFamilyFix) {
+            try {
+              const apiToHeal = (window as any).api
+              apiToHeal?.saveSetting?.('cursor', {
+                ...cursorSettings,
+                editorFontFamily: ef,
+                editorFontSize: correctedFontSize
+              })
+            } catch (err) {
+              console.warn('[useFontSettings] Failed to heal stale cursor settings:', err)
+            }
+          }
+        }
+
         localStorage.setItem('theme-colors', JSON.stringify(updatedColors))
         setBaseColors(updatedColors)
 

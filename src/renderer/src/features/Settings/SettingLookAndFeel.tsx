@@ -1,78 +1,118 @@
-import React, { useState } from 'react'
-import { Palette, Type, MousePointer } from 'lucide-react'
-import AccentColor from '../theme/AccentColor'
+import React, { useEffect, useState } from 'react'
+import { Palette, Type, MousePointer, Check } from 'lucide-react'
 import { getTheme } from '../theme/hooks/themeDefinitions'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 import Toggle from '../../components/toggle'
 
-export interface ColorPickerInputProps {
-  initialColor?: string
+const PRESET_PALETTE: readonly string[] = [
+  '#2563eb',
+  '#0284c7',
+  '#0891b2',
+  '#0d9488',
+  '#059669',
+  '#10b981',
+  '#65a30d',
+  '#ca8a04',
+  '#d97706',
+  '#ea580c',
+  '#e11d48',
+  '#f43f5e',
+  '#db2777',
+  '#c026d3',
+  '#9333ea',
+  '#7c3aed',
+  '#6366f1',
+  '#4f46e5',
+  '#c2410c',
+  '#475569'
+]
+
+export interface InlineColorPickerProps {
+  value?: string
   defaultColor: string
-  onColorChange: (color: string) => void
-  previewProperty: string
-  title: string
+  onChange: (color: string) => void
+  onReset: () => void
   ariaLabel: string
 }
 
-export const ColorPickerInput: React.FC<ColorPickerInputProps> = ({
-  initialColor,
+export const InlineColorPicker: React.FC<InlineColorPickerProps> = ({
+  value,
   defaultColor,
-  onColorChange,
-  previewProperty,
-  title,
+  onChange,
+  onReset,
   ariaLabel
 }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const displayColor = initialColor
-    ? initialColor.startsWith('#')
-      ? initialColor
-      : `#${initialColor}`
-    : defaultColor
+  const displayColor = value
+    ? value.startsWith('#')
+      ? value
+      : `#${value}`
+    : ''
+  const activeColor = displayColor || defaultColor
+  const [hexLocal, setHexLocal] = useState(displayColor)
+
+  useEffect(() => {
+    setHexLocal(displayColor)
+  }, [displayColor])
 
   return (
-    <>
-      <div
-        className="caret-color-reset"
-        onClick={(e) => {
-          e.stopPropagation()
-          setIsOpen(true)
-        }}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '40px',
-          height: '28px',
-          padding: '1px',
-          cursor: 'pointer',
-          overflow: 'hidden',
-          boxSizing: 'border-box'
-        }}
-        title={title}
-        aria-label={ariaLabel}
-      >
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            backgroundColor: displayColor,
-            borderRadius: '3px',
-            boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.15)'
+    <div className="inline-color-picker" role="group" aria-label={ariaLabel}>
+      <div className="inline-color-swatches">
+        {PRESET_PALETTE.map((preset) => {
+          const isSelected = displayColor.toLowerCase() === preset.toLowerCase()
+          return (
+            <button
+              key={preset}
+              type="button"
+              className={`inline-color-swatch${isSelected ? ' selected' : ''}`}
+              style={{ backgroundColor: preset }}
+              onClick={() => onChange(preset)}
+              title={preset}
+              aria-label={`Select ${preset}`}
+            >
+              {isSelected && (
+                <span className="inline-color-swatch-badge">
+                  <Check size={8} color="#ffffff" strokeWidth={3.5} />
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+      <div className="inline-color-hex-row" title="Custom color (hex code, e.g. #ffffff)">
+        <input
+          className="inline-color-hex-input"
+          type="text"
+          spellCheck={false}
+          maxLength={7}
+          placeholder="#ffffff"
+          value={hexLocal}
+          aria-label={ariaLabel}
+          onChange={(e) => {
+            let clean = e.target.value.replace(/[^0-9A-Fa-f#]/g, '').slice(0, 7)
+            if (clean && !clean.startsWith('#')) clean = `#${clean}`
+            setHexLocal(clean)
+            const hex = clean.replace('#', '')
+            if (hex.length === 3 || hex.length === 6) {
+              onChange(clean)
+            }
           }}
         />
+        <div
+          className="inline-color-hex-preview"
+          style={{ backgroundColor: activeColor }}
+        />
+        <button
+          type="button"
+          className="inline-color-reset"
+          onClick={onReset}
+          title="Reset to theme default"
+          aria-label="Reset to theme default"
+        >
+          Reset
+        </button>
       </div>
-
-      <AccentColor
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        initialColor={displayColor}
-        defaultColor={defaultColor}
-        onSelect={onColorChange}
-        previewProperty={previewProperty}
-        title={title}
-      />
-    </>
+    </div>
   )
 }
 
@@ -85,6 +125,8 @@ type LookSubTab = 'appearance' | 'typography' | 'cursor'
 export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTheme }) => {
   const { settings, updateSetting } = useSettingsStore()
   const currentThemeAccent = getTheme(settings.theme || 'dark').colors['--text-accent'] || '#52b788'
+  const themeColors = getTheme(settings.theme || 'dark').colors
+  const currentCaretDefault = themeColors['--caret-color'] || currentThemeAccent
   const [activeSubTab, setActiveSubTab] = useState<LookSubTab>('appearance')
 
   const {
@@ -110,7 +152,10 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
     }
   }
 
-  const currentFontSize = parseInt(String(editorFontSize || settings.fontSize || 14), 10)
+  const currentFontSize = parseInt(
+    String((settings as any).fontSize ?? editorFontSize ?? 14),
+    10
+  )
   const currentCaretWidth = parseInt(String(caretWidth || 2), 10)
 
   return (
@@ -179,23 +224,13 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
               <div className="row-hint">Custom highlight color.</div>
             </div>
             <div className="caret-color-controls">
-              <ColorPickerInput
-                initialColor={themeAccentColor}
+              <InlineColorPicker
+                value={themeAccentColor}
                 defaultColor={currentThemeAccent}
-                onColorChange={updateThemeAccentColor}
-                previewProperty="--text-accent"
-                title="Choose Theme Accent Color"
+                onChange={updateThemeAccentColor}
+                onReset={() => updateThemeAccentColor('')}
                 ariaLabel="Theme accent color picker"
               />
-              <button
-                type="button"
-                onClick={() => updateThemeAccentColor('')}
-                className="caret-color-reset"
-                title="Reset to default theme color"
-                aria-label="Reset theme accent color to theme default"
-              >
-                Reset
-              </button>
             </div>
           </div>
 
@@ -314,23 +349,13 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
               <div className="row-hint">Custom cursor color. Leave empty for theme accent.</div>
             </div>
             <div className="caret-color-controls">
-              <ColorPickerInput
-                initialColor={caretColor}
-                defaultColor="#ffffff"
-                onColorChange={updateCaretColor}
-                previewProperty="--caret-color"
-                title="Choose Caret Color"
+              <InlineColorPicker
+                value={caretColor}
+                defaultColor={currentCaretDefault}
+                onChange={updateCaretColor}
+                onReset={() => updateCaretColor('')}
                 ariaLabel="Caret color picker"
               />
-              <button
-                type="button"
-                onClick={() => updateCaretColor('')}
-                className="caret-color-reset"
-                title="Reset to theme accent color"
-                aria-label="Reset caret color to theme default"
-              >
-                Reset
-              </button>
             </div>
           </div>
         </section>
