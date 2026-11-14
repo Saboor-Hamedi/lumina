@@ -174,7 +174,7 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
           onClose={() => setDeleteConfirmFolder(null)}
           onConfirm={handleConfirmDeleteFolder}
           title="Delete Folder"
-          message={`Are you sure you want to delete '${deleteConfirmFolder}' and all its contents? This action cannot be undone.`}
+          message={`Are you sure you want to delete '${String(deleteConfirmFolder).split('/').filter(Boolean).pop() || deleteConfirmFolder}' and all its contents? This action cannot be undone.`}
           confirmText="Delete Folder"
         />
       )}

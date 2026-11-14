@@ -128,6 +128,17 @@ export const VirtuosoFooter: React.FC<{ context?: any }> = ({ context }) => (
   />
 )
 
+const VIRTUOSO_COMPONENTS = { Footer: VirtuosoFooter } as const
+const VIRTUOSO_INCREASE_VIEWPORT = { top: 800, bottom: 600 } as const
+const VIRTUOSO_OVERSCAN = { main: 400, reverse: 600 } as const
+const computeVirtuosoItemKey = (index: number, item: any) => {
+  if (item.type === 'file') return item.snippet.id
+  if (item.type === 'folder') return item.id
+  if (item.type === 'input') return `input-${item.parentId}`
+  if (item.type === 'root-drop') return 'root-drop-zone'
+  return index
+}
+
 export interface ExplorerVirtuosoListProps {
   virtuosoRef: React.RefObject<any>
   flatTree: any[]
@@ -460,7 +471,6 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
       // selectedNoteIds and selectedSnippetId intentionally omitted — read from refs
       selectedFolderIds,
       selectedIndex,
-      totalSelectedCount,
       hoveredFolderId,
       activeListDragItem,
       query,
@@ -546,19 +556,11 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
               }}
               data={flatTree}
               defaultItemHeight={26}
-              increaseViewportBy={{ top: 800, bottom: 600 }}
-              overscan={{ main: 400, reverse: 600 }}
-              computeItemKey={(index, item) => {
-                if (item.type === 'file') return item.snippet.id
-                if (item.type === 'folder') return item.id
-                if (item.type === 'input') return `input-${item.parentId}`
-                if (item.type === 'root-drop') return 'root-drop-zone'
-                return index
-              }}
+              increaseViewportBy={VIRTUOSO_INCREASE_VIEWPORT}
+              overscan={VIRTUOSO_OVERSCAN}
+              computeItemKey={computeVirtuosoItemKey}
               context={virtuosoContext}
-              components={{
-                Footer: VirtuosoFooter
-              }}
+              components={VIRTUOSO_COMPONENTS}
               itemContent={renderItemContent}
             />
           )}

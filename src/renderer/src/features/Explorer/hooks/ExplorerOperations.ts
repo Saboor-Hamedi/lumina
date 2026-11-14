@@ -308,7 +308,6 @@ export function useExplorerOperations({
     (folderId: string, e?: React.MouseEvent | null) => {
       if (e) e.stopPropagation()
       const selectionStartedAt = performance.now()
-      useWorkspaceStore.getState().setSelectedFolder(folderId)
       markExplorerPerf('folder-selection-mutated', {
         folderId,
         durationMs: Number((performance.now() - selectionStartedAt).toFixed(2))
@@ -375,7 +374,11 @@ export function useExplorerOperations({
             : sanitizedName
           await (window as any).api.createFolder(folderPath)
           setExpandedFolders((prev) => new Set(prev).add(folderPath))
-          await loadWorkspace()
+          useWorkspaceStore.setState((state: any) => ({
+            folders: Array.isArray(state.folders) && !state.folders.includes(folderPath)
+              ? [...state.folders, folderPath]
+              : state.folders
+          }))
         } else if (currentCreating.type === 'canvas') {
           const cleanCanvasName = sanitizedName.replace(/\.canvas$/i, '') || sanitizedName
           const newId = crypto.randomUUID

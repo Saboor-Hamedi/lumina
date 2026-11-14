@@ -1,5 +1,6 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useEffect } from 'react'
 import { useContextMenu } from '../../Navigation/hooks/useContextMenu'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import type { ExportTargetNote } from '../utils/exportSelection'
 
 interface Snippet {
@@ -75,6 +76,19 @@ export function useFolderContextMenu({
 }: UseFolderContextMenuParams): FolderContextMenuResult {
   const [folderContext, setFolderContext] = useState<FolderContext | null>(null)
   const [deleteConfirmFolder, setDeleteConfirmFolder] = useState<string | null>(null)
+
+  // External "delete selected folder" request (e.g. Ctrl+Shift+D) — unresolved target
+  // comes from the workspace store's single selected folder.
+  useEffect(() => {
+    const handler = () => {
+      const target = useWorkspaceStore.getState().selectedFolder
+      if (target) {
+        setDeleteConfirmFolder(target)
+      }
+    }
+    window.addEventListener('trigger-delete-folder', handler)
+    return () => window.removeEventListener('trigger-delete-folder', handler)
+  }, [])
 
   // A right-clicked item is part of a multi-selection when more than one item is
   // selected and the clicked id belongs to the current note/folder selection.

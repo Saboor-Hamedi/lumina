@@ -862,6 +862,11 @@ export const MainLayout: React.FC = () => {
       window.dispatchEvent(new CustomEvent('trigger-new-folder'))
     },
     onDelete: () => {
+      const ws = useWorkspaceStore.getState() as any
+      if (ws?.selectedFolder) {
+        window.dispatchEvent(new CustomEvent('trigger-delete-folder'))
+        return
+      }
       const activeItem =
         selectedSnippet ||
         (activeTabId && activeTabId !== GRAPH_TAB_ID
