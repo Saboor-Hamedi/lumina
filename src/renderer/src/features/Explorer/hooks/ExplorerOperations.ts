@@ -236,6 +236,7 @@ export function useExplorerOperations({
       if (!raw) return
       const folderId = String(raw).replace(/^[/\\]+|[/\\]+$/g, '')
       if (!folderId) return
+      const shouldSelect = !detail || typeof detail !== 'object' || detail.select !== false
 
       const foldersToExpand: string[] = []
       const parts = folderId.split('/').filter(Boolean)
@@ -259,7 +260,9 @@ export function useExplorerOperations({
         setExpandedFolders(next)
       }
 
-      useWorkspaceStore.getState().setSelectedFolder(folderId)
+      if (shouldSelect) {
+        useWorkspaceStore.getState().setSelectedFolder(folderId)
+      }
     }
 
     const handleFocusRoot = () => {
@@ -269,12 +272,33 @@ export function useExplorerOperations({
       }
     }
 
+    const handleTriggerNewFolder = () => {
+      let targetFolderId: string | null = lastClickedFolder
+
+      if (!targetFolderId) {
+        const ws = useWorkspaceStore.getState() as any
+        targetFolderId = ws.selectedFolder || null
+      }
+      if (!targetFolderId) {
+        const activeSnippet = snippets.find((s) => s.id === selectedSnippetId)
+        targetFolderId = activeSnippet?.folderId || null
+      }
+
+      if (targetFolderId) {
+        setExpandedFolders((prev) => new Set(prev).add(targetFolderId!))
+      }
+      setCreating({ type: 'folder', parentId: targetFolderId || null })
+      setCreatingValue('')
+    }
+
     window.addEventListener('trigger-new-note', handleTriggerNewNote)
+    window.addEventListener('trigger-new-folder', handleTriggerNewFolder)
     window.addEventListener('reveal-folder-in-explorer', handleRevealFolder)
     window.addEventListener('focus-explorer-root', handleFocusRoot)
 
     return () => {
       window.removeEventListener('trigger-new-note', handleTriggerNewNote)
+      window.removeEventListener('trigger-new-folder', handleTriggerNewFolder)
       window.removeEventListener('reveal-folder-in-explorer', handleRevealFolder)
       window.removeEventListener('focus-explorer-root', handleFocusRoot)
     }

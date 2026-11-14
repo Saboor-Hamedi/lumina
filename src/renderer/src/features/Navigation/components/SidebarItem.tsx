@@ -132,6 +132,14 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
   const renameInputRef = useRef<HTMLInputElement | null>(null)
   const isRenamingInFlightRef = useRef(false)
 
+  // Keep the inline rename field in sync with the snippet prop when not renaming.
+  // Virtualized rows recycle instances and would otherwise show a stale name.
+  useEffect(() => {
+    if (!isRenaming) {
+      setRenameValue(snippet?.title || '')
+    }
+  }, [snippet?.id, snippet?.title, isRenaming])
+
   useEffect(() => {
     if (isRenaming && renameInputRef.current) {
       renameInputRef.current.select()

@@ -110,8 +110,8 @@ export const DEFAULT_SETTINGS: Settings = {
 
   inlineMetadata: true,
   metaPosition: 'bottom',
-  sidebar: { width: 260, isLeftOpen: true },
-  rightSidebar: { width: 300, isRightOpen: false },
+  sidebar: { width: 150, isLeftOpen: true },
+  rightSidebar: { width: 150, isRightOpen: false },
   titleBarVisible: true,
   statusBarVisible: true,
   activityBarVisible: true,

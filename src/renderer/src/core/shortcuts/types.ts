@@ -43,6 +43,7 @@ export interface KeyboardShortcutHandlers {
   onToggleCommandPalette?: () => void
   onToggleSettings?: () => void
   onNew?: () => void
+  onNewFolder?: () => void
   onOpenDocs?: () => void
   onOpenShortcuts?: () => void
   onToggleTheme?: () => void

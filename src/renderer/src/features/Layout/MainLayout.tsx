@@ -30,6 +30,7 @@ const LuminaChatContent = React.lazy(() =>
   import('../AI/components/LuminaChatContent').then((m) => ({ default: m.LuminaChatContent }))
 )
 import { useKeyboardShortcuts, matchesShortcut } from '../../core/shortcuts'
+import { createUntitledSnippet } from '../Breadcrumbs/utils/breadcrumbUtils'
 import { useWorkspaceStore, GRAPH_TAB_ID, LUMINA_TAB_ID } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useUpdateStore } from '../../core/store/UpdateSetting'
@@ -857,6 +858,9 @@ export const MainLayout: React.FC = () => {
       handleOpenOrCreateCanvasTabRef.current?.()
     },
     onNew: () => handleNew(),
+    onNewFolder: () => {
+      window.dispatchEvent(new CustomEvent('trigger-new-folder'))
+    },
     onDelete: () => {
       const activeItem =
         selectedSnippet ||
@@ -917,16 +921,30 @@ export const MainLayout: React.FC = () => {
 
   const handleNew = async () => {
     try {
-      const newSnippet = {
-        id: crypto.randomUUID(),
-        title: 'New Note',
-        code: '',
-        language: 'markdown',
-        tags: '',
-        timestamp: Date.now()
-      }
+      const ws = useWorkspaceStore.getState() as any
+      const targetFolder: string =
+        ws?.selectedFolder || selectedSnippet?.folderId || ''
+
+      const notes: any[] = ws?.notes || []
+      const newSnippet: any = createUntitledSnippet(targetFolder, notes)
       await saveSnippet(newSnippet)
+
+      // Activate the new note exactly like an explorer click: expand target
+      // folder without marking it selected, then select the note in the tree
+      if (targetFolder) {
+        window.dispatchEvent(
+          new CustomEvent('reveal-folder-in-explorer', {
+            detail: { folderId: targetFolder, select: false }
+          })
+        )
+      }
+      useWorkspaceStore.getState().setSelectedFolder(null)
       setSelectedSnippet(newSnippet)
+      window.dispatchEvent(
+        new CustomEvent('select-note-in-explorer', {
+          detail: { noteId: newSnippet.id }
+        })
+      )
       setActiveTab('files')
       setShowPalette(false)
       setTimeout(() => {

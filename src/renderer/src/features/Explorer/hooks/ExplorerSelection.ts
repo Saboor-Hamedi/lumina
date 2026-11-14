@@ -184,6 +184,23 @@ export function useExplorerSelection({
   ])
 
   useEffect(() => {
+    const handleSelectNoteInExplorer = (e: Event) => {
+      const noteId = (e as CustomEvent).detail?.noteId
+      if (!noteId) return
+      // Mirror the activation state of a note click so folder/blocking state clears
+      setSelectedFolderIds(new Set())
+      setSelectedFolder(null)
+      setSelectedNoteIds(new Set([noteId]))
+      setLastClickedFolder(null)
+      setLastClickedNoteId(noteId)
+      setAnchorId(noteId)
+      setSidebarFocus('note')
+    }
+    window.addEventListener('select-note-in-explorer', handleSelectNoteInExplorer)
+    return () => window.removeEventListener('select-note-in-explorer', handleSelectNoteInExplorer)
+  }, [setSelectedFolder])
+
+  useEffect(() => {
     const handleOutsideInteraction = (e: Event) => {
       const target = e.target as HTMLElement | null
 

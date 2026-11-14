@@ -381,7 +381,7 @@ export const SETTINGS_REGISTRY: LuminaSettingDefinition[] = [
     getValue: (s) => s.sidebar?.isLeftOpen ?? true,
     setValue: async (val) => {
       const b = Boolean(val)
-      const current = useSettingsStore.getState().settings.sidebar || { width: 260, isLeftOpen: true }
+      const current = useSettingsStore.getState().settings.sidebar || { width: 150, isLeftOpen: true }
       await useSettingsStore.getState().updateSetting('sidebar', { ...current, isLeftOpen: b })
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('left-sidebar-toggle', { detail: { open: b } }))
@@ -401,7 +401,7 @@ export const SETTINGS_REGISTRY: LuminaSettingDefinition[] = [
     getValue: (s) => s.rightSidebar?.isRightOpen ?? false,
     setValue: async (val) => {
       const b = Boolean(val)
-      const current = useSettingsStore.getState().settings.rightSidebar || { width: 300, isRightOpen: false }
+      const current = useSettingsStore.getState().settings.rightSidebar || { width: 150, isRightOpen: false }
       await useSettingsStore.getState().updateSetting('rightSidebar', { ...current, isRightOpen: b })
       if (typeof window !== 'undefined') window.dispatchEvent(new Event('resize'))
     },
@@ -422,7 +422,7 @@ export const SETTINGS_REGISTRY: LuminaSettingDefinition[] = [
     setValue: async (val) => {
       const num = parseInt(val, 10)
       if (!isNaN(num) && num >= 180 && num <= 600) {
-        const current = useSettingsStore.getState().settings.sidebar || { width: 260, isLeftOpen: true }
+        const current = useSettingsStore.getState().settings.sidebar || { width: 150, isLeftOpen: true }
         await useSettingsStore.getState().updateSetting('sidebar', { ...current, width: num })
       }
     },

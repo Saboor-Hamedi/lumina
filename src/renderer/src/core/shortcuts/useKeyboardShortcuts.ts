@@ -377,6 +377,13 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
         return
       }
 
+      // New Folder
+      if (matchesShortcut(e, getKey('newFolder')) && shortcutsRef.current.onNewFolder) {
+        e.preventDefault()
+        shortcutsRef.current.onNewFolder()
+        return
+      }
+
       // Open Docs (Ctrl+D)
       const docsKey = userShortcuts['openDocs'] || 'Ctrl + D'
       if (matchesShortcut(e, docsKey) && shortcutsRef.current.onOpenDocs) {

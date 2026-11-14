@@ -241,11 +241,11 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
 
     // Sidebars geometry & state
     sidebar: {
-      width: 260,
+      width: 150,
       isLeftOpen: true
     },
     rightSidebar: {
-      width: 300,
+      width: 150,
       isRightOpen: false
     },
 
@@ -522,12 +522,12 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
   },
 
   togglePrimarySidebar: async () => {
-    const s = get().settings.sidebar || { width: 260, isLeftOpen: true }
+    const s = get().settings.sidebar || { width: 150, isLeftOpen: true }
     await get().updateSetting('sidebar', { ...s, isLeftOpen: !s.isLeftOpen })
   },
 
   toggleSecondarySidebar: async () => {
-    const r = get().settings.rightSidebar || { width: 300, isRightOpen: false }
+    const r = get().settings.rightSidebar || { width: 150, isRightOpen: false }
     await get().updateSetting('rightSidebar', { ...r, isRightOpen: !r.isRightOpen })
   },
 
@@ -570,8 +570,8 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       activityBarVisible: false,
       tabsVisible: false,
       breadcrumbsVisible: false,
-      sidebar: { ...(s.sidebar || { width: 260, isLeftOpen: true }), isLeftOpen: false },
-      rightSidebar: { ...(s.rightSidebar || { width: 300, isRightOpen: false }), isRightOpen: false }
+      sidebar: { ...(s.sidebar || { width: 150, isLeftOpen: true }), isLeftOpen: false },
+      rightSidebar: { ...(s.rightSidebar || { width: 150, isRightOpen: false }), isRightOpen: false }
     }
 
     await get().updateSettings(updates)
@@ -613,10 +613,10 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       if (pre.tabsVisible !== undefined) updates.tabsVisible = pre.tabsVisible
       if (pre.breadcrumbsVisible !== undefined) updates.breadcrumbsVisible = pre.breadcrumbsVisible
       if (pre.isLeftOpen !== undefined) {
-        updates.sidebar = { ...(s.sidebar || { width: 260, isLeftOpen: true }), isLeftOpen: pre.isLeftOpen }
+        updates.sidebar = { ...(s.sidebar || { width: 150, isLeftOpen: true }), isLeftOpen: pre.isLeftOpen }
       }
       if (pre.isRightOpen !== undefined) {
-        updates.rightSidebar = { ...(s.rightSidebar || { width: 300, isRightOpen: false }), isRightOpen: pre.isRightOpen }
+        updates.rightSidebar = { ...(s.rightSidebar || { width: 150, isRightOpen: false }), isRightOpen: pre.isRightOpen }
       }
     } else {
       updates.titleBarVisible = true
@@ -624,8 +624,8 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       updates.activityBarVisible = true
       updates.tabsVisible = true
       updates.breadcrumbsVisible = false
-      updates.sidebar = { ...(s.sidebar || { width: 260, isLeftOpen: true }), isLeftOpen: true }
-      updates.rightSidebar = { ...(s.rightSidebar || { width: 300, isRightOpen: false }), isRightOpen: false }
+      updates.sidebar = { ...(s.sidebar || { width: 150, isLeftOpen: true }), isLeftOpen: true }
+      updates.rightSidebar = { ...(s.rightSidebar || { width: 150, isRightOpen: false }), isRightOpen: false }
     }
 
     await get().updateSettings(updates)

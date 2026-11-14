@@ -1186,8 +1186,6 @@
   background: transparent !important;
   z-index: 10;
   flex-shrink: 0;
-  --font-size-editor: 16px;
-  --editor-font-size: 1rem;
 }
 
 .meta-row {
