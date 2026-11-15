@@ -1,7 +1,6 @@
 import { pipeline, env } from '@xenova/transformers'
 
-// Skip local checks for now to ensure it downloads from HF CDN if needed
-// In production, we would bundle the models.
+// Models are fetched from the HF CDN and cached in-browser; no local model bundle is shipped.
 env.allowLocalModels = false
 env.useBrowserCache = true
 

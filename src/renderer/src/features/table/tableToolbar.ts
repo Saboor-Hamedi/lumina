@@ -79,8 +79,6 @@ export function setupTableFormattingToolbar() {
       return
     }
 
-    // Don't show toolbar if we are just selecting across multiple nodes in a complex way for now,
-    // or if we're in the middle of a mark
     const rect = range.getBoundingClientRect()
 
     toolbar.style.display = 'flex'

@@ -43,7 +43,6 @@ import SettingDropdown from '../Navigation/components/SettingDropdown'
 import ToolTip from '../../components/atoms/ToolTip'
 import CapsLock from '../../components/capsLock'
 import StatusbarMenu from './StatusbarMenu'
-import '../../assets/statusbar.css'
 
 export interface StatusBarProps {
   /** Toggle right inspector sidebar */

@@ -1,6 +1,6 @@
 {
   "name": "lumina",
-  "version": "1.0.87",
+  "version": "1.0.88",
   "description": "Lumina - A premium, AI-powered thinking environment.",
   "main": "./out/main/index.js",
   "author": "Saboor Hamedi",
@@ -8,6 +8,7 @@
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "start": "electron-vite preview",
     "predev": "node scripts/ensure-rust-core.mjs && node scripts/ensure-transformers.mjs && node scripts/ensure-electron.mjs",
     "dev": "electron-vite dev",
@@ -36,7 +37,7 @@
     "e2e:debug": "playwright test --debug",
     "e2e:list": "playwright test --list",
     "test:e2e": "playwright test",
-    "test:all": "npm run test:rust && npm run test:run && npm run e2e",
+    "test:all": "npm run typecheck && npm run test:rust && npm run test:run && npm run e2e",
     "publish": "node scripts/publish.mjs",
     "publish:win": "npm run build && dotenv -- electron-builder --win --publish always",
     "publish:mac": "npm run build && dotenv -- electron-builder --mac --publish always",

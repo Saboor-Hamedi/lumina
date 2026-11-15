@@ -6,7 +6,6 @@ import { hideScreenLoader } from './components/screenLoader'
 import { useSettingsStore } from './core/store/SettingStore'
 import { useZenWindowDrag } from './core/hooks/useZenWindowDrag'
 import './assets/globalErrorHandler.css'
-import './assets/modernUI/modernUi.css'
 
 function App() {
   const isTitleBarVisible = useSettingsStore((state) => {
