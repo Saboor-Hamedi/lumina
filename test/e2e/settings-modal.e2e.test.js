@@ -80,7 +80,8 @@ test('AI Assistant shows the friendly provider labels', async () => {
   await modal().locator('button:has-text("AI Assistant")').first().click()
   const select = modal().locator('select')
   await expect(select.locator('option', { hasText: 'DeepSeek (Default)' })).toHaveCount(1)
-  await expect(select.locator('option', { hasText: 'OpenAI (GPT-4o)' })).toHaveCount(1)
+  await expect(select.locator('option', { hasText: 'OpenAI' })).toHaveCount(1)
+  await expect(select.locator('option', { hasText: 'Anthropic (Claude)' })).toHaveCount(1)
   await expect(select.locator('option', { hasText: 'Ollama (Local / Offline)' })).toHaveCount(1)
 })
 

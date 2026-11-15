@@ -8,12 +8,13 @@
 .markdown-editor .cm-line:has(.cm-quote) {
   border: none !important;
   border-left: 2px solid var(--text-accent) !important;
-  padding: 3px 0 3px 10px !important;
-  margin: 2px 0 !important;
+  padding: 3px 0 3px 12px !important;
+  margin: 0 !important;
   font-style: italic !important;
   color: var(--text-muted) !important;
   background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.04) !important;
   border-radius: 0 4px 4px 0 !important;
+  box-sizing: border-box !important;
 }
 
 .markdown-editor .cm-quote {
