@@ -205,7 +205,7 @@ CRITICAL INSTRUCTIONS:
               Authorization: `Bearer ${cfg.apiKey}`
             },
             body: JSON.stringify({
-              model: cfg.activeModel || 'deepseek-chat',
+              model: cfg.activeModel || 'deepseek-flash',
               messages,
               temperature: 0.7,
               stream: true

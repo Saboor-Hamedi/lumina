@@ -111,11 +111,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
                 WebkitMaskPosition: 'center'
               }}
             />
-            <span className="app-name" data-testid="app-name">
-              Lumina
-            </span>
           </div>
-
           <UpdateDetails />
         </div>
       </div>

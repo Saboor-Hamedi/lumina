@@ -11,7 +11,7 @@ export class DeepSeekProvider extends BaseProvider {
   constructor(config: ProviderConfig = {}) {
     super(config)
     this.baseUrl = 'https://api.deepseek.com/chat/completions'
-    this.defaultModel = getDefaultModel('deepseek') || 'deepseek-chat'
+    this.defaultModel = getDefaultModel('deepseek') || 'deepseek-flash'
     this.id = 'deepseek'
     this.name = 'DeepSeek'
   }

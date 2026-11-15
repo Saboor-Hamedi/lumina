@@ -95,7 +95,7 @@ export const luminaDiagnoseSystemTool = aiSdk.tool({
       const { useSettingsStore } = await import('../../../core/store/SettingStore')
       const settings = (useSettingsStore as any).getState()?.settings || {}
       const activeProvider = settings.activeProvider || 'deepseek'
-      const activeModel = settings.activeModel || settings.deepSeekModel || 'deepseek-chat'
+      const activeModel = settings.activeModel || settings.deepSeekModel || 'deepseek-flash'
       const activeAIMode = settings.activeAIMode || 'Code'
 
       // 4. Memory & Background AI Tasks

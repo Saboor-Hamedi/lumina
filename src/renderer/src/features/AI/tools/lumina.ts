@@ -902,7 +902,7 @@ export const useAIStore = create<AIStore>((set, get) => {
           const readTime = data.readTimeMs ?? 1
           const openTabs = data.openTabsCount ?? 0
           const memCount = data.memoryCount ?? 0
-          const modelName = data.activeModel || 'deepseek-chat'
+          const modelName = data.activeModel || 'deepseek-flash'
           const heap = data.jsHeap || '113 MB'
 
           const assistantMsg: ChatMessage = {

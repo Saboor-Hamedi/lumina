@@ -59,7 +59,7 @@ export const LuminaWorkbench: React.FC<LuminaWorkbenchProps> = () => {
   }
 
   const activeProvider = settings.activeAIProvider || 'DeepSeek'
-  const activeModel = settings.activeAIModel || 'deepseek-chat'
+  const activeModel = settings.activeAIModel || 'deepseek-flash'
 
   const promptPct = useMemo(() => {
     if (!stats.totalTokens) return 50

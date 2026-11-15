@@ -80,11 +80,16 @@ export const runDeepSeekStream = async ({
   const { aiSdk: sdk, createDeepseekProvider: createDs } = await ensureAISdk()
 
   const result = sdk.streamText({
-    model: createDs({ apiKey })(activeModel || 'deepseek-chat'),
+    model: createDs({ apiKey })(activeModel || 'deepseek-flash'),
     system: systemPrompt,
     messages: finalMessages,
     temperature: modeCfg.temperature,
     maxTokens: modeCfg.max_tokens,
+    providerOptions: {
+      deepseek: {
+        thinking: { type: 'disabled' }
+      }
+    },
     abortSignal: controller.signal,
     tools: Object.fromEntries(
       Object.entries(sdkTools).filter(([, v]) => v !== undefined)

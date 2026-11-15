@@ -132,7 +132,7 @@ export const DEFAULT_SETTINGS: Settings = {
   globalShortcut: 'Ctrl+Space',
   windowOpacity: 1.0,
   deepSeekKey: null,
-  deepSeekModel: 'deepseek-chat',
+  deepSeekModel: 'deepseek-flash',
   huggingFaceKey: null,
   activeProvider: 'deepseek',
   activeModel: null,
