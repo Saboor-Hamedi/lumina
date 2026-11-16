@@ -40,6 +40,10 @@ try {
     return v
   }
 
+  // Was the version in package.json manually changed relative to the last tagged release?
+  // If so, the user explicitly opted for that version and we must not override it.
+  // If not, and the current tag already exists, this is the implicit-release flow,
+  // so we bump patch automatically as before.
   let shouldBump = false
   if (arg === 'patch') {
     version = bumpPatch(version)
@@ -51,10 +55,23 @@ try {
     version = arg.replace(/^v/, '')
     shouldBump = true
   } else if (existingTags.includes(`v${version}`)) {
-    // Current version tag already exists - automatically bump patch so a new release is generated
-    version = bumpPatch(version)
-    shouldBump = true
-    console.log(`ℹ️ Tag v${pkg.version} already exists. Auto-incrementing to v${version}...`)
+    // Detect manual version bump by inspecting the HEAD commit vs working tree version.
+    let headVersion = version
+    try {
+      const headPkg = JSON.parse(execSync('git show HEAD:package.json', { encoding: 'utf8' }))
+      headVersion = headPkg.version
+    } catch {
+      // Fall back to implicit bump if we cannot resolve HEAD's package.json.
+    }
+
+    if (headVersion !== version) {
+      console.log(`ℹ️  Manually-set version ${version} detected; keeping it as-is.`)
+    } else {
+      // No manual bump in place — auto-increment so a new release is generated.
+      version = bumpPatch(version)
+      shouldBump = true
+      console.log(`ℹ️ Tag v${pkg.version} already exists (no manual bump). Auto-incrementing to v${version}...`)
+    }
   }
 
   if (shouldBump) {

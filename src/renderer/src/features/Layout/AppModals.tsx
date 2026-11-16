@@ -31,7 +31,8 @@ import { VoiceCapsule } from '../voice'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { renameNote } from '../../core/hooks/renameNote'
-import Theme from '../theme/Theme'
+import { openSidebarView } from '../Navigation/sidebarViewStore'
+
 
 // Helper to retry dynamic imports if Vite dev server is still starting/recompiling
 const lazyWithRetry = <T extends React.ComponentType<any>>(
@@ -65,8 +66,8 @@ export interface AppModalsProps {
   setShowSettings: (val: boolean) => void
   settingsInitialTab: string
   setSettingsInitialTab: (tab: string) => void
-  showThemeModal: boolean
-  setShowThemeModal: (val: boolean) => void
+
+
   showAIChatModal: boolean
   setShowAIChatModal: (val: boolean) => void
   setSavedRightSidebarState: (state: any) => void
@@ -106,8 +107,8 @@ export const AppModals: React.FC<AppModalsProps> = ({
   setShowSettings,
   settingsInitialTab,
   setSettingsInitialTab,
-  showThemeModal,
-  setShowThemeModal,
+
+
   showAIChatModal,
   setShowAIChatModal,
   setSavedRightSidebarState,
@@ -175,7 +176,7 @@ export const AppModals: React.FC<AppModalsProps> = ({
             }}
             onOpenTheme={() => {
               setShowSettings(false)
-              setShowThemeModal(true)
+              openSidebarView('theme')
             }}
             initialTab={settingsInitialTab}
           />
@@ -183,11 +184,7 @@ export const AppModals: React.FC<AppModalsProps> = ({
       )}
 
       {/* Theme Customizer Modal */}
-      {showThemeModal && (
-        <React.Suspense fallback={null}>
-          <Theme isOpen={showThemeModal} onClose={() => setShowThemeModal(false)} />
-        </React.Suspense>
-      )}
+
 
       {/* Floating AI Chat Assistant (Dockable into right sidebar) */}
       {showAIChatModal && (

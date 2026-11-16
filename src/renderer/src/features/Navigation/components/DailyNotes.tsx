@@ -1,105 +1,41 @@
-import React, { memo, useState, useMemo } from 'react'
+import React, { memo } from 'react'
 import { Calendar } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
-import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/SettingStore'
-import Template from '../../template/Template'
-
-import { defaultTemplates } from '../../template/utils/defaultTemplates'
+import { useSidebarViewStore, toggleSidebarView } from '../sidebarViewStore'
 
 export interface DailyNotesProps {
   isActivityBar?: boolean
 }
 
-export interface TemplateItem {
-  id: string
-  title: string
-  code: string
-}
-
 const DailyNotes: React.FC<DailyNotesProps> = memo(({ isActivityBar = false }) => {
-  const saveNote = useWorkspaceStore((state) => state.saveNote)
-  const setSelectedNote = useWorkspaceStore((state) => state.setSelectedNote)
-
-  const [isModalOpen, setIsModalOpen] = useState(false)
-
-  const virtualTemplates: TemplateItem[] = useMemo(() => {
-    return defaultTemplates.map((t, idx) => ({
-      id: `template-${idx}`,
-      title: t.title.replace(/\.md$/i, ''),
-      code: t.code
-    }))
-  }, [])
-
-  const getTodayTitle = (): string => {
-    return new Date().toISOString().split('T')[0]
-  }
+  const isLeftOpen = useSettingsStore((s: any) => s.settings?.sidebar?.isLeftOpen ?? true)
+  const activeSidebarView = useSidebarViewStore((s) => s.activeView)
+  const isTemplatesActive = isLeftOpen && activeSidebarView === 'templates'
 
   const handleDailyNote = () => {
-    setIsModalOpen(true)
-  }
-
-  const handleSelectTemplate = async (template: { id: string; title: string; code?: string }) => {
-    const today = getTodayTitle()
-    const templateName = template.id === 'blank' ? 'Note' : template.title.replace(/\.md$/i, '')
-    const finalTitle = `${today} - ${templateName}`
-
-    if ((window as any).api?.createFolder) {
-      try {
-        await (window as any).api.createFolder('DailyNotes')
-      } catch (e) {
-      }
-    }
-
-    try {
-      const currentExpanded = useSettingsStore.getState().settings.expandedFolders || []
-      const arr = Array.isArray(currentExpanded) ? [...currentExpanded] : []
-      if (!arr.includes('DailyNotes')) {
-        arr.push('DailyNotes')
-        useSettingsStore.getState().updateSetting('expandedFolders', arr)
-      }
-    } catch (e) {}
-
-    const newNote = {
-      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `daily-${Date.now()}`,
-      title: finalTitle,
-      code: `# ${finalTitle}\n\n${template.code || ''}`,
-      language: 'markdown',
-      folderId: 'DailyNotes',
-      timestamp: Date.now()
-    }
-    if (saveNote) await saveNote(newNote as any)
-    if (setSelectedNote) setSelectedNote(newNote as any)
+    toggleSidebarView('templates')
   }
 
   return (
-    <>
-      <ToolTip text="Daily Note" position={isActivityBar ? 'right' : 'bottom'}>
-        <button
-          type="button"
-          className={isActivityBar ? 'activity-bar-btn' : 'new-note-btn'}
-          onClick={handleDailyNote}
-          style={isActivityBar ? undefined : { flex: 1, minWidth: 0, justifyContent: 'center' }}
-          aria-label="Daily Note"
-        >
-          <Calendar size={isActivityBar ? 16 : 13} style={{ flexShrink: 0 }} />
-          {!isActivityBar && (
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              Daily
-            </span>
-          )}
-        </button>
-      </ToolTip>
-
-      {isModalOpen && (
-        <Template
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          templates={virtualTemplates}
-          onSelectTemplate={handleSelectTemplate}
-        />
-      )}
-    </>
+    <ToolTip text="Daily Note" position={isActivityBar ? 'right' : 'bottom'}>
+      <button
+        type="button"
+        className={
+          isActivityBar ? `activity-bar-btn ${isTemplatesActive ? 'active' : ''}` : 'new-note-btn'
+        }
+        onClick={handleDailyNote}
+        style={isActivityBar ? undefined : { flex: 1, minWidth: 0, justifyContent: 'center' }}
+        aria-label="Daily Note"
+      >
+        <Calendar size={isActivityBar ? 16 : 13} style={{ flexShrink: 0 }} />
+        {!isActivityBar && (
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            Daily
+          </span>
+        )}
+      </button>
+    </ToolTip>
   )
 })
 

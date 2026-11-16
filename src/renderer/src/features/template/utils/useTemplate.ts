@@ -1,5 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { defaultTemplates } from './defaultTemplates'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
+import { useSettingsStore } from '../../../core/store/SettingStore'
 
 export interface TemplateItem {
   id: string
@@ -35,6 +37,62 @@ export const BLANK_TEMPLATE: TemplateItem = {
   title: 'Blank Note',
   code: '',
   description: 'Start with a completely empty note. No predefined structure.'
+}
+
+/**
+ * Create a collision-safe daily note inside `DailyNotes` from a template and open it.
+ */
+export async function createNoteFromTemplate(template: {
+  id: string
+  title: string
+  code?: string
+}): Promise<void> {
+  const today = new Date().toISOString().split('T')[0]
+  const templateName = template.id === 'blank' ? 'Note' : template.title.replace(/\.md$/i, '')
+  const baseTitle = `${today} - ${templateName}`
+
+  const { notes, saveNote, setSelectedNote } = useWorkspaceStore.getState()
+  const existingTitles = new Set(
+    (notes || [])
+      .filter((n) => (n.folderId || '') === 'DailyNotes')
+      .map((n) => (n.title || '').toLowerCase())
+  )
+
+  let finalTitle = baseTitle
+  let counter = 2
+  while (existingTitles.has(finalTitle.toLowerCase())) {
+    finalTitle = `${baseTitle} (${counter++})`
+  }
+
+  try {
+    const currentExpanded = useSettingsStore.getState().settings.expandedFolders || []
+    const arr = Array.isArray(currentExpanded) ? [...currentExpanded] : []
+    if (!arr.includes('DailyNotes')) {
+      arr.push('DailyNotes')
+      useSettingsStore.getState().updateSetting('expandedFolders', arr)
+    }
+  } catch {
+    // Ignore settings update errors
+  }
+
+  const newNote = {
+    id:
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `daily-${Date.now()}`,
+    title: finalTitle,
+    fileName: `${finalTitle}.md`,
+    code: `# ${finalTitle}\n\n${template.code || ''}`,
+    language: 'markdown',
+    tags: '',
+    folderId: 'DailyNotes',
+    timestamp: Date.now(),
+    isPinned: false,
+    isLearned: false
+  }
+
+  const savedNote = saveNote ? await saveNote(newNote as any) : newNote
+  if (setSelectedNote) setSelectedNote((savedNote || newNote) as any)
 }
 
 export function useTemplate({

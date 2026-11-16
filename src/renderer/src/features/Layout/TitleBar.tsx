@@ -22,6 +22,7 @@ import UpdateDetails from '../../components/update/UpdateDetails'
 import AccentColor from '../theme/AccentColor'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 import { useSettingStore } from '../../core/store/SettingStore'
+import { ThemeToggle } from './ThemeToggle'
 import '../../assets/titlebar.css'
 
 export interface TitleBarProps {
@@ -137,6 +138,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
 
       <div className="title-right">
         <div className="window-controls" data-testid="window-controls">
+          <ThemeToggle />
           <div className="accent-titlebar-container">
             <ToolTip
               text={
@@ -218,6 +220,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
           </button>
         </div>
       </div>
+
     </div>
   )
 })

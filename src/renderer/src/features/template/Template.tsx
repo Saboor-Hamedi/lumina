@@ -1,34 +1,98 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react'
+import React, { useRef, useCallback, useEffect, useDeferredValue, memo } from 'react'
 import { createPortal } from 'react-dom'
-import { PanelLeftClose, PanelLeftOpen, Square, Copy, X, Check } from 'lucide-react'
+import {
+  LayoutTemplate,
+  FileText,
+  Calendar,
+  CheckSquare,
+  Table,
+  X,
+  Check,
+  Search
+} from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
-import TemplateSidebar from './TemplateSidebar'
-import TemplateContent from './TemplateContent'
-import useTemplate, { type TemplateItem } from './utils/useTemplate'
-import { useSettingsStore } from '../../core/store/SettingStore'
+import useTemplate, {
+  createNoteFromTemplate,
+  type TemplateItem
+} from './utils/useTemplate'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
-import '../modals/css/guide.css'
-import '../Docs/Documentation.css'
-import '../preview/preview.css'
+import { PreviewCommandPalette } from '../commandpalette'
 import './css/template.css'
 
 export interface TemplateProps {
   isOpen?: boolean
+  isEmbedded?: boolean
   onClose?: () => void
   templates?: TemplateItem[]
   onSelectTemplate?: (template: TemplateItem) => void
 }
 
+interface TemplateRowProps {
+  template: TemplateItem
+  isActive: boolean
+  onSelect: (id: string) => void
+  onApply: (template: TemplateItem) => void
+}
+
+const getTemplateIcon = (id: string, title: string) => {
+  const t = (title || '').toLowerCase()
+  if (id === 'blank') return FileText
+  if (t.includes('daily') || t.includes('calendar') || t.includes('journal')) return Calendar
+  if (t.includes('todo') || t.includes('task') || t.includes('check')) return CheckSquare
+  if (t.includes('project') || t.includes('table') || t.includes('tracker') || t.includes('matrix'))
+    return Table
+  return LayoutTemplate
+}
+
+const getTemplateCategory = (id: string, title: string): string => {
+  if (id === 'blank') return 'Blank'
+  const t = (title || '').toLowerCase()
+  if (t.includes('daily')) return 'Daily'
+  if (t.includes('meeting') || t.includes('interview')) return 'Meeting'
+  if (t.includes('project') || t.includes('tracker')) return 'Project'
+  if (t.includes('weekly')) return 'Weekly'
+  return 'Doc'
+}
+
+const TemplateRow: React.FC<TemplateRowProps> = memo(
+  ({ template, isActive, onSelect, onApply }) => {
+    const Icon = getTemplateIcon(template.id, template.title)
+    const category = getTemplateCategory(template.id, template.title)
+
+    return (
+      <div
+        data-template-id={template.id}
+        className={`lumina-drawer-item ${isActive ? 'active' : ''}`}
+        onClick={() => onSelect(template.id)}
+        onDoubleClick={() => onApply(template)}
+        role="button"
+        tabIndex={0}
+        title={`${template.title} (Click to preview, Double-click to apply)`}
+      >
+        <div className="lumina-drawer-item-icon">
+          <Icon size={14} />
+        </div>
+        <span className="lumina-drawer-item-label">{template.title}</span>
+        <div className="lumina-drawer-item-meta">
+          <span className="template-drawer-badge">{category}</span>
+          {isActive && <Check size={13} strokeWidth={2.5} style={{ color: 'var(--text-accent)' }} />}
+        </div>
+      </div>
+    )
+  }
+)
+
+TemplateRow.displayName = 'TemplateRow'
+
 export const Template: React.FC<TemplateProps> = ({
   isOpen = false,
+  isEmbedded = false,
   onClose = () => {},
   templates,
-  onSelectTemplate = () => {}
+  onSelectTemplate
 }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const isMaximized = useSettingsStore((s: any) => s.settings?.templateModalMaximized ?? false)
-
-  const containerRef = useRef<HTMLDivElement | null>(null)
+  const listRef = useRef<HTMLDivElement | null>(null)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   const {
     searchQuery,
@@ -40,11 +104,11 @@ export const Template: React.FC<TemplateProps> = ({
     handleApply
   } = useTemplate({
     templates,
-    onSelectTemplate,
-    onClose
+    onSelectTemplate: onSelectTemplate || createNoteFromTemplate,
+    onClose: isEmbedded ? undefined : onClose
   })
 
-  // Esc key closes modal cleanly via Lumina's global shortcut manager
+  // Esc key closes drawer / sidebar view only when active
   useKeyboardShortcuts({
     onEscape: () => {
       if (isOpen && onClose) {
@@ -55,172 +119,183 @@ export const Template: React.FC<TemplateProps> = ({
     }
   })
 
-  // Keyboard navigation
+  // Scroll active item into view on open
+  useEffect(() => {
+    if (!isOpen) return
+    setTimeout(() => {
+      const container = listRef.current
+      if (!container) return
+      const activeItem = container.querySelector<HTMLElement>('.lumina-drawer-item.active')
+      if (activeItem) {
+        activeItem.scrollIntoView({ block: 'nearest' })
+      }
+    }, 50)
+  }, [isOpen])
+
+  const scrollToItem = useCallback((idx: number) => {
+    const container = listRef.current
+    if (!container) return
+    const el = container.children[idx] as HTMLElement | undefined
+    if (el) el.scrollIntoView({ block: 'nearest' })
+  }, [])
+
+  // Latest values in refs so the keydown listener is bound once per open
+  const navRef = useRef({ filteredTemplates, selectedId, handleApply })
+  navRef.current = { filteredTemplates, selectedId, handleApply }
+
+  // Keyboard navigation (↑/↓ to move, Enter to apply)
   useEffect(() => {
     if (!isOpen) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      const { filteredTemplates: list, selectedId: current, handleApply: apply } = navRef.current
       const target = e.target as HTMLElement | null
       const isInput = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA'
 
-      if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (list.length === 0) return
         e.preventDefault()
-        const currentIndex = filteredTemplates.findIndex((t) => t.id === selectedId)
-        const nextIndex = Math.min(filteredTemplates.length - 1, (currentIndex === -1 ? 0 : currentIndex) + 1)
-        if (filteredTemplates[nextIndex]) {
-          setSelectedId(filteredTemplates[nextIndex].id)
-        }
-      } else if (e.key === 'ArrowUp') {
+        const idx = list.findIndex((t) => t.id === current)
+        const base = idx === -1 ? 0 : idx
+        const next =
+          e.key === 'ArrowDown' ? Math.min(list.length - 1, base + 1) : Math.max(0, base - 1)
+        setSelectedId(list[next].id)
+        scrollToItem(next)
+      } else if (e.key === 'Enter') {
         e.preventDefault()
-        const currentIndex = filteredTemplates.findIndex((t) => t.id === selectedId)
-        const prevIndex = Math.max(0, (currentIndex === -1 ? 0 : currentIndex) - 1)
-        if (filteredTemplates[prevIndex]) {
-          setSelectedId(filteredTemplates[prevIndex].id)
-        }
-      } else if (e.key === 'Enter' && !e.shiftKey) {
-        if (!isInput || target?.classList.contains('template-search-input')) {
-          e.preventDefault()
-          handleApply()
-        }
+        apply()
+      } else if (!isInput && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        searchInputRef.current?.focus()
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen, filteredTemplates, selectedId, handleApply, setSelectedId])
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, setSelectedId, scrollToItem])
 
-  const handleToggleSidebar = useCallback(() => {
-    setIsSidebarOpen((prev) => !prev)
-  }, [])
+  // Defer the heavy rich-markdown preview so list navigation stays instant
+  const deferredPreview = useDeferredValue(selectedTemplate)
 
-  const handleToggleMaximize = useCallback(() => {
-    const { settings, updateSettings } = useSettingsStore.getState() as any
-    updateSettings({ templateModalMaximized: !(settings?.templateModalMaximized ?? false) })
-  }, [])
+  // Stable apply callback so memoized rows don't re-render on every selection change
+  const stableApply = useCallback(
+    (t: TemplateItem) => navRef.current.handleApply(t),
+    []
+  )
 
-  if (!isOpen) return null
+  if (!isOpen && !isEmbedded) return null
 
-  return createPortal(
-    <div className="guide-modal-overlay" onClick={onClose}>
-      <div
-        ref={containerRef}
-        className={`docs-modal-container template-modal-container${isMaximized ? ' maximized' : ''}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header - exactly identical to Documentation / mother modal */}
-        <div
-          className="docs-modal-header template-modal-header"
-          onDoubleClick={handleToggleMaximize}
-          style={{ cursor: 'default' }}
-        >
-          <div className="docs-header-left template-header-left">
-            <ToolTip text={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'} position="bottom">
-              <button
-                type="button"
-                className="docs-sidebar-toggle-btn template-sidebar-toggle-btn"
-                onClick={handleToggleSidebar}
-                aria-label={isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
-              >
-                {isSidebarOpen ? (
-                  <PanelLeftClose size={15} strokeWidth={2} />
-                ) : (
-                  <PanelLeftOpen size={15} strokeWidth={2} />
-                )}
-              </button>
-            </ToolTip>
-            <span
-              className="template-header-title"
-              style={{
-                fontSize: '12.5px',
-                fontWeight: 500,
-                color: 'var(--text-main)',
-                letterSpacing: '-0.01em',
-                background: 'transparent',
-                padding: 0
-              }}
-            >
-              Templates
-            </span>
-            {selectedTemplate && (
-              <>
-                <span style={{ opacity: 0.35, color: 'var(--text-muted)', fontSize: '12px' }}>/</span>
-                <span
-                  className="template-header-active-pill"
-                  style={{
-                    fontSize: '11.5px',
-                    fontWeight: 400,
-                    color: 'var(--text-muted)',
-                    maxWidth: '240px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    background: 'transparent',
-                    padding: 0
-                  }}
-                  title={selectedTemplate?.title?.replace(/\.md$/, '')}
-                >
-                  {selectedTemplate?.title?.replace(/\.md$/, '') || 'Blank Note'}
-                </span>
-              </>
-            )}
-          </div>
+  const content = (
+    <div className="lumina-sidebar-pane template-sidebar-pane">
+      {/* Sidebar Header */}
+      <div className="lumina-drawer-header">
+        <div className="lumina-drawer-header-left">
+          <LayoutTemplate size={14} className="lumina-drawer-header-icon" />
+          <span className="lumina-drawer-title">Templates</span>
+          <span className="lumina-drawer-badge">{filteredTemplates.length}</span>
+        </div>
 
-          <div className="docs-header-right template-header-right">
+        <div className="lumina-drawer-header-right">
+          <ToolTip text="Close" position="bottom">
             <button
               type="button"
-              className="template-header-apply-btn"
-              onClick={() => handleApply(selectedTemplate)}
-              aria-label="Use selected template"
+              className="lumina-drawer-close-btn"
+              onClick={onClose}
+              aria-label="Close"
             >
-              <Check size={12} strokeWidth={2.5} />
-              <span>Apply</span>
+              <X size={14} />
             </button>
-            <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
-              <button
-                type="button"
-                className="docs-window-btn template-window-btn"
-                onClick={handleToggleMaximize}
-                aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
-              >
-                {isMaximized ? (
-                  <Copy size={13} strokeWidth={2} />
-                ) : (
-                  <Square size={13} strokeWidth={2} />
-                )}
-              </button>
-            </ToolTip>
-            <ToolTip text="Close (Esc)" position="bottom">
-              <button
-                type="button"
-                className="guide-close-btn"
-                onClick={onClose}
-                aria-label="Close Templates (Esc)"
-              >
-                <X size={17} />
-              </button>
-            </ToolTip>
-          </div>
+          </ToolTip>
         </div>
+      </div>
 
-        {/* Content Container: Flat Docked Sidebar + Content */}
-        <div className={`docs-container template-container ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
-          <TemplateSidebar
-            templates={filteredTemplates}
-            selectedId={selectedId}
+      {/* Search Bar */}
+      <div className="lumina-drawer-search-wrap">
+        <Search size={13} className="search-icon" />
+        <input
+          ref={searchInputRef}
+          type="text"
+          placeholder="Search templates..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          spellCheck={false}
+          autoFocus
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            className="clear-btn"
+            onClick={() => setSearchQuery('')}
+            aria-label="Clear search"
+          >
+            <X size={12} />
+          </button>
+        )}
+      </div>
+
+      {/* Template List */}
+      <div ref={listRef} className="lumina-drawer-list template-sidebar-list">
+        {filteredTemplates.map((template) => (
+          <TemplateRow
+            key={template.id}
+            template={template}
+            isActive={template.id === selectedId}
             onSelect={setSelectedId}
-            onApply={handleApply}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            isOpen={isSidebarOpen}
+            onApply={stableApply}
           />
+        ))}
 
-          <TemplateContent
-            template={selectedTemplate}
-            onApply={handleApply}
-          />
+        {filteredTemplates.length === 0 && (
+          <div className="lumina-drawer-empty">
+            No templates found matching "{searchQuery}"
+          </div>
+        )}
+      </div>
+
+      {/* Built-in Rich Markdown Template Preview + Apply Button */}
+      <div className="template-sidebar-preview-pane">
+        <div className="template-sidebar-preview-header">
+          <span className="template-sidebar-preview-title" title={selectedTemplate.title}>
+            {selectedTemplate.title}
+          </span>
+          <button
+            type="button"
+            className="template-sidebar-apply-btn"
+            onClick={() => handleApply(selectedTemplate)}
+          >
+            <Check size={12} strokeWidth={2.5} />
+            <span>Apply</span>
+          </button>
         </div>
+
+        <div className="template-sidebar-preview-body">
+          {deferredPreview.id === 'blank' || !deferredPreview.code?.trim() ? (
+            <div className="template-sidebar-blank-preview">
+              <FileText size={22} className="template-blank-preview-icon" />
+              <span className="template-blank-preview-text">
+                Start with a clean, empty note.
+              </span>
+            </div>
+          ) : isOpen ? (
+            <div className="template-sidebar-rich-preview">
+              <PreviewCommandPalette content={deferredPreview.code} />
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+
+  if (isEmbedded) {
+    return content
+  }
+
+  return createPortal(
+    <div className="lumina-side-drawer-overlay" onClick={onClose}>
+      <div
+        className="lumina-side-drawer-panel template-side-drawer"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {content}
       </div>
     </div>,
     document.body

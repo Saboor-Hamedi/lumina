@@ -106,14 +106,30 @@ const hexToRgb = (hex: string): string | null => {
     : null
 }
 
+let pendingThemeSideEffects: (() => void) | null = null
+
+export const flushThemeSideEffects = (): void => {
+  if (pendingThemeSideEffects) {
+    const fn = pendingThemeSideEffects
+    pendingThemeSideEffects = null
+    fn()
+  }
+}
+
 /**
  * Apply theme to document
  * Applies all theme colors including caret styling
  * Caret color matches theme accent unless user has set a custom color
  *
  * @param themeId - Theme identifier
+ * @param resetCustomAccent - Whether to clear custom accent override
+ * @param deferSideEffects - Defer JSON serialization & event broadcast until animation completes
  */
-export const applyTheme = (themeId: string, resetCustomAccent = false): void => {
+export const applyTheme = (
+  themeId: string,
+  resetCustomAccent = false,
+  deferSideEffects = false
+): void => {
   const theme = getTheme(themeId)
   const root = document.documentElement
 
@@ -186,11 +202,29 @@ export const applyTheme = (themeId: string, resetCustomAccent = false): void => 
   // Set data attribute
   root.setAttribute('data-theme', themeId)
 
-  // Persist to localStorage
+  // Persist theme-id synchronously; defer heavy JSON serialization & listeners if animating
   localStorage.setItem('theme-id', themeId)
-  localStorage.setItem('lumina_active_theme_colors', JSON.stringify(computedColors))
 
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('theme-changed', { detail: { themeId, colors: computedColors, accentColor: computedColors['--text-accent'], resetCustomAccent } }))
+  const runSideEffects = () => {
+    localStorage.setItem('lumina_active_theme_colors', JSON.stringify(computedColors))
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('theme-changed', {
+          detail: {
+            themeId,
+            colors: computedColors,
+            accentColor: computedColors['--text-accent'],
+            resetCustomAccent
+          }
+        })
+      )
+    }
+  }
+
+  if (deferSideEffects) {
+    pendingThemeSideEffects = runSideEffects
+  } else {
+    pendingThemeSideEffects = null
+    runSideEffects()
   }
 }

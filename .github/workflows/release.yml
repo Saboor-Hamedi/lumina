@@ -10,8 +10,49 @@ permissions:
   contents: write
 
 jobs:
+  create-release:
+    name: Create Draft Release
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve_tag.outputs.tag }}
+      version: ${{ steps.resolve_tag.outputs.version }}
+
+    steps:
+      - name: Resolve release tag/version
+        id: resolve_tag
+        shell: bash
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+            echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          else
+            # Manual dispatch: no tag pushed yet — publish is performed only manually via `gh release create` for the next tagged release.
+            echo "Manual workflow_dispatch is not supported for publishing releases. Push a v* tag instead." >&2
+            exit 1
+          fi
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Ensure draft release exists (single, shared across matrix)
+        shell: bash
+        run: |
+          TAG="${{ steps.resolve_tag.outputs.tag }}"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; leaving it untouched."
+            # Ensure it is a draft so matrix jobs can attach assets without racing on "latest".
+            gh release edit "$TAG" --draft=true --repo "$GITHUB_REPOSITORY" || true
+          else
+            gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --draft \
+              --title "${{ steps.resolve_tag.outputs.version }}" \
+              --notes "Automated release for $TAG"
+          fi
+
   release:
     name: Build & Publish (${{ matrix.os }})
+    needs: create-release
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -52,11 +93,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
         run: npx electron-builder --publish always
 
-      - name: Publish Release (Undraft)
-        if: success()
+  finalize-release:
+    name: Publish Release (Undraft & Mark Latest)
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Undraft release and mark as latest
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
-        shell: bash
         run: |
-          gh release edit "${{ github.ref_name }}" --draft=false --latest || true
+          # Exactly one release should exist for this tag; the other duplicates from older releases remain untouched.
+          RELEASE_ID=$(gh release view "${GITHUB_REF#refs/tags/}" --repo "$GITHUB_REPOSITORY" --json id --jq .id)
+          echo "Release id: $RELEASE_ID"
+          gh release edit "$RELEASE_ID" --repo "$GITHUB_REPOSITORY" --draft=false --latest

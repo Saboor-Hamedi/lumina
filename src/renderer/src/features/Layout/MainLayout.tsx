@@ -18,6 +18,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Sidebar from '../Navigation/Sidebar'
 import ActivityBar from '../Navigation/ActivityBar'
+import { openSidebarView } from '../Navigation/sidebarViewStore'
 import Welcome from '../../Welcome'
 import TabBar from './TabBar'
 import TabContentPane from './TabContentPane'
@@ -161,7 +162,7 @@ export const MainLayout: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState('files')
   const [showSettings, setShowSettings] = useState(false)
-  const [showThemeModal, setShowThemeModal] = useState(false)
+
   const [showPalette, setShowPalette] = useState(false)
   const [paletteInitialQuery, setPaletteInitialQuery] = useState('')
   const [showDocsModal, setShowDocsModal] = useState(false)
@@ -840,7 +841,7 @@ export const MainLayout: React.FC = () => {
       return false
     },
     onToggleSettings: () => setShowSettings(true),
-    onToggleTheme: () => setShowThemeModal(true),
+    onToggleTheme: () => openSidebarView('theme'),
     onToggleGraph: () => useWorkspaceStore.getState().openGraphTab(),
     onToggleAIChat: () => handleToggleAIChat(),
     onToggleSidebar: () => updateLeftSidebarOpen((prev) => !prev),
@@ -1091,7 +1092,7 @@ export const MainLayout: React.FC = () => {
   }, [saveSnippet, setSelectedSnippet, setActiveTab, showToast])
 
   const handleOpenSettings = useCallback(() => setShowSettings(true), [])
-  const handleOpenTheme = useCallback(() => setShowThemeModal(true), [])
+  const handleOpenTheme = useCallback(() => openSidebarView('theme'), [])
   const handleToggleGraph = useCallback(() => {
     useWorkspaceStore.getState().openGraphTab()
   }, [])
@@ -1118,7 +1119,12 @@ export const MainLayout: React.FC = () => {
     const handleAIChatEvent = () => {
       handleToggleAIChat()
     }
-    const handleToggleLeftSidebarEvent = () => {
+    const handleToggleLeftSidebarEvent = (e?: Event) => {
+      const detailOpen = (e as CustomEvent<{ open?: boolean }>)?.detail?.open
+      if (typeof detailOpen === 'boolean') {
+        updateLeftSidebarOpen(detailOpen)
+        return
+      }
       handleToggleLeftSidebar()
     }
     const handleNewCanvasEvent = () => {
@@ -1445,8 +1451,8 @@ export const MainLayout: React.FC = () => {
         setShowSettings={setShowSettings}
         settingsInitialTab={settingsInitialTab}
         setSettingsInitialTab={setSettingsInitialTab}
-        showThemeModal={showThemeModal}
-        setShowThemeModal={setShowThemeModal}
+
+
         showAIChatModal={showAIChatModal}
         setShowAIChatModal={setShowAIChatModal}
         setSavedRightSidebarState={setSavedRightSidebarState}

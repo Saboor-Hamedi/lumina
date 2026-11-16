@@ -23,6 +23,7 @@ import DailyNotes from './components/DailyNotes'
 import ActivityBarMail from './components/ActivityBarMail'
 import { useSettingStore } from '../../core/store/SettingStore'
 import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
+import { useSidebarViewStore, toggleSidebarView } from './sidebarViewStore'
 import './css/activitybar.css'
 
 export interface ActivityBarProps {
@@ -49,6 +50,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState<boolean>(() => {
     return useSettingStore.getState().settings?.sidebar?.isLeftOpen ?? true
   })
+  const sidebarActiveView = useSidebarViewStore((s) => s.activeView)
   const isGraphActive = useWorkspaceStore((state) => state.activeTabId === GRAPH_TAB_ID)
 
   useEffect(() => {
@@ -65,15 +67,11 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
   }, [])
 
   const handleToggleExplorer = () => {
-    window.dispatchEvent(new CustomEvent('toggle-left-sidebar'))
+    toggleSidebarView('files')
   }
 
   const handleOpenTheme = () => {
-    if (onOpenTheme) {
-      onOpenTheme()
-    } else {
-      window.dispatchEvent(new CustomEvent('open-theme-modal'))
-    }
+    toggleSidebarView('theme')
   }
 
   const handleOpenLumina = () => {
@@ -119,7 +117,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
         <ToolTip text={`Explorer (${isMac ? '⌘B' : 'Ctrl+B'})`} position="right">
           <button
             type="button"
-            className={`activity-bar-btn ${isLeftSidebarOpen ? 'active' : ''}`}
+            className={`activity-bar-btn ${isLeftSidebarOpen && sidebarActiveView === 'files' ? 'active' : ''}`}
             onClick={handleToggleExplorer}
             aria-label="Explorer"
           >
@@ -182,7 +180,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
         <ToolTip text="Theme Settings" position="right">
           <button
             type="button"
-            className="activity-bar-btn"
+            className={`activity-bar-btn ${isLeftSidebarOpen && sidebarActiveView === 'theme' ? 'active' : ''}`}
             onClick={handleOpenTheme}
             aria-label="Theme Settings"
           >
