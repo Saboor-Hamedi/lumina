@@ -35,13 +35,77 @@ export interface ReleaseCategory {
   items: string[]
 }
 
+const decodeHtmlEntities = (str: string): string =>
+  str
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+
+const stripHtmlTags = (str: string): string =>
+  decodeHtmlEntities(str.replace(/<[^>]*>/g, ' '))
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const parseHtmlToMarkdownLines = (html: string): string[] => {
+  if (typeof DOMParser !== 'undefined') {
+    try {
+      const doc = new DOMParser().parseFromString(html, 'text/html')
+      const lines: string[] = []
+      const walk = (node: Node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const text = (node.textContent || '').replace(/\s+/g, ' ').trim()
+          if (text) lines.push(text)
+          return
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE) return
+        const el = node as HTMLElement
+        const tag = el.tagName.toLowerCase()
+        if (tag === 'script' || tag === 'style') return
+        if (/^h[1-6]$/.test(tag)) {
+          const text = (el.textContent || '').replace(/\s+/g, ' ').trim()
+          if (text) lines.push(`# ${text}`)
+          return
+        }
+        if (tag === 'li') {
+          const text = (el.textContent || '').replace(/\s+/g, ' ').trim()
+          if (text) lines.push(`- ${text}`)
+          return
+        }
+        if (tag === 'p' || tag === 'blockquote') {
+          const text = (el.textContent || '').replace(/\s+/g, ' ').trim()
+          if (text) lines.push(text)
+          return
+        }
+        el.childNodes.forEach(walk)
+      }
+      doc.body.childNodes.forEach(walk)
+      if (lines.length > 0) return lines
+    } catch {
+      // Fall through to regex HTML normalization
+    }
+  }
+
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(h[1-6]|p|li|div|blockquote|ul|ol)>/gi, '\n')
+    .replace(/<h[1-6][^>]*>/gi, '# ')
+    .replace(/<li[^>]*>/gi, '- ')
+    .split('\n')
+    .map((line) => stripHtmlTags(line))
+    .filter(Boolean)
+}
+
 /**
- * Simple, clean release notes parser for our Markdown release notes.
+ * Release notes parser supporting Markdown, GitHub HTML release bodies, arrays,
+ * and empty/short/long inputs without exposing raw HTML tags.
  */
 export const parseReleaseNotes = (notes?: unknown): ReleaseCategory[] => {
   if (!notes) return []
 
-  const text =
+  const rawText =
     typeof notes === 'string'
       ? notes
       : Array.isArray(notes)
@@ -51,10 +115,15 @@ export const parseReleaseNotes = (notes?: unknown): ReleaseCategory[] => {
             .join('\n\n')
         : ''
 
+  const text = rawText.trim()
+  if (!text) return []
+
+  const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(text)
+  const lines = looksLikeHtml ? parseHtmlToMarkdownLines(text) : text.split('\n')
+
   const categories: ReleaseCategory[] = []
   let currentCategory: ReleaseCategory | null = null
 
-  const lines = text.split('\n')
   for (const rawLine of lines) {
     const trimmed = rawLine.trim()
     if (!trimmed) continue
@@ -62,24 +131,29 @@ export const parseReleaseNotes = (notes?: unknown): ReleaseCategory[] => {
     // Detect markdown headings: # Title, ## Title, ### Title
     const headingMatch = trimmed.match(/^#{1,6}\s+(.+)$/)
     if (headingMatch) {
-      currentCategory = { title: headingMatch[1].replace(/\*\*/g, '').trim(), items: [] }
-      categories.push(currentCategory)
+      const headingTitle = stripHtmlTags(headingMatch[1].replace(/\*\*/g, ''))
+      if (headingTitle) {
+        currentCategory = { title: headingTitle, items: [] }
+        categories.push(currentCategory)
+      }
       continue
     }
 
     // Detect bullet points: - item, * item, • item, + item
     const bulletMatch = trimmed.match(/^[-*•+]\s+(.+)$/)
     if (bulletMatch) {
+      const cleanItem = stripHtmlTags(bulletMatch[1])
+      if (!cleanItem) continue
       if (!currentCategory) {
         currentCategory = { title: 'Highlights', items: [] }
         categories.push(currentCategory)
       }
-      currentCategory.items.push(bulletMatch[1].trim())
+      currentCategory.items.push(cleanItem)
       continue
     }
 
     // Category header without markdown (e.g. "New", "Improved", "Fixed")
-    const cleanHeader = trimmed.replace(/[:：]$/, '').replace(/\*\*/g, '').trim()
+    const cleanHeader = stripHtmlTags(trimmed.replace(/[:：]$/, '').replace(/\*\*/g, ''))
     const lower = cleanHeader.toLowerCase()
     const isCategoryHeader =
       lower === 'new' ||
@@ -98,15 +172,26 @@ export const parseReleaseNotes = (notes?: unknown): ReleaseCategory[] => {
     }
 
     // Fallback item in current or default category
+    const cleanLine = stripHtmlTags(trimmed)
+    if (!cleanLine) continue
     if (currentCategory) {
-      currentCategory.items.push(trimmed)
+      currentCategory.items.push(cleanLine)
     } else {
-      currentCategory = { title: 'Highlights', items: [trimmed] }
+      currentCategory = { title: 'Highlights', items: [cleanLine] }
       categories.push(currentCategory)
     }
   }
 
-  return categories.length > 0 ? categories : [{ title: 'Notes', items: [text] }]
+  const nonEmpty = categories.filter((c) => c.items.length > 0)
+  if (nonEmpty.length > 0) return nonEmpty
+
+  // If the release only had a heading with no body text, surface it cleanly under Highlights
+  if (categories.length > 0 && categories[0].title) {
+    return [{ title: 'Highlights', items: [categories[0].title] }]
+  }
+
+  const fallback = stripHtmlTags(text)
+  return fallback ? [{ title: 'Notes', items: [fallback] }] : []
 }
 
 export const UpdateDetails: React.FC = () => {
@@ -276,8 +361,8 @@ export const UpdateDetails: React.FC = () => {
                   </div>
                   <ul className="category-items">
                     {category.items.map((item, j) => {
-                      const colonIdx = item.indexOf(':')
-                      if (colonIdx !== -1) {
+                      const colonIdx = item.indexOf(': ')
+                      if (colonIdx > 0 && colonIdx <= 48 && !item.slice(0, colonIdx).includes('http')) {
                         const title = item.slice(0, colonIdx)
                         const desc = item.slice(colonIdx + 1)
                         return (

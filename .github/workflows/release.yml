@@ -110,8 +110,14 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          # Exactly one release should exist for this tag; the other duplicates from older releases remain untouched.
           TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          # Clean up any stale untagged draft with the same version title so only the tagged release remains
+          gh release list --repo "$GITHUB_REPOSITORY" --limit 20 --json databaseId,tagName,isDraft,name \
+            --jq ".[] | select(.isDraft == true and .tagName == \"\" and (.name == \"$VERSION\" or .name == \"$TAG\")) | .databaseId" \
+            | while read -r DRAFT_ID; do
+                [ -n "$DRAFT_ID" ] && gh release delete "$DRAFT_ID" --repo "$GITHUB_REPOSITORY" --yes || true
+              done
           RELEASE_ID=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json id --jq .id)
           echo "Release id: $RELEASE_ID"
           gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest

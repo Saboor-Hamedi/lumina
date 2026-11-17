@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
-import UpdateDetails from '../../../../../src/renderer/src/components/update/UpdateDetails'
+import UpdateDetails, {
+  parseReleaseNotes
+} from '../../../../../src/renderer/src/components/update/UpdateDetails'
 import { useUpdateStore } from '../../../../../src/renderer/src/core/store/UpdateSetting'
 
 describe('UpdateDetails', () => {
@@ -97,5 +99,32 @@ describe('UpdateDetails', () => {
 
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByTestId('update-details')).toBeNull()
+  })
+
+  it('parses HTML release notes cleanly without raw tags across empty, short, and long inputs', () => {
+    expect(parseReleaseNotes('')).toEqual([])
+    expect(parseReleaseNotes('   ')).toEqual([])
+    expect(parseReleaseNotes(null)).toEqual([])
+
+    const htmlNotes =
+      '<h1>Version 91</h1>\n<p>This version has fixed most the critical issue.</p>'
+    expect(parseReleaseNotes(htmlNotes)).toEqual([
+      {
+        title: 'Version 91',
+        items: ['This version has fixed most the critical issue.']
+      }
+    ])
+
+    const headingOnly = '<h2>Version 92</h2>'
+    expect(parseReleaseNotes(headingOnly)).toEqual([
+      { title: 'Highlights', items: ['Version 92'] }
+    ])
+
+    const multiSectionHtml =
+      '<h2>New</h2><ul><li>Fast launch</li><li>Clean UI</li></ul><h2>Fixed</h2><p>Resolved &amp; verified</p>'
+    expect(parseReleaseNotes(multiSectionHtml)).toEqual([
+      { title: 'New', items: ['Fast launch', 'Clean UI'] },
+      { title: 'Fixed', items: ['Resolved & verified'] }
+    ])
   })
 })

@@ -63,4 +63,4 @@ publish:
   provider: github
   owner: Saboor-Hamedi
   repo: lumina
-  releaseType: release
+  releaseType: draft
