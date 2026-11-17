@@ -72,19 +72,11 @@ function applySidebarCssVars(
   width: number,
   contentWidth: number
 ): void {
+  if (!shellEl) return
   const widthProp = `--${side}-sidebar-width`
   const contentWidthProp = `--${side}-sidebar-content-width`
-  const widthVal = `${width}px`
-  const contentWidthVal = `${contentWidth}px`
-
-  if (shellEl) {
-    shellEl.style.setProperty(widthProp, widthVal)
-    shellEl.style.setProperty(contentWidthProp, contentWidthVal)
-  }
-  if (typeof document !== 'undefined') {
-    document.documentElement.style.setProperty(widthProp, widthVal)
-    document.documentElement.style.setProperty(contentWidthProp, contentWidthVal)
-  }
+  shellEl.style.setProperty(widthProp, `${width}px`)
+  shellEl.style.setProperty(contentWidthProp, `${contentWidth}px`)
 }
 
 /**
@@ -180,17 +172,18 @@ export function useSidebarResize({
       initialWidthRef.current[side] = startWidth
       widthRef.current[side] = startWidth
 
-      const onMouseMove = (moveEvent: MouseEvent) => {
+      let rafId = 0
+      let latestClientX = startClientX
+
+      const flushResizeFrame = () => {
+        rafId = 0
         const activeSide = resizingSideRef.current
         if (!activeSide) return
-
-        // Stop any text/image drag / selection that propagates from sidebar items
-        moveEvent.preventDefault()
 
         const shell = appShellRef.current
         if (!shell) return
 
-        const deltaX = moveEvent.clientX - startClientX
+        const deltaX = latestClientX - startClientX
 
         if (activeSide === 'left') {
           const rawWidth = startWidth + deltaX
@@ -207,7 +200,19 @@ export function useSidebarResize({
         }
       }
 
+      const onMouseMove = (moveEvent: MouseEvent) => {
+        if (!resizingSideRef.current) return
+        latestClientX = moveEvent.clientX
+        if (!rafId) {
+          rafId = window.requestAnimationFrame(flushResizeFrame)
+        }
+      }
+
       const onMouseUp = () => {
+        if (rafId) {
+          window.cancelAnimationFrame(rafId)
+          rafId = 0
+        }
         window.removeEventListener('mousemove', onMouseMove)
         window.removeEventListener('mouseup', onMouseUp)
         window.removeEventListener('blur', onMouseUp)
@@ -227,14 +232,10 @@ export function useSidebarResize({
             if (shell) {
               shell.style.setProperty('--left-sidebar-content-width', `${MIN_LEFT_WIDTH}px`)
             }
-            document.documentElement.style.setProperty(
-              '--left-sidebar-content-width',
-              `${MIN_LEFT_WIDTH}px`
-            )
             setTimeout(() => {
               setLeftWidth(restoreWidth)
               applySidebarCssVars(shell, 'left', restoreWidth, restoreWidth)
-            }, 250)
+            }, 340)
           } else {
             const finalWidth = Math.max(MIN_LEFT_WIDTH, Math.min(MAX_LEFT_WIDTH, Math.round(raw)))
             setLeftWidth(finalWidth)
@@ -260,14 +261,10 @@ export function useSidebarResize({
             if (shell) {
               shell.style.setProperty('--right-sidebar-content-width', `${MIN_RIGHT_WIDTH}px`)
             }
-            document.documentElement.style.setProperty(
-              '--right-sidebar-content-width',
-              `${MIN_RIGHT_WIDTH}px`
-            )
             setTimeout(() => {
               setRightWidth(restoreWidth)
               applySidebarCssVars(shell, 'right', restoreWidth, restoreWidth)
-            }, 250)
+            }, 340)
           } else {
             const finalWidth = Math.max(MIN_RIGHT_WIDTH, Math.min(MAX_RIGHT_WIDTH, Math.round(raw)))
             setRightWidth(finalWidth)

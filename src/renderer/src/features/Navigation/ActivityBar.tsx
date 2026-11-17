@@ -37,6 +37,7 @@ import { useSidebarViewStore, toggleSidebarView } from './sidebarViewStore'
 import './css/activitybar.css'
 
 export interface ActivityBarProps {
+  isZenHidden?: boolean
   onToggleGraph?: () => void
   onToggleAIChat?: () => void
   onToggleTerminal?: () => void
@@ -47,6 +48,7 @@ export interface ActivityBarProps {
 }
 
 export const ActivityBar: React.FC<ActivityBarProps> = memo(({
+  isZenHidden = false,
   onToggleGraph,
   onToggleAIChat,
   onToggleTerminal,
@@ -156,7 +158,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
   }
 
   return (
-    <aside className="lumina-activity-bar" data-testid="activity-bar" aria-label="Activity Bar">
+    <aside className={`lumina-activity-bar${isZenHidden ? ' zen-hidden' : ''}`} data-testid="activity-bar" aria-label="Activity Bar">
       <div className="activity-bar-top">
         {/* 0. Explorer / Files (Active indicator when sidebar is open) */}
         <ToolTip text={`Explorer (${isMac ? '⌘B' : 'Ctrl+B'})`} position="right">

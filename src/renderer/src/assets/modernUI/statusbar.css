@@ -27,6 +27,16 @@
   z-index: 100 !important;
   overflow: hidden !important;
   position: relative !important;
+  transition: height 0.28s cubic-bezier(0.22, 1, 0.36, 1), min-height 0.28s cubic-bezier(0.22, 1, 0.36, 1), max-height 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.status-bar.zen-hidden,
+[data-modern-ui='true'] .status-bar.zen-hidden {
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Lualine Section A: Mode Badge (NORMAL / VISUAL) — Completely Static & Stationary (Zero Shake) */

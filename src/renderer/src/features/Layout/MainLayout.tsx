@@ -190,15 +190,11 @@ export const MainLayout: React.FC = () => {
   const [, setSavedRightSidebarState] = useState<any>(null)
   const appShellRef = useRef<HTMLDivElement | null>(null)
 
+  const isZenModeEnabled = useSettingsStore((state) => state.settings?.zenMode?.enabled === true)
   const isActivityBarVisible = useSettingsStore(
-    (state) => !state.settings?.zenMode?.enabled && state.settings?.activityBarVisible !== false
+    (state) => state.settings?.activityBarVisible !== false
   )
-  const isStatusBarVisible = useSettingsStore((state) => {
-    if (state.settings?.zenMode?.enabled) {
-      return false
-    }
-    return state.settings?.statusBarVisible === true
-  })
+  const isStatusBarVisible = useSettingsStore((state) => state.settings?.statusBarVisible === true)
   const isTabsVisible = useSettingsStore((state) => {
     if (state.settings?.zenMode?.enabled) {
       return state.settings?.tabsVisible === true
@@ -1237,6 +1233,7 @@ export const MainLayout: React.FC = () => {
             onOpenTheme={handleOpenTheme}
             onOpenDocs={handleOpenDocs}
             onOpenGuide={() => setShowGuideModal(true)}
+            isZenHidden={isZenModeEnabled}
           />
         )}
 
@@ -1447,6 +1444,7 @@ export const MainLayout: React.FC = () => {
             setShowSettings(true)
           }}
           onGuideClick={() => setShowGuideModal(true)}
+          isZenHidden={isZenModeEnabled}
         />
       )}
 

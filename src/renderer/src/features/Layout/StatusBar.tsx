@@ -57,6 +57,8 @@ export interface StatusBarProps {
   onShortcutsClick?: () => void
   /** Open guide */
   onGuideClick?: () => void
+  /** Smoothly hide status bar during Zen Mode */
+  isZenHidden?: boolean
 }
 
 interface CursorPosition {
@@ -214,7 +216,8 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   onThemeClick,
   onDocsClick,
   onShortcutsClick,
-  onGuideClick
+  onGuideClick,
+  isZenHidden = false
 }) => {
   const selectedSnippet = useWorkspaceStore((s) => s.selectedNote || (s as any).selectedSnippet)
   const [cursorPos, setCursorPos] = useState<CursorPosition>({ line: 1, col: 1, selectedChars: 0 })
@@ -526,7 +529,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
   return (
     <div
-      className="status-bar"
+      className={`status-bar${isZenHidden ? ' zen-hidden' : ''}`}
       ref={statusBarRef}
       data-testid="status-bar"
       onContextMenu={handleContextMenu}

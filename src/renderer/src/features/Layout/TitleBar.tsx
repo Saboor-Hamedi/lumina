@@ -79,17 +79,30 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
   }, [])
 
   const isZenMode = useSettingStore((s: any) => Boolean(s.settings?.zenMode?.enabled))
+  const prevLeftOpenRef = React.useRef<boolean>(true)
 
   const handleToggleZenMode = useCallback(() => {
     const store = useSettingStore.getState() as any
     const currentZen = store.settings?.zenMode || {}
+    const currentSidebar = store.settings?.sidebar || { width: 150, isLeftOpen: true }
     const nextEnabled = !currentZen.enabled
-    store.updateSettings({
-      zenMode: { ...currentZen, enabled: nextEnabled }
-    })
-    window.dispatchEvent(
-      new CustomEvent('toggle-left-sidebar', { detail: { open: !nextEnabled } })
-    )
+
+    if (nextEnabled) {
+      const wasLeftOpen = currentSidebar.isLeftOpen ?? true
+      prevLeftOpenRef.current = wasLeftOpen
+      setIsLeftSidebarOpen(false)
+      store.updateSettings({
+        zenMode: { ...currentZen, enabled: true },
+        ...(wasLeftOpen ? { sidebar: { ...currentSidebar, isLeftOpen: false } } : {})
+      })
+    } else {
+      const shouldRestoreLeft = prevLeftOpenRef.current
+      setIsLeftSidebarOpen(shouldRestoreLeft)
+      store.updateSettings({
+        zenMode: { ...currentZen, enabled: false },
+        ...(shouldRestoreLeft ? { sidebar: { ...currentSidebar, isLeftOpen: true } } : {})
+      })
+    }
   }, [])
 
   const handleToggleLeftSidebar = useCallback(() => {

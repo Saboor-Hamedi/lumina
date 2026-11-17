@@ -473,12 +473,12 @@
   transform: translateY(8px);
 }
 
-/* Rotating moon / sun knob inside the sky */
+/* Rotating moon / sun knob dead-center inside the sky */
 .theme-titlebar-knob {
   position: relative;
   z-index: 2;
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -488,7 +488,8 @@
   background: transparent !important;
   border-radius: 50%;
   user-select: none;
-  transition: transform 0.55s cubic-bezier(0.25, 1, 0.5, 1);
+  transform-origin: center center;
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .theme-titlebar-knob.is-night {
@@ -502,20 +503,20 @@
 .theme-knob-orb {
   position: absolute;
   inset: 0;
+  margin: auto;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .theme-knob-orb--sun {
-  width: 9px;
-  height: 9px;
-  margin: auto;
+  width: 10px;
+  height: 10px;
   background: radial-gradient(circle at 35% 35%, #fff6b3 0%, #ffd24c 55%, #ffa726 100%);
   box-shadow: 0 0 6px rgba(255, 200, 64, 0.75);
-  transform: translate(-2px, -2px) scale(1);
+  transform: scale(1);
   opacity: 1;
 }
 
@@ -525,6 +526,8 @@
 }
 
 .theme-knob-orb--moon {
+  width: 14px;
+  height: 14px;
   color: #f4f6ff;
   filter: drop-shadow(0 0 3px rgba(210, 222, 255, 0.55));
   opacity: 0;

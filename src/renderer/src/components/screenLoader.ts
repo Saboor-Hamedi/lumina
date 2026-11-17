@@ -37,27 +37,12 @@ const stopGlobalInlineTimer = (): void => {
 }
 
 /**
- * Returns or creates the SVG emblem markup for the screen loader
+ * Returns minimal monochrome SVG emblem markup for the subtle screen loader
  */
 export const getEmblemSvgMarkup = (): string => `
-  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M24 4L42 16V32L24 44L6 32V16L24 4Z" stroke="url(#loader-emblem-grad)" stroke-width="2.5" stroke-linejoin="round"/>
-    <path d="M24 4V44M6 16L42 32M6 32L42 16" stroke="url(#loader-emblem-inner)" stroke-width="1.2" stroke-opacity="0.45"/>
-    <circle cx="24" cy="24" r="4.5" fill="url(#loader-core-grad)"/>
-    <defs>
-      <linearGradient id="loader-emblem-grad" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#a855f7"/>
-        <stop offset="1" stop-color="#6366f1"/>
-      </linearGradient>
-      <linearGradient id="loader-emblem-inner" x1="6" y1="16" x2="42" y2="32" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#c084fc"/>
-        <stop offset="1" stop-color="#818cf8"/>
-      </linearGradient>
-      <linearGradient id="loader-core-grad" x1="20" y1="20" x2="28" y2="28" gradientUnits="userSpaceOnUse">
-        <stop stop-color="#ffffff"/>
-        <stop offset="1" stop-color="#c084fc"/>
-      </linearGradient>
-    </defs>
+  <svg width="26" height="26" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M24 5L41 16V32L24 43L7 32V16L24 5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-opacity="0.75"/>
+    <circle cx="24" cy="24" r="3.5" fill="var(--text-accent, #8b5cf6)"/>
   </svg>
 `
 
@@ -198,11 +183,7 @@ export const initScreenLoader = (options?: ScreenLoaderOptions): HTMLElement | n
   const initialVal = options?.progress !== undefined ? options.progress : 18
 
   loaderElement.innerHTML = `
-    <div class="screen-loader-ambient"></div>
     <div class="screen-loader-emblem-wrap">
-      <div class="screen-loader-pulse-ring ring-1"></div>
-      <div class="screen-loader-pulse-ring ring-2"></div>
-      <div class="screen-loader-spinner-ring"></div>
       <div class="screen-loader-emblem">
         ${getEmblemSvgMarkup()}
       </div>
@@ -212,7 +193,7 @@ export const initScreenLoader = (options?: ScreenLoaderOptions): HTMLElement | n
       <div class="screen-loader-bar-fill" id="screen-loader-bar-fill" style="width: ${initialVal}%"></div>
     </div>
     <div class="screen-loader-footer">
-      <span class="screen-loader-status" id="screen-loader-status">${options?.status || 'Opening your workspace...'}</span>
+      <span class="screen-loader-status" id="screen-loader-status">${options?.status || 'Opening workspace…'}</span>
       <span class="screen-loader-percent" id="screen-loader-percent">${initialVal}%</span>
     </div>
     <div class="screen-loader-substatus" id="screen-loader-substatus">${options?.subStatus || ''}</div>
