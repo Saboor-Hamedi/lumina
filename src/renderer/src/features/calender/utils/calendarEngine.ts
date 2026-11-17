@@ -15,6 +15,7 @@ import { notifyUser } from './notificationService'
 import {
   saveCalendarAlarms,
   saveCalendarCountdown,
+  formatTime12h,
   type AlarmItem,
   type CountdownTarget
 } from './calendarUtils'
@@ -207,9 +208,7 @@ class CalendarEngine {
 
   public snoozeMinutes(mins: number, label = 'Snoozed Reminder'): void {
     const targetTimestamp = Date.now() + mins * 60 * 1000
-    const d = new Date(targetTimestamp)
-    const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`)
-    const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+    const timeStr = formatTime12h(new Date(targetTimestamp))
     const settings = useSettingStore.getState().settings
     const alarms = (settings?.calendarAlarms as readonly AlarmItem[] | undefined) || []
     const snoozeAlarm: AlarmItem = {

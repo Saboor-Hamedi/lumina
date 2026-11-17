@@ -1,46 +1,92 @@
-/* 
+/*
  * ============================================================
- * LUMINA CALLOUT STYLING
+ * LUMINA CALLOUT STYLING — Continuous Block Geometry
+ * Matches codeWrapper.css: zero gaps, single selection layer.
  * ============================================================
  */
 
-/* Base Callout Line */
 .lumina-callout-line {
-  background-color: rgba(255, 255, 255, 0.02) !important;
-  border-left: 1.5px solid var(--text-accent) !important;
-  padding-left: 12px !important;
-  border-radius: 0 4px 4px 0 !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
   margin: 0 !important;
+  display: block !important;
+  padding: 2px 12px !important;
+  line-height: 1.6 !important;
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  border-left: 2px solid var(--text-accent) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
-.lumina-callout-line.cm-activeLine {
-  background-color: inherit !important;
+.lumina-callout-line:not(.lumina-callout-line + .lumina-callout-line),
+.cm-line:not(.lumina-callout-line) + .cm-line.lumina-callout-line,
+.cm-line.lumina-callout-line:first-child {
+  padding-top: 6px !important;
+  border-top-right-radius: 4px !important;
+}
+
+.cm-line.lumina-callout-line:has(+ :not(.lumina-callout-line)),
+.cm-line.lumina-callout-line:last-child {
+  padding-bottom: 6px !important;
+  border-bottom-right-radius: 4px !important;
+}
+
+.lumina-callout-line.cm-activeLine,
+html[data-use-active-line-border="true"] .cm-line.lumina-callout-line.cm-activeLine {
+  margin: 0 !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  box-shadow: none !important;
+  outline: none !important;
+  transform: none !important;
+}
+
+/* Prevent native selection from doubling over CodeMirror's .cm-selectionLayer */
+.lumina-callout-line::selection,
+.lumina-callout-line *::selection {
+  background: transparent !important;
+  color: inherit !important;
+  text-shadow: none !important;
 }
 
 /* Callout Types */
-.lumina-callout-line-note {
+.lumina-callout-line-note,
+.lumina-callout-line-info,
+.lumina-callout-line-todo {
   border-left-color: #38bdf8 !important;
-  background-color: rgba(56, 189, 248, 0.04) !important;
+  background-color: rgba(56, 189, 248, 0.05) !important;
 }
 
-.lumina-callout-line-tip {
+.lumina-callout-line-tip,
+.lumina-callout-line-success {
   border-left-color: #4ade80 !important;
-  background-color: rgba(74, 222, 128, 0.04) !important;
+  background-color: rgba(74, 222, 128, 0.05) !important;
 }
 
-.lumina-callout-line-warning {
+.lumina-callout-line-warning,
+.lumina-callout-line-question {
   border-left-color: #fbbf24 !important;
-  background-color: rgba(251, 191, 36, 0.04) !important;
+  background-color: rgba(251, 191, 36, 0.05) !important;
 }
 
-.lumina-callout-line-important {
+.lumina-callout-line-important,
+.lumina-callout-line-example {
   border-left-color: #a855f7 !important;
-  background-color: rgba(168, 85, 247, 0.04) !important;
+  background-color: rgba(168, 85, 247, 0.05) !important;
 }
 
-.lumina-callout-line-caution {
+.lumina-callout-line-caution,
+.lumina-callout-line-danger,
+.lumina-callout-line-bug {
   border-left-color: #f87171 !important;
-  background-color: rgba(248, 113, 113, 0.04) !important;
+  background-color: rgba(248, 113, 113, 0.05) !important;
+}
+
+.lumina-callout-line-quote {
+  border-left-color: #94a3b8 !important;
+  background-color: rgba(148, 163, 184, 0.05) !important;
 }
 
 /* Header & Typography */
@@ -56,11 +102,19 @@
   letter-spacing: 0.02em;
 }
 
-.lumina-callout-note { color: #38bdf8; }
-.lumina-callout-tip { color: #4ade80; }
-.lumina-callout-warning { color: #fbbf24; }
-.lumina-callout-important { color: #a855f7; }
-.lumina-callout-caution { color: #f87171; }
+.lumina-callout-note,
+.lumina-callout-info,
+.lumina-callout-todo { color: #38bdf8; }
+.lumina-callout-tip,
+.lumina-callout-success { color: #4ade80; }
+.lumina-callout-warning,
+.lumina-callout-question { color: #fbbf24; }
+.lumina-callout-important,
+.lumina-callout-example { color: #a855f7; }
+.lumina-callout-caution,
+.lumina-callout-danger,
+.lumina-callout-bug { color: #f87171; }
+.lumina-callout-quote { color: #94a3b8; }
 
 .lumina-callout-icon {
   display: inline-flex;

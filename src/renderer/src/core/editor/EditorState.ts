@@ -158,8 +158,20 @@ export function useEditorState({
 
       if (codeChangedFromOutside) {
         const timeSinceLastSave = Date.now() - lastSaveTimeRef.current
-        // Suppress chokidar echo if saved within last 3s and not dirty
-        if (timeSinceLastSave < 3000 && !isDirty) {
+        const isOwnSaveEcho =
+          timeSinceLastSave < 3500 &&
+          (incomingCode === lastSavedCodeRef.current ||
+            incomingCode.trim() === lastSavedCodeRef.current.trim())
+
+        // Suppress chokidar / store echo from our own auto-save (even if user kept typing)
+        if (isOwnSaveEcho) {
+          lastSavedCodeRef.current = incomingCode
+          return
+        }
+
+        // Preserve user's intentional leading/trailing whitespace if content is otherwise identical
+        const isTrivialDifference = incomingCode.trim() === currentCode.trim()
+        if (isDirty && isTrivialDifference) {
           lastSavedCodeRef.current = incomingCode
           return
         }
@@ -167,7 +179,6 @@ export function useEditorState({
         // A true conflict ONLY exists if user has active unsaved local edits
         // that differ non-trivially from both incomingCode and currentCode
         const hasUnsavedEdits = isDirty && currentCode !== lastSavedCodeRef.current
-        const isTrivialDifference = incomingCode.trim() === currentCode.trim()
 
         if (hasUnsavedEdits && !isTrivialDifference) {
           // Real conflict: user is actively typing and external changes arrived

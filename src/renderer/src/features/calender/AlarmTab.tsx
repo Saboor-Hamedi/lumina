@@ -14,7 +14,7 @@
 import React, { useState, useCallback, memo } from 'react'
 import { Plus, Bell, Trash2, Volume2 } from 'lucide-react'
 import { useSettingStore } from '../../core/store/SettingStore'
-import { pad2, saveCalendarAlarms, type AlarmItem } from './utils/calendarUtils'
+import { pad2, formatTime12h, saveCalendarAlarms, type AlarmItem } from './utils/calendarUtils'
 import { calendarEngine } from './utils/calendarEngine'
 import { playAlarmSound } from './utils/alarmSound'
 
@@ -36,6 +36,7 @@ export const AlarmTab: React.FC = memo(() => {
   const [hours, setHours] = useState<string>('00')
   const [minutes, setMinutes] = useState<string>('15')
   const [seconds, setSeconds] = useState<string>('00')
+  const [ampm, setAmpm] = useState<'AM' | 'PM'>(() => (new Date().getHours() >= 12 ? 'PM' : 'AM'))
   const [mode, setMode] = useState<'relative' | 'specific'>('relative')
 
   const createAlarm = useCallback(
@@ -48,17 +49,18 @@ export const AlarmTab: React.FC = memo(() => {
         const totalMs = (h * 3600 + m * 60 + s) * 1000
         if (totalMs <= 0) return
         targetTimestamp = Date.now() + totalMs
-        const d = new Date(targetTimestamp)
-        timeStr = `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`
+        timeStr = formatTime12h(new Date(targetTimestamp))
       } else {
+        const h12 = Math.max(1, Math.min(12, h || 12))
+        const h24 = ampm === 'PM' ? (h12 === 12 ? 12 : h12 + 12) : h12 === 12 ? 0 : h12
         const now = new Date()
         const target = new Date()
-        target.setHours(h % 24, m, s, 0)
+        target.setHours(h24, m, s, 0)
         if (target.getTime() <= now.getTime()) {
           target.setDate(target.getDate() + 1)
         }
         targetTimestamp = target.getTime()
-        timeStr = `${pad2(h % 24)}:${pad2(m)}:${pad2(s)}`
+        timeStr = formatTime12h(target)
       }
 
       const nextAlarm: AlarmItem = {
@@ -73,7 +75,7 @@ export const AlarmTab: React.FC = memo(() => {
       saveCalendarAlarms([nextAlarm, ...alarms])
       calendarEngine.ensureLoop()
     },
-    [mode, alarmTitle, alarms]
+    [mode, ampm, alarmTitle, alarms]
   )
 
   const handleAddAlarm = useCallback(() => {
@@ -122,7 +124,15 @@ export const AlarmTab: React.FC = memo(() => {
             type="button"
             className="calender-chip"
             style={{ fontSize: '10px', padding: '1px 7px' }}
-            onClick={() => setMode((m) => (m === 'relative' ? 'specific' : 'relative'))}
+            onClick={() =>
+              setMode((m) => {
+                const next = m === 'relative' ? 'specific' : 'relative'
+                if (next === 'specific' && (hours === '00' || parseInt(hours, 10) > 12)) {
+                  setHours('09')
+                }
+                return next
+              })
+            }
           >
             {mode === 'relative' ? 'Exact Time' : 'Duration'}
           </button>
@@ -155,6 +165,16 @@ export const AlarmTab: React.FC = memo(() => {
             onChange={(e) => setSeconds(e.target.value.replace(/\D/g, '').slice(0, 2))}
             aria-label="Seconds"
           />
+          {mode === 'specific' && (
+            <button
+              type="button"
+              className="calender-chip active"
+              style={{ height: 32, padding: '0 8px', fontSize: '11px' }}
+              onClick={() => setAmpm((p) => (p === 'AM' ? 'PM' : 'AM'))}
+            >
+              {ampm}
+            </button>
+          )}
         </div>
 
         {mode === 'relative' && (

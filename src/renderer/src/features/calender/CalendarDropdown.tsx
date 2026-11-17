@@ -124,10 +124,18 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = memo(({ isOpen,
 
   const now = new Date()
   const dateSubtitle = `${FULL_DAY_NAMES[now.getDay()]}, ${MONTH_NAMES[now.getMonth()]} ${now.getDate()}`
-  const rawName = isLoggedIn && user ? user.name || user.email || 'Lumina' : 'Lumina'
-  const displayName = rawName.includes('@')
-    ? rawName.split('@')[0]
-    : rawName.trim().split(/\s+/)[0] || 'Lumina'
+  const displayName = (() => {
+    if (!isLoggedIn || !user) return 'Lumina'
+    if (user.name && user.name.trim()) {
+      const parts = user.name.trim().split(/\s+/)
+      return parts.length >= 2 ? `${parts[0]} ${parts[parts.length - 1]}` : parts[0]
+    }
+    if (user.email) {
+      const local = user.email.split('@')[0].replace(/\d+/g, '').replace(/[._-]+/g, ' ').trim()
+      return local || 'Lumina'
+    }
+    return 'Lumina'
+  })()
 
   return (
     <div

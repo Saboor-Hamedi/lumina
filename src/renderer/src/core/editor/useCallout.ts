@@ -133,7 +133,8 @@ export const calloutPlugin = ViewPlugin.fromClass(
               if (l >= startLineNumber) {
                 const sel = view.state.selection.main
                 const cursor = sel.head
-                if (sel.empty && (cursor < line.from || cursor > line.to)) {
+                const isEditingHeader = sel.empty && cursor >= line.from && cursor <= line.to
+                if (!isEditingHeader) {
                   const replaceFrom = line.from + line.text.indexOf('[')
                   const replaceTo = line.to
                   builder.push(

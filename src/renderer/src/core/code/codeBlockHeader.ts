@@ -66,7 +66,7 @@ export class CodeBlockHeaderWidget extends WidgetType {
   }
 
   get estimatedHeight(): number {
-    return 30
+    return 0
   }
 
   eq(other: CodeBlockHeaderWidget): boolean {
@@ -115,12 +115,16 @@ export class CodeBlockHeaderWidget extends WidgetType {
       }
     })
 
-    wrap.appendChild(langLabel)
+    const floatingBar = document.createElement('div')
+    floatingBar.className = 'code-block-floating-actions'
+    floatingBar.appendChild(langLabel)
 
     const actionsWrap = document.createElement('div')
     actionsWrap.style.display = 'flex'
     actionsWrap.style.alignItems = 'center'
-    wrap.appendChild(actionsWrap)
+    floatingBar.appendChild(actionsWrap)
+
+    wrap.appendChild(floatingBar)
 
     const root = createRoot(actionsWrap)
     wrap._reactRoot = root

@@ -146,6 +146,13 @@ export function formatDurationString(totalSeconds: number): string {
   return h > 0 ? `${pad2(h)}:${pad2(m)}:${pad2(sec)}` : `${pad2(m)}:${pad2(sec)}`
 }
 
+export function formatTime12h(date: Date): string {
+  let h = date.getHours()
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  h = h % 12 || 12
+  return `${pad2(h)}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())} ${ampm}`
+}
+
 export function getCountdownParts(targetMs: number, nowMs: number): {
   days: number
   hours: number

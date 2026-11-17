@@ -157,8 +157,13 @@
   border-radius: 0 !important;
   transition: none !important;
 }
+/* Prevent native browser ::selection from doubling over CodeMirror's .cm-selectionLayer (fixes 2-background overlap on h1, h2, callouts, etc.) */
+.cm-content::selection,
+.cm-content *::selection,
 .cm-content ::selection {
-  background: color-mix(in srgb, var(--text-accent) 18%, transparent) !important; 
+  background: transparent !important;
+  color: inherit !important;
+  text-shadow: none !important;
 }
 
 /* Ensure Mermaid diagrams and Images visually reflect Ctrl+A / range selection */
@@ -1953,8 +1958,7 @@ html[data-use-active-line-border="false"] .cm-activeLine {
   filter: drop-shadow(0 0 3px rgba(var(--text-accent-rgb), 0.85)) drop-shadow(0 0 8px rgba(var(--text-accent-rgb), 0.35));
 }
 
-[data-theme='cyberpunk'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
-[data-theme='cyberpunk'] .cm-content ::selection {
+[data-theme='cyberpunk'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(56, 189, 248, 0.2) !important;
 }
 
@@ -1963,8 +1967,7 @@ html[data-use-active-line-border="false"] .cm-activeLine {
   border-left-color: var(--caret-color, #7aa2f7) !important;
   filter: drop-shadow(0 0 2.5px rgba(122, 162, 247, 0.65)) drop-shadow(0 0 6px rgba(122, 162, 247, 0.25));
 }
-[data-theme='tokyoNight'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
-[data-theme='tokyoNight'] .cm-content ::selection {
+[data-theme='tokyoNight'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(122, 162, 247, 0.2) !important;
 }
 [data-theme='tokyoNight'] .cm-scroller::-webkit-scrollbar-thumb {
@@ -1979,8 +1982,7 @@ html[data-use-active-line-border="false"] .cm-activeLine {
   border-left-color: var(--caret-color, #bd93f9) !important;
   filter: drop-shadow(0 0 2.5px rgba(189, 147, 249, 0.7)) drop-shadow(0 0 7px rgba(189, 147, 249, 0.25));
 }
-[data-theme='dracula'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
-[data-theme='dracula'] .cm-content ::selection {
+[data-theme='dracula'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(189, 147, 249, 0.22) !important;
 }
 [data-theme='dracula'] .cm-scroller::-webkit-scrollbar-thumb {
@@ -1995,8 +1997,7 @@ html[data-use-active-line-border="false"] .cm-activeLine {
   border-left-color: var(--caret-color, #88c0d0) !important;
   filter: drop-shadow(0 0 2.5px rgba(136, 192, 208, 0.65));
 }
-[data-theme='nord'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
-[data-theme='nord'] .cm-content ::selection {
+[data-theme='nord'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(136, 192, 208, 0.18) !important;
 }
 [data-theme='nord'] .cm-scroller::-webkit-scrollbar-thumb {
@@ -2010,15 +2011,13 @@ html[data-use-active-line-border="false"] .cm-activeLine {
 [data-theme='catppuccin'] .cm-cursor {
   filter: drop-shadow(0 0 2.5px var(--glow-accent, rgba(var(--text-accent-rgb), 0.4)));
 }
-[data-theme='catppuccin'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
-[data-theme='catppuccin'] .cm-content ::selection {
+[data-theme='catppuccin'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(245, 194, 231, 0.18) !important;
 }
 [data-theme='gruvbox'] .cm-cursor {
   filter: drop-shadow(0 0 2px rgba(250, 189, 47, 0.5));
 }
-[data-theme='gruvbox'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
-[data-theme='gruvbox'] .cm-content ::selection {
+[data-theme='gruvbox'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(250, 189, 47, 0.16) !important;
 }
 
