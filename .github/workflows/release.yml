@@ -113,11 +113,11 @@ jobs:
           TAG="${GITHUB_REF#refs/tags/}"
           VERSION="${TAG#v}"
           # Clean up any stale untagged draft with the same version title so only the tagged release remains
-          gh release list --repo "$GITHUB_REPOSITORY" --limit 20 --json databaseId,tagName,isDraft,name \
-            --jq ".[] | select(.isDraft == true and .tagName == \"\" and (.name == \"$VERSION\" or .name == \"$TAG\")) | .databaseId" \
+          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=20" \
+            --jq ".[] | select(.draft == true and (.tag_name == \"\" or (.tag_name | startswith(\"untagged-\"))) and (.name == \"$VERSION\" or .name == \"$TAG\")) | .id" \
             | while read -r DRAFT_ID; do
-                [ -n "$DRAFT_ID" ] && gh release delete "$DRAFT_ID" --repo "$GITHUB_REPOSITORY" --yes || true
-              done
+                [ -n "$DRAFT_ID" ] && gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$DRAFT_ID" >/dev/null 2>&1 || true
+              done || true
           RELEASE_ID=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json id --jq .id)
           echo "Release id: $RELEASE_ID"
           gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
