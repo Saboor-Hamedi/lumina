@@ -18,6 +18,45 @@
   transition: opacity 0.25s ease;
 }
 
+[data-theme='light'] .screen-loader-overlay,
+[data-theme='porcelain'] .screen-loader-overlay {
+  background-color: var(--bg-app, #f8fafc);
+}
+
+[data-theme='light'] .screen-loader-title,
+[data-theme='porcelain'] .screen-loader-title {
+  color: var(--text-main, #0f172a);
+}
+
+[data-theme='light'] .screen-loader-emblem-wrap,
+[data-theme='light'] .screen-loader-status,
+[data-theme='porcelain'] .screen-loader-emblem-wrap,
+[data-theme='porcelain'] .screen-loader-status {
+  color: var(--text-muted, #475569);
+}
+
+[data-theme='light'] .screen-loader-bar-container,
+[data-theme='porcelain'] .screen-loader-bar-container {
+  background: var(--border-dim, rgba(15, 23, 42, 0.1));
+}
+
+[data-theme='parchment'] .screen-loader-overlay {
+  background-color: var(--bg-app, #f5f0e6);
+}
+
+[data-theme='parchment'] .screen-loader-title {
+  color: var(--text-main, #2c241b);
+}
+
+[data-theme='parchment'] .screen-loader-emblem-wrap,
+[data-theme='parchment'] .screen-loader-status {
+  color: var(--text-muted, #6b5d4d);
+}
+
+[data-theme='parchment'] .screen-loader-bar-container {
+  background: var(--border-dim, rgba(44, 36, 27, 0.12));
+}
+
 .screen-loader-overlay.inline-loader {
   position: relative;
   width: 100%;

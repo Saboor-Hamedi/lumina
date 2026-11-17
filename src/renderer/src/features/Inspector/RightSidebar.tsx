@@ -44,13 +44,8 @@ export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
       : null
   })
 
-  // Do not execute or render anything when right sidebar is closed
-  if (!isRightSidebarOpen) {
-    return null
-  }
-
   return (
-    <div className="inspector-panel" ref={panelRef}>
+    <div className="inspector-panel" ref={panelRef} aria-hidden={!isRightSidebarOpen}>
       {/* Tab-style header */}
       <div className="panel-header-tabs inspector-tabbar">
         <div

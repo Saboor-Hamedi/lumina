@@ -195,18 +195,10 @@ export const MainLayout: React.FC = () => {
     (state) => state.settings?.activityBarVisible !== false
   )
   const isStatusBarVisible = useSettingsStore((state) => state.settings?.statusBarVisible === true)
-  const isTabsVisible = useSettingsStore((state) => {
-    if (state.settings?.zenMode?.enabled) {
-      return state.settings?.tabsVisible === true
-    }
-    return state.settings?.tabsVisible !== false
-  })
-  const isBreadcrumbsVisible = useSettingsStore((state) => {
-    if (state.settings?.zenMode?.enabled) {
-      return false
-    }
-    return state.settings?.breadcrumbsVisible === true
-  })
+  const isTabsVisible = useSettingsStore((state) => state.settings?.tabsVisible !== false)
+  const isBreadcrumbsVisible = useSettingsStore(
+    (state) => state.settings?.breadcrumbsVisible === true
+  )
 
   const isLeftSidebarOpenRef = useRef(isLeftSidebarOpen)
   const isRightSidebarOpenRef = useRef(isRightSidebarOpen)
@@ -1264,12 +1256,14 @@ export const MainLayout: React.FC = () => {
             {(activeTab === 'files' || activeTab === 'search') && (
               <>
                 {isTabsVisible && (
-                  <TabBar
-                    isSidebarOpen={isRightSidebarOpen}
-                    onToggleSidebar={handleToggleRightSidebar}
-                    isLeftSidebarOpen={isLeftSidebarOpen}
-                    onToggleLeftSidebar={handleToggleLeftSidebar}
-                  />
+                  <div className={`zen-collapsible-bar${isZenModeEnabled ? ' zen-hidden' : ''}`}>
+                    <TabBar
+                      isSidebarOpen={isRightSidebarOpen}
+                      onToggleSidebar={handleToggleRightSidebar}
+                      isLeftSidebarOpen={isLeftSidebarOpen}
+                      onToggleLeftSidebar={handleToggleLeftSidebar}
+                    />
+                  </div>
                 )}
                 {isBreadcrumbsVisible &&
                   !isTerminalMaximized &&
@@ -1279,7 +1273,9 @@ export const MainLayout: React.FC = () => {
                   activeTabId !== LUMINA_TAB_ID &&
                   openTabs.includes(selectedSnippet.id) &&
                   snippets.some((s: any) => s.id === selectedSnippet.id) && (
-                    <Breadcrumbs snippet={selectedSnippet} />
+                    <div className={`zen-collapsible-bar${isZenModeEnabled ? ' zen-hidden' : ''}`}>
+                      <Breadcrumbs snippet={selectedSnippet} />
+                    </div>
                   )}
               </>
             )}
@@ -1394,43 +1390,40 @@ export const MainLayout: React.FC = () => {
           </div>
         </main>
 
-        {isRightSidebarOpen && (
-          <div
-            className="sidebar-resizer right open"
-            title="Double-click to reset default width (150px)"
-            onMouseDown={(e) => handleStartResize('right', e)}
-            onDoubleClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              handleResetSidebar('right')
-            }}
-          >
-            <div className="resizer-knob">
-              <span className="knob-dot" />
-              <span className="knob-dot" />
-              <span className="knob-dot" />
-            </div>
+        <div
+          className={`sidebar-resizer right ${isRightSidebarOpen ? 'open' : 'closed'}`}
+          title="Double-click to reset default width (150px)"
+          onMouseDown={(e) => handleStartResize('right', e)}
+          onDoubleClick={(e) => {
+            if (!isRightSidebarOpen) return
+            e.preventDefault()
+            e.stopPropagation()
+            handleResetSidebar('right')
+          }}
+        >
+          <div className="resizer-knob">
+            <span className="knob-dot" />
+            <span className="knob-dot" />
+            <span className="knob-dot" />
           </div>
-        )}
-        {isRightSidebarOpen && (
-          <aside className="shell-sidebar-right">
-            <GlobalErrorHandler>
-              <RightSidebar
-                rightSidebarTab={rightSidebarTab}
-                setRightSidebarTab={setRightSidebarTab}
-                setSettingsInitialTab={setSettingsInitialTab}
-                setShowSettings={setShowSettings}
-                setSavedRightSidebarState={setSavedRightSidebarState}
-                isRightSidebarOpen={isRightSidebarOpen}
-                rightWidth={rightWidth}
-                setIsRightSidebarOpen={handleCloseRightSidebar}
-                setShowAIChatModal={setShowAIChatModal}
-                selectedNote={selectedSnippet}
-                isLoading={isLoading}
-              />
-            </GlobalErrorHandler>
-          </aside>
-        )}
+        </div>
+        <aside className="shell-sidebar-right">
+          <GlobalErrorHandler>
+            <RightSidebar
+              rightSidebarTab={rightSidebarTab}
+              setRightSidebarTab={setRightSidebarTab}
+              setSettingsInitialTab={setSettingsInitialTab}
+              setShowSettings={setShowSettings}
+              setSavedRightSidebarState={setSavedRightSidebarState}
+              isRightSidebarOpen={isRightSidebarOpen}
+              rightWidth={rightWidth}
+              setIsRightSidebarOpen={handleCloseRightSidebar}
+              setShowAIChatModal={setShowAIChatModal}
+              selectedNote={selectedSnippet}
+              isLoading={isLoading}
+            />
+          </GlobalErrorHandler>
+        </aside>
       </div>
 
       {isStatusBarVisible && (

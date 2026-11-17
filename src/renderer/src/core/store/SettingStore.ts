@@ -136,6 +136,29 @@ export interface Settings {
   emailSidebarOpen: boolean
   emailDetailOpen: boolean
 
+  // Calendar & Timer Suite (persisted in app-config.json)
+  calendarEvents?: Array<{
+    id: string
+    dateStr: string
+    title: string
+    completed?: boolean
+    createdAt: number
+  }>
+  calendarAlarms?: Array<{
+    id: string
+    title: string
+    timeStr: string
+    timestamp: number
+    triggered?: boolean
+    enabled: boolean
+  }>
+  calendarCountdown?: {
+    id: string
+    title: string
+    targetTimestamp: number
+  } | null
+  calendarCoverTheme?: number
+
   // Extensible for dynamic properties (e.g. googleUser, sound settings, shortcuts)
   [key: string]: any
 }
@@ -275,6 +298,12 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     guideModalMaximized: false,
     templateModalMaximized: false,
     aiModalMaximized: false,
+
+    // Calendar & Timer Suite
+    calendarEvents: [],
+    calendarAlarms: [],
+    calendarCountdown: null,
+    calendarCoverTheme: 0,
 
     // Email Modal Geometry & State Persistence (settings.json)
     emailModalWidth: 840,
@@ -538,7 +567,6 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
 
   enterZenMode: async () => {
     if (typeof document !== 'undefined') {
-      document.documentElement.classList.add('zen-instant-transition')
       document.documentElement.setAttribute('data-zen-mode', 'true')
     }
     const s = get().settings
@@ -566,27 +594,15 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       zenMode: { ...zen, enabled: true },
       zenPreState: preState,
       titleBarVisible: false,
-      statusBarVisible: false,
-      activityBarVisible: false,
-      tabsVisible: false,
-      breadcrumbsVisible: false,
       sidebar: { ...(s.sidebar || { width: 150, isLeftOpen: true }), isLeftOpen: false },
       rightSidebar: { ...(s.rightSidebar || { width: 150, isRightOpen: false }), isRightOpen: false }
     }
 
     await get().updateSettings(updates)
-    if (typeof window !== 'undefined') {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          document.documentElement.classList.remove('zen-instant-transition')
-        })
-      })
-    }
   },
 
   exitZenMode: async () => {
     if (typeof document !== 'undefined') {
-      document.documentElement.classList.add('zen-instant-transition')
       document.documentElement.removeAttribute('data-zen-mode')
     }
     const s = get().settings
@@ -608,10 +624,6 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
 
     if (pre) {
       if (pre.titleBarVisible !== undefined) updates.titleBarVisible = pre.titleBarVisible
-      if (pre.statusBarVisible !== undefined) updates.statusBarVisible = pre.statusBarVisible
-      if (pre.activityBarVisible !== undefined) updates.activityBarVisible = pre.activityBarVisible
-      if (pre.tabsVisible !== undefined) updates.tabsVisible = pre.tabsVisible
-      if (pre.breadcrumbsVisible !== undefined) updates.breadcrumbsVisible = pre.breadcrumbsVisible
       if (pre.isLeftOpen !== undefined) {
         updates.sidebar = { ...(s.sidebar || { width: 150, isLeftOpen: true }), isLeftOpen: pre.isLeftOpen }
       }
@@ -620,22 +632,11 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       }
     } else {
       updates.titleBarVisible = true
-      updates.statusBarVisible = false
-      updates.activityBarVisible = true
-      updates.tabsVisible = true
-      updates.breadcrumbsVisible = false
       updates.sidebar = { ...(s.sidebar || { width: 150, isLeftOpen: true }), isLeftOpen: true }
       updates.rightSidebar = { ...(s.rightSidebar || { width: 150, isRightOpen: false }), isRightOpen: false }
     }
 
     await get().updateSettings(updates)
-    if (typeof window !== 'undefined') {
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => {
-          document.documentElement.classList.remove('zen-instant-transition')
-        })
-      })
-    }
   },
 
   toggleZenMode: async () => {

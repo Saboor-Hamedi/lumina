@@ -23,6 +23,7 @@ import AccentColor from '../theme/AccentColor'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 import { useSettingStore } from '../../core/store/SettingStore'
 import { ThemeToggle } from './ThemeToggle'
+import { CalendarToggle } from '../calender'
 import '../../assets/titlebar.css'
 
 export interface TitleBarProps {
@@ -80,27 +81,43 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
 
   const isZenMode = useSettingStore((s: any) => Boolean(s.settings?.zenMode?.enabled))
   const prevLeftOpenRef = React.useRef<boolean>(true)
+  const prevRightOpenRef = React.useRef<boolean>(false)
 
   const handleToggleZenMode = useCallback(() => {
     const store = useSettingStore.getState() as any
     const currentZen = store.settings?.zenMode || {}
     const currentSidebar = store.settings?.sidebar || { width: 150, isLeftOpen: true }
+    const currentRightSidebar = store.settings?.rightSidebar || { width: 150, isRightOpen: false }
     const nextEnabled = !currentZen.enabled
 
     if (nextEnabled) {
       const wasLeftOpen = currentSidebar.isLeftOpen ?? true
+      const wasRightOpen = currentRightSidebar.isRightOpen ?? false
       prevLeftOpenRef.current = wasLeftOpen
+      prevRightOpenRef.current = wasRightOpen
       setIsLeftSidebarOpen(false)
       store.updateSettings({
         zenMode: { ...currentZen, enabled: true },
-        ...(wasLeftOpen ? { sidebar: { ...currentSidebar, isLeftOpen: false } } : {})
+        zenPreState: {
+          ...(store.settings?.zenPreState || {}),
+          isLeftOpen: wasLeftOpen,
+          isRightOpen: wasRightOpen
+        },
+        ...(wasLeftOpen ? { sidebar: { ...currentSidebar, isLeftOpen: false } } : {}),
+        ...(wasRightOpen ? { rightSidebar: { ...currentRightSidebar, isRightOpen: false } } : {})
       })
     } else {
-      const shouldRestoreLeft = prevLeftOpenRef.current
+      const pre = store.settings?.zenPreState
+      const shouldRestoreLeft =
+        pre && typeof pre.isLeftOpen === 'boolean' ? pre.isLeftOpen : prevLeftOpenRef.current
+      const shouldRestoreRight =
+        pre && typeof pre.isRightOpen === 'boolean' ? pre.isRightOpen : prevRightOpenRef.current
       setIsLeftSidebarOpen(shouldRestoreLeft)
       store.updateSettings({
         zenMode: { ...currentZen, enabled: false },
-        ...(shouldRestoreLeft ? { sidebar: { ...currentSidebar, isLeftOpen: true } } : {})
+        zenPreState: null,
+        ...(shouldRestoreLeft ? { sidebar: { ...currentSidebar, isLeftOpen: true } } : {}),
+        ...(shouldRestoreRight ? { rightSidebar: { ...currentRightSidebar, isRightOpen: true } } : {})
       })
     }
   }, [])
@@ -176,6 +193,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
             </button>
           </ToolTip>
           <ThemeToggle />
+          <CalendarToggle />
           <div className="accent-titlebar-container">
             <ToolTip
               text={

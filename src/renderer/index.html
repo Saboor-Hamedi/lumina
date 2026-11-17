@@ -21,6 +21,26 @@
         const themeId = localStorage.getItem('theme-id') || 'dark'
         document.documentElement.setAttribute('data-theme', themeId)
 
+        const activeColorsRaw = localStorage.getItem('lumina_active_theme_colors')
+        if (activeColorsRaw) {
+          const activeColors = JSON.parse(activeColorsRaw)
+          const bootVars = [
+            '--bg-app',
+            '--bg-sidebar',
+            '--text-main',
+            '--text-muted',
+            '--text-faint',
+            '--text-accent',
+            '--border-dim'
+          ]
+          for (let i = 0; i < bootVars.length; i++) {
+            const key = bootVars[i]
+            if (activeColors[key]) {
+              document.documentElement.style.setProperty(key, activeColors[key])
+            }
+          }
+        }
+
         const stored = localStorage.getItem('theme-colors')
         if (stored) {
           const colors = JSON.parse(stored)

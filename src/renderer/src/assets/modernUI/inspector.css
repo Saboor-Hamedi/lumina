@@ -4,17 +4,22 @@
  * ============================================================ */
 
 /* Right Sidebar Container */
-.app-shell.right-open .shell-sidebar-right,
-[data-modern-ui='true'] .app-shell.right-open .shell-sidebar-right {
+.shell-sidebar-right,
+[data-modern-ui='true'] .shell-sidebar-right {
   background: var(--bg-sidebar) !important;
   border: none !important;
-  border-left: 1px solid var(--border-dim) !important;
+  border-left: 1px solid transparent !important;
   box-shadow: none !important;
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   z-index: 5;
+}
+
+.app-shell.right-open .shell-sidebar-right,
+[data-modern-ui='true'] .app-shell.right-open .shell-sidebar-right {
+  border-left-color: var(--border-dim) !important;
 }
 
 .shell-sidebar-right .inspector-panel,
