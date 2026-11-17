@@ -1,7 +1,6 @@
 import React, { memo } from 'react'
 import { Plus, Network } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
-import DailyNotes from './DailyNotes'
 
 export interface SidebarHeaderProps {
   onToggleGraph?: () => void
@@ -29,7 +28,6 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = memo(({ onToggleGraph }) => 
           </span>
         </button>
       </ToolTip>
-      <DailyNotes />
       <ToolTip text="Local Graph View" position="bottom">
         <button
           className="new-note-btn graph-header-btn"

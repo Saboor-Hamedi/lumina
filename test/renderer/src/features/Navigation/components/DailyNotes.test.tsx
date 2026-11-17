@@ -1,49 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import DailyNotes from '../../../../../../src/renderer/src/features/Navigation/components/DailyNotes'
-import { useWorkspaceStore } from '../../../../../../src/renderer/src/core/store/workspaceStore'
-import { defaultTemplates } from '../../../../../../src/renderer/src/features/template/utils/defaultTemplates'
+import { useSidebarViewStore } from '../../../../../../src/renderer/src/features/Navigation/sidebarViewStore'
+import { useSettingsStore } from '../../../../../../src/renderer/src/core/store/SettingStore'
 
-vi.mock('../../../../../../src/renderer/src/features/template/Template', () => ({
-  default: ({ isOpen, onClose, templates, onSelectTemplate }: any) =>
-    isOpen ? (
-      <div data-testid="template-modal">
-        <button
-          onClick={() =>
-            onSelectTemplate(templates[1] || { id: 'blank', title: 'Blank Note', code: '' })
-          }
-        >
-          Choose Template
-        </button>
-        <button onClick={() => onSelectTemplate({ id: 'blank', title: 'Blank Note', code: '' })}>
-          Choose Blank
-        </button>
-        <button onClick={onClose}>Close Modal</button>
-      </div>
-    ) : null
-}))
-
-const todayISO = new Date().toISOString().split('T')[0]
-const TEMPLATE_COUNT = defaultTemplates.length
+const setSidebarOpen = (isLeftOpen: boolean) => {
+  const settings = useSettingsStore.getState().settings as any
+  useSettingsStore.setState({
+    settings: { ...settings, sidebar: { ...settings.sidebar, isLeftOpen } }
+  } as any)
+}
 
 describe('DailyNotes', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    useWorkspaceStore.setState({
-      snippets: [],
-      selectedSnippet: null,
-      isLoading: false,
-      searchQuery: '',
-      openTabs: [],
-      activeTabId: null,
-      pinnedTabIds: []
-    } as any)
-    global.window.api = {
-      ...global.window.api,
-      createFolder: vi.fn().mockResolvedValue(true),
-      saveSnippet: vi.fn((snip) => Promise.resolve(snip)),
-      getSetting: vi.fn().mockResolvedValue(null)
-    }
+    setSidebarOpen(true)
+    useSidebarViewStore.setState({ activeView: 'files', activeActivityItem: 'files' })
   })
 
   const clickDaily = () => fireEvent.click(screen.getByRole('button', { name: /Daily/ }))
@@ -53,101 +25,59 @@ describe('DailyNotes', () => {
     expect(screen.getByRole('button', { name: /Daily/ })).toBeInTheDocument()
   })
 
-  it('opens the template modal on first click without saving template files to disk', async () => {
+  it('opens the templates sidebar view on click', () => {
     render(<DailyNotes />)
     clickDaily()
 
-    expect(await screen.findByTestId('template-modal')).toBeInTheDocument()
-    const templateSaves = global.window.api.saveSnippet.mock.calls.filter(
-      ([snip]: any) => snip.folderId === 'Templates'
-    )
-    expect(templateSaves.length).toBe(0)
-    expect(global.window.api.createFolder).not.toHaveBeenCalledWith('Templates')
+    expect(useSidebarViewStore.getState().activeView).toBe('templates')
+    expect(useSidebarViewStore.getState().activeActivityItem).toBe('templates')
   })
 
-  it('does not create template files on disk when modal opens', async () => {
+  it('dispatches a toggle-left-sidebar open event when the sidebar is closed', () => {
+    const events: any[] = []
+    const listener = (e: Event) => events.push((e as CustomEvent).detail)
+    window.addEventListener('toggle-left-sidebar', listener as any)
+
     render(<DailyNotes />)
+    setSidebarOpen(false)
     clickDaily()
 
-    await waitFor(() => {
-      expect(screen.getByTestId('template-modal')).toBeInTheDocument()
-    })
-    const templateSaves = global.window.api.saveSnippet.mock.calls.filter(
-      ([snip]: any) => snip.folderId === 'Templates'
-    )
-    expect(templateSaves.length).toBe(0)
+    window.removeEventListener('toggle-left-sidebar', listener as any)
+    expect(events).toContainEqual({ open: true })
+    expect(useSidebarViewStore.getState().activeView).toBe('templates')
   })
 
-  it('creates a titled note when a template is selected', async () => {
+  it('closes the templates sidebar when clicked again while open', () => {
     render(<DailyNotes />)
     clickDaily()
-    await waitFor(() => screen.getByTestId('template-modal'))
+    expect(useSidebarViewStore.getState().activeView).toBe('templates')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Choose Template' }))
-
-    await waitFor(() => {
-      const daily = global.window.api.saveSnippet.mock.calls.find(
-        ([snip]: any) => snip.folderId === 'DailyNotes'
-      )
-      expect(daily).toBeTruthy()
-    })
-    const daily = (global.window.api.saveSnippet.mock.calls.find(
-      ([snip]: any) => snip.folderId === 'DailyNotes'
-    ) as any)[0]
-    expect(daily.title.startsWith(`${todayISO} - `)).toBe(true)
-    expect(daily.code.startsWith(`# ${daily.title}`)).toBe(true)
+    clickDaily()
+    expect(useSidebarViewStore.getState().activeActivityItem).toBeNull()
+    expect(useSidebarViewStore.getState().activeView).toBe('templates')
   })
 
-  it('creates a DailyNotes folder when a template is selected', async () => {
+  it('reopens the templates view when the sidebar was closed', () => {
+    useSidebarViewStore.setState({ activeView: 'templates', activeActivityItem: 'templates' })
+    setSidebarOpen(false)
+
     render(<DailyNotes />)
     clickDaily()
-    await waitFor(() => screen.getByTestId('template-modal'))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Choose Template' }))
-    await waitFor(() => {
-      expect(global.window.api.createFolder).toHaveBeenCalledWith('DailyNotes')
-    })
+    expect(useSidebarViewStore.getState().activeActivityItem).toBe('templates')
   })
 
-  it('sets the created note as selected after template selection', async () => {
-    render(<DailyNotes />)
-    clickDaily()
-    await waitFor(() => screen.getByTestId('template-modal'))
+  it('marks the activity bar button as active when the templates view is active', () => {
+    useSidebarViewStore.setState({ activeView: 'templates', activeActivityItem: 'templates' })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Choose Template' }))
-    await waitFor(() => {
-      expect((useWorkspaceStore.getState() as any).selectedSnippet?.folderId).toBe('DailyNotes')
-    })
+    const { container } = render(<DailyNotes isActivityBar />)
+    const btn = container.querySelector('.activity-bar-btn')
+    expect(btn?.className).toContain('active')
   })
 
-  it('uses "Note" as the title suffix for the blank template', async () => {
-    render(<DailyNotes />)
-    clickDaily()
-    await waitFor(() => screen.getByTestId('template-modal'))
-
-    fireEvent.click(screen.getByRole('button', { name: 'Choose Blank' }))
-    await waitFor(() => {
-      const daily = global.window.api.saveSnippet.mock.calls.find(
-        ([snip]: any) => snip.folderId === 'DailyNotes'
-      )
-      expect(daily).toBeTruthy()
-    })
-    const daily = (global.window.api.saveSnippet.mock.calls.find(
-      ([snip]: any) => snip.folderId === 'DailyNotes'
-    ) as any)[0]
-    expect(daily.title).toBe(`${todayISO} - Note`)
-  })
-
-  it('closes the modal without creating a note when canceled', async () => {
-    render(<DailyNotes />)
-    clickDaily()
-    await waitFor(() => screen.getByTestId('template-modal'))
-
-    fireEvent.click(screen.getByRole('button', { name: 'Close Modal' }))
-    expect(screen.queryByTestId('template-modal')).not.toBeInTheDocument()
-    const dailySaves = global.window.api.saveSnippet.mock.calls.filter(
-      ([snip]: any) => snip.folderId === 'DailyNotes'
-    )
-    expect(dailySaves.length).toBe(0)
+  it('renders only the icon in activity bar mode', () => {
+    const { container } = render(<DailyNotes isActivityBar />)
+    expect(container.querySelector('.activity-bar-btn')).toBeInTheDocument()
+    expect(screen.queryByText('Daily')).not.toBeInTheDocument()
   })
 })

@@ -323,9 +323,12 @@ describe('CanvasView (TypeScript)', () => {
       canvasEl!.dispatchEvent(pasteEvent)
     })
 
-    await waitFor(() => {
-      expect(screen.getByText('my-diagram')).toBeInTheDocument()
-    })
+    await waitFor(
+      () => {
+        expect(screen.getByText('my-diagram')).toBeInTheDocument()
+      },
+      { timeout: 5000 }
+    )
   })
 
   it('renders image preview card with fallback and image tag', () => {

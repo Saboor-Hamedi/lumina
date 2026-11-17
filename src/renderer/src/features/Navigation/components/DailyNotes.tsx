@@ -10,8 +10,8 @@ export interface DailyNotesProps {
 
 const DailyNotes: React.FC<DailyNotesProps> = memo(({ isActivityBar = false }) => {
   const isLeftOpen = useSettingsStore((s: any) => s.settings?.sidebar?.isLeftOpen ?? true)
-  const activeSidebarView = useSidebarViewStore((s) => s.activeView)
-  const isTemplatesActive = isLeftOpen && activeSidebarView === 'templates'
+  const activeActivityItem = useSidebarViewStore((s) => s.activeActivityItem)
+  const isTemplatesActive = isLeftOpen && activeActivityItem === 'templates'
 
   const handleDailyNote = () => {
     toggleSidebarView('templates')

@@ -213,13 +213,12 @@ html.theme-fallback-fade * {
   color: #ff5f56;
 }
 
-/* Drawer Search Bar — matching start-menu-search */
+/* Drawer Search Bar — matching start-menu-search, soft spacing without stacked divider */
 .lumina-drawer-search-wrap {
-  padding: 8px 10px;
+  padding: 6px 10px 4px 10px;
   position: relative;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--border-dim, rgba(255, 255, 255, 0.06));
   flex-shrink: 0;
 }
 

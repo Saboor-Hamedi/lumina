@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, memo } from 'react'
 import { createPortal } from 'react-dom'
 import {
   BookOpen,
@@ -18,16 +18,36 @@ import {
   Bot,
   Workflow,
   Square,
-  Copy
+  Copy,
+  type LucideIcon
 } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import './css/guide.css'
 
-/**
- * Visual Preview for Step 0: Local-First Workspace
- */
-const PreviewWelcome = () => (
+export interface GuideProps {
+  isOpen: boolean
+  onClose: () => void
+  onLoadStarterNotes?: () => Promise<void>
+  onOpenDocs?: () => void
+}
+
+interface GuideFeature {
+  icon: LucideIcon
+  title: string
+  text: string
+}
+
+interface GuideStep {
+  badge: string
+  badgeIcon: LucideIcon
+  title: string
+  subtitle: string
+  features: GuideFeature[]
+  preview: React.ComponentType
+}
+
+const PreviewWelcome: React.FC = memo(() => (
   <div className="preview-card">
     <div className="preview-top-bar">
       <div className="preview-dot red" />
@@ -49,12 +69,10 @@ const PreviewWelcome = () => (
       </div>
     </div>
   </div>
-)
+))
+PreviewWelcome.displayName = 'PreviewWelcome'
 
-/**
- * Visual Preview for Step 1: Markdown & KaTeX Math
- */
-const PreviewEditor = () => (
+const PreviewEditor: React.FC = memo(() => (
   <div className="preview-card">
     <div className="preview-top-bar">
       <div className="preview-dot red" />
@@ -76,12 +94,10 @@ const PreviewEditor = () => (
       </div>
     </div>
   </div>
-)
+))
+PreviewEditor.displayName = 'PreviewEditor'
 
-/**
- * Visual Preview for Step 2: Knowledge Graph
- */
-const PreviewGraph = () => (
+const PreviewGraph: React.FC = memo(() => (
   <div className="preview-card">
     <div className="preview-top-bar">
       <div className="preview-dot red" />
@@ -91,14 +107,12 @@ const PreviewGraph = () => (
     </div>
     <div className="preview-step-2">
       <svg viewBox="0 0 200 120" className="graph-preview-svg">
-        {/* Edge Lines */}
         <line x1="40" y1="60" x2="100" y2="35" stroke="rgba(64, 186, 250, 0.4)" strokeWidth="1.5" strokeDasharray="3 3" />
         <line x1="100" y1="35" x2="160" y2="55" stroke="rgba(64, 186, 250, 0.4)" strokeWidth="1.5" />
         <line x1="100" y1="35" x2="100" y2="95" stroke="rgba(168, 85, 247, 0.5)" strokeWidth="2" />
         <line x1="40" y1="60" x2="100" y2="95" stroke="rgba(64, 186, 250, 0.3)" strokeWidth="1.5" />
         <line x1="160" y1="55" x2="100" y2="95" stroke="rgba(64, 186, 250, 0.3)" strokeWidth="1.5" />
 
-        {/* Nodes */}
         <circle cx="40" cy="60" r="7" fill="#40bafa" className="graph-node" />
         <text x="40" y="78" fontSize="8" fill="#a0a0b5" textAnchor="middle">Ideas</text>
 
@@ -113,12 +127,10 @@ const PreviewGraph = () => (
       </svg>
     </div>
   </div>
-)
+))
+PreviewGraph.displayName = 'PreviewGraph'
 
-/**
- * Visual Preview for Step 3: AI Copilot & Voice
- */
-const PreviewAI = () => (
+const PreviewAI: React.FC = memo(() => (
   <div className="preview-card">
     <div className="preview-top-bar">
       <div className="preview-dot red" />
@@ -141,12 +153,10 @@ const PreviewAI = () => (
       </div>
     </div>
   </div>
-)
+))
+PreviewAI.displayName = 'PreviewAI'
 
-/**
- * Visual Preview for Step 4: Mail & Spatial Canvas
- */
-const PreviewMailCanvas = () => (
+const PreviewMailCanvas: React.FC = memo(() => (
   <div className="preview-card">
     <div className="preview-top-bar">
       <div className="preview-dot red" />
@@ -175,12 +185,10 @@ const PreviewMailCanvas = () => (
       </div>
     </div>
   </div>
-)
+))
+PreviewMailCanvas.displayName = 'PreviewMailCanvas'
 
-/**
- * Visual Preview for Step 5: Ready to Start
- */
-const PreviewReady = () => (
+const PreviewReady: React.FC = memo(() => (
   <div className="preview-card">
     <div className="preview-top-bar">
       <div className="preview-dot red" />
@@ -202,9 +210,10 @@ const PreviewReady = () => (
       </div>
     </div>
   </div>
-)
+))
+PreviewReady.displayName = 'PreviewReady'
 
-const GUIDE_STEPS = [
+const GUIDE_STEPS: readonly GuideStep[] = [
   {
     badge: 'Philosophy',
     badgeIcon: ShieldCheck,
@@ -351,27 +360,16 @@ const GUIDE_STEPS = [
   }
 ]
 
-/**
- * Interactive Guide Modal
- *
- * Provides a multi-step onboarding carousel with feature walkthroughs,
- * interactive mockups, step indicators, and sample notes generation.
- *
- * @param {object} props
- * @param {boolean} props.isOpen - Whether the modal is visible.
- * @param {() => void} props.onClose - Function to close the modal.
- * @param {() => Promise<void>} [props.onLoadStarterNotes] - Optional callback to generate starter notes.
- * @param {() => void} [props.onOpenDocs] - Optional callback to open the Documentation modal.
- */
-const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
-  const [step, setStep] = useState(0)
-  const [isGeneratingNotes, setIsGeneratingNotes] = useState(false)
+const Guide: React.FC<GuideProps> = memo(({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
+  const [step, setStep] = useState<number>(0)
+  const [isGeneratingNotes, setIsGeneratingNotes] = useState<boolean>(false)
+  const isMaximized = useSettingsStore((s: any) => s.settings?.guideModalMaximized ?? false)
 
-  // Keyboard navigation: Escape to close, Arrow keys for step navigation
+  // Single window capture listener (prevents duplicate step advances)
   useEffect(() => {
     if (!isOpen) return
 
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
         e.stopPropagation()
@@ -384,53 +382,44 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
     }
 
     window.addEventListener('keydown', handleKeyDown, { capture: true })
-    document.addEventListener('keydown', handleKeyDown, { capture: true })
     return () => {
       window.removeEventListener('keydown', handleKeyDown, { capture: true })
-      document.removeEventListener('keydown', handleKeyDown, { capture: true })
     }
   }, [isOpen, onClose])
 
-  const handleNext = () => {
-    if (step < GUIDE_STEPS.length - 1) {
-      setStep((prev) => prev + 1)
-    } else {
+  const handleNext = useCallback(() => {
+    setStep((prev) => {
+      if (prev < GUIDE_STEPS.length - 1) return prev + 1
       onClose()
-    }
-  }
+      return prev
+    })
+  }, [onClose])
 
-  const handlePrev = () => {
-    if (step > 0) {
-      setStep((prev) => prev - 1)
-    }
-  }
+  const handlePrev = useCallback(() => {
+    setStep((prev) => (prev > 0 ? prev - 1 : prev))
+  }, [])
 
-  const handleOpenDocs = () => {
+  const handleOpenDocs = useCallback(() => {
     onClose()
-    if (onOpenDocs) {
-      onOpenDocs()
+    onOpenDocs?.()
+  }, [onClose, onOpenDocs])
+
+  const handleGenerateSamples = useCallback(async () => {
+    if (!onLoadStarterNotes || isGeneratingNotes) return
+    setIsGeneratingNotes(true)
+    try {
+      await onLoadStarterNotes()
+      onClose()
+    } catch (err) {
+      console.error('[Guide] Failed to populate starter notes:', err)
+    } finally {
+      setIsGeneratingNotes(false)
     }
-  }
+  }, [onLoadStarterNotes, isGeneratingNotes, onClose])
 
-  const handleGenerateSamples = async () => {
-    if (onLoadStarterNotes && !isGeneratingNotes) {
-      setIsGeneratingNotes(true)
-      try {
-        await onLoadStarterNotes()
-        onClose()
-      } catch (err) {
-        console.error('[Guide] Failed to populate starter notes:', err)
-      } finally {
-        setIsGeneratingNotes(false)
-      }
-    }
-  }
-
-  const isMaximized = useSettingsStore((s) => s.settings.guideModalMaximized ?? false)
-
-  const handleToggleMaximize = React.useCallback(() => {
-    const { settings, updateSettings } = useSettingsStore.getState()
-    updateSettings({ guideModalMaximized: !(settings.guideModalMaximized ?? false) })
+  const handleToggleMaximize = useCallback(() => {
+    const { settings, updateSettings } = useSettingsStore.getState() as any
+    updateSettings({ guideModalMaximized: !(settings?.guideModalMaximized ?? false) })
   }, [])
 
   if (!isOpen) return null
@@ -441,9 +430,15 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
 
   return createPortal(
     <div className="guide-modal-overlay" onClick={onClose}>
-      <div className={`guide-modal-container${isMaximized ? ' maximized' : ''}`} onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="guide-modal-header docs-modal-header" onDoubleClick={handleToggleMaximize} style={{ cursor: 'default' }}>
+      <div
+        className={`guide-modal-container${isMaximized ? ' maximized' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="guide-modal-header docs-modal-header"
+          onDoubleClick={handleToggleMaximize}
+          style={{ cursor: 'default' }}
+        >
           <div className="guide-header-left" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span
               style={{
@@ -474,6 +469,7 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
             {onOpenDocs && (
               <ToolTip text="Documentation (Ctrl + D)" position="bottom">
                 <button
+                  type="button"
                   className="guide-header-btn"
                   onClick={handleOpenDocs}
                   aria-label="Documentation (Ctrl + D)"
@@ -485,6 +481,7 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
             )}
             <ToolTip text={isMaximized ? 'Restore Window' : 'Maximize Window'} position="bottom">
               <button
+                type="button"
                 className="docs-window-btn guide-window-btn"
                 onClick={handleToggleMaximize}
                 aria-label={isMaximized ? 'Restore Window' : 'Maximize Window'}
@@ -498,6 +495,7 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
             </ToolTip>
             <ToolTip text="Close (Esc)" position="bottom">
               <button
+                type="button"
                 className="guide-close-btn"
                 onClick={onClose}
                 aria-label="Close Guide (Esc)"
@@ -508,9 +506,7 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
           </div>
         </div>
 
-        {/* Body */}
         <div className="guide-modal-body">
-          {/* Left Column: Description & Features */}
           <div className="guide-content-col">
             <div className="guide-badge">
               <BadgeIcon size={13} />
@@ -535,19 +531,17 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
             </div>
           </div>
 
-          {/* Right Column: Visual Preview Mockup */}
           <div className="guide-preview-col">
             <PreviewComponent />
           </div>
         </div>
 
-        {/* Footer */}
         <div className="guide-modal-footer">
-          {/* Step Indicator Dots */}
           <div className="guide-dots-nav">
             {GUIDE_STEPS.map((_, idx) => (
               <button
                 key={idx}
+                type="button"
                 className={`guide-dot ${idx === step ? 'active' : ''}`}
                 onClick={() => setStep(idx)}
                 aria-label={`Go to step ${idx + 1}`}
@@ -555,10 +549,10 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
             ))}
           </div>
 
-          {/* Action Buttons */}
           <div className="guide-footer-actions">
             {onOpenDocs && (
               <button
+                type="button"
                 className="guide-btn guide-btn-secondary"
                 onClick={handleOpenDocs}
                 aria-label="Documentation (Ctrl + D)"
@@ -569,6 +563,7 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
             )}
 
             <button
+              type="button"
               className="guide-btn guide-btn-secondary"
               onClick={handlePrev}
               disabled={step === 0}
@@ -581,6 +576,7 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
               <>
                 {onLoadStarterNotes && (
                   <button
+                    type="button"
                     className="guide-btn guide-btn-starter"
                     onClick={handleGenerateSamples}
                     disabled={isGeneratingNotes}
@@ -589,13 +585,13 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
                     <span>{isGeneratingNotes ? 'Loading Notes…' : 'Add Sample Notes'}</span>
                   </button>
                 )}
-                <button className="guide-btn guide-btn-primary" onClick={onClose}>
+                <button type="button" className="guide-btn guide-btn-primary" onClick={onClose}>
                   <CheckCircle2 size={14} />
                   <span>Get Started</span>
                 </button>
               </>
             ) : (
-              <button className="guide-btn guide-btn-primary" onClick={handleNext}>
+              <button type="button" className="guide-btn guide-btn-primary" onClick={handleNext}>
                 <span>Next</span>
                 <ChevronRight size={14} />
               </button>
@@ -606,6 +602,8 @@ const Guide = ({ isOpen, onClose, onLoadStarterNotes, onOpenDocs }) => {
     </div>,
     document.body
   )
-}
+})
+
+Guide.displayName = 'Guide'
 
 export default Guide

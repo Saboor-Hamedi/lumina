@@ -21,10 +21,12 @@ describe('Theme.jsx Modal', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('renders theme modal header with breadcrumb and available count', () => {
+  it('renders theme sidebar header with title and available count', () => {
     render(<Theme {...defaultProps()} />)
-    expect(screen.getByText('Theme Gallery')).toBeInTheDocument()
-    expect(screen.getByText(new RegExp(`${Object.keys(THEMES).length} Themes`))).toBeInTheDocument()
+    expect(screen.getByText('Themes')).toBeInTheDocument()
+    expect(document.querySelector('.lumina-drawer-badge')?.textContent).toBe(
+      String(Object.keys(THEMES).length)
+    )
   })
 
   it('renders search input and theme cards', () => {
@@ -44,7 +46,7 @@ describe('Theme.jsx Modal', () => {
 
     expect(screen.getByText('Dracula')).toBeInTheDocument()
     expect(screen.queryByText('Gruvbox Dark')).not.toBeInTheDocument()
-    expect(screen.getByText(/1 Theme/)).toBeInTheDocument()
+    expect(document.querySelector('.lumina-drawer-badge')?.textContent).toBe('1')
   })
 
   it('calls onClose when close button is clicked', () => {
@@ -58,7 +60,7 @@ describe('Theme.jsx Modal', () => {
 
   it('selects a theme when card is clicked and updates document', () => {
     render(<Theme {...defaultProps()} />)
-    const draculaCard = screen.getByText('Dracula').closest('.template-modal-card')
+    const draculaCard = screen.getByText('Dracula').closest('.lumina-drawer-item')
     fireEvent.click(draculaCard)
 
     expect(localStorage.getItem('theme-id')).toBe('dracula')

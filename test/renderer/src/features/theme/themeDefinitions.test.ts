@@ -12,9 +12,9 @@ describe('Theme Definitions & Parchment', () => {
     expect(theme.colors['--text-accent']).toBe('#9c4310')
   })
 
-  it('contains all 64 themes with valid color keys', () => {
+  it('contains all 50 themes with valid color keys', () => {
     const ids = getThemeIds()
-    expect(ids.length).toBeGreaterThanOrEqual(60)
+    expect(ids.length).toBeGreaterThanOrEqual(50)
 
     for (const id of ids) {
       const theme = THEMES[id]

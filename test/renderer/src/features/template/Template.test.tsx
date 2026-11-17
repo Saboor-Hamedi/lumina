@@ -25,42 +25,26 @@ describe('Template.tsx', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('renders modal header, title, and active pill badge when open', () => {
+  it('renders sidebar header, title, count badge and apply button when open', () => {
     render(<Template {...defaultProps()} />)
     expect(screen.getByText('Templates')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Use selected template' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeInTheDocument()
 
-    const activePill = document.querySelector('.template-header-active-pill')
-    expect(activePill).toBeInTheDocument()
-    // Blank Note is default
-    expect(activePill?.textContent).toBe('Blank Note')
+    const badge = document.querySelector('.lumina-drawer-badge')
+    expect(badge).toBeInTheDocument()
+    // Blank Note + 2 sample templates
+    expect(badge?.textContent).toBe('3')
+    // Blank Note is selected by default
+    expect(document.querySelector('.template-sidebar-preview-title')?.textContent).toBe(
+      'Blank Note'
+    )
   })
 
-  it('toggles sidebar when sidebar button is clicked', () => {
-    render(<Template {...defaultProps()} />)
-    const toggleBtn = screen.getByLabelText('Hide Sidebar')
-    fireEvent.click(toggleBtn)
-
-    const sidebar = document.querySelector('.template-sidebar')
-    expect(sidebar?.className).toContain('closed')
-    expect(screen.getByLabelText('Show Sidebar')).toBeInTheDocument()
-  })
-
-  it('toggles window maximize state when window button is clicked', () => {
-    render(<Template {...defaultProps()} />)
-    const maxBtn = screen.getByLabelText('Maximize Window')
-    fireEvent.click(maxBtn)
-
-    const container = document.querySelector('.template-modal-container')
-    expect(container?.className).toContain('maximized')
-    expect(screen.getByLabelText('Restore Window')).toBeInTheDocument()
-  })
-
-  it('calls onSelectTemplate and onClose when Use Template button is clicked', () => {
+  it('calls onSelectTemplate and onClose when Apply button is clicked', () => {
     const props = defaultProps()
     render(<Template {...props} />)
 
-    const applyBtn = screen.getByRole('button', { name: 'Use selected template' })
+    const applyBtn = screen.getByRole('button', { name: 'Apply' })
     fireEvent.click(applyBtn)
 
     expect(props.onSelectTemplate).toHaveBeenCalledWith(
@@ -74,12 +58,13 @@ describe('Template.tsx', () => {
     render(<Template {...props} />)
 
     // ArrowDown from Blank to Daily Log
-    fireEvent.keyDown(document, { key: 'ArrowDown' })
-    const activePill = document.querySelector('.template-header-active-pill')
-    expect(activePill?.textContent).toBe('Daily Log')
+    fireEvent.keyDown(window, { key: 'ArrowDown' })
+    expect(document.querySelector('.template-sidebar-preview-title')?.textContent).toBe(
+      'Daily Log'
+    )
 
     // Enter to apply
-    fireEvent.keyDown(document, { key: 'Enter' })
+    fireEvent.keyDown(window, { key: 'Enter' })
     expect(props.onSelectTemplate).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'daily-log', title: 'Daily Log' })
     )
@@ -98,8 +83,9 @@ describe('Template.tsx', () => {
     const props = defaultProps()
     render(<Template {...props} />)
 
-    const overlay = document.querySelector('.guide-modal-overlay')
-    if (overlay) fireEvent.click(overlay)
+    const overlay = document.querySelector('.lumina-side-drawer-overlay')
+    expect(overlay).toBeInTheDocument()
+    fireEvent.click(overlay!)
     expect(props.onClose).toHaveBeenCalled()
   })
 
@@ -107,8 +93,9 @@ describe('Template.tsx', () => {
     const props = defaultProps()
     render(<Template {...props} />)
 
-    const container = document.querySelector('.template-modal-container')
-    if (container) fireEvent.click(container)
+    const container = document.querySelector('.lumina-side-drawer-panel')
+    expect(container).toBeInTheDocument()
+    fireEvent.click(container!)
     expect(props.onClose).not.toHaveBeenCalled()
   })
 })

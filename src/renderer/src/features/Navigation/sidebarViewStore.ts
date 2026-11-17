@@ -2,15 +2,31 @@ import { create } from 'zustand'
 import { useSettingsStore } from '../../core/store/SettingStore'
 
 export type SidebarActiveView = 'files' | 'theme' | 'templates'
+export type ActivityBarItemId =
+  | SidebarActiveView
+  | 'lumina'
+  | 'graph'
+  | 'canvas'
+  | 'terminal'
+  | 'docs'
+  | 'guide'
+  | null
 
 interface SidebarViewState {
   activeView: SidebarActiveView
+  activeActivityItem: ActivityBarItemId
   setActiveView: (view: SidebarActiveView) => void
+  setActiveActivityItem: (item: ActivityBarItemId) => void
 }
+
+const isSidebarView = (item: ActivityBarItemId): item is SidebarActiveView =>
+  item === 'files' || item === 'theme' || item === 'templates'
 
 export const useSidebarViewStore = create<SidebarViewState>((set) => ({
   activeView: 'files',
-  setActiveView: (view) => set({ activeView: view })
+  activeActivityItem: 'files',
+  setActiveView: (view) => set({ activeView: view }),
+  setActiveActivityItem: (item) => set({ activeActivityItem: item })
 }))
 
 export const openLeftSidebar = (): void => {
@@ -20,13 +36,16 @@ export const openLeftSidebar = (): void => {
 }
 
 export const closeLeftSidebar = (): void => {
+  useSidebarViewStore.setState((state) => ({
+    activeActivityItem: isSidebarView(state.activeActivityItem) ? null : state.activeActivityItem
+  }))
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('toggle-left-sidebar', { detail: { open: false } }))
   }
 }
 
 export const openSidebarView = (view: SidebarActiveView): void => {
-  useSidebarViewStore.getState().setActiveView(view)
+  useSidebarViewStore.setState({ activeView: view, activeActivityItem: view })
   openLeftSidebar()
 }
 

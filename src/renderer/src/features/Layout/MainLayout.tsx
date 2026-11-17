@@ -191,7 +191,7 @@ export const MainLayout: React.FC = () => {
   const appShellRef = useRef<HTMLDivElement | null>(null)
 
   const isActivityBarVisible = useSettingsStore(
-    (state) => state.settings?.activityBarVisible !== false
+    (state) => !state.settings?.zenMode?.enabled && state.settings?.activityBarVisible !== false
   )
   const isStatusBarVisible = useSettingsStore((state) => {
     if (state.settings?.zenMode?.enabled) {
@@ -1151,6 +1151,9 @@ export const MainLayout: React.FC = () => {
     // Preload Graph component in background after app mount
     const preloadTimer = setTimeout(() => {
       import('../graph/Graph')
+      import('../Docs/Documentation')
+      import('../modals/Guide')
+      import('../canvas/CanvasTabPane')
     }, 1200)
 
     return () => {
@@ -1274,6 +1277,7 @@ export const MainLayout: React.FC = () => {
                 {isBreadcrumbsVisible &&
                   !isTerminalMaximized &&
                   selectedSnippet &&
+                  Boolean(selectedSnippet.folderId) &&
                   activeTabId !== GRAPH_TAB_ID &&
                   activeTabId !== LUMINA_TAB_ID &&
                   openTabs.includes(selectedSnippet.id) &&

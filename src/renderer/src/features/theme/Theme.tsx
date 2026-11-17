@@ -72,6 +72,10 @@ const ThemeRow: React.FC<ThemeRowProps> = memo(({ themeData, isActive, isSelecte
 
 ThemeRow.displayName = 'ThemeRow'
 
+type ThemeToneFilter = 'all' | 'dark' | 'light'
+
+const LIGHT_THEME_IDS = new Set(['light', 'parchment', 'porcelain', 'rosePineDawn'])
+
 export const Theme: React.FC<ThemeProps> = ({
   isOpen = false,
   isEmbedded = false,
@@ -79,6 +83,7 @@ export const Theme: React.FC<ThemeProps> = ({
 }) => {
   const { theme, setTheme, allThemes } = useTheme()
   const [searchQuery, setSearchQuery] = useState<string>('')
+  const [toneFilter, setToneFilter] = useState<ThemeToneFilter>('all')
   const [selectedId, setSelectedId] = useState<string>(theme)
 
   const listRef = useRef<HTMLDivElement | null>(null)
@@ -119,6 +124,7 @@ export const Theme: React.FC<ThemeProps> = ({
     () =>
       allThemes.map((t) => ({
         theme: t,
+        isLight: LIGHT_THEME_IDS.has(t.id),
         haystack: `${t.name} ${t.id} ${t.description || ''}`.toLowerCase()
       })),
     [allThemes]
@@ -126,9 +132,14 @@ export const Theme: React.FC<ThemeProps> = ({
 
   const filteredThemes = useMemo(() => {
     const q = searchQuery.toLowerCase().trim()
-    if (!q) return allThemes
-    return searchIndex.filter((e) => e.haystack.includes(q)).map((e) => e.theme)
-  }, [allThemes, searchIndex, searchQuery])
+    return searchIndex
+      .filter((e) => {
+        if (toneFilter === 'light' && !e.isLight) return false
+        if (toneFilter === 'dark' && e.isLight) return false
+        return !q || e.haystack.includes(q)
+      })
+      .map((e) => e.theme)
+  }, [searchIndex, toneFilter, searchQuery])
 
   const handleSelect = useCallback(
     (themeId: string, origin?: ThemeChangeOrigin) => {
@@ -230,6 +241,22 @@ export const Theme: React.FC<ThemeProps> = ({
             <X size={12} />
           </button>
         )}
+      </div>
+
+      {/* Compact All / Dark / Light Filter */}
+      <div className="theme-tone-tabs" role="tablist" aria-label="Filter themes by tone">
+        {(['all', 'dark', 'light'] as ThemeToneFilter[]).map((tone) => (
+          <button
+            key={tone}
+            type="button"
+            role="tab"
+            aria-selected={toneFilter === tone}
+            className={`theme-tone-tab ${toneFilter === tone ? 'active' : ''}`}
+            onClick={() => setToneFilter(tone)}
+          >
+            {tone === 'all' ? 'All' : tone === 'dark' ? 'Dark' : 'Light'}
+          </button>
+        ))}
       </div>
 
       {/* Note-Tree Styled Theme Rows */}

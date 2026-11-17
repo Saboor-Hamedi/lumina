@@ -68,8 +68,8 @@ describe('themeDefinitions', () => {
     })
 
     it('persists theme id to localStorage', () => {
-      applyTheme('jellyfish')
-      expect(localStorage.getItem('theme-id')).toBe('jellyfish')
+      applyTheme('dracula')
+      expect(localStorage.getItem('theme-id')).toBe('dracula')
     })
 
     it('caches active theme colors to localStorage for anti-fouc on refresh', () => {

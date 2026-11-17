@@ -14,7 +14,7 @@
  */
 
 import React, { useState, useEffect, useCallback, memo } from 'react'
-import { Square, X, Minus, Search, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react'
+import { Square, X, Minus, Search, PanelLeftOpen, PanelLeftClose, User, Maximize2, Minimize2 } from 'lucide-react'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import logoUrl from '../../assets/logo.png'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -78,6 +78,20 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
     }
   }, [])
 
+  const isZenMode = useSettingStore((s: any) => Boolean(s.settings?.zenMode?.enabled))
+
+  const handleToggleZenMode = useCallback(() => {
+    const store = useSettingStore.getState() as any
+    const currentZen = store.settings?.zenMode || {}
+    const nextEnabled = !currentZen.enabled
+    store.updateSettings({
+      zenMode: { ...currentZen, enabled: nextEnabled }
+    })
+    window.dispatchEvent(
+      new CustomEvent('toggle-left-sidebar', { detail: { open: !nextEnabled } })
+    )
+  }, [])
+
   const handleToggleLeftSidebar = useCallback(() => {
     window.dispatchEvent(new CustomEvent('toggle-left-sidebar'))
   }, [])
@@ -138,6 +152,16 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
 
       <div className="title-right">
         <div className="window-controls" data-testid="window-controls">
+          <ToolTip text={isZenMode ? 'Exit Focus Mode' : 'Focus Mode'} position="bottom">
+            <button
+              type="button"
+              className={`titlebar-focus-btn ${isZenMode ? 'active' : ''}`}
+              onClick={handleToggleZenMode}
+              aria-label={isZenMode ? 'Exit Focus Mode' : 'Focus Mode'}
+            >
+              {isZenMode ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            </button>
+          </ToolTip>
           <ThemeToggle />
           <div className="accent-titlebar-container">
             <ToolTip

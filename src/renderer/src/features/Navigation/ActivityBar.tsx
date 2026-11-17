@@ -16,8 +16,18 @@
  * - 100% TypeScript with strict memoization (`React.memo`) to avoid unneeded re-renders.
  */
 
-import React, { memo, useState, useEffect } from 'react'
-import { Files, MessageSquare, Network, LayoutDashboard, Terminal, Palette, Book, Compass } from 'lucide-react'
+import React, { memo, useState, useEffect, useRef } from 'react'
+import {
+  Files,
+  MessageSquare,
+  Network,
+  LayoutDashboard,
+  Terminal,
+  Palette,
+  Book,
+  Compass,
+  HelpCircle
+} from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import DailyNotes from './components/DailyNotes'
 import ActivityBarMail from './components/ActivityBarMail'
@@ -50,21 +60,42 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState<boolean>(() => {
     return useSettingStore.getState().settings?.sidebar?.isLeftOpen ?? true
   })
+  const [isHelpOpen, setIsHelpOpen] = useState(false)
+  const helpMenuRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!isHelpOpen) return
+    const handleOutside = (e: MouseEvent) => {
+      if (helpMenuRef.current && !helpMenuRef.current.contains(e.target as Node)) {
+        setIsHelpOpen(false)
+      }
+    }
+    window.addEventListener('mousedown', handleOutside)
+    return () => window.removeEventListener('mousedown', handleOutside)
+  }, [isHelpOpen])
   const sidebarActiveView = useSidebarViewStore((s) => s.activeView)
-  const isGraphActive = useWorkspaceStore((state) => state.activeTabId === GRAPH_TAB_ID)
+  const activeActivityItem = useSidebarViewStore((s) => s.activeActivityItem)
+  const setActiveActivityItem = useSidebarViewStore((s) => s.setActiveActivityItem)
 
   useEffect(() => {
     const handleLeftSidebarChange = (e: Event) => {
       const customEvent = e as CustomEvent<{ open?: boolean }>
       if (typeof customEvent.detail?.open === 'boolean') {
-        setIsLeftSidebarOpen(customEvent.detail.open)
+        const nextOpen = customEvent.detail.open
+        setIsLeftSidebarOpen(nextOpen)
+        const current = useSidebarViewStore.getState().activeActivityItem
+        if (!nextOpen && (current === 'files' || current === 'theme' || current === 'templates')) {
+          setActiveActivityItem(null)
+        } else if (nextOpen && current === null) {
+          setActiveActivityItem(useSidebarViewStore.getState().activeView)
+        }
       }
     }
     window.addEventListener('left-sidebar-toggle', handleLeftSidebarChange)
     return () => {
       window.removeEventListener('left-sidebar-toggle', handleLeftSidebarChange)
     }
-  }, [])
+  }, [setActiveActivityItem])
 
   const handleToggleExplorer = () => {
     toggleSidebarView('files')
@@ -75,6 +106,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
   }
 
   const handleOpenLumina = () => {
+    setActiveActivityItem('lumina')
     if (onToggleAIChat) {
       onToggleAIChat()
     } else {
@@ -82,11 +114,18 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
     }
   }
 
+  const handleToggleGraph = () => {
+    setActiveActivityItem('graph')
+    onToggleGraph?.()
+  }
+
   const handleNewCanvas = () => {
+    setActiveActivityItem('canvas')
     window.dispatchEvent(new CustomEvent('trigger-new-canvas'))
   }
 
   const handleOpenDocs = () => {
+    setActiveActivityItem('docs')
     if (onOpenDocs) {
       onOpenDocs()
     } else {
@@ -95,6 +134,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
   }
 
   const handleOpenGuide = () => {
+    setActiveActivityItem('guide')
     if (onOpenGuide) {
       onOpenGuide()
     } else {
@@ -103,6 +143,11 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
   }
 
   const handleToggleTerminal = () => {
+    if (isTerminalOpen && activeActivityItem === 'terminal') {
+      setActiveActivityItem(isLeftSidebarOpen ? sidebarActiveView : null)
+    } else {
+      setActiveActivityItem('terminal')
+    }
     if (onToggleTerminal) {
       onToggleTerminal()
     } else {
@@ -117,7 +162,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
         <ToolTip text={`Explorer (${isMac ? '⌘B' : 'Ctrl+B'})`} position="right">
           <button
             type="button"
-            className={`activity-bar-btn ${isLeftSidebarOpen && sidebarActiveView === 'files' ? 'active' : ''}`}
+            className={`activity-bar-btn ${isLeftSidebarOpen && activeActivityItem === 'files' ? 'active' : ''}`}
             onClick={handleToggleExplorer}
             aria-label="Explorer"
           >
@@ -129,7 +174,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
         <ToolTip text={`Lumina AI (${isMac ? '⌘⇧\\' : 'Ctrl+Shift+\\'})`} position="right">
           <button
             type="button"
-            className="activity-bar-btn"
+            className={`activity-bar-btn ${activeActivityItem === 'lumina' ? 'active' : ''}`}
             onClick={handleOpenLumina}
             aria-label="Lumina AI"
           >
@@ -144,8 +189,8 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
         <ToolTip text="Knowledge Graph" position="right">
           <button
             type="button"
-            className={`activity-bar-btn ${isGraphActive ? 'active' : ''}`}
-            onClick={onToggleGraph}
+            className={`activity-bar-btn ${activeActivityItem === 'graph' ? 'active' : ''}`}
+            onClick={handleToggleGraph}
             aria-label="Knowledge Graph"
           >
             <Network size={16} />
@@ -156,7 +201,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
         <ToolTip text="Infinite Canvas" position="right">
           <button
             type="button"
-            className="activity-bar-btn"
+            className={`activity-bar-btn ${activeActivityItem === 'canvas' ? 'active' : ''}`}
             onClick={handleNewCanvas}
             aria-label="Infinite Canvas"
           >
@@ -168,7 +213,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
         <ToolTip text={`Terminal (${isMac ? '⌘J' : 'Ctrl+J'})`} position="right">
           <button
             type="button"
-            className={`activity-bar-btn ${isTerminalOpen ? 'active' : ''}`}
+            className={`activity-bar-btn ${isTerminalOpen && activeActivityItem === 'terminal' ? 'active' : ''}`}
             onClick={handleToggleTerminal}
             aria-label="Terminal"
           >
@@ -180,41 +225,62 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
         <ToolTip text="Theme Settings" position="right">
           <button
             type="button"
-            className={`activity-bar-btn ${isLeftSidebarOpen && sidebarActiveView === 'theme' ? 'active' : ''}`}
+            className={`activity-bar-btn ${isLeftSidebarOpen && activeActivityItem === 'theme' ? 'active' : ''}`}
             onClick={handleOpenTheme}
             aria-label="Theme Settings"
           >
             <Palette size={16} />
           </button>
         </ToolTip>
-
-        {/* 7. Documentation */}
-        <ToolTip text={`Documentation (${isMac ? '⌘D' : 'Ctrl+D'})`} position="right">
-          <button
-            type="button"
-            className="activity-bar-btn"
-            onClick={handleOpenDocs}
-            aria-label="Documentation"
-          >
-            <Book size={16} />
-          </button>
-        </ToolTip>
-
-        {/* 8. Lumina Interactive Guide */}
-        <ToolTip text="Lumina Guide" position="right">
-          <button
-            type="button"
-            className="activity-bar-btn"
-            onClick={handleOpenGuide}
-            aria-label="Lumina Guide"
-          >
-            <Compass size={16} />
-          </button>
-        </ToolTip>
       </div>
 
       <div className="activity-bar-bottom">
-        {/* 7. Communication & Capsule Mail Hub */}
+        {/* Help & Resources Menu (Documentation + Interactive Guide) */}
+        <div className="activity-bar-help-wrap" ref={helpMenuRef}>
+          <ToolTip text="Help & Guide" position="right">
+            <button
+              type="button"
+              className={`activity-bar-btn ${isHelpOpen || activeActivityItem === 'docs' || activeActivityItem === 'guide' ? 'active' : ''}`}
+              onClick={() => setIsHelpOpen((prev) => !prev)}
+              aria-label="Help and Guide"
+              aria-expanded={isHelpOpen}
+            >
+              <HelpCircle size={16} />
+            </button>
+          </ToolTip>
+
+          {isHelpOpen && (
+            <div className="activity-bar-help-popover" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                className="activity-bar-help-item"
+                onClick={() => {
+                  setIsHelpOpen(false)
+                  handleOpenDocs()
+                }}
+              >
+                <Book size={13} />
+                <span>Documentation</span>
+                <kbd>{isMac ? '⌘D' : 'Ctrl+D'}</kbd>
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="activity-bar-help-item"
+                onClick={() => {
+                  setIsHelpOpen(false)
+                  handleOpenGuide()
+                }}
+              >
+                <Compass size={13} />
+                <span>Lumina Guide</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Communication & Capsule Mail Hub */}
         <ActivityBarMail />
       </div>
     </aside>
