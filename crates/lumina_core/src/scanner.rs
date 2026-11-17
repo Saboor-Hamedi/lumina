@@ -178,7 +178,15 @@ pub fn extract_and_strip_frontmatter(raw: &str) -> (ParsedFrontmatter, &str) {
                 parse_yaml_line(line, &mut fm);
             }
             let mut next = &inner_and_rest[next_content_start..];
-            if next.starts_with('\n') {
+            if next.starts_with("\r\n") {
+                next = &next[2..];
+            } else if next.starts_with('\n') {
+                next = &next[1..];
+            }
+            // Strip at most one separator newline added by gray-matter after `---`
+            if next.starts_with("\r\n") {
+                next = &next[2..];
+            } else if next.starts_with('\n') {
                 next = &next[1..];
             }
             content = next;
@@ -220,7 +228,11 @@ pub fn extract_and_strip_frontmatter(raw: &str) -> (ParsedFrontmatter, &str) {
         content = &content[byte_offset..];
     }
 
-    let clean_body = content.trim_start_matches(|c| c == '\r' || c == '\n');
+    let clean_body = if in_loose_metadata {
+        content.trim_start_matches(|c| c == '\r' || c == '\n')
+    } else {
+        content
+    };
     (fm, clean_body)
 }
 

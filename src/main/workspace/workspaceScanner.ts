@@ -182,7 +182,7 @@ export function safeParseFrontmatter(rawContent: string): FrontmatterResult {
     text = lines.slice(lineIdx).join('\n')
   }
 
-  return { data, content: text.replace(/^[\r\n]+/, '') }
+  return { data, content: foundLooseMetadata ? text.replace(/^[\r\n]+/, '') : text }
 }
 
 /**

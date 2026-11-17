@@ -212,7 +212,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
       if (foundLoose) {
         text = lines.slice(lineIdx).join('\n')
       }
-      const cleaned = text.replace(/^[\r\n]+/, '')
+      const cleaned = foundLoose ? text.replace(/^[\r\n]+/, '') : text
       markExplorerPerf('document-source-clean-end', {
         noteId: snippet?.id,
         durationMs: Number((performance.now() - sourceStartedAt).toFixed(2)),

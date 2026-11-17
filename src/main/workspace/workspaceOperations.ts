@@ -152,7 +152,7 @@ export class WorkspaceOperations {
     if (foundLoose) {
       cleanCode = lines.slice(lineIdx).join('\n')
     }
-    cleanCode = cleanCode.replace(/^[\r\n]+/, '')
+    // Preserve user's intentional leading blank lines
 
     let rawTitle = (snippet.title || '').trim()
     if (

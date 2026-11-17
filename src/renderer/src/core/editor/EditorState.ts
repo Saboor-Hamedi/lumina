@@ -169,9 +169,11 @@ export function useEditorState({
           return
         }
 
-        // Preserve user's intentional leading/trailing whitespace if content is otherwise identical
+        // If disk content didn't actually change from what we last saved/loaded (e.g. trailing newline from gray-matter),
+        // or only differs from editor by leading/trailing blank lines, never overwrite or prompt conflict.
+        const diskUnchanged = incomingCode.trim() === lastSavedCodeRef.current.trim()
         const isTrivialDifference = incomingCode.trim() === currentCode.trim()
-        if (isDirty && isTrivialDifference) {
+        if (diskUnchanged || isTrivialDifference) {
           lastSavedCodeRef.current = incomingCode
           return
         }
