@@ -9,7 +9,6 @@ describe('EditorMenu', () => {
 
   const baseProps = {
     snippet: { id: 'test-1', code: '# Hello world' },
-    onPreview: vi.fn(),
     onOpenExportDialog: vi.fn()
   }
 
@@ -23,17 +22,9 @@ describe('EditorMenu', () => {
     const button = screen.getByRole('button')
     fireEvent.click(button)
 
-    expect(screen.getByText('Preview Note')).toBeInTheDocument()
+    expect(screen.getByText('Rename Note')).toBeInTheDocument()
     expect(screen.getByText('Copy as Plain Text')).toBeInTheDocument()
     expect(screen.getByText('Export with Preview…')).toBeInTheDocument()
-  })
-
-  it('triggers onPreview when clicking Preview Note', () => {
-    render(<EditorMenu {...baseProps} />)
-    fireEvent.click(screen.getByRole('button'))
-    fireEvent.click(screen.getByText('Preview Note'))
-
-    expect(baseProps.onPreview).toHaveBeenCalledTimes(1)
   })
 
   it('triggers onOpenExportDialog when clicking Export with Preview', () => {

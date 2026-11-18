@@ -5,7 +5,10 @@ import {
   CALLOUT_TYPES,
   CalloutHeaderWidget,
   insertCallout,
-  calloutExtension
+  calloutExtension,
+  parseCalloutHeaderLine,
+  toggleCalloutFoldEffect,
+  calloutFoldField
 } from '../../../../../../src/renderer/src/core/editor'
 
 describe('useCallout.js', () => {
@@ -75,5 +78,61 @@ describe('useCallout.js', () => {
     expect(docText).toContain('> [!warning] Security Alert')
     expect(docText).toContain('> Important line 1')
     expect(docText).toContain('> Important line 2')
+  })
+
+  it('parses foldable callout headers (+, -, and non-foldable)', () => {
+    const collapsed = parseCalloutHeaderLine('> [!note]- Collapsed Title')
+    expect(collapsed).toMatchObject({
+      type: 'note',
+      foldMode: '-',
+      title: 'Collapsed Title'
+    })
+
+    const expanded = parseCalloutHeaderLine('> [!tip]+ Expanded Title')
+    expect(expanded).toMatchObject({
+      type: 'tip',
+      foldMode: '+',
+      title: 'Expanded Title'
+    })
+
+    const standard = parseCalloutHeaderLine('> [!info] Plain Title')
+    expect(standard).toMatchObject({
+      type: 'info',
+      foldMode: null,
+      title: 'Plain Title'
+    })
+  })
+
+  it('renders fold button on foldable CalloutHeaderWidget and toggles via effect', () => {
+    const collapsedWidget = new CalloutHeaderWidget('note', 'Details', '-', true)
+    const el = collapsedWidget.toDOM()
+    expect(el.className).toContain('is-foldable')
+    expect(el.className).toContain('is-collapsed')
+    const foldBtn = el.querySelector('.lumina-callout-fold-btn')
+    expect(foldBtn).toBeTruthy()
+    expect(foldBtn?.getAttribute('aria-expanded')).toBe('false')
+
+    const parent = document.createElement('div')
+    const state = EditorState.create({
+      doc: '> [!note]- Hidden Body\n> Secret line 1\n> Secret line 2\nAfter',
+      extensions: [calloutExtension]
+    })
+    const view = new EditorView({ state, parent })
+
+    // Initially collapsed: state field has no override yet, default is collapsed (-)
+    const line1 = view.state.doc.line(1)
+    expect(view.state.field(calloutFoldField).has(line1.from)).toBe(false)
+
+    // Toggle open
+    view.dispatch({
+      effects: toggleCalloutFoldEffect.of({ pos: line1.from, defaultCollapsed: true })
+    })
+    expect(view.state.field(calloutFoldField).get(line1.from)).toBe(false)
+
+    // Toggle back to collapsed
+    view.dispatch({
+      effects: toggleCalloutFoldEffect.of({ pos: line1.from, defaultCollapsed: true })
+    })
+    expect(view.state.field(calloutFoldField).get(line1.from)).toBe(true)
   })
 })

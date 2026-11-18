@@ -1,7 +1,19 @@
 import React, { useState } from 'react'
-import { ArrowRight, CheckCircle2, Download, Loader2, RefreshCw } from 'lucide-react'
+import { CheckCircle2, Download, Loader2, RefreshCw } from 'lucide-react'
+import type { UpdateStatus, UpdateProgress } from '../../core/store/UpdateSetting'
 
-const UpdateHeader = ({
+export interface UpdateHeaderProps {
+  currentVersion: string
+  newVersion: string
+  status: UpdateStatus
+  progress?: UpdateProgress | number | null
+  download: () => Promise<void> | void
+  install: () => Promise<void> | void
+  check: () => Promise<void> | void
+  onClose?: () => void
+}
+
+export const UpdateHeader: React.FC<UpdateHeaderProps> = ({
   currentVersion,
   newVersion,
   status,
@@ -10,16 +22,15 @@ const UpdateHeader = ({
   install,
   check
 }) => {
-  const [channel, setChannel] = useState('stable')
-  const isUpToDate = status === 'idle' || (status === 'not-available') || (currentVersion === newVersion && status !== 'available' && status !== 'downloading' && status !== 'ready')
+  const [channel, setChannel] = useState<'stable' | 'beta'>('stable')
 
   const percentValue =
     typeof progress === 'number'
       ? progress
-      : typeof progress?.percent === 'number'
-        ? progress.percent
-        : typeof progress?.progress === 'number'
-          ? progress.progress
+      : typeof (progress as any)?.percent === 'number'
+        ? (progress as any).percent
+        : typeof (progress as any)?.progress === 'number'
+          ? (progress as any).progress
           : 0
 
   const safePercent = isNaN(percentValue)

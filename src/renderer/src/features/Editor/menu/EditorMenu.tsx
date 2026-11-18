@@ -20,13 +20,11 @@ export interface EditorMenuProps {
   onSave?: (snippet?: any) => Promise<any> | void
   onToggleInspector?: () => void
   onInlineAI?: () => void
-  onPreview?: () => void
   onOpenExportDialog?: () => void
 }
 
 export const EditorMenu: React.FC<EditorMenuProps> = ({
   snippet,
-  onPreview,
   onOpenExportDialog
 }) => {
   const [showMoreMenu, setShowMoreMenu] = useState(false)
@@ -129,17 +127,6 @@ export const EditorMenu: React.FC<EditorMenuProps> = ({
                   <span className="menu-label">Rename Note</span>
                   <span className="shortcut-label">F2</span>
                   <Edit3 size={12} className="menu-icon-right" />
-                </div>
-                <div
-                  className="dropdown-item"
-                  onClick={() => {
-                    if (onPreview) onPreview()
-                    setShowMoreMenu(false)
-                  }}
-                >
-                  <span className="menu-label">Preview Note</span>
-                  <span className="shortcut-label">Ctrl+\</span>
-                  <FileText size={12} className="menu-icon-right" />
                 </div>
                 <div className="dropdown-divider" />
                 <div

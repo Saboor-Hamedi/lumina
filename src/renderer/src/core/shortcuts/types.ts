@@ -58,7 +58,6 @@ export interface KeyboardShortcutHandlers {
   onCloseWindow?: () => void
   onQuitApp?: () => void
   onToggleAIChat?: () => void
-  onTogglePreview?: () => void
   onToggleSidebar?: () => void
   onToggleCanvas?: () => void
   onToggleCanvasDrawer?: () => void

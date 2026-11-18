@@ -16,7 +16,6 @@ import ToolTip from '../../components/atoms/ToolTip'
 import DocSidebar from './DocSidebar'
 import { PreviewCommandPalette } from '../commandpalette'
 import '../modals/css/guide.css'
-import '../preview/preview.css'
 import './Documentation.css'
 
 type DocLoader = string | (() => Promise<string>)

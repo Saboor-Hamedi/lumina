@@ -24,7 +24,7 @@
 
 import React, { useLayoutEffect } from 'react'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
-import { useWorkspaceStore } from '../../core/store/workspaceStore'
+import { useWorkspaceStore, type WorkspacePaneId } from '../../core/store/workspaceStore'
 import { countExplorerPerfRender, markExplorerPerf } from '../Explorer/utils/explorerPerf'
 
 // Helper to retry dynamic imports if Vite dev server is still starting or compiling modules
@@ -52,6 +52,8 @@ const PDFViewerTab = lazyWithRetry(() => import('../media/PDFViewerTab'))
 const CanvasTabPane = lazyWithRetry(() => import('../canvas/CanvasTabPane'))
 
 export interface TabContentPaneProps {
+  /** Which split pane this content belongs to */
+  paneId?: WorkspacePaneId
   /** The note or snippet record to render in this pane */
   snippet: {
     id: string
@@ -95,6 +97,7 @@ export interface TabContentPaneProps {
  */
 export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
   ({
+    paneId = 'primary',
     snippet,
     onSave,
     onToggleInspector,
@@ -105,9 +108,15 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
   }) => {
     countExplorerPerfRender('TabContentPane', snippet.id)
     // Each pane subscribes to only its own slice of state — O(1) check, zero cross-tab re-renders
-    const isSelected = useWorkspaceStore(
-      (state) => state.activeTabId === snippet.id || (!state.activeTabId && state.selectedNote?.id === snippet.id)
-    )
+    const isSelected = useWorkspaceStore((state) => {
+      if (paneId === 'secondary') {
+        return state.secondaryActiveTabId === snippet.id
+      }
+      return (
+        state.activeTabId === snippet.id ||
+        (!state.activeTabId && state.selectedNote?.id === snippet.id)
+      )
+    })
 
     useLayoutEffect(() => {
       markExplorerPerf('TabContentPane-mount', { noteId: snippet.id, isSelected })

@@ -1,17 +1,24 @@
 import React, { useState, useEffect } from 'react'
-import { Download, Loader2, Settings, CheckCircle2, RefreshCw } from 'lucide-react'
+import { Settings } from 'lucide-react'
 import ToolTip from '../atoms/ToolTip'
+import type { UpdateStatus, UpdateProgress } from '../../core/store/UpdateSetting'
 
-const UpdateFooter = ({
+export interface UpdateFooterProps {
+  currentVersion: string
+  lastChecked: number
+  status: UpdateStatus
+  progress?: UpdateProgress | number | null
+  install: () => Promise<void> | void
+  download: () => Promise<void> | void
+  check: () => Promise<void> | void
+  newVersion?: string
+  onClose?: () => void
+}
+
+export const UpdateFooter: React.FC<UpdateFooterProps> = ({
   currentVersion,
   lastChecked,
-  status,
-  progress,
-  install,
-  download,
-  check,
-  newVersion,
-  onClose
+  newVersion
 }) => {
   const [showSettings, setShowSettings] = useState(false)
   const [now, setNow] = useState(Date.now())

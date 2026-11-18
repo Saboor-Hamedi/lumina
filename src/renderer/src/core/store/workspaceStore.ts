@@ -4,6 +4,9 @@ import { useSettingsStore } from './SettingStore'
 export const GRAPH_TAB_ID = '__graph__'
 export const LUMINA_TAB_ID = '__lumina__'
 
+export type SplitDirection = 'none' | 'vertical' | 'horizontal'
+export type WorkspacePaneId = 'primary' | 'secondary'
+
 export interface WorkspaceNote {
   id: string
   title?: string
@@ -39,6 +42,11 @@ export interface WorkspaceStoreState {
   openTabs: string[]
   activeTabId: string | null
   pinnedTabIds: string[]
+  splitDirection: SplitDirection
+  splitRatio: number
+  secondaryTabs: string[]
+  secondaryActiveTabId: string | null
+  focusedPane: WorkspacePaneId
   clipboard: any
 
   setNotes: (notes: WorkspaceNote[]) => void
@@ -56,6 +64,22 @@ export interface WorkspaceStoreState {
   openGraphTab: () => void
   openLuminaTab: () => void
   setPinnedTabs: (pinnedTabIds: string[]) => void
+  setFocusedPane: (pane: WorkspacePaneId) => void
+  setSplitRatio: (ratio: number) => void
+  splitPane: (direction: 'vertical' | 'horizontal', tabId?: string) => void
+  closeSplit: () => void
+  toggleSplitDirection: () => void
+  setPaneActiveTabId: (pane: WorkspacePaneId, id: string | null) => void
+  closePaneTab: (pane: WorkspacePaneId, id: string) => void
+  reorderPaneTabs: (pane: WorkspacePaneId, newTabs: string[]) => void
+  closeOtherPaneTabs: (pane: WorkspacePaneId, keepId: string) => void
+  closePaneTabsToRight: (pane: WorkspacePaneId, id: string) => void
+  closeAllPaneTabs: (pane: WorkspacePaneId) => void
+  moveTabToPane: (
+    id: string,
+    targetPane: WorkspacePaneId,
+    direction?: 'vertical' | 'horizontal'
+  ) => void
   setLoading: (isLoading: boolean) => void
   setSearchQuery: (query: string) => void
   setDraft: (id: string, code: string) => void
@@ -96,6 +120,28 @@ const getCachedSession = () => {
   }
 }
 
+const resolveNoteById = (notes: WorkspaceNote[], id: string | null): WorkspaceNote | null => {
+  if (!id || id === GRAPH_TAB_ID || id === LUMINA_TAB_ID) return null
+  return notes.find((n) => n.id === id) || null
+}
+
+const computeTabsAfterClose = (
+  tabs: string[],
+  currentActiveId: string | null,
+  closedId: string
+): { nextTabs: string[]; nextActiveId: string | null } => {
+  const nextTabs = tabs.filter((tid) => tid !== closedId)
+  let nextActiveId = currentActiveId
+  if (currentActiveId === closedId || !nextTabs.includes(nextActiveId || '')) {
+    const idx = tabs.indexOf(closedId)
+    nextActiveId = idx === -1 ? nextTabs[0] || null : nextTabs[idx] || nextTabs[idx - 1] || null
+  }
+  if (!nextActiveId && nextTabs.length > 0) {
+    nextActiveId = nextTabs[0]
+  }
+  return { nextTabs, nextActiveId }
+}
+
 const initialSession = getCachedSession()
 
 export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
@@ -114,6 +160,11 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   openTabs: initialSession.openTabs,
   activeTabId: initialSession.activeTabId,
   pinnedTabIds: initialSession.pinnedTabIds,
+  splitDirection: 'none' as SplitDirection,
+  splitRatio: 0.5,
+  secondaryTabs: [] as string[],
+  secondaryActiveTabId: null as string | null,
+  focusedPane: 'primary' as WorkspacePaneId,
   clipboard: null,
 
   setNotes: (notes: WorkspaceNote[]) => set({ notes, snippets: notes }),
@@ -158,6 +209,26 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     }
 
     set((state) => {
+      if (state.splitDirection !== 'none' && state.focusedPane === 'secondary') {
+        const isAlreadyOpen = state.secondaryTabs.includes(note.id)
+        const nextSecondaryTabs = isAlreadyOpen
+          ? state.secondaryTabs
+          : [...state.secondaryTabs, note.id]
+        if (
+          state.secondaryActiveTabId === note.id &&
+          state.selectedNote?.id === note.id &&
+          isAlreadyOpen
+        ) {
+          return state
+        }
+        return {
+          selectedNote: note,
+          selectedSnippet: note,
+          secondaryTabs: nextSecondaryTabs,
+          secondaryActiveTabId: note.id
+        }
+      }
+
       if (
         state.activeTabId === note.id &&
         state.selectedNote?.id === note.id &&
@@ -366,6 +437,249 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     set((state) => ({
       pinnedTabIds: pinnedTabIds.filter((id) => state.openTabs.includes(id)).slice(0, 1)
     })),
+
+  setFocusedPane: (pane: WorkspacePaneId) =>
+    set((state) => {
+      if (state.focusedPane === pane) return state
+      const targetId = pane === 'secondary' ? state.secondaryActiveTabId : state.activeTabId
+      const targetNote = resolveNoteById(state.notes || [], targetId)
+      return {
+        focusedPane: pane,
+        ...(targetNote ? { selectedNote: targetNote, selectedSnippet: targetNote } : {})
+      }
+    }),
+
+  setSplitRatio: (ratio: number) =>
+    set({ splitRatio: Math.min(0.8, Math.max(0.2, ratio)) }),
+
+  splitPane: (direction: 'vertical' | 'horizontal', tabId?: string) =>
+    set((state) => {
+      const targetId = tabId || state.activeTabId || state.openTabs[0] || null
+      if (!targetId) return state
+      const nextSecondaryTabs = state.secondaryTabs.includes(targetId)
+        ? state.secondaryTabs
+        : [...state.secondaryTabs, targetId]
+      const targetNote = resolveNoteById(state.notes || [], targetId)
+      return {
+        splitDirection: direction,
+        secondaryTabs: nextSecondaryTabs,
+        secondaryActiveTabId: targetId,
+        focusedPane: 'secondary',
+        ...(targetNote ? { selectedNote: targetNote, selectedSnippet: targetNote } : {})
+      }
+    }),
+
+  closeSplit: () =>
+    set((state) => {
+      if (state.splitDirection === 'none') return state
+      const primaryNote = resolveNoteById(state.notes || [], state.activeTabId)
+      return {
+        splitDirection: 'none',
+        secondaryTabs: [],
+        secondaryActiveTabId: null,
+        focusedPane: 'primary',
+        selectedNote: primaryNote,
+        selectedSnippet: primaryNote
+      }
+    }),
+
+  toggleSplitDirection: () =>
+    set((state) => {
+      if (state.splitDirection === 'none') return state
+      return {
+        splitDirection: state.splitDirection === 'vertical' ? 'horizontal' : 'vertical'
+      }
+    }),
+
+  setPaneActiveTabId: (pane: WorkspacePaneId, id: string | null) => {
+    if (pane === 'primary') {
+      set({ focusedPane: 'primary' })
+      get().setActiveTabId(id)
+      return
+    }
+    set((state) => {
+      if (!id) {
+        return { secondaryActiveTabId: null, focusedPane: 'secondary' }
+      }
+      const nextSecondaryTabs = state.secondaryTabs.includes(id)
+        ? state.secondaryTabs
+        : [...state.secondaryTabs, id]
+      const targetNote = resolveNoteById(state.notes || [], id)
+      return {
+        secondaryTabs: nextSecondaryTabs,
+        secondaryActiveTabId: id,
+        focusedPane: 'secondary',
+        ...(targetNote ? { selectedNote: targetNote, selectedSnippet: targetNote } : {})
+      }
+    })
+  },
+
+  closePaneTab: (pane: WorkspacePaneId, id: string) => {
+    if (pane === 'primary') {
+      set((state) => {
+        const { nextTabs, nextActiveId } = computeTabsAfterClose(state.openTabs, state.activeTabId, id)
+        if (nextTabs.length === 0 && state.splitDirection !== 'none' && state.secondaryTabs.length > 0) {
+          const promotedActiveId = state.secondaryActiveTabId || state.secondaryTabs[0] || null
+          const promotedNote = resolveNoteById(state.notes || [], promotedActiveId)
+          return {
+            openTabs: state.secondaryTabs,
+            pinnedTabIds: [],
+            activeTabId: promotedActiveId,
+            splitDirection: 'none',
+            secondaryTabs: [],
+            secondaryActiveTabId: null,
+            focusedPane: 'primary',
+            selectedNote: promotedNote,
+            selectedSnippet: promotedNote
+          }
+        }
+        const nextSelected = resolveNoteById(state.notes || [], nextActiveId)
+        return {
+          openTabs: nextTabs,
+          pinnedTabIds: state.pinnedTabIds.filter((tabId) => nextTabs.includes(tabId)),
+          activeTabId: nextActiveId,
+          selectedNote: nextSelected,
+          selectedSnippet: nextSelected
+        }
+      })
+      return
+    }
+
+    set((state) => {
+      const { nextTabs, nextActiveId } = computeTabsAfterClose(
+        state.secondaryTabs,
+        state.secondaryActiveTabId,
+        id
+      )
+      if (nextTabs.length === 0) {
+        const primaryNote = resolveNoteById(state.notes || [], state.activeTabId)
+        return {
+          splitDirection: 'none',
+          secondaryTabs: [],
+          secondaryActiveTabId: null,
+          focusedPane: 'primary',
+          selectedNote: primaryNote,
+          selectedSnippet: primaryNote
+        }
+      }
+      const nextSelected = resolveNoteById(state.notes || [], nextActiveId)
+      return {
+        secondaryTabs: nextTabs,
+        secondaryActiveTabId: nextActiveId,
+        ...(nextSelected ? { selectedNote: nextSelected, selectedSnippet: nextSelected } : {})
+      }
+    })
+  },
+
+  reorderPaneTabs: (pane: WorkspacePaneId, newTabs: string[]) => {
+    if (pane === 'primary') {
+      get().reorderTabs(newTabs)
+      return
+    }
+    set({ secondaryTabs: newTabs })
+  },
+
+  closeOtherPaneTabs: (pane: WorkspacePaneId, keepId: string) => {
+    if (pane === 'primary') {
+      get().closeOtherTabs(keepId)
+      return
+    }
+    set((state) => {
+      const nextSelected = resolveNoteById(state.notes || [], keepId)
+      return {
+        secondaryTabs: [keepId],
+        secondaryActiveTabId: keepId,
+        ...(nextSelected ? { selectedNote: nextSelected, selectedSnippet: nextSelected } : {})
+      }
+    })
+  },
+
+  closePaneTabsToRight: (pane: WorkspacePaneId, id: string) => {
+    if (pane === 'primary') {
+      get().closeTabsToRight(id)
+      return
+    }
+    set((state) => {
+      const idx = state.secondaryTabs.indexOf(id)
+      const nextTabs = idx === -1 ? state.secondaryTabs : state.secondaryTabs.slice(0, idx + 1)
+      const nextActiveId = nextTabs.includes(state.secondaryActiveTabId || '')
+        ? state.secondaryActiveTabId
+        : id
+      const nextSelected = resolveNoteById(state.notes || [], nextActiveId)
+      return {
+        secondaryTabs: nextTabs,
+        secondaryActiveTabId: nextActiveId,
+        ...(nextSelected ? { selectedNote: nextSelected, selectedSnippet: nextSelected } : {})
+      }
+    })
+  },
+
+  closeAllPaneTabs: (pane: WorkspacePaneId) => {
+    if (pane === 'primary') {
+      get().closeAllTabs()
+      return
+    }
+    get().closeSplit()
+  },
+
+  moveTabToPane: (
+    id: string,
+    targetPane: WorkspacePaneId,
+    direction: 'vertical' | 'horizontal' = 'vertical'
+  ) =>
+    set((state) => {
+      const notes = state.notes || []
+      if (targetPane === 'secondary') {
+        const nextSecondaryTabs = state.secondaryTabs.includes(id)
+          ? state.secondaryTabs
+          : [...state.secondaryTabs, id]
+        const { nextTabs: nextPrimaryTabs, nextActiveId: nextPrimaryActive } =
+          computeTabsAfterClose(state.openTabs, state.activeTabId, id)
+        const nextDirection =
+          state.splitDirection === 'none' ? direction : state.splitDirection
+
+        // If primary would become empty, keep it in primary instead of leaving primary blank
+        if (nextPrimaryTabs.length === 0) {
+          return {
+            splitDirection: nextDirection,
+            secondaryTabs: nextSecondaryTabs,
+            secondaryActiveTabId: id,
+            focusedPane: 'secondary'
+          }
+        }
+
+        const nextSelected = resolveNoteById(notes, id)
+        return {
+          splitDirection: nextDirection,
+          openTabs: nextPrimaryTabs,
+          pinnedTabIds: state.pinnedTabIds.filter((tid) => nextPrimaryTabs.includes(tid)),
+          activeTabId: nextPrimaryActive,
+          secondaryTabs: nextSecondaryTabs,
+          secondaryActiveTabId: id,
+          focusedPane: 'secondary',
+          ...(nextSelected ? { selectedNote: nextSelected, selectedSnippet: nextSelected } : {})
+        }
+      }
+
+      // Moving to primary
+      const nextPrimaryTabs = state.openTabs.includes(id)
+        ? state.openTabs
+        : [...state.openTabs, id]
+      const { nextTabs: nextSecondaryTabs, nextActiveId: nextSecondaryActive } =
+        computeTabsAfterClose(state.secondaryTabs, state.secondaryActiveTabId, id)
+      const nextSelected = resolveNoteById(notes, id)
+      const collapseSplit = nextSecondaryTabs.length === 0
+
+      return {
+        openTabs: nextPrimaryTabs,
+        activeTabId: id,
+        focusedPane: 'primary',
+        splitDirection: collapseSplit ? 'none' : state.splitDirection,
+        secondaryTabs: nextSecondaryTabs,
+        secondaryActiveTabId: collapseSplit ? null : nextSecondaryActive,
+        ...(nextSelected ? { selectedNote: nextSelected, selectedSnippet: nextSelected } : {})
+      }
+    }),
 
   setLoading: (isLoading: boolean) => set({ isLoading }),
   setSearchQuery: (query: string) => set({ searchQuery: query }),
@@ -698,6 +1012,14 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
       const dirtyNotes = (state.dirtyNoteIds || []).filter((dId) => dId !== id)
 
+      const secondaryCleanup = computeTabsAfterClose(
+        state.secondaryTabs,
+        state.secondaryActiveTabId,
+        id
+      )
+      const collapseSplit =
+        state.splitDirection !== 'none' && secondaryCleanup.nextTabs.length === 0
+
       return {
         notes: next,
         snippets: next,
@@ -706,7 +1028,15 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         selectedNote: nextSelectedNote,
         selectedSnippet: nextSelectedNote,
         drafts: nextDrafts,
-        dirtyNoteIds: dirtyNotes
+        dirtyNoteIds: dirtyNotes,
+        ...(state.splitDirection !== 'none'
+          ? {
+              splitDirection: collapseSplit ? 'none' : state.splitDirection,
+              secondaryTabs: secondaryCleanup.nextTabs,
+              secondaryActiveTabId: collapseSplit ? null : secondaryCleanup.nextActiveId,
+              focusedPane: collapseSplit ? 'primary' : state.focusedPane
+            }
+          : {})
       }
     })
 

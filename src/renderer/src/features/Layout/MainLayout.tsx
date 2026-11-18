@@ -20,16 +20,11 @@ import Sidebar from '../Navigation/Sidebar'
 import ActivityBar from '../Navigation/ActivityBar'
 import { openSidebarView } from '../Navigation/sidebarViewStore'
 import Welcome from '../../Welcome'
-import TabBar from './TabBar'
-import TabContentPane from './TabContentPane'
+import WorkspacePane from './WorkspacePane'
 import AppModals, { RenameModalState } from './AppModals'
 import { ExternalDropOverlay, useWorkspaceDrop } from '../Explorer/drop'
 import { countExplorerPerfRender, markExplorerPerf } from '../Explorer/utils/explorerPerf'
 import { FileText, FolderDown } from 'lucide-react'
-const Graph = React.lazy(() => import('../graph/Graph'))
-const LuminaChatContent = React.lazy(() =>
-  import('../AI/components/LuminaChatContent').then((m) => ({ default: m.LuminaChatContent }))
-)
 import { useKeyboardShortcuts, matchesShortcut } from '../../core/shortcuts'
 import { createUntitledSnippet } from '../Breadcrumbs/utils/breadcrumbUtils'
 import { useWorkspaceStore, GRAPH_TAB_ID, LUMINA_TAB_ID } from '../../core/store/workspaceStore'
@@ -46,73 +41,9 @@ import { useTypingSound } from '../../core/hooks/useTypingSound'
 import { useShallow } from 'zustand/react/shallow'
 
 import RightSidebar from '../Inspector/RightSidebar'
-import Breadcrumbs from '../Breadcrumbs/index'
 import StatusBar from './StatusBar'
 import { useSidebarResize } from './resizeSidebar'
 import { TerminalPanel } from '../terminal/TerminalPanel'
-
-/**
- * GraphTabPane — stable memoized wrapper for the embedded graph tab.
- * Reads its own visibility from the store to avoid re-rendering peer tabs on switch.
- */
-interface GraphTabPaneProps {
-  onNavigate: (snippet: any) => void
-}
-
-const GraphTabPane = React.memo<GraphTabPaneProps>(({ onNavigate }) => {
-  const isSelected = useWorkspaceStore((state) => state.activeTabId === GRAPH_TAB_ID)
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        opacity: isSelected ? 1 : 0,
-        pointerEvents: isSelected ? 'auto' : 'none',
-        visibility: isSelected ? 'visible' : 'hidden',
-        contentVisibility: isSelected ? 'visible' : 'hidden',
-        contain: isSelected ? 'none' : 'strict',
-        display: isSelected ? 'flex' : 'none',
-        overflow: 'hidden',
-        zIndex: isSelected ? 10 : 1,
-        transition: 'opacity 0.08s ease-out'
-      }}
-    >
-      <React.Suspense fallback={null}>
-        <Graph embedded={true} isOpen={isSelected} onNavigate={onNavigate} />
-      </React.Suspense>
-    </div>
-  )
-})
-GraphTabPane.displayName = 'GraphTabPane'
-
-/**
- * LuminaTabPane — stable memoized wrapper for the embedded Lumina AI tab.
- * Reads its own visibility from the store to avoid re-rendering peer tabs on switch.
- */
-const LuminaTabPane = React.memo(() => {
-  const isSelected = useWorkspaceStore((state) => state.activeTabId === LUMINA_TAB_ID)
-  return (
-    <div
-      style={{
-        display: isSelected ? 'flex' : 'none',
-        flex: 1,
-        width: '100%',
-        height: '100%',
-        position: 'relative',
-        overflow: 'hidden',
-        flexDirection: 'column'
-      }}
-    >
-      <React.Suspense fallback={null}>
-        <LuminaChatContent isSidebar={false} isModal={false} />
-      </React.Suspense>
-    </div>
-  )
-})
-LuminaTabPane.displayName = 'LuminaTabPane'
 
 export const MainLayout: React.FC = () => {
   countExplorerPerfRender('MainLayout')
@@ -124,7 +55,13 @@ export const MainLayout: React.FC = () => {
     isLoading,
     loadWorkspace,
     activeTabId,
-    openTabs
+    openTabs,
+    splitDirection,
+    splitRatio,
+    secondaryTabs,
+    setSplitRatio,
+    splitPane,
+    closeSplit
   } = useWorkspaceStore(
     useShallow((state) => ({
       snippets: state.notes || [],
@@ -134,7 +71,13 @@ export const MainLayout: React.FC = () => {
       isLoading: state.isLoading,
       loadWorkspace: state.loadWorkspace,
       activeTabId: state.activeTabId,
-      openTabs: state.openTabs
+      openTabs: state.openTabs,
+      splitDirection: state.splitDirection,
+      splitRatio: state.splitRatio,
+      secondaryTabs: state.secondaryTabs,
+      setSplitRatio: state.setSplitRatio,
+      splitPane: state.splitPane,
+      closeSplit: state.closeSplit
     }))
   )
   const { toast, showToast, clearToast } = useToast()
@@ -1157,6 +1100,54 @@ export const MainLayout: React.FC = () => {
     }
   }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme, handleToggleTerminal])
 
+  const splitContainerRef = useRef<HTMLDivElement | null>(null)
+
+  const handleStartSplitResize = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const container = splitContainerRef.current
+      if (!container) return
+
+      const isVertical = splitDirection === 'vertical'
+      document.body.classList.add(isVertical ? 'is-split-resizing-v' : 'is-split-resizing-h')
+
+      const onMouseMove = (moveEvent: MouseEvent) => {
+        const rect = container.getBoundingClientRect()
+        if (isVertical && rect.width > 0) {
+          setSplitRatio((moveEvent.clientX - rect.left) / rect.width)
+        } else if (!isVertical && rect.height > 0) {
+          setSplitRatio((moveEvent.clientY - rect.top) / rect.height)
+        }
+      }
+
+      const onMouseUp = () => {
+        document.body.classList.remove('is-split-resizing-v', 'is-split-resizing-h')
+        window.removeEventListener('mousemove', onMouseMove)
+        window.removeEventListener('mouseup', onMouseUp)
+      }
+
+      window.addEventListener('mousemove', onMouseMove)
+      window.addEventListener('mouseup', onMouseUp)
+    },
+    [splitDirection, setSplitRatio]
+  )
+
+  useEffect(() => {
+    const onSplitEditor = (e: Event) => {
+      const direction = (e as CustomEvent<{ direction?: 'vertical' | 'horizontal' }>)?.detail
+        ?.direction
+      if (!direction) return
+      if (splitDirection === direction) {
+        closeSplit()
+      } else {
+        splitPane(direction)
+      }
+    }
+    window.addEventListener('split-editor', onSplitEditor as EventListener)
+    return () => window.removeEventListener('split-editor', onSplitEditor as EventListener)
+  }, [splitDirection, splitPane, closeSplit])
+
   // Stable snippet map — only re-computes when notes change (saves, renames), NOT on tab switch
   const snippetMap = useMemo(() => {
     const map = new Map<string, any>()
@@ -1166,44 +1157,17 @@ export const MainLayout: React.FC = () => {
     return map
   }, [snippets])
 
-  // Stable editor instances — only re-mounts when the set of open tabs changes or a snippet is saved.
-  const renderedEditors = useMemo(() => {
-    return openTabs.map((tabId: string) => {
-      if (tabId === GRAPH_TAB_ID) {
-        return <GraphTabPane key={tabId} onNavigate={setSelectedSnippet} />
-      }
-      if (tabId === LUMINA_TAB_ID) {
-        return <LuminaTabPane key={tabId} />
-      }
-      markExplorerPerf('document-lookup-start', { noteId: tabId })
-      const snippet = snippetMap.get(tabId)
-      markExplorerPerf('document-lookup-end', { noteId: tabId, found: Boolean(snippet) })
-      if (!snippet) return null
-      return (
-        <TabContentPane
-          key={tabId}
-          snippet={snippet}
-          isSelected={false}
-          onSave={saveSnippet}
-          onToggleInspector={handleToggleInspector}
-          onToggleExplorerModal={handleToggleExplorerModal}
-          onSettingsClick={handleOpenSettings}
-          onThemeClick={handleOpenTheme}
-          onGraphClick={handleToggleGraph}
-        />
-      )
-    })
-  }, [
-    openTabs,
-    snippetMap,
-    saveSnippet,
-    handleToggleInspector,
-    handleToggleExplorerModal,
-    handleOpenSettings,
-    handleOpenTheme,
-    handleToggleGraph,
-    setSelectedSnippet
-  ])
+  const hasValidOpenTabs = useMemo(
+    () =>
+      openTabs.some(
+        (id: string) =>
+          id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || snippetMap.has(id)
+      ),
+    [openTabs, snippetMap]
+  )
+
+  const isSplitActive = splitDirection !== 'none' && secondaryTabs.length > 0
+  const showTabHeader = activeTab === 'files' || activeTab === 'search'
 
   return (
     <div
@@ -1253,33 +1217,6 @@ export const MainLayout: React.FC = () => {
         </div>
         <main className="shell-main">
           <div className="shell-center-workspace" {...workspaceDropProps}>
-            {(activeTab === 'files' || activeTab === 'search') && (
-              <>
-                {isTabsVisible && (
-                  <div className={`zen-collapsible-bar${isZenModeEnabled ? ' zen-hidden' : ''}`}>
-                    <TabBar
-                      isSidebarOpen={isRightSidebarOpen}
-                      onToggleSidebar={handleToggleRightSidebar}
-                      isLeftSidebarOpen={isLeftSidebarOpen}
-                      onToggleLeftSidebar={handleToggleLeftSidebar}
-                    />
-                  </div>
-                )}
-                {isBreadcrumbsVisible &&
-                  !isTerminalMaximized &&
-                  selectedSnippet &&
-                  Boolean(selectedSnippet.folderId) &&
-                  activeTabId !== GRAPH_TAB_ID &&
-                  activeTabId !== LUMINA_TAB_ID &&
-                  openTabs.includes(selectedSnippet.id) &&
-                  snippets.some((s: any) => s.id === selectedSnippet.id) && (
-                    <div className={`zen-collapsible-bar${isZenModeEnabled ? ' zen-hidden' : ''}`}>
-                      <Breadcrumbs snippet={selectedSnippet} />
-                    </div>
-                  )}
-              </>
-            )}
-
             <div
               className="workspace-editor-dock-area"
               style={{
@@ -1302,31 +1239,65 @@ export const MainLayout: React.FC = () => {
                     position: 'relative'
                   }}
                 />
-              ) : openTabs.filter(
-                  (id: string) =>
-                    id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || snippets.some((s: any) => s.id === id)
-                ).length > 0 ? (
+              ) : hasValidOpenTabs ? (
                 <div
-                  className="workspace-container"
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    flex: 1,
-                    overflow: 'hidden',
-                    position: 'relative'
-                  }}
+                  ref={splitContainerRef}
+                  className={`workspace-container workspace-split-container${
+                    isSplitActive ? ` split-${splitDirection}` : ''
+                  }`}
                 >
-                  <div
-                    style={{
-                      position: 'relative',
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      overflow: 'hidden'
-                    }}
-                  >
-                    {renderedEditors}
-                  </div>
+                  <WorkspacePane
+                    paneId="primary"
+                    snippetMap={snippetMap}
+                    showTabHeader={showTabHeader}
+                    isTabsVisible={isTabsVisible}
+                    isBreadcrumbsVisible={isBreadcrumbsVisible}
+                    isZenModeEnabled={isZenModeEnabled}
+                    isTerminalMaximized={isTerminalMaximized}
+                    isRightSidebarOpen={isRightSidebarOpen}
+                    isLeftSidebarOpen={isLeftSidebarOpen}
+                    onToggleRightSidebar={handleToggleRightSidebar}
+                    onToggleLeftSidebar={handleToggleLeftSidebar}
+                    onSave={saveSnippet}
+                    onToggleInspector={handleToggleInspector}
+                    onToggleExplorerModal={handleToggleExplorerModal}
+                    onSettingsClick={handleOpenSettings}
+                    onThemeClick={handleOpenTheme}
+                    onGraphClick={handleToggleGraph}
+                    onNavigate={setSelectedSnippet}
+                    flexRatio={isSplitActive ? splitRatio : 1}
+                  />
+                  {isSplitActive && (
+                    <>
+                      <div
+                        className={`split-pane-resizer ${splitDirection}`}
+                        title="Drag to resize panes (double-click to reset 50/50)"
+                        onMouseDown={handleStartSplitResize}
+                        onDoubleClick={() => setSplitRatio(0.5)}
+                      />
+                      <WorkspacePane
+                        paneId="secondary"
+                        snippetMap={snippetMap}
+                        showTabHeader={showTabHeader}
+                        isTabsVisible={isTabsVisible}
+                        isBreadcrumbsVisible={isBreadcrumbsVisible}
+                        isZenModeEnabled={isZenModeEnabled}
+                        isTerminalMaximized={isTerminalMaximized}
+                        isRightSidebarOpen={isRightSidebarOpen}
+                        isLeftSidebarOpen={isLeftSidebarOpen}
+                        onToggleRightSidebar={handleToggleRightSidebar}
+                        onToggleLeftSidebar={handleToggleLeftSidebar}
+                        onSave={saveSnippet}
+                        onToggleInspector={handleToggleInspector}
+                        onToggleExplorerModal={handleToggleExplorerModal}
+                        onSettingsClick={handleOpenSettings}
+                        onThemeClick={handleOpenTheme}
+                        onGraphClick={handleToggleGraph}
+                        onNavigate={setSelectedSnippet}
+                        flexRatio={1 - splitRatio}
+                      />
+                    </>
+                  )}
                 </div>
               ) : (
                 <GlobalErrorHandler>

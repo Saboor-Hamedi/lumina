@@ -21,7 +21,12 @@ describe('workspaceStore', () => {
       dirtyNoteIds: [],
       openTabs: [],
       activeTabId: null,
-      pinnedTabIds: []
+      pinnedTabIds: [],
+      splitDirection: 'none',
+      splitRatio: 0.5,
+      secondaryTabs: [],
+      secondaryActiveTabId: null,
+      focusedPane: 'primary'
     })
   })
 
@@ -200,6 +205,77 @@ describe('workspaceStore', () => {
       useWorkspaceStore.getState().setDirty('1', true)
       useWorkspaceStore.getState().setDirty('1', false)
       expect(useWorkspaceStore.getState().dirtyNoteIds).not.toContain('1')
+    })
+  })
+
+  describe('Split View / Multi-Pane Editing', () => {
+    it('splits vertically and horizontally and clamps split ratio', () => {
+      const n1 = { id: 'n1', title: 'Note 1', code: 'One' }
+      const n2 = { id: 'n2', title: 'Note 2', code: 'Two' }
+      useWorkspaceStore.getState().setNotes([n1, n2])
+      useWorkspaceStore.getState().setSelectedNote(n1)
+
+      useWorkspaceStore.getState().splitPane('vertical', 'n2')
+      let state = useWorkspaceStore.getState()
+      expect(state.splitDirection).toBe('vertical')
+      expect(state.secondaryTabs).toEqual(['n2'])
+      expect(state.secondaryActiveTabId).toBe('n2')
+      expect(state.focusedPane).toBe('secondary')
+      expect(state.selectedNote?.id).toBe('n2')
+
+      useWorkspaceStore.getState().toggleSplitDirection()
+      expect(useWorkspaceStore.getState().splitDirection).toBe('horizontal')
+
+      useWorkspaceStore.getState().setSplitRatio(0.05)
+      expect(useWorkspaceStore.getState().splitRatio).toBe(0.2)
+      useWorkspaceStore.getState().setSplitRatio(0.95)
+      expect(useWorkspaceStore.getState().splitRatio).toBe(0.8)
+    })
+
+    it('opens notes in focused pane and collapses split when last secondary tab closes', () => {
+      const n1 = { id: 'n1', title: 'Note 1', code: 'One' }
+      const n2 = { id: 'n2', title: 'Note 2', code: 'Two' }
+      const n3 = { id: 'n3', title: 'Note 3', code: 'Three' }
+      useWorkspaceStore.getState().setNotes([n1, n2, n3])
+      useWorkspaceStore.getState().setSelectedNote(n1)
+
+      useWorkspaceStore.getState().splitPane('vertical', 'n2')
+      // Focused pane is 'secondary', so setSelectedNote opens n3 in secondaryTabs
+      useWorkspaceStore.getState().setSelectedNote(n3)
+      expect(useWorkspaceStore.getState().secondaryTabs).toEqual(['n2', 'n3'])
+      expect(useWorkspaceStore.getState().secondaryActiveTabId).toBe('n3')
+
+      useWorkspaceStore.getState().closePaneTab('secondary', 'n3')
+      expect(useWorkspaceStore.getState().secondaryTabs).toEqual(['n2'])
+      expect(useWorkspaceStore.getState().secondaryActiveTabId).toBe('n2')
+
+      // Closing the last secondary tab collapses split back to primary
+      useWorkspaceStore.getState().closePaneTab('secondary', 'n2')
+      const state = useWorkspaceStore.getState()
+      expect(state.splitDirection).toBe('none')
+      expect(state.secondaryTabs).toEqual([])
+      expect(state.focusedPane).toBe('primary')
+      expect(state.selectedNote?.id).toBe('n1')
+    })
+
+    it('moves tabs between primary and secondary panes', () => {
+      const n1 = { id: 'n1', title: 'Note 1', code: 'One' }
+      const n2 = { id: 'n2', title: 'Note 2', code: 'Two' }
+      useWorkspaceStore.getState().setNotes([n1, n2])
+      useWorkspaceStore.getState().setSelectedNote(n1)
+      useWorkspaceStore.getState().setSelectedNote(n2)
+
+      useWorkspaceStore.getState().moveTabToPane('n2', 'secondary')
+      let state = useWorkspaceStore.getState()
+      expect(state.splitDirection).toBe('vertical')
+      expect(state.openTabs).toEqual(['n1'])
+      expect(state.secondaryTabs).toEqual(['n2'])
+
+      useWorkspaceStore.getState().moveTabToPane('n2', 'primary')
+      state = useWorkspaceStore.getState()
+      expect(state.splitDirection).toBe('none')
+      expect(state.openTabs).toEqual(['n1', 'n2'])
+      expect(state.activeTabId).toBe('n2')
     })
   })
 })

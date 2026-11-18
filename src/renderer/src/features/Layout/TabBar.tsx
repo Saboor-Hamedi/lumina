@@ -17,14 +17,28 @@
  */
 
 import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react'
-import { X, Pin, MoreHorizontal, ArrowRight, Image, Network, Sparkles, Edit3 } from 'lucide-react'
+import {
+  X,
+  Pin,
+  MoreHorizontal,
+  ArrowRight,
+  Image,
+  Network,
+  Sparkles,
+  Edit3,
+  Columns2,
+  Rows2,
+  ArrowLeftRight
+} from 'lucide-react'
 import {
   DndContext,
+  DragOverlay,
   closestCenter,
   useSensor,
   useSensors,
   PointerSensor,
-  DragEndEvent
+  type DragStartEvent,
+  type DragEndEvent
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -32,8 +46,13 @@ import {
   horizontalListSortingStrategy,
   arrayMove
 } from '@dnd-kit/sortable'
-import { restrictToHorizontalAxis } from '@dnd-kit/modifiers'
-import { useWorkspaceStore, GRAPH_TAB_ID, LUMINA_TAB_ID } from '../../core/store/workspaceStore'
+import { useTabDragStore, computePaneDropTarget } from './tabDragDrop'
+import {
+  useWorkspaceStore,
+  GRAPH_TAB_ID,
+  LUMINA_TAB_ID,
+  type WorkspacePaneId
+} from '../../core/store/workspaceStore'
 import { useShallow } from 'zustand/react/shallow'
 import ContextMenu from '../modals/ContextMenu'
 import PromptModal from '../modals/PromptModal'
@@ -175,51 +194,92 @@ const SortableTabItem = memo<SortableTabItemProps>(
 SortableTabItem.displayName = 'SortableTabItem'
 
 export interface TabBarProps {
+  paneId?: WorkspacePaneId
   isSidebarOpen?: boolean
   onToggleSidebar?: () => void
   isLeftSidebarOpen?: boolean
   onToggleLeftSidebar?: () => void
 }
 
-export const TabBar: React.FC<TabBarProps> = () => {
+const EMPTY_IDS: string[] = []
+
+export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
   const {
     openTabs,
     activeTabId,
     selectedSnippet,
     snippets,
-    setActiveTabId,
-    closeTab,
-    reorderTabs,
-    closeOtherTabs,
-    closeTabsToRight,
-    closeAllTabs,
+    setPaneActiveTabId,
+    closePaneTab,
+    reorderPaneTabs,
+    closeOtherPaneTabs,
+    closePaneTabsToRight,
+    closeAllPaneTabs,
     togglePinTab,
     saveSnippet,
     dirtySnippetIds,
-    pinnedTabIds
+    pinnedTabIds,
+    splitDirection,
+    splitPane,
+    closeSplit,
+    toggleSplitDirection,
+    moveTabToPane
   } = useWorkspaceStore(
     useShallow((state) => ({
       snippets: state.notes || [],
-      openTabs: state.openTabs || [],
-      activeTabId: state.activeTabId,
+      openTabs: paneId === 'secondary' ? state.secondaryTabs : state.openTabs,
+      activeTabId: paneId === 'secondary' ? state.secondaryActiveTabId : state.activeTabId,
       selectedSnippet: state.selectedNote,
-      setActiveTabId: state.setActiveTabId,
-      reorderTabs: state.reorderTabs,
-      closeTab: state.closeTab,
-      closeOtherTabs: state.closeOtherTabs,
-      closeTabsToRight: state.closeTabsToRight,
-      closeAllTabs: state.closeAllTabs,
+      setPaneActiveTabId: state.setPaneActiveTabId,
+      reorderPaneTabs: state.reorderPaneTabs,
+      closePaneTab: state.closePaneTab,
+      closeOtherPaneTabs: state.closeOtherPaneTabs,
+      closePaneTabsToRight: state.closePaneTabsToRight,
+      closeAllPaneTabs: state.closeAllPaneTabs,
       togglePinTab: state.togglePinTab,
       saveSnippet: state.saveNote,
-      dirtySnippetIds: state.dirtyNoteIds || [],
-      pinnedTabIds: state.pinnedTabIds || []
+      dirtySnippetIds: state.dirtyNoteIds,
+      pinnedTabIds: paneId === 'secondary' ? EMPTY_IDS : state.pinnedTabIds,
+      splitDirection: state.splitDirection,
+      splitPane: state.splitPane,
+      closeSplit: state.closeSplit,
+      toggleSplitDirection: state.toggleSplitDirection,
+      moveTabToPane: state.moveTabToPane
     }))
+  )
+
+  const setActiveTabId = useCallback(
+    (id: string | null) => setPaneActiveTabId(paneId, id),
+    [setPaneActiveTabId, paneId]
+  )
+  const closeTab = useCallback(
+    (id: string) => closePaneTab(paneId, id),
+    [closePaneTab, paneId]
+  )
+  const reorderTabs = useCallback(
+    (newTabs: string[]) => reorderPaneTabs(paneId, newTabs),
+    [reorderPaneTabs, paneId]
+  )
+  const closeOtherTabs = useCallback(
+    (keepId: string) => closeOtherPaneTabs(paneId, keepId),
+    [closeOtherPaneTabs, paneId]
+  )
+  const closeTabsToRight = useCallback(
+    (id: string) => closePaneTabsToRight(paneId, id),
+    [closePaneTabsToRight, paneId]
+  )
+  const closeAllTabs = useCallback(
+    () => closeAllPaneTabs(paneId),
+    [closeAllPaneTabs, paneId]
   )
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; id: string } | null>(null)
   const [prompt, setPrompt] = useState<{ id: string; title: string } | null>(null)
   const [iconPickerId, setIconPickerId] = useState<string | null>(null)
+  const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const tabbarRef = useRef<HTMLDivElement | null>(null)
+  const wrapperRef = useRef<HTMLDivElement | null>(null)
+  const dragMoveCleanupRef = useRef<(() => void) | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -309,7 +369,11 @@ export const TabBar: React.FC<TabBarProps> = () => {
         key={id}
         id={id}
         snippet={tabSnippet}
-        isActive={activeTabId === id || selectedSnippet?.id === id}
+        isActive={
+          paneId === 'secondary'
+            ? activeTabId === id
+            : activeTabId === id || (!activeTabId && selectedSnippet?.id === id)
+        }
         isDirty={dirtySnippetIds.includes(id)}
         isPinned={pinnedTabIds.includes(id)}
         onOpen={handleTabClick}
@@ -340,20 +404,81 @@ export const TabBar: React.FC<TabBarProps> = () => {
     setContextMenu({ x: e.clientX, y: e.clientY, id })
   }, [])
 
-  // --- Sortable Drag Handler ---
+  // --- Sortable Drag & Drop-to-Split Handlers ---
+  const cleanupDragListener = useCallback(() => {
+    if (dragMoveCleanupRef.current) {
+      dragMoveCleanupRef.current()
+      dragMoveCleanupRef.current = null
+    }
+  }, [])
+
+  useEffect(() => cleanupDragListener, [cleanupDragListener])
+
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const tabId = String(event.active.id)
+      setActiveDragId(tabId)
+      useTabDragStore.getState().startDrag(tabId, paneId)
+
+      const onPointerMove = (e: PointerEvent) => {
+        const target = computePaneDropTarget(e.clientX, e.clientY, paneId, wrapperRef.current)
+        useTabDragStore.getState().setDropTarget(target)
+      }
+
+      window.addEventListener('pointermove', onPointerMove, { passive: true })
+      dragMoveCleanupRef.current = () => {
+        window.removeEventListener('pointermove', onPointerMove)
+      }
+    },
+    [paneId]
+  )
+
+  const handleDragCancel = useCallback(() => {
+    cleanupDragListener()
+    setActiveDragId(null)
+    useTabDragStore.getState().clearDrag()
+  }, [cleanupDragListener])
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
+      cleanupDragListener()
       const { active, over } = event
-      if (!active || !over || active.id === over.id) return
+      const dropTarget = useTabDragStore.getState().dropTarget
+      setActiveDragId(null)
+      useTabDragStore.getState().clearDrag()
 
-      const oldIndex = openTabs.indexOf(String(active.id))
+      if (!active) return
+      const tabId = String(active.id)
+
+      if (dropTarget) {
+        const { targetPane, zone } = dropTarget
+        if (zone === 'center') {
+          if (targetPane !== paneId) {
+            moveTabToPane(tabId, targetPane)
+          }
+          return
+        }
+        const direction = zone === 'bottom' || zone === 'top' ? 'horizontal' : 'vertical'
+        const destPane =
+          splitDirection === 'none'
+            ? 'secondary'
+            : zone === 'left' || zone === 'top'
+              ? 'primary'
+              : 'secondary'
+        moveTabToPane(tabId, destPane, direction)
+        return
+      }
+
+      if (!over || active.id === over.id) return
+
+      const oldIndex = openTabs.indexOf(tabId)
       const newIndex = openTabs.indexOf(String(over.id))
       if (oldIndex === -1 || newIndex === -1) return
 
       const reordered = arrayMove(openTabs, oldIndex, newIndex)
       reorderTabs(reordered)
     },
-    [openTabs, reorderTabs]
+    [cleanupDragListener, paneId, splitDirection, moveTabToPane, openTabs, reorderTabs]
   )
 
   const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
@@ -377,11 +502,13 @@ export const TabBar: React.FC<TabBarProps> = () => {
   return (
     <DndContext
       sensors={sensors}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
       collisionDetection={closestCenter}
-      modifiers={[restrictToHorizontalAxis]}
     >
       <div
+        ref={wrapperRef}
         className="tabbar-outer-wrapper"
         onDragEnter={(e: React.DragEvent) => handleExternalDragEnter(e, '')}
         onDragOver={(e: React.DragEvent) => handleExternalDragOver(e, '')}
@@ -413,6 +540,63 @@ export const TabBar: React.FC<TabBarProps> = () => {
             >
               <div className="tabs-container">{scrollableTabs.map(renderTab)}</div>
             </div>
+            <div className="tabbar-split-actions" onMouseDown={(e) => e.stopPropagation()}>
+              {paneId === 'primary' ? (
+                <>
+                  <ToolTip text="Split Right (Ctrl+\\)" position="bottom" delay={400}>
+                    <button
+                      type="button"
+                      className={`tabbar-split-btn${splitDirection === 'vertical' ? ' active' : ''}`}
+                      aria-label="Split Right"
+                      onClick={() => splitPane('vertical')}
+                    >
+                      <Columns2 size={14} />
+                    </button>
+                  </ToolTip>
+                  <ToolTip text="Split Down (Ctrl+Alt+\\)" position="bottom" delay={400}>
+                    <button
+                      type="button"
+                      className={`tabbar-split-btn${splitDirection === 'horizontal' ? ' active' : ''}`}
+                      aria-label="Split Down"
+                      onClick={() => splitPane('horizontal')}
+                    >
+                      <Rows2 size={14} />
+                    </button>
+                  </ToolTip>
+                </>
+              ) : (
+                <>
+                  <ToolTip
+                    text={
+                      splitDirection === 'vertical'
+                        ? 'Switch to Horizontal Split'
+                        : 'Switch to Vertical Split'
+                    }
+                    position="bottom"
+                    delay={400}
+                  >
+                    <button
+                      type="button"
+                      className="tabbar-split-btn"
+                      aria-label="Toggle Split Orientation"
+                      onClick={() => toggleSplitDirection()}
+                    >
+                      {splitDirection === 'vertical' ? <Rows2 size={14} /> : <Columns2 size={14} />}
+                    </button>
+                  </ToolTip>
+                  <ToolTip text="Close Split Pane" position="bottom" delay={400}>
+                    <button
+                      type="button"
+                      className="tabbar-split-btn"
+                      aria-label="Close Split Pane"
+                      onClick={() => closeSplit()}
+                    >
+                      <X size={14} />
+                    </button>
+                  </ToolTip>
+                </>
+              )}
+            </div>
           </div>
         </SortableContext>
       </div>
@@ -423,11 +607,39 @@ export const TabBar: React.FC<TabBarProps> = () => {
           y={contextMenu.y}
           onClose={() => setContextMenu(null)}
           options={[
+            ...(paneId === 'primary'
+              ? [
+                  {
+                    label: pinnedTabIds.includes(contextMenu.id) ? 'Unpin Tab' : 'Pin Tab',
+                    icon: <Pin size={14} />,
+                    onClick: () => togglePinTab(contextMenu.id)
+                  }
+                ]
+              : []),
             {
-              label: pinnedTabIds.includes(contextMenu.id) ? 'Unpin Tab' : 'Pin Tab',
-              icon: <Pin size={14} />,
-              onClick: () => togglePinTab(contextMenu.id)
+              label: 'Split Right',
+              icon: <Columns2 size={14} />,
+              onClick: () => splitPane('vertical', contextMenu.id)
             },
+            {
+              label: 'Split Down',
+              icon: <Rows2 size={14} />,
+              onClick: () => splitPane('horizontal', contextMenu.id)
+            },
+            ...(splitDirection !== 'none'
+              ? [
+                  {
+                    label:
+                      paneId === 'primary' ? 'Move to Other Pane' : 'Move to Primary Pane',
+                    icon: <ArrowLeftRight size={14} />,
+                    onClick: () =>
+                      moveTabToPane(
+                        contextMenu.id,
+                        paneId === 'primary' ? 'secondary' : 'primary'
+                      )
+                  }
+                ]
+              : []),
             ...(contextMenu.id !== GRAPH_TAB_ID && contextMenu.id !== LUMINA_TAB_ID
               ? [
                   {
@@ -516,6 +728,20 @@ export const TabBar: React.FC<TabBarProps> = () => {
           if (s) saveSnippet({ ...s, customIcon: iconName })
         }}
       />
+
+      <DragOverlay dropAnimation={null}>
+        {activeDragId ? (
+          <div className="workspace-tab drag-overlay active">
+            <span className="tab-title">
+              {activeDragId === LUMINA_TAB_ID
+                ? 'Lumina AI'
+                : activeDragId === GRAPH_TAB_ID
+                  ? 'Knowledge Graph'
+                  : snippetMap.get(activeDragId)?.title || 'Untitled'}
+            </span>
+          </div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   )
 }

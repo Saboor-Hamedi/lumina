@@ -14,7 +14,6 @@ export interface UseEditorEventsProps {
   showToast: (message: string, type?: ToastType) => void
   setShowFindWidget: React.Dispatch<React.SetStateAction<boolean>>
   setReplaceModeActive: React.Dispatch<React.SetStateAction<boolean>>
-  setIsPreviewOpen?: React.Dispatch<React.SetStateAction<boolean>>
   lastSaveTimeRef: React.MutableRefObject<number>
   lastSavedCodeRef: React.MutableRefObject<string | undefined>
   latestCodeRef: React.MutableRefObject<string>
@@ -49,7 +48,6 @@ export function useEditorEvents({
   showToast,
   setShowFindWidget,
   setReplaceModeActive,
-  setIsPreviewOpen,
   lastSaveTimeRef,
   lastSavedCodeRef,
   latestCodeRef,
@@ -97,7 +95,7 @@ export function useEditorEvents({
 
     window.addEventListener('keydown', handleGlobalKeyDown)
     return () => window.removeEventListener('keydown', handleGlobalKeyDown)
-  }, [isActive, setShowFindWidget, setReplaceModeActive, setIsPreviewOpen, realViewRef])
+  }, [isActive, setShowFindWidget, setReplaceModeActive, realViewRef])
 
   // --- Global Window Events ---
   useEffect(() => {

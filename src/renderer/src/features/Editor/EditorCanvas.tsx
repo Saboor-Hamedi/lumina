@@ -122,7 +122,6 @@ export interface EditorCanvasProps {
   showToast?: (message: string, type?: ToastType) => void
   onInlineAI?: any
   editorMenu?: ReactNode
-  onPreview?: () => void
   onOpenExportDialog?: () => void
   onToggleInspector?: () => void
 }
@@ -144,7 +143,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
     showToast,
     onInlineAI,
     editorMenu,
-    onPreview,
     onOpenExportDialog,
     onToggleInspector
   }) => {
@@ -221,7 +219,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
             setIsDirty={setIsDirty}
             isDirty={isDirty}
             onInlineAI={onInlineAI}
-            onPreview={onPreview}
             onOpenExportDialog={onOpenExportDialog}
             onToggleInspector={onToggleInspector}
             showTools={false}

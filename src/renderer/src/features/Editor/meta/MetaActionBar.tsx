@@ -16,7 +16,6 @@ export interface MetaActionBarProps {
   showMenuWhenTitleHidden?: boolean
   showTools?: boolean
   position?: 'bottom' | 'top' | 'inline'
-  onPreview?: () => void
   onOpenExportDialog?: () => void
   onToggleInspector?: () => void
 }
@@ -38,7 +37,6 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
     editorMenu,
     showTools = false,
     position = 'bottom',
-    onPreview,
     onOpenExportDialog,
     onToggleInspector
   }) => {
@@ -119,7 +117,6 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
           showMoreDropdown={showMoreDropdown}
           setShowMoreDropdown={setShowMoreDropdown}
           position={position}
-          onPreview={onPreview}
           onOpenExportDialog={onOpenExportDialog}
           onToggleInspector={onToggleInspector}
         />

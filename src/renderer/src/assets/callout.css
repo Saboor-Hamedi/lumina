@@ -1,6 +1,6 @@
 /*
  * ============================================================
- * LUMINA CALLOUT STYLING — Borderless Soft Card & Obsidian Copy
+ * LUMINA CALLOUT STYLING — Robust Card Frame & Hover Copy
  * ============================================================
  */
 
@@ -12,47 +12,62 @@
   max-width: 100% !important;
   margin: 0 !important;
   display: block !important;
-  padding: 2px 14px 2px 18px !important;
+  padding: 3px 12px !important;
   line-height: 1.6 !important;
   font-style: normal !important;
-  background-color: rgba(255, 255, 255, 0.03) !important;
-  border-left: none !important;
+  background: var(--bg-panel, rgba(0, 0, 0, 0.15)) !important;
+  border-left: 1px solid var(--border-dim) !important;
+  border-right: 1px solid var(--border-dim) !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   outline: none !important;
 }
 
-.cm-line.cm-atomic-fenced-code.lumina-callout-line {
-  border-right: 1px solid var(--border-dim) !important;
+/* Override blockquote styling when on a callout line */
+.markdown-editor .cm-line.cm-atomic-blockquote.lumina-callout-line,
+.markdown-editor .cm-line:has(.cm-quote).lumina-callout-line {
+  border-left: 1px solid var(--border-dim) !important;
+  font-style: normal !important;
 }
 
+.cm-line.cm-atomic-fenced-code.lumina-callout-line {
+  border-right: 1px solid var(--border-dim) !important;
+  border-left: 1px solid var(--border-dim) !important;
+}
+
+/* First line of callout: rounded top corners, top border, comfortable top padding */
 .cm-line.lumina-callout-line:not(.cm-line.lumina-callout-line + .cm-line.lumina-callout-line),
 .cm-line:not(.lumina-callout-line) + .cm-line.lumina-callout-line,
 .cm-line.lumina-callout-line:first-child {
-  padding-top: 8px !important;
+  border-top: 1px solid var(--border-dim) !important;
   border-top-left-radius: 6px !important;
   border-top-right-radius: 6px !important;
+  padding-top: 7px !important;
 }
 
+/* Last line of callout: rounded bottom corners, bottom border, comfortable bottom padding */
 .cm-line.lumina-callout-line:has(+ :not(.lumina-callout-line)),
 .cm-line.lumina-callout-line:last-child {
-  padding-bottom: 8px !important;
+  border-bottom: 1px solid var(--border-dim) !important;
   border-bottom-left-radius: 6px !important;
   border-bottom-right-radius: 6px !important;
+  padding-bottom: 7px !important;
 }
 
+/* Maintain clean borders on active line */
 .cm-line.lumina-callout-line.cm-activeLine,
 html[data-use-active-line-border="true"] .cm-line.lumina-callout-line.cm-activeLine {
   margin: 0 !important;
-  padding-left: 18px !important;
-  padding-right: 14px !important;
-  border-left: none !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  border-left: 1px solid var(--border-dim) !important;
+  border-right: 1px solid var(--border-dim) !important;
   box-shadow: none !important;
   outline: none !important;
   transform: none !important;
 }
 
-/* Prevent native selection from doubling over CodeMirror's .cm-selectionLayer */
+/* Selection background */
 .cm-line.lumina-callout-line::selection,
 .cm-line.lumina-callout-line *::selection {
   background: transparent !important;
@@ -60,49 +75,110 @@ html[data-use-active-line-border="true"] .cm-line.lumina-callout-line.cm-activeL
   text-shadow: none !important;
 }
 
-/* Callout Types — soft tinted cards without left border */
+/* Subtle, elegant card tints by callout type */
 .cm-line.lumina-callout-line.lumina-callout-line-note,
 .cm-line.lumina-callout-line.lumina-callout-line-info,
 .cm-line.lumina-callout-line.lumina-callout-line-todo {
-  background-color: rgba(56, 189, 248, 0.06) !important;
+  background-color: color-mix(in srgb, #38bdf8 6%, var(--bg-panel, rgba(0, 0, 0, 0.15))) !important;
 }
 
 .cm-line.lumina-callout-line.lumina-callout-line-tip,
 .cm-line.lumina-callout-line.lumina-callout-line-success {
-  background-color: rgba(74, 222, 128, 0.06) !important;
+  background-color: color-mix(in srgb, #4ade80 6%, var(--bg-panel, rgba(0, 0, 0, 0.15))) !important;
 }
 
 .cm-line.lumina-callout-line.lumina-callout-line-warning,
 .cm-line.lumina-callout-line.lumina-callout-line-question {
-  background-color: rgba(251, 191, 36, 0.06) !important;
+  background-color: color-mix(in srgb, #fbbf24 6%, var(--bg-panel, rgba(0, 0, 0, 0.15))) !important;
 }
 
 .cm-line.lumina-callout-line.lumina-callout-line-important,
 .cm-line.lumina-callout-line.lumina-callout-line-example {
-  background-color: rgba(168, 85, 247, 0.06) !important;
+  background-color: color-mix(in srgb, #a855f7 6%, var(--bg-panel, rgba(0, 0, 0, 0.15))) !important;
 }
 
 .cm-line.lumina-callout-line.lumina-callout-line-caution,
 .cm-line.lumina-callout-line.lumina-callout-line-danger,
 .cm-line.lumina-callout-line.lumina-callout-line-bug {
-  background-color: rgba(248, 113, 113, 0.06) !important;
+  background-color: color-mix(in srgb, #f87171 6%, var(--bg-panel, rgba(0, 0, 0, 0.15))) !important;
 }
 
 .cm-line.lumina-callout-line.lumina-callout-line-quote {
-  background-color: rgba(148, 163, 184, 0.06) !important;
+  font-style: italic !important;
+  color: var(--text-muted) !important;
+  background-color: color-mix(in srgb, #94a3b8 6%, var(--bg-panel, rgba(0, 0, 0, 0.15))) !important;
 }
 
-/* Header & Typography */
+/* Light / Parchment / Porcelain themes */
+[data-theme='light'] .cm-line.lumina-callout-line,
+[data-theme='porcelain'] .cm-line.lumina-callout-line,
+[data-theme='parchment'] .cm-line.lumina-callout-line {
+  background: var(--bg-card, #f7f7f7) !important;
+  border-color: var(--border-dim, rgba(0, 0, 0, 0.1)) !important;
+}
+
+/* Callout Header Widget Typography */
 .lumina-callout-header {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   font-weight: 600;
   color: var(--text-accent);
   margin-bottom: 2px;
   font-size: 0.9em;
   font-style: normal;
   letter-spacing: 0.02em;
+}
+
+.lumina-callout-header.is-foldable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.lumina-callout-header.is-collapsed {
+  margin-bottom: 0;
+}
+
+.lumina-callout-fold-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin-left: 2px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: currentColor;
+  opacity: 0.7;
+  cursor: pointer;
+  transition:
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 120ms ease,
+    background-color 120ms ease;
+}
+
+.lumina-callout-header.is-foldable:hover .lumina-callout-fold-btn,
+.lumina-callout-fold-btn:hover {
+  opacity: 1;
+  background-color: rgba(148, 163, 184, 0.14);
+}
+
+.lumina-callout-fold-btn.is-collapsed svg {
+  transform: rotate(-90deg);
+}
+
+.lumina-callout-fold-btn svg {
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Ensure collapsed callout header always gets bottom border & rounded corners */
+.cm-line.lumina-callout-line.lumina-callout-is-collapsed {
+  border-bottom: 1px solid var(--border-dim) !important;
+  border-bottom-left-radius: 6px !important;
+  border-bottom-right-radius: 6px !important;
+  padding-bottom: 7px !important;
 }
 
 .lumina-callout-note,
@@ -125,8 +201,8 @@ html[data-use-active-line-border="true"] .cm-line.lumina-callout-line.cm-activeL
 }
 
 .lumina-callout-icon svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
 }
 
 .lumina-callout-title {
@@ -136,17 +212,16 @@ html[data-use-active-line-border="true"] .cm-line.lumina-callout-line.cm-activeL
   font-weight: 700;
 }
 
-/* Obsidian-style right-side Copy Button (appears on hover, no extra header bar) */
+/* Robust Callout Copy Button (appears on hovering ANY line of the callout) */
 .lumina-callout-copy-btn {
   position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
+  right: 8px;
+  top: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border-radius: 4px;
   border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
@@ -156,6 +231,7 @@ html[data-use-active-line-border="true"] .cm-line.lumina-callout-line.cm-activeL
   color: var(--text-muted, #94a3b8);
   cursor: pointer;
   opacity: 0;
+  pointer-events: none;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
   transition:
     opacity 140ms ease,
@@ -166,24 +242,28 @@ html[data-use-active-line-border="true"] .cm-line.lumina-callout-line.cm-activeL
   z-index: 5;
 }
 
+.lumina-callout-copy-btn.is-hovered,
 .cm-line.lumina-callout-line:hover .lumina-callout-copy-btn,
+.lumina-callout-copy-btn:hover,
 .lumina-callout-copy-btn:focus-visible {
-  opacity: 1;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .lumina-callout-copy-btn:hover {
   color: var(--text-accent, #40bafa);
   background: var(--bg-active, rgba(255, 255, 255, 0.08));
-  transform: translateY(-50%) scale(1.06);
+  transform: scale(1.08);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .lumina-callout-copy-btn:active {
-  transform: translateY(-50%) scale(0.96);
+  transform: scale(0.96);
 }
 
 .lumina-callout-copy-btn.copied {
-  opacity: 1;
-  color: #4ade80;
-  border-color: rgba(74, 222, 128, 0.4);
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  color: #4ade80 !important;
+  border-color: rgba(74, 222, 128, 0.4) !important;
 }

@@ -529,10 +529,17 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
         return
       }
 
-      // Toggle Preview
-      if (matchesShortcut(e, getKey('togglePreview')) && shortcutsRef.current.onTogglePreview) {
+      // Split Editor (Vertical / Horizontal)
+      if (matchesShortcut(e, getKey('splitVertical'))) {
         e.preventDefault()
-        shortcutsRef.current.onTogglePreview()
+        e.stopPropagation()
+        window.dispatchEvent(new CustomEvent('split-editor', { detail: { direction: 'vertical' } }))
+        return
+      }
+      if (matchesShortcut(e, getKey('splitHorizontal'))) {
+        e.preventDefault()
+        e.stopPropagation()
+        window.dispatchEvent(new CustomEvent('split-editor', { detail: { direction: 'horizontal' } }))
         return
       }
 

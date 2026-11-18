@@ -69,9 +69,9 @@ describe('MetaHeader', () => {
   })
 
   it('toggles smart parallel dropdown on Options click and executes actions', () => {
-    const onPreview = vi.fn()
+    const onOpenExportDialog = vi.fn()
     const { container } = render(
-      <MetaHeader {...baseProps} position="bottom" onPreview={onPreview} />
+      <MetaHeader {...baseProps} position="bottom" onOpenExportDialog={onOpenExportDialog} />
     )
 
     fireEvent.click(screen.getByText('Options'))
@@ -79,8 +79,8 @@ describe('MetaHeader', () => {
     expect(dropdown).toBeInTheDocument()
     expect(dropdown).toHaveStyle({ bottom: 'calc(100% + 6px)' })
 
-    fireEvent.click(screen.getByText('Preview Note'))
-    expect(onPreview).toHaveBeenCalled()
+    fireEvent.click(screen.getByText('Export with Preview…'))
+    expect(onOpenExportDialog).toHaveBeenCalled()
     expect(container.querySelector('.meta-menu-dropdown')).toBeNull()
   })
 

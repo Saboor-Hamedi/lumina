@@ -18,7 +18,6 @@ export interface MetaActionsProps {
   showMoreDropdown: boolean
   setShowMoreDropdown: React.Dispatch<React.SetStateAction<boolean>>
   position?: 'bottom' | 'top' | 'inline'
-  onPreview?: () => void
   onOpenExportDialog?: () => void
   onToggleInspector?: () => void
 }
@@ -46,7 +45,6 @@ export const MetaActions: React.FC<MetaActionsProps> = React.memo(
     showMoreDropdown,
     setShowMoreDropdown,
     position = 'bottom',
-    onPreview,
     onOpenExportDialog,
     onToggleInspector
   }) => {
@@ -209,34 +207,6 @@ export const MetaActions: React.FC<MetaActionsProps> = React.memo(
                 <span className="menu-label">Rename Note</span>
                 <span className="shortcut-label">F2</span>
                 <Edit3 size={13} className="menu-icon-right" />
-              </div>
-
-              <div
-                role="menuitem"
-                tabIndex={0}
-                className="dropdown-item"
-                onClick={() => {
-                  setShowMoreDropdown(false)
-                  if (onPreview) {
-                    onPreview()
-                  } else {
-                    window.dispatchEvent(new CustomEvent('toggle-preview'))
-                  }
-                }}
-                onKeyDown={(e) =>
-                  handleItemKeyDown(e, () => {
-                    setShowMoreDropdown(false)
-                    if (onPreview) {
-                      onPreview()
-                    } else {
-                      window.dispatchEvent(new CustomEvent('toggle-preview'))
-                    }
-                  })
-                }
-              >
-                <span className="menu-label">Preview Note</span>
-                <span className="shortcut-label">Ctrl+\</span>
-                <FileText size={13} className="menu-icon-right" />
               </div>
 
               <div className="dropdown-divider" role="separator" />

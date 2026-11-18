@@ -17,7 +17,6 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react'
 import EditorMenu from './menu/EditorMenu'
 import ToastNotification from '../../core/notification'
-import Preview from '../preview'
 import OverwriteModal from '../modals/OverwriteModal'
 import InlineLumina from '../AI/InlineLumina'
 import RulerScrollbar from './RulerScrollbar'
@@ -72,7 +71,6 @@ export const Editor: React.FC<EditorProps> = memo(
     const inlineMetadata = useSettingsStore((s: any) => s.settings?.inlineMetadata !== false)
     const metaPosition = useSettingsStore((s: any) => s.settings?.metaPosition || 'bottom')
     const { toast, showToast, clearToast } = useToast()
-    const [isPreviewOpen, setIsPreviewOpen] = useState(false)
     const [showFindWidget, setShowFindWidget] = useState(false)
     const [replaceModeActive, setReplaceModeActive] = useState(false)
     const [isInlineAIOpen, setIsInlineAIOpen] = useState(false)
@@ -152,7 +150,6 @@ export const Editor: React.FC<EditorProps> = memo(
       showToast,
       setShowFindWidget,
       setReplaceModeActive,
-      setIsPreviewOpen,
       lastSaveTimeRef,
       lastSavedCodeRef,
       latestCodeRef,
@@ -230,11 +227,6 @@ export const Editor: React.FC<EditorProps> = memo(
           return true
         }
         return false
-      },
-      onTogglePreview: () => {
-        if (isActive) {
-          setIsPreviewOpen((prev) => !prev)
-        }
       }
     })
 
@@ -421,15 +413,6 @@ export const Editor: React.FC<EditorProps> = memo(
         <RulerScrollbar scrollerRef={scrollerRef} isActive={isActive} />
 
         <div className="editor-scroller" ref={scrollerRef}>
-          <Preview
-            isOpen={isPreviewOpen}
-            onClose={() => setIsPreviewOpen(false)}
-            title={title}
-            content={latestCodeRef.current !== undefined ? latestCodeRef.current : snippet?.code}
-            snippetId={snippet?.id}
-
-          />
-
           {isInlineAIOpen && (
             <InlineLumina
               isOpen={isInlineAIOpen}
@@ -465,7 +448,6 @@ export const Editor: React.FC<EditorProps> = memo(
               position={metaPosition}
               showTools={false}
               showMenu={false}
-              onPreview={() => setIsPreviewOpen(true)}
               onOpenExportDialog={() => setIsExportDialogOpen(true)}
               onToggleInspector={onToggleInspector}
               editorMenu={
@@ -478,7 +460,6 @@ export const Editor: React.FC<EditorProps> = memo(
                   onSave={handleSave}
                   onToggleInspector={onToggleInspector}
                   onInlineAI={() => setIsInlineAIOpen(true)}
-                  onPreview={() => setIsPreviewOpen(true)}
                   onOpenExportDialog={() => setIsExportDialogOpen(true)}
                 />
               }
@@ -501,7 +482,6 @@ export const Editor: React.FC<EditorProps> = memo(
             isDirty={isDirty}
             showToast={showToast}
             onInlineAI={() => setIsInlineAIOpen(true)}
-            onPreview={() => setIsPreviewOpen(true)}
             onOpenExportDialog={() => setIsExportDialogOpen(true)}
             onToggleInspector={onToggleInspector}
             editorMenu={
@@ -514,7 +494,6 @@ export const Editor: React.FC<EditorProps> = memo(
                 onSave={handleSave}
                 onToggleInspector={onToggleInspector}
                 onInlineAI={() => setIsInlineAIOpen(true)}
-                onPreview={() => setIsPreviewOpen(true)}
                 onOpenExportDialog={() => setIsExportDialogOpen(true)}
               />
             }

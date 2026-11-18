@@ -2,13 +2,13 @@ import React, { useEffect, useState, useRef, useMemo } from 'react'
 import { useUpdateStore } from '../../core/store/UpdateSetting'
 import { Download, Loader2, CheckCircle2 } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
-import UpdateHeaderRaw from './UpdateHeader'
-const UpdateHeader = UpdateHeaderRaw as any
+import UpdateHeader from './UpdateHeader'
 import UpdateFooter from './UpdateFooter'
 import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
+- Frosted Glassmorphism Context Menu: Sleek editor right-click menu with backdrop blur, Lumina AI prompt action, and dynamic OS keycaps.
 - Interactive Theme-Synchronized PDF Export: Export notes and entire vaults to polished, publication-ready PDFs with live preview, auto-generated Table of Contents, page numbers, and exact theme matching across Dark, Light, and Porcelain palettes.
 - Knowledge Graph Vector & Image Export (SVG & PNG): Download your 2D knowledge topography as scalable vectors or high-resolution images directly from the graph controls.
 - Persistent Node Layout & Elastic Central Physics: Dragged nodes retain their coordinates across app sessions via localStorage persistence, while central hub notes spring back elastically to equilibrium upon release.
@@ -17,13 +17,18 @@ export const DEFAULT_RELEASE_NOTES = `New
 - Spatial Infinite Canvas (.canvas): 2D infinite spatial whiteboard with pan/zoom (10% to 500%), dot-grid canvas, 12+ geometric vector shapes, dynamic shape ports, magnetic snapping, and 90° orthogonal connector routing.
 
 Improved
+- Robust Borderless Callouts: Card-wrapped callouts without thick left border stripes, matching CodeWrapper geometry with integrated hover copy action.
+- Cross-Platform Shortcut Keycaps: Clean tactile keycap shortcut pills across context menus and command palettes, dynamically rendering Ctrl+ on Windows/Linux and ⌘ on macOS.
+- Parchment Theme Polish: Authentic warm paper palette integration across all export engines, calendar inputs, code syntax highlights, and diagnostic badges.
 - Modularized Graph Subsystem: Fully migrated Graph architecture into strict TypeScript with dedicated 2D canvas (Graph2D), 3D WebGL (Graph3D), and web-worker physics modules.
 - Streamlined Graph Sidebar & HUD: Minimalist header with direct search and instant collapse, zero-scroll controls layout, and unobtrusive performance telemetry.
 - Automated Publishing Pipeline (npm run publish): One-command automated build and GitHub release deployment with zero manual steps.
 - Code Block Image Export: Theme-aware solid backgrounds matching your active color palette instead of gradients.
-- Porcelain Theme Polish: Authentic warm paper palette integration across all export engines, graph canvases, and diagnostic badges.
 
 Fixed
+- Help & Guide Popover Overlap: Portaled Help & Guide dropdown above all UI layers to eliminate clipping and sidebar overlap.
+- Zen Mode State Restoration: Restored full status bar, activity bar, breadcrumbs, and tabs state persistence when toggling Zen mode.
+- Command Palette Empty Preview: Restored centered empty preview placeholder layout with frosted overlay blur and keycap badges.
 - Central Hub Drag Freeze: Fixed issue where dragging central nodes caused them to stay frozen in place instead of smoothly springing back to equilibrium.
 - Dynamic Import Resolution: Resolved path casing and module resolution bugs across graph components.
 - Theme Fallbacks: Corrected dark background fallbacks on light themes across graph panels and export previews.
@@ -251,16 +256,10 @@ export const UpdateDetails: React.FC = () => {
 
   const newVersion = updateInfo?.version || currentVersion
 
-  // Parse notes from incoming update info if available, otherwise use curated release notes
+  // Curated release notes: Always use hardcoded release notes instead of remote GitHub notes
   const parsedNotes = useMemo(() => {
-    if (updateInfo?.releaseNotes) {
-      const parsed = parseReleaseNotes(updateInfo.releaseNotes)
-      if (parsed.length > 0 && parsed[0].items.length > 0) {
-        return parsed
-      }
-    }
     return parseReleaseNotes(DEFAULT_RELEASE_NOTES)
-  }, [updateInfo?.releaseNotes])
+  }, [])
 
   // Compute trigger button icon and tooltip dynamically
   const { triggerIcon, triggerTooltip, triggerClass } = useMemo(() => {
