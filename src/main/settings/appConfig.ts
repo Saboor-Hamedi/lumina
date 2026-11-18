@@ -15,6 +15,7 @@ export type WorkspaceKey =
   | 'pinnedTabIds'
   | 'lastNoteId'
   | 'lastSnippetId'
+  | 'splitLayout'
 
 export interface WorkspaceConfig {
   lastWorkspaceOpened: string | null
@@ -27,6 +28,7 @@ export interface WorkspaceConfig {
   pinnedTabIds: string[]
   lastNoteId: string | null
   lastSnippetId: string | null
+  splitLayout: any | null
 }
 
 export class AppConfigManager {
@@ -45,7 +47,8 @@ export class AppConfigManager {
     openTabs: [],
     pinnedTabIds: [],
     lastNoteId: null,
-    lastSnippetId: null
+    lastSnippetId: null,
+    splitLayout: null
   }
 
   getAppConfigPath(): string | null {
@@ -122,7 +125,8 @@ export class AppConfigManager {
           ? cfg.pinnedTabIds
           : [],
         lastNoteId: ws.lastNoteId ?? cfg?.lastNoteId ?? null,
-        lastSnippetId: ws.lastSnippetId ?? cfg?.lastSnippetId ?? null
+        lastSnippetId: ws.lastSnippetId ?? cfg?.lastSnippetId ?? null,
+        splitLayout: ws.splitLayout ?? cfg?.splitLayout ?? null
       }
     } catch {
       this.globalApiKeys = {}
@@ -138,7 +142,8 @@ export class AppConfigManager {
         openTabs: [],
         pinnedTabIds: [],
         lastNoteId: null,
-        lastSnippetId: null
+        lastSnippetId: null,
+        splitLayout: null
       }
     }
   }
@@ -185,7 +190,8 @@ export class AppConfigManager {
           openTabs: this.workspace.openTabs || [],
           pinnedTabIds: this.workspace.pinnedTabIds || [],
           lastNoteId: this.workspace.lastNoteId ?? null,
-          lastSnippetId: this.workspace.lastSnippetId ?? null
+          lastSnippetId: this.workspace.lastSnippetId ?? null,
+          splitLayout: this.workspace.splitLayout ?? null
         },
         apiKeys: encryptedApiKeys,
         shortcuts: this.shortcuts || {}
@@ -206,7 +212,8 @@ export class AppConfigManager {
       key === 'openTabs' ||
       key === 'pinnedTabIds' ||
       key === 'lastNoteId' ||
-      key === 'lastSnippetId'
+      key === 'lastSnippetId' ||
+      key === 'splitLayout'
     )
   }
 
@@ -227,6 +234,8 @@ export class AppConfigManager {
     } else if (key === 'lastSnippetId') {
       this.workspace.lastSnippetId = typeof value === 'string' ? value : null
       if (value) this.workspace.lastNoteId = value
+    } else if (key === 'splitLayout') {
+      this.workspace.splitLayout = value && typeof value === 'object' ? value : null
     }
   }
 

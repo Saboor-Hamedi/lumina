@@ -149,16 +149,8 @@ export function useWorkspaceDrop(): {
         try {
           const snippet = JSON.parse(raw)
           if (snippet && snippet.id) {
-            useWorkspaceStore.setState((state) => {
-              const nextTabs = state.openTabs.includes(snippet.id)
-                ? state.openTabs
-                : [...state.openTabs, snippet.id]
-              return {
-                openTabs: nextTabs,
-                activeTabId: snippet.id,
-                selectedNote: snippet
-              }
-            })
+            const store = useWorkspaceStore.getState()
+            store.setPaneActiveTabId(store.focusedPane || 'primary', snippet.id)
           }
         } catch (err) {
           console.error('[useWorkspaceDrop] Failed to parse dropped snippet:', err)

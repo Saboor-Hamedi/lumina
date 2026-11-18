@@ -20,14 +20,19 @@ import Sidebar from '../Navigation/Sidebar'
 import ActivityBar from '../Navigation/ActivityBar'
 import { openSidebarView } from '../Navigation/sidebarViewStore'
 import Welcome from '../../Welcome'
-import WorkspacePane from './WorkspacePane'
+import { SplitNodeRenderer } from './split'
+import './split/split.css'
 import AppModals, { RenameModalState } from './AppModals'
 import { ExternalDropOverlay, useWorkspaceDrop } from '../Explorer/drop'
 import { countExplorerPerfRender, markExplorerPerf } from '../Explorer/utils/explorerPerf'
 import { FileText, FolderDown } from 'lucide-react'
 import { useKeyboardShortcuts, matchesShortcut } from '../../core/shortcuts'
 import { createUntitledSnippet } from '../Breadcrumbs/utils/breadcrumbUtils'
-import { useWorkspaceStore, GRAPH_TAB_ID, LUMINA_TAB_ID } from '../../core/store/workspaceStore'
+import {
+  useWorkspaceStore,
+  GRAPH_TAB_ID,
+  LUMINA_TAB_ID
+} from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useUpdateStore } from '../../core/store/UpdateSetting'
 import { useToast } from '../../core/notification'
@@ -57,8 +62,7 @@ export const MainLayout: React.FC = () => {
     activeTabId,
     openTabs,
     splitDirection,
-    splitRatio,
-    secondaryTabs,
+    splitTree,
     setSplitRatio,
     splitPane,
     closeSplit
@@ -73,8 +77,7 @@ export const MainLayout: React.FC = () => {
       activeTabId: state.activeTabId,
       openTabs: state.openTabs,
       splitDirection: state.splitDirection,
-      splitRatio: state.splitRatio,
-      secondaryTabs: state.secondaryTabs,
+      splitTree: state.splitTree,
       setSplitRatio: state.setSplitRatio,
       splitPane: state.splitPane,
       closeSplit: state.closeSplit
@@ -299,7 +302,8 @@ export const MainLayout: React.FC = () => {
             .restoreSession(
               actualSettings.openTabs,
               actualSettings.lastNoteId,
-              actualSettings.pinnedTabIds || []
+              actualSettings.pinnedTabIds || [],
+              actualSettings.splitLayout ?? null
             )
         } else if (actualSettings.lastNoteId) {
           const allSnippets = useWorkspaceStore.getState().notes || []
@@ -1079,7 +1083,10 @@ export const MainLayout: React.FC = () => {
     window.addEventListener('open-graph-tab', handleOpenGraphEvent)
     window.addEventListener('toggle-terminal', handleToggleTerminalEvent)
 
-    // Preload Graph component in background after app mount
+    // Preload Editor immediately on mount so first note open is instant
+    void import('../Editor/Editor')
+
+    // Preload secondary modals/views in background after app mount
     const preloadTimer = setTimeout(() => {
       import('../graph/Graph')
       import('../Docs/Documentation')
@@ -1099,39 +1106,6 @@ export const MainLayout: React.FC = () => {
       clearTimeout(preloadTimer)
     }
   }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme, handleToggleTerminal])
-
-  const splitContainerRef = useRef<HTMLDivElement | null>(null)
-
-  const handleStartSplitResize = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      const container = splitContainerRef.current
-      if (!container) return
-
-      const isVertical = splitDirection === 'vertical'
-      document.body.classList.add(isVertical ? 'is-split-resizing-v' : 'is-split-resizing-h')
-
-      const onMouseMove = (moveEvent: MouseEvent) => {
-        const rect = container.getBoundingClientRect()
-        if (isVertical && rect.width > 0) {
-          setSplitRatio((moveEvent.clientX - rect.left) / rect.width)
-        } else if (!isVertical && rect.height > 0) {
-          setSplitRatio((moveEvent.clientY - rect.top) / rect.height)
-        }
-      }
-
-      const onMouseUp = () => {
-        document.body.classList.remove('is-split-resizing-v', 'is-split-resizing-h')
-        window.removeEventListener('mousemove', onMouseMove)
-        window.removeEventListener('mouseup', onMouseUp)
-      }
-
-      window.addEventListener('mousemove', onMouseMove)
-      window.addEventListener('mouseup', onMouseUp)
-    },
-    [splitDirection, setSplitRatio]
-  )
 
   useEffect(() => {
     const onSplitEditor = (e: Event) => {
@@ -1166,8 +1140,55 @@ export const MainLayout: React.FC = () => {
     [openTabs, snippetMap]
   )
 
-  const isSplitActive = splitDirection !== 'none' && secondaryTabs.length > 0
   const showTabHeader = activeTab === 'files' || activeTab === 'search'
+
+  const handleResizeSplit = useCallback(
+    (splitId: string, ratio: number) => {
+      setSplitRatio(ratio, splitId)
+    },
+    [setSplitRatio]
+  )
+
+  const sharedPaneProps = useMemo(
+    () => ({
+      snippetMap,
+      showTabHeader,
+      isTabsVisible,
+      isBreadcrumbsVisible,
+      isZenModeEnabled,
+      isTerminalMaximized,
+      isRightSidebarOpen,
+      isLeftSidebarOpen,
+      onToggleRightSidebar: handleToggleRightSidebar,
+      onToggleLeftSidebar: handleToggleLeftSidebar,
+      onSave: saveSnippet,
+      onToggleInspector: handleToggleInspector,
+      onToggleExplorerModal: handleToggleExplorerModal,
+      onSettingsClick: handleOpenSettings,
+      onThemeClick: handleOpenTheme,
+      onGraphClick: handleToggleGraph,
+      onNavigate: setSelectedSnippet
+    }),
+    [
+      snippetMap,
+      showTabHeader,
+      isTabsVisible,
+      isBreadcrumbsVisible,
+      isZenModeEnabled,
+      isTerminalMaximized,
+      isRightSidebarOpen,
+      isLeftSidebarOpen,
+      handleToggleRightSidebar,
+      handleToggleLeftSidebar,
+      saveSnippet,
+      handleToggleInspector,
+      handleToggleExplorerModal,
+      handleOpenSettings,
+      handleOpenTheme,
+      handleToggleGraph,
+      setSelectedSnippet
+    ]
+  )
 
   return (
     <div
@@ -1240,64 +1261,12 @@ export const MainLayout: React.FC = () => {
                   }}
                 />
               ) : hasValidOpenTabs ? (
-                <div
-                  ref={splitContainerRef}
-                  className={`workspace-container workspace-split-container${
-                    isSplitActive ? ` split-${splitDirection}` : ''
-                  }`}
-                >
-                  <WorkspacePane
-                    paneId="primary"
-                    snippetMap={snippetMap}
-                    showTabHeader={showTabHeader}
-                    isTabsVisible={isTabsVisible}
-                    isBreadcrumbsVisible={isBreadcrumbsVisible}
-                    isZenModeEnabled={isZenModeEnabled}
-                    isTerminalMaximized={isTerminalMaximized}
-                    isRightSidebarOpen={isRightSidebarOpen}
-                    isLeftSidebarOpen={isLeftSidebarOpen}
-                    onToggleRightSidebar={handleToggleRightSidebar}
-                    onToggleLeftSidebar={handleToggleLeftSidebar}
-                    onSave={saveSnippet}
-                    onToggleInspector={handleToggleInspector}
-                    onToggleExplorerModal={handleToggleExplorerModal}
-                    onSettingsClick={handleOpenSettings}
-                    onThemeClick={handleOpenTheme}
-                    onGraphClick={handleToggleGraph}
-                    onNavigate={setSelectedSnippet}
-                    flexRatio={isSplitActive ? splitRatio : 1}
+                <div className="workspace-container">
+                  <SplitNodeRenderer
+                    node={splitTree}
+                    onResizeSplit={handleResizeSplit}
+                    paneProps={sharedPaneProps}
                   />
-                  {isSplitActive && (
-                    <>
-                      <div
-                        className={`split-pane-resizer ${splitDirection}`}
-                        title="Drag to resize panes (double-click to reset 50/50)"
-                        onMouseDown={handleStartSplitResize}
-                        onDoubleClick={() => setSplitRatio(0.5)}
-                      />
-                      <WorkspacePane
-                        paneId="secondary"
-                        snippetMap={snippetMap}
-                        showTabHeader={showTabHeader}
-                        isTabsVisible={isTabsVisible}
-                        isBreadcrumbsVisible={isBreadcrumbsVisible}
-                        isZenModeEnabled={isZenModeEnabled}
-                        isTerminalMaximized={isTerminalMaximized}
-                        isRightSidebarOpen={isRightSidebarOpen}
-                        isLeftSidebarOpen={isLeftSidebarOpen}
-                        onToggleRightSidebar={handleToggleRightSidebar}
-                        onToggleLeftSidebar={handleToggleLeftSidebar}
-                        onSave={saveSnippet}
-                        onToggleInspector={handleToggleInspector}
-                        onToggleExplorerModal={handleToggleExplorerModal}
-                        onSettingsClick={handleOpenSettings}
-                        onThemeClick={handleOpenTheme}
-                        onGraphClick={handleToggleGraph}
-                        onNavigate={setSelectedSnippet}
-                        flexRatio={1 - splitRatio}
-                      />
-                    </>
-                  )}
                 </div>
               ) : (
                 <GlobalErrorHandler>

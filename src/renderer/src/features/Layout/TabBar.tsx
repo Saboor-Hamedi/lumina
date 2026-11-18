@@ -17,6 +17,7 @@
  */
 
 import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import {
   X,
   Pin,
@@ -221,14 +222,19 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
     pinnedTabIds,
     splitDirection,
     splitPane,
-    closeSplit,
-    toggleSplitDirection,
+    closePane,
     moveTabToPane
   } = useWorkspaceStore(
     useShallow((state) => ({
       snippets: state.notes || [],
-      openTabs: paneId === 'secondary' ? state.secondaryTabs : state.openTabs,
-      activeTabId: paneId === 'secondary' ? state.secondaryActiveTabId : state.activeTabId,
+      openTabs:
+        paneId === 'primary'
+          ? state.openTabs
+          : state.panes[paneId]?.tabs || EMPTY_IDS,
+      activeTabId:
+        paneId === 'primary'
+          ? state.activeTabId
+          : state.panes[paneId]?.activeTabId ?? null,
       selectedSnippet: state.selectedNote,
       setPaneActiveTabId: state.setPaneActiveTabId,
       reorderPaneTabs: state.reorderPaneTabs,
@@ -239,11 +245,10 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
       togglePinTab: state.togglePinTab,
       saveSnippet: state.saveNote,
       dirtySnippetIds: state.dirtyNoteIds,
-      pinnedTabIds: paneId === 'secondary' ? EMPTY_IDS : state.pinnedTabIds,
+      pinnedTabIds: paneId === 'primary' ? state.pinnedTabIds : EMPTY_IDS,
       splitDirection: state.splitDirection,
       splitPane: state.splitPane,
-      closeSplit: state.closeSplit,
-      toggleSplitDirection: state.toggleSplitDirection,
+      closePane: state.closePane,
       moveTabToPane: state.moveTabToPane
     }))
   )
@@ -277,6 +282,9 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
   const [prompt, setPrompt] = useState<{ id: string; title: string } | null>(null)
   const [iconPickerId, setIconPickerId] = useState<string | null>(null)
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
+  const isTabBarDropActive = useTabDragStore(
+    (state) => state.dropTarget?.targetPane === paneId && state.dropTarget?.zone === 'tabbar'
+  )
   const tabbarRef = useRef<HTMLDivElement | null>(null)
   const wrapperRef = useRef<HTMLDivElement | null>(null)
   const dragMoveCleanupRef = useRef<(() => void) | null>(null)
@@ -370,9 +378,9 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
         id={id}
         snippet={tabSnippet}
         isActive={
-          paneId === 'secondary'
-            ? activeTabId === id
-            : activeTabId === id || (!activeTabId && selectedSnippet?.id === id)
+          paneId === 'primary'
+            ? activeTabId === id || (!activeTabId && selectedSnippet?.id === id)
+            : activeTabId === id
         }
         isDirty={dirtySnippetIds.includes(id)}
         isPinned={pinnedTabIds.includes(id)}
@@ -452,20 +460,19 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
 
       if (dropTarget) {
         const { targetPane, zone } = dropTarget
-        if (zone === 'center') {
+        if (zone === 'center' || zone === 'tabbar') {
           if (targetPane !== paneId) {
             moveTabToPane(tabId, targetPane)
           }
           return
         }
         const direction = zone === 'bottom' || zone === 'top' ? 'horizontal' : 'vertical'
-        const destPane =
-          splitDirection === 'none'
-            ? 'secondary'
-            : zone === 'left' || zone === 'top'
-              ? 'primary'
-              : 'secondary'
-        moveTabToPane(tabId, destPane, direction)
+        const position = zone === 'left' || zone === 'top' ? 'before' : 'after'
+        moveTabToPane(tabId, targetPane, {
+          direction,
+          position,
+          sourcePane: paneId
+        })
         return
       }
 
@@ -538,63 +545,45 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
               onWheel={handleWheel}
               style={{ flex: 1, minWidth: 0 }}
             >
-              <div className="tabs-container">{scrollableTabs.map(renderTab)}</div>
+              <div className="tabs-container">
+                {scrollableTabs.map(renderTab)}
+                {isTabBarDropActive && (
+                  <div className="tabbar-drop-placeholder" aria-hidden="true" />
+                )}
+              </div>
             </div>
             <div className="tabbar-split-actions" onMouseDown={(e) => e.stopPropagation()}>
-              {paneId === 'primary' ? (
-                <>
-                  <ToolTip text="Split Right (Ctrl+\\)" position="bottom" delay={400}>
-                    <button
-                      type="button"
-                      className={`tabbar-split-btn${splitDirection === 'vertical' ? ' active' : ''}`}
-                      aria-label="Split Right"
-                      onClick={() => splitPane('vertical')}
-                    >
-                      <Columns2 size={14} />
-                    </button>
-                  </ToolTip>
-                  <ToolTip text="Split Down (Ctrl+Alt+\\)" position="bottom" delay={400}>
-                    <button
-                      type="button"
-                      className={`tabbar-split-btn${splitDirection === 'horizontal' ? ' active' : ''}`}
-                      aria-label="Split Down"
-                      onClick={() => splitPane('horizontal')}
-                    >
-                      <Rows2 size={14} />
-                    </button>
-                  </ToolTip>
-                </>
-              ) : (
-                <>
-                  <ToolTip
-                    text={
-                      splitDirection === 'vertical'
-                        ? 'Switch to Horizontal Split'
-                        : 'Switch to Vertical Split'
-                    }
-                    position="bottom"
-                    delay={400}
+              <ToolTip text="Split Right (Ctrl+\\)" position="bottom" delay={400}>
+                <button
+                  type="button"
+                  className="tabbar-split-btn"
+                  aria-label="Split Right"
+                  onClick={() => splitPane('vertical', undefined, paneId, 'after')}
+                >
+                  <Columns2 size={14} />
+                </button>
+              </ToolTip>
+              <ToolTip text="Split Down (Ctrl+Alt+\\)" position="bottom" delay={400}>
+                <button
+                  type="button"
+                  className="tabbar-split-btn"
+                  aria-label="Split Down"
+                  onClick={() => splitPane('horizontal', undefined, paneId, 'after')}
+                >
+                  <Rows2 size={14} />
+                </button>
+              </ToolTip>
+              {splitDirection !== 'none' && (
+                <ToolTip text="Close Pane" position="bottom" delay={400}>
+                  <button
+                    type="button"
+                    className="tabbar-split-btn"
+                    aria-label="Close Pane"
+                    onClick={() => closePane(paneId)}
                   >
-                    <button
-                      type="button"
-                      className="tabbar-split-btn"
-                      aria-label="Toggle Split Orientation"
-                      onClick={() => toggleSplitDirection()}
-                    >
-                      {splitDirection === 'vertical' ? <Rows2 size={14} /> : <Columns2 size={14} />}
-                    </button>
-                  </ToolTip>
-                  <ToolTip text="Close Split Pane" position="bottom" delay={400}>
-                    <button
-                      type="button"
-                      className="tabbar-split-btn"
-                      aria-label="Close Split Pane"
-                      onClick={() => closeSplit()}
-                    >
-                      <X size={14} />
-                    </button>
-                  </ToolTip>
-                </>
+                    <X size={14} />
+                  </button>
+                </ToolTip>
               )}
             </div>
           </div>
@@ -619,12 +608,12 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
             {
               label: 'Split Right',
               icon: <Columns2 size={14} />,
-              onClick: () => splitPane('vertical', contextMenu.id)
+              onClick: () => splitPane('vertical', contextMenu.id, paneId, 'after')
             },
             {
               label: 'Split Down',
               icon: <Rows2 size={14} />,
-              onClick: () => splitPane('horizontal', contextMenu.id)
+              onClick: () => splitPane('horizontal', contextMenu.id, paneId, 'after')
             },
             ...(splitDirection !== 'none'
               ? [
@@ -729,19 +718,23 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
         }}
       />
 
-      <DragOverlay dropAnimation={null}>
-        {activeDragId ? (
-          <div className="workspace-tab drag-overlay active">
-            <span className="tab-title">
-              {activeDragId === LUMINA_TAB_ID
-                ? 'Lumina AI'
-                : activeDragId === GRAPH_TAB_ID
-                  ? 'Knowledge Graph'
-                  : snippetMap.get(activeDragId)?.title || 'Untitled'}
-            </span>
-          </div>
-        ) : null}
-      </DragOverlay>
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <DragOverlay dropAnimation={null}>
+            {activeDragId ? (
+              <div className="workspace-tab drag-overlay active">
+                <span className="tab-title">
+                  {activeDragId === LUMINA_TAB_ID
+                    ? 'Lumina AI'
+                    : activeDragId === GRAPH_TAB_ID
+                      ? 'Knowledge Graph'
+                      : snippetMap.get(activeDragId)?.title || 'Untitled'}
+                </span>
+              </div>
+            ) : null}
+          </DragOverlay>,
+          document.body
+        )}
     </DndContext>
   )
 }

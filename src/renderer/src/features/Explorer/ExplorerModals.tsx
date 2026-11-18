@@ -18,7 +18,7 @@
 
 import React from 'react'
 import { createPortal } from 'react-dom'
-import { DragOverlay, defaultDropAnimationSideEffects } from '@dnd-kit/core'
+import { DragOverlay } from '@dnd-kit/core'
 import { Folder, Files } from 'lucide-react'
 import { getSnippetIcon } from '../Icons/FileIcon'
 import Confirm from '../modals/Confirm'
@@ -84,8 +84,8 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
       const label = targetLabel ? `Move "${folderName}" ${targetLabel}` : `Move "${folderName}"`
 
       return (
-        <div className="external-drop-pill" style={{ pointerEvents: 'none', userSelect: 'none' }}>
-          <Folder size={14} strokeWidth={1.5} color="var(--folder-color, #dcb67a)" fill="rgba(220, 182, 122, 0.16)" className="external-drop-icon" />
+        <div className="sidebar-drag-ghost">
+          <Folder size={13} strokeWidth={1.5} color="var(--folder-color, #dcb67a)" fill="rgba(220, 182, 122, 0.16)" className="external-drop-icon" />
           <span className="external-drop-text">{label}</span>
         </div>
       )
@@ -126,11 +126,11 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
       : snippetTitle
 
     return (
-      <div className="external-drop-pill" style={{ pointerEvents: 'none', userSelect: 'none' }}>
+      <div className="sidebar-drag-ghost">
         {count > 1 ? (
-          <Files size={14} className="external-drop-icon" />
+          <Files size={13} className="external-drop-icon" />
         ) : (
-          getSnippetIcon(activeListDragItem.snippet, 14, 'external-drop-icon')
+          getSnippetIcon(activeListDragItem.snippet, 13, 'external-drop-icon')
         )}
         <span className="external-drop-text">{label}</span>
         {count > 1 && (
@@ -142,16 +142,9 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
 
   return (
     <>
-      {/* 1. DragOverlay Portal: renders floating ghost during item reordering or folder moving */}
+      {/* 1. DragOverlay Portal: renders lightweight floating ghost during item drag */}
       {createPortal(
-        <DragOverlay
-          zIndex={9999}
-          dropAnimation={{
-            sideEffects: defaultDropAnimationSideEffects({
-              styles: { active: { opacity: '0.4' } }
-            })
-          }}
-        >
+        <DragOverlay zIndex={9999} dropAnimation={null}>
           {renderDragOverlayContent()}
         </DragOverlay>,
         document.body

@@ -1,11 +1,25 @@
 import { create } from 'zustand'
 import { useSettingsStore } from './SettingStore'
+import {
+  type WorkspacePaneId,
+  type SplitOrientation,
+  type SplitPosition,
+  type PaneState,
+  type SplitTreeNode,
+  clampSplitRatio,
+  collectLeafPaneIds,
+  splitLeafInTree,
+  removeLeafFromTree,
+  updateSplitRatioInTree,
+  toggleSplitDirectionInTree
+} from './splitTree'
+
+export type { WorkspacePaneId, SplitOrientation, SplitPosition, PaneState, SplitTreeNode }
 
 export const GRAPH_TAB_ID = '__graph__'
 export const LUMINA_TAB_ID = '__lumina__'
 
 export type SplitDirection = 'none' | 'vertical' | 'horizontal'
-export type WorkspacePaneId = 'primary' | 'secondary'
 
 export interface WorkspaceNote {
   id: string
@@ -46,13 +60,20 @@ export interface WorkspaceStoreState {
   splitRatio: number
   secondaryTabs: string[]
   secondaryActiveTabId: string | null
+  panes: Record<WorkspacePaneId, PaneState>
+  splitTree: SplitTreeNode
   focusedPane: WorkspacePaneId
   clipboard: any
 
   setNotes: (notes: WorkspaceNote[]) => void
   setSelectedFolder: (selectedFolder: string | null) => void
   setClipboard: (clipboard: any) => void
-  restoreSession: (tabs: string[], activeId: string | null, pinnedIds?: string[]) => void
+  restoreSession: (
+    tabs: string[],
+    activeId: string | null,
+    pinnedIds?: string[],
+    splitLayout?: any
+  ) => void
   setSelectedNote: (note: WorkspaceNote | null) => void
   setActiveTabId: (id: string | null) => void
   closeTab: (id: string) => void
@@ -65,10 +86,16 @@ export interface WorkspaceStoreState {
   openLuminaTab: () => void
   setPinnedTabs: (pinnedTabIds: string[]) => void
   setFocusedPane: (pane: WorkspacePaneId) => void
-  setSplitRatio: (ratio: number) => void
-  splitPane: (direction: 'vertical' | 'horizontal', tabId?: string) => void
+  setSplitRatio: (ratio: number, splitId?: string) => void
+  splitPane: (
+    direction: 'vertical' | 'horizontal',
+    tabId?: string,
+    targetPaneId?: WorkspacePaneId,
+    position?: SplitPosition
+  ) => void
+  closePane: (paneId: WorkspacePaneId) => void
   closeSplit: () => void
-  toggleSplitDirection: () => void
+  toggleSplitDirection: (paneId?: WorkspacePaneId) => void
   setPaneActiveTabId: (pane: WorkspacePaneId, id: string | null) => void
   closePaneTab: (pane: WorkspacePaneId, id: string) => void
   reorderPaneTabs: (pane: WorkspacePaneId, newTabs: string[]) => void
@@ -78,7 +105,7 @@ export interface WorkspaceStoreState {
   moveTabToPane: (
     id: string,
     targetPane: WorkspacePaneId,
-    direction?: 'vertical' | 'horizontal'
+    splitOptions?: SplitOrientation | { direction: SplitOrientation; position?: SplitPosition; sourcePane?: WorkspacePaneId }
   ) => void
   setLoading: (isLoading: boolean) => void
   setSearchQuery: (query: string) => void
@@ -142,6 +169,108 @@ const computeTabsAfterClose = (
   return { nextTabs, nextActiveId }
 }
 
+let paneIdCounter = 1
+
+const nextGeneratedPaneId = (panes: Record<WorkspacePaneId, PaneState>): WorkspacePaneId => {
+  if (!panes.secondary) return 'secondary'
+  paneIdCounter += 1
+  return `pane-${paneIdCounter}`
+}
+
+const buildSyncedPaneFields = (
+  panes: Record<WorkspacePaneId, PaneState>,
+  splitTree: SplitTreeNode,
+  focusedPane: WorkspacePaneId,
+  notes: WorkspaceNote[]
+) => {
+  const leaves = collectLeafPaneIds(splitTree)
+  const primaryId = leaves.includes('primary') ? 'primary' : leaves[0] || 'primary'
+  const primaryPane = panes[primaryId] || { id: primaryId, tabs: [], activeTabId: null }
+  const nonPrimaryId = leaves.find((id) => id !== primaryId)
+  const secondaryPane = nonPrimaryId ? panes[nonPrimaryId] : undefined
+  const activeFocusedPane = panes[focusedPane] ? focusedPane : primaryId
+  const focusedNote = resolveNoteById(notes, panes[activeFocusedPane]?.activeTabId ?? null)
+
+  return {
+    panes,
+    splitTree,
+    focusedPane: activeFocusedPane,
+    openTabs: primaryPane.tabs,
+    activeTabId: primaryPane.activeTabId,
+    splitDirection: (splitTree.kind === 'split' ? splitTree.direction : 'none') as SplitDirection,
+    splitRatio: splitTree.kind === 'split' ? splitTree.ratio : 0.5,
+    secondaryTabs: secondaryPane ? secondaryPane.tabs : [],
+    secondaryActiveTabId: secondaryPane ? secondaryPane.activeTabId : null,
+    selectedNote: focusedNote,
+    selectedSnippet: focusedNote
+  }
+}
+
+const sanitizeRestoredSplitLayout = (
+  rawLayout: any,
+  noteIdSet: Set<string>,
+  fallbackTabs: string[],
+  fallbackActiveId: string | null,
+  notes: WorkspaceNote[]
+) => {
+  const isValidTab = (id: string) =>
+    id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || noteIdSet.has(id)
+
+  if (
+    !rawLayout ||
+    typeof rawLayout !== 'object' ||
+    !rawLayout.splitTree ||
+    rawLayout.splitTree.kind !== 'split' ||
+    !rawLayout.panes ||
+    typeof rawLayout.panes !== 'object'
+  ) {
+    const primaryPane: PaneState = {
+      id: 'primary',
+      tabs: fallbackTabs,
+      activeTabId: fallbackActiveId
+    }
+    return buildSyncedPaneFields(
+      { primary: primaryPane },
+      { kind: 'leaf', paneId: 'primary' },
+      'primary',
+      notes
+    )
+  }
+
+  let nextTree: SplitTreeNode = rawLayout.splitTree
+  const leafIds = collectLeafPaneIds(nextTree)
+  const nextPanes: Record<WorkspacePaneId, PaneState> = {}
+
+  for (const pid of leafIds) {
+    const rawPane = rawLayout.panes[pid]
+    const rawTabs = Array.isArray(rawPane?.tabs) ? rawPane.tabs : pid === 'primary' ? fallbackTabs : []
+    const validPaneTabs = rawTabs.filter((id: any) => typeof id === 'string' && isValidTab(id))
+    if (validPaneTabs.length === 0 && pid !== 'primary') {
+      const reduced = removeLeafFromTree(nextTree, pid)
+      if (reduced) {
+        nextTree = reduced
+        continue
+      }
+    }
+    const rawActive = rawPane?.activeTabId
+    const validActive =
+      typeof rawActive === 'string' && validPaneTabs.includes(rawActive)
+        ? rawActive
+        : validPaneTabs[0] || null
+    nextPanes[pid] = { id: pid, tabs: validPaneTabs, activeTabId: validActive }
+  }
+
+  if (!nextPanes.primary) {
+    nextPanes.primary = { id: 'primary', tabs: fallbackTabs, activeTabId: fallbackActiveId }
+  }
+  const focusCandidate =
+    typeof rawLayout.focusedPane === 'string' && nextPanes[rawLayout.focusedPane]
+      ? rawLayout.focusedPane
+      : 'primary'
+
+  return buildSyncedPaneFields(nextPanes, nextTree, focusCandidate, notes)
+}
+
 const initialSession = getCachedSession()
 
 export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
@@ -164,6 +293,14 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   splitRatio: 0.5,
   secondaryTabs: [] as string[],
   secondaryActiveTabId: null as string | null,
+  panes: {
+    primary: {
+      id: 'primary',
+      tabs: initialSession.openTabs,
+      activeTabId: initialSession.activeTabId
+    }
+  } as Record<WorkspacePaneId, PaneState>,
+  splitTree: { kind: 'leaf', paneId: 'primary' } as SplitTreeNode,
   focusedPane: 'primary' as WorkspacePaneId,
   clipboard: null,
 
@@ -171,14 +308,17 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   setSelectedFolder: (selectedFolder: string | null) => set({ selectedFolder }),
   setClipboard: (clipboard: any) => set({ clipboard }),
 
-  restoreSession: (tabs: string[], activeId: string | null, pinnedIds: string[] = []) => {
+  restoreSession: (
+    tabs: string[],
+    activeId: string | null,
+    pinnedIds: string[] = [],
+    splitLayout?: any
+  ) => {
     set((state) => {
       const allNotes = state.notes || []
+      const noteIdSet = new Set(allNotes.map((n) => n.id))
       const validTabs = tabs.filter(
-        (id) =>
-          id === GRAPH_TAB_ID ||
-          id === LUMINA_TAB_ID ||
-          allNotes.some((idMatch) => idMatch.id === id)
+        (id) => id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || noteIdSet.has(id)
       )
       const validPinned = pinnedIds.filter((id) => validTabs.includes(id)).slice(0, 1)
 
@@ -192,41 +332,67 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
             ? allNotes.find((n) => n.id === finalActiveId) || null
             : null
 
+      const layoutToRestore =
+        splitLayout !== undefined
+          ? splitLayout
+          : state.splitTree.kind === 'split'
+            ? { splitTree: state.splitTree, panes: state.panes, focusedPane: state.focusedPane }
+            : null
+
+      const syncedLayout = sanitizeRestoredSplitLayout(
+        layoutToRestore,
+        noteIdSet,
+        validTabs,
+        finalActiveId,
+        allNotes
+      )
+
       return {
-        openTabs: validTabs,
+        ...syncedLayout,
         pinnedTabIds: validPinned,
-        activeTabId: finalActiveId,
-        selectedNote: activeNote,
-        selectedSnippet: activeNote
+        ...(syncedLayout.splitTree.kind === 'leaf'
+          ? { selectedNote: activeNote, selectedSnippet: activeNote }
+          : {})
       }
     })
   },
 
   setSelectedNote: (note: WorkspaceNote | null) => {
     if (!note) {
-      set({ selectedNote: null, selectedSnippet: null, activeTabId: null })
+      set((state) => ({
+        selectedNote: null,
+        selectedSnippet: null,
+        activeTabId: null,
+        panes: {
+          ...state.panes,
+          primary: { ...(state.panes.primary || { id: 'primary', tabs: [] }), activeTabId: null }
+        }
+      }))
       return
     }
 
     set((state) => {
-      if (state.splitDirection !== 'none' && state.focusedPane === 'secondary') {
-        const isAlreadyOpen = state.secondaryTabs.includes(note.id)
-        const nextSecondaryTabs = isAlreadyOpen
-          ? state.secondaryTabs
-          : [...state.secondaryTabs, note.id]
+      const targetPaneId =
+        state.splitTree.kind === 'split' && state.panes[state.focusedPane]
+          ? state.focusedPane
+          : 'primary'
+
+      if (targetPaneId !== 'primary') {
+        const targetPane = state.panes[targetPaneId]
+        const isAlreadyOpen = targetPane.tabs.includes(note.id)
         if (
-          state.secondaryActiveTabId === note.id &&
+          targetPane.activeTabId === note.id &&
           state.selectedNote?.id === note.id &&
           isAlreadyOpen
         ) {
           return state
         }
-        return {
-          selectedNote: note,
-          selectedSnippet: note,
-          secondaryTabs: nextSecondaryTabs,
-          secondaryActiveTabId: note.id
+        const nextTabs = isAlreadyOpen ? targetPane.tabs : [...targetPane.tabs, note.id]
+        const nextPanes = {
+          ...state.panes,
+          [targetPaneId]: { ...targetPane, tabs: nextTabs, activeTabId: note.id }
         }
+        return buildSyncedPaneFields(nextPanes, state.splitTree, targetPaneId, state.notes || [])
       }
 
       if (
@@ -238,11 +404,14 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       }
       const isAlreadyOpen = state.openTabs.includes(note.id)
       const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, note.id]
+      const nextPanes = {
+        ...state.panes,
+        primary: { id: 'primary', tabs: nextTabs, activeTabId: note.id }
+      }
       return {
+        ...buildSyncedPaneFields(nextPanes, state.splitTree, 'primary', state.notes || []),
         selectedNote: note,
-        selectedSnippet: note,
-        openTabs: nextTabs,
-        activeTabId: note.id
+        selectedSnippet: note
       }
     })
   },
@@ -440,54 +609,108 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
   setFocusedPane: (pane: WorkspacePaneId) =>
     set((state) => {
-      if (state.focusedPane === pane) return state
-      const targetId = pane === 'secondary' ? state.secondaryActiveTabId : state.activeTabId
-      const targetNote = resolveNoteById(state.notes || [], targetId)
+      if (state.focusedPane === pane || !state.panes[pane]) return state
+      const targetNote = resolveNoteById(state.notes || [], state.panes[pane].activeTabId)
       return {
         focusedPane: pane,
         ...(targetNote ? { selectedNote: targetNote, selectedSnippet: targetNote } : {})
       }
     }),
 
-  setSplitRatio: (ratio: number) =>
-    set({ splitRatio: Math.min(0.8, Math.max(0.2, ratio)) }),
-
-  splitPane: (direction: 'vertical' | 'horizontal', tabId?: string) =>
+  setSplitRatio: (ratio: number, splitId?: string) =>
     set((state) => {
-      const targetId = tabId || state.activeTabId || state.openTabs[0] || null
-      if (!targetId) return state
-      const nextSecondaryTabs = state.secondaryTabs.includes(targetId)
-        ? state.secondaryTabs
-        : [...state.secondaryTabs, targetId]
-      const targetNote = resolveNoteById(state.notes || [], targetId)
-      return {
-        splitDirection: direction,
-        secondaryTabs: nextSecondaryTabs,
-        secondaryActiveTabId: targetId,
-        focusedPane: 'secondary',
-        ...(targetNote ? { selectedNote: targetNote, selectedSnippet: targetNote } : {})
+      if (state.splitTree.kind !== 'split') {
+        return { splitRatio: clampSplitRatio(ratio) }
       }
+      const targetSplitId = splitId || state.splitTree.id
+      const nextTree = updateSplitRatioInTree(state.splitTree, targetSplitId, ratio)
+      return {
+        splitTree: nextTree,
+        splitRatio: nextTree.kind === 'split' ? nextTree.ratio : clampSplitRatio(ratio)
+      }
+    }),
+
+  splitPane: (
+    direction: 'vertical' | 'horizontal',
+    tabId?: string,
+    targetPaneId?: WorkspacePaneId,
+    position: SplitPosition = 'after'
+  ) =>
+    set((state) => {
+      const sourcePaneId = targetPaneId && state.panes[targetPaneId] ? targetPaneId : state.focusedPane
+      const sourcePane = state.panes[sourcePaneId] || {
+        id: 'primary',
+        tabs: state.openTabs,
+        activeTabId: state.activeTabId
+      }
+      const targetTabId = tabId || sourcePane.activeTabId || sourcePane.tabs[0] || state.activeTabId || state.openTabs[0] || null
+      if (!targetTabId) return state
+
+      const newPaneId = nextGeneratedPaneId(state.panes)
+      const nextPanes: Record<WorkspacePaneId, PaneState> = {
+        ...state.panes,
+        [sourcePaneId]: sourcePane,
+        [newPaneId]: {
+          id: newPaneId,
+          tabs: [targetTabId],
+          activeTabId: targetTabId
+        }
+      }
+      const nextTree = splitLeafInTree(state.splitTree, sourcePaneId, newPaneId, direction, position)
+      return buildSyncedPaneFields(nextPanes, nextTree, newPaneId, state.notes || [])
+    }),
+
+  closePane: (paneId: WorkspacePaneId) =>
+    set((state) => {
+      if (state.splitTree.kind !== 'split') return state
+      const nextTree = removeLeafFromTree(state.splitTree, paneId)
+      if (!nextTree) return state
+
+      const nextPanes = { ...state.panes }
+      delete nextPanes[paneId]
+
+      // If 'primary' was closed, promote the first surviving leaf to 'primary'
+      if (paneId === 'primary') {
+        const survivingIds = collectLeafPaneIds(nextTree)
+        const firstId = survivingIds[0]
+        if (firstId && nextPanes[firstId]) {
+          const promoted = nextPanes[firstId]
+          delete nextPanes[firstId]
+          nextPanes.primary = { ...promoted, id: 'primary' }
+          const renameLeaf = (n: SplitTreeNode): SplitTreeNode =>
+            n.kind === 'leaf'
+              ? { kind: 'leaf', paneId: n.paneId === firstId ? 'primary' : n.paneId }
+              : { ...n, first: renameLeaf(n.first), second: renameLeaf(n.second) }
+          const renamedTree = renameLeaf(nextTree)
+          return buildSyncedPaneFields(nextPanes, renamedTree, 'primary', state.notes || [])
+        }
+      }
+
+      const nextFocus = nextPanes[state.focusedPane] ? state.focusedPane : 'primary'
+      return buildSyncedPaneFields(nextPanes, nextTree, nextFocus, state.notes || [])
     }),
 
   closeSplit: () =>
     set((state) => {
-      if (state.splitDirection === 'none') return state
-      const primaryNote = resolveNoteById(state.notes || [], state.activeTabId)
-      return {
-        splitDirection: 'none',
-        secondaryTabs: [],
-        secondaryActiveTabId: null,
-        focusedPane: 'primary',
-        selectedNote: primaryNote,
-        selectedSnippet: primaryNote
+      if (state.splitTree.kind !== 'split') return state
+      const primaryPane = state.panes.primary || {
+        id: 'primary',
+        tabs: state.openTabs,
+        activeTabId: state.activeTabId
       }
+      const nextPanes: Record<WorkspacePaneId, PaneState> = { primary: primaryPane }
+      const nextTree: SplitTreeNode = { kind: 'leaf', paneId: 'primary' }
+      return buildSyncedPaneFields(nextPanes, nextTree, 'primary', state.notes || [])
     }),
 
-  toggleSplitDirection: () =>
+  toggleSplitDirection: (paneId?: WorkspacePaneId) =>
     set((state) => {
-      if (state.splitDirection === 'none') return state
+      if (state.splitTree.kind !== 'split') return state
+      const targetId = paneId || state.focusedPane
+      const nextTree = toggleSplitDirectionInTree(state.splitTree, targetId)
       return {
-        splitDirection: state.splitDirection === 'vertical' ? 'horizontal' : 'vertical'
+        splitTree: nextTree,
+        splitDirection: nextTree.kind === 'split' ? nextTree.direction : 'none'
       }
     }),
 
@@ -495,78 +718,83 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     if (pane === 'primary') {
       set({ focusedPane: 'primary' })
       get().setActiveTabId(id)
+      set((state) => ({
+        panes: {
+          ...state.panes,
+          primary: { id: 'primary', tabs: state.openTabs, activeTabId: state.activeTabId }
+        }
+      }))
       return
     }
     set((state) => {
+      const targetPane = state.panes[pane]
+      if (!targetPane) return state
       if (!id) {
-        return { secondaryActiveTabId: null, focusedPane: 'secondary' }
+        const nextPanes = { ...state.panes, [pane]: { ...targetPane, activeTabId: null } }
+        return buildSyncedPaneFields(nextPanes, state.splitTree, pane, state.notes || [])
       }
-      const nextSecondaryTabs = state.secondaryTabs.includes(id)
-        ? state.secondaryTabs
-        : [...state.secondaryTabs, id]
-      const targetNote = resolveNoteById(state.notes || [], id)
-      return {
-        secondaryTabs: nextSecondaryTabs,
-        secondaryActiveTabId: id,
-        focusedPane: 'secondary',
-        ...(targetNote ? { selectedNote: targetNote, selectedSnippet: targetNote } : {})
+      const nextTabs = targetPane.tabs.includes(id) ? targetPane.tabs : [...targetPane.tabs, id]
+      const nextPanes = {
+        ...state.panes,
+        [pane]: { ...targetPane, tabs: nextTabs, activeTabId: id }
       }
+      return buildSyncedPaneFields(nextPanes, state.splitTree, pane, state.notes || [])
     })
   },
 
   closePaneTab: (pane: WorkspacePaneId, id: string) => {
-    if (pane === 'primary') {
-      set((state) => {
-        const { nextTabs, nextActiveId } = computeTabsAfterClose(state.openTabs, state.activeTabId, id)
-        if (nextTabs.length === 0 && state.splitDirection !== 'none' && state.secondaryTabs.length > 0) {
-          const promotedActiveId = state.secondaryActiveTabId || state.secondaryTabs[0] || null
-          const promotedNote = resolveNoteById(state.notes || [], promotedActiveId)
-          return {
-            openTabs: state.secondaryTabs,
-            pinnedTabIds: [],
-            activeTabId: promotedActiveId,
-            splitDirection: 'none',
-            secondaryTabs: [],
-            secondaryActiveTabId: null,
-            focusedPane: 'primary',
-            selectedNote: promotedNote,
-            selectedSnippet: promotedNote
-          }
-        }
-        const nextSelected = resolveNoteById(state.notes || [], nextActiveId)
-        return {
-          openTabs: nextTabs,
-          pinnedTabIds: state.pinnedTabIds.filter((tabId) => nextTabs.includes(tabId)),
-          activeTabId: nextActiveId,
-          selectedNote: nextSelected,
-          selectedSnippet: nextSelected
-        }
-      })
-      return
-    }
-
     set((state) => {
+      const currentPane = state.panes[pane] || {
+        id: pane,
+        tabs: pane === 'primary' ? state.openTabs : [],
+        activeTabId: pane === 'primary' ? state.activeTabId : null
+      }
       const { nextTabs, nextActiveId } = computeTabsAfterClose(
-        state.secondaryTabs,
-        state.secondaryActiveTabId,
+        currentPane.tabs,
+        currentPane.activeTabId,
         id
       )
-      if (nextTabs.length === 0) {
-        const primaryNote = resolveNoteById(state.notes || [], state.activeTabId)
-        return {
-          splitDirection: 'none',
-          secondaryTabs: [],
-          secondaryActiveTabId: null,
-          focusedPane: 'primary',
-          selectedNote: primaryNote,
-          selectedSnippet: primaryNote
+
+      if (nextTabs.length === 0 && state.splitTree.kind === 'split') {
+        const nextTree = removeLeafFromTree(state.splitTree, pane)
+        if (nextTree) {
+          const nextPanes = { ...state.panes }
+          delete nextPanes[pane]
+          if (pane === 'primary') {
+            const firstId = collectLeafPaneIds(nextTree)[0]
+            if (firstId && nextPanes[firstId]) {
+              const promoted = nextPanes[firstId]
+              delete nextPanes[firstId]
+              nextPanes.primary = { ...promoted, id: 'primary' }
+              const renameLeaf = (n: SplitTreeNode): SplitTreeNode =>
+                n.kind === 'leaf'
+                  ? { kind: 'leaf', paneId: n.paneId === firstId ? 'primary' : n.paneId }
+                  : { ...n, first: renameLeaf(n.first), second: renameLeaf(n.second) }
+              return {
+                ...buildSyncedPaneFields(nextPanes, renameLeaf(nextTree), 'primary', state.notes || []),
+                pinnedTabIds: []
+              }
+            }
+          }
+          const nextFocus = nextPanes[state.focusedPane] ? state.focusedPane : 'primary'
+          return {
+            ...buildSyncedPaneFields(nextPanes, nextTree, nextFocus, state.notes || []),
+            ...(pane === 'primary'
+              ? { pinnedTabIds: state.pinnedTabIds.filter((tid) => nextTabs.includes(tid)) }
+              : {})
+          }
         }
       }
-      const nextSelected = resolveNoteById(state.notes || [], nextActiveId)
+
+      const nextPanes = {
+        ...state.panes,
+        [pane]: { ...currentPane, tabs: nextTabs, activeTabId: nextActiveId }
+      }
       return {
-        secondaryTabs: nextTabs,
-        secondaryActiveTabId: nextActiveId,
-        ...(nextSelected ? { selectedNote: nextSelected, selectedSnippet: nextSelected } : {})
+        ...buildSyncedPaneFields(nextPanes, state.splitTree, pane, state.notes || []),
+        ...(pane === 'primary'
+          ? { pinnedTabIds: state.pinnedTabIds.filter((tid) => nextTabs.includes(tid)) }
+          : {})
       }
     })
   },
@@ -574,110 +802,207 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   reorderPaneTabs: (pane: WorkspacePaneId, newTabs: string[]) => {
     if (pane === 'primary') {
       get().reorderTabs(newTabs)
+      set((state) => ({
+        panes: {
+          ...state.panes,
+          primary: { id: 'primary', tabs: state.openTabs, activeTabId: state.activeTabId }
+        }
+      }))
       return
     }
-    set({ secondaryTabs: newTabs })
+    set((state) => {
+      const targetPane = state.panes[pane]
+      if (!targetPane) return state
+      const nextPanes = { ...state.panes, [pane]: { ...targetPane, tabs: newTabs } }
+      return buildSyncedPaneFields(nextPanes, state.splitTree, state.focusedPane, state.notes || [])
+    })
   },
 
   closeOtherPaneTabs: (pane: WorkspacePaneId, keepId: string) => {
     if (pane === 'primary') {
       get().closeOtherTabs(keepId)
+      set((state) => ({
+        panes: {
+          ...state.panes,
+          primary: { id: 'primary', tabs: state.openTabs, activeTabId: state.activeTabId }
+        }
+      }))
       return
     }
     set((state) => {
-      const nextSelected = resolveNoteById(state.notes || [], keepId)
-      return {
-        secondaryTabs: [keepId],
-        secondaryActiveTabId: keepId,
-        ...(nextSelected ? { selectedNote: nextSelected, selectedSnippet: nextSelected } : {})
+      const targetPane = state.panes[pane]
+      if (!targetPane) return state
+      const nextPanes = {
+        ...state.panes,
+        [pane]: { ...targetPane, tabs: [keepId], activeTabId: keepId }
       }
+      return buildSyncedPaneFields(nextPanes, state.splitTree, pane, state.notes || [])
     })
   },
 
   closePaneTabsToRight: (pane: WorkspacePaneId, id: string) => {
     if (pane === 'primary') {
       get().closeTabsToRight(id)
+      set((state) => ({
+        panes: {
+          ...state.panes,
+          primary: { id: 'primary', tabs: state.openTabs, activeTabId: state.activeTabId }
+        }
+      }))
       return
     }
     set((state) => {
-      const idx = state.secondaryTabs.indexOf(id)
-      const nextTabs = idx === -1 ? state.secondaryTabs : state.secondaryTabs.slice(0, idx + 1)
-      const nextActiveId = nextTabs.includes(state.secondaryActiveTabId || '')
-        ? state.secondaryActiveTabId
+      const targetPane = state.panes[pane]
+      if (!targetPane) return state
+      const idx = targetPane.tabs.indexOf(id)
+      const nextTabs = idx === -1 ? targetPane.tabs : targetPane.tabs.slice(0, idx + 1)
+      const nextActiveId = nextTabs.includes(targetPane.activeTabId || '')
+        ? targetPane.activeTabId
         : id
-      const nextSelected = resolveNoteById(state.notes || [], nextActiveId)
-      return {
-        secondaryTabs: nextTabs,
-        secondaryActiveTabId: nextActiveId,
-        ...(nextSelected ? { selectedNote: nextSelected, selectedSnippet: nextSelected } : {})
+      const nextPanes = {
+        ...state.panes,
+        [pane]: { ...targetPane, tabs: nextTabs, activeTabId: nextActiveId }
       }
+      return buildSyncedPaneFields(nextPanes, state.splitTree, pane, state.notes || [])
     })
   },
 
   closeAllPaneTabs: (pane: WorkspacePaneId) => {
     if (pane === 'primary') {
       get().closeAllTabs()
+      set((state) => ({
+        panes: {
+          ...state.panes,
+          primary: { id: 'primary', tabs: state.openTabs, activeTabId: state.activeTabId }
+        }
+      }))
       return
     }
-    get().closeSplit()
+    get().closePane(pane)
   },
 
   moveTabToPane: (
     id: string,
     targetPane: WorkspacePaneId,
-    direction: 'vertical' | 'horizontal' = 'vertical'
+    splitOptions?:
+      | SplitOrientation
+      | { direction: SplitOrientation; position?: SplitPosition; sourcePane?: WorkspacePaneId }
   ) =>
     set((state) => {
       const notes = state.notes || []
-      if (targetPane === 'secondary') {
-        const nextSecondaryTabs = state.secondaryTabs.includes(id)
-          ? state.secondaryTabs
-          : [...state.secondaryTabs, id]
-        const { nextTabs: nextPrimaryTabs, nextActiveId: nextPrimaryActive } =
-          computeTabsAfterClose(state.openTabs, state.activeTabId, id)
-        const nextDirection =
-          state.splitDirection === 'none' ? direction : state.splitDirection
+      const normalizedSplit =
+        typeof splitOptions === 'string' ? { direction: splitOptions, position: 'after' as SplitPosition } : splitOptions
+      const sourcePaneId =
+        normalizedSplit?.sourcePane ||
+        Object.keys(state.panes).find((pid) => state.panes[pid]?.tabs.includes(id)) ||
+        'primary'
+      const sourcePane = state.panes[sourcePaneId] || {
+        id: sourcePaneId,
+        tabs: state.openTabs,
+        activeTabId: state.activeTabId
+      }
 
-        // If primary would become empty, keep it in primary instead of leaving primary blank
-        if (nextPrimaryTabs.length === 0) {
-          return {
-            splitDirection: nextDirection,
-            secondaryTabs: nextSecondaryTabs,
-            secondaryActiveTabId: id,
-            focusedPane: 'secondary'
+      // Case 1: Split targetPane into a new column/row and place tab there
+      if (normalizedSplit) {
+        const { direction, position = 'after' } = normalizedSplit
+        const anchorPaneId = state.panes[targetPane] ? targetPane : sourcePaneId
+        const newPaneId = nextGeneratedPaneId(state.panes)
+        const nextPanes: Record<WorkspacePaneId, PaneState> = { ...state.panes }
+        let nextTree = splitLeafInTree(state.splitTree, anchorPaneId, newPaneId, direction, position)
+        nextPanes[newPaneId] = { id: newPaneId, tabs: [id], activeTabId: id }
+
+        const { nextTabs: nextSrcTabs, nextActiveId: nextSrcActive } = computeTabsAfterClose(
+          sourcePane.tabs,
+          sourcePane.activeTabId,
+          id
+        )
+
+        if (nextSrcTabs.length > 0) {
+          nextPanes[sourcePaneId] = { ...sourcePane, tabs: nextSrcTabs, activeTabId: nextSrcActive }
+        } else if (sourcePaneId !== anchorPaneId && state.splitTree.kind === 'split') {
+          const collapsed = removeLeafFromTree(nextTree, sourcePaneId)
+          if (collapsed) {
+            nextTree = collapsed
+            delete nextPanes[sourcePaneId]
           }
         }
 
-        const nextSelected = resolveNoteById(notes, id)
         return {
-          splitDirection: nextDirection,
-          openTabs: nextPrimaryTabs,
-          pinnedTabIds: state.pinnedTabIds.filter((tid) => nextPrimaryTabs.includes(tid)),
-          activeTabId: nextPrimaryActive,
-          secondaryTabs: nextSecondaryTabs,
-          secondaryActiveTabId: id,
-          focusedPane: 'secondary',
-          ...(nextSelected ? { selectedNote: nextSelected, selectedSnippet: nextSelected } : {})
+          ...buildSyncedPaneFields(nextPanes, nextTree, newPaneId, notes),
+          pinnedTabIds:
+            sourcePaneId === 'primary'
+              ? state.pinnedTabIds.filter((tid) => nextPanes.primary?.tabs.includes(tid))
+              : state.pinnedTabIds
         }
       }
 
-      // Moving to primary
-      const nextPrimaryTabs = state.openTabs.includes(id)
-        ? state.openTabs
-        : [...state.openTabs, id]
-      const { nextTabs: nextSecondaryTabs, nextActiveId: nextSecondaryActive } =
-        computeTabsAfterClose(state.secondaryTabs, state.secondaryActiveTabId, id)
-      const nextSelected = resolveNoteById(notes, id)
-      const collapseSplit = nextSecondaryTabs.length === 0
+      // Case 2: Move tab into an existing targetPane (or create 'secondary' if not yet open)
+      if (!state.panes[targetPane]) {
+        const newPaneId = targetPane
+        const nextPanes: Record<WorkspacePaneId, PaneState> = { ...state.panes }
+        const nextTree = splitLeafInTree(state.splitTree, sourcePaneId, newPaneId, 'vertical', 'after')
+        nextPanes[newPaneId] = { id: newPaneId, tabs: [id], activeTabId: id }
+        const { nextTabs: nextSrcTabs, nextActiveId: nextSrcActive } = computeTabsAfterClose(
+          sourcePane.tabs,
+          sourcePane.activeTabId,
+          id
+        )
+        if (nextSrcTabs.length > 0) {
+          nextPanes[sourcePaneId] = { ...sourcePane, tabs: nextSrcTabs, activeTabId: nextSrcActive }
+        }
+        return {
+          ...buildSyncedPaneFields(nextPanes, nextTree, newPaneId, notes),
+          pinnedTabIds:
+            sourcePaneId === 'primary'
+              ? state.pinnedTabIds.filter((tid) => nextPanes.primary?.tabs.includes(tid))
+              : state.pinnedTabIds
+        }
+      }
+
+      if (sourcePaneId === targetPane) return state
+
+      const destPane = state.panes[targetPane]
+      const nextDestTabs = destPane.tabs.includes(id) ? destPane.tabs : [...destPane.tabs, id]
+      const nextPanes: Record<WorkspacePaneId, PaneState> = {
+        ...state.panes,
+        [targetPane]: { ...destPane, tabs: nextDestTabs, activeTabId: id }
+      }
+      let nextTree = state.splitTree
+      const { nextTabs: nextSrcTabs, nextActiveId: nextSrcActive } = computeTabsAfterClose(
+        sourcePane.tabs,
+        sourcePane.activeTabId,
+        id
+      )
+
+      if (nextSrcTabs.length > 0) {
+        nextPanes[sourcePaneId] = { ...sourcePane, tabs: nextSrcTabs, activeTabId: nextSrcActive }
+      } else if (nextTree.kind === 'split') {
+        const collapsed = removeLeafFromTree(nextTree, sourcePaneId)
+        if (collapsed) {
+          nextTree = collapsed
+          delete nextPanes[sourcePaneId]
+          if (sourcePaneId === 'primary' && targetPane !== 'primary') {
+            nextPanes.primary = { ...nextPanes[targetPane], id: 'primary' }
+            delete nextPanes[targetPane]
+            const renameLeaf = (n: SplitTreeNode): SplitTreeNode =>
+              n.kind === 'leaf'
+                ? { kind: 'leaf', paneId: n.paneId === targetPane ? 'primary' : n.paneId }
+                : { ...n, first: renameLeaf(n.first), second: renameLeaf(n.second) }
+            nextTree = renameLeaf(nextTree)
+            return {
+              ...buildSyncedPaneFields(nextPanes, nextTree, 'primary', notes),
+              pinnedTabIds: []
+            }
+          }
+        }
+      }
 
       return {
-        openTabs: nextPrimaryTabs,
-        activeTabId: id,
-        focusedPane: 'primary',
-        splitDirection: collapseSplit ? 'none' : state.splitDirection,
-        secondaryTabs: nextSecondaryTabs,
-        secondaryActiveTabId: collapseSplit ? null : nextSecondaryActive,
-        ...(nextSelected ? { selectedNote: nextSelected, selectedSnippet: nextSelected } : {})
+        ...buildSyncedPaneFields(nextPanes, nextTree, targetPane, notes),
+        pinnedTabIds:
+          sourcePaneId === 'primary'
+            ? state.pinnedTabIds.filter((tid) => nextPanes.primary?.tabs.includes(tid))
+            : state.pinnedTabIds
       }
     }),
 
@@ -743,6 +1068,10 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
           let persistedOpenTabs = get().openTabs
           let persistedPinnedTabs = get().pinnedTabIds
           let persistedActiveId = get().activeTabId
+          let persistedSplitLayout: any =
+            get().splitTree.kind === 'split'
+              ? { splitTree: get().splitTree, panes: get().panes, focusedPane: get().focusedPane }
+              : null
 
           try {
             let allSettings = useSettingsStore.getState().settings as any
@@ -769,6 +1098,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
               }
               if (allSettings.lastNoteId) {
                 persistedActiveId = allSettings.lastNoteId
+              }
+              if (allSettings.splitLayout) {
+                persistedSplitLayout = allSettings.splitLayout
               }
             }
           } catch {
@@ -809,16 +1141,24 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
           })
           const allFolders = Array.from(folderSet)
 
+          const syncedLayout = sanitizeRestoredSplitLayout(
+            persistedSplitLayout,
+            noteIdSet,
+            validTabs,
+            validActiveId,
+            merged
+          )
+
           set({
             notes: merged,
             snippets: merged,
             folders: allFolders,
             folderColors,
-            openTabs: validTabs,
+            ...syncedLayout,
             pinnedTabIds: validPinned,
-            activeTabId: validActiveId,
-            selectedNote: activeNote,
-            selectedSnippet: activeNote
+            ...(syncedLayout.splitTree.kind === 'leaf'
+              ? { selectedNote: activeNote, selectedSnippet: activeNote }
+              : {})
           })
         } else {
           console.warn('[WorkspaceStore] ✗ Received invalid data from sync.')
@@ -1012,31 +1352,36 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
       const dirtyNotes = (state.dirtyNoteIds || []).filter((dId) => dId !== id)
 
-      const secondaryCleanup = computeTabsAfterClose(
-        state.secondaryTabs,
-        state.secondaryActiveTabId,
-        id
-      )
-      const collapseSplit =
-        state.splitDirection !== 'none' && secondaryCleanup.nextTabs.length === 0
+      let nextTree = state.splitTree
+      const nextPanes: Record<WorkspacePaneId, PaneState> = {}
+      Object.entries(state.panes).forEach(([pid, pane]) => {
+        const cleaned = computeTabsAfterClose(pane.tabs, pane.activeTabId, id)
+        if (cleaned.nextTabs.length === 0 && pid !== 'primary' && nextTree.kind === 'split') {
+          const reduced = removeLeafFromTree(nextTree, pid)
+          if (reduced) {
+            nextTree = reduced
+            return
+          }
+        }
+        nextPanes[pid] = {
+          ...pane,
+          tabs: pid === 'primary' ? nextTabs : cleaned.nextTabs,
+          activeTabId: pid === 'primary' ? nextActiveId : cleaned.nextActiveId
+        }
+      })
+      if (!nextPanes.primary) {
+        nextPanes.primary = { id: 'primary', tabs: nextTabs, activeTabId: nextActiveId }
+      }
+      const nextFocus = nextPanes[state.focusedPane] ? state.focusedPane : 'primary'
 
       return {
         notes: next,
         snippets: next,
-        openTabs: nextTabs,
-        activeTabId: nextActiveId,
-        selectedNote: nextSelectedNote,
-        selectedSnippet: nextSelectedNote,
         drafts: nextDrafts,
         dirtyNoteIds: dirtyNotes,
-        ...(state.splitDirection !== 'none'
-          ? {
-              splitDirection: collapseSplit ? 'none' : state.splitDirection,
-              secondaryTabs: secondaryCleanup.nextTabs,
-              secondaryActiveTabId: collapseSplit ? null : secondaryCleanup.nextActiveId,
-              focusedPane: collapseSplit ? 'primary' : state.focusedPane
-            }
-          : {})
+        ...buildSyncedPaneFields(nextPanes, nextTree, nextFocus, next),
+        selectedNote: nextSelectedNote,
+        selectedSnippet: nextSelectedNote
       }
     })
 
@@ -1126,6 +1471,12 @@ let lastWorkspaceState = useWorkspaceStore.getState()
 let saveLastNoteTimeout: any = null
 let saveOpenTabsTimeout: any = null
 let savePinnedTabsTimeout: any = null
+let saveSplitLayoutTimeout: any = null
+
+const serializeSplitLayout = (state: WorkspaceStoreState) =>
+  state.splitTree.kind === 'split'
+    ? { splitTree: state.splitTree, panes: state.panes, focusedPane: state.focusedPane }
+    : null
 
 const flushPendingWorkspaceSaves = () => {
   if (saveLastNoteTimeout) {
@@ -1146,6 +1497,12 @@ const flushPendingWorkspaceSaves = () => {
     const pinnedTabIds = useWorkspaceStore.getState().pinnedTabIds
     ;(window as any).api?.saveSetting('pinnedTabIds', pinnedTabIds)?.catch?.(() => {})
   }
+  if (saveSplitLayoutTimeout) {
+    clearTimeout(saveSplitLayoutTimeout)
+    saveSplitLayoutTimeout = null
+    const layout = serializeSplitLayout(useWorkspaceStore.getState())
+    ;(window as any).api?.saveSetting('splitLayout', layout)?.catch?.(() => {})
+  }
 }
 
 if (typeof window !== 'undefined') {
@@ -1157,7 +1514,21 @@ useWorkspaceStore.subscribe((state) => {
   if (!isStoreInitialized) {
     if ((state.notes && state.notes.length > 0) || hasLoadedWorkspaceOnce) {
       isStoreInitialized = true
-      lastWorkspaceState = state
+      // 4. Split-view layout persistence: debounced IPC to settings
+  if (
+    state.splitTree !== lastWorkspaceState.splitTree ||
+    state.panes !== lastWorkspaceState.panes ||
+    state.focusedPane !== lastWorkspaceState.focusedPane
+  ) {
+    if (saveSplitLayoutTimeout) clearTimeout(saveSplitLayoutTimeout)
+    saveSplitLayoutTimeout = setTimeout(() => {
+      saveSplitLayoutTimeout = null
+      const layout = serializeSplitLayout(state)
+      useSettingsStore.getState().updateSetting?.('splitLayout', layout)
+    }, 500)
+  }
+
+  lastWorkspaceState = state
     }
     return
   }
@@ -1191,6 +1562,20 @@ useWorkspaceStore.subscribe((state) => {
       saveLastNoteTimeout = null
       ;(window as any).api?.saveSetting('lastNoteId', state.activeTabId)?.catch?.(() => {})
     }, 1200)
+  }
+
+  // 4. Split-view layout persistence: debounced IPC to settings
+  if (
+    state.splitTree !== lastWorkspaceState.splitTree ||
+    state.panes !== lastWorkspaceState.panes ||
+    state.focusedPane !== lastWorkspaceState.focusedPane
+  ) {
+    if (saveSplitLayoutTimeout) clearTimeout(saveSplitLayoutTimeout)
+    saveSplitLayoutTimeout = setTimeout(() => {
+      saveSplitLayoutTimeout = null
+      const layout = serializeSplitLayout(state)
+      useSettingsStore.getState().updateSetting?.('splitLayout', layout)
+    }, 500)
   }
 
   lastWorkspaceState = state

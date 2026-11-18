@@ -8,7 +8,7 @@
 import { create } from 'zustand'
 import type { WorkspacePaneId } from '../../core/store/workspaceStore'
 
-export type DropZonePosition = 'left' | 'right' | 'top' | 'bottom' | 'center'
+export type DropZonePosition = 'left' | 'right' | 'top' | 'bottom' | 'center' | 'tabbar'
 
 export interface TabDropTarget {
   targetPane: WorkspacePaneId
@@ -51,14 +51,21 @@ export function resolveDropZoneInRect(
   rect: Pick<DOMRect, 'left' | 'top' | 'right' | 'bottom' | 'width' | 'height'>,
   clientX: number,
   clientY: number,
+  allowCenter = true,
   edgeThreshold = 0.28
 ): DropZonePosition {
   if (rect.width <= 0 || rect.height <= 0) return 'center'
-  const rx = (clientX - rect.left) / rect.width
-  const ry = (clientY - rect.top) / rect.height
 
-  // Top 36px (tabbar region) always drops into the pane's tab strip
-  if (clientY - rect.top <= 36) return 'center'
+  // Top 36px (tabbar region) drops beside existing tabs in that pane's tab strip
+  const headerHeight = Math.min(36, rect.height * 0.25)
+  if (clientY - rect.top <= headerHeight) {
+    return allowCenter ? 'tabbar' : 'top'
+  }
+
+  const bodyTop = rect.top + headerHeight
+  const bodyHeight = Math.max(1, rect.height - headerHeight)
+  const rx = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+  const ry = Math.min(1, Math.max(0, (clientY - bodyTop) / bodyHeight))
 
   const distRight = 1 - rx
   const distLeft = rx
@@ -66,7 +73,7 @@ export function resolveDropZoneInRect(
   const distTop = ry
 
   const minEdge = Math.min(distRight, distLeft, distBottom, distTop)
-  if (minEdge > edgeThreshold) return 'center'
+  if (allowCenter && minEdge > edgeThreshold) return 'center'
 
   if (minEdge === distRight) return 'right'
   if (minEdge === distBottom) return 'bottom'
@@ -109,10 +116,7 @@ export function computePaneDropTarget(
     ) {
       const targetPane = el.getAttribute('data-workspace-pane') as WorkspacePaneId
       if (!targetPane) continue
-      const zone = resolveDropZoneInRect(rect, clientX, clientY)
-      if (zone === 'center' && targetPane === sourcePane) {
-        return null
-      }
+      const zone = resolveDropZoneInRect(rect, clientX, clientY, targetPane !== sourcePane)
       return { targetPane, zone }
     }
   }

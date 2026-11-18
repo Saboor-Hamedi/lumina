@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, type MutableRefObject } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, type MutableRefObject } from 'react'
 import {
   Decoration,
   EditorView,
@@ -94,7 +94,7 @@ export function AtomicCodeMirrorEditor({
 
   const editorIdentity = documentId ?? markdownSource
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = rootRef.current
     if (!root) return
 

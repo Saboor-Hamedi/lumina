@@ -109,13 +109,13 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
     countExplorerPerfRender('TabContentPane', snippet.id)
     // Each pane subscribes to only its own slice of state — O(1) check, zero cross-tab re-renders
     const isSelected = useWorkspaceStore((state) => {
-      if (paneId === 'secondary') {
-        return state.secondaryActiveTabId === snippet.id
+      if (paneId === 'primary') {
+        return (
+          state.activeTabId === snippet.id ||
+          (!state.activeTabId && state.selectedNote?.id === snippet.id)
+        )
       }
-      return (
-        state.activeTabId === snippet.id ||
-        (!state.activeTabId && state.selectedNote?.id === snippet.id)
-      )
+      return state.panes[paneId]?.activeTabId === snippet.id
     })
 
     useLayoutEffect(() => {
@@ -164,8 +164,7 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
           display: isSelected ? 'flex' : 'none',
           flexDirection: 'column',
           overflow: 'hidden',
-          zIndex: isSelected ? 10 : 1,
-          transition: 'opacity 0.08s ease-out'
+          zIndex: isSelected ? 10 : 1
         }}
       >
         <GlobalErrorHandler>

@@ -30,9 +30,9 @@ interface PaneSpecialTabProps {
 
 const GraphTabPane = React.memo<PaneSpecialTabProps>(({ paneId, onNavigate }) => {
   const isSelected = useWorkspaceStore((state) =>
-    paneId === 'secondary'
-      ? state.secondaryActiveTabId === GRAPH_TAB_ID
-      : state.activeTabId === GRAPH_TAB_ID
+    paneId === 'primary'
+      ? state.activeTabId === GRAPH_TAB_ID
+      : state.panes[paneId]?.activeTabId === GRAPH_TAB_ID
   )
   return (
     <div
@@ -63,9 +63,9 @@ GraphTabPane.displayName = 'GraphTabPane'
 
 const LuminaTabPane = React.memo<{ paneId: WorkspacePaneId }>(({ paneId }) => {
   const isSelected = useWorkspaceStore((state) =>
-    paneId === 'secondary'
-      ? state.secondaryActiveTabId === LUMINA_TAB_ID
-      : state.activeTabId === LUMINA_TAB_ID
+    paneId === 'primary'
+      ? state.activeTabId === LUMINA_TAB_ID
+      : state.panes[paneId]?.activeTabId === LUMINA_TAB_ID
   )
   return (
     <div
@@ -109,6 +109,8 @@ export interface WorkspacePaneProps {
   flexRatio?: number
 }
 
+const EMPTY_TABS: string[] = []
+
 export const WorkspacePane: React.FC<WorkspacePaneProps> = React.memo(
   ({
     paneId,
@@ -133,8 +135,14 @@ export const WorkspacePane: React.FC<WorkspacePaneProps> = React.memo(
   }) => {
     const { tabs, activeId, isSplit, isFocused, setFocusedPane } = useWorkspaceStore(
       useShallow((state) => ({
-        tabs: paneId === 'secondary' ? state.secondaryTabs || [] : state.openTabs || [],
-        activeId: paneId === 'secondary' ? state.secondaryActiveTabId : state.activeTabId,
+        tabs:
+          paneId === 'primary'
+            ? state.openTabs
+            : state.panes[paneId]?.tabs || EMPTY_TABS,
+        activeId:
+          paneId === 'primary'
+            ? state.activeTabId
+            : state.panes[paneId]?.activeTabId ?? null,
         isSplit: state.splitDirection !== 'none',
         isFocused: state.focusedPane === paneId,
         setFocusedPane: state.setFocusedPane
@@ -224,7 +232,9 @@ export const WorkspacePane: React.FC<WorkspacePaneProps> = React.memo(
 
         <div className="workspace-pane-body">
           {renderedEditors}
-          {dropZone && <div className={`pane-drop-overlay zone-${dropZone}`} aria-hidden="true" />}
+          {dropZone && dropZone !== 'tabbar' && (
+            <div className={`pane-drop-overlay zone-${dropZone}`} aria-hidden="true" />
+          )}
         </div>
       </div>
     )

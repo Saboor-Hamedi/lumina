@@ -13,6 +13,7 @@ import {
 import { arrayMove } from '@dnd-kit/sortable'
 import { useSettingsStore } from '../../../core/store/SettingStore'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
+import { useTabDragStore, resolveDropZoneInRect, type TabDropTarget } from '../../Layout/tabDragDrop'
 
 function patchStoreForMigratedImages(migratedImages: Map<string, string>): void {
   if (migratedImages.size === 0) return
@@ -110,16 +111,11 @@ export function useExplorerDnd({
 
   useEffect(() => {
     if (!activeListDragItem) {
-      window.dispatchEvent(
-        new CustomEvent('lumina:workspace-drag-hover', {
-          detail: { isOver: false }
-        })
-      )
+      useTabDragStore.getState().setDropTarget(null)
       return
     }
 
     let rafId: number | null = null
-    let lastDispatched = false
 
     const onPointerMove = (e: PointerEvent) => {
       pointerPosRef.current = { x: e.clientX, y: e.clientY }
@@ -128,30 +124,29 @@ export function useExplorerDnd({
         if (rafId !== null) return
         rafId = requestAnimationFrame(() => {
           rafId = null
-          const workspaceEl = document.querySelector('.shell-center-workspace')
-          if (workspaceEl) {
-            const r = workspaceEl.getBoundingClientRect()
-            const inWorkspace =
-              e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
-            const isOverCanvas =
-              inWorkspace &&
-              Boolean(
-                document.elementFromPoint(e.clientX, e.clientY)?.closest('.lumina-canvas-container')
-              )
-            const shouldBeOver = inWorkspace && !isOverCanvas
-            if (shouldBeOver !== lastDispatched) {
-              lastDispatched = shouldBeOver
-              window.dispatchEvent(
-                new CustomEvent('lumina:workspace-drag-hover', {
-                  detail: {
-                    isOver: shouldBeOver,
-                    title: activeListDragItem.snippet?.title || 'Note',
-                    count: activeListDragItem.count || 1
-                  }
-                })
-              )
+          const isOverCanvas = Boolean(
+            document.elementFromPoint(e.clientX, e.clientY)?.closest('.lumina-canvas-container')
+          )
+          if (isOverCanvas) {
+            useTabDragStore.getState().setDropTarget(null)
+            return
+          }
+
+          const paneEls = document.querySelectorAll<HTMLElement>('[data-workspace-pane]')
+          let nextTarget: TabDropTarget | null = null
+          for (let i = 0; i < paneEls.length; i++) {
+            const r = paneEls[i].getBoundingClientRect()
+            if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+              const targetPane = paneEls[i].getAttribute('data-workspace-pane')
+              if (targetPane) {
+                const zone = resolveDropZoneInRect(r, e.clientX, e.clientY, true)
+                nextTarget = { targetPane, zone: zone === 'tabbar' ? 'center' : zone }
+              }
+              break
             }
           }
+
+          useTabDragStore.getState().setDropTarget(nextTarget)
         })
       }
     }
@@ -160,11 +155,7 @@ export function useExplorerDnd({
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId)
       window.removeEventListener('pointermove', onPointerMove)
-      window.dispatchEvent(
-        new CustomEvent('lumina:workspace-drag-hover', {
-          detail: { isOver: false }
-        })
-      )
+      useTabDragStore.getState().setDropTarget(null)
     }
   }, [activeListDragItem])
 
@@ -305,7 +296,7 @@ export function useExplorerDnd({
         }
       }
 
-      // Check if dropped onto workspace (and not a canvas) to open in tab
+      // Check if dropped onto workspace / editor pane (and not a canvas) to open in a standalone tab
       if (!targetCanvas && dragItem?.type === 'file') {
         const workspaceEl = document.querySelector('.shell-center-workspace')
         if (workspaceEl) {
@@ -313,11 +304,7 @@ export function useExplorerDnd({
           const isOverWorkspace =
             dropX >= r.left && dropX <= r.right && dropY >= r.top && dropY <= r.bottom
           if (isOverWorkspace) {
-            window.dispatchEvent(
-              new CustomEvent('lumina:workspace-drag-hover', {
-                detail: { isOver: false }
-              })
-            )
+            useTabDragStore.getState().setDropTarget(null)
             const idsToOpen = dragItem?.draggedSnippetIds?.length
               ? dragItem.draggedSnippetIds
               : [String(active.id)]
@@ -327,20 +314,37 @@ export function useExplorerDnd({
             }
 
             if (snippetsToOpen.length > 0) {
-              useWorkspaceStore.setState((state) => {
-                const nextTabs = [...state.openTabs]
+              const paneEls = document.querySelectorAll<HTMLElement>('[data-workspace-pane]')
+              let targetPaneId = useWorkspaceStore.getState().focusedPane || 'primary'
+              let dropZone: 'left' | 'right' | 'top' | 'bottom' | 'center' | 'tabbar' = 'center'
+              for (let i = 0; i < paneEls.length; i++) {
+                const pr = paneEls[i].getBoundingClientRect()
+                if (dropX >= pr.left && dropX <= pr.right && dropY >= pr.top && dropY <= pr.bottom) {
+                  targetPaneId = paneEls[i].getAttribute('data-workspace-pane') || targetPaneId
+                  dropZone = resolveDropZoneInRect(pr, dropX, dropY, true)
+                  break
+                }
+              }
+
+              const store = useWorkspaceStore.getState()
+              if (
+                dropZone === 'left' ||
+                dropZone === 'right' ||
+                dropZone === 'top' ||
+                dropZone === 'bottom'
+              ) {
+                const direction = dropZone === 'top' || dropZone === 'bottom' ? 'horizontal' : 'vertical'
+                const position = dropZone === 'left' || dropZone === 'top' ? 'before' : 'after'
+                store.splitPane(direction, snippetsToOpen[0].id, targetPaneId, position)
+                const newPaneId = useWorkspaceStore.getState().focusedPane
+                for (let i = 1; i < snippetsToOpen.length; i++) {
+                  useWorkspaceStore.getState().setPaneActiveTabId(newPaneId, snippetsToOpen[i].id)
+                }
+              } else {
                 for (const s of snippetsToOpen) {
-                  if (!nextTabs.includes(s.id)) {
-                    nextTabs.push(s.id)
-                  }
+                  store.setPaneActiveTabId(targetPaneId, s.id)
                 }
-                const activeSnippet = snippetsToOpen[snippetsToOpen.length - 1]
-                return {
-                  openTabs: nextTabs,
-                  activeTabId: activeSnippet.id,
-                  selectedNote: activeSnippet
-                }
-              })
+              }
               return
             }
           }

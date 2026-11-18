@@ -438,7 +438,7 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
       }}
       {...(dndProps?.attributes || {})}
       {...(dndProps?.listeners || {})}
-      draggable={!isRenaming}
+      draggable={!isRenaming && !dndProps}
       onDragStart={(e) => {
         try {
           e.dataTransfer.setData('application/lumina-snippet', JSON.stringify(snippet))

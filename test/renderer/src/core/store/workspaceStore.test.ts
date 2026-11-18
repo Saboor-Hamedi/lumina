@@ -26,6 +26,8 @@ describe('workspaceStore', () => {
       splitRatio: 0.5,
       secondaryTabs: [],
       secondaryActiveTabId: null,
+      panes: { primary: { id: 'primary', tabs: [], activeTabId: null } },
+      splitTree: { kind: 'leaf', paneId: 'primary' },
       focusedPane: 'primary'
     })
   })
@@ -227,9 +229,9 @@ describe('workspaceStore', () => {
       expect(useWorkspaceStore.getState().splitDirection).toBe('horizontal')
 
       useWorkspaceStore.getState().setSplitRatio(0.05)
-      expect(useWorkspaceStore.getState().splitRatio).toBe(0.2)
+      expect(useWorkspaceStore.getState().splitRatio).toBe(0.15)
       useWorkspaceStore.getState().setSplitRatio(0.95)
-      expect(useWorkspaceStore.getState().splitRatio).toBe(0.8)
+      expect(useWorkspaceStore.getState().splitRatio).toBe(0.85)
     })
 
     it('opens notes in focused pane and collapses split when last secondary tab closes', () => {
@@ -276,6 +278,62 @@ describe('workspaceStore', () => {
       expect(state.splitDirection).toBe('none')
       expect(state.openTabs).toEqual(['n1', 'n2'])
       expect(state.activeTabId).toBe('n2')
+    })
+
+    it('supports multiple columns and nested rows in splitTree', () => {
+      const n1 = { id: 'n1', title: 'Note 1', code: 'One' }
+      const n2 = { id: 'n2', title: 'Note 2', code: 'Two' }
+      const n3 = { id: 'n3', title: 'Note 3', code: 'Three' }
+      useWorkspaceStore.getState().setNotes([n1, n2, n3])
+      useWorkspaceStore.getState().setSelectedNote(n1)
+
+      // Column 1 -> split vertically into Column 1 & Column 2
+      useWorkspaceStore.getState().splitPane('vertical', 'n2', 'primary', 'after')
+      const col2Id = useWorkspaceStore.getState().focusedPane
+      expect(col2Id).not.toBe('primary')
+
+      // Split Column 2 horizontally into two rows
+      useWorkspaceStore.getState().splitPane('horizontal', 'n3', col2Id, 'after')
+      const row2Id = useWorkspaceStore.getState().focusedPane
+      expect(Object.keys(useWorkspaceStore.getState().panes)).toHaveLength(3)
+      expect(useWorkspaceStore.getState().panes[row2Id].activeTabId).toBe('n3')
+
+      // Close row2 -> collapses back to 2 columns
+      useWorkspaceStore.getState().closePane(row2Id)
+      expect(Object.keys(useWorkspaceStore.getState().panes)).toHaveLength(2)
+      expect(useWorkspaceStore.getState().splitTree.kind).toBe('split')
+    })
+
+    it('restores splitLayout across sessions and prunes missing notes', () => {
+      const n1 = { id: 'n1', title: 'Note 1', code: 'One' }
+      const n2 = { id: 'n2', title: 'Note 2', code: 'Two' }
+      useWorkspaceStore.getState().setNotes([n1, n2])
+
+      const savedLayout = {
+        splitTree: {
+          kind: 'split',
+          id: 'split-1',
+          direction: 'vertical',
+          ratio: 0.6,
+          first: { kind: 'leaf', paneId: 'primary' },
+          second: { kind: 'leaf', paneId: 'secondary' }
+        },
+        panes: {
+          primary: { id: 'primary', tabs: ['n1'], activeTabId: 'n1' },
+          secondary: { id: 'secondary', tabs: ['n2', 'deleted-note'], activeTabId: 'deleted-note' }
+        },
+        focusedPane: 'secondary'
+      }
+
+      useWorkspaceStore.getState().restoreSession(['n1'], 'n1', [], savedLayout)
+      const state = useWorkspaceStore.getState()
+      expect(state.splitDirection).toBe('vertical')
+      expect(state.splitRatio).toBe(0.6)
+      expect(state.openTabs).toEqual(['n1'])
+      expect(state.secondaryTabs).toEqual(['n2'])
+      expect(state.secondaryActiveTabId).toBe('n2')
+      expect(state.focusedPane).toBe('secondary')
+      expect(state.selectedNote?.id).toBe('n2')
     })
   })
 })
