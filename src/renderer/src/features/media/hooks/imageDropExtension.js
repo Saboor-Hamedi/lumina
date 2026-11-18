@@ -33,10 +33,13 @@ export const imageDropExtension = () =>
 
             if (relativePath) {
               const markdownToInsert = `\n![${file.name}](${relativePath})\n`
+              const currentDocLen = view.state.doc.length
+              const safePos = Math.max(0, Math.min(pos, currentDocLen))
+              const safeAnchor = Math.min(safePos + markdownToInsert.length, currentDocLen + markdownToInsert.length)
 
               view.dispatch({
-                changes: { from: pos, insert: markdownToInsert },
-                selection: { anchor: pos + markdownToInsert.length }
+                changes: { from: safePos, insert: markdownToInsert },
+                selection: { anchor: safeAnchor }
               })
             }
           } catch (error) {
@@ -124,10 +127,13 @@ export const imageDropExtension = () =>
 
             if (relativePath) {
               const markdownToInsert = `![${filename}](${relativePath})`
+              const currentDocLen = view.state.doc.length
+              const safePos = Math.max(0, Math.min(pos, currentDocLen))
+              const safeAnchor = Math.min(safePos + markdownToInsert.length, currentDocLen + markdownToInsert.length)
 
               view.dispatch({
-                changes: { from: pos, insert: markdownToInsert },
-                selection: { anchor: pos + markdownToInsert.length }
+                changes: { from: safePos, insert: markdownToInsert },
+                selection: { anchor: safeAnchor }
               })
             }
           } catch (error) {
@@ -154,7 +160,9 @@ export const imageDropExtension = () =>
         event.stopPropagation()
 
         const rawText = event.clipboardData?.getData('text/plain') || ''
-        applyRichPasteToView(view, rawHtml, rawText)
+        applyRichPasteToView(view, rawHtml, rawText).catch((err) => {
+          console.error('[imageDropExtension] Failed to apply rich paste:', err)
+        })
         return true
       }
 

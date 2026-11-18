@@ -337,5 +337,72 @@ describe('htmlToMarkdown', () => {
         selection: { anchor: 'Plain fallback'.length }
       })
     })
+
+    it('safely clamps selection when from/to exceed document length and recovers on error', async () => {
+      const view = {
+        state: {
+          doc: { length: 10 },
+          selection: { main: { from: 50, to: 60 } },
+          replaceSelection: vi.fn().mockReturnValue({ changes: { from: 10, insert: 'safe text' } })
+        },
+        dispatch: vi.fn().mockImplementationOnce(() => {
+          throw new RangeError('Selection points outside of document')
+        }),
+        focus: vi.fn()
+      }
+
+      // Should not throw and should recover via replaceSelection
+      const handled = await applyRichPasteToView(view, '<p>safe text</p>', 'safe text')
+      expect(handled).toBe(true)
+      expect(view.dispatch).toHaveBeenCalledTimes(2)
+      expect(view.state.replaceSelection).toHaveBeenCalledWith('safe text')
+    })
+  })
+
+  describe('Website Link Formatting & SourceURL resolution', () => {
+    it('resolves relative URLs to full URLs using SourceURL from clipboard header', async () => {
+      const html = `
+        Version:0.9
+        SourceURL:https://en.wikipedia.org/wiki/JavaScript
+        <!--StartFragment-->
+        <p>Learn <a href="/wiki/TypeScript">TypeScript</a> from the docs.</p>
+        <!--EndFragment-->
+      `
+      const md = await htmlToMarkdown(html)
+      expect(md).toContain('[TypeScript](https://en.wikipedia.org/wiki/TypeScript)')
+    })
+
+    it('preserves clean spacing around links in sentences', async () => {
+      const html = '<p>Check out <a href="https://example.com">Example Site</a> for more details.</p>'
+      const md = await htmlToMarkdown(html)
+      expect(md).toBe('Check out [Example Site](https://example.com) for more details.')
+    })
+
+    it('splits links across paragraphs when an anchor tag wraps multiple block elements', async () => {
+      const html = '<a href="https://example.com"><p>Paragraph 1</p><p>Paragraph 2</p></a>'
+      const md = await htmlToMarkdown(html)
+      expect(md).toContain('[Paragraph 1](https://example.com)')
+      expect(md).toContain('[Paragraph 2](https://example.com)')
+      expect(md).not.toContain('\n\n](')
+    })
+  })
+
+  describe('Robustness: 1-Million Character & Deep Tree Resilience', () => {
+    it('handles 1,000,000+ characters without crashing or hanging', async () => {
+      const hugeText = 'A'.repeat(1_000_000)
+      const html = `<p>${hugeText}</p>`
+      const md = await htmlToMarkdown(html)
+      expect(md.length).toBeGreaterThan(0)
+    })
+
+    it('safely caps deeply nested DOM trees to avoid call stack overflow', async () => {
+      // Build 100-level nested div tree
+      let nestedHtml = 'Deep Text'
+      for (let i = 0; i < 60; i++) {
+        nestedHtml = `<div>${nestedHtml}</div>`
+      }
+      const md = await htmlToMarkdown(nestedHtml)
+      expect(md).toContain('Deep Text')
+    })
   })
 })

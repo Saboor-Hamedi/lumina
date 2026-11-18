@@ -1,32 +1,67 @@
 /**
- * htmlToMarkdown.js
+ * htmlToMarkdown.ts
  * 
  * Enterprise-grade HTML-to-Markdown engine and paste pipeline for Lumina.
  * Specifically engineered for Microsoft Word, Google Docs, Web tables, and rich text.
  * 
  * Architecture & Guarantees:
  * - Resilient & Non-Breaking: Safe parsing with complete fallback to plain text on any error.
+ * - Million-Character & Deep-Tree Hardened: Enforces input length caps, tree depth clamps, and table row limits.
  * - Table Polish: Zero literal <br> tags in table cells; handles colspan balance and text alignment (:---:, ---:).
+ * - Single-Column Preservation: Prevents 1-column copied tables from collapsing into a single row.
+ * - Link Fidelity: Preserves rich markdown links [text](url) copied from websites, resolving relative URLs.
  * - Paragraph Flow: Cleans mid-sentence ragged line breaks and justification spacing for continuous text flow.
  * - Table of Contents (TOC): Clean single-line entries with hierarchical indent levels (MsoToc1 -> -, MsoToc2 ->   -).
  * - References / Bibliography: Auto-detects and highlights raw URLs/DOIs into [url](url); prevents multi-line spacing gaps.
  * - Embedded Images: Extracts base64 images and saves to workspace assets via onSaveImage callback.
- * - DRY Execution: Provides applyRichPasteToView for unified CodeMirror paste handling.
+ * - Selection Safety: Atomic dispatch clamping prevents RangeError selection out-of-bounds exceptions.
  */
 
+import type { EditorView } from '@codemirror/view'
+import { trySmartLinkPaste } from './smartLinkPaste'
+
+export const MAX_HTML_PARSE_LENGTH = 1_000_000 // 1MB payload safety guard
+export const MAX_PARSE_DEPTH = 32 // Prevent call stack overflow on deeply nested trees
+export const MAX_CHILDREN_PER_NODE = 2000 // Prevent iteration freezing on thousands of inline spans
+export const MAX_TABLE_ROWS = 500 // Prevent memory exhaustion on massive spreadsheets
+
+export interface ImageState {
+  seen: Set<string>
+  saved: number
+}
+
+export interface HtmlToMarkdownOptions {
+  baseHref?: string
+  imageState?: ImageState
+  maxImages?: number
+  maxDepth?: number
+  maxHtmlLength?: number
+  onSaveImage?: (uint8Array: Uint8Array, filename: string) => Promise<string | null>
+  onSaveImageFromPath?: (filePath: string, filename?: string) => Promise<string | null>
+  onGetClipboardImage?: () => Promise<string | null>
+}
+
+/**
+ * Extracts base href or SourceURL from HTML if present (e.g. from Word or Chromium clipboard header).
+ */
+export function extractBaseHref(html: string): string {
+  if (!html || typeof html !== 'string') return ''
+  const baseMatch = html.match(/<base\s+[^>]*href=["']([^"']+)["']/i)
+  if (baseMatch) return baseMatch[1]
+  const sourceUrlMatch = html.match(/(?:SourceURL|URL):\s*([^\r\n]+)/i)
+  if (sourceUrlMatch) return sourceUrlMatch[1].trim()
+  return ''
+}
 
 /**
  * Automatically converts raw URLs in plain text into Markdown links [url](url),
- * skipping punctuation at the end.
+ * skipping punctuation at the end and avoiding double-linking URLs already wrapped in markdown links.
  */
-
-import { trySmartLinkPaste } from './smartLinkPaste'
-
-export function autolinkText(text) {
+export function autolinkText(text: string): string {
   if (!text || typeof text !== 'string') return ''
 
-  // Matches http://, https://, or www.
-  const urlRegex = /\b(https?:\/\/[^\s<>()"']+|www\.[^\s<>()"']+)/gi
+  // Matches http://, https://, or www., skipping URLs already inside markdown [text](url) or <url>
+  const urlRegex = /(?<!\(|<)\b(https?:\/\/[^\s<>()"']+|www\.[^\s<>()"']+)/gi
 
   return text.replace(urlRegex, (url) => {
     let cleanUrl = url
@@ -47,8 +82,7 @@ export function autolinkText(text) {
 /**
  * Detects whether an image src is a local filesystem path or file:// URI.
  */
-
-export function isLocalPath(src) {
+export function isLocalPath(src: string): boolean {
   if (!src || typeof src !== 'string') return false
   const trimmed = src.trim()
   if (trimmed.startsWith('data:')) return false
@@ -62,8 +96,7 @@ export function isLocalPath(src) {
 /**
  * Strips Microsoft Word proprietary comments, XML tags, and wrapper fragments.
  */
-
-export function cleanWordHtml(rawHtml) {
+export function cleanWordHtml(rawHtml: string): string {
   if (!rawHtml || typeof rawHtml !== 'string') return ''
 
   let html = rawHtml
@@ -76,7 +109,7 @@ export function cleanWordHtml(rawHtml) {
   }
 
   // 2. Convert Word HYPERLINK field codes to <a> tags before stripping comments
-  html = html.replace(/HYPERLINK\s+"([^"]+)"(?:\s*\\l\s*"[^"]*")?\s*([^\r\n<]*)/gi, (match, url, text) => {
+  html = html.replace(/HYPERLINK\s+"([^"]+)"(?:\s*\\l\s*"[^"]*")?\s*([^\r\n<]*)/gi, (_match, url, text) => {
     const linkText = text.trim() || url
     return `<a href="${url}">${linkText}</a>`
   })
@@ -137,8 +170,7 @@ export function cleanWordHtml(rawHtml) {
 /**
  * Converts a base64 data URL to a Uint8Array safely.
  */
-
-function dataUrlToUint8Array(dataUrl) {
+function dataUrlToUint8Array(dataUrl: string): Uint8Array | null {
   try {
     const base64Index = dataUrl.indexOf(';base64,')
     if (base64Index === -1) return null
@@ -159,8 +191,7 @@ function dataUrlToUint8Array(dataUrl) {
 /**
  * Detects whether an HTML element represents a Word list item.
  */
-
-function isWordListItem(el) {
+function isWordListItem(el: Element): boolean {
   const className = el.className || ''
   return typeof className === 'string' && className.toLowerCase().includes('msolistparagraph')
 }
@@ -169,8 +200,7 @@ function isWordListItem(el) {
  * Detects whether an HTML element represents a Word Table of Contents item,
  * and returns the 1-based hierarchy level (1, 2, 3, etc.).
  */
-
-function getWordTocLevel(el) {
+function getWordTocLevel(el: Element): number {
   const className = (el.className || '').toLowerCase()
   if (!className.includes('toc')) return 0
   const match = className.match(/toc([1-6])/i)
@@ -181,8 +211,7 @@ function getWordTocLevel(el) {
 /**
  * Detects whether an HTML element represents a Bibliography or Reference item.
  */
-
-function isWordReferenceItem(el) {
+function isWordReferenceItem(el: Element): boolean {
   const className = (el.className || '').toLowerCase()
   return (
     className.includes('msobibliography') ||
@@ -196,14 +225,13 @@ function isWordReferenceItem(el) {
  * Normalizes text content with Markdown delimiters, ensuring whitespace is not wrapped inside.
  * e.g. "  hello  " wrapped in "**" becomes "  **hello**  "
  */
-
-function wrapFormattedText(text, delimiter) {
+function wrapFormattedText(text: string, delimiter: string): string {
   if (!text) return ''
   const trimmed = text.trim()
   if (!trimmed) return text
 
-  const leadSpace = text.match(/^\s*/)[0]
-  const trailSpace = text.match(/\s*$/)[0]
+  const leadSpace = text.match(/^\s*/)?.[0] || ''
+  const trailSpace = text.match(/\s*$/)?.[0] || ''
 
   return `${leadSpace}${delimiter}${trimmed}${delimiter}${trailSpace}`
 }
@@ -212,8 +240,7 @@ function wrapFormattedText(text, delimiter) {
  * Normalizes intra-paragraph text flow by flattening accidental ragged line wraps,
  * multiple spaces, tabs, and Word justification spacers into a clean continuous sentence.
  */
-
-function justifyParagraphText(text) {
+function justifyParagraphText(text: string): string {
   if (!text) return ''
   return text
     .replace(/\r?\n+/g, ' ')
@@ -223,13 +250,23 @@ function justifyParagraphText(text) {
 
 /**
  * Recursively converts an HTML DOM element and its children into clean Markdown text.
+ * Guarded against deep call stacks and excessive children.
  */
-
-export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0) {
+export async function convertDomNodeToMarkdown(
+  node: Node,
+  options: HtmlToMarkdownOptions = {},
+  listDepth: number = 0
+): Promise<string> {
   const { onSaveImage } = options
+  const maxDepth = options.maxDepth ?? MAX_PARSE_DEPTH
+
+  // Depth-cutoff safeguard against call stack overflow on deeply nested elements
+  if (listDepth > maxDepth) {
+    return node.textContent ? node.textContent.replace(/[\u00A0\u2007\u202F]/g, ' ') : ''
+  }
 
   if (node.nodeType === Node.TEXT_NODE) {
-    const raw = node.textContent.replace(/[\u00A0\u2007\u202F]/g, ' ')
+    const raw = (node.textContent || '').replace(/[\u00A0\u2007\u202F]/g, ' ')
 
     // Auto-link plain text URLs when not already wrapped inside <a>, <code>, or <pre>
     const parentTag = node.parentElement ? node.parentElement.tagName.toLowerCase() : ''
@@ -237,9 +274,9 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
       parentTag === 'a' ||
       parentTag === 'code' ||
       parentTag === 'pre' ||
-      node.parentElement?.closest?.('a, code, pre')
+      Boolean(node.parentElement?.closest?.('a, code, pre'))
 
-    if (!isInsideLinkOrCode && raw.includes('http')) {
+    if (!isInsideLinkOrCode && (raw.includes('http') || raw.includes('www.'))) {
       return autolinkText(raw)
     }
 
@@ -250,21 +287,22 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
     return ''
   }
 
-  const tagName = node.tagName.toLowerCase()
+  const el = node as HTMLElement
+  const tagName = el.tagName.toLowerCase()
 
   if (tagName === 'table') {
-    return convertTableToMarkdown(node, options)
+    return convertTableToMarkdown(el, options, listDepth)
   }
 
   if (tagName === 'pre') {
-    const codeText = node.textContent || ''
+    const codeText = el.textContent || ''
     return `\n\n\`\`\`\n${codeText.replace(/\r\n/g, '\n').trim()}\n\`\`\`\n\n`
   }
 
   if (tagName === 'ul' || tagName === 'ol') {
     const indent = '  '.repeat(listDepth)
-    const items = Array.from(node.children).filter((child) => child.tagName.toLowerCase() === 'li')
-    const listLines = []
+    const items = Array.from(el.children).filter((child) => child.tagName.toLowerCase() === 'li')
+    const listLines: string[] = []
 
     for (let index = 0; index < items.length; index += 1) {
       const itemMarkdown = await convertDomNodeToMarkdown(items[index], options, listDepth + 1)
@@ -275,23 +313,26 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
     return `\n\n${listLines.join('\n')}\n\n`
   }
 
-  // Walk children in document order without creating a promise for every node.
-  // Large Word pastes can contain tens of thousands of nodes; recursive Promise.all
-  // creates a large transient promise tree and delays the first editor update.
+  // Walk children in document order with a slice guard against massive arrays of child nodes
+  const childNodes = Array.from(el.childNodes)
+  const safeChildNodes = childNodes.length > MAX_CHILDREN_PER_NODE
+    ? childNodes.slice(0, MAX_CHILDREN_PER_NODE)
+    : childNodes
+
   let innerMarkdown = ''
-  for (const child of node.childNodes) {
+  for (const child of safeChildNodes) {
     innerMarkdown += await convertDomNodeToMarkdown(child, options, listDepth)
   }
 
   // Headings: H1 - H6 or Word MsoHeading / MsoTitle classes
-  const classNameLower = (node.className || '').toLowerCase()
+  const classNameLower = (el.className || '').toLowerCase()
   const isMsoHeading = classNameLower.includes('msoheading') || classNameLower.includes('msotitle')
   if (/^h[1-6]$/.test(tagName) || isMsoHeading) {
     let level = 1
-    if (tagName.length === 2 && !isNaN(tagName[1])) {
+    if (tagName.length === 2 && !isNaN(Number(tagName[1]))) {
       level = parseInt(tagName[1], 10)
     } else if (isMsoHeading) {
-      const match = node.className.match(/msoheading([1-6])/i)
+      const match = el.className.match(/msoheading([1-6])/i)
       if (match) level = parseInt(match[1], 10)
     }
     const prefix = '#'.repeat(level)
@@ -299,7 +340,7 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
   }
 
   // Bold / Strong / font-weight: bold / 700+
-  const fontWeight = node.style?.fontWeight || ''
+  const fontWeight = el.style?.fontWeight || ''
   const isBold =
     tagName === 'strong' ||
     tagName === 'b' ||
@@ -311,7 +352,7 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
   }
 
   // Italic / Emphasis
-  const fontStyle = node.style?.fontStyle || ''
+  const fontStyle = el.style?.fontStyle || ''
   const isItalic = tagName === 'em' || tagName === 'i' || fontStyle === 'italic'
 
   if (isItalic) {
@@ -319,7 +360,7 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
   }
 
   // Strikethrough / Delete
-  const textDecoration = node.style?.textDecoration || ''
+  const textDecoration = el.style?.textDecoration || ''
   const isStrike =
     tagName === 'del' ||
     tagName === 's' ||
@@ -347,7 +388,7 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
 
   // Inline Code vs Code Block
   if (tagName === 'code') {
-    if (node.parentElement && node.parentElement.tagName.toLowerCase() === 'pre') {
+    if (el.parentElement && el.parentElement.tagName.toLowerCase() === 'pre') {
       return innerMarkdown
     }
     return wrapFormattedText(innerMarkdown, '`')
@@ -367,29 +408,63 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
 
   // Anchor Link
   if (tagName === 'a') {
-    const href = node.getAttribute('href')
-    const text = innerMarkdown.trim() || href || ''
+    let href = el.getAttribute('href') || ''
+    const title = el.getAttribute('title') || ''
+
+    // Resolve relative URL using baseHref if available
+    const baseHref = options.baseHref
+    if (href && baseHref && !/^(?:[a-zA-Z][a-zA-Z0-9+.-]*:|\/\/|#)/.test(href)) {
+      try {
+        href = new URL(href, baseHref).href
+      } catch {
+        // preserve original
+      }
+    } else if (href && href.startsWith('//')) {
+      href = `https:${href}`
+    }
 
     // Word internal bookmarks and anchors (e.g. #_Ref123, #_Toc123, #fig1, #bookmark): render clean text directly
     if (!href || href.startsWith('#') || href.startsWith('javascript:')) {
-      return text
+      return innerMarkdown
     }
 
-    return `[${text}](${href})`
+    const rawText = innerMarkdown || title || href
+    const leadSpace = rawText.match(/^\s*/)?.[0] || ''
+    const trailSpace = rawText.match(/\s*$/)?.[0] || ''
+    let cleanText = rawText.trim()
+
+    if (!cleanText) return ''
+
+    // If cleanText contains block breaks (\n\n), split by paragraph so markdown links don't break across paragraphs
+    if (cleanText.includes('\n\n')) {
+      const parts = cleanText.split(/\n\n+/)
+      return parts
+        .map((part) => {
+          const t = part.trim()
+          return t ? `[${t}](${href})` : ''
+        })
+        .filter(Boolean)
+        .join('\n\n')
+    }
+
+    // Clean internal newlines inside link text
+    cleanText = cleanText.replace(/\r?\n+/g, ' ').replace(/\s{2,}/g, ' ')
+
+    return `${leadSpace}[${cleanText}](${href})${trailSpace}`
   }
 
   // Images
   if (tagName === 'img') {
     const imageState = options.imageState || (options.imageState = { seen: new Set(), saved: 0 })
-    let src = node.getAttribute('src') || ''
-    const alt = node.getAttribute('alt') || 'image'
+    let src = el.getAttribute('src') || ''
+    const alt = el.getAttribute('alt') || 'image'
 
     if (!src || imageState.seen.has(src)) return ''
     imageState.seen.add(src)
 
-    const width = Number.parseInt(node.getAttribute('width') || '', 10)
-    const height = Number.parseInt(node.getAttribute('height') || '', 10)
-    const style = node.getAttribute('style') || ''
+    const width = Number.parseInt(el.getAttribute('width') || '', 10)
+    const height = Number.parseInt(el.getAttribute('height') || '', 10)
+    const style = el.getAttribute('style') || ''
     if (
       (width > 0 && width <= 1) ||
       (height > 0 && height <= 1) ||
@@ -467,7 +542,7 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
   // Line breaks
   if (tagName === 'br') {
     // If inside a table cell, return space to prevent literal <br> strings
-    if (node.closest && node.closest('td, th')) {
+    if (el.closest && el.closest('td, th')) {
       return ' '
     }
     return '\n'
@@ -479,7 +554,7 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
   }
 
   // Word List Paragraphs (<p class="MsoListParagraph">)
-  if (isWordListItem(node)) {
+  if (isWordListItem(el)) {
     const cleanItem = innerMarkdown.replace(/^[·•\u2022\u25E6\u25AA-]\s*/, '').trim()
     return `\n- ${cleanItem}`
   }
@@ -490,12 +565,12 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
     if (!content) return ''
 
     // Inside table cells, paragraphs must be inline text separated by space
-    if (node.closest && node.closest('td, th')) {
+    if (el.closest && el.closest('td, th')) {
       return `${content} `
     }
 
     // Table of contents item: single newline for tight list with indent levels
-    const tocLevel = getWordTocLevel(node)
+    const tocLevel = getWordTocLevel(el)
     if (tocLevel > 0) {
       // Normalize dot leaders (e.g. " . . . . . . . . . . 12" -> " ... 12")
       content = content.replace(/\s*(?:\.\s*){3,}\s*/g, ' ... ')
@@ -504,12 +579,12 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
     }
 
     // Reference / Bibliography item: single newline for tight list
-    if (isWordReferenceItem(node)) {
+    if (isWordReferenceItem(el)) {
       return `\n${content}`
     }
 
     // Caption item (MsoCaption or caption class): single newline directly beneath the image
-    const classNameLower = (node.className || '').toLowerCase()
+    const classNameLower = (el.className || '').toLowerCase()
     if (classNameLower.includes('msocaption') || classNameLower.includes('caption')) {
       return `\n${content}\n`
     }
@@ -523,7 +598,7 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
     const trimmed = innerMarkdown.trim()
     if (!trimmed) return ''
     // If this div is a direct child of body or another div, ensure block separation so lines don't collapse into one row
-    const parentTag = (node.parentElement?.tagName || '').toLowerCase()
+    const parentTag = (el.parentElement?.tagName || '').toLowerCase()
     if (parentTag === 'body' || parentTag === 'div' || parentTag === 'td') {
       return innerMarkdown.endsWith('\n') ? innerMarkdown : `${innerMarkdown}\n`
     }
@@ -537,23 +612,29 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
  * Converts an HTML Table element into a clean, balanced GitHub-Flavored Markdown pipe table.
  * Resolves colspan cell padding, column alignment, and completely eliminates raw <br> tags.
  */
+async function convertTableToMarkdown(
+  tableEl: HTMLElement,
+  options: HtmlToMarkdownOptions,
+  listDepth: number = 0
+): Promise<string> {
+  const allRows = Array.from(tableEl.querySelectorAll('tr'))
+  if (allRows.length === 0) return ''
 
-async function convertTableToMarkdown(tableEl, options) {
-  const rows = Array.from(tableEl.querySelectorAll('tr'))
-  if (rows.length === 0) return ''
+  // Truncate table rows to prevent memory exhaustion on massive spreadsheets
+  const rows = allRows.length > MAX_TABLE_ROWS ? allRows.slice(0, MAX_TABLE_ROWS) : allRows
 
   // Collect table matrix and cell alignments
-  const tableData = []
-  const alignments = []
+  const tableData: string[][] = []
+  const alignments: string[] = []
 
   for (const row of rows) {
-    const cells = Array.from(row.querySelectorAll('th, td'))
+    const cells = Array.from(row.querySelectorAll('th, td')) as HTMLElement[]
     if (cells.length === 0) continue
 
-    const rowData = []
+    const rowData: string[] = []
     for (let cIdx = 0; cIdx < cells.length; cIdx++) {
       const cell = cells[cIdx]
-      let cellMd = await convertDomNodeToMarkdown(cell, options)
+      let cellMd = await convertDomNodeToMarkdown(cell, options, listDepth + 1)
 
       // Replace any <br> tags, residual HTML tags (like <u>, <span>, <font>), newlines, and extra whitespace
       cellMd = cellMd
@@ -607,7 +688,11 @@ async function convertTableToMarkdown(tableEl, options) {
     const lines = normalizedRows
       .map((row) => row[0])
       .filter((text) => text && text.trim().length > 0)
-    return `\n\n${lines.join('\n\n')}\n\n`
+    let result = `\n\n${lines.join('\n\n')}\n\n`
+    if (allRows.length > MAX_TABLE_ROWS) {
+      result += `\n\n*(Table truncated: showing first ${MAX_TABLE_ROWS} rows)*\n\n`
+    }
+    return result
   }
 
   // Format header row (Row 0)
@@ -623,7 +708,10 @@ async function convertTableToMarkdown(tableEl, options) {
   // Body rows (Row 1 onwards)
   const bodyLines = normalizedRows.slice(1).map((row) => `| ${row.join(' | ')} |`)
 
-  const markdownTable = [headerLine, separatorLine, ...bodyLines].join('\n')
+  let markdownTable = [headerLine, separatorLine, ...bodyLines].join('\n')
+  if (allRows.length > MAX_TABLE_ROWS) {
+    markdownTable += `\n\n*(Table truncated: showing first ${MAX_TABLE_ROWS} rows)*`
+  }
   return `\n\n${markdownTable}\n\n`
 }
 
@@ -631,32 +719,34 @@ async function convertTableToMarkdown(tableEl, options) {
  * Main entry point: converts an HTML string into clean Markdown.
  * Wrapped in resilient error-handling to guarantee it never throws or breaks the editor.
  * 
- * @param {string} html - Raw HTML from clipboard (e.g. text/html)
- * @param {Object} options - Conversion options
- * @param {Function} [options.onSaveImage] - Optional callback (uint8Array, filename) => Promise<string>
- * @returns {Promise<string>} Clean Markdown string
+ * @param html - Raw HTML from clipboard (e.g. text/html)
+ * @param options - Conversion options
+ * @returns Clean Markdown string
  */
-
-export async function htmlToMarkdown(html, options = {}) {
+export async function htmlToMarkdown(html: string, options: HtmlToMarkdownOptions = {}): Promise<string> {
   if (!html || typeof html !== 'string') return ''
 
   try {
-    // Extract base href if present in raw HTML (e.g. from Word temp folder)
-    let baseHref = options.baseHref || ''
-    const baseMatch = html.match(/<base\s+[^>]*href=["']([^"']+)["']/i)
-    if (baseMatch && !baseHref) {
-      baseHref = baseMatch[1]
+    // Truncate input string if it exceeds maximum parse limit (safety guard for 1M+ char pastes)
+    const maxHtmlLength = options.maxHtmlLength ?? MAX_HTML_PARSE_LENGTH
+    let workingHtml = html
+    if (workingHtml.length > maxHtmlLength) {
+      console.warn(`[htmlToMarkdown] HTML length (${workingHtml.length}) exceeds safety limit (${maxHtmlLength}). Truncating.`)
+      workingHtml = workingHtml.slice(0, maxHtmlLength)
     }
 
+    // Extract base href if present in raw HTML (e.g. from Word temp folder or browser SourceURL header)
+    const baseHref = options.baseHref || extractBaseHref(workingHtml)
+
     // Clean Microsoft Office XML artifacts, spacer paragraphs & comments
-    const cleaned = cleanWordHtml(html)
+    const cleaned = cleanWordHtml(workingHtml)
     if (!cleaned) return ''
 
     // Parse HTML into browser DOM
     const parser = new DOMParser()
     const doc = parser.parseFromString(cleaned, 'text/html')
 
-    const mergedOptions = { ...options, baseHref }
+    const mergedOptions: HtmlToMarkdownOptions = { ...options, baseHref }
 
     // Convert body tree to Markdown
     const markdown = await convertDomNodeToMarkdown(doc.body, mergedOptions)
@@ -676,97 +766,140 @@ export async function htmlToMarkdown(html, options = {}) {
  * Shared DRY helper to execute rich paste into a CodeMirror EditorView.
  * Used by both DOM event handlers (imageDropExtension) and context menu actions (clipboardActions).
  * 
- * @param {Object} view - CodeMirror EditorView instance
- * @param {string} rawHtml - HTML clipboard string (text/html)
- * @param {string} fallbackText - Plain text clipboard string (text/plain)
- * @param {Object} [options] - Optional settings
- * @returns {Promise<boolean>} True if rich paste was applied
+ * Guarantees:
+ * - Atomic calculation against the live document state right before dispatch.
+ * - Absolute clamping of from/to/anchor to guarantee zero RangeError out-of-document exceptions.
+ * - Graceful fallback to replaceSelection and plain text on any unexpected transaction failure.
  */
-
-export async function applyRichPasteToView(view, rawHtml, fallbackText = '', options = {}) {
+export async function applyRichPasteToView(
+  view: EditorView | any,
+  rawHtml: string,
+  fallbackText: string = '',
+  options: HtmlToMarkdownOptions = {}
+): Promise<boolean> {
   if (!view) return false
 
   try {
+    // 1. Smart Link Paste: If text is selected and fallbackText is a URL, transform into [Selected](URL)
     if (fallbackText && trySmartLinkPaste(view, fallbackText)) {
       return true
     }
 
-    const from = view.state.selection.main.from
-    const to = view.state.selection.main.to
-
     let insertText = ''
+
+    // 2. HTML to Markdown conversion (guarded with length limit)
     if (rawHtml && rawHtml.trim()) {
-      const onSaveImage =
-        options.onSaveImage ||
-        (async (uint8Array, filename) => {
-          if (window.api?.saveImage) {
-            return await window.api.saveImage(uint8Array, filename)
-          }
-          return null
-        })
-
-      const onSaveImageFromPath =
-        options.onSaveImageFromPath ||
-        (async (filePath, filename) => {
-          if (window.api?.saveImageFromPath) {
-            return await window.api.saveImageFromPath(filePath, filename)
-          }
-          return null
-        })
-
-      const onGetClipboardImage =
-        options.onGetClipboardImage ||
-        (async () => {
-          if (window.api?.readClipboardImageBuffer && window.api?.saveImage) {
-            const buffer = await window.api.readClipboardImageBuffer()
-            if (buffer) {
-              const filename = `Pasted image ${Date.now()}.png`
-              return await window.api.saveImage(buffer, filename)
+      const maxHtmlLength = options.maxHtmlLength ?? MAX_HTML_PARSE_LENGTH
+      if (rawHtml.length > maxHtmlLength && fallbackText) {
+        console.warn(`[applyRichPasteToView] HTML length (${rawHtml.length}) exceeds safety limit; using plain text fallback.`)
+        insertText = fallbackText
+      } else {
+        const onSaveImage =
+          options.onSaveImage ||
+          (async (uint8Array: Uint8Array, filename: string) => {
+            if ((window as any).api?.saveImage) {
+              return await (window as any).api.saveImage(uint8Array, filename)
             }
-          }
-          return null
+            return null
+          })
+
+        const onSaveImageFromPath =
+          options.onSaveImageFromPath ||
+          (async (filePath: string, filename?: string) => {
+            if ((window as any).api?.saveImageFromPath) {
+              return await (window as any).api.saveImageFromPath(filePath, filename)
+            }
+            return null
+          })
+
+        const onGetClipboardImage =
+          options.onGetClipboardImage ||
+          (async () => {
+            if ((window as any).api?.readClipboardImageBuffer && (window as any).api?.saveImage) {
+              const buffer = await (window as any).api.readClipboardImageBuffer()
+              if (buffer) {
+                const filename = `Pasted image ${Date.now()}.png`
+                return await (window as any).api.saveImage(buffer, filename)
+              }
+            }
+            return null
+          })
+
+        const markdown = await htmlToMarkdown(rawHtml, {
+          ...options,
+          onSaveImage,
+          onSaveImageFromPath,
+          onGetClipboardImage
         })
 
-      const markdown = await htmlToMarkdown(rawHtml, {
-        ...options,
-        onSaveImage,
-        onSaveImageFromPath,
-        onGetClipboardImage
-      })
-
-      if (markdown && markdown.trim()) {
-        insertText = markdown
+        if (markdown && markdown.trim()) {
+          insertText = markdown
+        }
       }
     }
 
-    // Fallback to plain text if rich markdown conversion produced empty output
+    // 3. Fallback to plain text if markdown conversion produced empty output
     if (!insertText) {
       insertText = fallbackText || ''
     }
 
     if (!insertText) return false
 
-    view.dispatch({
-      changes: { from, to, insert: insertText },
-      selection: { anchor: from + insertText.length }
-    })
-    view.focus()
-    return true
-  } catch (err) {
-    console.error('[applyRichPasteToView] Failed to dispatch rich paste:', err)
-    if (fallbackText) {
-      if (fallbackText && trySmartLinkPaste(view, fallbackText)) {
-      return true
-    }
+    // 4. Safely query document length and selection AT DISPATCH TIME (post-await)
+    const currentDoc = view.state?.doc
+    const docLen = typeof currentDoc?.length === 'number' ? currentDoc.length : 0
+    const mainSel = view.state?.selection?.main ?? { from: 0, to: 0 }
 
-    const from = view.state.selection.main.from
-      const to = view.state.selection.main.to
+    // Strictly clamp selection boundaries to the live document range
+    const safeFrom = typeof currentDoc?.length === 'number'
+      ? Math.max(0, Math.min(mainSel.from, docLen))
+      : mainSel.from
+    const safeTo = typeof currentDoc?.length === 'number'
+      ? Math.max(safeFrom, Math.min(mainSel.to, docLen))
+      : mainSel.to
+
+    const newDocLen = typeof currentDoc?.length === 'number'
+      ? docLen - (safeTo - safeFrom) + insertText.length
+      : safeFrom + insertText.length
+    const safeAnchor = Math.max(0, Math.min(safeFrom + insertText.length, newDocLen))
+
+    try {
       view.dispatch({
-        changes: { from, to, insert: fallbackText },
-        selection: { anchor: from + fallbackText.length }
+        changes: { from: safeFrom, to: safeTo, insert: insertText },
+        selection: { anchor: safeAnchor }
       })
       view.focus()
       return true
+    } catch (dispatchErr) {
+      console.warn('[applyRichPasteToView] Transaction with explicit selection failed, falling back to replaceSelection:', dispatchErr)
+      if (typeof view.state?.replaceSelection === 'function') {
+        view.dispatch(view.state.replaceSelection(insertText))
+        view.focus()
+        return true
+      }
+      return false
+    }
+  } catch (err) {
+    console.error('[applyRichPasteToView] Failed to process rich paste:', err)
+    if (fallbackText) {
+      try {
+        if (trySmartLinkPaste(view, fallbackText)) {
+          return true
+        }
+        if (typeof view.state?.replaceSelection === 'function') {
+          view.dispatch(view.state.replaceSelection(fallbackText))
+          view.focus()
+          return true
+        }
+        const sel = view.state?.selection?.main ?? { from: 0, to: 0 }
+        view.dispatch({
+          changes: { from: sel.from, to: sel.to, insert: fallbackText }
+        })
+        view.focus()
+        return true
+      } catch (fallbackErr) {
+        console.error('[applyRichPasteToView] Plain text fallback failed:', fallbackErr)
+      }
     }
     return false
   }
