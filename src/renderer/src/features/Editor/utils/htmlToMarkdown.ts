@@ -54,6 +54,52 @@ export function extractBaseHref(html: string): string {
 }
 
 /**
+ * Detects whether plain text represents a tab-separated spreadsheet table (e.g. copied from Excel/Sheets).
+ */
+export function isTsvTable(text: string): boolean {
+  if (!text || typeof text !== 'string') return false
+  const trimmed = text.trim()
+  if (!trimmed.includes('\t') || !trimmed.includes('\n')) return false
+
+  const lines = trimmed.split(/\r?\n/).filter((l) => l.trim().length > 0)
+  if (lines.length < 2) return false
+
+  // At least 2 lines must contain tab characters
+  const tabLines = lines.filter((l) => l.includes('\t'))
+  return tabLines.length >= 2 && tabLines.length >= lines.length * 0.7
+}
+
+/**
+ * Converts tab-separated spreadsheet values into a clean GitHub-Flavored Markdown table.
+ */
+export function tsvToMarkdownTable(tsv: string): string {
+  const lines = tsv.trim().split(/\r?\n/).filter((l) => l.trim().length > 0)
+  if (lines.length === 0) return ''
+
+  const rows = lines.map((line) =>
+    line.split('\t').map((cell) => cell.trim().replace(/\|/g, '\\|'))
+  )
+
+  const maxCols = Math.max(...rows.map((r) => r.length))
+  if (maxCols <= 1) {
+    return `\n\n${rows.map((r) => r[0]).join('\n\n')}\n\n`
+  }
+
+  const paddedRows = rows.map((row) => {
+    const padded = [...row]
+    while (padded.length < maxCols) padded.push(' ')
+    return padded
+  })
+
+  const headerRow = paddedRows[0]
+  const headerLine = `| ${headerRow.map((c) => c || ' ').join(' | ')} |`
+  const sepLine = `| ${new Array(maxCols).fill('---').join(' | ')} |`
+  const bodyLines = paddedRows.slice(1).map((r) => `| ${r.map((c) => c || ' ').join(' | ')} |`)
+
+  return `\n\n${[headerLine, sepLine, ...bodyLines].join('\n')}\n\n`
+}
+
+/**
  * Automatically converts raw URLs in plain text into Markdown links [url](url),
  * skipping punctuation at the end and avoiding double-linking URLs already wrapped in markdown links.
  */
@@ -649,10 +695,14 @@ async function convertTableToMarkdown(
       const colspan = parseInt(cell.getAttribute('colspan') || '1', 10)
       rowData.push(cellMd || ' ')
 
-      // Record column alignment from header or first row
+      // Record column alignment from header, updating from data rows if header is unaligned
+      const alignAttr = (cell.getAttribute('align') || cell.style?.textAlign || '').toLowerCase()
+      const alignToken = alignAttr === 'center' ? ':---:' : alignAttr === 'right' ? '---:' : '---'
+
       if (tableData.length === 0) {
-        const alignAttr = (cell.getAttribute('align') || cell.style?.textAlign || '').toLowerCase()
-        alignments.push(alignAttr === 'center' ? ':---:' : alignAttr === 'right' ? '---:' : '---')
+        alignments.push(alignToken)
+      } else if (alignToken !== '---' && cIdx < alignments.length && alignments[cIdx] === '---') {
+        alignments[cIdx] = alignToken
       }
 
       for (let c = 1; c < colspan; c++) {
@@ -838,7 +888,11 @@ export async function applyRichPasteToView(
       }
     }
 
-    // 3. Fallback to plain text if markdown conversion produced empty output
+    // 3. Fallback to TSV table conversion or plain text
+    if (!insertText && fallbackText && isTsvTable(fallbackText)) {
+      insertText = tsvToMarkdownTable(fallbackText)
+    }
+
     if (!insertText) {
       insertText = fallbackText || ''
     }

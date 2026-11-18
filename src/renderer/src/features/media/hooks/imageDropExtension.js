@@ -1,7 +1,7 @@
 import { EditorView } from '@codemirror/view'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/SettingStore'
-import { htmlToMarkdown, applyRichPasteToView } from '../../Editor/utils/htmlToMarkdown'
+import { htmlToMarkdown, applyRichPasteToView, isTsvTable } from '../../Editor/utils/htmlToMarkdown'
 import { trySmartLinkPaste } from '../../Editor/utils/smartLinkPaste'
 
 export const imageDropExtension = () =>
@@ -93,7 +93,36 @@ export const imageDropExtension = () =>
         return false
       }
 
-      // 2. Direct image file paste (e.g. copied image or screenshot from clipboard)
+      const rawText = event.clipboardData?.getData('text/plain') || ''
+      const rawHtml = event.clipboardData?.getData('text/html') || ''
+
+      // 2. Markdown Link Smart-Paste: When text is selected and a URL is pasted,
+      // transform into [Selected Text](https://url) instead of overwriting the text.
+      if (rawText && trySmartLinkPaste(view, rawText)) {
+        event.preventDefault()
+        event.stopPropagation()
+        return true
+      }
+
+      // 3. Table & Rich Document Priority:
+      // When copying cells from Excel or Google Sheets, the clipboard provides rich HTML containing <table>
+      // AND also attaches an image/png snapshot. If a table, structured HTML, or TSV data is detected,
+      // prioritize parsing it as a Markdown table instead of saving the companion snapshot image.
+      const hasTable = /<(?:table|tbody|thead|tr|td|th)\b/i.test(rawHtml)
+      const hasStructuredHtml = /<(?:table|tbody|thead|tr|td|th|p|div|h[1-6]|ul|ol|li|blockquote)\b/i.test(rawHtml)
+      const isTsv = isTsvTable(rawText)
+
+      if ((rawHtml && (hasTable || hasStructuredHtml)) || isTsv) {
+        event.preventDefault()
+        event.stopPropagation()
+
+        applyRichPasteToView(view, rawHtml, rawText).catch((err) => {
+          console.error('[imageDropExtension] Failed to apply rich paste:', err)
+        })
+        return true
+      }
+
+      // 4. Direct image file paste (e.g. copied image file or screenshot from clipboard)
       const items = Array.from(event.clipboardData?.items || [])
       const fileFromItems = items
         .filter((it) => it.kind === 'file' && it.type.startsWith('image/'))
@@ -144,22 +173,11 @@ export const imageDropExtension = () =>
         return true
       }
 
-      // 3. Markdown Link Smart-Paste: When text is selected and a URL is pasted,
-      // transform into [Selected Text](https://url) instead of overwriting the text.
-      const rawText = event.clipboardData?.getData('text/plain') || ''
-      if (rawText && trySmartLinkPaste(view, rawText)) {
-        event.preventDefault()
-        event.stopPropagation()
-        return true
-      }
-
-      // 4. Rich HTML / Word Paste: convert tables, formatting & extract images
-      const rawHtml = event.clipboardData?.getData('text/html')
+      // 5. Fallback for any remaining rich HTML formatting
       if (rawHtml && rawHtml.trim()) {
         event.preventDefault()
         event.stopPropagation()
 
-        const rawText = event.clipboardData?.getData('text/plain') || ''
         applyRichPasteToView(view, rawHtml, rawText).catch((err) => {
           console.error('[imageDropExtension] Failed to apply rich paste:', err)
         })

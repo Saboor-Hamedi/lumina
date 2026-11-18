@@ -2,7 +2,9 @@ import { describe, it, expect, vi } from 'vitest'
 import {
   htmlToMarkdown,
   cleanWordHtml,
-  applyRichPasteToView
+  applyRichPasteToView,
+  isTsvTable,
+  tsvToMarkdownTable
 } from '../../../../../../src/renderer/src/features/Editor/utils/htmlToMarkdown'
 
 describe('htmlToMarkdown', () => {
@@ -403,6 +405,71 @@ describe('htmlToMarkdown', () => {
       }
       const md = await htmlToMarkdown(nestedHtml)
       expect(md).toContain('Deep Text')
+    })
+  })
+
+  describe('Microsoft Excel & TSV Table Conversions', () => {
+    it('converts Microsoft Excel clipboard HTML table into a GFM table', async () => {
+      const excelHtml = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office"
+        xmlns:x="urn:schemas-microsoft-com:office:excel">
+        <head><style><!-- table {mso-displayed-decimal-separator:"\\.";} --></style></head>
+        <body>
+        <!--StartFragment-->
+        <table border=0 cellpadding=0 cellspacing=0 width=214>
+         <tr>
+          <td width=71>Product</td>
+          <td width=71>Qty</td>
+          <td width=72>Price</td>
+         </tr>
+         <tr>
+          <td>Apples</td>
+          <td align=right>10</td>
+          <td align=right>$1.50</td>
+         </tr>
+         <tr>
+          <td>Oranges</td>
+          <td align=right>5</td>
+          <td align=right>$2.00</td>
+         </tr>
+        </table>
+        <!--EndFragment-->
+        </body>
+        </html>
+      `
+      const md = await htmlToMarkdown(excelHtml)
+      expect(md).toContain('| Product | Qty | Price |')
+      expect(md).toContain('| --- | ---: | ---: |')
+      expect(md).toContain('| Apples | 10 | $1.50 |')
+      expect(md).toContain('| Oranges | 5 | $2.00 |')
+    })
+
+    it('detects and converts tab-separated (TSV) spreadsheet text into a GFM table', () => {
+      const tsv = 'Item\tCount\tStatus\nWidget A\t42\tIn Stock\nWidget B\t0\tBackorder'
+      expect(isTsvTable(tsv)).toBe(true)
+      const mdTable = tsvToMarkdownTable(tsv)
+      expect(mdTable).toContain('| Item | Count | Status |')
+      expect(mdTable).toContain('| --- | --- | --- |')
+      expect(mdTable).toContain('| Widget A | 42 | In Stock |')
+    })
+
+    it('applyRichPasteToView converts TSV plain text into a Markdown table', async () => {
+      const view = {
+        state: {
+          doc: { length: 0 },
+          selection: { main: { from: 0, to: 0 } }
+        },
+        dispatch: vi.fn(),
+        focus: vi.fn()
+      }
+
+      const tsv = 'Col1\tCol2\nVal1\tVal2'
+      const handled = await applyRichPasteToView(view, '', tsv)
+      expect(handled).toBe(true)
+      expect(view.dispatch).toHaveBeenCalled()
+      const dispatchedArg = view.dispatch.mock.calls[0][0]
+      expect(dispatchedArg.changes.insert).toContain('| Col1 | Col2 |')
+      expect(dispatchedArg.changes.insert).toContain('| Val1 | Val2 |')
     })
   })
 })

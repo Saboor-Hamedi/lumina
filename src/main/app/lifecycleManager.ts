@@ -42,18 +42,32 @@ import { isAppQuitting } from '../handlers/useTrayIcon'
  */
 export async function autoRepairIndexedDB(): Promise<void> {
   try {
-    const partitionsDir = join(app.getPath('userData'), 'Partitions', 'main', 'IndexedDB')
-    const devDbDir = join(partitionsDir, 'http_localhost_5173.indexeddb.leveldb')
-    const currentFile = join(devDbDir, 'CURRENT')
-    const currentContent = await fs.readFile(currentFile, 'utf8').catch(() => null)
-    if (currentContent) {
-      const manifestName = currentContent.trim().replace(/^[\r\n]+|[\r\n]+$/g, '')
-      const manifestPath = join(devDbDir, manifestName)
-      const manifestExists = await fs.access(manifestPath).then(() => true).catch(() => false)
-      if (!manifestExists) {
-        console.warn('[IndexedDB] Corrupted LevelDB manifest detected, auto-healing cache:', devDbDir)
-        await fs.rm(devDbDir, { recursive: true, force: true }).catch(() => {})
-      }
+    const userData = app.getPath('userData')
+    const targetDirs = [
+      join(userData, 'IndexedDB'),
+      join(userData, 'Partitions', 'main', 'IndexedDB')
+    ]
+
+    for (const parentDir of targetDirs) {
+      try {
+        const entries = await fs.readdir(parentDir).catch(() => [])
+        for (const entry of entries) {
+          if (entry.includes('.indexeddb.leveldb')) {
+            const dbDir = join(parentDir, entry)
+            const currentFile = join(dbDir, 'CURRENT')
+            const currentContent = await fs.readFile(currentFile, 'utf8').catch(() => null)
+            if (currentContent) {
+              const manifestName = currentContent.trim().replace(/^[\r\n]+|[\r\n]+$/g, '')
+              const manifestPath = join(dbDir, manifestName)
+              const manifestExists = await fs.access(manifestPath).then(() => true).catch(() => false)
+              if (!manifestExists) {
+                console.warn('[IndexedDB] Corrupted LevelDB manifest detected, auto-healing cache:', dbDir)
+                await fs.rm(dbDir, { recursive: true, force: true }).catch(() => {})
+              }
+            }
+          }
+        }
+      } catch (_) {}
     }
   } catch (_) {}
 }
