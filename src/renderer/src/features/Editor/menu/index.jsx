@@ -4,7 +4,7 @@
  */
 import React from 'react'
 import {
-  Link, ExternalLink, Search, Bold, Italic, Strikethrough,
+  Bold, Italic, Strikethrough,
   Highlighter, Code, Sigma, MessageSquare, Eraser,
   List, ListOrdered, CheckSquare, Heading1, Heading2, Heading3,
   Heading4, Heading5, Heading6, AlignLeft, Quote,
@@ -72,31 +72,7 @@ export const getEditorContextMenuOptions = (view) => {
     },
     { divider: true },
 
-    // 3. Links & Search
-    {
-      id: 'add-link',
-      label: hasSelection ? `Link to [[${selectedText.slice(0, 18)}${selectedText.length > 18 ? '...' : ''}]]` : 'Add note link',
-      icon: <Link size={14} />,
-      action: () => toggleMark(view, '[[', ']]')
-    },
-    {
-      id: 'add-external-link',
-      label: 'Add web link',
-      icon: <ExternalLink size={14} />,
-      action: () => toggleMark(view, '[', ']()')
-    },
-    {
-      id: 'search-in-note',
-      label: hasSelection ? `Find "${selectedText.slice(0, 16)}${selectedText.length > 16 ? '...' : ''}" in note` : 'Find in note...',
-      icon: <Search size={14} />,
-      shortcut: `${mod}F`,
-      action: () => {
-        window.dispatchEvent(new CustomEvent('open-find', { detail: { query: selectedText } }))
-      }
-    },
-    { divider: true },
-
-    // 4. Formatting Submenu
+    // 3. Formatting Submenu
     {
       id: 'format',
       label: 'Format',
@@ -114,7 +90,7 @@ export const getEditorContextMenuOptions = (view) => {
       ]
     },
 
-    // 5. Paragraph & Headings Submenu
+    // 4. Paragraph & Headings Submenu
     {
       id: 'paragraph',
       label: 'Paragraph',
@@ -135,7 +111,7 @@ export const getEditorContextMenuOptions = (view) => {
       ]
     },
 
-    // 6. Insert Submenu
+    // 5. Insert Submenu
     {
       id: 'insert',
       label: 'Insert',
@@ -152,7 +128,7 @@ export const getEditorContextMenuOptions = (view) => {
     },
     { divider: true },
 
-    // 7. Select All
+    // 6. Select All
     {
       id: 'select-all',
       label: 'Select all',
