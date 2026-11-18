@@ -1,6 +1,6 @@
 {
   "name": "lumina",
-  "version": "1.0.94",
+  "version": "1.0.95",
   "description": "Lumina - A premium, AI-powered thinking environment.",
   "main": "./out/main/index.js",
   "author": "Saboor Hamedi",
