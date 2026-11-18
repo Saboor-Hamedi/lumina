@@ -201,11 +201,10 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
             borderRadius: '3px'
           }}
         >
-          {isExpanded ? (
-            <ChevronDown size={14} className="folder-chevron" />
-          ) : (
-            <ChevronRight size={14} className="folder-chevron" />
-          )}
+          <ChevronRight
+            size={13}
+            className={`folder-chevron ${isExpanded ? 'expanded' : ''}`}
+          />
         </span>
         <div
           style={{

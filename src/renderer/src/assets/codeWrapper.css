@@ -8,6 +8,8 @@
   width: 100% !important;
   height: 26px;
   background: var(--bg-panel, rgba(255, 255, 255, 0.02));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--border-dim);
   border-bottom-color: rgba(255, 255, 255, 0.05);
   border-radius: 4px 4px 0 0;
@@ -18,6 +20,7 @@
   user-select: none;
   cursor: pointer !important;
   box-sizing: border-box !important;
+  transition: background-color 140ms ease, border-color 140ms ease;
 }
 
 .code-block-widget-header .mermaid-widget-lang-label {

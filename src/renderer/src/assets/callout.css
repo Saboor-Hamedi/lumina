@@ -151,10 +151,18 @@ html[data-use-active-line-border="true"] .cm-line.lumina-callout-line.cm-activeL
   border-radius: 4px;
   border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
   background: var(--bg-panel, rgba(24, 24, 27, 0.85));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: var(--text-muted, #94a3b8);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 120ms ease, color 120ms ease, background 120ms ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  transition:
+    opacity 140ms ease,
+    color 120ms ease,
+    background 120ms ease,
+    transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 140ms ease;
   z-index: 5;
 }
 
@@ -166,9 +174,16 @@ html[data-use-active-line-border="true"] .cm-line.lumina-callout-line.cm-activeL
 .lumina-callout-copy-btn:hover {
   color: var(--text-accent, #40bafa);
   background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  transform: translateY(-50%) scale(1.06);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.lumina-callout-copy-btn:active {
+  transform: translateY(-50%) scale(0.96);
 }
 
 .lumina-callout-copy-btn.copied {
   opacity: 1;
   color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.4);
 }

@@ -94,10 +94,11 @@
   min-height: 26px !important;
   margin: 1px 2px !important;
   border-radius: 4px !important;
-  padding: 0 4px 0 18px !important;
+  padding: 0 4px 0 16px !important;
+  border-left: 2px solid transparent !important;
   gap: 6px !important;
   font-size: 12px !important;
-  transition: background 0.1s ease, color 0.1s ease !important;
+  transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease !important;
 }
 
 .folder-tree-main,
@@ -107,8 +108,10 @@
   margin: 1px 2px !important;
   border-radius: 4px !important;
   padding: 0 4px 0 0 !important;
+  border-left: 2px solid transparent !important;
   gap: 4px !important;
   font-size: 12px !important;
+  transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 0.1s ease !important;
 }
 
 .tree-item:hover,
@@ -125,7 +128,12 @@
   background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.12) !important;
   color: var(--text-main) !important;
   font-weight: 500 !important;
-  border-left: 2px solid var(--text-accent) !important;
+  border-left-color: var(--text-accent) !important;
+}
+
+.folder-tree-main.active,
+[data-modern-ui='true'] .folder-tree-main.active {
+  border-left-color: var(--text-accent) !important;
 }
 
 /* Neo-Tree Indent lines */
