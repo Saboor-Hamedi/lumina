@@ -52,7 +52,7 @@ const MenuItem = ({ opt, onClose }) => {
   return (
     <div
       ref={itemRef}
-      className={`menu-item ${opt.danger ? 'danger' : ''} ${opt.disabled ? 'disabled' : ''} ${isHovered ? 'hovered' : ''}`}
+      className={`menu-item ${opt.className || ''} ${opt.danger ? 'danger' : ''} ${opt.disabled ? 'disabled' : ''} ${isHovered ? 'hovered' : ''}`}
       onMouseEnter={() => {
         if (!opt.disabled) setIsHovered(true)
       }}
