@@ -19,7 +19,7 @@ describe('AI Theme Awareness & Visual Theme Disambiguation', () => {
     expect(prompt).toContain('The user\'s current visual UI theme of the Lumina app is "Porcelain"')
 
     // Confirms disambiguation directive between visual theme and operational mode
-    expect(prompt).toContain('NEVER confuse their visual theme ("Porcelain") with your AI reasoning mode (Deep Mode)')
+    expect(prompt).toContain('NEVER confuse their visual theme ("Porcelain") with your AI reasoning mode (Research & Analysis Mode)')
   })
 
   it('works seamlessly in Plan mode and other non-execution modes', async () => {
@@ -31,7 +31,7 @@ describe('AI Theme Awareness & Visual Theme Disambiguation', () => {
 
     expect(prompt).toContain('Dracula')
     expect(prompt).toContain('The user\'s current visual UI theme of the Lumina app is "Dracula"')
-    expect(prompt).toContain('NEVER confuse their visual theme ("Dracula") with your AI reasoning mode (Plan Mode)')
+    expect(prompt).toContain('NEVER confuse their visual theme ("Dracula") with your AI reasoning mode (Planning & Strategy Mode)')
   })
 
   it('resolves theme friendly names dynamically via getTheme()', () => {

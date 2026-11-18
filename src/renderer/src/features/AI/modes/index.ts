@@ -1,27 +1,53 @@
 import { luminaPlanMode } from './luminaPlanMode'
-import { luminaDeepMode } from './luminaDeepMode'
-import { luminaCreativeMode } from './luminaCreativeMode'
 import { luminaCodeMode } from './luminaCodeMode'
 import { luminaResearchMode } from './luminaResearchMode'
 import type { AIModeConfig } from '../types/ai.types'
 
 export const AI_MODES: Record<string, AIModeConfig> = {
-  Plan: luminaPlanMode,
-  Deep: luminaDeepMode,
-  Creative: luminaCreativeMode,
-  Research: luminaResearchMode,
-  Code: luminaCodeMode
+  'Planning & Strategy': luminaPlanMode,
+  'Execution & Action': luminaCodeMode,
+  'Research & Analysis': luminaResearchMode
+}
+
+const MODE_ALIAS_MAP: Record<string, AIModeConfig> = {
+  plan: luminaPlanMode,
+  planning: luminaPlanMode,
+  strategy: luminaPlanMode,
+  'planning & strategy': luminaPlanMode,
+  architect: luminaPlanMode,
+  planner: luminaPlanMode,
+  strategist: luminaPlanMode,
+  'co-pilot': luminaPlanMode,
+  copilot: luminaPlanMode,
+
+  execute: luminaCodeMode,
+  execution: luminaCodeMode,
+  action: luminaCodeMode,
+  'execution & action': luminaCodeMode,
+  auto: luminaCodeMode,
+  executor: luminaCodeMode,
+  operator: luminaCodeMode,
+  builder: luminaCodeMode,
+  code: luminaCodeMode,
+  coder: luminaCodeMode,
+  standard: luminaCodeMode,
+  creative: luminaCodeMode,
+
+  research: luminaResearchMode,
+  analysis: luminaResearchMode,
+  'research & analysis': luminaResearchMode,
+  'deep dive': luminaResearchMode,
+  deep: luminaResearchMode,
+  thinking: luminaResearchMode,
+  scout: luminaResearchMode,
+  investigator: luminaResearchMode,
+  analyst: luminaResearchMode
 }
 
 export const getAIMode = (modeName?: string | null): AIModeConfig => {
   if (!modeName || typeof modeName !== 'string') return luminaCodeMode
   const norm = modeName.trim().toLowerCase()
-  if (norm === 'plan') return luminaPlanMode
-  if (norm === 'deep' || norm === 'thinking') return luminaDeepMode
-  if (norm === 'creative') return luminaCreativeMode
-  if (norm === 'research') return luminaResearchMode
-  if (norm === 'code' || norm === 'coder' || norm === 'standard') return luminaCodeMode
-  return AI_MODES[modeName] || luminaCodeMode
+  return MODE_ALIAS_MAP[norm] || AI_MODES[modeName] || luminaCodeMode
 }
 
-export { luminaPlanMode, luminaDeepMode, luminaCreativeMode, luminaResearchMode, luminaCodeMode }
+export { luminaPlanMode, luminaCodeMode, luminaResearchMode }

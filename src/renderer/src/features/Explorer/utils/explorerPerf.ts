@@ -12,7 +12,9 @@ type PerfState = {
 }
 
 const perfState = ((window as any).__luminaExplorerPerf ||= { active: null }) as PerfState
-const enabled = Boolean(import.meta.env.DEV)
+const enabled = Boolean(
+  import.meta.env.DEV && (window as any).__LUMINA_ENABLE_EXPLORER_PERF__ === true
+)
 
 const log = (label: string, startedAt: number, detail?: Record<string, unknown>) => {
   if (!enabled) return

@@ -1,4 +1,5 @@
-import React, { useEffect, useLayoutEffect, useRef, type MutableRefObject } from 'react'
+import React, { useEffect, useRef, useState, type MutableRefObject } from 'react'
+import PulseLoader from '../../../components/PulseLoader'
 import {
   Decoration,
   EditorView,
@@ -61,6 +62,10 @@ export interface AtomicCodeMirrorEditorProps {
   editorHandleRef?: MutableRefObject<AtomicCodeMirrorEditorHandle | null>
   codeLanguages?: readonly LanguageDescription[]
   extensions?: readonly Extension[]
+  /** Set false when caller supplies its own table extension (e.g. EditorExtensions) */
+  enableDefaultTables?: boolean
+  /** Set false when caller supplies its own image extension (e.g. EditorExtensions) */
+  enableDefaultImages?: boolean
 }
 
 const EMPTY_CODE_LANGUAGES: readonly LanguageDescription[] = []
@@ -76,10 +81,13 @@ export function AtomicCodeMirrorEditor({
   onLinkClick,
   editorHandleRef,
   codeLanguages = EMPTY_CODE_LANGUAGES,
-  extensions = EMPTY_EXTENSIONS
+  extensions = EMPTY_EXTENSIONS,
+  enableDefaultTables = true,
+  enableDefaultImages = true
 }: AtomicCodeMirrorEditorProps): React.JSX.Element {
   const rootRef = useRef<HTMLDivElement | null>(null)
   const viewRef = useRef<EditorView | null>(null)
+  const [isViewReady, setIsViewReady] = useState(false)
   const clearRevealTimerRef = useRef<number | null>(null)
   const onMarkdownChangeRef = useRef(onMarkdownChange)
   const onLinkClickRef = useRef(onLinkClick)
@@ -94,85 +102,117 @@ export function AtomicCodeMirrorEditor({
 
   const editorIdentity = documentId ?? markdownSource
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const root = rootRef.current
     if (!root) return
 
-    const view = new EditorView({
-      parent: root,
-      state: EditorState.create({
-        doc: markdownSource,
-        extensions: [
-          highlightSpecialChars(),
-          history(),
-          drawSelection(),
-          dropCursor(),
-          scrollPastEnd(),
-          EditorState.allowMultipleSelections.of(true),
-          indentOnInput(),
-          rectangularSelection(),
-          highlightActiveLine(),
-          closeBrackets(),
-          extendEmphasisPair,
-          autoCloseCodeFence,
-          EditorView.lineWrapping,
-          search({
-            top: true,
-            createPanel: (innerView) => {
-              const panel = defaultSearchPanel(innerView)
-              panel.dom.classList.add('atomic-editor-search-panel')
-              return panel
-            }
-          }),
-          markdown({ base: markdownLanguage, codeLanguages: [...codeLanguages] }),
-          markdownLanguage.data.of({
-            closeBrackets: { brackets: ['(', '[', '{', "'", '"', '*', '_', '`'] }
-          }),
-          atomicMarkdownSyntax,
-          atomicEditorTheme,
-          keymap.of([
-            ...closeBracketsKeymap,
-            ...historyKeymap,
-            ...searchKeymap,
-            ...markdownKeymap,
-            indentWithTab,
-            ...defaultKeymap
-          ]),
-          tables({
-            onLinkClick: (url: string) => onLinkClickRef.current?.(url)
-          }),
-          imageBlocks(),
-          inlinePreview({
-            onLinkClick: (url: string) => onLinkClickRef.current?.(url)
-          }),
-          EditorView.updateListener.of((update) => {
-            if (!update.docChanged) return
-            onMarkdownChangeRef.current?.(update.state.doc.toString())
-          }),
-          initialRevealField,
-          ...extensions
-        ]
-      })
-    })
+    let cancelled = false
+    let mountedView: EditorView | null = null
+    setIsViewReady(false)
 
-    viewRef.current = view
+    const mountEditor = () => {
+      if (cancelled || !rootRef.current) return
 
-    if (initialSearchText) {
-      queueMicrotask(() => {
-        if (viewRef.current !== view) return
-        view.dispatch({
-          effects: setSearchQuery.of(new SearchQuery({ search: initialSearchText }))
+      const view = new EditorView({
+        parent: rootRef.current,
+        state: EditorState.create({
+          doc: markdownSource,
+          extensions: [
+            highlightSpecialChars(),
+            history(),
+            drawSelection(),
+            dropCursor(),
+            scrollPastEnd(),
+            EditorState.allowMultipleSelections.of(false),
+            indentOnInput(),
+            rectangularSelection(),
+            highlightActiveLine(),
+            closeBrackets(),
+            extendEmphasisPair,
+            autoCloseCodeFence,
+            EditorView.lineWrapping,
+            search({
+              top: true,
+              createPanel: (innerView) => {
+                const panel = defaultSearchPanel(innerView)
+                panel.dom.classList.add('atomic-editor-search-panel')
+                return panel
+              }
+            }),
+            markdown({ base: markdownLanguage, codeLanguages: [...codeLanguages] }),
+            markdownLanguage.data.of({
+              closeBrackets: { brackets: ['(', '[', '{', "'", '"', '*', '_', '`'] }
+            }),
+            atomicMarkdownSyntax,
+            atomicEditorTheme,
+            keymap.of([
+              ...closeBracketsKeymap,
+              ...historyKeymap,
+              ...searchKeymap,
+              ...markdownKeymap,
+              indentWithTab,
+              ...defaultKeymap
+            ]),
+            ...(enableDefaultTables
+              ? [
+                  tables({
+                    onLinkClick: (url: string) => onLinkClickRef.current?.(url)
+                  })
+                ]
+              : []),
+            ...(enableDefaultImages ? [imageBlocks()] : []),
+            inlinePreview({
+              onLinkClick: (url: string) => onLinkClickRef.current?.(url)
+            }),
+            EditorView.updateListener.of((update) => {
+              if (!update.docChanged) return
+              onMarkdownChangeRef.current?.(update.state.doc.toString())
+            }),
+            initialRevealField,
+            ...extensions
+          ]
         })
-        openSearchPanel(view)
       })
+
+      mountedView = view
+      viewRef.current = view
+      setIsViewReady(true)
+
+      if (initialRevealText) {
+        revealInitialMatch(viewRef, view, initialRevealText, clearRevealTimerRef)
+      }
+
+      if (initialSearchText) {
+        queueMicrotask(() => {
+          if (viewRef.current !== view) return
+          view.dispatch({
+            effects: setSearchQuery.of(new SearchQuery({ search: initialSearchText }))
+          })
+          openSearchPanel(view)
+        })
+      }
     }
 
+    // Yield 1 frame so sidebar active transition and tab switch paint smoothly before CodeMirror mounts
+    const rafId =
+      typeof requestAnimationFrame !== 'undefined'
+        ? requestAnimationFrame(mountEditor)
+        : (setTimeout(mountEditor, 0) as unknown as number)
+
     return () => {
+      cancelled = true
+      if (typeof cancelAnimationFrame !== 'undefined') {
+        cancelAnimationFrame(rafId)
+      } else {
+        clearTimeout(rafId)
+      }
       if (clearRevealTimerRef.current !== null) {
         window.clearTimeout(clearRevealTimerRef.current)
         clearRevealTimerRef.current = null
       }
-      view.destroy()
+      if (mountedView) {
+        mountedView.destroy()
+      }
       viewRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -229,7 +269,11 @@ export function AtomicCodeMirrorEditor({
     }
   }, [editorHandleRef])
 
-  return <div ref={rootRef} className="atomic-cm-editor" />
+  return (
+    <div ref={rootRef} className="atomic-cm-editor">
+      {!isViewReady && <PulseLoader message="Wait a second…" />}
+    </div>
+  )
 }
 
 export const LuminaCodeMirrorEditor = AtomicCodeMirrorEditor

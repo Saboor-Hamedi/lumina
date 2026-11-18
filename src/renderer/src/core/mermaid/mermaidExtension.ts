@@ -685,6 +685,16 @@ const mermaidTreeWatcher = ViewPlugin.fromClass(
 )
 
 function buildMermaidDecorations(state: any) {
+  const doc = state.doc
+  let hasMermaid = false
+  for (let i = 1; i <= doc.lines; i++) {
+    if (doc.line(i).text.toLowerCase().includes('mermaid')) {
+      hasMermaid = true
+      break
+    }
+  }
+  if (!hasMermaid) return Decoration.none
+
   const widgets: any[] = []
   const tree = ensureSyntaxTree(state, state.doc.length, 250) ?? syntaxTree(state)
   const editingPos = state.field(editingMermaidField, false)

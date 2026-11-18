@@ -12,6 +12,7 @@ import os from 'os'
 import path from 'path'
 import fs from 'fs'
 import WorkspaceManager from '../workspace/workspaceManager'
+import NativeEngine from '../workspace/nativeEngine'
 
 interface SpawnPayload {
   sessionId: string
@@ -43,10 +44,35 @@ interface TerminalLineState {
 }
 
 const activeSessions = new Map<string, ChildProcess>()
+const activePtySessions = new Set<string>()
 const activeBuffers = new Map<string, string[]>()
 const activeSessionShells = new Map<string, string>()
 const activeSessionCwds = new Map<string, string>()
 const activeLineStates = new Map<string, TerminalLineState>()
+
+function findGitBashPath(): string | null {
+  const candidates = [
+    'C:\\Program Files\\Git\\bin\\bash.exe',
+    'C:\\Program Files\\Git\\usr\\bin\\bash.exe',
+    'C:\\Program Files (x86)\\Git\\bin\\bash.exe',
+    path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Git', 'bin', 'bash.exe'),
+    path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Git', 'bin', 'bash.exe')
+  ]
+  for (const cand of candidates) {
+    if (cand && fs.existsSync(cand)) {
+      return cand
+    }
+  }
+  try {
+    const out = execSync('where.exe git', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+    const firstGit = out.split(/\r?\n/).map((l) => l.trim()).find(Boolean)
+    if (firstGit) {
+      const bashFromGit = path.resolve(path.dirname(firstGit), '..', 'bin', 'bash.exe')
+      if (fs.existsSync(bashFromGit)) return bashFromGit
+    }
+  } catch {}
+  return null
+}
 
 export interface ShellProfile {
   id: string
@@ -126,20 +152,7 @@ export async function discoverAvailableShells(): Promise<ShellProfile[]> {
 
   if (isWin) {
     // 1. Git Bash (User preferred)
-    const gitBashCandidates = [
-      'C:\\Program Files\\Git\\bin\\bash.exe',
-      'C:\\Program Files\\Git\\usr\\bin\\bash.exe',
-      'C:\\Program Files (x86)\\Git\\bin\\bash.exe',
-      path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Git', 'bin', 'bash.exe'),
-      path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Git', 'bin', 'bash.exe')
-    ]
-    let gitBashPath: string | null = null
-    for (const cand of gitBashCandidates) {
-      if (cand && fs.existsSync(cand)) {
-        gitBashPath = cand
-        break
-      }
-    }
+    const gitBashPath = findGitBashPath()
     if (gitBashPath) {
       profiles.push({
         id: 'bash',
@@ -268,17 +281,9 @@ function resolveShellExecutable(requestedShell?: string): { shell: string; args:
       return { shell: 'cmd.exe', args: ['/Q', '/k'] }
     }
     if (/bash(\.exe)?$/i.test(requestedShell)) {
-      const candidates = [
-        'C:\\Program Files\\Git\\bin\\bash.exe',
-        'C:\\Program Files\\Git\\usr\\bin\\bash.exe',
-        'C:\\Program Files (x86)\\Git\\bin\\bash.exe',
-        path.join(process.env.PROGRAMFILES || 'C:\\Program Files', 'Git', 'bin', 'bash.exe'),
-        path.join(process.env.LOCALAPPDATA || '', 'Programs', 'Git', 'bin', 'bash.exe')
-      ]
-      for (const cand of candidates) {
-        if (cand && fs.existsSync(cand)) {
-          return { shell: cand, args: ['--login', '-i'] }
-        }
+      const gitBashPath = findGitBashPath()
+      if (gitBashPath) {
+        return { shell: gitBashPath, args: ['--login', '-i'] }
       }
       // If Git Bash is not installed, fallback to powershell.exe so it never fails with Access Denied
       return { shell: 'powershell.exe', args: getPowerShellArgs() }
@@ -337,15 +342,91 @@ export function registerTerminalHandlers(getMainWindow: () => BrowserWindow | nu
     }
 
     // Reuse existing healthy session process if already running
+    if (activePtySessions.has(sessionId)) {
+      return { success: true, shell, cwd, isPty: true }
+    }
     const existing = activeSessions.get(sessionId)
     if (existing && !existing.killed) {
-      return { success: true, pid: existing.pid, shell, cwd }
+      return { success: true, pid: existing.pid, shell, cwd, isPty: false }
     }
     if (existing) {
       try {
         terminateProcessTree(existing)
       } catch {}
       activeSessions.delete(sessionId)
+    }
+
+    const rustPty = NativeEngine.getPty()
+    if (rustPty) {
+      try {
+        const isWin = os.platform() === 'win32'
+        let ptyArgs = args
+        if (isWin) {
+          if (/pwsh(\.exe)?$/i.test(shell)) {
+            ptyArgs = ['-NoLogo']
+          } else if (/powershell(\.exe)?$/i.test(shell)) {
+            ptyArgs = ['-NoLogo', '-ExecutionPolicy', 'Bypass']
+          } else if (/cmd(\.exe)?$/i.test(shell)) {
+            ptyArgs = []
+          }
+        }
+
+        activePtySessions.add(sessionId)
+        activeSessionShells.set(sessionId, shell)
+        activeSessionCwds.set(sessionId, cwd)
+        activeBuffers.set(sessionId, [])
+
+        const sender = event.sender
+        const cols = Math.max(2, payload?.cols || 80)
+        const rows = Math.max(2, payload?.rows || 24)
+
+        const pid = rustPty.ptySpawn(
+          sessionId,
+          shell,
+          ptyArgs,
+          cwd,
+          cols,
+          rows,
+          (text: string) => {
+            if (!text) return
+            let currentBuf = activeBuffers.get(sessionId)
+            if (!currentBuf) {
+              currentBuf = []
+              activeBuffers.set(sessionId, currentBuf)
+            }
+            currentBuf.push(text)
+            if (currentBuf.length > 1000) currentBuf.shift()
+
+            if (!sender.isDestroyed()) {
+              sender.send(`terminal:data:${sessionId}`, text)
+            } else {
+              const win = getMainWindow()
+              if (win && !win.isDestroyed()) {
+                win.webContents.send(`terminal:data:${sessionId}`, text)
+              }
+            }
+          },
+          (code: number) => {
+            activePtySessions.delete(sessionId)
+            activeBuffers.delete(sessionId)
+            activeSessionShells.delete(sessionId)
+            activeSessionCwds.delete(sessionId)
+            if (!sender.isDestroyed()) {
+              sender.send(`terminal:exit:${sessionId}`, code ?? 0)
+            } else {
+              const win = getMainWindow()
+              if (win && !win.isDestroyed()) {
+                win.webContents.send(`terminal:exit:${sessionId}`, code ?? 0)
+              }
+            }
+          }
+        )
+
+        return { success: true, pid, shell, cwd, isPty: true }
+      } catch (ptyErr: any) {
+        activePtySessions.delete(sessionId)
+        console.warn('[TerminalHandlers] Native PTY spawn failed, falling back to piped process:', ptyErr?.message || ptyErr)
+      }
     }
 
     try {
@@ -524,6 +605,17 @@ export function registerTerminalHandlers(getMainWindow: () => BrowserWindow | nu
   ipcMain.handle('terminal:write', async (event, payload: WritePayload) => {
     const { sessionId, data } = payload || {}
     if (!sessionId || data == null) return false
+
+    if (activePtySessions.has(sessionId)) {
+      const rustPty = NativeEngine.getPty()
+      if (rustPty) {
+        try {
+          return rustPty.ptyWrite(sessionId, data)
+        } catch {
+          return false
+        }
+      }
+    }
 
     const proc = activeSessions.get(sessionId)
     if (!proc || !proc.stdin || proc.stdin.destroyed) {
@@ -841,14 +933,40 @@ export function registerTerminalHandlers(getMainWindow: () => BrowserWindow | nu
 
   // Resize notification
   ipcMain.handle('terminal:resize', async (_, payload: ResizePayload) => {
-    const { sessionId } = payload || {}
+    const { sessionId, cols, rows } = payload || {}
     if (!sessionId) return false
+    if (activePtySessions.has(sessionId)) {
+      const rustPty = NativeEngine.getPty()
+      if (rustPty && cols > 0 && rows > 0) {
+        try {
+          return rustPty.ptyResize(sessionId, cols, rows)
+        } catch {
+          return false
+        }
+      }
+    }
     return true
   })
 
   // Kill a session process
   ipcMain.handle('terminal:kill', async (_, sessionId: string) => {
     if (!sessionId) return false
+    if (activePtySessions.has(sessionId)) {
+      const rustPty = NativeEngine.getPty()
+      activePtySessions.delete(sessionId)
+      activeBuffers.delete(sessionId)
+      activeSessionShells.delete(sessionId)
+      activeSessionCwds.delete(sessionId)
+      activeLineStates.delete(sessionId)
+      if (rustPty) {
+        try {
+          return rustPty.ptyKill(sessionId)
+        } catch {
+          return false
+        }
+      }
+      return true
+    }
     const proc = activeSessions.get(sessionId)
     if (proc) {
       try {
@@ -869,6 +987,10 @@ export function registerTerminalHandlers(getMainWindow: () => BrowserWindow | nu
  * Cleans up all active terminal processes on app quit.
  */
 export function terminateAllTerminalSessions(): void {
+  try {
+    NativeEngine.getPty()?.ptyKillAll()
+  } catch {}
+  activePtySessions.clear()
   for (const [id, proc] of activeSessions.entries()) {
     try {
       terminateProcessTree(proc)

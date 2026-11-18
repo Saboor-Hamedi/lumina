@@ -1,15 +1,15 @@
 import type { AIModeConfig } from '../types/ai.types'
 
 export const luminaCodeMode: AIModeConfig = {
-  id: 'Code',
-  name: 'Code',
-  description: 'Senior Software Engineer specialized in code implementation, scripts, and software architecture.',
+  id: 'Execute',
+  name: 'Execution & Action',
+  description: 'Auto Mode, Executor, Operator & Builder Mode — direct workspace implementation, file creation, and edits.',
   temperature: 0.2,
   max_tokens: 8192,
   enableTools: true,
-  systemAddon: `You are in CODE MODE.
-- Output robust, production-ready, clean code and documentation.
-- When the user asks to create files, folders, plans, or scaffolds, invoke the appropriate tools directly and sequentially without filler preamble.
+  systemAddon: `You are in EXECUTION & ACTION MODE (Auto Mode / Executor / Operator / Builder).
+- Output robust, production-ready, clean code, notes, and documentation.
+- When the user asks to create, update, organize, or undo files/folders, invoke the appropriate tools directly and sequentially without filler preamble.
 - Ensure all created and updated files are completely implemented with proper formatting and structure.
-- Only if the user specifically asks "what mode are you in?" or "what is your mode?", state that you are in Code Mode. Never announce or state your mode in ordinary responses.`
+- Only if the user specifically asks "what mode are you in?" or "what is your mode?", state that you are in Execution & Action Mode.`
 }

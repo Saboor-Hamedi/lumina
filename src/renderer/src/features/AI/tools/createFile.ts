@@ -1,5 +1,6 @@
 import * as aiSdk from 'ai'
 import type { AIToolExecutionResult } from '../types/ai.types'
+import { recordAIFileSnapshot } from '../safety'
 
 interface CreateFileInput {
   title: string
@@ -162,6 +163,14 @@ export const createFileTool = aiSdk.tool({
       const saveAction = vs.saveNote || vs.saveSnippet
       const saved = saveAction ? await saveAction(note) : null
       const targetNote = saved || note
+
+      recordAIFileSnapshot({
+        action: 'create',
+        targetPath: [targetNote.folderId, targetNote.title].filter(Boolean).join('/'),
+        noteId: targetNote.id,
+        createdNoteId: targetNote.id,
+        previousNote: null
+      })
 
       window.dispatchEvent(
         new CustomEvent('ai-saved-note', {

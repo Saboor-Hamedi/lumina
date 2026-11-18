@@ -26,7 +26,7 @@ import React, { useLayoutEffect } from 'react'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import PulseLoader from '../../components/PulseLoader'
 import { useWorkspaceStore, type WorkspacePaneId } from '../../core/store/workspaceStore'
-import { countExplorerPerfRender, isExplorerPerfEnabled, markExplorerPerf } from '../Explorer/utils/explorerPerf'
+import { countExplorerPerfRender, markExplorerPerf } from '../Explorer/utils/explorerPerf'
 
 // Helper to retry dynamic imports if Vite dev server is still starting or compiling modules
 const lazyWithRetry = <T extends React.ComponentType<any>>(
@@ -129,21 +129,6 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
       requestAnimationFrame(() => markExplorerPerf('tab-visible-frame', { noteId: snippet.id }))
     }, [isSelected, snippet.id])
 
-    const onEditorRender = React.useCallback(
-      (id: string, phase: string, actualDuration: number, baseDuration: number, startTime: number, commitTime: number) => {
-        markExplorerPerf('editor-react-commit', {
-          paneId: snippet.id,
-          id,
-          phase,
-          actualDuration,
-          baseDuration,
-          startTime,
-          commitTime
-        })
-      },
-      [snippet.id]
-    )
-
     if (!snippet) return null
 
     const paneContent = (
@@ -193,15 +178,7 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
           zIndex: isSelected ? 10 : 1
         }}
       >
-        <GlobalErrorHandler>
-          {isExplorerPerfEnabled() ? (
-            <React.Profiler id={`TabContentPane:${snippet.id}`} onRender={onEditorRender}>
-              {paneContent}
-            </React.Profiler>
-          ) : (
-            paneContent
-          )}
-        </GlobalErrorHandler>
+        <GlobalErrorHandler>{paneContent}</GlobalErrorHandler>
       </div>
     )
   },

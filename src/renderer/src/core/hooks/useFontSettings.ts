@@ -78,7 +78,6 @@ export interface FontSettings {
   caretWidth: string
   caretColor: string
   themeAccentColor: string
-  useBorderLeft: boolean
   updateEditorFontFamily: (fontFamily: string) => void
   updateEditorFontSize: (size: string | number) => void
   updatePreviewFontFamily: (fontFamily: string) => void
@@ -87,7 +86,6 @@ export interface FontSettings {
   updateCaretStyle: (style: string) => void
   updateCaretColor: (color: string) => void
   updateThemeAccentColor: (color: string) => void
-  updateUseBorderLeft: (enabled: boolean) => void
 }
 
 /**
@@ -141,13 +139,6 @@ export const useFontSettings = (): FontSettings => {
   const [themeAccentColor, setThemeAccentColor] = useState<string>(() =>
     getInitial('themeAccentColor', '')
   )
-  const [useBorderLeft, setUseBorderLeft] = useState<boolean>(() => {
-    try {
-      const stored = localStorage.getItem('useBorderLeft')
-      if (stored !== null) return stored !== 'false'
-    } catch {}
-    return getInitial('useBorderLeft', true)
-  })
 
   const persistDebounceRef = useRef<any>(null)
   const caretDebounceRef = useRef<any>(null)
@@ -213,20 +204,6 @@ export const useFontSettings = (): FontSettings => {
                 cursorSettings && typeof cursorSettings.caretColor !== 'undefined'
                   ? cursorSettings.caretColor
                   : (allSettings?.caretColor ?? allSettings?.color ?? colors.caretColor),
-              useBorderLeft:
-                typeof cursorSettings.useBorderLeft !== 'undefined'
-                  ? cursorSettings.useBorderLeft !== false &&
-                    cursorSettings.useBorderLeft !== 'none' &&
-                    cursorSettings.useBorderLeft !== 'hidden'
-                  : typeof allSettings?.useBorderLeft !== 'undefined'
-                    ? allSettings.useBorderLeft !== false &&
-                      allSettings.useBorderLeft !== 'none' &&
-                      allSettings.useBorderLeft !== 'hidden'
-                    : typeof allSettings?.borderLeft !== 'undefined'
-                      ? allSettings.borderLeft !== false &&
-                        allSettings.borderLeft !== 'none' &&
-                        allSettings.borderLeft !== 'hidden'
-                      : true,
               editorFontFamily:
                 (allSettings && allSettings.fontFamily) ||
                 (cursorSettings && cursorSettings.editorFontFamily) ||
@@ -336,8 +313,6 @@ export const useFontSettings = (): FontSettings => {
         root.style.setProperty('--caret-style', savedCaretStyle)
         root.setAttribute('data-caret-style', savedCaretStyle || 'smooth')
         root.style.setProperty('--caret-width', normalizedWidth)
-        const initialUseBorderLeft = colors.useBorderLeft !== undefined ? colors.useBorderLeft : true
-        root.setAttribute('data-use-active-line-border', initialUseBorderLeft ? 'true' : 'false')
 
         let finalCaretColor = savedCaretColor
         if (!finalCaretColor || finalCaretColor.trim() === '') {
@@ -411,8 +386,7 @@ export const useFontSettings = (): FontSettings => {
               : normalizedWidth,
           caretStyle: savedCaretStyle,
           caretColor: stateCaretColor,
-          themeAccentColor: stateThemeAccentColor,
-          useBorderLeft: colors.useBorderLeft !== undefined ? colors.useBorderLeft : true
+          themeAccentColor: stateThemeAccentColor
         }
         if (cursorSettings && typeof cursorSettings === 'object' && Object.keys(cursorSettings).length > 0) {
           const correctedFontSize = isNaN(es) ? DEFAULTS.FONT_SIZE : es
@@ -491,20 +465,6 @@ export const useFontSettings = (): FontSettings => {
               typeof cursorSettings.themeAccentColor !== 'undefined'
                 ? cursorSettings.themeAccentColor
                 : settings?.themeAccentColor,
-            useBorderLeft:
-              typeof cursorSettings.useBorderLeft !== 'undefined'
-                ? cursorSettings.useBorderLeft !== false &&
-                  cursorSettings.useBorderLeft !== 'none' &&
-                  cursorSettings.useBorderLeft !== 'hidden'
-                : typeof settings?.useBorderLeft !== 'undefined'
-                  ? settings.useBorderLeft !== false &&
-                    settings.useBorderLeft !== 'none' &&
-                    settings.useBorderLeft !== 'hidden'
-                  : typeof settings?.borderLeft !== 'undefined'
-                    ? settings.borderLeft !== false &&
-                      settings.borderLeft !== 'none' &&
-                      settings.borderLeft !== 'hidden'
-                    : true,
             editorFontFamily: cursorSettings.editorFontFamily ?? settings?.fontFamily,
             editorFontSize: cursorSettings.editorFontSize ?? settings?.fontSize,
             previewFontFamily: cursorSettings.previewFontFamily ?? settings?.previewFontFamily,
@@ -578,8 +538,6 @@ export const useFontSettings = (): FontSettings => {
           setCaretWidth(normalizedWidth)
           setCaretColor(savedCaretColor || '')
           setThemeAccentColor(savedThemeAccentColor || '')
-          setUseBorderLeft(incoming.useBorderLeft)
-          root.setAttribute('data-use-active-line-border', incoming.useBorderLeft ? 'true' : 'false')
 
           requestAnimationFrame(() => {
             window.dispatchEvent(new CustomEvent('caret-style-update'))
@@ -663,7 +621,6 @@ export const useFontSettings = (): FontSettings => {
 
     root.style.setProperty('--caret-style', caretStyle)
     root.setAttribute('data-caret-style', caretStyle || 'smooth')
-    root.setAttribute('data-use-active-line-border', useBorderLeft ? 'true' : 'false')
     root.style.setProperty(
       '--caret-width',
       typeof caretWidth === 'number' ? `${caretWidth}px` : caretWidth
@@ -713,8 +670,7 @@ export const useFontSettings = (): FontSettings => {
     caretStyle,
     caretWidth,
     caretColor,
-    themeAccentColor,
-    useBorderLeft
+    themeAccentColor
   ])
 
   const persistTheme = useCallback(
@@ -746,7 +702,6 @@ export const useFontSettings = (): FontSettings => {
               caretWidth: caretWidthValue,
               caretStyle: merged.caretStyle,
               caretColor: merged.caretColor,
-              useBorderLeft: merged.useBorderLeft !== undefined ? merged.useBorderLeft : true,
               editorFontFamily: merged.editorFontFamily,
               editorFontSize: merged.editorFontSize,
               previewFontFamily: merged.previewFontFamily,
@@ -921,22 +876,6 @@ export const useFontSettings = (): FontSettings => {
     [persistTheme]
   )
 
-  const updateUseBorderLeft = useCallback(
-    (enabled: boolean) => {
-      const isEnabled = Boolean(enabled)
-      setUseBorderLeft(isEnabled)
-      document.documentElement.setAttribute('data-use-active-line-border', isEnabled ? 'true' : 'false')
-      try {
-        localStorage.setItem('useBorderLeft', isEnabled ? 'true' : 'false')
-      } catch {}
-      persistTheme({ useBorderLeft: isEnabled })
-      window.dispatchEvent(
-        new CustomEvent('caret-style-update', { detail: { useBorderLeft: isEnabled } })
-      )
-    },
-    [persistTheme]
-  )
-
   return {
     editorFontFamily,
     editorFontSize,
@@ -946,7 +885,6 @@ export const useFontSettings = (): FontSettings => {
     caretWidth,
     caretColor,
     themeAccentColor,
-    useBorderLeft,
     updateEditorFontFamily,
     updateEditorFontSize,
     updatePreviewFontFamily,
@@ -954,8 +892,7 @@ export const useFontSettings = (): FontSettings => {
     updateCaretWidth,
     updateCaretStyle,
     updateCaretColor,
-    updateThemeAccentColor,
-    updateUseBorderLeft
+    updateThemeAccentColor
   }
 }
 

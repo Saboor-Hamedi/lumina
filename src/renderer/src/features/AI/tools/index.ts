@@ -17,6 +17,7 @@ import { readBrainFileTool } from './readBrainFile'
 import { luminaDiagnoseSystemTool, diagnoseSystemTool } from './luminaDiagnoseSystem'
 import { auditWikilinksTool } from './auditWikilinks'
 import { luminaQueryIndexTool, queryIndexTool } from './luminaQueryIndex'
+import { undoChangesTool } from './undoChanges'
 import { saveMemoryTool, updateMemoryTool, forgetMemoryTool } from '../../../core/ai/memory'
 
 export {
@@ -55,7 +56,8 @@ export const getAITools = (blockReadFile?: boolean, allowOpenFile: boolean = fal
     renameFolder: renameFolderTool,
     deleteFolder: deleteFolderTool,
     moveFolder: moveFolderTool,
-    moveFile: moveFileTool
+    moveFile: moveFileTool,
+    undoChanges: undoChangesTool
   }
 
   if (allowOpenFile) {

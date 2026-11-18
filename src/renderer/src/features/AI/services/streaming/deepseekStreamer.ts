@@ -79,7 +79,15 @@ export const runDeepSeekStream = async ({
 }: RunDeepSeekStreamParams): Promise<{ usage: any }> => {
   const { aiSdk: sdk, createDeepseekProvider: createDs } = await ensureAISdk()
 
-  const result = sdk.streamText({
+  const innerAbort = new AbortController()
+  const onOuterAbort = () => innerAbort.abort(controller.signal.reason)
+  if (controller.signal.aborted) {
+    innerAbort.abort(controller.signal.reason)
+  } else {
+    controller.signal.addEventListener('abort', onOuterAbort, { once: true })
+  }
+
+  let activeResult = sdk.streamText({
     model: createDs({ apiKey })(activeModel || 'deepseek-flash'),
     system: systemPrompt,
     messages: finalMessages,
@@ -90,7 +98,7 @@ export const runDeepSeekStream = async ({
         thinking: { type: 'disabled' }
       }
     },
-    abortSignal: controller.signal,
+    abortSignal: innerAbort.signal,
     tools: Object.fromEntries(
       Object.entries(sdkTools).filter(([, v]) => v !== undefined)
     ),
@@ -112,19 +120,22 @@ export const runDeepSeekStream = async ({
   let recordedTarget = ''
   let isParsingModelThink = false
   let skippedThinking = false
+  let hasAnswerText = false
 
   const streamCtrl = controller as LuminaStreamAbortController
   if (streamCtrl) {
     streamCtrl.onSkipThinking = () => {
       if (skippedThinking) return
       skippedThinking = true
-      // Preserve isParsingModelThink so incoming reasoning tokens are discarded and never leak into text-delta
       const thinkSeg = timeline.find((s) => s.type === 'think')
       if (thinkSeg && !thinkSeg.content.includes('(Thinking skipped by user)')) {
         thinkSeg.content = (thinkSeg.content.trim() + '\n\n*(Thinking skipped by user)*').trim()
       }
       updateDisplay(true)
-      onThinkingStatusUpdate('Proceeding to execution...')
+      onThinkingStatusUpdate('Skipping reasoning, answering directly...')
+      if (!hasAnswerText && !controller.signal.aborted && !innerAbort.signal.aborted) {
+        innerAbort.abort('skip-thinking')
+      }
     }
   }
 
@@ -179,11 +190,13 @@ export const runDeepSeekStream = async ({
 
   onThinkingStatusUpdate('Thinking...')
 
-  for await (const chunk of result.fullStream) {
-    if (controller.signal.aborted) break
-    try {
-      onHeartbeat?.()
-    } catch (_) {}
+  const consumeStream = async (streamResult: any) => {
+    for await (const chunk of streamResult.fullStream) {
+      if (controller.signal.aborted) break
+      if (innerAbort.signal.aborted && streamResult === activeResult) break
+      try {
+        onHeartbeat?.()
+      } catch (_) {}
     if (!chunk || typeof chunk.type !== 'string') continue
 
     if (chunk.type === 'tool-input-start' || chunk.type === 'tool-call-streaming-start') {
@@ -465,6 +478,7 @@ export const runDeepSeekStream = async ({
       }
 
       if (delta) {
+        hasAnswerText = true
         appendTextDelta(delta)
         const hasExecutedTools = timeline.some((s) => s.type === 'activity')
         if (hasExecutedTools) {
@@ -490,7 +504,51 @@ export const runDeepSeekStream = async ({
       console.error('Stream error:', chunk.error)
       updateDisplay(true)
     }
+    }
   }
+
+  try {
+    await consumeStream(activeResult)
+  } catch (streamErr: any) {
+    if (!skippedThinking || controller.signal.aborted) {
+      controller.signal.removeEventListener('abort', onOuterAbort)
+      throw streamErr
+    }
+  }
+
+  // If user skipped thinking before answer text started, immediately re-run with thinking disabled
+  if (skippedThinking && !hasAnswerText && !controller.signal.aborted && innerAbort.signal.aborted) {
+    isParsingModelThink = false
+    activeResult = sdk.streamText({
+      model: createDs({ apiKey })(activeModel || 'deepseek-flash'),
+      system: `${systemPrompt}\n\n[User skipped reasoning — respond directly and concisely without <think> blocks.]`,
+      messages: finalMessages,
+      temperature: modeCfg.temperature,
+      maxTokens: modeCfg.max_tokens,
+      providerOptions: {
+        deepseek: {
+          thinking: { type: 'disabled' }
+        }
+      },
+      abortSignal: controller.signal,
+      tools: Object.fromEntries(
+        Object.entries(sdkTools).filter(([, v]) => v !== undefined)
+      ),
+      toolChoice: 'auto',
+      stopWhen: sdk.stepCountIs ? sdk.stepCountIs(30) : ({ steps }: any) => steps.length >= 30,
+      maxSteps: 30,
+      experimental_transform: sdk.smoothStream
+        ? sdk.smoothStream({
+            chunking: 'word',
+            delayInMs: 15
+          })
+        : undefined
+    })
+    await consumeStream(activeResult)
+  }
+
+  controller.signal.removeEventListener('abort', onOuterAbort)
+  const result = activeResult
 
   flushDisplay()
   activeToolStatus = ''

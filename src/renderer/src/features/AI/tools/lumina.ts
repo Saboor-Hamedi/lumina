@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { beginAIUndoTurn, useAIApprovalStore } from '../safety'
 import {
   initAIWorker,
   generateEmbedding,
@@ -651,6 +652,7 @@ export const useAIStore = create<AIStore>((set, get) => {
           console.warn('[AIStore] Abort error:', e)
         }
       }
+      useAIApprovalStore.getState().clearAllApprovals()
       set({ isChatLoading: false, chatController: null })
     },
 
@@ -680,6 +682,7 @@ export const useAIStore = create<AIStore>((set, get) => {
         set({ chatError: 'Message cannot be empty.' })
         return
       }
+      beginAIUndoTurn()
       const requestStartedAt = Date.now()
 
       let cleanMessage = (message || '').trim()

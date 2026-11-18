@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { Zap, Brain, Palette, Code, Check, Search, Activity } from 'lucide-react'
+import { Compass, Zap, Search, Check } from 'lucide-react'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
+import { getAIMode } from './modes'
 import './css/luminSlash.css'
 
 export interface SlashCommand {
   id: string
+  modeName: string
   label: string
   desc: string
   icon: React.ReactNode
@@ -17,50 +19,31 @@ export interface SlashCommand {
 export const SLASH_COMMANDS: SlashCommand[] = [
   {
     id: 'plan',
-    label: 'Plan',
-    desc: 'Smart planning, outlines, and architectural design.',
-    icon: <Zap size={14} />,
-    action: (setMode) => setMode('Plan')
+    modeName: 'Planning & Strategy',
+    label: 'Planning & Strategy',
+    desc: 'Architect, Planner, Strategist & Co-Pilot Mode',
+    aliases: ['architect', 'planner', 'strategist', 'copilot', 'strategy'],
+    icon: <Compass size={14} />,
+    action: (setMode) => setMode('Planning & Strategy')
   },
   {
-    id: 'deep',
-    label: 'Deep',
-    desc: 'Deep step-by-step reasoning (CoT).',
-    icon: <Brain size={14} />,
-    action: (setMode) => setMode('Deep')
+    id: 'execute',
+    modeName: 'Execution & Action',
+    label: 'Execution & Action',
+    desc: 'Auto Mode, Executor, Operator & Builder Mode',
+    aliases: ['auto', 'executor', 'operator', 'builder', 'code'],
+    icon: <Zap size={14} />,
+    action: (setMode) => setMode('Execution & Action')
   },
   {
     id: 'research',
-    label: 'Research',
-    desc: 'Deep research, thesis guidance, academic writing, and analysis.',
+    modeName: 'Research & Analysis',
+    label: 'Research & Analysis',
+    desc: 'Deep Dive, Scout, Investigator & Analyst Mode',
+    aliases: ['deep', 'scout', 'investigator', 'analyst', 'analysis'],
     icon: <Search size={14} />,
-    action: (setMode) => setMode('Research')
-  },
-  {
-    id: 'creative',
-    label: 'Creative',
-    desc: 'Storytelling, expressive writing, and metaphors.',
-    icon: <Palette size={14} />,
-    action: (setMode) => setMode('Creative')
-  },
-  {
-    id: 'code',
-    label: 'Code',
-    desc: 'Specialized for programming, scripts, and software engineering.',
-    icon: <Code size={14} />,
-    action: (setMode) => setMode('Code')
-  },
-  {
-    id: 'doctor',
-    label: 'Doctor',
-    desc: 'Run system diagnostics and health checks.',
-    icon: <Activity size={14} />,
-    insertText: '/doctor',
-    isAction: true,
-    action: (_setMode, context) => {
-      context?.setInput?.('/doctor')
-    }
-  },
+    action: (setMode) => setMode('Research & Analysis')
+  }
 ]
 
 export interface LuminaSlashProps {
@@ -160,7 +143,7 @@ export const LuminaSlash: React.FC<LuminaSlashProps> = ({
     <div className="slash-menu-container">
       {filteredCommands.map((cmd, index) => {
         const isCurrentActive =
-          !cmd.isAction && cmd.label.toLowerCase() === (activeMode || '').toLowerCase()
+          !cmd.isAction && getAIMode(activeMode).name === cmd.modeName
         const isKeyboardSelected = index === selectedIndex
 
         return (

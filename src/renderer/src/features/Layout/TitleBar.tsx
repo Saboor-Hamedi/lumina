@@ -14,7 +14,7 @@
  */
 
 import React, { useState, useEffect, useCallback, memo } from 'react'
-import { Square, X, Minus, Search, PanelLeftOpen, PanelLeftClose, User, Maximize2, Minimize2 } from 'lucide-react'
+import { Square, X, Minus, Search, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import logoUrl from '../../assets/logo.png'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -22,7 +22,6 @@ import UpdateDetails from '../../components/update/UpdateDetails'
 import AccentColor from '../theme/AccentColor'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 import { useSettingStore } from '../../core/store/SettingStore'
-import { ThemeToggle } from './ThemeToggle'
 import { CalendarToggle } from '../calender'
 import '../../assets/titlebar.css'
 
@@ -35,7 +34,6 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
   const handleToggleMaximize = useCallback(() => (window as any).api?.toggleMaximize?.(), [])
   const handleClose = useCallback(() => (window as any).api?.closeWindow?.(), [])
 
-  const [, setVersion] = useState<string>('')
   const [isAccentOpen, setIsAccentOpen] = useState<boolean>(false)
   const { themeAccentColor, updateThemeAccentColor } = useFontSettings()
   const { user, isLoggedIn } = useCurrentUser()
@@ -54,10 +52,6 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
 
   useEffect(() => {
-    if ((window as any).api?.getVersion) {
-      (window as any).api.getVersion().then(setVersion)
-    }
-
     if ((window as any).api?.isMaximized) {
       (window as any).api.isMaximized().then(setIsMaximized).catch(() => {})
     }
@@ -76,49 +70,6 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
     return () => {
       window.removeEventListener('left-sidebar-toggle', handleLeftSidebarChange)
       if (typeof unsubMax === 'function') unsubMax()
-    }
-  }, [])
-
-  const isZenMode = useSettingStore((s: any) => Boolean(s.settings?.zenMode?.enabled))
-  const prevLeftOpenRef = React.useRef<boolean>(true)
-  const prevRightOpenRef = React.useRef<boolean>(false)
-
-  const handleToggleZenMode = useCallback(() => {
-    const store = useSettingStore.getState() as any
-    const currentZen = store.settings?.zenMode || {}
-    const currentSidebar = store.settings?.sidebar || { width: 150, isLeftOpen: true }
-    const currentRightSidebar = store.settings?.rightSidebar || { width: 150, isRightOpen: false }
-    const nextEnabled = !currentZen.enabled
-
-    if (nextEnabled) {
-      const wasLeftOpen = currentSidebar.isLeftOpen ?? true
-      const wasRightOpen = currentRightSidebar.isRightOpen ?? false
-      prevLeftOpenRef.current = wasLeftOpen
-      prevRightOpenRef.current = wasRightOpen
-      setIsLeftSidebarOpen(false)
-      store.updateSettings({
-        zenMode: { ...currentZen, enabled: true },
-        zenPreState: {
-          ...(store.settings?.zenPreState || {}),
-          isLeftOpen: wasLeftOpen,
-          isRightOpen: wasRightOpen
-        },
-        ...(wasLeftOpen ? { sidebar: { ...currentSidebar, isLeftOpen: false } } : {}),
-        ...(wasRightOpen ? { rightSidebar: { ...currentRightSidebar, isRightOpen: false } } : {})
-      })
-    } else {
-      const pre = store.settings?.zenPreState
-      const shouldRestoreLeft =
-        pre && typeof pre.isLeftOpen === 'boolean' ? pre.isLeftOpen : prevLeftOpenRef.current
-      const shouldRestoreRight =
-        pre && typeof pre.isRightOpen === 'boolean' ? pre.isRightOpen : prevRightOpenRef.current
-      setIsLeftSidebarOpen(shouldRestoreLeft)
-      store.updateSettings({
-        zenMode: { ...currentZen, enabled: false },
-        zenPreState: null,
-        ...(shouldRestoreLeft ? { sidebar: { ...currentSidebar, isLeftOpen: true } } : {}),
-        ...(shouldRestoreRight ? { rightSidebar: { ...currentRightSidebar, isRightOpen: true } } : {})
-      })
     }
   }, [])
 
@@ -182,17 +133,6 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
 
       <div className="title-right">
         <div className="window-controls" data-testid="window-controls">
-          <ToolTip text={isZenMode ? 'Exit Focus Mode' : 'Focus Mode'} position="bottom">
-            <button
-              type="button"
-              className={`titlebar-focus-btn ${isZenMode ? 'active' : ''}`}
-              onClick={handleToggleZenMode}
-              aria-label={isZenMode ? 'Exit Focus Mode' : 'Focus Mode'}
-            >
-              {isZenMode ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-            </button>
-          </ToolTip>
-          <ThemeToggle />
           <CalendarToggle />
           <div className="accent-titlebar-container">
             <ToolTip
@@ -252,6 +192,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
               />
             )}
           </div>
+          <span className="titlebar-controls-divider" aria-hidden="true" />
           <button type="button" onClick={handleMinimize} className="control-btn" aria-label="Minimize">
             <Minus size={14} strokeWidth={2} />
           </button>

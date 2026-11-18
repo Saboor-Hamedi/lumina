@@ -259,8 +259,7 @@
 }
 
 /* TitleBar Profile & Accent Trigger Button */
-.accent-titlebar-container,
-.theme-titlebar-container {
+.accent-titlebar-container {
   position: relative;
   display: flex;
   align-items: center;
@@ -287,258 +286,6 @@
   background: var(--bg-active, rgba(128, 128, 128, 0.14));
 }
 
-.titlebar-focus-btn {
-  width: 30px;
-  height: 100%;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-  transition: background 0.15s ease, color 0.15s ease;
-  -webkit-app-region: no-drag;
-}
-
-.titlebar-focus-btn:hover {
-  background: var(--bg-active, rgba(128, 128, 128, 0.14));
-  color: var(--text-main);
-}
-
-.titlebar-focus-btn.active {
-  color: var(--text-accent);
-}
-
-.theme-titlebar-btn {
-  width: 32px;
-  height: 100%;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  cursor: pointer;
-  padding: 0;
-  margin: 0;
-  transition: background 0.15s ease;
-  -webkit-app-region: no-drag;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.theme-titlebar-btn:hover {
-  background: var(--bg-active, rgba(128, 128, 128, 0.14));
-}
-
-.theme-titlebar-btn:focus,
-.theme-titlebar-btn:focus-visible,
-.theme-titlebar-btn:active {
-  outline: none !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-/* 22px circular sky scene matching profile avatar size, with zero border & zero focus */
-.theme-titlebar-sky-circle {
-  position: relative;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  flex-shrink: 0;
-}
-
-.theme-sky-layer {
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  transition: opacity 0.45s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.theme-sky-layer--day {
-  background: linear-gradient(180deg, #4ea8f5 0%, #9ad6ff 100%);
-  opacity: 1;
-}
-
-.theme-sky-layer--night {
-  background: linear-gradient(180deg, #0b1026 0%, #1d2754 100%);
-  opacity: 0;
-}
-
-.theme-titlebar-sky-circle.is-night .theme-sky-layer--night {
-  opacity: 1;
-}
-
-/* Twinkling stars in night sky */
-.theme-sky-stars {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.theme-sky-star {
-  position: absolute;
-  border-radius: 50%;
-  background: #ffffff;
-  opacity: 0;
-  transform: scale(0.3);
-  transition: opacity 0.35s ease, transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.theme-sky-star--1 {
-  width: 2px;
-  height: 2px;
-  top: 4px;
-  left: 5px;
-}
-
-.theme-sky-star--2 {
-  width: 1.5px;
-  height: 1.5px;
-  top: 7px;
-  right: 4px;
-  transition-delay: 0.06s;
-}
-
-.theme-sky-star--3 {
-  width: 1.5px;
-  height: 1.5px;
-  bottom: 5px;
-  left: 6px;
-  transition-delay: 0.12s;
-}
-
-.theme-titlebar-sky-circle.is-night .theme-sky-star {
-  opacity: 0.9;
-  transform: scale(1);
-}
-
-/* Soft white clouds in day sky */
-.theme-sky-clouds {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.theme-sky-cloud {
-  position: absolute;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.95);
-  transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.35s ease;
-}
-
-.theme-sky-cloud::before {
-  content: '';
-  position: absolute;
-  left: 22%;
-  bottom: 45%;
-  width: 52%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: inherit;
-}
-
-.theme-sky-cloud--back {
-  width: 11px;
-  height: 4px;
-  right: -2px;
-  bottom: 5px;
-  opacity: 0.72;
-}
-
-.theme-sky-cloud--front {
-  width: 12px;
-  height: 4.5px;
-  left: -1px;
-  bottom: 1px;
-  opacity: 0.95;
-}
-
-.theme-titlebar-sky-circle.is-night .theme-sky-cloud {
-  opacity: 0;
-  transform: translateY(8px);
-}
-
-/* Rotating moon / sun knob dead-center inside the sky */
-.theme-titlebar-knob {
-  position: relative;
-  z-index: 2;
-  width: 14px;
-  height: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  border-radius: 50%;
-  user-select: none;
-  transform-origin: center center;
-  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.theme-titlebar-knob.is-night {
-  transform: rotate(0deg);
-}
-
-.theme-titlebar-knob.is-day {
-  transform: rotate(360deg);
-}
-
-.theme-knob-orb {
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.theme-knob-orb--sun {
-  width: 10px;
-  height: 10px;
-  background: radial-gradient(circle at 35% 35%, #fff6b3 0%, #ffd24c 55%, #ffa726 100%);
-  box-shadow: 0 0 6px rgba(255, 200, 64, 0.75);
-  transform: scale(1);
-  opacity: 1;
-}
-
-.theme-titlebar-knob.is-night .theme-knob-orb--sun {
-  opacity: 0;
-  transform: scale(0.4);
-}
-
-.theme-knob-orb--moon {
-  width: 14px;
-  height: 14px;
-  color: #f4f6ff;
-  filter: drop-shadow(0 0 3px rgba(210, 222, 255, 0.55));
-  opacity: 0;
-  transform: rotate(-90deg) scale(0.5);
-}
-
-.theme-titlebar-knob.is-night .theme-knob-orb--moon {
-  opacity: 1;
-  transform: rotate(0deg) scale(1);
-}
-
 .accent-titlebar-avatar-wrap {
   width: 22px;
   height: 22px;
@@ -554,8 +301,7 @@
   transition: border-color 0.15s ease;
 }
 
-.accent-titlebar-btn:hover .accent-titlebar-avatar-wrap,
-.theme-titlebar-btn:hover .titlebar-sun-moon-toggle {
+.accent-titlebar-btn:hover .accent-titlebar-avatar-wrap {
   border-color: var(--text-accent, #40bafa);
 }
 
@@ -578,12 +324,11 @@
   color: var(--text-muted, #94a3b8);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .theme-titlebar-knob {
-    transition: none !important;
-  }
+.titlebar-controls-divider {
+  width: 1px;
+  height: 14px;
+  margin: 0 4px;
+  background: var(--border-dim, rgba(255, 255, 255, 0.1));
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
 }
-
-
-
-

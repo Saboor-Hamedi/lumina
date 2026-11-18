@@ -46,7 +46,6 @@ try {
   const allowedExactKeys = new Set([
     'theme-id',
     'theme-colors',
-    'useBorderLeft',
     'aiChatModalState'
   ])
   for (let i = localStorage.length - 1; i >= 0; i--) {

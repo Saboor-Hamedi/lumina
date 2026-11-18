@@ -183,12 +183,17 @@ describe('useKeyboardShortcuts', () => {
     expect(onGlobalSearch).toHaveBeenCalled()
   })
 
-  it('calls onTogglePreview on Ctrl+\\', () => {
-    const onTogglePreview = vi.fn()
-    renderHook(() => useKeyboardShortcuts({ onTogglePreview }))
+  it('dispatches split-editor event on Ctrl+\\', () => {
+    const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
+    renderHook(() => useKeyboardShortcuts({}))
 
     triggerKey('\\', { ctrl: true })
-    expect(onTogglePreview).toHaveBeenCalled()
+
+    const splitEvent = dispatchSpy.mock.calls
+      .map(([event]) => event)
+      .find((event) => event?.type === 'split-editor')
+    expect(splitEvent).toBeDefined()
+    expect(splitEvent.detail).toEqual({ direction: 'vertical' })
   })
 
   it('calls onToggleCanvas on Ctrl+Shift+; with semicolon or colon', () => {

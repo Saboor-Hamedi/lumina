@@ -5,6 +5,12 @@ import { CanvasView } from '../../../../../src/renderer/src/features/canvas/Canv
 import { CanvasTabPane } from '../../../../../src/renderer/src/features/canvas/CanvasTabPane'
 import { CanvasData } from '../../../../../src/renderer/src/features/canvas/types'
 
+vi.mock('../../../../../src/renderer/src/features/canvas/utils/canvasExport', () => ({
+  copyCanvasAsImage: vi.fn().mockResolvedValue(true),
+  downloadCanvasPng: vi.fn(),
+  downloadCanvasSvg: vi.fn()
+}))
+
 describe('CanvasView (TypeScript)', () => {
   const initialData: CanvasData = {
     nodes: [

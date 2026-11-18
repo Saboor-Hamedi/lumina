@@ -1182,6 +1182,16 @@ export function arrowDownIntoTable(view: EditorView): boolean {
 
 // ---- state field ----------------------------------------------------
 export function buildTableWidgets(state: EditorState): DecorationSet {
+  const doc = state.doc
+  let hasPipe = false
+  for (let i = 1; i <= doc.lines; i++) {
+    if (doc.line(i).text.includes('|')) {
+      hasPipe = true
+      break
+    }
+  }
+  if (!hasPipe) return Decoration.none
+
   const ranges: StateRange<Decoration>[] = []
   // Force full-doc parse so tables past the initial parsed region
   // also get the widget treatment. This StateField only rebuilds on
@@ -1190,7 +1200,6 @@ export function buildTableWidgets(state: EditorState): DecorationSet {
   // `| col |` raw lines for the rest of the session. 200ms budget
   // bounds the worst case on very long atoms.
   const tree = ensureSyntaxTree(state, state.doc.length, 200) ?? syntaxTree(state)
-  const doc = state.doc
   tree.iterate({
     enter: (node) => {
       if (node.name !== 'Table') return

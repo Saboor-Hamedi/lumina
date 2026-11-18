@@ -44,29 +44,13 @@ function createInitialSession(): TerminalSession {
   }
 }
 
-function loadSavedSessions(): { sessions: TerminalSession[]; activeId: string | null } {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const savedActive = localStorage.getItem(STORAGE_ACTIVE_KEY)
-          const validActive = parsed.some((s) => s.id === savedActive) ? savedActive : parsed[0].id
-          return {
-            sessions: parsed.map((s) => ({ ...s, status: 'idle' })),
-            activeId: validActive
-          }
-        }
-      }
-    }
-  } catch {}
+function loadInitialSessions(): { sessions: TerminalSession[]; activeId: string | null } {
   const init = createInitialSession()
   return { sessions: [init], activeId: init.id }
 }
 
 export function useTerminalSessions() {
-  const [initialState] = useState(() => loadSavedSessions())
+  const [initialState] = useState(() => loadInitialSessions())
   const [sessions, setSessions] = useState<TerminalSession[]>(initialState.sessions)
   const [activeId, setActiveId] = useState<string | null>(initialState.activeId)
 

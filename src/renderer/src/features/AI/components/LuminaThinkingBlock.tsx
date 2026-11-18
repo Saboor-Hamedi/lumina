@@ -17,9 +17,14 @@ export interface ThinkingBlockProps {
 export const ThinkingBlock: React.FC<ThinkingBlockProps> = React.memo(
   ({ thinkContent, isStreaming = false, onSkipThinking }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false)
+  const [hasSkipped, setHasSkipped] = useState<boolean>(false)
   const prevStreamingRef = useRef<boolean>(isStreaming)
   const [elapsed, setElapsed] = useState<number>(0)
   const startTimeRef = useRef<number>(Date.now())
+
+  useEffect(() => {
+    if (!isStreaming) setHasSkipped(false)
+  }, [isStreaming])
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null
@@ -53,63 +58,67 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = React.memo(
     ? `Thinking (${formatLuminaTime(elapsed)})`
     : `Thought for ${formatLuminaTime(Math.max(1, elapsed))}`
 
+  const handleSkipClick = (e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    if (hasSkipped) return
+    setHasSkipped(true)
+    if (onSkipThinking) {
+      onSkipThinking()
+    } else {
+      try {
+        // @ts-ignore
+        window.__lumina_skip_thinking?.()
+      } catch {}
+    }
+  }
+
   return (
     <div
       className={`chat-thinking-container ${isOpen ? 'open' : 'collapsed'}`}
       style={{ width: '100%', boxSizing: 'border-box' }}
     >
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         className="chat-thinking-header"
         onClick={() => setIsOpen((prev) => !prev)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            setIsOpen((prev) => !prev)
+          }
+        }}
       >
         <div className="chat-thinking-header-left">
-          <Brain size={13} className={`chat-thinking-brain-icon ${isStreaming ? 'pulsing' : ''}`} />
+          <Brain size={13} className={`chat-thinking-brain-icon ${isStreaming && !hasSkipped ? 'pulsing' : ''}`} />
           <span className="chat-thinking-title">
             {timerText}
           </span>
           <span className="preview-indicator-tag chat-thinking-pill">
-            {isStreaming ? 'REASONING' : 'THOUGHT'}
+            {hasSkipped ? 'SKIPPED' : isStreaming ? 'REASONING' : 'THOUGHT'}
           </span>
         </div>
         <div className="chat-thinking-header-right">
-          {isStreaming && (
-            <span
-              role="button"
-              tabIndex={0}
+          {isStreaming && !hasSkipped && (
+            <button
+              type="button"
               className="chat-skip-thinking-btn"
-              onClick={(e) => {
-                e.stopPropagation()
-                e.preventDefault()
-                if (onSkipThinking) {
-                  onSkipThinking()
-                } else {
-                  try {
-                    // @ts-ignore
-                    window.__lumina_skip_thinking?.()
-                  } catch {}
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.stopPropagation()
-                  e.preventDefault()
-                  onSkipThinking?.()
-                }
-              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={handleSkipClick}
               title="Skip reasoning and proceed to response"
               aria-label="Skip thinking"
             >
               <FastForward size={11} />
               <span>Skip thinking</span>
-            </span>
+            </button>
           )}
           <ChevronDown
             size={12}
             className={`chat-thinking-chevron ${isOpen ? 'rotated' : ''}`}
           />
         </div>
-      </button>
+      </div>
 
       {isOpen && (
         <div ref={bodyRef} className="chat-thinking-body seamless-scrollbar">

@@ -100,10 +100,7 @@
 }
 
 .cm-line.cm-atomic-fenced-code.cm-activeLine,
-html .cm-line.cm-atomic-fenced-code.cm-activeLine,
-html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code.cm-activeLine,
-html:not([data-use-active-line-border="true"]) .cm-line.cm-atomic-fenced-code.cm-activeLine,
-html[data-use-active-line-border="false"] .cm-line.cm-atomic-fenced-code.cm-activeLine {
+html .cm-line.cm-atomic-fenced-code.cm-activeLine {
   background: var(--bg-panel, rgba(0, 0, 0, 0.15)) !important;
   background-color: var(--bg-panel, rgba(0, 0, 0, 0.15)) !important;
   border-left: 1px solid var(--border-dim) !important;
@@ -117,11 +114,6 @@ html[data-use-active-line-border="false"] .cm-line.cm-atomic-fenced-code.cm-acti
   transform: none !important;
   box-shadow: none !important;
   outline: none !important;
-}
-
-html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code.cm-activeLine,
-html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code {
-  box-shadow: none !important;
 }
 
 /* Eliminate gap at the very beginning of selection background and under cursor */
@@ -251,9 +243,6 @@ html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code {
 
 [data-theme='light'] .cm-line.cm-atomic-fenced-code.cm-activeLine,
 [data-theme='light'] html .cm-line.cm-atomic-fenced-code.cm-activeLine,
-[data-theme='light'] html[data-use-active-line-border="true"] .cm-line.cm-atomic-fenced-code.cm-activeLine,
-[data-theme='light'] html:not([data-use-active-line-border="true"]) .cm-line.cm-atomic-fenced-code.cm-activeLine,
-[data-theme='light'] html[data-use-active-line-border="false"] .cm-line.cm-atomic-fenced-code.cm-activeLine,
 [data-theme='porcelain'] .cm-line.cm-atomic-fenced-code.cm-activeLine,
 [data-theme='rosePineDawn'] .cm-line.cm-atomic-fenced-code.cm-activeLine {
   background: var(--bg-panel, #f7f7f7) !important;

@@ -54,8 +54,7 @@ export interface Settings {
   showLineNumbers: boolean
   autoSave: boolean
   cursorStyle: string
-  cursor?: { useBorderLeft?: boolean; [key: string]: any }
-  useBorderLeft?: boolean
+  cursor?: { [key: string]: any }
   smoothScrolling: boolean
   sidebarCollapsedSections: SidebarSectionCollapsedState
   sortBy: string
@@ -196,16 +195,6 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     showLineNumbers: false,
     autoSave: true,
     cursorStyle: 'smooth',
-    cursor: {
-      useBorderLeft:
-        typeof localStorage !== 'undefined' && localStorage.getItem('useBorderLeft') !== null
-          ? localStorage.getItem('useBorderLeft') !== 'false'
-          : true
-    },
-    useBorderLeft:
-      typeof localStorage !== 'undefined' && localStorage.getItem('useBorderLeft') !== null
-        ? localStorage.getItem('useBorderLeft') !== 'false'
-        : true,
     smoothScrolling: true,
     sidebarCollapsedSections: {
       pinned: false,
@@ -371,15 +360,6 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
             root.setAttribute('data-modern-ui', String(Boolean(mergedSettings.modernUi)))
             root.style.setProperty('--font-editor', mergedSettings.fontFamily)
             root.style.setProperty('--font-size-editor', `${mergedSettings.fontSize}px`)
-            const isBorder =
-              typeof localStorage !== 'undefined' && localStorage.getItem('useBorderLeft') !== null
-                ? localStorage.getItem('useBorderLeft') !== 'false'
-                : mergedSettings.cursor?.useBorderLeft !== undefined
-                  ? mergedSettings.cursor.useBorderLeft !== false
-                  : mergedSettings.useBorderLeft !== undefined
-                    ? mergedSettings.useBorderLeft !== false
-                    : true
-            root.setAttribute('data-use-active-line-border', isBorder ? 'true' : 'false')
           }
 
           if (api && typeof api.onSettingsChanged === 'function') {
@@ -397,13 +377,6 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
                     root.style.setProperty('--font-editor', updatedParams.fontFamily)
                     root.style.setProperty('--font-size-editor', `${updatedParams.fontSize}px`)
                     root.style.setProperty('--cursor-style', updatedParams.cursorStyle)
-                    if (updatedParams.cursor?.useBorderLeft !== undefined || updatedParams.useBorderLeft !== undefined) {
-                      const isBorder =
-                        updatedParams.cursor?.useBorderLeft !== undefined
-                          ? updatedParams.cursor.useBorderLeft !== false
-                          : updatedParams.useBorderLeft !== false
-                      root.setAttribute('data-use-active-line-border', isBorder ? 'true' : 'false')
-                    }
                   }
                 } catch (err) {
                   console.error('[SettingStore] Error applying external settings:', err)
@@ -472,16 +445,6 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       }
       if (key === 'fontFamily') root.style.setProperty('--font-editor', value)
       if (key === 'fontSize') root.style.setProperty('--font-size-editor', `${value}px`)
-      if (key === 'cursor' || key === 'useBorderLeft') {
-        const isBorder = key === 'cursor' ? (value?.useBorderLeft !== false) : Boolean(value)
-        root.setAttribute('data-use-active-line-border', isBorder ? 'true' : 'false')
-        if (typeof localStorage !== 'undefined') {
-          localStorage.setItem('useBorderLeft', isBorder ? 'true' : 'false')
-        }
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('caret-style-update'))
-        }
-      }
     }
 
     if (typeof localStorage !== 'undefined') {
@@ -638,9 +601,6 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       zenMode: { ...zen, enabled: true },
       zenPreState: preState,
       titleBarVisible: zen.hideTitleBar !== false ? false : s.titleBarVisible,
-      statusBarVisible: zen.hideStatusBar !== false ? false : s.statusBarVisible,
-      activityBarVisible: zen.hideActivityBar !== false ? false : s.activityBarVisible,
-      tabsVisible: zen.hideTabs !== false ? false : s.tabsVisible,
       breadcrumbsVisible: false,
       sidebar: { ...(s.sidebar || { width: 150, isLeftOpen: true }), isLeftOpen: false },
       rightSidebar: { ...(s.rightSidebar || { width: 150, isRightOpen: false }), isRightOpen: false }
@@ -677,10 +637,16 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       if (pre.tabsVisible !== undefined) updates.tabsVisible = pre.tabsVisible
       if (pre.breadcrumbsVisible !== undefined) updates.breadcrumbsVisible = pre.breadcrumbsVisible
       if (pre.isLeftOpen !== undefined) {
-        updates.sidebar = { ...(s.sidebar || { width: 150, isLeftOpen: true }), isLeftOpen: pre.isLeftOpen }
+        updates.sidebar = {
+          ...(s.sidebar || { width: 150, isLeftOpen: true }),
+          isLeftOpen: Boolean(s.sidebar?.isLeftOpen || pre.isLeftOpen)
+        }
       }
       if (pre.isRightOpen !== undefined) {
-        updates.rightSidebar = { ...(s.rightSidebar || { width: 150, isRightOpen: false }), isRightOpen: pre.isRightOpen }
+        updates.rightSidebar = {
+          ...(s.rightSidebar || { width: 150, isRightOpen: false }),
+          isRightOpen: Boolean(s.rightSidebar?.isRightOpen || pre.isRightOpen)
+        }
       }
     } else {
       updates.titleBarVisible = true

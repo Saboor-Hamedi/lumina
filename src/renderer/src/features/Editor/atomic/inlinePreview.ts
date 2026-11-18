@@ -276,7 +276,7 @@ function buildInlineDecorations(view: EditorView): DecorationSet {
     }
   }
 
-  const tree = ensureSyntaxTree(state, state.doc.length, 200) ?? syntaxTree(state)
+  const tree = ensureSyntaxTree(state, view.viewport.to, 30) ?? syntaxTree(state)
   const activeLinkStarts = new Set<number>()
 
   tree.iterate({

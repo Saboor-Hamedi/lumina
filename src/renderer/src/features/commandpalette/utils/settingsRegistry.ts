@@ -196,23 +196,6 @@ export const SETTINGS_REGISTRY: LuminaSettingDefinition[] = [
     }
   },
   {
-    id: 'cursor.useBorderLeft',
-    key: 'useBorderLeft',
-    title: 'Cursor: Active Line Left Border',
-    description: 'Show a colored accent border on the line where the cursor is placed.',
-    category: 'Cursor & Sound',
-    keywords: ['active line border', 'line highlight', 'cursor border'],
-    type: 'boolean',
-    settingsTab: 'look-and-feel',
-    getValue: (s) => s.useBorderLeft !== false && s.cursor?.useBorderLeft !== false,
-    setValue: async (val) => {
-      const b = Boolean(val)
-      await useSettingsStore.getState().updateSetting('useBorderLeft', b)
-      await useSettingsStore.getState().updateSetting('cursor', { useBorderLeft: b })
-    },
-    formatValue: (val) => (val ? 'On' : 'Off')
-  },
-  {
     id: 'cursor.typeSound',
     key: 'typeSound',
     title: 'Cursor: Mechanical Keyboard Sound',

@@ -95,10 +95,10 @@
   margin: 1px 2px !important;
   border-radius: 4px !important;
   padding: 0 4px 0 16px !important;
-  border-left: 2px solid transparent !important;
+  border-left: none !important;
   gap: 6px !important;
   font-size: 12px !important;
-  transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease !important;
+  transition: none !important;
 }
 
 .folder-tree-main,
@@ -118,17 +118,15 @@
 .start-section .tree-item:hover,
 [data-modern-ui='true'] .tree-item:hover,
 [data-modern-ui='true'] .start-section .tree-item:hover {
-  background: rgba(255, 255, 255, 0.04) !important;
+  background-color: rgba(255, 255, 255, 0.04) !important;
 }
 
 .tree-item.active,
 .start-section .tree-item.active,
 [data-modern-ui='true'] .tree-item.active,
 [data-modern-ui='true'] .start-section .tree-item.active {
-  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.12) !important;
+  background-color: color-mix(in srgb, var(--text-accent, #8b5cf6) 9%, transparent) !important;
   color: var(--text-main) !important;
-  font-weight: 500 !important;
-  border-left-color: var(--text-accent) !important;
 }
 
 .folder-tree-main.active,

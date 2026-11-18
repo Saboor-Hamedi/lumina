@@ -1,6 +1,7 @@
 import * as aiSdk from 'ai'
 import type { AIToolExecutionResult } from '../types/ai.types'
 import { confirmWorkspaceChange } from './confirmWorkspaceChange'
+import { recordAIFileSnapshot } from '../safety'
 
 interface SingleEditHunk {
   sectionHeader?: string
@@ -791,6 +792,13 @@ export const updateFileTool = aiSdk.tool({
         })
       )
     }
+
+    recordAIFileSnapshot({
+      action: 'update',
+      targetPath: [target.folderId, target.title].filter(Boolean).join('/'),
+      noteId: target.id,
+      previousNote: target
+    })
 
     const saveAction = vs.saveNote || vs.saveSnippet
     const updated = saveAction ? await saveAction({ ...target, code: newCode }) : null

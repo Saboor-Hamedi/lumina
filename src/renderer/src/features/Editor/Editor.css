@@ -1352,18 +1352,6 @@
   position: relative;
 }
 
-html[data-use-active-line-border="true"] .cm-heading.cm-activeLine::before {
-  content: '';
-  position: absolute;
-  left: 1px;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--text-accent);
-  z-index: 1;
-  pointer-events: none !important;
-}
-
 
 .cm-selectionBackground {
   background: rgba(var(--text-accent-rgb, 64, 186, 250), 0.3) !important;
@@ -1865,32 +1853,20 @@ html[data-use-active-line-border="true"] .cm-heading.cm-activeLine::before {
 
 .virtuoso-scroller-no-scrollbar::-webkit-scrollbar { display: none; }
 
-/* Active Line Left Border Toggle Support */
-html[data-use-active-line-border="true"] .cm-activeLine {
-  border-left: 1px solid var(--caret-color, var(--text-accent, #40bafa)) !important;
-}
-
-html:not([data-use-active-line-border="true"]) .cm-activeLine,
-html[data-use-active-line-border="false"] .cm-activeLine {
-  border-left: none !important;
-  box-shadow: none !important;
-}
-
-
 /* ==========================================================================
    Multi-Theme Writing Atmosphere & Caret Physics
    Enhances writing tactile feel without altering DOM layout, selection flow,
    or AI streaming tokens
    ========================================================================== */
 
-/* Universal Caret Soft Ambient Glow */
+/* Universal Caret */
 .markdown-editor .cm-cursor,
 .markdown-editor .cm-dropCursor,
 .cm-cursor,
 .cm-dropCursor {
   border-left-color: var(--caret-color, var(--text-accent)) !important;
   border-left-width: var(--caret-width, 2px) !important;
-  filter: drop-shadow(0 0 2px var(--glow-accent, rgba(var(--text-accent-rgb), 0.3)));
+  filter: none !important;
   pointer-events: none !important;
 }
 
@@ -1908,7 +1884,6 @@ html[data-use-active-line-border="false"] .cm-activeLine {
 /* Parchment Manuscript Atmosphere */
 [data-theme='parchment'] .cm-cursor {
   border-left-color: var(--caret-color, #9c4310) !important;
-  filter: drop-shadow(0 0 1.8px rgba(156, 67, 16, 0.45));
 }
 
 [data-theme='parchment'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
@@ -1932,7 +1907,6 @@ html[data-use-active-line-border="false"] .cm-activeLine {
 /* Celestial Cosmic Starlight Atmosphere */
 [data-theme='celestial'] .cm-cursor {
   border-left-color: var(--caret-color, #facc15) !important;
-  filter: drop-shadow(0 0 2.5px rgba(250, 204, 21, 0.65)) drop-shadow(0 0 7px rgba(250, 204, 21, 0.22));
 }
 
 [data-theme='celestial'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
@@ -1954,10 +1928,6 @@ html[data-use-active-line-border="false"] .cm-activeLine {
 }
 
 /* Cyberpunk Neon Atmosphere */
-[data-theme='cyberpunk'] .cm-cursor {
-  filter: drop-shadow(0 0 3px rgba(var(--text-accent-rgb), 0.85)) drop-shadow(0 0 8px rgba(var(--text-accent-rgb), 0.35));
-}
-
 [data-theme='cyberpunk'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(56, 189, 248, 0.2) !important;
 }
@@ -1965,7 +1935,6 @@ html[data-use-active-line-border="false"] .cm-activeLine {
 /* Tokyo Night Atmospheric Glow */
 [data-theme='tokyoNight'] .cm-cursor {
   border-left-color: var(--caret-color, #7aa2f7) !important;
-  filter: drop-shadow(0 0 2.5px rgba(122, 162, 247, 0.65)) drop-shadow(0 0 6px rgba(122, 162, 247, 0.25));
 }
 [data-theme='tokyoNight'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(122, 162, 247, 0.2) !important;
@@ -1980,7 +1949,6 @@ html[data-use-active-line-border="false"] .cm-activeLine {
 /* Dracula Gothic Neon Depth */
 [data-theme='dracula'] .cm-cursor {
   border-left-color: var(--caret-color, #bd93f9) !important;
-  filter: drop-shadow(0 0 2.5px rgba(189, 147, 249, 0.7)) drop-shadow(0 0 7px rgba(189, 147, 249, 0.25));
 }
 [data-theme='dracula'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(189, 147, 249, 0.22) !important;
@@ -1995,7 +1963,6 @@ html[data-use-active-line-border="false"] .cm-activeLine {
 /* Nord Arctic Frost Depth */
 [data-theme='nord'] .cm-cursor {
   border-left-color: var(--caret-color, #88c0d0) !important;
-  filter: drop-shadow(0 0 2.5px rgba(136, 192, 208, 0.65));
 }
 [data-theme='nord'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(136, 192, 208, 0.18) !important;
@@ -2008,14 +1975,8 @@ html[data-use-active-line-border="false"] .cm-activeLine {
 }
 
 /* Catppuccin & Gruvbox Atmospheric Depth */
-[data-theme='catppuccin'] .cm-cursor {
-  filter: drop-shadow(0 0 2.5px var(--glow-accent, rgba(var(--text-accent-rgb), 0.4)));
-}
 [data-theme='catppuccin'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(245, 194, 231, 0.18) !important;
-}
-[data-theme='gruvbox'] .cm-cursor {
-  filter: drop-shadow(0 0 2px rgba(250, 189, 47, 0.5));
 }
 [data-theme='gruvbox'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(250, 189, 47, 0.16) !important;

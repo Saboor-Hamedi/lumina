@@ -8,6 +8,7 @@ import { LuminaSession } from './LuminaSession'
 import { ChatFooterStatus } from './LuminaChatFooterStatus'
 import { ChatEmptyState } from './LuminaChatEmptyState'
 import { LuminaAnalyticsDropdown } from './LuminaAnalyticsDropdown'
+import { LuminaApprovalCard } from '../safety'
 import { useChatScroll } from '../hooks/useChatScroll'
 import { useScopedSelectAll } from '../hooks/useScopedSelectAll'
 import { getBrainDocuments } from '../services/brainKnowledge'
@@ -437,6 +438,7 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
                   position: 'relative'
                 }}
               >
+                <LuminaApprovalCard />
                 <Composer
                   isSidebar={isSidebar}
                   onSend={handleSendMessage}

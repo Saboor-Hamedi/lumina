@@ -1,6 +1,7 @@
 import * as aiSdk from 'ai'
 import type { AIToolExecutionResult } from '../types/ai.types'
 import { confirmWorkspaceChange } from './confirmWorkspaceChange'
+import { recordAIFileSnapshot } from '../safety'
 
 interface ClearFileInput {
   title: string
@@ -66,6 +67,13 @@ export const clearFileTool = aiSdk.tool({
         `This clears ${oldWords} word${oldWords === 1 ? '' : 's'} from the note. The previous contents can be restored from Workspace Changes.`
       )
       if (!confirmed) return { success: false, error: 'Clear cancelled; the note was not changed.', cancelled: true }
+
+      recordAIFileSnapshot({
+        action: 'clear',
+        targetPath: [target.folderId, target.title].filter(Boolean).join('/'),
+        noteId: target.id,
+        previousNote: target
+      })
 
       if (vs.setDraft) {
         vs.setDraft(target.id, newCode)

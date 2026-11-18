@@ -71,6 +71,7 @@ interface SortableTabItemProps {
   isActive: boolean
   isDirty: boolean
   isPinned: boolean
+  isClosing: boolean
   showCloseOthersIcon: boolean
   onOpen: (id: string) => void
   onClose: (e: React.MouseEvent, id: string) => void
@@ -87,6 +88,7 @@ const SortableTabItem = memo<SortableTabItemProps>(
     isActive,
     isDirty,
     isPinned,
+    isClosing,
     showCloseOthersIcon,
     onOpen,
     onClose,
@@ -117,7 +119,7 @@ const SortableTabItem = memo<SortableTabItemProps>(
       <ToolTip text={getTitle()} position="bottom" delay={400}>
         <div
           ref={setNodeRef}
-          className={`workspace-tab ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${isDragging ? 'dragging' : ''} ${isPinned ? 'pinned' : ''}`}
+          className={`workspace-tab ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${isDragging ? 'dragging' : ''} ${isPinned ? 'pinned' : ''} ${isClosing ? 'is-closing' : ''}`}
           style={{
             transform: transform ? `translate3d(${transform.x}px, 0, 0)` : undefined,
             transition: isDragging ? transition : undefined,
@@ -194,6 +196,7 @@ const SortableTabItem = memo<SortableTabItemProps>(
       prev.isActive === next.isActive &&
       prev.isDirty === next.isDirty &&
       prev.isPinned === next.isPinned &&
+      prev.isClosing === next.isClosing &&
       prev.showCloseOthersIcon === next.showCloseOthersIcon &&
       prev.snippet?.title === next.snippet?.title &&
       prev.snippet?.customIcon === next.snippet?.customIcon &&
@@ -296,6 +299,8 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
   const [iconPickerId, setIconPickerId] = useState<string | null>(null)
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const [isAltPressed, setIsAltPressed] = useState(false)
+  const [closingTabIds, setClosingTabIds] = useState<Set<string>>(() => new Set())
+  const closingTimersRef = useRef<number[]>([])
   const isTabBarDropActive = useTabDragStore(
     (state) => state.dropTarget?.targetPane === paneId && state.dropTarget?.zone === 'tabbar'
   )
@@ -373,12 +378,41 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
 
   const canCloseOthers = openTabs.length > 1 || splitDirection !== 'none'
 
+  useEffect(() => {
+    return () => {
+      closingTimersRef.current.forEach((t) => window.clearTimeout(t))
+      closingTimersRef.current = []
+    }
+  }, [])
+
+  const animateCloseTabs = useCallback((idsToAnimate: string[], commit: () => void) => {
+    if (idsToAnimate.length === 0) {
+      commit()
+      return
+    }
+    setClosingTabIds((prev) => {
+      const next = new Set(prev)
+      idsToAnimate.forEach((tid) => next.add(tid))
+      return next
+    })
+    const timer = window.setTimeout(() => {
+      commit()
+      setClosingTabIds((prev) => {
+        const next = new Set(prev)
+        idsToAnimate.forEach((tid) => next.delete(tid))
+        return next
+      })
+    }, 150)
+    closingTimersRef.current.push(timer)
+  }, [])
+
   const handleCloseTrigger = useCallback(
     (e: React.MouseEvent | { stopPropagation: () => void; altKey?: boolean }, id: string) => {
       e.stopPropagation()
       if ((e.altKey || isAltPressed) && canCloseOthers) {
         if (openTabs.length > 1) {
-          closeOtherTabs(id)
+          const otherIds = openTabs.filter((tid) => tid !== id)
+          animateCloseTabs(otherIds, () => closeOtherTabs(id))
         } else if (splitDirection !== 'none') {
           if (paneId !== 'primary') {
             moveTabToPane(id, 'primary')
@@ -394,15 +428,16 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
         const snippet = snippetMap.get(id)
         setPrompt({ id, title: snippet?.title || 'Untitled' })
       } else {
-        closeTab(id)
+        animateCloseTabs([id], () => closeTab(id))
       }
     },
     [
       isAltPressed,
       canCloseOthers,
-      openTabs.length,
+      openTabs,
       splitDirection,
       paneId,
+      animateCloseTabs,
       closeOtherTabs,
       moveTabToPane,
       closeSplit,
@@ -446,6 +481,7 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
         }
         isDirty={dirtySnippetIds.includes(id)}
         isPinned={pinnedTabIds.includes(id)}
+        isClosing={closingTabIds.has(id)}
         showCloseOthersIcon={showCloseOthersIcon}
         onOpen={handleTabClick}
         onClose={handleCloseTrigger}

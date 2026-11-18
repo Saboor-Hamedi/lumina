@@ -584,16 +584,13 @@
   height: 26px;
   margin: 1px 2px;
   border-radius: 4px;
-  border-left: 2px solid transparent;
+  border-left: none;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
   cursor: pointer;
-  transition:
-    background-color 120ms cubic-bezier(0.16, 1, 0.3, 1),
-    color 120ms cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 120ms ease;
+  transition: none;
   position: relative;
   overflow: hidden;
   user-select: none;
@@ -601,23 +598,18 @@
 
 .tree-item:hover,
 .start-section .tree-item:hover {
-  background: var(--bg-hover, color-mix(in srgb, var(--text-main) 7%, transparent));
-}
-
-.tree-item:active,
-.start-section .tree-item:active {
-  background: var(--bg-active, color-mix(in srgb, var(--text-accent) 14%, transparent));
+  background-color: var(--bg-hover, color-mix(in srgb, var(--text-main) 7%, transparent));
 }
 
 .tree-item.active,
 .start-section .tree-item.active {
-  background: var(--bg-active, rgba(var(--text-accent-rgb, 139, 92, 246), 0.14)) !important;
+  background-color: color-mix(in srgb, var(--text-accent, #8b5cf6) 9%, transparent) !important;
   color: var(--text-main);
 }
 
 .tree-item.active:hover,
 .start-section .tree-item.active:hover {
-  background: color-mix(in srgb, var(--text-accent) 20%, transparent) !important;
+  background: color-mix(in srgb, var(--text-accent, #8b5cf6) 13%, transparent) !important;
 }
 
 .tree-item .item-icon-wrap,

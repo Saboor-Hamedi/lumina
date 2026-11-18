@@ -214,9 +214,38 @@ export const MainLayout: React.FC = () => {
   }, [updateRightSidebarOpen])
 
   const [isTerminalOpen, setIsTerminalOpen] = useState(false)
+  const [hasMountedTerminal, setHasMountedTerminal] = useState(false)
   const [terminalHeight, setTerminalHeight] = useState(260)
   const [isTerminalMaximized, setIsTerminalMaximized] = useState(false)
   const previousTerminalHeightRef = useRef(260)
+  const wasTerminalOpenBeforeZenRef = useRef(false)
+  const prevZenModeRef = useRef(isZenModeEnabled)
+
+  useEffect(() => {
+    if (isTerminalOpen) {
+      setHasMountedTerminal(true)
+    }
+  }, [isTerminalOpen])
+
+  // Hide open terminal when entering Zen Mode (without unmounting/killing sessions),
+  // restore when exiting Zen Mode, and allow user to re-open it anytime during Zen Mode.
+  useEffect(() => {
+    const prevZen = prevZenModeRef.current
+    prevZenModeRef.current = isZenModeEnabled
+    if (!prevZen && isZenModeEnabled) {
+      wasTerminalOpenBeforeZenRef.current = isTerminalOpen
+      if (isTerminalOpen) {
+        setIsTerminalOpen(false)
+      }
+    } else if (prevZen && !isZenModeEnabled) {
+      if (wasTerminalOpenBeforeZenRef.current) {
+        wasTerminalOpenBeforeZenRef.current = false
+        setIsTerminalOpen(true)
+      }
+    }
+  }, [isZenModeEnabled, isTerminalOpen])
+
+  const isTerminalVisible = isTerminalOpen
 
   const handleToggleTerminal = useCallback(() => {
     setIsTerminalOpen((prev) => !prev)
@@ -1241,8 +1270,8 @@ export const MainLayout: React.FC = () => {
             <div
               className="workspace-editor-dock-area"
               style={{
-                flex: isTerminalMaximized ? 0 : 1,
-                display: isTerminalMaximized ? 'none' : 'flex',
+                flex: isTerminalMaximized && isTerminalVisible ? 0 : 1,
+                display: isTerminalMaximized && isTerminalVisible ? 'none' : 'flex',
                 flexDirection: 'column',
                 minHeight: 0,
                 position: 'relative',
@@ -1281,9 +1310,9 @@ export const MainLayout: React.FC = () => {
               )}
             </div>
 
-            {isTerminalOpen && (
+            {hasMountedTerminal && (
               <>
-                {!isTerminalMaximized && (
+                {isTerminalVisible && !isTerminalMaximized && (
                   <div
                     className="terminal-resizer top"
                     title="Drag to resize terminal (double-click to reset 260px)"
@@ -1304,7 +1333,7 @@ export const MainLayout: React.FC = () => {
                     flex: isTerminalMaximized ? 1 : 'none',
                     minHeight: isTerminalMaximized ? 0 : 120,
                     width: '100%',
-                    display: 'flex',
+                    display: isTerminalVisible ? 'flex' : 'none',
                     flexDirection: 'column',
                     position: 'relative',
                     flexShrink: isTerminalMaximized ? 1 : 0,

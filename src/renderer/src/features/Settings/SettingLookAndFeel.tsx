@@ -141,9 +141,7 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
     updateEditorFontFamily,
     updateEditorFontSize,
     themeAccentColor,
-    updateThemeAccentColor,
-    useBorderLeft,
-    updateUseBorderLeft
+    updateThemeAccentColor
   } = useFontSettings()
 
   const handleOpenTheme = () => {
@@ -362,30 +360,6 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
 
         <section style={{ marginTop: '28px' }}>
           <h3>Interface & Behavior</h3>
-
-          <div className="settings-row">
-            <div className="row-info">
-              <div className="row-label">Active Line Left Border</div>
-              <div className="row-hint">
-                Show a colored left border on the line where the cursor is currently placed.
-              </div>
-            </div>
-            <Toggle
-              checked={useBorderLeft ?? ((settings.cursor && settings.cursor.useBorderLeft) ?? true)}
-              onChange={(e) => {
-                const checked = e.target.checked
-                if (typeof updateUseBorderLeft === 'function') {
-                  updateUseBorderLeft(checked)
-                }
-                const next = {
-                  ...(settings.cursor || {}),
-                  useBorderLeft: checked
-                }
-                updateSetting('cursor', next)
-                updateSetting('useBorderLeft', checked)
-              }}
-            />
-          </div>
 
           <div className="settings-row">
             <div className="row-info">

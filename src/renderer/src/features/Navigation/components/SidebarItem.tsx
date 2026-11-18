@@ -432,10 +432,7 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
         handleContextMenu(e)
       }}
       onDoubleClick={() => setIsRenaming(true)}
-      style={{
-        ...style,
-        backgroundColor: isActive ? 'var(--bg-active)' : undefined
-      }}
+      style={style}
       {...(dndProps?.attributes || {})}
       {...(dndProps?.listeners || {})}
       draggable={!isRenaming && !dndProps}

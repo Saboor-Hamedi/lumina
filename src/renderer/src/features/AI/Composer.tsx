@@ -6,6 +6,7 @@ import VoiceButton from '../voice'
 import { useComposerTextarea } from './hooks/useComposerTextarea'
 import { useComposerVoice } from './hooks/useComposerVoice'
 import { useComposerAutocomplete } from './hooks/useComposerAutocomplete'
+import { getAIMode } from './modes'
 import './css/composer.css'
 
 const LuminaSlash = lazy(() => import('./LuminaSlash'))
@@ -35,7 +36,7 @@ export const Composer: React.FC<ComposerProps> = ({
   const handleStop = onStop || onCancel
 
   const { settings, updateSetting } = useSettingsStore()
-  const mode = settings.activeAIMode || 'Code'
+  const mode = getAIMode(settings.activeAIMode).name
   const setMode = (newMode: string) => updateSetting('activeAIMode', newMode)
 
   const textareaRef = useComposerTextarea({ input, isSidebar, isLoading })

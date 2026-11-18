@@ -75,11 +75,33 @@ export interface GraphData {
   links: GraphLink[]
 }
 
+export interface RustPtyApi {
+  ptySpawn: (
+    sessionId: string,
+    shell: string,
+    args: string[],
+    cwd: string,
+    cols: number,
+    rows: number,
+    onData: (data: string) => void,
+    onExit: (code: number) => void
+  ) => number
+  ptyWrite: (sessionId: string, data: string) => boolean
+  ptyResize: (sessionId: string, cols: number, rows: number) => boolean
+  ptyKill: (sessionId: string) => boolean
+  ptyKillAll: () => void
+}
+
 interface RustCoreModule {
   getCoreVersion: () => string
   scanVault: (vaultPath: string, maxBytes?: number) => { notes: any[]; folders: string[]; totalScanned: number; elapsedMs: number }
   fuzzySearch: (items: SearchIndexItem[], query: string, limit?: number) => SearchHit[]
   buildGraphData: (notes: Array<{ id: string; title: string; wikilinks: string[] }>) => GraphData
+  ptySpawn?: RustPtyApi['ptySpawn']
+  ptyWrite?: RustPtyApi['ptyWrite']
+  ptyResize?: RustPtyApi['ptyResize']
+  ptyKill?: RustPtyApi['ptyKill']
+  ptyKillAll?: RustPtyApi['ptyKillAll']
 }
 
 let rustCore: RustCoreModule | null = null
@@ -240,6 +262,30 @@ export const NativeEngine = {
       console.error('[Lumina Native Engine] Error during native build_graph_data:', err)
       return null
     }
+  },
+
+  /**
+   * Native ConPTY/PTY terminal engine if compiled in lumina_core
+   */
+  getPty(): RustPtyApi | null {
+    const core = loadRustCore()
+    if (
+      core &&
+      typeof core.ptySpawn === 'function' &&
+      typeof core.ptyWrite === 'function' &&
+      typeof core.ptyResize === 'function' &&
+      typeof core.ptyKill === 'function' &&
+      typeof core.ptyKillAll === 'function'
+    ) {
+      return {
+        ptySpawn: core.ptySpawn.bind(core),
+        ptyWrite: core.ptyWrite.bind(core),
+        ptyResize: core.ptyResize.bind(core),
+        ptyKill: core.ptyKill.bind(core),
+        ptyKillAll: core.ptyKillAll.bind(core)
+      }
+    }
+    return null
   }
 }
 

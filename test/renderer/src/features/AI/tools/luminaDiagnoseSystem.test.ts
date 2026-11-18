@@ -114,14 +114,12 @@ describe('System Self-Diagnostics & Health Verification (luminaDiagnoseSystem)',
     expect(healthBlock?.content).toContain('"metrics"')
   })
 
-  it('includes /doctor in SLASH_COMMANDS configured with Activity icon and /doctor insert text', () => {
-    const doctorCmd = SLASH_COMMANDS.find((cmd) => cmd.id === 'doctor')
-    expect(doctorCmd).toBeDefined()
-    expect(doctorCmd?.label).toBe('Doctor')
-    expect(doctorCmd?.insertText).toBe('/doctor')
-
-    const mockSetInput = vi.fn()
-    doctorCmd?.action?.(vi.fn(), { setInput: mockSetInput })
-    expect(mockSetInput).toHaveBeenCalledWith('/doctor')
+  it('exposes the 3 consolidated AI modes in SLASH_COMMANDS without /doctor', () => {
+    expect(SLASH_COMMANDS.find((cmd) => cmd.id === 'doctor')).toBeUndefined()
+    expect(SLASH_COMMANDS.map((cmd) => cmd.label)).toEqual([
+      'Planning & Strategy',
+      'Execution & Action',
+      'Research & Analysis'
+    ])
   })
 })

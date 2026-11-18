@@ -1,17 +1,56 @@
 #![deny(clippy::all)]
 
 pub mod graph;
+pub mod pty;
 pub mod scanner;
 pub mod search;
 
+use napi::{JsFunction, Result};
 use napi_derive::napi;
 pub use graph::{build_graph_data_impl, GraphData, GraphLink, GraphNode, NoteInput};
+pub use pty::{pty_kill_all_impl, pty_kill_impl, pty_resize_impl, pty_spawn_impl, pty_write_impl};
 pub use scanner::{scan_vault_impl, ScanResult, ScannedNote};
 pub use search::{search_notes_impl, SearchHit, SearchIndexItem};
 
 #[napi]
 pub fn get_core_version() -> String {
     "lumina-core-rust/0.1.0".to_string()
+}
+
+/// Spawn a native ConPTY/PTY shell session and stream output via callbacks
+#[napi]
+#[allow(clippy::too_many_arguments)]
+pub fn pty_spawn(
+    session_id: String,
+    shell: String,
+    args: Vec<String>,
+    cwd: String,
+    cols: u16,
+    rows: u16,
+    on_data: JsFunction,
+    on_exit: JsFunction,
+) -> Result<u32> {
+    pty_spawn_impl(session_id, shell, args, cwd, cols, rows, on_data, on_exit)
+}
+
+#[napi]
+pub fn pty_write(session_id: String, data: String) -> Result<bool> {
+    pty_write_impl(session_id, data)
+}
+
+#[napi]
+pub fn pty_resize(session_id: String, cols: u16, rows: u16) -> Result<bool> {
+    pty_resize_impl(session_id, cols, rows)
+}
+
+#[napi]
+pub fn pty_kill(session_id: String) -> Result<bool> {
+    pty_kill_impl(session_id)
+}
+
+#[napi]
+pub fn pty_kill_all() -> Result<()> {
+    pty_kill_all_impl()
 }
 
 /// Scan an entire vault directory using multithreaded Rayon parallelism

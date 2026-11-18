@@ -5,7 +5,7 @@
  * Can be rendered inside tabs, modals, media viewers, or inline containers.
  */
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import './pulseLoader.css'
 
 export interface PulseLoaderProps {
@@ -15,6 +15,8 @@ export interface PulseLoaderProps {
   size?: 'sm' | 'md'
   /** Render inline instead of centered full-container */
   inline?: boolean
+  /** Grace delay in ms before showing so fast operations don't flash */
+  delayMs?: number
   /** Optional extra CSS class */
   className?: string
 }
@@ -23,8 +25,23 @@ export const PulseLoader: React.FC<PulseLoaderProps> = ({
   message = 'Wait a second…',
   size = 'sm',
   inline = false,
+  delayMs = 180,
   className = ''
 }) => {
+  const [visible, setVisible] = useState(delayMs <= 0)
+
+  useEffect(() => {
+    if (delayMs <= 0) {
+      setVisible(true)
+      return
+    }
+    setVisible(false)
+    const timer = window.setTimeout(() => setVisible(true), delayMs)
+    return () => window.clearTimeout(timer)
+  }, [delayMs])
+
+  if (!visible) return null
+
   return (
     <div
       className={`lumina-pulse-loader size-${size}${inline ? ' is-inline' : ''} ${className}`.trim()}
