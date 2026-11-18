@@ -20,6 +20,7 @@ import React, { useRef, useState, useCallback, useMemo, memo, useEffect } from '
 import { createPortal } from 'react-dom'
 import {
   X,
+  CopyX,
   Pin,
   MoreHorizontal,
   ArrowRight,
@@ -70,6 +71,7 @@ interface SortableTabItemProps {
   isActive: boolean
   isDirty: boolean
   isPinned: boolean
+  showCloseOthersIcon: boolean
   onOpen: (id: string) => void
   onClose: (e: React.MouseEvent, id: string) => void
   onContextMenu: (e: React.MouseEvent, id: string) => void
@@ -79,7 +81,17 @@ interface SortableTabItemProps {
  * SortableTabItem — draggable tab using @dnd-kit/sortable
  */
 const SortableTabItem = memo<SortableTabItemProps>(
-  ({ id, snippet, isActive, isDirty, isPinned, onOpen, onClose, onContextMenu }) => {
+  ({
+    id,
+    snippet,
+    isActive,
+    isDirty,
+    isPinned,
+    showCloseOthersIcon,
+    onOpen,
+    onClose,
+    onContextMenu
+  }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
       id,
       data: { snippet },
@@ -144,7 +156,6 @@ const SortableTabItem = memo<SortableTabItemProps>(
               <div
                 onMouseDown={(e: React.MouseEvent) => {
                   e.stopPropagation()
-                  onClose(e, id)
                 }}
                 onClick={(e: React.MouseEvent) => {
                   e.stopPropagation()
@@ -158,19 +169,18 @@ const SortableTabItem = memo<SortableTabItemProps>(
             ) : !isPinned ? (
               <button
                 type="button"
-                className="tab-close-btn"
-                aria-label="Close tab"
-                title="Close tab"
+                className={`tab-close-btn${showCloseOthersIcon ? ' is-close-others' : ''}`}
+                aria-label={showCloseOthersIcon ? 'Close other tabs' : 'Close tab'}
+                title={showCloseOthersIcon ? 'Close Other Tabs (Alt+Click)' : 'Close tab'}
                 onMouseDown={(e: React.MouseEvent) => {
                   e.stopPropagation()
-                  onClose(e, id)
                 }}
                 onClick={(e: React.MouseEvent) => {
                   e.stopPropagation()
                   onClose(e, id)
                 }}
               >
-                <X size={14} />
+                {showCloseOthersIcon ? <CopyX size={14} /> : <X size={14} />}
               </button>
             ) : null}
           </div>
@@ -184,6 +194,7 @@ const SortableTabItem = memo<SortableTabItemProps>(
       prev.isActive === next.isActive &&
       prev.isDirty === next.isDirty &&
       prev.isPinned === next.isPinned &&
+      prev.showCloseOthersIcon === next.showCloseOthersIcon &&
       prev.snippet?.title === next.snippet?.title &&
       prev.snippet?.customIcon === next.snippet?.customIcon &&
       prev.snippet?.color === next.snippet?.color &&
@@ -223,6 +234,7 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
     splitDirection,
     splitPane,
     closePane,
+    closeSplit,
     moveTabToPane
   } = useWorkspaceStore(
     useShallow((state) => ({
@@ -249,6 +261,7 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
       splitDirection: state.splitDirection,
       splitPane: state.splitPane,
       closePane: state.closePane,
+      closeSplit: state.closeSplit,
       moveTabToPane: state.moveTabToPane
     }))
   )
@@ -282,6 +295,7 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
   const [prompt, setPrompt] = useState<{ id: string; title: string } | null>(null)
   const [iconPickerId, setIconPickerId] = useState<string | null>(null)
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
+  const [isAltPressed, setIsAltPressed] = useState(false)
   const isTabBarDropActive = useTabDragStore(
     (state) => state.dropTarget?.targetPane === paneId && state.dropTarget?.zone === 'tabbar'
   )
@@ -296,6 +310,25 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
       }
     })
   )
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Alt' || e.altKey) setIsAltPressed(true)
+    }
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Alt' || !e.altKey) setIsAltPressed(false)
+    }
+    const onBlur = () => setIsAltPressed(false)
+
+    window.addEventListener('keydown', onKeyDown, true)
+    window.addEventListener('keyup', onKeyUp, true)
+    window.addEventListener('blur', onBlur)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true)
+      window.removeEventListener('keyup', onKeyUp, true)
+      window.removeEventListener('blur', onBlur)
+    }
+  }, [])
 
   // Auto-scroll to active tab when it changes
   useEffect(() => {
@@ -338,9 +371,23 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
     [setActiveTabId]
   )
 
+  const canCloseOthers = openTabs.length > 1 || splitDirection !== 'none'
+
   const handleCloseTrigger = useCallback(
-    (e: React.MouseEvent | { stopPropagation: () => void }, id: string) => {
+    (e: React.MouseEvent | { stopPropagation: () => void; altKey?: boolean }, id: string) => {
       e.stopPropagation()
+      if ((e.altKey || isAltPressed) && canCloseOthers) {
+        if (openTabs.length > 1) {
+          closeOtherTabs(id)
+        } else if (splitDirection !== 'none') {
+          if (paneId !== 'primary') {
+            moveTabToPane(id, 'primary')
+          }
+          closeSplit()
+          useWorkspaceStore.getState().closeOtherTabs(id)
+        }
+        return
+      }
       if (pinnedTabIds.includes(id)) return
 
       if (dirtySnippetIds.includes(id)) {
@@ -350,7 +397,20 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
         closeTab(id)
       }
     },
-    [pinnedTabIds, dirtySnippetIds, snippetMap, closeTab]
+    [
+      isAltPressed,
+      canCloseOthers,
+      openTabs.length,
+      splitDirection,
+      paneId,
+      closeOtherTabs,
+      moveTabToPane,
+      closeSplit,
+      pinnedTabIds,
+      dirtySnippetIds,
+      snippetMap,
+      closeTab
+    ]
   )
 
   const pinnedTabs = useMemo(
@@ -361,6 +421,8 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
     () => openTabs.filter((id) => !pinnedTabIds.includes(id)),
     [openTabs, pinnedTabIds]
   )
+
+  const showCloseOthersIcon = isAltPressed && canCloseOthers
 
   const renderTab = (id: string) => {
     const snippet = snippetMap.get(id)
@@ -384,6 +446,7 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
         }
         isDirty={dirtySnippetIds.includes(id)}
         isPinned={pinnedTabIds.includes(id)}
+        showCloseOthersIcon={showCloseOthersIcon}
         onOpen={handleTabClick}
         onClose={handleCloseTrigger}
         onContextMenu={handleContextMenu}

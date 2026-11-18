@@ -206,6 +206,7 @@ function buildFoldDecorations(state: EditorState): DecorationSet {
 
   for (let l = 1; l <= doc.lines; l++) {
     const startLine = doc.line(l)
+    if (!startLine.text.includes('[!')) continue
     const header = parseCalloutHeaderLine(startLine.text)
     if (!header || header.foldMode === null) continue
 

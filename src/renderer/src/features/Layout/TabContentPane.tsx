@@ -24,8 +24,9 @@
 
 import React, { useLayoutEffect } from 'react'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
+import PulseLoader from '../../components/PulseLoader'
 import { useWorkspaceStore, type WorkspacePaneId } from '../../core/store/workspaceStore'
-import { countExplorerPerfRender, markExplorerPerf } from '../Explorer/utils/explorerPerf'
+import { countExplorerPerfRender, isExplorerPerfEnabled, markExplorerPerf } from '../Explorer/utils/explorerPerf'
 
 // Helper to retry dynamic imports if Vite dev server is still starting or compiling modules
 const lazyWithRetry = <T extends React.ComponentType<any>>(
@@ -145,6 +146,31 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
 
     if (!snippet) return null
 
+    const paneContent = (
+      <React.Suspense fallback={<PulseLoader message="Wait a second…" />}>
+        {snippet.type === 'image' ? (
+          <ImageViewerTab snippet={snippet} />
+        ) : snippet.type === 'pdf' ? (
+          <PDFViewerTab snippet={snippet} />
+        ) : snippet.type === 'canvas' ||
+          snippet.language === 'canvas' ||
+          snippet.fileName?.endsWith('.canvas') ? (
+          <CanvasTabPane {...({ snippet, onSave, isSelected } as any)} />
+        ) : (
+          <Editor
+            snippet={snippet as any}
+            onSave={onSave as any}
+            onToggleInspector={onToggleInspector}
+            isActive={isSelected}
+            onToggleExplorerModal={onToggleExplorerModal}
+            onSettingsClick={onSettingsClick}
+            onThemeClick={onThemeClick}
+            onGraphClick={onGraphClick}
+          />
+        )}
+      </React.Suspense>
+    )
+
     return (
       <div
         className={`tab-content-pane ${isSelected ? 'active' : 'inactive'}`}
@@ -158,7 +184,7 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
           pointerEvents: isSelected ? 'auto' : 'none',
           visibility: isSelected ? 'visible' : 'hidden',
           contentVisibility: isSelected ? 'visible' : 'hidden',
-          contain: isSelected ? 'none' : 'strict',
+          contain: isSelected ? 'layout style' : 'strict',
           // Keep inactive editors mounted to preserve undo/caret state, but take
           // their DOM out of layout so window resizing only lays out the active tab.
           display: isSelected ? 'flex' : 'none',
@@ -168,48 +194,13 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
         }}
       >
         <GlobalErrorHandler>
-          <React.Profiler id={`TabContentPane:${snippet.id}`} onRender={onEditorRender}>
-          <React.Suspense
-            fallback={
-              <div
-                role="status"
-                aria-label={`Opening ${snippet.title || 'note'}`}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '100%',
-                  height: '100%',
-                  color: 'var(--text-muted, var(--color-text-muted, #888))',
-                  fontSize: 13
-                }}
-              >
-                Opening {snippet.title || 'note'}…
-              </div>
-            }
-          >
-            {snippet.type === 'image' ? (
-              <ImageViewerTab snippet={snippet} />
-            ) : snippet.type === 'pdf' ? (
-              <PDFViewerTab snippet={snippet} />
-            ) : snippet.type === 'canvas' ||
-              snippet.language === 'canvas' ||
-              snippet.fileName?.endsWith('.canvas') ? (
-              <CanvasTabPane {...({ snippet, onSave, isSelected } as any)} />
-            ) : (
-              <Editor
-                snippet={snippet as any}
-                onSave={onSave as any}
-                onToggleInspector={onToggleInspector}
-                isActive={isSelected}
-                onToggleExplorerModal={onToggleExplorerModal}
-                onSettingsClick={onSettingsClick}
-                onThemeClick={onThemeClick}
-                onGraphClick={onGraphClick}
-              />
-            )}
-          </React.Suspense>
-          </React.Profiler>
+          {isExplorerPerfEnabled() ? (
+            <React.Profiler id={`TabContentPane:${snippet.id}`} onRender={onEditorRender}>
+              {paneContent}
+            </React.Profiler>
+          ) : (
+            paneContent
+          )}
         </GlobalErrorHandler>
       </div>
     )

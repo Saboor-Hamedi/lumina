@@ -6,10 +6,10 @@ import {
   RotateCcw,
   Copy,
   Check,
-  FolderOpen,
-  Image as ImageIcon
+  FolderOpen
 } from 'lucide-react'
 import { copyImageToClipboard } from './hooks/imageClipboard'
+import PulseLoader from '../../components/PulseLoader'
 import type { Snippet } from '../../core/editor/types'
 import './css/imageViewTab.css'
 
@@ -44,7 +44,9 @@ export const ImageViewerTab: React.FC<ImageViewerTabProps> = ({ snippet }) => {
     return `asset://local/${encodedSegments}`
   }, [relPath])
 
-  const [imageSrc, setImageSrc] = useState<string | null>(() => assetUrl)
+  const [imageSrc, setImageSrc] = useState<string | null>(() =>
+    (typeof window !== 'undefined' && (window as any).api?.readAsset) ? null : assetUrl
+  )
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [fallbackAttempted, setFallbackAttempted] = useState(false)
@@ -66,12 +68,49 @@ export const ImageViewerTab: React.FC<ImageViewerTabProps> = ({ snippet }) => {
       return
     }
 
+    let cancelled = false
     setLoading(true)
     setError(null)
     setScale(1)
     setPosition({ x: 0, y: 0 })
     setFallbackAttempted(false)
-    setImageSrc(assetUrl)
+
+    const readAsset = (window as any).api?.readAsset
+    if (readAsset) {
+      setImageSrc(null)
+      readAsset(relPath)
+        .then((res: any) => {
+          if (cancelled) return
+          if (res?.dataUrl) {
+            setImageSrc(res.dataUrl)
+          } else if (typeof res === 'string' && res.length > 0) {
+            setImageSrc(res.startsWith('data:') ? res : `data:image/png;base64,${res}`)
+          } else if (assetUrl && window.location.protocol !== 'http:' && window.location.protocol !== 'https:') {
+            setFallbackAttempted(true)
+            setImageSrc(assetUrl)
+          } else {
+            setError('Failed to load image from workspace')
+            setLoading(false)
+          }
+        })
+        .catch((err: any) => {
+          if (cancelled) return
+          console.error('[ImageViewerTab] readAsset IPC error:', err)
+          if (assetUrl && window.location.protocol !== 'http:' && window.location.protocol !== 'https:') {
+            setFallbackAttempted(true)
+            setImageSrc(assetUrl)
+          } else {
+            setError('Failed to load image from workspace')
+            setLoading(false)
+          }
+        })
+    } else {
+      setImageSrc(assetUrl)
+    }
+
+    return () => {
+      cancelled = true
+    }
   }, [relPath, assetUrl])
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -229,10 +268,7 @@ export const ImageViewerTab: React.FC<ImageViewerTabProps> = ({ snippet }) => {
 
       <div className="image-viewer-canvas">
         {loading && !imageSrc ? (
-          <div className="image-viewer-loading">
-            <ImageIcon size={28} className="image-viewer-spin-icon" />
-            <span>Loading image...</span>
-          </div>
+          <PulseLoader message="Wait a second…" />
         ) : error ? (
           <div className="image-viewer-error">{error}</div>
         ) : (

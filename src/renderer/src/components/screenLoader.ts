@@ -372,10 +372,55 @@ export const resetScreenLoader = (): void => {
   startTime = Date.now()
 }
 
+let pulseLoaderElement: HTMLElement | null = null
+
+export const showPulseLoader = (
+  message = 'Wait a second…',
+  container?: HTMLElement | null
+): HTMLElement | null => {
+  if (typeof document === 'undefined') return null
+  hidePulseLoader()
+
+  const el = document.createElement('div')
+  el.className = 'lumina-pulse-loader size-sm'
+  el.setAttribute('role', 'status')
+  el.setAttribute('aria-live', 'polite')
+  el.setAttribute('aria-label', message)
+  el.innerHTML = `
+    <span class="lumina-pulse-emblem" aria-hidden="true">
+      <span class="lumina-pulse-ring ring-1"></span>
+      <span class="lumina-pulse-ring ring-2"></span>
+      <span class="lumina-pulse-dot"></span>
+    </span>
+    <span class="lumina-pulse-message"></span>
+  `
+  const msgEl = el.querySelector('.lumina-pulse-message')
+  if (msgEl) msgEl.textContent = message
+
+  if (!container) {
+    el.style.position = 'fixed'
+    el.style.inset = '0'
+    el.style.zIndex = '9998'
+    el.style.pointerEvents = 'none'
+  }
+  ;(container || document.body).appendChild(el)
+  pulseLoaderElement = el
+  return el
+}
+
+export const hidePulseLoader = (): void => {
+  if (pulseLoaderElement && pulseLoaderElement.parentNode) {
+    pulseLoaderElement.parentNode.removeChild(pulseLoaderElement)
+  }
+  pulseLoaderElement = null
+}
+
 export const screenLoader = {
   init: initScreenLoader,
   show: showScreenLoader,
   hide: hideScreenLoader,
+  showPulse: showPulseLoader,
+  hidePulse: hidePulseLoader,
   setProgress: setScreenLoaderProgress,
   setStatus: setScreenLoaderStatus,
   isVisible: isScreenLoaderVisible,
