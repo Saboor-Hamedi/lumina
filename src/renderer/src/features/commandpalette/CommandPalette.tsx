@@ -1218,8 +1218,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
                     <PreviewCommandPalette content={previewContent} onClose={onClose} />
                   ) : (
                     <div className="palette-empty-preview">
-                      <Search size={32} style={{ opacity: 0.2 }} />
-                      <p>Select a command, setting, or note to preview details</p>
+                      <div className="palette-empty-icon-wrap">
+                        <Search size={22} />
+                      </div>
+                      <div className="palette-empty-title">No preview available</div>
+                      <p className="palette-empty-subtitle">Select a command, setting, or note to preview details</p>
                     </div>
                   )}
                 </div>

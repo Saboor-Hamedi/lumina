@@ -17,11 +17,11 @@
   max-width: 94vw !important;
   min-height: 480px !important;
   max-height: 78vh !important;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--border-dim) !important;
   overflow: hidden !important;
   border-radius: 12px !important;
-  background: var(--bg-panel, #1e1e2e) !important;
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.06)) !important;
+  background: var(--bg-panel, var(--bg-app)) !important;
+  border: 1px solid var(--border-dim) !important;
   position: relative;
   -webkit-app-region: no-drag !important;
 }
@@ -52,10 +52,17 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: rgba(0, 0, 0, 0.5) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
   z-index: 10005 !important;
+}
+
+[data-theme='parchment'] .settings-overlay,
+[data-theme='light'] .settings-overlay,
+[data-theme='porcelain'] .settings-overlay,
+[data-theme='rosePineDawn'] .settings-overlay {
+  background: rgba(43, 33, 22, 0.28) !important;
 }
 
 /* === CUSTOM HEADER === */
@@ -79,8 +86,8 @@
   height: 36px;
   min-height: 36px;
   padding: 0 12px;
-  background: var(--bg-panel, #16161e);
-  border-bottom: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  background: var(--bg-panel, var(--bg-sidebar));
+  border-bottom: 1px solid var(--border-dim);
   z-index: 10;
 }
 
@@ -266,9 +273,9 @@
   height: 34px;
   margin: 2px 8px;
   width: calc(100% - 16px);
-  color: var(--text-muted, #c9d1d9);
+  color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   border-radius: 7px;
   border: 1px solid transparent;
   background: transparent;
@@ -280,22 +287,22 @@
 }
 
 .nav-item:hover {
-  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
+  background: var(--bg-hover, var(--bg-active, rgba(125, 125, 125, 0.08)));
   color: var(--text-main);
   border-color: var(--border-dim, transparent);
 }
 
 .nav-item.active {
-  background: rgba(var(--text-accent-rgb, 99, 102, 241), 0.12);
-  color: var(--text-accent, #818cf8);
+  background: var(--bg-active, rgba(var(--text-accent-rgb, 99, 102, 241), 0.12));
+  color: var(--text-accent);
   font-weight: 600;
-  border-color: rgba(var(--text-accent-rgb, 99, 102, 241), 0.22);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border-color: var(--border-dim);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .nav-item.active:hover {
-  background: rgba(var(--text-accent-rgb, 99, 102, 241), 0.18);
-  color: var(--text-accent, #818cf8);
+  background: var(--bg-active);
+  color: var(--text-accent);
 }
 
 /* === PANE HEADER === */
@@ -408,17 +415,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   padding: 10px 14px;
   border-radius: 8px;
-  border: 1px solid transparent;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-card);
   gap: 16px;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .settings-row:hover {
-  background: var(--bg-hover, rgba(125, 125, 125, 0.04));
-  border-color: var(--border-dim, transparent);
+  background: var(--bg-hover, var(--bg-card));
+  border-color: var(--border-subtle, var(--border-dim));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 .row-info {
@@ -452,12 +461,12 @@
 .vault-path-display {
   display: flex;
   align-items: center;
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--bg-card);
   border: 1px solid var(--border-dim);
   border-radius: 6px;
   padding: 8px 12px;
   margin-bottom: 14px;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .vault-path-display .vault-icon {
