@@ -110,6 +110,7 @@ export function useEditorState({
       setIsDirty(true)
       if (snippet?.id) {
         setDirty(snippet.id, true)
+        useWorkspaceStore.getState().setDraft?.(snippet.id, newContent)
       }
 
       const settings = (useSettingsStore.getState() as any).settings

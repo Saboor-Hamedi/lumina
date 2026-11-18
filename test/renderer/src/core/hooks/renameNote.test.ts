@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { renameNote } from '../../../../../src/renderer/src/core/hooks/renameNote'
+import { useWorkspaceStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
 
 describe('renameNote', () => {
   it('shows error toast when no item in renameModal', async () => {
@@ -126,5 +127,40 @@ describe('renameNote', () => {
     })
 
     expect(saveSnippet).toHaveBeenCalled()
+  })
+
+  it('preserves unsaved draft content when renaming an Untitled note before Ctrl+S', async () => {
+    const saveSnippet = vi.fn()
+    const setSelectedSnippet = vi.fn()
+    useWorkspaceStore.setState({
+      notes: [{ id: 'unsaved-1', title: 'Untitled', code: '', language: 'markdown' } as any],
+      drafts: { 'unsaved-1': 'My unsaved notes here' }
+    })
+
+    await renameNote({
+      renameModal: {
+        isOpen: true,
+        item: { id: 'unsaved-1', title: 'Untitled', code: '', language: 'markdown' },
+        newName: 'Custom Note'
+      },
+      saveSnippet,
+      setSelectedSnippet,
+      setRenameModal: vi.fn()
+    })
+
+    expect(saveSnippet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'unsaved-1',
+        title: 'Custom Note',
+        code: 'My unsaved notes here'
+      })
+    )
+    expect(setSelectedSnippet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'unsaved-1',
+        title: 'Custom Note',
+        code: 'My unsaved notes here'
+      })
+    )
   })
 })

@@ -176,15 +176,22 @@ export const renameNote = async ({
     }
   }
 
+  const storeState = useWorkspaceStore.getState()
+  const liveNote = storeState.notes?.find((n: any) => n.id === item.id) || item
+  const liveDraft = storeState.drafts?.[item.id]
+  const preservedCode = liveDraft !== undefined ? liveDraft : (liveNote.code ?? item.code)
+
   const updatedItem = {
+    ...liveNote,
     ...item,
+    code: preservedCode,
     title: baseName,
     language: lang
   }
 
   const setSelectionAction =
-    setSelectedNote || setSelectedSnippet || useWorkspaceStore.getState().setSelectedNote
-  const saveAction = saveNote || saveSnippet || useWorkspaceStore.getState().saveNote
+    setSelectedNote || setSelectedSnippet || storeState.setSelectedNote
+  const saveAction = saveNote || saveSnippet || storeState.saveNote
 
   if (setSelectionAction) {
     setSelectionAction(updatedItem)
@@ -192,6 +199,7 @@ export const renameNote = async ({
 
   try {
     if (saveAction) await saveAction(updatedItem)
+    storeState.setDirty?.(item.id, false)
   } catch (error) {
     console.error('Failed to save item after rename:', error)
     if (showToast) showToast('❌ Failed to rename note.', 'error')

@@ -118,11 +118,11 @@ describe('SettingStore - Zen Mode and Visibility Management', () => {
       isRightOpen: false
     })
 
-    // UI elements hidden
+    // UI elements hidden (statusBar, activityBar, tabs stay mounted for smooth CSS .zen-hidden transitions)
     expect(state.titleBarVisible).toBe(false)
-    expect(state.statusBarVisible).toBe(false)
-    expect(state.activityBarVisible).toBe(false)
-    expect(state.tabsVisible).toBe(false)
+    expect(state.statusBarVisible).toBe(true)
+    expect(state.activityBarVisible).toBe(true)
+    expect(state.tabsVisible).toBe(true)
     expect(state.breadcrumbsVisible).toBe(false)
     expect(state.sidebar.isLeftOpen).toBe(false)
     expect(state.rightSidebar.isRightOpen).toBe(false)

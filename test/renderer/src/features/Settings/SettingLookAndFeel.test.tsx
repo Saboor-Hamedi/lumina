@@ -16,9 +16,7 @@ vi.mock('../../../../../src/renderer/src/core/hooks/useFontSettings', () => ({
     updateEditorFontFamily: vi.fn(),
     updateEditorFontSize: vi.fn(),
     themeAccentColor: '',
-    updateThemeAccentColor: vi.fn(),
-    useBorderLeft: true,
-    updateUseBorderLeft: vi.fn()
+    updateThemeAccentColor: vi.fn()
   })
 }))
 
@@ -27,7 +25,6 @@ const baseSettings = (): any => ({
   fontSize: 14,
   mirrorMode: true,
   translucency: false,
-  cursor: { useBorderLeft: true },
   typeSound: false,
   typeSoundVolume: 50,
   autoSave: true,
@@ -75,20 +72,12 @@ describe('SettingLookAndFeel', () => {
 
   it('renders the Interface & Behavior toggles', () => {
     render(<SettingLookAndFeel />)
-    expect(screen.getByText('Active Line Left Border')).toBeInTheDocument()
+    expect(screen.queryByText('Active Line Left Border')).not.toBeInTheDocument()
     expect(screen.getByText('Mechanical Keyboard Sound')).toBeInTheDocument()
   })
 
   const switchInputFor = (labelText: string): HTMLInputElement =>
     screen.getByText(labelText).closest('.settings-row')?.querySelector('input') as HTMLInputElement
-
-  it('toggles Active Line Left Border in the store', () => {
-    render(<SettingLookAndFeel />)
-    const checkbox = switchInputFor('Active Line Left Border')
-    expect(checkbox.checked).toBe(true)
-    fireEvent.click(checkbox)
-    expect(useSettingsStore.getState().settings.cursor?.useBorderLeft).toBe(false)
-  })
 
   it('toggles Mechanical Keyboard Sound in the store', () => {
     render(<SettingLookAndFeel />)
@@ -116,13 +105,5 @@ describe('SettingLookAndFeel', () => {
     rerender(<SettingLookAndFeel />)
     expect(screen.getByText('Typing Volume')).toBeInTheDocument()
     expect(screen.getByText('50%')).toBeInTheDocument()
-  })
-
-  it('toggles the Active Line Left Border cursor setting', () => {
-    render(<SettingLookAndFeel />)
-    const checkbox = switchInputFor('Active Line Left Border')
-    expect(checkbox.checked).toBe(true)
-    fireEvent.click(checkbox)
-    expect(useSettingsStore.getState().settings.cursor?.useBorderLeft).toBe(false)
   })
 })
