@@ -27,7 +27,7 @@
     "analyze": "electron-vite build --mode analyze",
     "analyze:bundle": "node scripts/analyze-bundle.js",
     "workbench": "node scripts/workbench.js",
-    "test": "vitest",
+    "test": "vitest run",
     "test:rust": "cargo test --workspace",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",

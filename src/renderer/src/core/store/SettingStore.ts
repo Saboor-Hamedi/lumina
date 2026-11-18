@@ -637,7 +637,11 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     const updates: Partial<Settings> = {
       zenMode: { ...zen, enabled: true },
       zenPreState: preState,
-      titleBarVisible: false,
+      titleBarVisible: zen.hideTitleBar !== false ? false : s.titleBarVisible,
+      statusBarVisible: zen.hideStatusBar !== false ? false : s.statusBarVisible,
+      activityBarVisible: zen.hideActivityBar !== false ? false : s.activityBarVisible,
+      tabsVisible: zen.hideTabs !== false ? false : s.tabsVisible,
+      breadcrumbsVisible: false,
       sidebar: { ...(s.sidebar || { width: 150, isLeftOpen: true }), isLeftOpen: false },
       rightSidebar: { ...(s.rightSidebar || { width: 150, isRightOpen: false }), isRightOpen: false }
     }
@@ -668,6 +672,10 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
 
     if (pre) {
       if (pre.titleBarVisible !== undefined) updates.titleBarVisible = pre.titleBarVisible
+      if (pre.statusBarVisible !== undefined) updates.statusBarVisible = pre.statusBarVisible
+      if (pre.activityBarVisible !== undefined) updates.activityBarVisible = pre.activityBarVisible
+      if (pre.tabsVisible !== undefined) updates.tabsVisible = pre.tabsVisible
+      if (pre.breadcrumbsVisible !== undefined) updates.breadcrumbsVisible = pre.breadcrumbsVisible
       if (pre.isLeftOpen !== undefined) {
         updates.sidebar = { ...(s.sidebar || { width: 150, isLeftOpen: true }), isLeftOpen: pre.isLeftOpen }
       }
@@ -676,6 +684,10 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       }
     } else {
       updates.titleBarVisible = true
+      updates.statusBarVisible = true
+      updates.activityBarVisible = true
+      updates.tabsVisible = true
+      updates.breadcrumbsVisible = true
       updates.sidebar = { ...(s.sidebar || { width: 150, isLeftOpen: true }), isLeftOpen: true }
       updates.rightSidebar = { ...(s.rightSidebar || { width: 150, isRightOpen: false }), isRightOpen: false }
     }

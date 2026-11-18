@@ -17,6 +17,7 @@
  */
 
 import React, { memo, useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Files,
   MessageSquare,
@@ -64,11 +65,18 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
   })
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const helpMenuRef = useRef<HTMLDivElement | null>(null)
+  const popoverRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (!isHelpOpen) return
     const handleOutside = (e: MouseEvent) => {
-      if (helpMenuRef.current && !helpMenuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      if (
+        helpMenuRef.current &&
+        !helpMenuRef.current.contains(target) &&
+        popoverRef.current &&
+        !popoverRef.current.contains(target)
+      ) {
         setIsHelpOpen(false)
       }
     }
@@ -251,35 +259,47 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
             </button>
           </ToolTip>
 
-          {isHelpOpen && (
-            <div className="activity-bar-help-popover" role="menu">
-              <button
-                type="button"
-                role="menuitem"
-                className="activity-bar-help-item"
-                onClick={() => {
-                  setIsHelpOpen(false)
-                  handleOpenDocs()
+          {isHelpOpen &&
+            createPortal(
+              <div
+                ref={popoverRef}
+                className="activity-bar-help-popover"
+                role="menu"
+                style={{
+                  position: 'fixed',
+                  left: `${(helpMenuRef.current?.getBoundingClientRect().right ?? 42) + 6}px`,
+                  bottom: `${Math.max(8, window.innerHeight - (helpMenuRef.current?.getBoundingClientRect().bottom ?? 48))}px`,
+                  zIndex: 100000
                 }}
               >
-                <Book size={13} />
-                <span>Documentation</span>
-                <kbd>{isMac ? '⌘D' : 'Ctrl+D'}</kbd>
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="activity-bar-help-item"
-                onClick={() => {
-                  setIsHelpOpen(false)
-                  handleOpenGuide()
-                }}
-              >
-                <Compass size={13} />
-                <span>Lumina Guide</span>
-              </button>
-            </div>
-          )}
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="activity-bar-help-item"
+                  onClick={() => {
+                    setIsHelpOpen(false)
+                    handleOpenDocs()
+                  }}
+                >
+                  <Book size={13} />
+                  <span>Documentation</span>
+                  <kbd>{isMac ? '⌘D' : 'Ctrl+D'}</kbd>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="activity-bar-help-item"
+                  onClick={() => {
+                    setIsHelpOpen(false)
+                    handleOpenGuide()
+                  }}
+                >
+                  <Compass size={13} />
+                  <span>Lumina Guide</span>
+                </button>
+              </div>,
+              document.body
+            )}
         </div>
 
         {/* Communication & Capsule Mail Hub */}
