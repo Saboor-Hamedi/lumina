@@ -66,7 +66,7 @@ export class CodeBlockHeaderWidget extends WidgetType {
   }
 
   get estimatedHeight(): number {
-    return 0
+    return 26
   }
 
   eq(other: CodeBlockHeaderWidget): boolean {
@@ -115,16 +115,12 @@ export class CodeBlockHeaderWidget extends WidgetType {
       }
     })
 
-    const floatingBar = document.createElement('div')
-    floatingBar.className = 'code-block-floating-actions'
-    floatingBar.appendChild(langLabel)
+    wrap.appendChild(langLabel)
 
     const actionsWrap = document.createElement('div')
     actionsWrap.style.display = 'flex'
     actionsWrap.style.alignItems = 'center'
-    floatingBar.appendChild(actionsWrap)
-
-    wrap.appendChild(floatingBar)
+    wrap.appendChild(actionsWrap)
 
     const root = createRoot(actionsWrap)
     wrap._reactRoot = root
@@ -315,7 +311,10 @@ const codeBlockHoverHandler = EditorView.domEventHandlers({
     let header: HTMLElement | null = null
     if (line) {
       let prev = line.previousElementSibling as HTMLElement | null
-      while (prev && prev.classList.contains('cm-line')) {
+      while (
+        prev &&
+        (prev.classList.contains('cm-atomic-fenced-code') || prev.classList.contains('cm-widgetBuffer'))
+      ) {
         prev = prev.previousElementSibling as HTMLElement | null
       }
       if (prev && prev.classList.contains('code-block-widget-header')) {

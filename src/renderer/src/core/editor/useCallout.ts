@@ -44,7 +44,7 @@ export class CalloutHeaderWidget extends WidgetType {
     return other.type === this.type && other.title === this.title
   }
 
-  toDOM(): HTMLElement {
+  toDOM(view: EditorView): HTMLElement {
     const wrap = document.createElement('span')
     wrap.className = `lumina-callout-header lumina-callout-${this.type}`
 
@@ -72,6 +72,54 @@ export class CalloutHeaderWidget extends WidgetType {
 
     wrap.appendChild(icon)
     wrap.appendChild(text)
+
+    // Obsidian-style copy button on the right (shown on hover)
+    const copyBtn = document.createElement('button')
+    copyBtn.type = 'button'
+    copyBtn.className = 'lumina-callout-copy-btn'
+    copyBtn.title = 'Copy callout'
+    copyBtn.setAttribute('aria-label', 'Copy callout')
+    const copyIconSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`
+    const checkIconSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+    copyBtn.innerHTML = copyIconSvg
+
+    copyBtn.addEventListener('mousedown', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+    })
+
+    copyBtn.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const pos = view.posAtDOM(wrap)
+      if (pos < 0) return
+
+      const doc = view.state.doc
+      const startLine = doc.lineAt(pos)
+      const collected: string[] = []
+      const firstMatch = startLine.text.match(/^(?:>\s*)+\[![a-zA-Z]+\]\s*(.*)/)
+      if (firstMatch && firstMatch[1].trim()) {
+        collected.push(firstMatch[1].trim())
+      }
+
+      for (let ln = startLine.number + 1; ln <= doc.lines; ln++) {
+        const line = doc.line(ln)
+        if (!/^\s*>/.test(line.text)) break
+        collected.push(line.text.replace(/^(?:\s*>\s?)+/, ''))
+      }
+
+      const payload = collected.join('\n').trim()
+      if (!payload) return
+      navigator.clipboard?.writeText(payload).catch(() => {})
+      copyBtn.classList.add('copied')
+      copyBtn.innerHTML = checkIconSvg
+      window.setTimeout(() => {
+        copyBtn.classList.remove('copied')
+        copyBtn.innerHTML = copyIconSvg
+      }, 1400)
+    })
+
+    wrap.appendChild(copyBtn)
 
     return wrap
   }

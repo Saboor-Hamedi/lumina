@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { computeMinimalChange } from './editorDiff'
 import { useSettingsStore } from '../store/SettingStore'
 import { useWorkspaceStore } from '../store/workspaceStore'
+import { stripMarkdownFrontmatter } from '../../../../shared/frontmatter'
 import type { UseEditorStateProps, UseEditorStateReturn, Snippet } from './types'
 
 export interface ConflictPrompt {
@@ -154,61 +155,58 @@ export function useEditorState({
         return
       }
 
-      const codeChangedFromOutside = incomingCode !== lastSavedCodeRef.current
+      // Normalize content to compare bodies without frontmatter formatting noise
+      const incomingClean = stripMarkdownFrontmatter(incomingCode).content.trim()
+      const lastSavedClean = stripMarkdownFrontmatter(lastSavedCodeRef.current).content.trim()
+      const currentClean = stripMarkdownFrontmatter(currentCode).content.trim()
 
-      if (codeChangedFromOutside) {
-        const timeSinceLastSave = Date.now() - lastSaveTimeRef.current
-        const isOwnSaveEcho =
-          timeSinceLastSave < 3500 &&
-          (incomingCode === lastSavedCodeRef.current ||
-            incomingCode.trim() === lastSavedCodeRef.current.trim())
+      // If what is on disk matches what Lumina last saved, it is Lumina's own save/chokidar echo!
+      // This is NEVER an external modification conflict, regardless of how much time has passed.
+      if (incomingClean === lastSavedClean || incomingCode === lastSavedCodeRef.current) {
+        lastSavedCodeRef.current = incomingCode
+        return
+      }
 
-        // Suppress chokidar / store echo from our own auto-save (even if user kept typing)
-        if (isOwnSaveEcho) {
-          lastSavedCodeRef.current = incomingCode
-          return
-        }
+      // If disk content already matches the current editor content (ignoring whitespace),
+      // update our saved pointer and do nothing.
+      if (incomingClean === currentClean) {
+        lastSavedCodeRef.current = incomingCode
+        return
+      }
 
-        // If disk content didn't actually change from what we last saved/loaded (e.g. trailing newline from gray-matter),
-        // or only differs from editor by leading/trailing blank lines, never overwrite or prompt conflict.
-        const diskUnchanged = incomingCode.trim() === lastSavedCodeRef.current.trim()
-        const isTrivialDifference = incomingCode.trim() === currentCode.trim()
-        if (diskUnchanged || isTrivialDifference) {
-          lastSavedCodeRef.current = incomingCode
-          return
-        }
+      // A genuine external conflict ONLY occurs if:
+      // 1. The user has active unsaved local changes (isDirty === true)
+      // 2. The incoming disk content differs from what Lumina last saved
+      // 3. The incoming disk content differs from what the user has typed
+      const hasUnsavedEdits = isDirty && currentClean !== lastSavedClean
 
-        // A true conflict ONLY exists if user has active unsaved local edits
-        // that differ non-trivially from both incomingCode and currentCode
-        const hasUnsavedEdits = isDirty && currentCode !== lastSavedCodeRef.current
+      if (hasUnsavedEdits) {
+        // True conflict from an external editor or process
+        setConflictPrompt({
+          snippetCode: incomingCode,
+          snippetTitle: snippet?.title || 'Untitled'
+        })
+      } else {
+        // Safe to sync external changes silently (e.g. git checkout, external edits when not dirty)
+        setIsDirty(false)
+        lastSavedCodeRef.current = incomingCode
+        latestCodeRef.current = incomingCode
 
-        if (hasUnsavedEdits && !isTrivialDifference) {
-          // Real conflict: user is actively typing and external changes arrived
-          setConflictPrompt({
-            snippetCode: incomingCode,
-            snippetTitle: snippet?.title || 'Untitled'
-          })
+        if (realViewRef.current) {
+          const view = realViewRef.current
+          const currentDoc = view.state.doc.toString()
+          // Only dispatch if the content actually changed non-trivially to avoid wiping intentional leading blank lines
+          if (currentDoc !== incomingCode && currentDoc.trim() !== incomingCode.trim()) {
+            const minimalChange = computeMinimalChange(currentDoc, incomingCode)
+            if (minimalChange.from !== minimalChange.to || minimalChange.insert.length > 0) {
+              view.dispatch({
+                changes: minimalChange
+              })
+            }
+          }
         } else {
-          // Safe to sync external changes (e.g. reload, disk sync, or AI tool updates)
-          setIsDirty(false)
-          lastSavedCodeRef.current = incomingCode
-          latestCodeRef.current = incomingCode
-
-          if (realViewRef.current) {
-            const view = realViewRef.current
-            const currentDoc = view.state.doc.toString()
-            if (currentDoc !== incomingCode) {
-              const minimalChange = computeMinimalChange(currentDoc, incomingCode)
-              if (minimalChange.from !== minimalChange.to || minimalChange.insert.length > 0) {
-                view.dispatch({
-                  changes: minimalChange
-                })
-              }
-            }
-          } else {
-            if (currentCode !== incomingCode) {
-              setEditorKey((k) => k + 1)
-            }
+          if (currentCode !== incomingCode && currentCode.trim() !== incomingCode.trim()) {
+            setEditorKey((k) => k + 1)
           }
         }
       }

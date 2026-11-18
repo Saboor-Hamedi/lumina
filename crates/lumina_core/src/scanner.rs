@@ -138,6 +138,7 @@ fn parse_yaml_line(line: &str, fm: &mut ParsedFrontmatter) -> bool {
 pub fn extract_and_strip_frontmatter(raw: &str) -> (ParsedFrontmatter, &str) {
     let mut fm = ParsedFrontmatter::default();
     let mut content = raw.strip_prefix('\u{feff}').unwrap_or(raw);
+    let mut has_yaml_frontmatter = false;
 
     // 1. Strip any standard `---...---` blocks
     loop {
@@ -173,17 +174,12 @@ pub fn extract_and_strip_frontmatter(raw: &str) -> (ParsedFrontmatter, &str) {
         }
 
         if let Some((yaml_end, next_content_start)) = closing_found {
+            has_yaml_frontmatter = true;
             let yaml_block = &inner_and_rest[..yaml_end];
             for line in yaml_block.lines() {
                 parse_yaml_line(line, &mut fm);
             }
             let mut next = &inner_and_rest[next_content_start..];
-            if next.starts_with("\r\n") {
-                next = &next[2..];
-            } else if next.starts_with('\n') {
-                next = &next[1..];
-            }
-            // Strip at most one separator newline added by gray-matter after `---`
             if next.starts_with("\r\n") {
                 next = &next[2..];
             } else if next.starts_with('\n') {
@@ -195,45 +191,44 @@ pub fn extract_and_strip_frontmatter(raw: &str) -> (ParsedFrontmatter, &str) {
         }
     }
 
-    // 2. Strip any loose metadata block at the top of content
-    let mut byte_offset = 0;
-    let mut in_loose_metadata = false;
+    // 2. Only check for loose metadata `key: value` lines if NO standard YAML was present
+    // and the very first line is non-empty (to preserve intentional leading blank lines).
+    if !has_yaml_frontmatter {
+        let mut byte_offset = 0;
+        let mut in_loose_metadata = false;
 
-    for line in content.split_inclusive('\n') {
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            if in_loose_metadata {
-                byte_offset += line.len();
-                continue;
-            } else {
-                byte_offset += line.len();
-                continue;
+        for (idx, line) in content.split_inclusive('\n').enumerate() {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                if idx == 0 {
+                    break;
+                }
+                if in_loose_metadata {
+                    byte_offset += line.len();
+                    continue;
+                }
+                break;
             }
+
+            if let Some((k, _)) = trimmed.split_once(':') {
+                let key = k.trim();
+                if is_known_metadata_key(key) {
+                    in_loose_metadata = true;
+                    parse_yaml_line(trimmed, &mut fm);
+                    byte_offset += line.len();
+                    continue;
+                }
+            }
+
+            break;
         }
 
-        if let Some((k, _)) = trimmed.split_once(':') {
-            let key = k.trim();
-            if is_known_metadata_key(key) {
-                in_loose_metadata = true;
-                parse_yaml_line(trimmed, &mut fm);
-                byte_offset += line.len();
-                continue;
-            }
+        if in_loose_metadata {
+            content = &content[byte_offset..];
         }
-
-        break;
     }
 
-    if in_loose_metadata {
-        content = &content[byte_offset..];
-    }
-
-    let clean_body = if in_loose_metadata {
-        content.trim_start_matches(|c| c == '\r' || c == '\n')
-    } else {
-        content
-    };
-    (fm, clean_body)
+    (fm, content)
 }
 
 /// Extract first markdown H1 (# Title)

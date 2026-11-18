@@ -520,6 +520,13 @@ export async function convertDomNodeToMarkdown(node, options = {}, listDepth = 0
   }
 
   if (tagName === 'div') {
+    const trimmed = innerMarkdown.trim()
+    if (!trimmed) return ''
+    // If this div is a direct child of body or another div, ensure block separation so lines don't collapse into one row
+    const parentTag = (node.parentElement?.tagName || '').toLowerCase()
+    if (parentTag === 'body' || parentTag === 'div' || parentTag === 'td') {
+      return innerMarkdown.endsWith('\n') ? innerMarkdown : `${innerMarkdown}\n`
+    }
     return innerMarkdown
   }
 
@@ -591,6 +598,17 @@ async function convertTableToMarkdown(tableEl, options) {
     }
     return padded
   })
+
+  // When there is only 1 column (e.g. user copied a single column from Docs, Sheets, or Word table),
+  // GFM Markdown tables require >= 2 columns to parse as a Table. In CommonMark / Lezer,
+  // a 1-column pipe table degrades into a single Paragraph and collapses all lines into a single row.
+  // Instead, output each cell on its own line so the column preserves its vertical sequence cleanly.
+  if (colCount === 1) {
+    const lines = normalizedRows
+      .map((row) => row[0])
+      .filter((text) => text && text.trim().length > 0)
+    return `\n\n${lines.join('\n\n')}\n\n`
+  }
 
   // Format header row (Row 0)
   const headerRow = normalizedRows[0]

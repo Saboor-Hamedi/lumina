@@ -26,6 +26,7 @@ import MetaHeader from './meta/MetaHeader'
 import type { Snippet, EditorHandle } from '../../core/editor/types'
 import type { ToastType } from '../../core/notification'
 import { markExplorerPerf } from '../Explorer/utils/explorerPerf'
+import { stripMarkdownFrontmatter } from '../../../../shared/frontmatter'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -174,45 +175,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
         markExplorerPerf('document-source-clean-end', { noteId: snippet?.id, durationMs: 0, sourceLength: 0 })
         return ''
       }
-      let text = raw.replace(/^\uFEFF/, '')
-      while (/^\s*---\r?\n/.test(text)) {
-        const match = text.match(/^\s*---\r?\n[\s\S]*?\r?\n---\r?\n?([\s\S]*)$/)
-        if (!match) break
-        text = match[1] || ''
-      }
-      const lines = text.split(/\r?\n/)
-      let lineIdx = 0
-      let foundLoose = false
-      const knownKeys = new Set([
-        'id', 'title', 'language', 'tags', 'selection', 'ispinned', 'pinned',
-        'islearned', 'learned', 'customicon', 'icon', 'createdat', 'created_at',
-        'timestamp', 'color', 'type', 'folderid', 'folder_id'
-      ])
-      while (lineIdx < lines.length) {
-        const line = lines[lineIdx].trim()
-        if (!line) {
-          if (foundLoose) {
-            lineIdx++
-            continue
-          }
-          lineIdx++
-          continue
-        }
-        const colonIdx = line.indexOf(':')
-        if (colonIdx !== -1) {
-          const key = line.slice(0, colonIdx).trim().toLowerCase()
-          if (knownKeys.has(key)) {
-            foundLoose = true
-            lineIdx++
-            continue
-          }
-        }
-        break
-      }
-      if (foundLoose) {
-        text = lines.slice(lineIdx).join('\n')
-      }
-      const cleaned = foundLoose ? text.replace(/^[\r\n]+/, '') : text
+      const cleaned = stripMarkdownFrontmatter(raw).content
       markExplorerPerf('document-source-clean-end', {
         noteId: snippet?.id,
         durationMs: Number((performance.now() - sourceStartedAt).toFixed(2)),

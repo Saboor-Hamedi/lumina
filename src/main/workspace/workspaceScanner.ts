@@ -3,6 +3,7 @@ import path from 'path'
 import crypto from 'crypto'
 import matter from 'gray-matter'
 import { NativeEngine } from './nativeEngine'
+import { stripMarkdownFrontmatter } from '../../shared/frontmatter'
 
 /**
  * Recognized image file extensions for media attachments within the workspace.
@@ -100,16 +101,10 @@ export function safeParseFrontmatter(rawContent: string): FrontmatterResult {
     return { data: {}, content: '' }
   }
 
-  let text = rawContent.replace(/^\uFEFF/, '')
+  const { content, yamlBlocks, looseLines } = stripMarkdownFrontmatter(rawContent)
   const data: Record<string, any> = {}
 
-  // 1. Strip any standard `---...---` blocks (including repeated/nested)
-  while (/^\s*---\r?\n/.test(text)) {
-    const match = text.match(/^\s*---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/)
-    if (!match) break
-    const fmHeader = match[1]
-    text = match[2] || ''
-
+  for (const fmHeader of yamlBlocks) {
     try {
       const parsed = matter(`---\n${fmHeader}\n---`)
       if (parsed.data) {
@@ -133,56 +128,29 @@ export function safeParseFrontmatter(rawContent: string): FrontmatterResult {
     }
   }
 
-  // 2. Strip any loose metadata key: value lines at the top of content
-  const lines = text.split(/\r?\n/)
-  let lineIdx = 0
-  let foundLooseMetadata = false
-
-  while (lineIdx < lines.length) {
-    const line = lines[lineIdx].trim()
-    if (!line) {
-      if (foundLooseMetadata) {
-        lineIdx++
-        continue
-      }
-      lineIdx++
-      continue
-    }
-
+  for (const line of looseLines) {
     const colonIdx = line.indexOf(':')
     if (colonIdx !== -1) {
-      const key = line.slice(0, colonIdx).trim().toLowerCase()
-      if (KNOWN_METADATA_KEYS.has(key)) {
-        foundLooseMetadata = true
-        let val: any = line.slice(colonIdx + 1).trim()
-        if (
-          (val.startsWith('"') && val.endsWith('"')) ||
-          (val.startsWith("'") && val.endsWith("'"))
-        ) {
-          val = val.slice(1, -1)
-        }
-        if (val === 'true') val = true
-        else if (val === 'false') val = false
-        else if (val === 'null') val = null
-        else if (!isNaN(Number(val)) && val !== '') val = Number(val)
+      const originalKey = line.slice(0, colonIdx).trim()
+      let val: any = line.slice(colonIdx + 1).trim()
+      if (
+        (val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))
+      ) {
+        val = val.slice(1, -1)
+      }
+      if (val === 'true') val = true
+      else if (val === 'false') val = false
+      else if (val === 'null') val = null
+      else if (!isNaN(Number(val)) && val !== '') val = Number(val)
 
-        const originalKey = line.slice(0, colonIdx).trim()
-        if (!data[originalKey]) {
-          data[originalKey] = val
-        }
-        lineIdx++
-        continue
+      if (!data[originalKey]) {
+        data[originalKey] = val
       }
     }
-
-    break
   }
 
-  if (foundLooseMetadata) {
-    text = lines.slice(lineIdx).join('\n')
-  }
-
-  return { data, content: foundLooseMetadata ? text.replace(/^[\r\n]+/, '') : text }
+  return { data, content }
 }
 
 /**

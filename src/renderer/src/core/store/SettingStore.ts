@@ -262,13 +262,27 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     folderOrder: [],
     expandedFolders: [],
 
-    // Sidebars geometry & state
+    // Sidebars geometry & state (hydrate width synchronously for zero-jump first paint)
     sidebar: {
-      width: 150,
+      width: (() => {
+        try {
+          const w = Number(typeof localStorage !== 'undefined' ? localStorage.getItem('lumina_left_sidebar_width') : 0)
+          return w >= 130 && w <= 600 ? w : 150
+        } catch {
+          return 150
+        }
+      })(),
       isLeftOpen: true
     },
     rightSidebar: {
-      width: 150,
+      width: (() => {
+        try {
+          const w = Number(typeof localStorage !== 'undefined' ? localStorage.getItem('lumina_right_sidebar_width') : 0)
+          return w >= 130 && w <= 750 ? w : 150
+        } catch {
+          return 150
+        }
+      })(),
       isRightOpen: false
     },
 
@@ -342,6 +356,15 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
 
           set({ settings: mergedSettings })
 
+          if (typeof localStorage !== 'undefined') {
+            if (typeof mergedSettings.sidebar?.width === 'number') {
+              localStorage.setItem('lumina_left_sidebar_width', String(mergedSettings.sidebar.width))
+            }
+            if (typeof mergedSettings.rightSidebar?.width === 'number') {
+              localStorage.setItem('lumina_right_sidebar_width', String(mergedSettings.rightSidebar.width))
+            }
+          }
+
           if (typeof document !== 'undefined') {
             const root = document.documentElement
             root.setAttribute('data-theme', mergedSettings.theme)
@@ -407,6 +430,15 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
                   : ((typeof localStorage !== 'undefined' && localStorage.getItem('theme-id')) || 'dark')
               mergedSettings.theme = activeTheme
               set({ settings: mergedSettings })
+
+          if (typeof localStorage !== 'undefined') {
+            if (typeof mergedSettings.sidebar?.width === 'number') {
+              localStorage.setItem('lumina_left_sidebar_width', String(mergedSettings.sidebar.width))
+            }
+            if (typeof mergedSettings.rightSidebar?.width === 'number') {
+              localStorage.setItem('lumina_right_sidebar_width', String(mergedSettings.rightSidebar.width))
+            }
+          }
               if (typeof document !== 'undefined') {
                 const root = document.documentElement
                 root.setAttribute('data-theme', mergedSettings.theme)
@@ -461,6 +493,12 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       if (key === 'previewModalMaximized') {
         localStorage.setItem('lumina_modal_maximized_preview', String(Boolean(value)))
       }
+      if (key === 'sidebar' && typeof value?.width === 'number') {
+        localStorage.setItem('lumina_left_sidebar_width', String(value.width))
+      }
+      if (key === 'rightSidebar' && typeof value?.width === 'number') {
+        localStorage.setItem('lumina_right_sidebar_width', String(value.width))
+      }
     }
 
     try {
@@ -502,6 +540,12 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     if (typeof localStorage !== 'undefined') {
       if (newSettings.modernUi !== undefined) {
         localStorage.setItem('lumina_modern_ui', String(Boolean(newSettings.modernUi)))
+      }
+      if (typeof newSettings.sidebar?.width === 'number') {
+        localStorage.setItem('lumina_left_sidebar_width', String(newSettings.sidebar.width))
+      }
+      if (typeof newSettings.rightSidebar?.width === 'number') {
+        localStorage.setItem('lumina_right_sidebar_width', String(newSettings.rightSidebar.width))
       }
       if (newSettings.deepSeekKey !== undefined) {
         if (newSettings.deepSeekKey) {

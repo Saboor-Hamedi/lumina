@@ -30,6 +30,7 @@
     ]
   },
   "include": [
+    "src/shared/**/*",
     "src/main/**/*",
     "src/export/**/*",
     "src/preload/**/*",

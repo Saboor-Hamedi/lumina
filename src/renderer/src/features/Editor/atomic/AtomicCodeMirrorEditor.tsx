@@ -8,6 +8,7 @@ import {
   highlightSpecialChars,
   keymap,
   rectangularSelection,
+  scrollPastEnd,
   type Panel
 } from '@codemirror/view'
 import { EditorState, StateEffect, StateField, type Extension } from '@codemirror/state'
@@ -106,6 +107,7 @@ export function AtomicCodeMirrorEditor({
           history(),
           drawSelection(),
           dropCursor(),
+          scrollPastEnd(),
           EditorState.allowMultipleSelections.of(true),
           indentOnInput(),
           rectangularSelection(),

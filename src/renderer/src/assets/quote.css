@@ -1,15 +1,15 @@
 /* 
  * ============================================================
- * LUMINA BLOCKQUOTE STYLING
+ * LUMINA BLOCKQUOTE STYLING (Optical Alignment & Clean Nuance)
  * ============================================================
  */
 
-.markdown-editor .cm-line.cm-atomic-blockquote,
-.markdown-editor .cm-line:has(.cm-quote) {
+.markdown-editor .cm-line.cm-atomic-blockquote:not(.lumina-callout-line),
+.markdown-editor .cm-line:has(.cm-quote):not(.lumina-callout-line) {
   border: none !important;
   border-left: 2px solid var(--text-accent) !important;
-  padding: 3px 0 3px 12px !important;
-  margin: 0 !important;
+  padding: 3px 0 3px 10px !important;
+  margin: 1px 0 1px 0 !important;
   font-style: italic !important;
   color: var(--text-muted) !important;
   background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.04) !important;
@@ -19,6 +19,7 @@
 
 .markdown-editor .cm-quote {
   color: var(--text-accent) !important;
-  font-weight: 600;
-  margin-right: 4px;
+  font-weight: 500;
+  margin-right: 5px;
+  opacity: 0.85;
 }

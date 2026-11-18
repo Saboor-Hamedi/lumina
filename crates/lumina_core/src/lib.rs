@@ -104,7 +104,7 @@ mod tests {
         assert_eq!(fm.tags, vec!["tag1", "tag2"]);
         assert!(fm.is_pinned);
         assert!(fm.is_learned);
-        assert_eq!(body, "# Body Heading\nSome content here.");
+        assert_eq!(body, "\n# Body Heading\nSome content here.");
     }
 
     #[test]

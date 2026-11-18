@@ -386,9 +386,12 @@ export class WorkspaceManager {
     }
 
     // Pre-register watcher ignore BEFORE write/rename so chokidar never triggers on our own save
-    if (this.workspacePath && oldSnippet?.fileName) {
-      const prePath = path.join(this.workspacePath, oldSnippet.folderId || '', oldSnippet.fileName)
-      this.ignoredPaths.set(path.resolve(prePath).toLowerCase(), Date.now() + 2500)
+    if (this.workspacePath) {
+      const candidateName = oldSnippet?.fileName || snippet?.fileName
+      if (candidateName) {
+        const prePath = path.join(this.workspacePath, oldSnippet?.folderId || snippet?.folderId || '', candidateName)
+        this.ignoredPaths.set(path.resolve(prePath).toLowerCase(), Date.now() + 4000)
+      }
     }
 
     const result = await WorkspaceOperations.saveSnippet(
@@ -403,13 +406,13 @@ export class WorkspaceManager {
 
     if (this.workspacePath && result?.fileName) {
       const savedPath = path.join(this.workspacePath, result.folderId || '', result.fileName)
-      this.ignoredPaths.set(path.resolve(savedPath).toLowerCase(), Date.now() + 2500)
+      this.ignoredPaths.set(path.resolve(savedPath).toLowerCase(), Date.now() + 4000)
     }
 
     if (this.workspacePath && oldSnippet?.fileName && oldSnippet.fileName !== result?.fileName) {
       const oldRelativeFolder = (oldSnippet.folderId || '').replace(/\\/g, '/')
       const oldPath = path.join(this.workspacePath, oldRelativeFolder, oldSnippet.fileName)
-      this.ignoredPaths.set(path.resolve(oldPath).toLowerCase(), Date.now() + 2500)
+      this.ignoredPaths.set(path.resolve(oldPath).toLowerCase(), Date.now() + 4000)
     }
 
     return result

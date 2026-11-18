@@ -137,6 +137,23 @@ describe('htmlToMarkdown', () => {
       expect(md).not.toContain('</u>')
       expect(md).toContain('Dr. Sajarwo Anggai., S.ST., M.T.')
     })
+
+    it('converts single-column tables into distinct vertical lines instead of collapsed single row', async () => {
+      const html = `
+        <table>
+          <tr><td>Item 1</td></tr>
+          <tr><td>Item 2</td></tr>
+          <tr><td>Item 3</td></tr>
+        </table>
+      `
+      const md = await htmlToMarkdown(html)
+      expect(md).not.toContain('| --- |')
+      expect(md).toContain('Item 1')
+      expect(md).toContain('Item 2')
+      expect(md).toContain('Item 3')
+      expect(md.indexOf('Item 1')).toBeLessThan(md.indexOf('Item 2'))
+      expect(md.indexOf('Item 2')).toBeLessThan(md.indexOf('Item 3'))
+    })
   })
 
   describe('Table of Contents & References polish', () => {
