@@ -1,3 +1,9 @@
+<p align="center">
+  <video src="./Lumina%20read%20me.mp4" controls autoplay loop muted playsinline width="100%">
+    <a href="./Lumina%20read%20me.mp4">Watch Lumina Demo Video</a>
+  </video>
+</p>
+
 # Lumina
 
 ![banner](./banner.png?v=2)

@@ -318,20 +318,10 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
         if (now - last < 400) return
         ;(window as any).__lastZenDispatch = now
 
-        if (typeof document !== 'undefined') {
-          document.documentElement.classList.add('zen-instant-transition')
-        }
         if (shortcutsRef.current.onToggleZenMode) {
           shortcutsRef.current.onToggleZenMode()
         } else {
           useSettingsStore.getState().toggleZenMode()
-        }
-        if (typeof window !== 'undefined') {
-          window.requestAnimationFrame(() => {
-            window.requestAnimationFrame(() => {
-              document.documentElement.classList.remove('zen-instant-transition')
-            })
-          })
         }
         return
       }

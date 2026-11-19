@@ -5,8 +5,8 @@
 .lumina-activity-bar,
 [data-modern-ui='true'] .lumina-activity-bar {
   width: 42px !important;
-  min-width: 42px !important;
-  max-width: 42px !important;
+  min-width: 0 !important;
+  max-width: none !important;
   height: 100% !important;
   background: var(--bg-sidebar) !important;
   border: none !important;
@@ -14,7 +14,7 @@
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
-  align-items: center !important;
+  align-items: flex-end !important;
   padding: 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
@@ -23,37 +23,55 @@
   user-select: none !important;
   box-shadow: none !important;
   border-radius: 0 !important;
-  overflow: visible !important;
+  overflow: hidden !important;
+  visibility: visible !important;
+  contain: layout paint;
   will-change: width, opacity;
-  transition: width 0.26s cubic-bezier(0.22, 1, 0.36, 1), min-width 0.26s cubic-bezier(0.22, 1, 0.36, 1), max-width 0.26s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease, border-color 0.22s ease !important;
+  transition:
+    width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    border-right-color 0.24s ease,
+    visibility 0s 0s !important;
 }
 
 .lumina-activity-bar.zen-hidden,
 [data-modern-ui='true'] .lumina-activity-bar.zen-hidden {
   width: 0 !important;
   min-width: 0 !important;
-  max-width: 0 !important;
   opacity: 0 !important;
   overflow: hidden !important;
+  border-right-width: 0 !important;
   border-right-color: transparent !important;
   pointer-events: none !important;
+  visibility: hidden !important;
+  transition:
+    width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    border-right-color 0.18s ease,
+    visibility 0s 0.28s !important;
 }
 
 .activity-bar-top {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  width: 100% !important;
+  width: 42px !important;
+  flex-shrink: 0 !important;
   gap: 2px !important;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .activity-bar-bottom {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  width: 100% !important;
+  width: 42px !important;
+  flex-shrink: 0 !important;
   gap: 2px !important;
   margin-top: auto !important;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* Activity Bar Button: Ultra-sleek vertical tab */

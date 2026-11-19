@@ -17,10 +17,11 @@
 }
 
 .cm-katex-block {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 16px 20px;
+  padding: 16px 36px;
   margin: 0 !important;
   border-radius: 8px;
   background: var(--card, rgba(125, 125, 125, 0.04));
@@ -30,6 +31,48 @@
   user-select: text;
   box-sizing: border-box !important;
   transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cm-katex-content {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.cm-katex-copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 5px;
+  border: 1px solid var(--border-dim, rgba(125, 125, 125, 0.2));
+  background: var(--bg-panel, rgba(24, 24, 27, 0.85));
+  color: var(--text-muted, #a1a1aa);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  z-index: 2;
+}
+
+.cm-katex-block:hover .cm-katex-copy-btn,
+.cm-katex-copy-btn:focus-visible,
+.cm-katex-copy-btn.copied {
+  opacity: 1;
+}
+
+.cm-katex-copy-btn:hover {
+  color: var(--text-main, #f4f4f5);
+  border-color: var(--border-subtle, rgba(125, 125, 125, 0.4));
+  background: var(--bg-hover, rgba(125, 125, 125, 0.16));
+}
+
+.cm-katex-copy-btn.copied {
+  color: var(--text-accent, #22c55e);
+  border-color: var(--text-accent, #22c55e);
 }
 
 .cm-katex-block:hover {

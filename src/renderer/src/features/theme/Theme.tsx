@@ -88,6 +88,7 @@ export const Theme: React.FC<ThemeProps> = ({
 
   const listRef = useRef<HTMLDivElement | null>(null)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
+  const paneRef = useRef<HTMLDivElement | null>(null)
 
   // Esc key closes modal / sidebar view only when active
   useKeyboardShortcuts({
@@ -169,8 +170,47 @@ export const Theme: React.FC<ThemeProps> = ({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const { filteredThemes: list, selectedId: current, theme: active } = navRef.current
-      const target = e.target as HTMLElement | null
-      const isInput = target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA'
+      const target = e.target as EventTarget | null
+      const targetEl = target instanceof HTMLElement ? target : null
+      const activeEl = document.activeElement instanceof HTMLElement ? document.activeElement : null
+      const paneEl = paneRef.current
+
+      const isInsideThemePane = Boolean(
+        paneEl &&
+          ((target instanceof Node && paneEl.contains(target)) ||
+            (activeEl && paneEl.contains(activeEl)))
+      )
+
+      // Never intercept keys from the Editor, Terminal, or inputs outside the Theme pane
+      const isEditableOutsideTheme = Boolean(
+        (targetEl &&
+          !paneEl?.contains(targetEl) &&
+          (targetEl.tagName === 'INPUT' ||
+            targetEl.tagName === 'TEXTAREA' ||
+            targetEl.isContentEditable ||
+            targetEl.closest('[contenteditable="true"], .cm-editor, .xterm, .lumina-terminal'))) ||
+          (activeEl &&
+            !paneEl?.contains(activeEl) &&
+            (activeEl.tagName === 'INPUT' ||
+              activeEl.tagName === 'TEXTAREA' ||
+              activeEl.isContentEditable ||
+              activeEl.closest('[contenteditable="true"], .cm-editor, .xterm, .lumina-terminal')))
+      )
+
+      if (isEditableOutsideTheme) {
+        return
+      }
+      if (
+        isEmbedded &&
+        !isInsideThemePane &&
+        target !== window &&
+        target !== document &&
+        target !== document.body
+      ) {
+        return
+      }
+
+      const isInput = targetEl?.tagName === 'INPUT' || targetEl?.tagName === 'TEXTAREA'
 
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         if (list.length === 0) return
@@ -191,12 +231,12 @@ export const Theme: React.FC<ThemeProps> = ({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, setTheme, scrollToItem])
+  }, [isOpen, isEmbedded, setTheme, scrollToItem])
 
   if (!isOpen && !isEmbedded) return null
 
   const content = (
-    <div className="lumina-sidebar-pane theme-sidebar-pane">
+    <div ref={paneRef} className="lumina-sidebar-pane theme-sidebar-pane">
       {/* Sidebar Header — exactly like notes explorer */}
       <div className="lumina-drawer-header">
         <div className="lumina-drawer-header-left">
