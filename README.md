@@ -1,8 +1,4 @@
-<p align="center">
-  <video src="./bannerv.mp4" controls autoplay loop muted playsinline width="100%">
-    <a href="./bannerv.mp4">Watch Lumina Demo Video</a>
-  </video>
-</p>
+https://github.com/user-attachments/assets/f641f391-95f5-4b3f-9209-ffa6124f30cd
 
 # Lumina
 
