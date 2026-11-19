@@ -1,6 +1,6 @@
 <p align="center">
-  <video src="./Lumina%20read%20me.mp4" controls autoplay loop muted playsinline width="100%">
-    <a href="./Lumina%20read%20me.mp4">Watch Lumina Demo Video</a>
+  <video src="./bannerv.mp4" controls autoplay loop muted playsinline width="100%">
+    <a href="./bannerv.mp4">Watch Lumina Demo Video</a>
   </video>
 </p>
 
@@ -46,7 +46,7 @@ Your notes stay on your disk as **100% plain-text `.md` and `.canvas` files**. A
 - **Native Rust Core (`crates/lumina_core`)** — Multithreaded Rayon disk scanning, sub-millisecond fuzzy search, and graph construction via N-API bindings.
 - **Integrated ConPTY / PTY Terminal (`Ctrl + J`)** — Real native pseudoterminal powered by `portable-pty` in Rust. Run **Git Bash**, **PowerShell**, **CMD**, **Zsh**, `vim`, `ssh`, `python`, and interactive CLIs with full `Tab` completion, `Ctrl+C`, and resizing right inside your workspace.
 - **Multi-Pane Split Views** — Drag tabs to split horizontally or vertically (`Ctrl + \` / `Ctrl + Alt + \`) with persistent pane layouts.
-- **AI Copilot with Safety Controls** — Works offline with **Ollama** or with cloud providers (DeepSeek, OpenAI, Claude) across 3 focused modes (*Planning & Strategy*, *Execution & Action*, *Research & Analysis*). File edits include inline **Approve / Reject** diff cards and **multi-file Undo**.
+- **AI Copilot with Safety Controls** — Works offline with **Ollama** or with cloud providers (DeepSeek, OpenAI, Claude) across 3 focused modes (_Planning & Strategy_, _Execution & Action_, _Research & Analysis_). File edits include inline **Approve / Reject** diff cards and **multi-file Undo**.
 - **Spatial Infinite Canvas (`.canvas`)** — Freeform 2D whiteboard with shapes, magnetic ports, and orthogonal routing.
 - **2D & 3D Knowledge Graph** — Interactive force-directed 2D Canvas and 3D WebGL graph views with cluster physics and persistent node positions.
 - **Global Spotlight (`Ctrl + Space`)** — Instant note search and quick AI chat from anywhere on your OS.
@@ -58,26 +58,27 @@ Your notes stay on your disk as **100% plain-text `.md` and `.canvas` files**. A
 
 ## Essential Shortcuts
 
-| Shortcut | Action |
-| --- | --- |
-| `Ctrl + Space` | Global Spotlight (Search notes & ask AI from anywhere) |
-| `Ctrl + P` | Quick note & command search palette |
-| `Ctrl + N` | Create new note |
-| `Ctrl + J` | Toggle integrated ConPTY / PTY terminal |
-| `Ctrl + .` | Toggle Zen Mode |
-| `Ctrl + B` | Toggle Left Sidebar |
-| `Ctrl + \` | Split editor right |
-| `Ctrl + Alt + \` | Split editor down |
-| `Ctrl + K` | Inline AI edit / prompt inside editor |
-| `F2` / `Ctrl + R` | Rename active note or folder |
-| `Ctrl + W` | Close active tab |
-| `Double-click Tab` | Rename note from tab bar |
+| Shortcut           | Action                                                 |
+| ------------------ | ------------------------------------------------------ |
+| `Ctrl + Space`     | Global Spotlight (Search notes & ask AI from anywhere) |
+| `Ctrl + P`         | Quick note & command search palette                    |
+| `Ctrl + N`         | Create new note                                        |
+| `Ctrl + J`         | Toggle integrated ConPTY / PTY terminal                |
+| `Ctrl + .`         | Toggle Zen Mode                                        |
+| `Ctrl + B`         | Toggle Left Sidebar                                    |
+| `Ctrl + \`         | Split editor right                                     |
+| `Ctrl + Alt + \`   | Split editor down                                      |
+| `Ctrl + K`         | Inline AI edit / prompt inside editor                  |
+| `F2` / `Ctrl + R`  | Rename active note or folder                           |
+| `Ctrl + W`         | Close active tab                                       |
+| `Double-click Tab` | Rename note from tab bar                               |
 
 ---
 
 ## Build from Source
 
 ### Prerequisites
+
 - **Node.js 20+** (LTS) and **npm**
 - **Rust toolchain** (`cargo` / `rustc`, optional unless rebuilding `crates/lumina_core`)
 
