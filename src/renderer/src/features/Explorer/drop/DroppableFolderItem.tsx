@@ -52,7 +52,6 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
 }) => {
   countExplorerPerfRender('FolderRow', item?.id)
   const { isOver, setNodeRef: setDroppableRef } = useDroppable({ id: `folder-${item.id}` })
-  const [isHovered, setIsHovered] = useState(false)
 
   const getFolderTooltipContent = useCallback(() => {
     const allSnippets = (useWorkspaceStore.getState() as any).notes || []
@@ -154,8 +153,6 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
           cursor: 'pointer',
           userSelect: 'none'
         }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
         {...attributes}
         {...listeners}
         onClick={(e) => {
@@ -257,7 +254,7 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <ToolTip text={isHovered ? getFolderTooltipContent : null} position="right" delay={100}>
+            <ToolTip text={getFolderTooltipContent} disabled={isDragging} position="right" delay={100}>
               <span
                 className="folder-name"
                 style={{

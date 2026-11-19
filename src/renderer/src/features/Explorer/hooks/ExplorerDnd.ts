@@ -64,6 +64,7 @@ interface DragItemData {
   item?: unknown
   snippet?: Snippet
   draggedSnippetIds?: string[]
+  draggedSnippetIdSet?: Set<string>
   count?: number
   depth?: number
 }
@@ -117,31 +118,53 @@ export function useExplorerDnd({
 
     let rafId: number | null = null
 
+    // Snapshot canvas & workspace pane rects ONCE at drag start so pointermove
+    // runs pure O(1) coordinate math with zero DOM queries or forced layouts per frame.
+    const cachedCanvasRects: DOMRect[] = []
+    const cachedPaneRects: Array<{ targetPane: string; rect: DOMRect }> = []
+
+    if (activeListDragItem.type === 'file') {
+      const canvasEls = document.querySelectorAll<HTMLElement>('.lumina-canvas-container')
+      for (let i = 0; i < canvasEls.length; i++) {
+        const r = canvasEls[i].getBoundingClientRect()
+        if (r.width > 0 && r.height > 0) cachedCanvasRects.push(r)
+      }
+      const paneEls = document.querySelectorAll<HTMLElement>('[data-workspace-pane]')
+      for (let i = 0; i < paneEls.length; i++) {
+        const targetPane = paneEls[i].getAttribute('data-workspace-pane')
+        if (!targetPane) continue
+        const r = paneEls[i].getBoundingClientRect()
+        if (r.width > 0 && r.height > 0) {
+          cachedPaneRects.push({ targetPane, rect: r })
+        }
+      }
+    }
+
     const onPointerMove = (e: PointerEvent) => {
-      pointerPosRef.current = { x: e.clientX, y: e.clientY }
+      pointerPosRef.current.x = e.clientX
+      pointerPosRef.current.y = e.clientY
 
       if (activeListDragItem.type === 'file') {
         if (rafId !== null) return
         rafId = requestAnimationFrame(() => {
           rafId = null
-          const isOverCanvas = Boolean(
-            document.elementFromPoint(e.clientX, e.clientY)?.closest('.lumina-canvas-container')
-          )
-          if (isOverCanvas) {
-            useTabDragStore.getState().setDropTarget(null)
-            return
+          const x = pointerPosRef.current.x
+          const y = pointerPosRef.current.y
+
+          for (let i = 0; i < cachedCanvasRects.length; i++) {
+            const cr = cachedCanvasRects[i]
+            if (x >= cr.left && x <= cr.right && y >= cr.top && y <= cr.bottom) {
+              useTabDragStore.getState().setDropTarget(null)
+              return
+            }
           }
 
-          const paneEls = document.querySelectorAll<HTMLElement>('[data-workspace-pane]')
           let nextTarget: TabDropTarget | null = null
-          for (let i = 0; i < paneEls.length; i++) {
-            const r = paneEls[i].getBoundingClientRect()
-            if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
-              const targetPane = paneEls[i].getAttribute('data-workspace-pane')
-              if (targetPane) {
-                const zone = resolveDropZoneInRect(r, e.clientX, e.clientY, true)
-                nextTarget = { targetPane, zone: zone === 'tabbar' ? 'center' : zone }
-              }
+          for (let i = 0; i < cachedPaneRects.length; i++) {
+            const { targetPane, rect: r } = cachedPaneRects[i]
+            if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+              const zone = resolveDropZoneInRect(r, x, y, true)
+              nextTarget = { targetPane, zone: zone === 'tabbar' ? 'center' : zone }
               break
             }
           }
@@ -185,15 +208,17 @@ export function useExplorerDnd({
           setSelectedNoteIds?.(new Set())
           setSidebarFocus?.('folder')
         }
+        const folderCount = isFolderSelected && selectedFolderIds && selectedFolderIds.size > 1 ? selectedFolderIds.size : 1
         setActiveListDragItem({
           type: 'folder',
           id: active.id,
-          item: (active.data?.current as any)?.item
+          item: (active.data?.current as any)?.item,
+          count: folderCount
         })
       } else {
-        const activeSnippet = allSnippets.find((s) => s.id === active.id)
+        const activeSnippet =
+          (active.data?.current as any)?.snippet || allSnippets.find((s) => s.id === active.id)
         if (activeSnippet) {
-          const flatItem = flatTree.find((f) => f.type === 'file' && f.snippet?.id === active.id)
           const fileId = String(active.id)
           const isFileSelected = selectedNoteIds.has(fileId)
 
@@ -214,17 +239,20 @@ export function useExplorerDnd({
             id: active.id,
             snippet: activeSnippet,
             draggedSnippetIds,
+            draggedSnippetIdSet: new Set(draggedSnippetIds),
             count: draggedSnippetIds.length,
-            depth: flatItem ? (flatItem.depth ?? 0) : 0
+            depth: 0
           })
         }
       }
     },
-    [allSnippets, flatTree, selectedNoteIds, selectedFolderIds, setSelectedNoteIds, setSelectedFolderIds, setSidebarFocus]
+    [allSnippets, selectedNoteIds, selectedFolderIds, setSelectedNoteIds, setSelectedFolderIds, setSidebarFocus]
   )
 
-  const handleListDragOver = useCallback((event: DragOverEvent) => {
-    setCurrentOverId(event.over ? String(event.over.id) : null)
+  const handleListDragOver = useCallback((_event: DragOverEvent) => {
+    // Intentionally a no-op: individual droppables (DroppableFolderItem, SortableListItem,
+    // DroppableVirtuosoWrapper) handle their own isOver highlight via @dnd-kit without
+    // triggering any top-level FileExplorer React re-renders during drag.
   }, [])
 
   const handleListDragEnd = useCallback(

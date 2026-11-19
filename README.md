@@ -6,7 +6,7 @@
 
 # Lumina
 
-![banner](./banner.png?v=2)
+<!-- ![banner](./banner.png?v=2) -->
 
 <p align="center">
   <a href="https://github.com/Saboor-Hamedi/lumina/releases/latest">

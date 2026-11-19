@@ -460,7 +460,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
       return pointerCollisions
     }
-    return rectIntersection(args)
+    return []
   }, [])
 
   // Stable ref for selectedSnippetId — allows renderItemContent to always see the current
@@ -725,7 +725,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                     virtuosoContext={virtuosoContext}
                     isDragging={!!activeListDragItem}
                     activeListDragItem={activeListDragItem}
-                    currentOverId={currentOverId}
+                    isOverRootExplicit={Boolean(!hoveredFolderId && currentOverId === 'root-drop-zone')}
                     isDraggingExternal={isDraggingExternal}
                     hoveredFolderId={hoveredFolderId}
                     selectedNoteIds={selectedNoteIds}
@@ -746,8 +746,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                     handleFolderContextMenu={handleFolderContextMenu}
                     handleNoteClick={handleNoteClick}
                     handleFolderClick={handleFolderClick}
-                    setSidebarFocus={(val: any) => setSidebarFocus(val)}
-                    setLastClickedFolder={(val: any) => setLastClickedFolder(val)}
+                    setSidebarFocus={setSidebarFocus as any}
+                    setLastClickedFolder={setLastClickedFolder as any}
                     setSelectedIndex={setSelectedIndex}
                     handleBackgroundClick={handleBackgroundClick}
                     handleExternalDragEnter={handleExternalDragEnter}

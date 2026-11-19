@@ -16,7 +16,7 @@
  *    - Confirms deletion of multiple selected notes and folders.
  */
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { DragOverlay } from '@dnd-kit/core'
 import { Folder, Files } from 'lucide-react'
@@ -48,10 +48,8 @@ export interface ExplorerModalsProps {
   selectedNoteIds: Set<string>
 }
 
-export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
+const ExplorerModalsComponent: React.FC<ExplorerModalsProps> = ({
   activeListDragItem,
-  currentOverId,
-  allSnippets = [],
   folderContext,
   setFolderContext,
   contextMenuOptions,
@@ -65,65 +63,30 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
   selectedFolderIds,
   selectedNoteIds
 }) => {
-  const renderDragOverlayContent = () => {
+  const dragOverlayContent = useMemo(() => {
     if (!activeListDragItem) return null
 
     if (activeListDragItem.type === 'folder') {
-      const folderName = activeListDragItem.item?.name || 'Folder'
-      let targetLabel = ''
-      if (currentOverId === 'root-drop-zone') {
-        targetLabel = 'to Root'
-      } else if (
-        currentOverId &&
-        (currentOverId.startsWith('folder-') || currentOverId.startsWith('drag-folder-'))
-      ) {
-        const targetFolderId = currentOverId.replace('folder-', '').replace('drag-folder-', '')
-        const targetName = targetFolderId.split('/').pop() || targetFolderId
-        targetLabel = `into "${targetName}"`
-      }
-      const label = targetLabel ? `Move "${folderName}" ${targetLabel}` : `Move "${folderName}"`
+      const count = activeListDragItem.count || 1
+      const rawName = activeListDragItem.item?.name || 'Folder'
+      const folderName = rawName.length > 20 ? `${rawName.slice(0, 18)}…` : rawName
+      const label = count > 1 ? `${count} folders` : folderName
 
       return (
         <div className="sidebar-drag-ghost">
           <Folder size={13} strokeWidth={1.5} color="var(--folder-color, #dcb67a)" fill="rgba(220, 182, 122, 0.16)" className="external-drop-icon" />
           <span className="external-drop-text">{label}</span>
+          {count > 1 && <span className="external-drop-badge">{count}</span>}
         </div>
       )
     }
 
-    // activeListDragItem.type === 'file'
+    // activeListDragItem.type === 'file' — identical compact width inside Explorer & over Editor
     const count = activeListDragItem.count || 1
     const rawTitle =
       activeListDragItem.snippet?.title || activeListDragItem.snippet?.fileName || 'Note'
     const snippetTitle = rawTitle.length > 20 ? `${rawTitle.slice(0, 18)}…` : rawTitle
-    const countSubject = count > 1 ? `${count} items` : `"${snippetTitle}"`
-
-    let targetDesc = ''
-    if (currentOverId === 'root-drop-zone') {
-      targetDesc = 'to Root'
-    } else if (
-      currentOverId &&
-      (currentOverId.startsWith('folder-') || currentOverId.startsWith('drag-folder-'))
-    ) {
-      const targetFolderId = currentOverId.replace('folder-', '').replace('drag-folder-', '')
-      const targetName = targetFolderId.split('/').pop() || targetFolderId
-      const displayFolderName = targetName.length > 16 ? `${targetName.slice(0, 14)}…` : targetName
-      targetDesc = `into "${displayFolderName}"`
-    } else if (currentOverId) {
-      const overSnippet = allSnippets.find((s: any) => s.id === currentOverId)
-      if (overSnippet) {
-        const parentFolder = overSnippet.folderId
-        const targetName = parentFolder ? parentFolder.split('/').pop() : 'Root'
-        const displayFolderName = targetName && targetName.length > 16 ? `${targetName.slice(0, 14)}…` : targetName
-        targetDesc = targetName === 'Root' ? 'to Root' : `into "${displayFolderName}"`
-      }
-    }
-
-    const label = targetDesc
-      ? `Move ${countSubject} ${targetDesc}`
-      : count > 1
-      ? `Move ${count} items`
-      : snippetTitle
+    const label = count > 1 ? `${count} items` : snippetTitle
 
     return (
       <div className="sidebar-drag-ghost">
@@ -138,14 +101,14 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
         )}
       </div>
     )
-  }
+  }, [activeListDragItem])
 
   return (
     <>
       {/* 1. DragOverlay Portal: renders lightweight floating ghost during item drag */}
       {createPortal(
-        <DragOverlay zIndex={9999} dropAnimation={null}>
-          {renderDragOverlayContent()}
+        <DragOverlay zIndex={9999} dropAnimation={null} style={{ width: 'max-content', pointerEvents: 'none' }}>
+          {dragOverlayContent}
         </DragOverlay>,
         document.body
       )}
@@ -205,4 +168,7 @@ export const ExplorerModals: React.FC<ExplorerModalsProps> = ({
   )
 }
 
-export default React.memo(ExplorerModals)
+export const ExplorerModals = React.memo(ExplorerModalsComponent)
+ExplorerModals.displayName = 'ExplorerModals'
+
+export default ExplorerModals

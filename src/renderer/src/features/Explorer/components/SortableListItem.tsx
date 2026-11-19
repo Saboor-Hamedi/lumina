@@ -1,7 +1,19 @@
-import React, { useRef, useEffect, useCallback } from 'react'
+import React, { useRef, useEffect, useCallback, useMemo } from 'react'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import SidebarItem from '../../Navigation/components/SidebarItem'
 import { countExplorerPerfRender } from '../utils/explorerPerf'
+
+const STYLE_NORMAL: React.CSSProperties = {
+  opacity: 1,
+  zIndex: 1,
+  position: 'relative'
+}
+
+const STYLE_DIMMED: React.CSSProperties = {
+  opacity: 0.35,
+  zIndex: 99,
+  position: 'relative'
+}
 
 export interface SortableListItemProps {
   snippet: any
@@ -73,11 +85,11 @@ const SortableListItemComponent: React.FC<SortableListItemProps> = ({
   )
 
   const isDimmed = isDragging || isMultiDragging
-  const style: React.CSSProperties = {
-    opacity: isDimmed ? 0.35 : 1,
-    zIndex: isDimmed ? 99 : 1,
-    position: 'relative'
-  }
+  const style = isDimmed ? STYLE_DIMMED : STYLE_NORMAL
+  const dndProps = useMemo(
+    () => ({ attributes, listeners, setNodeRef: setCombinedRef }),
+    [attributes, listeners, setCombinedRef]
+  )
 
   return (
     <SidebarItem
@@ -88,7 +100,7 @@ const SortableListItemComponent: React.FC<SortableListItemProps> = ({
       isActive={isActive}
       searchQuery={searchQuery}
       matchSnippet={matchSnippet}
-      dndProps={{ attributes, listeners, setNodeRef: setCombinedRef }}
+      dndProps={dndProps}
       isDropOver={isOver && !isDragging}
       style={style}
       depth={depth}

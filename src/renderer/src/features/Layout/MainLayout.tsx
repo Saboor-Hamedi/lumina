@@ -916,7 +916,7 @@ export const MainLayout: React.FC = () => {
     }
   }
 
-  const handleNewCanvas = async () => {
+  const handleNewCanvas = useCallback(async () => {
     try {
       const defaultCanvasData = {
         nodes: [
@@ -948,15 +948,26 @@ export const MainLayout: React.FC = () => {
         isPinned: false,
         isLearned: false
       }
-      await saveSnippet(newSnippet)
+      // Optimistically insert into workspace store & open immediately (0ms perceived latency)
+      useWorkspaceStore.setState((state: any) => {
+        const currentNotes = state.notes || []
+        if (currentNotes.some((n: any) => n.id === newSnippet.id)) return state
+        return { notes: [...currentNotes, newSnippet] }
+      })
       setSelectedSnippet(newSnippet)
       setActiveTab('files')
       setShowPalette(false)
+
+      // Persist to disk in the background
+      void saveSnippet(newSnippet).catch((error) => {
+        console.error('[MainLayout] Failed to persist new canvas:', error)
+        showToast('Failed to save canvas. Please try again.', 'error')
+      })
     } catch (error) {
       console.error('[MainLayout] Failed to create new canvas:', error)
       showToast('Failed to create canvas. Please try again.', 'error')
     }
-  }
+  }, [saveSnippet, setSelectedSnippet, setActiveTab, setShowPalette, showToast])
 
   const handleOpenOrCreateCanvasTab = useCallback(async () => {
     try {
@@ -1102,17 +1113,6 @@ export const MainLayout: React.FC = () => {
     window.addEventListener('open-graph-tab', handleOpenGraphEvent)
     window.addEventListener('toggle-terminal', handleToggleTerminalEvent)
 
-    // Preload Editor immediately on mount so first note open is instant
-    void import('../Editor/Editor')
-
-    // Preload secondary modals/views in background after app mount
-    const preloadTimer = setTimeout(() => {
-      import('../graph/Graph')
-      import('../Docs/Documentation')
-      import('../modals/Guide')
-      import('../canvas/CanvasTabPane')
-    }, 1200)
-
     return () => {
       window.removeEventListener('open-ask-anything', handleAskAnything as EventListener)
       window.removeEventListener('open-ai-chat', handleAIChatEvent)
@@ -1122,9 +1122,28 @@ export const MainLayout: React.FC = () => {
       window.removeEventListener('open-graph-modal', handleOpenGraphEvent)
       window.removeEventListener('open-graph-tab', handleOpenGraphEvent)
       window.removeEventListener('toggle-terminal', handleToggleTerminalEvent)
-      clearTimeout(preloadTimer)
     }
   }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme, handleToggleTerminal])
+
+  // Mount-once module preloading so Editor and Canvas open instantaneously
+  useEffect(() => {
+    void import('../Editor/Editor')
+
+    const canvasPreloadTimer = setTimeout(() => {
+      void import('../canvas/CanvasTabPane')
+    }, 150)
+
+    const secondaryPreloadTimer = setTimeout(() => {
+      void import('../graph/Graph')
+      void import('../Docs/Documentation')
+      void import('../modals/Guide')
+    }, 1000)
+
+    return () => {
+      clearTimeout(canvasPreloadTimer)
+      clearTimeout(secondaryPreloadTimer)
+    }
+  }, [])
 
   useEffect(() => {
     const onSplitEditor = (e: Event) => {

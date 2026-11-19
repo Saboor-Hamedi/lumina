@@ -145,7 +145,7 @@ export interface ExplorerVirtuosoListProps {
   virtuosoContext: any
   isDragging: boolean
   activeListDragItem?: any
-  currentOverId?: string | null
+  isOverRootExplicit?: boolean
   isDraggingExternal: boolean
   hoveredFolderId: string | null
   selectedNoteIds: Set<string>
@@ -185,13 +185,13 @@ export interface ExplorerVirtuosoListProps {
  * Orchestrates row rendering for folders, files, and inline creation inputs
  * using smooth O(1) virtualization with robust zero-hiding scrolling.
  */
-export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
+const ExplorerVirtuosoListComponent: React.FC<ExplorerVirtuosoListProps> = ({
   virtuosoRef,
   flatTree,
   virtuosoContext,
   isDragging,
   activeListDragItem,
-  currentOverId,
+  isOverRootExplicit = false,
   isDraggingExternal,
   hoveredFolderId,
   selectedNoteIds,
@@ -456,7 +456,11 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
                 return false
               }}
               isActive={isNoteActive}
-              isMultiDragging={Boolean(activeListDragItem?.draggedSnippetIds?.includes(item.snippet.id))}
+              isMultiDragging={Boolean(
+                activeListDragItem?.draggedSnippetIdSet
+                  ? activeListDragItem.draggedSnippetIdSet.has(item.snippet.id)
+                  : activeListDragItem?.draggedSnippetIds?.includes(item.snippet.id)
+              )}
               searchQuery={query}
               matchSnippet={matchMetaMap?.get(item.snippet.id)?.matchSnippet || ''}
               depth={item.depth}
@@ -490,12 +494,6 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
       selectedFolderIdsRef
     ]
   )
-
-  const isOverFolder = Boolean(
-    hoveredFolderId ||
-    (currentOverId && (currentOverId.startsWith('folder-') || currentOverId.startsWith('drag-folder-')))
-  )
-  const isOverRootExplicit = Boolean(!isOverFolder && currentOverId === 'root-drop-zone')
 
   return (
     <DroppableVirtuosoWrapper
@@ -571,4 +569,7 @@ export const ExplorerVirtuosoList: React.FC<ExplorerVirtuosoListProps> = ({
   )
 }
 
-export default React.memo(ExplorerVirtuosoList)
+export const ExplorerVirtuosoList = React.memo(ExplorerVirtuosoListComponent)
+ExplorerVirtuosoList.displayName = 'ExplorerVirtuosoList'
+
+export default ExplorerVirtuosoList

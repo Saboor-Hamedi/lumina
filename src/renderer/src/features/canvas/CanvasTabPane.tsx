@@ -27,7 +27,7 @@ export interface CanvasTabPaneProps {
   isSelected?: boolean
 }
 
-export const CanvasTabPane: React.FC<CanvasTabPaneProps> = ({
+export const CanvasTabPane: React.FC<CanvasTabPaneProps> = React.memo(({
   snippet,
   onSave,
   isSelected = true
@@ -122,6 +122,8 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = ({
       />
     </div>
   )
-}
+})
+
+CanvasTabPane.displayName = 'CanvasTabPane'
 
 export default CanvasTabPane
