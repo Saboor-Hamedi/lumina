@@ -5,11 +5,11 @@ Tackle items **one by one** in strict order: complete **1 → 2 → 3** first, t
 ---
 
 ## 1. Security & Path Safety in the Rust Backend
-- [ ] Harden `safe_join_workspace` in `src-tauri/src/commands.rs` to block `..` traversal, arbitrary external absolute/drive paths, null bytes, and symlink escapes; accept valid in-workspace relative & absolute paths (handling Windows `\\?\` verbatim prefixes and case-insensitive drive letters).
-- [ ] Enforce workspace path confinement on every filesystem command: `read_snippet`, `save_snippet` (old-file cleanup), `resolve_snippet_target`, `delete_snippet`, `create_folder`, `rename_folder`, `move_file`, `move_files`, `delete_folder`, `bulk_delete`, `open_path_in_os`, `read_file_string`, `write_file_string`, and `delete_file`, and block deleting/renaming the workspace root itself.
-- [ ] Encrypt sensitive settings at rest (`src-tauri/src/secrets.rs`): authenticated Encrypt-then-MAC (`enc:v1:...`) using a per-machine CSPRNG key in `<app_data_dir>/.lumina_secret.key` for API keys (`deepSeekKey`, `huggingFaceKey`, `openaiKey`, `anthropicKey`, `groqKey`, `geminiKey`, `openrouterKey`, `apiKey`) and `googleUser.token.{access_token, refresh_token}`, with transparent backwards-compatible plaintext read & automatic upgrade on save.
-- [ ] Enforce CSP natively in `src-tauri/tauri.conf.json` (`app.security.csp`) matching `src/renderer/index.html`.
-- [ ] Add Rust unit tests covering path confinement, root-delete protection, URL validation, and secret encryption/decryption/tamper detection.
+- [x] Harden `safe_join_workspace` in `crates/lumina_core/src/security.rs` to block `..` traversal, arbitrary external absolute/drive paths, null bytes, and symlink escapes; accept valid in-workspace relative & absolute paths (handling Windows `\\?\` verbatim prefixes and case-insensitive drive letters).
+- [x] Enforce workspace path confinement on every filesystem command in `src-tauri/src/commands.rs`: `read_snippet`, `save_snippet` (old-file cleanup), `resolve_snippet_target`, `delete_snippet`, `create_folder`, `rename_folder`, `move_file`, `move_files`, `delete_folder`, `bulk_delete`, `open_path_in_os`, `read_file_string`, `write_file_string`, and `delete_file`, and block deleting/renaming the workspace root itself.
+- [x] Encrypt sensitive settings at rest (`crates/lumina_core/src/secrets.rs`): authenticated Encrypt-then-MAC (`enc:v1:...`) using a per-machine CSPRNG key in `<app_data_dir>/.lumina_secret.key` for API keys (`deepSeekKey`, `huggingFaceKey`, `openaiKey`, `anthropicKey`, `groqKey`, `geminiKey`, `openrouterKey`, `apiKey`) and `googleUser.token.{access_token, refresh_token}`, with transparent backwards-compatible plaintext read & automatic upgrade on save.
+- [x] Enforce CSP natively in `src-tauri/tauri.conf.json` (`app.security.csp`) matching `src/renderer/index.html`.
+- [x] Add Rust unit tests in `crates/lumina_core/src/security.rs` and `crates/lumina_core/src/secrets.rs` covering path confinement, root-delete protection, URL validation, and secret encryption/decryption/tamper detection.
 
 ---
 

@@ -3,10 +3,15 @@
 pub mod graph;
 pub mod scanner;
 pub mod search;
+pub mod secrets;
+pub mod security;
 
 pub use graph::{build_graph_data_impl, GraphData, GraphLink, GraphNode, NoteInput};
 pub use scanner::{scan_vault_impl, ScanResult, ScannedNote};
 pub use search::{search_notes_impl, SearchHit, SearchIndexItem};
+pub use security::{
+    canonicalize_or_normalize, ensure_not_workspace_root, is_safe_external_url, safe_join_workspace,
+};
 
 pub fn get_core_version() -> String {
     "lumina-core-rust/0.1.0".to_string()

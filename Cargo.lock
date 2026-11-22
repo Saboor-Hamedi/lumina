@@ -68,14 +68,11 @@ checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 name = "app"
 version = "1.1.2"
 dependencies = [
- "base64 0.23.1",
- "getrandom 0.3.4",
  "log",
  "lumina_core",
  "portable-pty",
  "serde",
  "serde_json",
- "sha2 0.11.1",
  "tauri",
  "tauri-build",
  "tauri-plugin-log",
@@ -1970,11 +1967,14 @@ checksum = "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c"
 name = "lumina_core"
 version = "0.1.0"
 dependencies = [
+ "base64 0.23.1",
+ "getrandom 0.3.4",
  "memchr",
  "rayon",
  "regex",
  "serde",
  "serde_json",
+ "sha2 0.11.1",
  "walkdir",
 ]
 

@@ -1,5 +1,5 @@
 use base64::{engine::general_purpose::STANDARD, Engine as _};
-use serde_json::Value;
+use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::Path;
@@ -50,14 +50,14 @@ fn random_bytes(buf: &mut [u8]) {
 
 pub fn load_or_create_master_key(app_data_dir: &Path) -> [u8; 32] {
     let key_path = app_data_dir.join(KEY_FILE_NAME);
-    if let Ok(raw) = fs::read_to_string(&key_path) {
-        if let Ok(decoded) = STANDARD.decode(raw.trim()) {
-            if decoded.len() == 32 {
-                let mut key = [0u8; 32];
-                key.copy_from_slice(&decoded);
-                return key;
-            }
-        }
+    if let Some(decoded) = fs::read_to_string(&key_path)
+        .ok()
+        .and_then(|raw| STANDARD.decode(raw.trim()).ok())
+        .filter(|d| d.len() == 32)
+    {
+        let mut key = [0u8; 32];
+        key.copy_from_slice(&decoded);
+        return key;
     }
 
     let mut key = [0u8; 32];
@@ -87,9 +87,9 @@ fn derive_subkey(domain: &[u8], master_key: &[u8; 32]) -> [u8; 32] {
 fn hmac_sha256(key: &[u8; 32], data: &[u8]) -> [u8; 32] {
     let mut ipad = [0x36u8; 64];
     let mut opad = [0x5cu8; 64];
-    for i in 0..32 {
-        ipad[i] ^= key[i];
-        opad[i] ^= key[i];
+    for ((ip, op), &k) in ipad.iter_mut().zip(opad.iter_mut()).zip(key.iter()) {
+        *ip ^= k;
+        *op ^= k;
     }
 
     let mut inner = Sha256::new();
@@ -191,6 +191,21 @@ pub fn decrypt_secret_with_key(value: &str, master_key: &[u8; 32]) -> String {
     String::from_utf8(plain).unwrap_or_default()
 }
 
+fn apply_transform_to_field<F>(obj: &mut Map<String, Value>, key: &str, transform: &F)
+where
+    F: Fn(&str) -> String,
+{
+    let Some(val) = obj.get_mut(key) else {
+        return;
+    };
+    let Some(s) = val.as_str() else {
+        return;
+    };
+    if !s.is_empty() {
+        *val = Value::String(transform(s));
+    }
+}
+
 fn transform_secret_fields<F>(settings: &mut Value, transform: F)
 where
     F: Fn(&str) -> String,
@@ -200,13 +215,7 @@ where
     };
 
     for key in SECRET_SETTING_KEYS {
-        if let Some(val) = obj.get_mut(*key) {
-            if let Some(s) = val.as_str() {
-                if !s.is_empty() {
-                    *val = Value::String(transform(s));
-                }
-            }
-        }
+        apply_transform_to_field(obj, key, &transform);
     }
 
     if let Some(token_obj) = obj
@@ -216,13 +225,7 @@ where
         .and_then(|t| t.as_object_mut())
     {
         for field in ["access_token", "refresh_token"] {
-            if let Some(val) = token_obj.get_mut(field) {
-                if let Some(s) = val.as_str() {
-                    if !s.is_empty() {
-                        *val = Value::String(transform(s));
-                    }
-                }
-            }
+            apply_transform_to_field(token_obj, field, &transform);
         }
     }
 }
