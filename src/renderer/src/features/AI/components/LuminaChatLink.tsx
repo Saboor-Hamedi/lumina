@@ -46,9 +46,9 @@ export const ChatLink: React.FC<ChatLinkProps> = ({ href, children, ...props }) 
       rel="noopener noreferrer"
       className="chat-external-link"
       onClick={(e) => {
-        if ((window as any).electron?.ipcRenderer) {
+        if (href && (window as any).api?.openExternal) {
           e.preventDefault()
-          ;(window as any).electron.ipcRenderer.send('open-external-url', href)
+          ;(window as any).api.openExternal(href)
         }
       }}
       {...props}

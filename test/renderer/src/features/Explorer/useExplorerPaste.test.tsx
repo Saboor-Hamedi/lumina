@@ -202,7 +202,6 @@ describe('useExplorerPaste Image Ingestion & Focus Routing', () => {
     expect(clearSelectionMock).toHaveBeenCalled()
     expect(loadWorkspaceMock).toHaveBeenCalled()
     expect(result.current.bulkDeleteModalOpen).toBe(false)
-    expect(toastEvents.length).toBe(1)
-    expect(toastEvents[0].detail.message).toBe('Deleted 4 items')
+    expect(toastEvents.length).toBe(0)
   })
 })

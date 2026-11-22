@@ -31,9 +31,6 @@
   },
   "include": [
     "src/shared/**/*",
-    "src/main/**/*",
-    "src/export/**/*",
-    "src/preload/**/*",
     "src/renderer/src/**/*",
     "test/**/*"
   ],

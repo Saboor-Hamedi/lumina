@@ -1,9 +1,7 @@
-use napi_derive::napi;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[napi(object)]
 pub struct GraphNode {
     pub id: String,
     pub label: String,
@@ -12,21 +10,18 @@ pub struct GraphNode {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[napi(object)]
 pub struct GraphLink {
     pub source: String,
     pub target: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[napi(object)]
 pub struct GraphData {
     pub nodes: Vec<GraphNode>,
     pub links: Vec<GraphLink>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[napi(object)]
 pub struct NoteInput {
     pub id: String,
     pub title: String,

@@ -222,7 +222,7 @@ export function useCanvasPaste({
         return
       }
 
-      // 8. Electron IPC fallback: read image directly from clipboard buffer
+      // 8. Native IPC fallback: read image directly from clipboard buffer
       if ((window as any).api?.readClipboardImageBuffer) {
         try {
           const buffer = await (window as any).api.readClipboardImageBuffer()

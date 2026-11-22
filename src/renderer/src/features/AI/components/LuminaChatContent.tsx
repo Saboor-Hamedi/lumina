@@ -14,6 +14,8 @@ import { useScopedSelectAll } from '../hooks/useScopedSelectAll'
 import { getBrainDocuments } from '../services/brainKnowledge'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { BarChart3, Plus, History, Trash2, Pin } from 'lucide-react'
+import '../css/lumina.css'
+import '../css/luminaWorkbench.css'
 
 export interface LuminaChatContentProps {
   isSidebar?: boolean

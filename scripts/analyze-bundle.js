@@ -70,6 +70,7 @@ function analyzePackageJson() {
 function analyzeBuildOutput() {
   const distPath = join(projectRoot, 'dist')
   const outPath = join(projectRoot, 'out')
+  const tauriTargetPath = join(projectRoot, 'target', 'release')
 
   const results = {
     dist: null,
@@ -82,16 +83,13 @@ function analyzeBuildOutput() {
     results.dist = { statsFile: statsPath }
   }
 
-  // Check for Electron build output
-  if (existsSync(outPath)) {
-    const mainPath = join(outPath, 'main')
-    const preloadPath = join(outPath, 'preload')
+  // Check for Tauri + Vite renderer build output
+  if (existsSync(outPath) || existsSync(tauriTargetPath)) {
     const rendererPath = join(outPath, 'renderer')
 
     results.out = {
-      main: existsSync(mainPath),
-      preload: existsSync(preloadPath),
-      renderer: existsSync(rendererPath)
+      renderer: existsSync(rendererPath),
+      tauriRelease: existsSync(tauriTargetPath)
     }
   }
 
@@ -110,8 +108,7 @@ function getLargeDependencies() {
     '@codemirror',
     'react-markdown', // Markdown rendering
     'highlight.js', // Syntax highlighting
-    'pdf-lib', // PDF generation
-    'electron' // Electron runtime
+    'pdf-lib' // PDF generation
   ]
 
   return packageJson.dependencies
@@ -168,13 +165,12 @@ function generateReport() {
   }
 
   if (buildInfo.out) {
-    const { main, preload, renderer } = buildInfo.out
-    console.log(`  ${main ? colors.green + '✓' : colors.red + '✗'}${colors.reset} Main process`)
+    const { renderer, tauriRelease } = buildInfo.out
     console.log(
-      `  ${preload ? colors.green + '✓' : colors.red + '✗'}${colors.reset} Preload scripts`
+      `  ${renderer ? colors.green + '✓' : colors.red + '✗'}${colors.reset} Renderer bundle (out/renderer)`
     )
     console.log(
-      `  ${renderer ? colors.green + '✓' : colors.red + '✗'}${colors.reset} Renderer process`
+      `  ${tauriRelease ? colors.green + '✓' : colors.yellow + '○'}${colors.reset} Tauri release target (target/release)`
     )
   } else {
     console.log(`  ${colors.yellow}⚠${colors.reset} No build output found`)

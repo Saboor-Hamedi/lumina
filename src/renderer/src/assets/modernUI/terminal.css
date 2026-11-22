@@ -297,7 +297,6 @@ body.is-terminal-resizing * {
 }
 
 body.is-terminal-resizing iframe,
-body.is-terminal-resizing webview,
 body.is-terminal-resizing canvas,
 body.is-terminal-resizing .workspace-container,
 body.is-terminal-resizing .cm-editor,

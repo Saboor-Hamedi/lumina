@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useTerminalInstance, createElectronPtyTransport } from '../../../../../src/renderer/src/core/terminal/useTerminalInstance'
+import { useTerminalInstance, createTauriPtyTransport } from '../../../../../src/renderer/src/core/terminal/useTerminalInstance'
 
-describe('createElectronPtyTransport fallback', () => {
+describe('createTauriPtyTransport fallback', () => {
   it('creates a headless mock transport when window.api is missing', () => {
-    const transport = createElectronPtyTransport({
+    const transport = createTauriPtyTransport({
       id: 'sess_1',
       name: 'Test Terminal',
       shell: 'cmd.exe',

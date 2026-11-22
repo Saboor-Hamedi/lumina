@@ -7,7 +7,7 @@
  * - Seamless vector shape rendering with accurate strokes and fills
  * - Bézier connection wires with directional arrow markers
  * - Clean typography and card layout
- * - Direct copy to clipboard via Electron nativeImage IPC & Web Clipboard API
+ * - Direct copy to clipboard via native clipboard IPC & Web Clipboard API
  * - One-click PNG/SVG download
  * ============================================================================
  */
@@ -560,7 +560,7 @@ export async function copyCanvasAsImage(options: ExportCanvasOptions): Promise<b
     const scale = options.scale || 2
     const pngDataUrl = await svgToPngDataUrl(svgString, width, height, scale)
 
-    // 1. Try Electron native clipboard IPC (most reliable in Electron desktop apps)
+    // 1. Try native clipboard IPC when available
     if ((window as any).api?.writeImageToClipboard) {
       await (window as any).api.writeImageToClipboard(pngDataUrl)
       return true

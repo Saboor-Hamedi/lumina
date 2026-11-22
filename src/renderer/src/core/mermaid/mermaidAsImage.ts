@@ -151,7 +151,7 @@ export async function copyMermaidAsImage(svgElement: SVGSVGElement | HTMLElement
   const canvasWidth = Math.round(width * scale)
   const canvasHeight = Math.round(height * scale)
 
-  // Try the fast path: createImageBitmap + OffscreenCanvas (Chromium/Electron native)
+  // Try the fast path: createImageBitmap + OffscreenCanvas (Chromium/WebView2 native)
   if (typeof createImageBitmap !== 'undefined' && typeof OffscreenCanvas !== 'undefined') {
     try {
       const bitmap = await createImageBitmap(svgBlob, {

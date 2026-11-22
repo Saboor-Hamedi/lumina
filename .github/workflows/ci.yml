@@ -34,17 +34,30 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install Linux Dependencies
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: '. -> target'
+
+      - name: Install Linux Tauri Dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfuse2
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Install Node Dependencies
         run: npm ci
 
-      - name: Run Automated Tests
+      - name: Run Rust Core Tests
+        run: cargo test -p lumina_core
+
+      - name: Run Automated Frontend Tests
         run: npm run test:run
 
-      - name: Build Application (Typecheck & Bundle)
-        run: npm run build
+      - name: Typecheck & Build Renderer
+        run: |
+          npm run typecheck
+          npm run build:renderer

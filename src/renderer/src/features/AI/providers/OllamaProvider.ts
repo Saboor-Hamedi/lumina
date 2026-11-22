@@ -150,7 +150,7 @@ export function normalizeOllamaUrl(rawUrl?: string): string {
 /**
  * Ollama Provider.
  * Streams chat completions locally using Ollama's /api/chat NDJSON endpoint,
- * with automatic IPv4 normalization and Electron Main Process IPC fallback.
+ * with automatic IPv4 normalization and optional native IPC bridge fallback.
  */
 export class OllamaProvider extends BaseProvider {
   constructor(config: ProviderConfig = {}) {
@@ -177,12 +177,11 @@ export class OllamaProvider extends BaseProvider {
 
       let response: Response | null = null
       const api = (window as any)?.api
-      const useElectronBridge = typeof api?.chatOllama === 'function'
+      const useNativeBridge = typeof api?.chatOllama === 'function'
       let rendererConnectionError = ''
 
-      // Electron's document CSP deliberately excludes localhost. Use IPC in
-      // desktop builds and keep renderer streaming for browser/dev contexts.
-      if (!useElectronBridge) {
+      // Use native IPC bridge when present; otherwise stream directly from the renderer.
+      if (!useNativeBridge) {
         try {
           response = await fetch(chatUrl, {
             method: 'POST',
@@ -218,9 +217,9 @@ export class OllamaProvider extends BaseProvider {
 
       let assistantMessage: Record<string, any> = { role: 'assistant', content: '' }
 
-      // Electron IPC bypasses Ollama's renderer CORS restrictions. It returns the
+      // Native IPC bypasses renderer CORS restrictions when available. It returns the
       // final message, including tool_calls, so the same agent loop works there.
-      if (!response && useElectronBridge) {
+      if (!response && useNativeBridge) {
         const request = {
           url: chatUrl,
           model: targetModel,
@@ -266,7 +265,7 @@ export class OllamaProvider extends BaseProvider {
                 num_predict: options.max_tokens || 4096
               }
             }
-            response = useElectronBridge && typeof api?.startOllamaChat === 'function'
+            response = useNativeBridge && typeof api?.startOllamaChat === 'function'
               ? await createIpcOllamaResponse(api, retryPayload, options.signal)
               : await fetch(chatUrl, {
                   method: 'POST',

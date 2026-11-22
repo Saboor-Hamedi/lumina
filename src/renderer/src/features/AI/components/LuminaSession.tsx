@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import LuminaSessionMenu from './LuminaSessionMenu'
+import '../css/luminaSession.css'
 
 export interface LuminaSessionProps {
   isOpen?: boolean

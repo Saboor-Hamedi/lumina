@@ -692,8 +692,8 @@ export const navigateToWorkspaceEntity = (
         : targetOrEntity
 
     if (entity.type === 'external' && entity.navigationTarget) {
-      if (typeof window !== 'undefined' && (window as any).electron?.ipcRenderer) {
-        ;(window as any).electron.ipcRenderer.send('open-external-url', entity.navigationTarget)
+      if (typeof window !== 'undefined' && (window as any).api?.openExternal) {
+        ;(window as any).api.openExternal(entity.navigationTarget)
       } else if (typeof window !== 'undefined') {
         window.open(entity.navigationTarget, '_blank', 'noopener,noreferrer')
       }

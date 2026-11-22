@@ -672,7 +672,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
               target.closest('.header-actions') ||
               target.closest('.explorer-action-btn') ||
               target.closest('.inline-create-input') ||
-              target.closest('.inline-rename-input')
+              target.closest('.inline-rename-input') ||
+              target.closest('.context-menu') ||
+              target.closest('[role="menu"]') ||
+              target.closest('[role="dialog"]') ||
+              target.closest('.modal-overlay')
             )
               return
             clearSelection()

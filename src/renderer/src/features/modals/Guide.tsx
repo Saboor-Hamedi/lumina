@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useSettingsStore } from '../../core/store/SettingStore'
+import { useKeyboardShortcuts } from '../../core/shortcuts/useKeyboardShortcuts'
 import './css/guide.css'
 
 export interface GuideProps {
@@ -365,6 +366,15 @@ const Guide: React.FC<GuideProps> = memo(({ isOpen, onClose, onLoadStarterNotes,
   const [isGeneratingNotes, setIsGeneratingNotes] = useState<boolean>(false)
   const isMaximized = useSettingsStore((s: any) => s.settings?.guideModalMaximized ?? false)
 
+  useKeyboardShortcuts({
+    onEscape: isOpen
+      ? () => {
+          onClose()
+          return true
+        }
+      : null
+  })
+
   // Single window capture listener (prevents duplicate step advances)
   useEffect(() => {
     if (!isOpen) return
@@ -373,6 +383,7 @@ const Guide: React.FC<GuideProps> = memo(({ isOpen, onClose, onLoadStarterNotes,
       if (e.key === 'Escape') {
         e.preventDefault()
         e.stopPropagation()
+        e.stopImmediatePropagation()
         onClose()
       } else if (e.key === 'ArrowRight') {
         setStep((prev) => Math.min(GUIDE_STEPS.length - 1, prev + 1))

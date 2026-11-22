@@ -132,7 +132,7 @@ export class GlobalErrorHandler extends Component<
       componentStack: errorInfo?.componentStack
     })
 
-    // Forward to Electron main process error logger with sanitized diagnostics
+    // Forward to native backend error logger with sanitized diagnostics
     if ((window as any).api?.logError) {
       try {
         const res = (window as any).api.logError({
@@ -182,7 +182,7 @@ export class GlobalErrorHandler extends Component<
     if (this.props.isRoot) {
       this.handleWindowError = (event: ErrorEvent) => {
         const msg = event.message || ''
-        // Ignore benign browser/electron events
+        // Ignore benign browser/webview events
         if (
           msg.includes('ResizeObserver') ||
           msg.includes('Script error.') ||
@@ -276,8 +276,6 @@ export class GlobalErrorHandler extends Component<
     try {
       if (typeof window.location?.reload === 'function') {
         window.location.reload()
-      } else if ((window as any).electron?.ipcRenderer) {
-        ;(window as any).electron.ipcRenderer.invoke('window:reload')
       }
     } catch (e) {
       console.error('[GlobalErrorHandler] Failed to reload window:', e)

@@ -74,14 +74,11 @@ import { useTag } from '../../core/hooks/useTag'
 import { useMention } from '../../core/hooks/useMention'
 import { useShallow } from 'zustand/react/shallow'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
-import { useAIStore } from '../AI/tools/lumina'
-import { ChatMessageRow } from '../AI/Lumina'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useSettingsStore, Settings as AppSettings } from '../../core/store/SettingStore'
 import { PreviewCommandPalette } from './PreviewCommandPalette'
 import { COMMANDS_REGISTRY, LuminaCommand, CommandContext } from './utils/commandsRegistry'
 import { SETTINGS_REGISTRY, LuminaSettingDefinition, SettingOption } from './utils/settingsRegistry'
-import '../AI/css/lumina.css'
 import './css/commandPalette.css'
 
 export interface PaletteItem {
@@ -468,7 +465,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
   }) => {
     const [query, setQuery] = useState<string>('')
     const [selectedIndex, setSelectedIndex] = useState<number>(0)
-    const [mode, setMode] = useState<'search' | 'ai'>('search')
     const [splitRatio, setSplitRatio] = useState<number>(50)
     const [activePromptSetting, setActivePromptSetting] = useState<LuminaSettingDefinition | null>(null)
 
@@ -477,29 +473,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
     const itemRefs = useRef<(HTMLDivElement | null)[]>([])
     const isDraggingRef = useRef<boolean>(false)
     const previousFocusRef = useRef<Element | null>(null)
-    const chatScrollRef = useRef<HTMLDivElement>(null)
 
-    const {
-      isModelReady,
-      modelLoadingProgress,
-      aiError,
-      chatMessages,
-      isChatLoading,
-      cancelChat,
-      sendChatMessage,
-      clearChat
-    } = useAIStore()
-
-    const { dirtySnippetIds, folders, selectedSnippet } = useWorkspaceStore(
+    const { dirtySnippetIds } = useWorkspaceStore(
       useShallow((state) => ({
-        dirtySnippetIds: state.dirtyNoteIds || [],
-        folders: state.folders || [],
-        selectedSnippet: state.selectedNote
+        dirtySnippetIds: state.dirtyNoteIds || []
       }))
     )
 
-    const commandPaletteMode = useSettingsStore((s) => s.settings?.commandPaletteMode)
-    const updateSetting = useSettingsStore((s) => s.updateSetting)
     const { tags } = useTag()
     const { mentions } = useMention()
 
@@ -522,7 +502,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
         setQuery(initialQuery)
         setSelectedIndex(0)
         setActivePromptSetting(null)
-        setMode((commandPaletteMode as 'ai' | 'search') || 'search')
         setTimeout(() => inputRef.current?.focus(), 20)
       } else {
         setActivePromptSetting(null)
@@ -530,24 +509,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
           setTimeout(() => (previousFocusRef.current as HTMLElement)?.focus(), 10)
         }
       }
-    }, [isOpen, initialQuery, commandPaletteMode])
-
-    useEffect(() => {
-      if (mode === 'ai' && chatScrollRef.current) {
-        const scrollToBottom = (): void => {
-          if (chatScrollRef.current) {
-            chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight
-          }
-        }
-        scrollToBottom()
-        const timeoutId = setTimeout(scrollToBottom, 50)
-        return () => clearTimeout(timeoutId)
-      }
-    }, [chatMessages, isChatLoading, isOpen, mode])
+    }, [isOpen, initialQuery])
 
     // Lightning-fast instant filtering logic (< 0.05ms)
     const filtered: PaletteItem[] = useMemo(() => {
-      if (mode === 'ai') return []
 
       // If activePromptSetting is active (e.g. enum or number options picker), list its options
       if (activePromptSetting) {
@@ -755,7 +720,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
       }
 
       return matches.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 25)
-    }, [query, items, tags, mentions, mode, activePromptSetting])
+    }, [query, items, tags, mentions, activePromptSetting])
 
     useEffect(() => {
       if (selectedIndex >= filtered.length && filtered.length > 0) {
@@ -871,14 +836,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
         }
       } else if (e.key === 'Enter') {
         e.preventDefault()
-        if (mode === 'ai') {
-          if (query.trim() && !isChatLoading) {
-            sendChatMessage(query.trim(), selectedSnippet ? [selectedSnippet] : [])
-            setQuery('')
-          }
-          return
-        }
-
         const item = filtered[selectedIndex]
         if (item) {
           executeItem(item)
@@ -895,37 +852,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
         setActivePromptSetting(null)
       }
     }
-
-    const handleCopy = useCallback((text: string): void => {
-      navigator.clipboard.writeText(text)
-    }, [])
-
-    const handleRating = useCallback(
-      (index: number, rating: 'up' | 'down'): void => {
-        const current = (chatMessages as any[])[index]?.rating
-        const newRating = current === rating ? null : rating
-        const updated = [...(chatMessages as any[])]
-        if (updated[index]) {
-          updated[index] = { ...updated[index], rating: newRating }
-          useAIStore.setState({ chatMessages: updated })
-        }
-      },
-      [chatMessages]
-    )
-
-    const userMentionRegex = useMemo(() => {
-      const list = items || []
-      const titles = list
-        .map((s) => s.title)
-        .filter(Boolean)
-        .sort((a, b) => (b?.length || 0) - (a?.length || 0))
-        .map((t) => (t as string).replace(/[.*+?^${}()|[]\]/g, (m) => '\\' + m))
-
-      if (titles.length > 0) {
-        return new RegExp('(@(?:' + titles.join('|') + '|[a-zA-Z0-9_./-]+))', 'gi')
-      }
-      return /(@[a-zA-Z0-9_./-]+)/g
-    }, [items])
 
     const handleResizerMouseDown = (e: React.MouseEvent): void => {
       e.preventDefault()
@@ -989,15 +915,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
               ref={inputRef}
               type="text"
               placeholder={
-                mode === 'ai'
-                  ? 'Ask Lumina anything...'
-                  : activePromptSetting
-                    ? activePromptSetting.type === 'number'
-                      ? `Type value (${activePromptSetting.min ?? 0} - ${activePromptSetting.max ?? 100}) or choose below...`
-                      : `Select option for ${activePromptSetting.title}...`
-                    : query.startsWith('>')
-                      ? 'Type a command or setting name...'
-                      : 'Search notes, commands, and settings... (Type > for commands)'
+                activePromptSetting
+                  ? activePromptSetting.type === 'number'
+                    ? `Type value (${activePromptSetting.min ?? 0} - ${activePromptSetting.max ?? 100}) or choose below...`
+                    : `Select option for ${activePromptSetting.title}...`
+                  : query.startsWith('>')
+                    ? 'Type a command or setting name...'
+                    : 'Search notes, commands, and settings... (Type > for commands)'
               }
               value={query}
               onChange={(e) => {
@@ -1007,38 +931,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
               onKeyDown={handleKeyDown}
               autoFocus
             />
-            <div className="palette-mode-toggle">
-              <button
-                type="button"
-                className={`palette-header-btn ${mode === 'search' ? 'active' : ''}`}
-                onClick={() => {
-                  setMode('search')
-                  updateSetting('commandPaletteMode', 'search')
-                }}
-              >
-                Search
-              </button>
-              <button
-                type="button"
-                className={`palette-header-btn ${mode === 'ai' ? 'active' : ''}`}
-                onClick={() => {
-                  setMode('ai')
-                  updateSetting('commandPaletteMode', 'ai')
-                }}
-              >
-                Ask AI
-              </button>
-              {mode === 'ai' && isChatLoading && (
-                <button type="button" className="palette-header-btn danger" onClick={cancelChat}>
-                  <Square size={10} fill="currentColor" /> Stop
-                </button>
-              )}
-              {mode === 'ai' && chatMessages.length > 0 && !isChatLoading && (
-                <button type="button" className="palette-header-btn" onClick={clearChat} title="Clear Chat">
-                  <Trash2 size={13} />
-                </button>
-              )}
-            </div>
           </div>
 
           {activePromptSetting && (
@@ -1055,219 +947,160 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
 
           {/* Palette Content Area */}
           <div className="palette-body">
-            {mode === 'search' ? (
-              <>
-                {/* Results Column */}
+            <>
+              {/* Results Column */}
+              <div
+                className="palette-results-col"
+                style={{ width: `${splitRatio}%`, display: 'flex', flexDirection: 'column' }}
+              >
                 <div
-                  className="palette-results-col"
-                  style={{ width: `${splitRatio}%`, display: 'flex', flexDirection: 'column' }}
+                  className="palette-results seamless-scrollbar"
+                  ref={listRef}
+                  style={{ height: filtered.length > 0 ? '100%' : 'auto', minHeight: 120, overflowY: 'auto' }}
                 >
-                  <div
-                    className="palette-results seamless-scrollbar"
-                    ref={listRef}
-                    style={{ height: filtered.length > 0 ? '100%' : 'auto', minHeight: 120, overflowY: 'auto' }}
-                  >
-                    {filtered.length > 0 ? (
-                      filtered.map((item, index) => (
-                        <CommandPaletteRow
-                          key={item.id || item.action || index}
-                          ref={(el) => {
-                            itemRefs.current[index] = el
-                          }}
-                          item={item}
-                          isSelected={index === selectedIndex}
-                          query={activeHighlightQuery}
-                          isDirty={Boolean(item.id && dirtySnippetIds.includes(item.id))}
-                          onClick={() => {
-                            setSelectedIndex(index)
-                            executeItem(item)
-                          }}
-                          onMouseEnter={() => setSelectedIndex(index)}
-                        />
-                      ))
-                    ) : (
-                      <div className="palette-zero-results" style={{ padding: '36px 20px', textAlign: 'center' }}>
-                        <Search size={24} style={{ opacity: 0.3, marginBottom: '8px' }} />
-                        <span>
-                          {query.startsWith('>')
-                            ? `No matching commands or settings found for "${query.slice(1).trim()}"`
-                            : `No matching notes or commands found for "${query}"`}
-                        </span>
-                        {query.trim().length > 0 && !query.startsWith('>') && (
-                          <button
-                            type="button"
-                            className="palette-ask-lumina-btn"
-                            style={{ marginTop: '14px' }}
-                            onClick={() => {
-                              setMode('ai')
-                              updateSetting('commandPaletteMode', 'ai')
-                              if (query.trim() && !isChatLoading) {
-                                sendChatMessage(query.trim(), selectedSnippet ? [selectedSnippet] : [])
-                                setQuery('')
-                              }
-                            }}
-                          >
-                            Ask Lumina: "{query}"
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="palette-resizer" onMouseDown={handleResizerMouseDown}>
-                  <div className="resizer-grip">
-                    <GripVertical size={14} />
-                  </div>
-                </div>
-
-                {/* Details / Preview Column */}
-                <div className="palette-preview-col" style={{ width: `${100 - splitRatio}%`, height: '100%', maxHeight: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                  {selectedItem?.matchType === 'command' && selectedItem.command ? (
-                    <div className="command-details-preview">
-                      <div className="command-details-header">
-                        <div className="command-details-badge-row">
-                          <span className="command-details-cat">{selectedItem.command.category}</span>
-                          {Boolean(
-                            (selectedItem.command.id === 'view.metaPositionFloatTop' && (useSettingsStore.getState().settings?.metaPosition || 'bottom') === 'top') ||
-                            (selectedItem.command.id === 'view.metaPositionFloatBottom' && (useSettingsStore.getState().settings?.metaPosition || 'bottom') === 'bottom') ||
-                            (selectedItem.command.id === 'view.metaPositionInline' && (useSettingsStore.getState().settings?.metaPosition || 'bottom') === 'inline')
-                          ) && (
-                            <span
-                              className="setting-value-badge"
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                                marginLeft: '8px',
-                                color: 'var(--text-accent, #a78bfa)',
-                                borderColor: 'rgba(167, 139, 250, 0.3)',
-                                fontSize: '11px',
-                                fontWeight: 600
-                              }}
-                            >
-                              <Check size={11} strokeWidth={2.5} />
-                              Active
-                            </span>
-                          )}
-                          {selectedItem.command.shortcut && (
-                            <div className="palette-shortcut" style={{ marginLeft: 'auto' }}>
-                              {selectedItem.command.shortcut.split('+').map((key, i) => (
-                                <kbd key={i}>{key.trim()}</kbd>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <div className="command-details-title">{selectedItem.command.title}</div>
-                      </div>
-                      <div className="command-details-desc">
-                        {selectedItem.description
-                          ? `Keywords: ${selectedItem.description}`
-                          : 'Execute this application command immediately.'}
-                      </div>
-                      <div style={{ marginTop: 'auto', fontSize: '11px', opacity: 0.6 }}>
-                        Press <kbd>↵ Enter</kbd> to execute command
-                      </div>
-                    </div>
-                  ) : selectedItem?.matchType === 'setting' && selectedItem.settingDef ? (
-                    (() => {
-                      const curVal = selectedItem.settingDef.getValue(useSettingsStore.getState().settings)
-                      const displayVal = selectedItem.settingDef.formatValue ? selectedItem.settingDef.formatValue(curVal) : String(curVal)
-                      return (
-                        <div className="command-details-preview">
-                          <div className="command-details-header">
-                            <div className="command-details-badge-row">
-                              <span className="command-details-cat">{selectedItem.settingDef.category}</span>
-                              <span className="setting-value-badge" style={{ marginLeft: 'auto' }}>
-                                Current: {displayVal}
-                              </span>
-                            </div>
-                            <div className="command-details-title">{selectedItem.settingDef.title}</div>
-                          </div>
-                          <div className="command-details-desc">{selectedItem.settingDef.description}</div>
-                          {selectedItem.settingDef.options && (
-                            <div style={{ marginTop: '8px' }}>
-                              <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-                                Available Options:
-                              </div>
-                              <div className="command-details-options-list">
-                                {selectedItem.settingDef.options.map((opt) => (
-                                  <div key={opt.value} className="command-details-option-item">
-                                    <span>{opt.label}</span>
-                                    {opt.value === curVal && (
-                                      <span style={{ color: 'var(--text-accent)', fontSize: '11px', fontWeight: 600 }}>Active</span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          <div style={{ marginTop: 'auto', fontSize: '11px', opacity: 0.6 }}>
-                            {selectedItem.settingDef.type === 'boolean'
-                              ? 'Press ↵ Enter to toggle value'
-                              : selectedItem.settingDef.type === 'enum'
-                                ? 'Press ↵ Enter to select an option'
-                                : selectedItem.settingDef.type === 'number'
-                                  ? 'Press ↵ Enter to enter a new value'
-                                  : 'Press ↵ Enter to configure in Settings'}
-                          </div>
-                        </div>
-                      )
-                    })()
-                  ) : previewContent ? (
-                    <PreviewCommandPalette content={previewContent} onClose={onClose} />
+                  {filtered.length > 0 ? (
+                    filtered.map((item, index) => (
+                      <CommandPaletteRow
+                        key={item.id || item.action || index}
+                        ref={(el) => {
+                          itemRefs.current[index] = el
+                        }}
+                        item={item}
+                        isSelected={index === selectedIndex}
+                        query={activeHighlightQuery}
+                        isDirty={Boolean(item.id && dirtySnippetIds.includes(item.id))}
+                        onClick={() => {
+                          setSelectedIndex(index)
+                          executeItem(item)
+                        }}
+                        onMouseEnter={() => setSelectedIndex(index)}
+                      />
+                    ))
                   ) : (
-                    <div className="palette-empty-preview">
-                      <div className="palette-empty-icon-wrap">
-                        <Search size={22} />
-                      </div>
-                      <div className="palette-empty-title">No preview available</div>
-                      <p className="palette-empty-subtitle">Select a command, setting, or note to preview details</p>
+                    <div className="palette-zero-results" style={{ padding: '36px 20px', textAlign: 'center' }}>
+                      <Search size={24} style={{ opacity: 0.3, marginBottom: '8px' }} />
+                      <span>
+                        {query.startsWith('>')
+                          ? `No matching commands or settings found for "${query.slice(1).trim()}"`
+                          : `No matching notes or commands found for "${query}"`}
+                      </span>
                     </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              /* AI Chat Panel */
-              <div className="palette-chat-panel">
-                <div className="palette-chat-messages seamless-scrollbar" ref={chatScrollRef}>
-                  {chatMessages.length === 0 ? (
-                    <div className="palette-chat-empty">
-                      <Bot size={36} className="palette-ai-bot-icon" />
-                      <h3 className="palette-ai-empty-title">Ask Lumina AI</h3>
-                      <p className="palette-ai-empty-desc">
-                        Conversational intelligence grounded in your private workspace. Ask questions, brainstorm, or explore notes.
-                      </p>
-                      {!isModelReady && modelLoadingProgress > 0 && (
-                        <div className="palette-model-status-card">
-                          <div className="palette-model-status-header">
-                            <span className="palette-status-pulse"></span>
-                            <span>Initializing Local Engine... ({modelLoadingProgress}%)</span>
-                          </div>
-                          <div className="palette-loading-bar-wrap">
-                            <div className="palette-loading-bar" style={{ width: `${modelLoadingProgress}%` }} />
-                          </div>
-                        </div>
-                      )}
-                      {aiError && <div className="palette-ai-err-box">{typeof aiError === "string" ? aiError : (aiError as any)?.message || "AI Error"}</div>}
-                    </div>
-                  ) : (
-                    chatMessages.map((msg: any, i: number) => (
-                    <ChatMessageRow
-                      key={msg.id || i}
-                      msg={msg}
-                      index={i}
-                      isLast={i === chatMessages.length - 1}
-                      isChatLoading={isChatLoading}
-                      userMentionRegex={userMentionRegex}
-                      handleCopy={handleCopy}
-                      handleRating={handleRating}
-                    />
-                  ))
                   )}
                 </div>
               </div>
-            )}
+
+              <div className="palette-resizer" onMouseDown={handleResizerMouseDown}>
+                <div className="resizer-grip">
+                  <GripVertical size={14} />
+                </div>
+              </div>
+
+              {/* Details / Preview Column */}
+              <div className="palette-preview-col" style={{ width: `${100 - splitRatio}%`, height: '100%', maxHeight: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                {selectedItem?.matchType === 'command' && selectedItem.command ? (
+                  <div className="command-details-preview">
+                    <div className="command-details-header">
+                      <div className="command-details-badge-row">
+                        <span className="command-details-cat">{selectedItem.command.category}</span>
+                        {Boolean(
+                          (selectedItem.command.id === 'view.metaPositionFloatTop' && (useSettingsStore.getState().settings?.metaPosition || 'bottom') === 'top') ||
+                          (selectedItem.command.id === 'view.metaPositionFloatBottom' && (useSettingsStore.getState().settings?.metaPosition || 'bottom') === 'bottom') ||
+                          (selectedItem.command.id === 'view.metaPositionInline' && (useSettingsStore.getState().settings?.metaPosition || 'bottom') === 'inline')
+                        ) && (
+                          <span
+                            className="setting-value-badge"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              marginLeft: '8px',
+                              color: 'var(--text-accent, #a78bfa)',
+                              borderColor: 'rgba(167, 139, 250, 0.3)',
+                              fontSize: '11px',
+                              fontWeight: 600
+                            }}
+                          >
+                            <Check size={11} strokeWidth={2.5} />
+                            Active
+                          </span>
+                        )}
+                        {selectedItem.command.shortcut && (
+                          <div className="palette-shortcut" style={{ marginLeft: 'auto' }}>
+                            {selectedItem.command.shortcut.split('+').map((key, i) => (
+                              <kbd key={i}>{key.trim()}</kbd>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="command-details-title">{selectedItem.command.title}</div>
+                    </div>
+                    <div className="command-details-desc">
+                      {selectedItem.description
+                        ? `Keywords: ${selectedItem.description}`
+                        : 'Execute this application command immediately.'}
+                    </div>
+                    <div style={{ marginTop: 'auto', fontSize: '11px', opacity: 0.6 }}>
+                      Press <kbd>↵ Enter</kbd> to execute command
+                    </div>
+                  </div>
+                ) : selectedItem?.matchType === 'setting' && selectedItem.settingDef ? (
+                  (() => {
+                    const curVal = selectedItem.settingDef.getValue(useSettingsStore.getState().settings)
+                    const displayVal = selectedItem.settingDef.formatValue ? selectedItem.settingDef.formatValue(curVal) : String(curVal)
+                    return (
+                      <div className="command-details-preview">
+                        <div className="command-details-header">
+                          <div className="command-details-badge-row">
+                            <span className="command-details-cat">{selectedItem.settingDef.category}</span>
+                            <span className="setting-value-badge" style={{ marginLeft: 'auto' }}>
+                              Current: {displayVal}
+                            </span>
+                          </div>
+                          <div className="command-details-title">{selectedItem.settingDef.title}</div>
+                        </div>
+                        <div className="command-details-desc">{selectedItem.settingDef.description}</div>
+                        {selectedItem.settingDef.options && (
+                          <div style={{ marginTop: '8px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
+                              Available Options:
+                            </div>
+                            <div className="command-details-options-list">
+                              {selectedItem.settingDef.options.map((opt) => (
+                                <div key={opt.value} className="command-details-option-item">
+                                  <span>{opt.label}</span>
+                                  {opt.value === curVal && (
+                                    <span style={{ color: 'var(--text-accent)', fontSize: '11px', fontWeight: 600 }}>Active</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <div style={{ marginTop: 'auto', fontSize: '11px', opacity: 0.6 }}>
+                          {selectedItem.settingDef.type === 'boolean'
+                            ? 'Press ↵ Enter to toggle value'
+                            : selectedItem.settingDef.type === 'enum'
+                              ? 'Press ↵ Enter to select an option'
+                              : selectedItem.settingDef.type === 'number'
+                                ? 'Press ↵ Enter to enter a new value'
+                                : 'Press ↵ Enter to configure in Settings'}
+                        </div>
+                      </div>
+                    )
+                  })()
+                ) : previewContent ? (
+                  <PreviewCommandPalette content={previewContent} onClose={onClose} />
+                ) : (
+                  <div className="palette-empty-preview">
+                    <div className="palette-empty-icon-wrap">
+                      <Search size={22} />
+                    </div>
+                    <div className="palette-empty-title">No preview available</div>
+                    <p className="palette-empty-subtitle">Select a command, setting, or note to preview details</p>
+                  </div>
+                )}
+              </div>
+            </>
           </div>
 
           {/* Palette Footer Shortcuts */}

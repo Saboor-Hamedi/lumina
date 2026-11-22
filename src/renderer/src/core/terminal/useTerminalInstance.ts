@@ -10,7 +10,7 @@ import '@xterm/xterm/css/xterm.css'
 import { DEFAULT_FONT_SIZE, DEFAULT_SCROLLBACK, TERMINAL_FONT, XTERM_THEME, getActiveTerminalTheme } from './constants'
 import type { TerminalSession } from './types'
 
-/** Minimal transport contract — implement for node-pty, WS, SSH, Electron IPC, etc. */
+/** Minimal transport contract — implement for Tauri PTY (portable-pty), WS, SSH, etc. */
 export interface PtyTransport {
   write(data: string): void
   resize(cols: number, rows: number): void
@@ -20,10 +20,10 @@ export interface PtyTransport {
 }
 
 /**
- * Creates a real native shell PTY transport wired over Electron IPC,
+ * Creates a real native shell PTY transport wired over Tauri IPC,
  * with zero-fail fallback for unit tests and headless environments.
  */
-export function createElectronPtyTransport(session: TerminalSession): PtyTransport {
+export function createTauriPtyTransport(session: TerminalSession): PtyTransport {
   const api = typeof window !== 'undefined' ? (window as any).api : null
 
   if (!api?.terminalSpawn) {

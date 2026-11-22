@@ -34,6 +34,8 @@ export const useZoom = ({
   }, [isActive])
 
   const saveDebounceRef = useRef<NodeJS.Timeout | null>(null)
+  const wheelAccumulatorRef = useRef<number>(0)
+  const lastWheelTimeRef = useRef<number>(0)
 
   const setZoom = useCallback(
     (newSize: number) => {
@@ -55,10 +57,12 @@ export const useZoom = ({
       const root = document.documentElement
       root.style.setProperty('--font-size-editor', `${clamped}px`)
       root.style.setProperty('--editor-font-size', `${clamped / 16}rem`)
+      root.style.setProperty('--atomic-editor-body-size', `${clamped}px`)
 
       if (containerRef?.current) {
         containerRef.current.style.setProperty('--font-size-editor', `${clamped}px`)
         containerRef.current.style.setProperty('--editor-font-size', `${clamped / 16}rem`)
+        containerRef.current.style.setProperty('--atomic-editor-body-size', `${clamped}px`)
       }
 
       if (realViewRef?.current) {
@@ -128,8 +132,8 @@ export const useZoom = ({
       if (!isActiveRef.current) return
       if (e.ctrlKey || e.metaKey) {
         const target = e.target as HTMLElement | null
-        // If zooming inside graph (InlineGraph or canvas), let the graph handle its own zoom
-        if (target && typeof target.closest === 'function' && target.closest('.inline-graph-container, .graph-container, canvas')) {
+        // If zooming inside graph (InlineGraph, embedded graph, or canvas), let the graph handle its own zoom
+        if (target && typeof target.closest === 'function' && target.closest('.inline-graph-container, .nexus-embedded-graph, .graph-container, canvas')) {
           return
         }
 
@@ -138,14 +142,42 @@ export const useZoom = ({
           e.preventDefault()
           e.stopPropagation()
 
-          const direction = e.deltaY > 0 ? -1 : 1
-          const delta = direction * (e.altKey ? step * 2 : step)
-          setZoom(sizeRef.current + delta)
+          if (e.deltaY === 0) return
+
+          const effectiveStep = e.altKey ? step * 2 : step
+          const isTrackpadPinch = e.deltaMode === 0 && Math.abs(e.deltaY) < 40
+          if (isTrackpadPinch) {
+            // Smooth 2-finger trackpad pinch emits small fractional deltaY values
+            const now = performance.now()
+            const delta = -e.deltaY
+            if (
+              now - lastWheelTimeRef.current > 250 ||
+              (wheelAccumulatorRef.current !== 0 &&
+                Math.sign(wheelAccumulatorRef.current) !== Math.sign(delta))
+            ) {
+              wheelAccumulatorRef.current = 0
+            }
+            lastWheelTimeRef.current = now
+            wheelAccumulatorRef.current += delta
+            const threshold = 10
+            if (Math.abs(wheelAccumulatorRef.current) >= threshold) {
+              const rawSteps = Math.trunc(wheelAccumulatorRef.current / threshold)
+              wheelAccumulatorRef.current -= rawSteps * threshold
+              const clampedSteps = Math.max(-2, Math.min(2, rawSteps))
+              setZoom(sizeRef.current + clampedSteps * effectiveStep)
+            }
+          } else {
+            wheelAccumulatorRef.current = 0
+            lastWheelTimeRef.current = 0
+            const direction = e.deltaY > 0 ? -1 : 1
+            setZoom(sizeRef.current + direction * effectiveStep)
+          }
         }
       }
     }
 
     window.addEventListener('wheel', handleWheel as EventListener, { capture: true, passive: false })
+
     return () => {
       window.removeEventListener('wheel', handleWheel as EventListener, { capture: true })
     }

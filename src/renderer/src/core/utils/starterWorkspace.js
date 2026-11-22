@@ -225,16 +225,16 @@ sequenceDiagram
     autonumber
     actor User
     participant UI as Renderer (React)
-    participant Preload as Context Bridge
-    participant Main as Electron Main
+    participant Bridge as Tauri Bridge
+    participant Backend as Rust Backend
     participant Disk as File System
 
     User->>UI: Type note content
-    UI->>Preload: window.api.saveSnippet()
-    Preload->>Main: IPC 'workspace:saveSnippet'
-    Main->>Disk: Atomic write to .md file
-    Disk-->>Main: Write acknowledged
-    Main-->>UI: Broadcast 'workspace:updated'
+    UI->>Bridge: window.api.saveSnippet()
+    Bridge->>Backend: Invoke 'save_snippet'
+    Backend->>Disk: Atomic write to .md file
+    Disk-->>Backend: Write acknowledged
+    Backend-->>UI: Workspace state refreshed
     UI-->>User: Visual save indicator (Saved)
 \`\`\`
 

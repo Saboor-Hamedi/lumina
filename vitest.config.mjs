@@ -12,10 +12,9 @@ export default defineConfig({
     include: [
       '**/*.{test,spec}.{js,jsx,ts,tsx}',
       'src/**/*.test.{js,jsx,ts,tsx}',
-      'src/main/**/*.test.{js,ts}',
       'src/renderer/**/*.test.{js,jsx,ts,tsx}'
     ],
-    exclude: ['node_modules', 'out', 'build', 'dist', 'test/e2e'],
+    exclude: ['node_modules', 'out', 'build', 'dist', 'src-tauri', 'target', 'crates'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

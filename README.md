@@ -104,9 +104,8 @@ npm run build:linux  # Linux (AppImage / .deb)
 
 ```text
 lumina/
-├── crates/lumina_core/      # Native Rust core (Rayon scanner, fuzzy search, graph builder, portable-pty ConPTY engine)
-├── src/main/                # Electron main process (IPC, terminal handlers, filesystem watcher, cloud backup)
-├── src/export/              # Export engines (PDF, DOC, HTML, Markdown, image optimization)
+├── crates/lumina_core/      # Native Rust core (Rayon scanner, fuzzy search, graph builder)
+├── src-tauri/               # Tauri 2.0 Rust backend (IPC commands, portable-pty ConPTY engine, Google OAuth)
 └── src/renderer/            # React 19 UI
     ├── core/                # Zustand stores, CodeMirror 6 extensions, keyboard & terminal hooks
     └── features/            # Feature modules (Editor, AI + Safety, Terminal, Canvas, Graph, Explorer, Layout)
@@ -116,13 +115,12 @@ lumina/
 
 ## Testing
 
-Lumina includes unit, integration, Rust, and end-to-end desktop tests:
+Lumina includes unit, integration, and Rust core tests:
 
 ```bash
 npm run typecheck   # TypeScript verification
-npm run test:run    # Vitest unit & integration suite (1,429+ tests)
-npm run test:rust   # Cargo workspace unit tests
-npm run e2e         # Playwright E2E desktop tests against packaged Electron build
+npm run test:run    # Vitest unit & integration suite
+npm run test:rust   # Cargo core unit tests
 ```
 
 ---

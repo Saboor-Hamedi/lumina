@@ -6,23 +6,22 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          50: 'var(--ev-c-accent)', // Using accent for all for now to ensure visibility
-          100: 'var(--ev-c-accent)',
-          200: 'var(--ev-c-accent)',
-          300: 'var(--ev-c-accent)',
-          400: 'var(--ev-c-accent)',
-          500: 'var(--ev-c-accent)', // Main primary color
-          600: 'var(--ev-c-accent-hover)',
-          700: 'var(--ev-c-accent-hover)',
-          800: 'var(--ev-c-accent-hover)',
-          900: 'var(--ev-c-accent-hover)'
+          50: 'var(--text-accent)',
+          100: 'var(--text-accent)',
+          200: 'var(--text-accent)',
+          300: 'var(--text-accent)',
+          400: 'var(--text-accent)',
+          500: 'var(--text-accent)',
+          600: 'var(--text-accent-hover)',
+          700: 'var(--text-accent-hover)',
+          800: 'var(--text-accent-hover)',
+          900: 'var(--text-accent-hover)'
         },
-        // We can also map slate/backgrounds if we want full control
         slate: {
-          50: 'var(--color-background-soft)',
-          100: 'var(--color-background-mute)',
-          800: 'var(--color-background-mute)',
-          900: 'var(--color-background)'
+          50: 'var(--bg-sidebar)',
+          100: 'var(--bg-panel)',
+          800: 'var(--bg-panel)',
+          900: 'var(--bg-app)'
         },
         red: {
           50: '#ff938a',

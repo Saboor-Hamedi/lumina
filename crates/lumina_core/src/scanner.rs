@@ -1,4 +1,3 @@
-use napi_derive::napi;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -7,7 +6,6 @@ use std::time::UNIX_EPOCH;
 use walkdir::WalkDir;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[napi(object)]
 pub struct ScannedNote {
     pub id: String,
     pub title: String,
@@ -32,7 +30,6 @@ pub struct ScannedNote {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[napi(object)]
 pub struct ScanResult {
     pub notes: Vec<ScannedNote>,
     pub folders: Vec<String>,

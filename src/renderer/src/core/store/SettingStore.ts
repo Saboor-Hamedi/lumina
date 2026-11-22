@@ -9,6 +9,7 @@
  */
 
 import { create } from 'zustand'
+import { applyTheme } from '../../features/theme/hooks/themeDefinitions'
 
 export interface SidebarSectionCollapsedState {
   pinned: boolean
@@ -336,6 +337,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
             mergedSettings.theme && mergedSettings.theme !== 'default'
               ? mergedSettings.theme
               : ((typeof localStorage !== 'undefined' && localStorage.getItem('theme-id')) || 'dark')
+          mergedSettings.theme = activeTheme
           if (mergedSettings.shortcuts?.canvasDrawer === 'Ctrl + Shift + /') {
             mergedSettings.shortcuts.canvasDrawer = 'Ctrl + Shift + ;'
           }
@@ -356,7 +358,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
 
           if (typeof document !== 'undefined') {
             const root = document.documentElement
-            root.setAttribute('data-theme', mergedSettings.theme)
+            applyTheme(activeTheme)
             root.setAttribute('data-modern-ui', String(Boolean(mergedSettings.modernUi)))
             root.style.setProperty('--font-editor', mergedSettings.fontFamily)
             root.style.setProperty('--font-size-editor', `${mergedSettings.fontSize}px`)
@@ -372,7 +374,11 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
 
                   if (typeof document !== 'undefined') {
                     const root = document.documentElement
-                    root.setAttribute('data-theme', updatedParams.theme)
+                    if (newSettings.theme && newSettings.theme !== 'default') {
+                      applyTheme(newSettings.theme)
+                    } else if (updatedParams.theme) {
+                      root.setAttribute('data-theme', updatedParams.theme)
+                    }
                     root.setAttribute('data-modern-ui', String(Boolean(updatedParams.modernUi)))
                     root.style.setProperty('--font-editor', updatedParams.fontFamily)
                     root.style.setProperty('--font-size-editor', `${updatedParams.fontSize}px`)

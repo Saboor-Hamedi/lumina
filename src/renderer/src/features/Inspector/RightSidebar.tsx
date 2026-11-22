@@ -4,7 +4,6 @@ import NoteDetails from './NoteDetails'
 import NoteOutline from './NoteOutline'
 import Backlinks from './Backlinks'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
-import { useKeyboardShortcuts } from '../../core/shortcuts'
 import ToolTip from '../../components/atoms/ToolTip'
 import RightSidebarFooter from './RightSidebarFooter'
 import './NoteDetails.css'
@@ -31,18 +30,6 @@ export const RightSidebar: React.FC<RightSidebarProps> = React.memo(({
   setIsRightSidebarOpen
 }) => {
   const panelRef = React.useRef<HTMLDivElement | null>(null)
-
-  useKeyboardShortcuts({
-    onEscape: isRightSidebarOpen
-      ? () => {
-          if (document.querySelector('.command-palette-overlay, .command-palette-container, .modal-overlay')) {
-            return false
-          }
-          setIsRightSidebarOpen(false)
-          return true
-        }
-      : null
-  })
 
   return (
     <div className="inspector-panel" ref={panelRef} aria-hidden={!isRightSidebarOpen}>

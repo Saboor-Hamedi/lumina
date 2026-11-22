@@ -1,4 +1,4 @@
-import { useSettingsStore, Settings, ZenModeSettings } from '../../../core/store/SettingStore'
+import { useSettingsStore, Settings } from '../../../core/store/SettingStore'
 
 export type SettingType = 'boolean' | 'enum' | 'number' | 'string' | 'action'
 
@@ -307,89 +307,7 @@ export const SETTINGS_REGISTRY: LuminaSettingDefinition[] = [
     }
   },
 
-  // --- Layout & Component Visibility ---
-  {
-    id: 'layout.titleBarVisible',
-    key: 'titleBarVisible',
-    title: 'Layout: Title Bar Visibility',
-    description: 'Show or hide the top application title bar.',
-    category: 'Layout',
-    keywords: ['title bar', 'window title', 'header bar', 'visibility'],
-    type: 'boolean',
-    getValue: (s) => s.titleBarVisible !== false,
-    setValue: async (val) => {
-      await useSettingsStore.getState().updateSetting('titleBarVisible', Boolean(val))
-      if (typeof window !== 'undefined') window.dispatchEvent(new Event('resize'))
-    },
-    formatValue: (val) => (val ? 'Visible' : 'Hidden')
-  },
-  {
-    id: 'layout.statusBarVisible',
-    key: 'statusBarVisible',
-    title: 'Layout: Status Bar Visibility',
-    description: 'Show or hide the bottom document status bar.',
-    category: 'Layout',
-    keywords: ['status bar', 'bottom bar', 'word count', 'visibility'],
-    type: 'boolean',
-    getValue: (s) => s.statusBarVisible !== false,
-    setValue: async (val) => {
-      await useSettingsStore.getState().updateSetting('statusBarVisible', Boolean(val))
-      if (typeof window !== 'undefined') window.dispatchEvent(new Event('resize'))
-    },
-    formatValue: (val) => (val ? 'Visible' : 'Hidden')
-  },
-  {
-    id: 'layout.activityBarVisible',
-    key: 'activityBarVisible',
-    title: 'Layout: Activity Bar Visibility',
-    description: 'Show or hide the left activity dock icons.',
-    category: 'Layout',
-    keywords: ['activity bar', 'icon bar', 'dock icons', 'visibility'],
-    type: 'boolean',
-    getValue: (s) => s.activityBarVisible !== false,
-    setValue: async (val) => {
-      await useSettingsStore.getState().updateSetting('activityBarVisible', Boolean(val))
-      if (typeof window !== 'undefined') window.dispatchEvent(new Event('resize'))
-    },
-    formatValue: (val) => (val ? 'Visible' : 'Hidden')
-  },
-  {
-    id: 'layout.primarySidebarOpen',
-    key: 'sidebar.isLeftOpen',
-    title: 'Layout: Primary (Left) Sidebar Visibility',
-    description: 'Show or hide the vault file tree explorer sidebar.',
-    category: 'Layout',
-    keywords: ['primary sidebar', 'left sidebar', 'file explorer', 'vault tree', 'visibility'],
-    type: 'boolean',
-    getValue: (s) => s.sidebar?.isLeftOpen ?? true,
-    setValue: async (val) => {
-      const b = Boolean(val)
-      const current = useSettingsStore.getState().settings.sidebar || { width: 150, isLeftOpen: true }
-      await useSettingsStore.getState().updateSetting('sidebar', { ...current, isLeftOpen: b })
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('left-sidebar-toggle', { detail: { open: b } }))
-        window.dispatchEvent(new Event('resize'))
-      }
-    },
-    formatValue: (val) => (val ? 'Open' : 'Closed')
-  },
-  {
-    id: 'layout.secondarySidebarOpen',
-    key: 'rightSidebar.isRightOpen',
-    title: 'Layout: Secondary (Right) Sidebar Visibility',
-    description: 'Show or hide the inspector / backlinks / details sidebar.',
-    category: 'Layout',
-    keywords: ['secondary sidebar', 'right sidebar', 'inspector', 'details', 'backlinks', 'visibility'],
-    type: 'boolean',
-    getValue: (s) => s.rightSidebar?.isRightOpen ?? false,
-    setValue: async (val) => {
-      const b = Boolean(val)
-      const current = useSettingsStore.getState().settings.rightSidebar || { width: 150, isRightOpen: false }
-      await useSettingsStore.getState().updateSetting('rightSidebar', { ...current, isRightOpen: b })
-      if (typeof window !== 'undefined') window.dispatchEvent(new Event('resize'))
-    },
-    formatValue: (val) => (val ? 'Open' : 'Closed')
-  },
+  // --- Layout ---
   {
     id: 'layout.primarySidebarWidth',
     key: 'sidebar.width',
@@ -415,67 +333,6 @@ export const SETTINGS_REGISTRY: LuminaSettingDefinition[] = [
       if (isNaN(num) || num < 180 || num > 600) return 'Width must be between 180 and 600'
       return true
     }
-  },
-
-  {
-    id: 'zenMode.hideStatusBar',
-    key: 'zenMode.hideStatusBar',
-    title: 'Zen Mode: Hide Status Bar',
-    description: 'Automatically hide the status bar when entering Zen Mode.',
-    category: 'Zen Mode',
-    keywords: ['zen hide status bar', 'zen status bar'],
-    type: 'boolean',
-    getValue: (s) => s.zenMode?.hideStatusBar !== false,
-    setValue: async (val) => {
-      const current = useSettingsStore.getState().settings.zenMode || ({} as ZenModeSettings)
-      await useSettingsStore.getState().updateSetting('zenMode', { ...current, hideStatusBar: Boolean(val) })
-    },
-    formatValue: (val) => (val ? 'On' : 'Off')
-  },
-  {
-    id: 'zenMode.hideActivityBar',
-    key: 'zenMode.hideActivityBar',
-    title: 'Zen Mode: Hide Activity Bar',
-    description: 'Automatically hide the activity bar when entering Zen Mode.',
-    category: 'Zen Mode',
-    keywords: ['zen hide activity bar', 'zen activity dock'],
-    type: 'boolean',
-    getValue: (s) => s.zenMode?.hideActivityBar !== false,
-    setValue: async (val) => {
-      const current = useSettingsStore.getState().settings.zenMode || ({} as ZenModeSettings)
-      await useSettingsStore.getState().updateSetting('zenMode', { ...current, hideActivityBar: Boolean(val) })
-    },
-    formatValue: (val) => (val ? 'On' : 'Off')
-  },
-  {
-    id: 'zenMode.hidePrimarySidebar',
-    key: 'zenMode.hidePrimarySidebar',
-    title: 'Zen Mode: Hide Primary Sidebar',
-    description: 'Automatically collapse the left sidebar when entering Zen Mode.',
-    category: 'Zen Mode',
-    keywords: ['zen hide primary sidebar', 'zen left sidebar', 'zen explorer'],
-    type: 'boolean',
-    getValue: (s) => s.zenMode?.hidePrimarySidebar !== false,
-    setValue: async (val) => {
-      const current = useSettingsStore.getState().settings.zenMode || ({} as ZenModeSettings)
-      await useSettingsStore.getState().updateSetting('zenMode', { ...current, hidePrimarySidebar: Boolean(val) })
-    },
-    formatValue: (val) => (val ? 'On' : 'Off')
-  },
-  {
-    id: 'zenMode.hideSecondarySidebar',
-    key: 'zenMode.hideSecondarySidebar',
-    title: 'Zen Mode: Hide Secondary Sidebar',
-    description: 'Automatically collapse the inspector sidebar when entering Zen Mode.',
-    category: 'Zen Mode',
-    keywords: ['zen hide secondary sidebar', 'zen right sidebar', 'zen inspector'],
-    type: 'boolean',
-    getValue: (s) => s.zenMode?.hideSecondarySidebar !== false,
-    setValue: async (val) => {
-      const current = useSettingsStore.getState().settings.zenMode || ({} as ZenModeSettings)
-      await useSettingsStore.getState().updateSetting('zenMode', { ...current, hideSecondarySidebar: Boolean(val) })
-    },
-    formatValue: (val) => (val ? 'On' : 'Off')
   },
 
   // --- AI Assistant ---

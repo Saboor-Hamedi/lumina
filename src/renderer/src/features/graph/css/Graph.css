@@ -7,13 +7,17 @@
   position: relative;
   overflow: hidden;
   background: var(--bg-app);
+  touch-action: none;
 }
 
 /* Ensure ForceGraph2D canvas is transparent to show theme background */
-.nexus-embedded-graph canvas {
+.nexus-embedded-graph canvas,
+.inline-graph-container,
+.inline-graph-container canvas {
   background: transparent !important;
   position: relative;
   z-index: 1;
+  touch-action: none;
 }
 
 .nexus-embedded-graph {

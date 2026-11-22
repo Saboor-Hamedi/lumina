@@ -214,18 +214,26 @@ export function useExplorerPaste({
 
     try {
       const api = (window as any).api
+      const allNotes = useWorkspaceStore.getState().notes || []
+      const notePathMap = new Map<string, string>()
+      for (const n of allNotes as any[]) {
+        if (n?.id && (n.relativePath || n.filePath)) {
+          notePathMap.set(n.id, n.relativePath || n.filePath)
+        }
+      }
+      const resolvedSnippetTargets = deletedSnippetIds.map((id) => notePathMap.get(id) || id)
 
       if (api?.bulkDelete) {
         await api.bulkDelete({
           folderIds: deletedFolderIds,
-          snippetIds: deletedSnippetIds
+          snippetIds: resolvedSnippetTargets
         })
       } else {
         // Fallback sequential deletion
         for (const folderId of deletedFolderIds) {
           await api?.deleteFolder?.(folderId).catch(() => {})
         }
-        for (const noteId of deletedSnippetIds) {
+        for (const noteId of resolvedSnippetTargets) {
           await deleteSnippet(noteId, true).catch(() => {})
         }
       }
@@ -243,16 +251,6 @@ export function useExplorerPaste({
 
       clearSelection()
       await loadWorkspace()
-
-      const totalDeleted = deletedFolderIds.length + deletedSnippetIds.length
-      window.dispatchEvent(
-        new CustomEvent('show-toast', {
-          detail: {
-            message: `Deleted ${totalDeleted} ${totalDeleted === 1 ? 'item' : 'items'}`,
-            type: 'success'
-          }
-        })
-      )
     } catch (err) {
       console.error('[useExplorerPaste] Failed to execute bulk deletion:', err)
       window.dispatchEvent(

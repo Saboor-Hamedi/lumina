@@ -118,6 +118,65 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
   const [searchQuery, setSearchQuery] = useState('')
 
   const graphRef = useRef<any>(null)
+
+  const handleZoomBy = useCallback(
+    (factor: number, e?: React.MouseEvent) => {
+      if (e) e.stopPropagation()
+      const fg = graphRef.current
+      if (!fg) return
+      if (is3DMode && typeof fg.cameraPosition === 'function') {
+        const cam = fg.cameraPosition()
+        if (cam) {
+          fg.cameraPosition(
+            { x: cam.x / factor, y: cam.y / factor, z: cam.z / factor },
+            undefined,
+            220
+          )
+        }
+      } else if (typeof fg.zoom === 'function') {
+        const current = fg.zoom() || 1
+        const next = Math.max(0.05, Math.min(20, current * factor))
+        fg.zoom(next, 220)
+      }
+    },
+    [is3DMode]
+  )
+
+  useEffect(() => {
+    if (isOpen === false) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      const container = containerRef.current
+      if (!container || container.offsetParent === null) return
+      const target = e.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+      ) {
+        return
+      }
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return
+      if (e.key === '=' || e.key === '+' || e.code === 'Equal' || e.code === 'NumpadAdd') {
+        e.preventDefault()
+        e.stopPropagation()
+        handleZoomBy(1.35)
+      } else if (e.key === '-' || e.key === '_' || e.code === 'Minus' || e.code === 'NumpadSubtract') {
+        e.preventDefault()
+        e.stopPropagation()
+        handleZoomBy(1 / 1.35)
+      } else if (e.key === '0' || e.code === 'Digit0' || e.code === 'Numpad0') {
+        e.preventDefault()
+        e.stopPropagation()
+        if (graphRef.current?.zoomToFit) {
+          graphRef.current.zoomToFit(400, 50)
+        }
+      }
+    }
+    window.addEventListener('keydown', onKeyDown, { capture: true })
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, { capture: true })
+    }
+  }, [isOpen, handleZoomBy])
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [isEngineReady, setIsEngineReady] = useState(false)
   const [dimensions, setDimensions] = useState({
@@ -517,7 +576,10 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
         overflow: 'hidden'
       }}
     >
-      <PerformancePanel onRecenter={handleRecenter} is3DMode={is3DMode} />
+      <PerformancePanel
+        onRecenter={handleRecenter}
+        is3DMode={is3DMode}
+      />
       <div
         className="nexus-body"
         style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}

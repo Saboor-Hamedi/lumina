@@ -37,7 +37,6 @@ declare module '*.svg' {
 
 interface Window {
   api?: any
-  electron?: any
   __lastVoiceToggleDispatch?: number
   [key: string]: any
 }

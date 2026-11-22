@@ -87,6 +87,15 @@ export function useExplorerSelection({
   // appear to "select everything".
   const [anchorId, setAnchorId] = useState<string | null>(null)
 
+  const anchorIdRef = useRef<string | null>(anchorId)
+  anchorIdRef.current = anchorId
+  const lastClickedNoteIdRef = useRef<string | null>(lastClickedNoteId)
+  lastClickedNoteIdRef.current = lastClickedNoteId
+  const lastClickedFolderRef = useRef<string | null>(lastClickedFolder)
+  lastClickedFolderRef.current = lastClickedFolder
+  const flatTreeRef = useRef(flatTree)
+  flatTreeRef.current = flatTree
+
   const clickedInExplorerRef = useRef(0)
   const lastScrolledSnippetRef = useRef<string | null>(null)
   // When set to true, the next scrollToIndex call is skipped (user clicked from
@@ -263,7 +272,12 @@ export function useExplorerSelection({
         !target.closest('.start-menu-search') &&
         !target.closest('.explorer-segmented-tabs') &&
         !target.closest('.start-section-header') &&
-        !target.closest('.explorer-header-container')
+        !target.closest('.explorer-header-container') &&
+        !target.closest('.context-menu') &&
+        !target.closest('[role="menu"]') &&
+        !target.closest('[role="dialog"]') &&
+        !target.closest('.modal-overlay') &&
+        !target.closest('.modal-content')
       ) {
         clearSelection()
         setSidebarFocus('root')
@@ -399,7 +413,9 @@ export function useExplorerSelection({
       setSelectedFolder(null)
       setSelectedNoteIds(new Set([snippet.id]))
       setSelectedFolderIds(new Set())
+      lastClickedNoteIdRef.current = snippet.id
       setLastClickedNoteId(snippet.id)
+      anchorIdRef.current = snippet.id
       setAnchorId(snippet.id)
       setSidebarFocus('note')
       const storeMutationStartedAt = performance.now()
@@ -425,26 +441,27 @@ export function useExplorerSelection({
       const isCtrl = (event as React.MouseEvent)?.ctrlKey || (event as React.MouseEvent)?.metaKey
       const isShift = (event as React.MouseEvent)?.shiftKey
 
+      const currentFlatTree = flatTreeRef.current
       let itemIndex =
         typeof index === 'number' &&
         index >= 0 &&
-        index < (flatTree?.length || 0) &&
-        flatTree[index]?.snippet?.id === snippet.id
+        index < (currentFlatTree?.length || 0) &&
+        currentFlatTree[index]?.snippet?.id === snippet.id
           ? index
           : -1
-      if (itemIndex === -1 && flatTree) {
-        itemIndex = flatTree.findIndex((i) => i.type === 'file' && i.snippet?.id === snippet.id)
+      if (itemIndex === -1 && currentFlatTree) {
+        itemIndex = currentFlatTree.findIndex((i) => i.type === 'file' && i.snippet?.id === snippet.id)
       }
 
-      if (isShift && flatTree && flatTree.length > 0) {
+      if (isShift && currentFlatTree && currentFlatTree.length > 0) {
         // Only use an anchor that came from an explicit explorer click. The active
         // note (selectedSnippetId) is intentionally NOT used as a fallback so a
         // Shift+Click never spans from an unrelated open tab.
-        const effectiveAnchorId = anchorId || lastClickedNoteId
+        const effectiveAnchorId = anchorIdRef.current || lastClickedNoteIdRef.current
 
         let anchorPos = -1
         if (effectiveAnchorId) {
-          anchorPos = flatTree.findIndex((item) =>
+          anchorPos = currentFlatTree.findIndex((item) =>
             item.type === 'file'
               ? item.snippet?.id === effectiveAnchorId
               : item.id === effectiveAnchorId
@@ -454,9 +471,11 @@ export function useExplorerSelection({
         // If previous anchor is not visible in current flatTree (e.g. was inside a collapsed folder)
         // or no anchor existed, current item becomes the anchor and is single-selected
         if (anchorPos === -1 || itemIndex === -1) {
+          anchorIdRef.current = snippet.id
           setAnchorId(snippet.id)
           setSelectedNoteIds(new Set([snippet.id]))
           setSelectedFolderIds(new Set())
+          lastClickedNoteIdRef.current = snippet.id
           setLastClickedNoteId(snippet.id)
           setSelectedIndex(itemIndex)
           setSidebarFocus('note')
@@ -471,7 +490,7 @@ export function useExplorerSelection({
 
         // Collect all visible selectable items (both files and folders) in this continuous range
         for (let i = minIdx; i <= maxIdx; i++) {
-          const item = flatTree[i]
+          const item = currentFlatTree[i]
           if (item?.type === 'file' && item.snippet?.id) {
             rangeNotes.add(item.snippet.id)
           } else if (item?.type === 'folder' && item.id) {
@@ -482,6 +501,7 @@ export function useExplorerSelection({
 
         setSelectedNoteIds(rangeNotes)
         setSelectedFolderIds(rangeFolders)
+        lastClickedNoteIdRef.current = snippet.id
         setLastClickedNoteId(snippet.id)
         setSelectedIndex(itemIndex)
         setSidebarFocus('multi')
@@ -496,12 +516,16 @@ export function useExplorerSelection({
           }
           return next
         })
+        anchorIdRef.current = snippet.id
         setAnchorId(snippet.id)
+        lastClickedNoteIdRef.current = snippet.id
         setLastClickedNoteId(snippet.id)
         setSelectedIndex(itemIndex)
         setSidebarFocus('multi')
+        lastClickedFolderRef.current = snippet.folderId || ''
         setLastClickedFolder(snippet.folderId || '')
       } else {
+        anchorIdRef.current = snippet.id
         setAnchorId(snippet.id)
         setSelectedIndex(itemIndex)
         // handleSelect owns the single-selection state and workspace activation.
@@ -509,7 +533,7 @@ export function useExplorerSelection({
         handleSelect(snippet)
       }
     },
-    [flatTree, anchorId, lastClickedNoteId, handleSelect, setSelectedFolder]
+    [handleSelect, setSelectedFolder]
   )
 
   const handleFolderClick = useCallback(
@@ -522,23 +546,25 @@ export function useExplorerSelection({
       const isCtrl = (event as React.MouseEvent)?.ctrlKey || (event as React.MouseEvent)?.metaKey
       const isShift = (event as React.MouseEvent)?.shiftKey
 
+      const currentFlatTree = flatTreeRef.current
       let itemIndex =
         typeof index === 'number' &&
         index >= 0 &&
-        index < (flatTree?.length || 0) &&
-        flatTree[index]?.id === folderId
+        index < (currentFlatTree?.length || 0) &&
+        currentFlatTree[index]?.id === folderId
           ? index
           : -1
-      if (itemIndex === -1 && flatTree) {
-        itemIndex = flatTree.findIndex((i) => i.type === 'folder' && i.id === folderId)
+      if (itemIndex === -1 && currentFlatTree) {
+        itemIndex = currentFlatTree.findIndex((i) => i.type === 'folder' && i.id === folderId)
       }
 
-      if (isShift && flatTree && flatTree.length > 0) {
-        const effectiveAnchorId = anchorId || lastClickedFolder || lastClickedNoteId
+      if (isShift && currentFlatTree && currentFlatTree.length > 0) {
+        const effectiveAnchorId =
+          anchorIdRef.current || lastClickedFolderRef.current || lastClickedNoteIdRef.current
 
         let anchorPos = -1
         if (effectiveAnchorId) {
-          anchorPos = flatTree.findIndex((item) =>
+          anchorPos = currentFlatTree.findIndex((item) =>
             item.type === 'folder'
               ? item.id === effectiveAnchorId
               : item.snippet?.id === effectiveAnchorId
@@ -546,9 +572,11 @@ export function useExplorerSelection({
         }
 
         if (anchorPos === -1 || itemIndex === -1) {
+          anchorIdRef.current = folderId
           setAnchorId(folderId)
           setSelectedFolderIds(new Set([folderId]))
           setSelectedNoteIds(new Set())
+          lastClickedFolderRef.current = folderId
           setLastClickedFolder(folderId)
           setSelectedIndex(itemIndex)
           setSidebarFocus('folder')
@@ -562,7 +590,7 @@ export function useExplorerSelection({
         const rangeFolders = new Set<string>()
 
         for (let i = minIdx; i <= maxIdx; i++) {
-          const item = flatTree[i]
+          const item = currentFlatTree[i]
           if (item?.type === 'file' && item.snippet) {
             rangeNotes.add(item.snippet.id)
           } else if (item?.type === 'folder' && item.id) {
@@ -573,6 +601,7 @@ export function useExplorerSelection({
 
         setSelectedNoteIds(rangeNotes)
         setSelectedFolderIds(rangeFolders)
+        lastClickedFolderRef.current = folderId
         setLastClickedFolder(folderId)
         setSelectedIndex(itemIndex)
         setSidebarFocus('multi')
@@ -586,21 +615,25 @@ export function useExplorerSelection({
           }
           return next
         })
+        anchorIdRef.current = folderId
         setAnchorId(folderId)
+        lastClickedFolderRef.current = folderId
         setLastClickedFolder(folderId)
         setSelectedIndex(itemIndex)
         setSidebarFocus('multi')
       } else {
         setSelectedFolderIds(new Set([folderId]))
         setSelectedNoteIds(new Set())
+        anchorIdRef.current = folderId
         setAnchorId(folderId)
+        lastClickedFolderRef.current = folderId
         setLastClickedFolder(folderId)
         setSelectedIndex(itemIndex)
         setSidebarFocus('folder')
         setSelectedFolder(folderId)
       }
     },
-    [flatTree, anchorId, lastClickedFolder, lastClickedNoteId, setSelectedFolder]
+    [setSelectedFolder]
   )
 
   return {

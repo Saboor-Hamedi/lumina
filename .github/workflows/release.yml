@@ -26,7 +26,6 @@ jobs:
             echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
             echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
           else
-            # Manual dispatch: no tag pushed yet — publish is performed only manually via `gh release create` for the next tagged release.
             echo "Manual workflow_dispatch is not supported for publishing releases. Push a v* tag instead." >&2
             exit 1
           fi
@@ -42,25 +41,31 @@ jobs:
         run: |
           TAG="${{ steps.resolve_tag.outputs.tag }}"
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $TAG already exists; leaving it untouched."
-            # Ensure it is a draft so matrix jobs can attach assets without racing on "latest".
+            echo "Release $TAG already exists; setting draft=true for asset upload."
             gh release edit "$TAG" --draft=true --repo "$GITHUB_REPOSITORY" || true
           else
             gh release create "$TAG" \
               --repo "$GITHUB_REPOSITORY" \
               --draft \
               --title "${{ steps.resolve_tag.outputs.version }}" \
-              --notes "Automated release for $TAG"
+              --notes "Automated Tauri 2.0 release for $TAG"
           fi
 
   release:
-    name: Build & Publish (${{ matrix.os }})
+    name: Build & Publish (${{ matrix.platform }})
     needs: create-release
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - platform: windows-latest
+            args: ''
+          - platform: macos-latest
+            # Universal binary: runs natively on BOTH Apple Silicon (M1-M4) and Intel Macs
+            args: '--target universal-apple-darwin'
+          - platform: ubuntu-latest
+            args: ''
 
     steps:
       - name: Checkout Code
@@ -71,29 +76,49 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install Linux Dependencies
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: '. -> target'
+
+      - name: Install Linux Tauri Dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libfuse2
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
-      - name: Install Dependencies
+      - name: Install Node Dependencies
         run: npm ci
 
-      - name: Run Automated Tests
-        run: npm run test:run
+      - name: Run Rust & Frontend Tests
+        run: |
+          cargo test -p lumina_core
+          npm run test:run
 
-      - name: Build Application
+      - name: Build Tauri 2.0 Installers
         env:
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-        run: npm run build
+          APPLE_SIGNING_IDENTITY: '-'
+        run: npx tauri build ${{ matrix.args }}
 
-      - name: Publish Release Artifacts
+      - name: Upload Release Installers to GitHub Release
+        shell: bash
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --publish always
+        run: |
+          TAG="${{ needs.create-release.outputs.tag }}"
+          find target -type f \( \
+            -path "*/release/bundle/nsis/*.exe" -o \
+            -path "*/release/bundle/msi/*.msi" -o \
+            -path "*/release/bundle/dmg/*.dmg" -o \
+            -path "*/release/bundle/appimage/*.AppImage" -o \
+            -path "*/release/bundle/deb/*.deb" \
+          \) -print -exec gh release upload "$TAG" {} --clobber --repo "$GITHUB_REPOSITORY" \;
 
   finalize-release:
     name: Publish Release (Undraft & Mark Latest)
@@ -110,13 +135,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
-          VERSION="${TAG#v}"
-          # Clean up any stale untagged draft with the same version title so only the tagged release remains
-          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=20" \
-            --jq ".[] | select(.draft == true and (.tag_name == \"\" or (.tag_name | startswith(\"untagged-\"))) and (.name == \"$VERSION\" or .name == \"$TAG\")) | .id" \
-            | while read -r DRAFT_ID; do
-                [ -n "$DRAFT_ID" ] && gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$DRAFT_ID" >/dev/null 2>&1 || true
-              done || true
-          RELEASE_ID=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json id --jq .id)
-          echo "Release id: $RELEASE_ID"
           gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest

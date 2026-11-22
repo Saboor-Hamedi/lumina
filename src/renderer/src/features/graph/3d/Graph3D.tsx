@@ -197,6 +197,61 @@ const Graph3D = React.forwardRef<any, Graph3DProps>(({ graphData, ...restProps }
     }
   }, [graphData])
 
+  // Boost precision trackpad pinch zoom (wheel + ctrlKey) for Three.js TrackballControls
+  useEffect(() => {
+    let attachedEl: HTMLElement | null = null
+    let retryTimer: ReturnType<typeof setTimeout> | null = null
+
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey || e.deltaMode !== 0 || e.deltaY === 0) return
+      const fg = internalRef.current
+      if (!fg) return
+      e.preventDefault()
+      e.stopPropagation()
+
+      const camera = fg.camera?.()
+      const controls = fg.controls?.()
+      if (camera?.position && controls?.target) {
+        const dx = camera.position.x - controls.target.x
+        const dy = camera.position.y - controls.target.y
+        const dz = camera.position.z - controls.target.z
+        const dist = Math.hypot(dx, dy, dz)
+        if (dist > 0) {
+          const scale = Math.exp(Math.max(-40, Math.min(40, e.deltaY)) * 0.012)
+          const minDist = Math.max(10, controls.minDistance || 10)
+          const maxDist = Math.min(10000, controls.maxDistance || 10000)
+          const nextDist = Math.max(minDist, Math.min(maxDist, dist * scale))
+          const ratio = nextDist / dist
+          camera.position.set(
+            controls.target.x + dx * ratio,
+            controls.target.y + dy * ratio,
+            controls.target.z + dz * ratio
+          )
+          controls.update?.()
+        }
+      }
+    }
+
+    const tryAttach = (attemptsLeft: number) => {
+      const domEl = internalRef.current?.renderer?.()?.domElement as HTMLElement | undefined
+      if (domEl) {
+        attachedEl = domEl
+        domEl.addEventListener('wheel', handleWheel, { capture: true, passive: false })
+      } else if (attemptsLeft > 0) {
+        retryTimer = setTimeout(() => tryAttach(attemptsLeft - 1), 100)
+      }
+    }
+
+    tryAttach(10)
+
+    return () => {
+      if (retryTimer) clearTimeout(retryTimer)
+      if (attachedEl) {
+        attachedEl.removeEventListener('wheel', handleWheel, { capture: true })
+      }
+    }
+  }, [graphData])
+
   return (
     <ForceGraph3D
       ref={internalRef}

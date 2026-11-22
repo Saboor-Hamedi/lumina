@@ -166,7 +166,7 @@ export const ShortcutRenameBox: React.FC<ShortcutRenameBoxProps> = ({
         ;(window as any).__isRecordingShortcut = true
       }
 
-      // Keep Electron global shortcuts from consuming keys while recording.
+      // Keep native global shortcuts from consuming keys while recording.
       const winApi = (window as unknown as { api?: WindowApiWithShortcuts }).api
       if (winApi?.pauseGlobalShortcuts) {
         winApi.pauseGlobalShortcuts().catch(() => {})

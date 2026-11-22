@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lumina</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none'%3E%3Cpath d='M24 5L41 16V32L24 43L7 32V16L24 5Z' stroke='%238b5cf6' stroke-width='3' stroke-linejoin='round'/%3E%3Ccircle cx='24' cy='24' r='5' fill='%238b5cf6'/%3E%3C/svg%3E" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,7 +14,7 @@
     <link rel="stylesheet" href="/src/assets/screenLoader.css" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; connect-src 'self' asset: blob: data: https://api.groq.com https://api.deepseek.com https://api.openai.com https://api.anthropic.com https://router.huggingface.co https://api-inference.huggingface.co https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' blob: data: asset: https:; media-src 'self' blob: data: asset:; font-src 'self' data: https://fonts.gstatic.com; frame-src 'self' blob: data: asset:; child-src 'self' blob: data: asset:; object-src 'self' blob: data: asset:;"
+      content="default-src 'self' ipc: http://ipc.localhost https://ipc.localhost tauri: http://tauri.localhost; connect-src 'self' ipc: http://ipc.localhost https://ipc.localhost tauri: http://tauri.localhost http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* asset: http://asset.localhost https://asset.localhost blob: data: https://api.groq.com https://api.deepseek.com https://api.openai.com https://api.anthropic.com https://router.huggingface.co https://api-inference.huggingface.co https://cdn.jsdelivr.net https://gmail.googleapis.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' blob: data: asset: http://asset.localhost https://asset.localhost https:; media-src 'self' blob: data: asset: http://asset.localhost https://asset.localhost; font-src 'self' data: https://fonts.gstatic.com; frame-src 'self' blob: data: asset: http://asset.localhost https://asset.localhost; child-src 'self' blob: data: asset:; object-src 'self' blob: data: asset:;"
     />
     <script>
       // Prevent Flash of Unstyled Content (FOUC) on First Launch & Refresh

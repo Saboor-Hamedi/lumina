@@ -117,7 +117,6 @@ body.is-global-resizing {
 }
 
 body.is-global-resizing iframe,
-body.is-global-resizing webview,
 body.is-global-resizing canvas,
 body.is-global-resizing .cm-editor,
 body.is-global-resizing .cm-content,
@@ -128,7 +127,6 @@ body.is-global-resizing [data-zen-mode='true'] * {
 }
 
 body.is-global-resizing iframe,
-body.is-global-resizing webview,
 body.is-global-resizing canvas,
 body.is-global-resizing .cm-editor,
 body.is-global-resizing .cm-content,

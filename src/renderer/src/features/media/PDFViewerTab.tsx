@@ -22,7 +22,7 @@ const pdfBlobCache = new Map<string, string>()
  * Renders workspace PDFs using Chromium's native PDF engine via blob URLs.
  * High-performance architecture:
  *   1. Checks in-memory cache for instant 0ms tab switching.
- *   2. Reads binary directly via Electron IPC `window.api.readAsset`.
+ *   2. Reads binary directly via Tauri IPC `window.api.readAsset`.
  *   3. Falls back gracefully to `fetch(assetUrl)` if IPC is unavailable.
  *   4. Feeds the blob URL to the <iframe> so Chromium renders it natively with
  *      all its native toolbar features (zoom, download, print, page navigation).

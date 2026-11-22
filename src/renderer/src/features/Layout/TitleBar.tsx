@@ -3,7 +3,7 @@
  * TitleBar Component (`TitleBar.tsx`)
  * =========================================================================
  *
- * Custom Electron frameless application title bar for Lumina.
+ * Custom Tauri frameless application title bar for Lumina.
  *
  * Architecture & Features:
  * - Left pane: Left sidebar toggle, app logo, and update status indicator.
@@ -23,6 +23,7 @@ import AccentColor from '../theme/AccentColor'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 import { useSettingStore } from '../../core/store/SettingStore'
 import { CalendarToggle } from '../calender'
+import { minimizeWindow, toggleMaximizeWindow, closeWindow } from '../../core/tauriBridge'
 import '../../assets/titlebar.css'
 
 export interface TitleBarProps {
@@ -30,9 +31,9 @@ export interface TitleBarProps {
 }
 
 export const TitleBar: React.FC<TitleBarProps> = memo(() => {
-  const handleMinimize = useCallback(() => (window as any).api?.minimize?.(), [])
-  const handleToggleMaximize = useCallback(() => (window as any).api?.toggleMaximize?.(), [])
-  const handleClose = useCallback(() => (window as any).api?.closeWindow?.(), [])
+  const handleMinimize = useCallback(() => minimizeWindow(), [])
+  const handleToggleMaximize = useCallback(() => toggleMaximizeWindow(), [])
+  const handleClose = useCallback(() => closeWindow(), [])
 
   const [isAccentOpen, setIsAccentOpen] = useState<boolean>(false)
   const { themeAccentColor, updateThemeAccentColor } = useFontSettings()
@@ -78,7 +79,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
   }, [])
 
   return (
-    <div className="title-bar" data-testid="title-bar">
+    <div className="title-bar" data-testid="title-bar" data-tauri-drag-region>
       <div className="title-left">
         <ToolTip text={isLeftSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'} position="bottom">
           <button
@@ -208,7 +209,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
                 <path d="M1.5 3.5V9.5H7.5" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
               </svg>
             ) : (
-              <Square size={13} strokeWidth={1.8} />
+              <Square size={11} strokeWidth={1.7} />
             )}
           </button>
           <button type="button" onClick={handleClose} className="control-btn close" aria-label="Close">

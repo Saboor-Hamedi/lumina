@@ -1,5 +1,6 @@
 import './assets/index.css'
 import './assets/globalErrorHandler.css'
+import { initTauriBridge } from './core/tauriBridge'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
@@ -8,8 +9,21 @@ import { initScreenLoader } from './components/screenLoader'
 import GlobalErrorHandler from './components/GlobalErrorHandler'
 import { initDomTooltips } from './components/atoms/domTooltip'
 
+initTauriBridge()
 initScreenLoader()
 initDomTooltips()
+
+// Prevent WebView2 native page-scale pinch-zoom on non-zoomable UI chrome
+// while allowing capture/target handlers (editor, graphs, canvas, lightboxes) to handle zoom first.
+window.addEventListener(
+  'wheel',
+  (e) => {
+    if (e.ctrlKey && !e.defaultPrevented) {
+      e.preventDefault()
+    }
+  },
+  { passive: false }
+)
 
 window.addEventListener('keydown', (e) => {
   if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'i') || e.key === 'F12') {

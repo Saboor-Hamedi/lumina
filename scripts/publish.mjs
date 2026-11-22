@@ -80,6 +80,26 @@ try {
     console.log(`📦 Updated package.json version to ${version}`)
   }
 
+  // Always keep src-tauri/tauri.conf.json and src-tauri/Cargo.toml version in sync
+  const tauriConfPath = 'src-tauri/tauri.conf.json'
+  if (fs.existsSync(tauriConfPath)) {
+    const tauriConf = JSON.parse(fs.readFileSync(tauriConfPath, 'utf8'))
+    if (tauriConf.version !== version) {
+      tauriConf.version = version
+      fs.writeFileSync(tauriConfPath, JSON.stringify(tauriConf, null, 2) + '\n', 'utf8')
+      console.log(`📦 Synced src-tauri/tauri.conf.json version to ${version}`)
+    }
+  }
+  const tauriCargoPath = 'src-tauri/Cargo.toml'
+  if (fs.existsSync(tauriCargoPath)) {
+    const cargoContent = fs.readFileSync(tauriCargoPath, 'utf8')
+    const updatedCargo = cargoContent.replace(/^version\s*=\s*"[^"]+"/m, `version = "${version}"`)
+    if (updatedCargo !== cargoContent) {
+      fs.writeFileSync(tauriCargoPath, updatedCargo, 'utf8')
+      console.log(`📦 Synced src-tauri/Cargo.toml version to ${version}`)
+    }
+  }
+
   const tagName = `v${version}`
 
   console.log(`\n🚀 Lumina Automated Release Pipeline`)

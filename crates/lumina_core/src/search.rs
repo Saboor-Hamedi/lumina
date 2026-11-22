@@ -1,8 +1,7 @@
-use napi_derive::napi;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[napi(object)]
 pub struct SearchHit {
     pub id: String,
     pub title: String,
@@ -12,7 +11,6 @@ pub struct SearchHit {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-#[napi(object)]
 pub struct SearchIndexItem {
     pub id: String,
     pub title: String,
@@ -21,7 +19,7 @@ pub struct SearchIndexItem {
     pub content: String,
 }
 
-/// Instant in-memory search matcher
+/// Instant parallel in-memory search matcher using Rayon across all CPU cores
 pub fn search_notes_impl(items: &[SearchIndexItem], query: &str, limit: usize) -> Vec<SearchHit> {
     if query.trim().is_empty() {
         return Vec::new();
@@ -31,7 +29,7 @@ pub fn search_notes_impl(items: &[SearchIndexItem], query: &str, limit: usize) -
     let q_tokens: Vec<&str> = q_lower.split_whitespace().collect();
 
     let mut hits: Vec<SearchHit> = items
-        .iter()
+        .par_iter()
         .filter_map(|item| {
             let title_lower = item.title.to_lowercase();
             let path_lower = item.relative_path.to_lowercase();

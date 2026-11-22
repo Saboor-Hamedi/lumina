@@ -197,6 +197,10 @@
   background: var(--bg-active, rgba(128, 128, 128, 0.22));
 }
 
+.control-btn.close {
+  border-top-right-radius: 8px;
+}
+
 .control-btn.close:hover {
   background: #e81123 !important;
   color: #ffffff !important;

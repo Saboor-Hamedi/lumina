@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/lumina_core",
+    "src-tauri",
 ]
 resolver = "2"
 

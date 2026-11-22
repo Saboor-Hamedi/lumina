@@ -196,6 +196,11 @@ const Graph2DInner = forwardRef<any, Graph2DInnerProps>(
           }
         }}
         backgroundColor="transparent"
+        enableNodeDrag={true}
+        enableZoomInteraction={true}
+        enablePanInteraction={true}
+        minZoom={0.05}
+        maxZoom={20}
         d3AlphaDecay={0.05}
         d3VelocityDecay={0.4}
         onNodeDrag={(node: any) => {
@@ -250,7 +255,20 @@ export interface Graph2DProps extends Omit<Graph2DInnerProps, 'onWorkerDragStart
 const Graph2D = forwardRef<any, Graph2DProps>(function Graph2DWrapper(props, ref) {
   const fgRef = useRef<any>(null)
 
-  useImperativeHandle(ref, () => fgRef.current, [])
+  useImperativeHandle(
+    ref,
+    () => ({
+      zoom: (...args: any[]) => fgRef.current?.zoom?.(...args),
+      zoomToFit: (...args: any[]) => fgRef.current?.zoomToFit?.(...args),
+      centerAt: (...args: any[]) => fgRef.current?.centerAt?.(...args),
+      d3Force: (...args: any[]) => fgRef.current?.d3Force?.(...args),
+      d3ReheatSimulation: (...args: any[]) => fgRef.current?.d3ReheatSimulation?.(...args),
+      getGraphBbox: (...args: any[]) => fgRef.current?.getGraphBbox?.(...args),
+      screen2GraphCoords: (...args: any[]) => fgRef.current?.screen2GraphCoords?.(...args),
+      graph2ScreenCoords: (...args: any[]) => fgRef.current?.graph2ScreenCoords?.(...args)
+    }),
+    []
+  )
 
   const workerRef = useRef<Worker | null>(null)
 

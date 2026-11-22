@@ -5,7 +5,7 @@
  * MIGRATION NOTICE:
  * This store has been migrated from JavaScript (`useUpdateStore.js`) to TypeScript (`UpdateSetting.ts`)
  * to provide strict status typing, typed update payloads, progress indicators,
- * and reliable IPC communication with the Electron auto-updater service.
+ * and reliable IPC communication with the native updater service.
  */
 
 import { create } from 'zustand'

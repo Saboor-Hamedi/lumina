@@ -25,7 +25,7 @@ vi.mock('@atomic-editor/editor', () => ({
   extendEmphasisPair: []
 }))
 
-// Mock window.api for Electron
+// Mock window.api for Tauri
 global.window = global.window || {}
 const originalDispatchEvent = window.dispatchEvent ? window.dispatchEvent.bind(window) : () => true
 global.window.dispatchEvent = vi.fn((event) => originalDispatchEvent(event))

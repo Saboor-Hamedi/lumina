@@ -776,18 +776,6 @@ export const MainLayout: React.FC = () => {
         setShowDeleteConfirm(false)
         return true
       }
-      if (isRightSidebarOpen) {
-        if (
-          showPalette ||
-          document.querySelector(
-            '.command-palette-overlay, .command-palette-container, .modal-overlay'
-          )
-        ) {
-          return false
-        }
-        updateRightSidebarOpen(false)
-        return true
-      }
       if (showDocsModal) {
         setShowDocsModal(false)
         return true

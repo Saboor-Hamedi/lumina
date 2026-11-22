@@ -428,6 +428,13 @@ html.theme-fallback-fade * {
   --bg-selection: rgba(64, 186, 250, 0.3);
 }
 
+/* Hide oversized native Edge/WebView2 password reveal & clear icons */
+input[type='password']::-ms-reveal,
+input[type='password']::-ms-clear,
+input::-webkit-credentials-auto-fill-button {
+  display: none !important;
+}
+
 [data-theme='dark'] {
   --bg-app-rgb: 21, 22, 28;
   --bg-app: #15161c;

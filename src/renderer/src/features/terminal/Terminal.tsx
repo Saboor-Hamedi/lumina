@@ -12,11 +12,11 @@ import { useTerminalSessions } from '../../core/terminal/useTerminalSessions'
 import { TerminalPane } from './TerminalPane'
 import { TerminalProfile, type ShellOption } from './TerminalProfile'
 import type { TerminalSession } from '../../core/terminal/types'
-import { createElectronPtyTransport, type PtyTransport } from '../../core/terminal/useTerminalInstance'
+import { createTauriPtyTransport, type PtyTransport } from '../../core/terminal/useTerminalInstance'
 import { useSettingStore } from '../../core/store/SettingStore'
 
 interface TerminalProps {
-  /** Override transport factory (e.g. node-pty through electron IPC) */
+  /** Override transport factory (e.g. Tauri portable-pty over IPC) */
   spawnTransport?: (session: TerminalSession) => PtyTransport
   /** Called when the user requests a full close of the whole panel */
   onClose?: () => void
@@ -598,7 +598,7 @@ export function Terminal({
                 key={s.id}
                 session={s}
                 visible={s.id === api.activeId}
-                spawnTransport={spawnTransport ?? ((sess) => createElectronPtyTransport(sess))}
+                spawnTransport={spawnTransport ?? ((sess) => createTauriPtyTransport(sess))}
                 onStatus={api.setStatus}
               />
             ))}

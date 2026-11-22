@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useExplorerOperations } from '../../../../../src/renderer/src/features/Explorer/hooks/ExplorerOperations'
-import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
-import SettingsManager from '../../../../../src/main/settings'
 
 describe('Explorer and Sidebar Persistence', () => {
   beforeEach(() => {
@@ -144,15 +142,5 @@ describe('Explorer and Sidebar Persistence', () => {
 
     // Now smart reveal can open 'Personal'
     expect(navResult.current.expandedFolders.has('Personal')).toBe(true)
-  })
-
-  it('SettingsManager flush immediately commits saves', async () => {
-    SettingsManager.saveTimeout = setTimeout(() => {}, 10000)
-    SettingsManager.save = vi.fn().mockResolvedValue(true)
-
-    await SettingsManager.flush()
-
-    expect(SettingsManager.saveTimeout).toBeNull()
-    expect(SettingsManager.save).toHaveBeenCalled()
   })
 })

@@ -177,8 +177,13 @@ export function openMermaidLightbox(svgEl: SVGSVGElement | HTMLElement | null): 
     'wheel',
     (e: WheelEvent) => {
       e.preventDefault()
-      const delta = e.deltaY < 0 ? 1.15 : 0.85
-      scale = Math.min(Math.max(0.2, scale * delta), 6)
+      const factor =
+        e.ctrlKey && e.deltaMode === 0 && Math.abs(e.deltaY) < 40
+          ? Math.exp(-e.deltaY * 0.012)
+          : e.deltaY < 0
+            ? 1.15
+            : 0.85
+      scale = Math.min(Math.max(0.2, scale * factor), 6)
       updateTransform()
     },
     { passive: false }

@@ -422,10 +422,10 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   )
 
   /**
-   * Smooth mouse wheel zoom anchored at pointer
+   * Smooth mouse wheel & trackpad pinch zoom anchored at pointer
    */
   const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
+    (e: WheelEvent) => {
       const target = e.target as HTMLElement | null
       // Do not hijack scroll or pan if the user's cursor is over toolbars, sidebars, studio panel, or menus!
       if (
@@ -441,7 +441,12 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
       const rect = containerRef.current.getBoundingClientRect()
 
       if (e.ctrlKey || e.metaKey) {
-        const delta = e.deltaY < 0 ? 0.08 : -0.08
+        const isTrackpadPinch = e.deltaMode === 0 && Math.abs(e.deltaY) < 40
+        const delta = isTrackpadPinch
+          ? Math.max(-0.15, Math.min(0.15, -e.deltaY * 0.01))
+          : e.deltaY < 0
+            ? 0.08
+            : -0.08
         zoomAt(delta, e.clientX, e.clientY, rect)
       } else {
         panBy(-e.deltaX, -e.deltaY)
@@ -449,6 +454,13 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     },
     [zoomAt, panBy]
   )
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    el.addEventListener('wheel', handleWheel, { passive: false })
+    return () => el.removeEventListener('wheel', handleWheel)
+  }, [handleWheel])
 
   /**
    * Quick Add Sticky Note from center toolbar
@@ -855,7 +867,6 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         backgroundSize: `${(snapToGrid ? 20 : 24) * viewport.zoom}px ${(snapToGrid ? 20 : 24) * viewport.zoom}px`,
         cursor: cursorStyle
       }}
-      onWheel={handleWheel}
       onMouseDown={handleCanvasMouseDown}
       onDoubleClick={handleDoubleClick}
       onDragOver={handleDragOver}

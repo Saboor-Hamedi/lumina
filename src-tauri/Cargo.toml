@@ -1,0 +1,31 @@
+[package]
+name = "app"
+version = "1.1.2"
+description = "Lumina - A premium, AI-powered thinking environment."
+authors = ["Saboor Hamedi"]
+license = ""
+repository = ""
+edition = "2024"
+rust-version = "1.90"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "app_lib"
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.6", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.12.7", features = [] }
+tauri-plugin-log = "2"
+portable-pty = "0.8"
+lumina_core = { path = "../crates/lumina_core" }
+
+[target.'cfg(windows)'.dependencies]
+webview2-com = "0.39"
+windows = "0.62"
