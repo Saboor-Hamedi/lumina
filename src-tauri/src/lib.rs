@@ -1,4 +1,5 @@
 mod commands;
+mod secrets;
 
 pub use commands::*;
 

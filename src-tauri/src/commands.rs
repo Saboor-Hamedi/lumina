@@ -185,14 +185,153 @@ fn sanitize_filename(name: &str) -> String {
     }
 }
 
-fn safe_join_workspace(ws_path: &Path, rel: &str) -> Result<PathBuf, String> {
-    let normalized = rel.replace('\\', "/");
-    for comp in Path::new(&normalized).components() {
-        if matches!(comp, std::path::Component::ParentDir) {
-            return Err("Path traversal outside workspace is not allowed".to_string());
+fn strip_verbatim_prefix(p: &Path) -> PathBuf {
+    #[cfg(windows)]
+    {
+        let s = p.to_string_lossy();
+        if let Some(stripped) = s.strip_prefix(r"\\?\UNC\") {
+            return PathBuf::from(format!(r"\\{}", stripped));
+        }
+        if let Some(stripped) = s.strip_prefix(r"\\?\") {
+            return PathBuf::from(stripped);
         }
     }
-    Ok(ws_path.join(normalized.trim_start_matches('/')))
+    p.to_path_buf()
+}
+
+fn normalize_path_for_compare(p: &Path) -> PathBuf {
+    let stripped = strip_verbatim_prefix(p);
+    let mut out = PathBuf::new();
+    for comp in stripped.components() {
+        if !matches!(comp, std::path::Component::CurDir) {
+            out.push(comp.as_os_str());
+        }
+    }
+    out
+}
+
+fn canonicalize_or_normalize(p: &Path) -> PathBuf {
+    fs::canonicalize(p)
+        .map(|canon| normalize_path_for_compare(&canon))
+        .unwrap_or_else(|_| normalize_path_for_compare(p))
+}
+
+fn components_equal(a: &std::path::Component<'_>, b: &std::path::Component<'_>) -> bool {
+    #[cfg(windows)]
+    {
+        a.as_os_str().to_string_lossy().to_lowercase()
+            == b.as_os_str().to_string_lossy().to_lowercase()
+    }
+    #[cfg(not(windows))]
+    {
+        a.as_os_str() == b.as_os_str()
+    }
+}
+
+fn is_within_root(root: &Path, candidate: &Path) -> bool {
+    let root_norm = normalize_path_for_compare(root);
+    let cand_norm = normalize_path_for_compare(candidate);
+    let root_comps: Vec<_> = root_norm.components().collect();
+    let cand_comps: Vec<_> = cand_norm.components().collect();
+    if cand_comps.len() < root_comps.len() {
+        return false;
+    }
+    root_comps
+        .iter()
+        .zip(cand_comps.iter())
+        .all(|(r, c)| components_equal(r, c))
+}
+
+fn is_same_path(a: &Path, b: &Path) -> bool {
+    is_within_root(a, b) && is_within_root(b, a)
+}
+
+fn ensure_not_workspace_root(ws_path: &Path, target: &Path) -> Result<(), String> {
+    let canon_ws = canonicalize_or_normalize(ws_path);
+    let norm_target = normalize_path_for_compare(target);
+    if is_same_path(&canon_ws, &norm_target) {
+        return Err("Operation on workspace root is not allowed".to_string());
+    }
+    Ok(())
+}
+
+fn is_safe_external_url(trimmed: &str) -> bool {
+    (trimmed.starts_with("http://") || trimmed.starts_with("https://") || trimmed.starts_with("mailto:"))
+        && !trimmed.chars().any(|c| c.is_control())
+}
+
+pub(crate) fn safe_join_workspace(ws_path: &Path, rel: &str) -> Result<PathBuf, String> {
+    if rel.contains('\0') {
+        return Err("Null bytes in path are not allowed".to_string());
+    }
+
+    let canon_ws = canonicalize_or_normalize(ws_path);
+    let trimmed = rel.trim();
+    if trimmed.is_empty() {
+        return Ok(canon_ws);
+    }
+
+    let mut candidate = canon_ws.clone();
+    let raw_path = Path::new(trimmed);
+    let is_unc = trimmed.starts_with(r"\\") || trimmed.starts_with("//");
+
+    if raw_path.is_absolute() || is_unc {
+        for comp in raw_path.components() {
+            if matches!(comp, std::path::Component::ParentDir) {
+                return Err("Path traversal outside workspace is not allowed".to_string());
+            }
+        }
+        let lex = normalize_path_for_compare(raw_path);
+        if !is_within_root(&canon_ws, &lex) {
+            return Err("Path outside active workspace is not allowed".to_string());
+        }
+        let root_len = canon_ws.components().count();
+        for comp in lex.components().skip(root_len) {
+            if let std::path::Component::Normal(seg) = comp {
+                candidate.push(seg);
+            }
+        }
+    } else {
+        let normalized = trimmed.replace('\\', "/");
+        let stripped = normalized.trim_start_matches('/');
+        for comp in Path::new(stripped).components() {
+            match comp {
+                std::path::Component::Normal(seg) => candidate.push(seg),
+                std::path::Component::CurDir => {}
+                std::path::Component::ParentDir => {
+                    return Err("Path traversal outside workspace is not allowed".to_string());
+                }
+                std::path::Component::Prefix(_) | std::path::Component::RootDir => {
+                    return Err("Path outside active workspace is not allowed".to_string());
+                }
+            }
+        }
+    }
+
+    // Verify no symlink in the existing ancestor chain or target escapes the workspace
+    if fs::symlink_metadata(&candidate).is_ok() {
+        if let Ok(canon_target) = fs::canonicalize(&candidate) {
+            if !is_within_root(&canon_ws, &strip_verbatim_prefix(&canon_target)) {
+                return Err("Symlink target outside workspace is not allowed".to_string());
+            }
+        }
+    }
+    let mut probe = candidate.as_path();
+    while !probe.exists() {
+        match probe.parent() {
+            Some(parent) => probe = parent,
+            None => break,
+        }
+    }
+    if probe.exists() {
+        if let Ok(canon_probe) = fs::canonicalize(probe) {
+            if !is_within_root(&canon_ws, &strip_verbatim_prefix(&canon_probe)) {
+                return Err("Symlink target outside workspace is not allowed".to_string());
+            }
+        }
+    }
+
+    Ok(candidate)
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -226,12 +365,19 @@ pub fn get_snippets() -> Result<Value, String> {
 
 #[tauri::command]
 pub fn read_snippet(id: String) -> Result<Value, String> {
-    let ws_path = resolve_workspace_path();
-    let rel = id.replace('\\', "/");
-    let full_path = ws_path.join(&rel);
-    if !full_path.exists() {
+    if id.trim().is_empty() {
         return Ok(Value::Null);
     }
+    let ws_path = resolve_workspace_path();
+    let ws_canon = canonicalize_or_normalize(&ws_path);
+    let full_path = safe_join_workspace(&ws_path, &id)?;
+    if !full_path.exists() || !full_path.is_file() {
+        return Ok(Value::Null);
+    }
+    let rel = full_path
+        .strip_prefix(&ws_canon)
+        .map(|p| p.to_string_lossy().replace('\\', "/"))
+        .unwrap_or_else(|_| id.replace('\\', "/").trim_start_matches('/').to_string());
     let code = fs::read_to_string(&full_path).unwrap_or_default();
     let file_name = full_path
         .file_name()
@@ -308,9 +454,13 @@ pub fn save_snippet(snippet: Value) -> Result<Value, String> {
     {
         let old_norm = old_rel.replace('\\', "/");
         if !old_norm.is_empty() && old_norm != rel_path && (old_norm.ends_with(".md") || old_norm.ends_with(".canvas")) {
-            let old_full = ws_path.join(&old_norm);
-            if old_full.exists() && old_full.is_file() {
-                let _ = fs::remove_file(old_full);
+            if let Ok(old_full) = safe_join_workspace(&ws_path, &old_norm) {
+                if ensure_not_workspace_root(&ws_path, &old_full).is_ok()
+                    && old_full.exists()
+                    && old_full.is_file()
+                {
+                    let _ = fs::remove_file(old_full);
+                }
             }
         }
     }
@@ -372,22 +522,23 @@ pub fn save_snippet(snippet: Value) -> Result<Value, String> {
 }
 
 fn resolve_snippet_target(ws_path: &Path, id: &str) -> Option<PathBuf> {
+    if id.trim().is_empty() {
+        return None;
+    }
+    if let Ok(direct) = safe_join_workspace(ws_path, id) {
+        if ensure_not_workspace_root(ws_path, &direct).is_ok() && direct.exists() && direct.is_file() {
+            return Some(direct);
+        }
+    }
     let cleaned = id.replace('\\', "/");
-    let direct = ws_path.join(cleaned.trim_start_matches('/'));
-    if direct.exists() && direct.is_file() {
-        return Some(direct);
-    }
-    let abs = PathBuf::from(&cleaned);
-    if abs.is_absolute() && abs.exists() && abs.is_file() {
-        return Some(abs);
-    }
     let ws_str = ws_path.to_string_lossy().to_string();
     let scan = scan_vault_impl(&ws_str, 5 * 1024 * 1024);
     for n in scan.notes {
         if n.id == id || n.relative_path == cleaned {
-            let p = ws_path.join(n.relative_path.replace('\\', "/"));
-            if p.exists() && p.is_file() {
-                return Some(p);
+            if let Ok(p) = safe_join_workspace(ws_path, &n.relative_path) {
+                if p.exists() && p.is_file() {
+                    return Some(p);
+                }
             }
         }
     }
@@ -406,11 +557,8 @@ pub fn delete_snippet(id: String) -> Result<bool, String> {
 #[tauri::command]
 pub fn create_folder(path: String) -> Result<bool, String> {
     let ws_path = resolve_workspace_path();
-    let target = if Path::new(&path).is_absolute() {
-        PathBuf::from(&path)
-    } else {
-        ws_path.join(path.replace('\\', "/"))
-    };
+    let target = safe_join_workspace(&ws_path, &path)?;
+    ensure_not_workspace_root(&ws_path, &target)?;
     fs::create_dir_all(&target).map_err(|e| e.to_string())?;
     Ok(true)
 }
@@ -418,8 +566,10 @@ pub fn create_folder(path: String) -> Result<bool, String> {
 #[tauri::command]
 pub fn rename_folder(old_path: String, new_path: String) -> Result<bool, String> {
     let ws_path = resolve_workspace_path();
-    let src = ws_path.join(old_path.replace('\\', "/"));
-    let dst = ws_path.join(new_path.replace('\\', "/"));
+    let src = safe_join_workspace(&ws_path, &old_path)?;
+    let dst = safe_join_workspace(&ws_path, &new_path)?;
+    ensure_not_workspace_root(&ws_path, &src)?;
+    ensure_not_workspace_root(&ws_path, &dst)?;
     if src.exists() {
         if let Some(parent) = dst.parent() {
             let _ = fs::create_dir_all(parent);
@@ -432,8 +582,10 @@ pub fn rename_folder(old_path: String, new_path: String) -> Result<bool, String>
 #[tauri::command]
 pub fn move_file(old_rel_path: String, new_rel_path: String) -> Result<Value, String> {
     let ws_path = resolve_workspace_path();
-    let src = ws_path.join(old_rel_path.replace('\\', "/"));
-    let dst = ws_path.join(new_rel_path.replace('\\', "/"));
+    let src = safe_join_workspace(&ws_path, &old_rel_path)?;
+    let dst = safe_join_workspace(&ws_path, &new_rel_path)?;
+    ensure_not_workspace_root(&ws_path, &src)?;
+    ensure_not_workspace_root(&ws_path, &dst)?;
     if src.exists() {
         if let Some(parent) = dst.parent() {
             let _ = fs::create_dir_all(parent);
@@ -454,7 +606,7 @@ pub fn move_files(moves: Vec<Value>) -> Result<Value, String> {
         let old_p = m.get("oldRelPath").and_then(|v| v.as_str()).unwrap_or("");
         let new_p = m.get("newRelPath").and_then(|v| v.as_str()).unwrap_or("");
         if !old_p.is_empty() && !new_p.is_empty() {
-            let _ = move_file(old_p.to_string(), new_p.to_string());
+            move_file(old_p.to_string(), new_p.to_string())?;
             results.push(json!({
                 "oldRelPath": old_p,
                 "newRelPath": new_p,
@@ -472,7 +624,8 @@ pub fn move_files(moves: Vec<Value>) -> Result<Value, String> {
 #[tauri::command]
 pub fn delete_folder(path: String) -> Result<Value, String> {
     let ws_path = resolve_workspace_path();
-    let target = ws_path.join(path.replace('\\', "/"));
+    let target = safe_join_workspace(&ws_path, &path)?;
+    ensure_not_workspace_root(&ws_path, &target)?;
     if target.exists() && target.is_dir() {
         fs::remove_dir_all(&target).map_err(|e| e.to_string())?;
     }
@@ -494,11 +647,11 @@ pub fn bulk_delete(folder_ids: Option<Vec<String>>, snippet_ids: Option<Vec<Stri
     }
     if let Some(f_ids) = folder_ids {
         for fid in f_ids {
-            let cleaned = fid.replace('\\', "/");
-            let p = ws_path.join(cleaned.trim_start_matches('/'));
-            if p.exists() && p.is_dir() {
-                if fs::remove_dir_all(p).is_ok() {
-                    deleted_count += 1;
+            if let Ok(p) = safe_join_workspace(&ws_path, &fid) {
+                if ensure_not_workspace_root(&ws_path, &p).is_ok() && p.exists() && p.is_dir() {
+                    if fs::remove_dir_all(p).is_ok() {
+                        deleted_count += 1;
+                    }
                 }
             }
         }
@@ -564,7 +717,7 @@ if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
 #[tauri::command]
 pub fn open_path_in_os(path: String) -> Result<bool, String> {
     let trimmed = path.trim();
-    if trimmed.starts_with("http://") || trimmed.starts_with("https://") || trimmed.starts_with("mailto:") {
+    if is_safe_external_url(trimmed) {
         #[cfg(target_os = "windows")]
         {
             let _ = Command::new("rundll32")
@@ -583,9 +736,7 @@ pub fn open_path_in_os(path: String) -> Result<bool, String> {
     }
 
     let ws_path = resolve_workspace_path();
-    let target = if Path::new(trimmed).is_absolute() {
-        PathBuf::from(trimmed)
-    } else if trimmed.is_empty() {
+    let target = if trimmed.is_empty() {
         ws_path
     } else {
         safe_join_workspace(&ws_path, trimmed)?
@@ -642,6 +793,10 @@ pub fn read_asset_bytes(relative_path: String) -> Result<Vec<u8>, String> {
 // Settings & Memory Tauri Commands
 // ──────────────────────────────────────────────────────────────────────────────
 
+fn settings_master_key() -> [u8; 32] {
+    crate::secrets::load_or_create_master_key(&get_app_data_dir())
+}
+
 #[tauri::command]
 pub fn get_setting(key: Option<String>) -> Result<Value, String> {
     let ws_path = resolve_workspace_path();
@@ -650,6 +805,7 @@ pub fn get_setting(key: Option<String>) -> Result<Value, String> {
     if !settings.is_object() {
         settings = Value::Object(Map::new());
     }
+    crate::secrets::decrypt_settings_secrets(&mut settings, &settings_master_key());
     let app_cfg = read_json_file(&get_app_config_path());
 
     if let Some(obj) = settings.as_object_mut() {
@@ -752,6 +908,8 @@ pub fn save_settings(new_settings: Value) -> Result<bool, String> {
         }
     }
 
+    crate::secrets::encrypt_settings_secrets(&mut current, &settings_master_key());
+
     if let Ok(s) = serde_json::to_string_pretty(&current) {
         let _ = fs::write(&settings_file, s);
     }
@@ -830,21 +988,29 @@ pub fn build_graph_data(notes: Vec<NoteInput>) -> Result<GraphData, String> {
 
 #[tauri::command]
 pub fn read_file_string(path: String) -> Result<String, String> {
-    fs::read_to_string(&path).map_err(|e| e.to_string())
+    let ws_path = resolve_workspace_path();
+    let full_path = safe_join_workspace(&ws_path, &path)?;
+    fs::read_to_string(&full_path).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn write_file_string(path: String, content: String) -> Result<(), String> {
-    if let Some(parent) = Path::new(&path).parent() {
+    let ws_path = resolve_workspace_path();
+    let full_path = safe_join_workspace(&ws_path, &path)?;
+    ensure_not_workspace_root(&ws_path, &full_path)?;
+    if let Some(parent) = full_path.parent() {
         let _ = fs::create_dir_all(parent);
     }
-    fs::write(&path, content).map_err(|e| e.to_string())
+    fs::write(&full_path, content).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn delete_file(path: String) -> Result<(), String> {
-    if Path::new(&path).exists() {
-        fs::remove_file(&path).map_err(|e| e.to_string())?;
+    let ws_path = resolve_workspace_path();
+    let full_path = safe_join_workspace(&ws_path, &path)?;
+    ensure_not_workspace_root(&ws_path, &full_path)?;
+    if full_path.exists() && full_path.is_file() {
+        fs::remove_file(&full_path).map_err(|e| e.to_string())?;
     }
     Ok(())
 }
@@ -1600,4 +1766,96 @@ if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
     .map_err(|e| e.to_string())?;
 
     Ok(res)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_temp_workspace(suffix: &str) -> PathBuf {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let dir = std::env::temp_dir().join(format!(
+            "lumina-cmd-test-{}-{}-{}",
+            suffix,
+            std::process::id(),
+            nanos
+        ));
+        let _ = fs::create_dir_all(&dir);
+        dir
+    }
+
+    #[test]
+    fn test_safe_join_workspace_accepts_valid_paths() {
+        let ws = make_temp_workspace("valid");
+        let sub = ws.join("notes");
+        let _ = fs::create_dir_all(&sub);
+
+        let p1 = safe_join_workspace(&ws, "notes/hello.md").unwrap();
+        assert!(p1.ends_with(Path::new("notes").join("hello.md")));
+
+        let p2 = safe_join_workspace(&ws, "./notes/./hello.md").unwrap();
+        assert_eq!(p1, p2);
+
+        let in_ws_abs = ws.join("notes").join("inside.md");
+        let p3 = safe_join_workspace(&ws, &in_ws_abs.to_string_lossy()).unwrap();
+        assert!(p3.ends_with(Path::new("notes").join("inside.md")));
+
+        let _ = fs::remove_dir_all(&ws);
+    }
+
+    #[test]
+    fn test_safe_join_workspace_blocks_traversal_external_and_nulls() {
+        let ws = make_temp_workspace("reject");
+
+        assert!(safe_join_workspace(&ws, "../outside.md").is_err());
+        assert!(safe_join_workspace(&ws, "notes/../../outside.md").is_err());
+        assert!(safe_join_workspace(&ws, "notes\0bad.md").is_err());
+        assert!(safe_join_workspace(&ws, r"\\server\share\secret.md").is_err());
+
+        #[cfg(windows)]
+        {
+            assert!(safe_join_workspace(&ws, r"C:\Windows\System32\cmd.exe").is_err());
+            assert!(safe_join_workspace(&ws, r"C:/Users/Public/other.md").is_err());
+        }
+        #[cfg(not(windows))]
+        {
+            assert!(safe_join_workspace(&ws, "/etc/passwd").is_err());
+        }
+
+        let _ = fs::remove_dir_all(&ws);
+    }
+
+    #[test]
+    fn test_ensure_not_workspace_root() {
+        let ws = make_temp_workspace("root");
+
+        let root_from_empty = safe_join_workspace(&ws, "").unwrap();
+        assert!(ensure_not_workspace_root(&ws, &root_from_empty).is_err());
+
+        let root_from_dot = safe_join_workspace(&ws, ".").unwrap();
+        assert!(ensure_not_workspace_root(&ws, &root_from_dot).is_err());
+
+        assert!(ensure_not_workspace_root(&ws, &ws).is_err());
+
+        let child = safe_join_workspace(&ws, "folder").unwrap();
+        assert!(ensure_not_workspace_root(&ws, &child).is_ok());
+
+        let _ = fs::remove_dir_all(&ws);
+    }
+
+    #[test]
+    fn test_is_safe_external_url() {
+        assert!(is_safe_external_url("https://example.com/docs"));
+        assert!(is_safe_external_url("http://localhost:3000/callback"));
+        assert!(is_safe_external_url("mailto:hello@example.com"));
+
+        assert!(!is_safe_external_url("file:///C:/Windows/System32/calc.exe"));
+        assert!(!is_safe_external_url("javascript:alert(1)"));
+        assert!(!is_safe_external_url("cmd.exe"));
+        assert!(!is_safe_external_url("https://example.com/\n calc.exe"));
+        assert!(!is_safe_external_url("https://example.com/\r"));
+    }
 }
