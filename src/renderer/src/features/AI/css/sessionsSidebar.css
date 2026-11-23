@@ -79,9 +79,9 @@
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(8px);
+  border-radius: var(--radius-md, 6px);
+  background: var(--surface-3, #18181f);
+  border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.14));
   color: #fff;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -135,7 +135,6 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(12px);
   z-index: 99999;
   display: flex;
   align-items: center;

@@ -26,13 +26,11 @@
   max-height: 28px;
   padding: 0 12px;
   box-sizing: border-box;
-  background: var(--bg-panel, #18181b);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  background: var(--surface-3, var(--bg-panel, #18181b));
+  border: 1px solid var(--border-strong, var(--border-subtle, rgba(255, 255, 255, 0.12)));
   border-radius: 9999px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  animation: drop-pill-pop 0.14s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-shadow: var(--elev-popover);
+  animation: drop-pill-pop var(--dur-base, 160ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
 }
 
 .sidebar-drag-ghost {

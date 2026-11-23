@@ -18,12 +18,10 @@
 
 .inline-lumina-modal {
   position: absolute;
-  background: var(--bg-card, var(--bg-app));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-card, var(--border-dim));
-  border-radius: 10px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--border-dim);
+  background: var(--surface-3, var(--bg-card, var(--bg-app)));
+  border: 1px solid var(--border-strong, var(--border-card, var(--border-dim)));
+  border-radius: var(--radius-lg, 8px);
+  box-shadow: var(--elev-dialog);
   width: 440px;
   max-width: 90vw;
   display: flex;

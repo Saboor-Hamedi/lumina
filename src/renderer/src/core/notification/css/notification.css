@@ -3,24 +3,20 @@
   position: fixed;
   top: 36px;
   right: 24px;
-  background: var(--bg-panel) !important;
-  border: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.2)) !important;
-  color: var(--text-main) !important;
+  background: var(--surface-3, var(--bg-panel));
+  border: 1px solid var(--border-strong, var(--border-subtle, rgba(128, 128, 128, 0.2)));
+  color: var(--ink-1, var(--text-main));
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--radius-lg, 8px);
   padding: 8px 12px 8px 10px;
-  box-shadow: 
-    0 12px 28px var(--shadow-soft, rgba(0, 0, 0, 0.25)),
-    0 2px 8px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--elev-popover);
   z-index: 999999;
   width: auto;
   min-width: 180px;
   max-width: 340px;
   display: flex;
   align-items: center;
-  animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  animation: toastSlideIn var(--dur-slow, 220ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
 .toast-content {

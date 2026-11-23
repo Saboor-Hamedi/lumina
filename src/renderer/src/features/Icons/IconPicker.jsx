@@ -14,6 +14,7 @@ import { createPortal } from 'react-dom'
 import { Search, X, Sparkles, Check } from 'lucide-react'
 import { getLucideIconByName } from './iconRegistry'
 import ToolTip from '../../components/atoms/ToolTip'
+import { useDraggableSurface } from '../../ui/useDraggableSurface'
 import { EMOJI_INDEX } from './icons'
 import './IconPicker.css'
 
@@ -53,46 +54,12 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
   const [search, setSearch] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef(null)
-  const modalContainerRef = useRef(null)
-  const posRef = useRef({ x: 0, y: 0 })
-  const isDraggingRef = useRef(false)
-  const dragStartRef = useRef({ x: 0, y: 0 })
-  const initialPosRef = useRef({ x: 0, y: 0 })
-
-  // Direct GPU-accelerated 0-latency drag handler
-  const handleDragStart = useCallback((e) => {
-    if (e.button !== 0) return
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur()
-    }
-    e.preventDefault()
-    e.stopPropagation()
-
-    isDraggingRef.current = true
-    dragStartRef.current = { x: e.clientX, y: e.clientY }
-    initialPosRef.current = { x: posRef.current.x, y: posRef.current.y }
-    document.body.style.userSelect = 'none'
-
-    const handleMouseMove = (moveEvent) => {
-      if (!isDraggingRef.current || !modalContainerRef.current) return
-      const deltaX = moveEvent.clientX - dragStartRef.current.x
-      const deltaY = moveEvent.clientY - dragStartRef.current.y
-      const nextX = initialPosRef.current.x + deltaX
-      const nextY = initialPosRef.current.y + deltaY
-      posRef.current = { x: nextX, y: nextY }
-      modalContainerRef.current.style.transform = `translate3d(${nextX}px, ${nextY}px, 0)`
-    }
-
-    const handleMouseUp = () => {
-      isDraggingRef.current = false
-      document.body.style.userSelect = ''
-      window.removeEventListener('mousemove', handleMouseMove, { capture: true })
-      window.removeEventListener('mouseup', handleMouseUp, { capture: true })
-    }
-
-    window.addEventListener('mousemove', handleMouseMove, { capture: true, passive: true })
-    window.addEventListener('mouseup', handleMouseUp, { capture: true })
-  }, [])
+  const {
+    surfaceRef: modalContainerRef,
+    posRef,
+    handleDragStart,
+    resetPosition
+  } = useDraggableSurface()
 
   const filteredIcons = useMemo(() => {
     const term = search.toLowerCase().trim()
@@ -111,10 +78,7 @@ const IconPicker = ({ isOpen, onClose, currentIcon, onSelect }) => {
   useEffect(() => {
     if (isOpen && !wasOpenRef.current) {
       setSearch('')
-      posRef.current = { x: 0, y: 0 }
-      if (modalContainerRef.current) {
-        modalContainerRef.current.style.transform = 'translate3d(0px, 0px, 0)'
-      }
+      resetPosition()
 
       // Initialize selected index to current icon if present
       const initialIdx = currentIcon ? EMOJI_INDEX.findIndex((item) => item.char === currentIcon) : 0

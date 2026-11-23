@@ -1,11 +1,10 @@
 /* Canvas Toolbar */
 .lumina-canvas-toolbar {
   position: absolute;
-  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #18181b)) 92%, transparent);
-  border: 1px solid var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.1)));
-  border-radius: 5px;
-  box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(12px);
+  background-color: var(--surface-3, var(--bg-card, var(--bg-panel, #18181b)));
+  border: 1px solid var(--border-strong, var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.1))));
+  border-radius: var(--radius-xs, 4px);
+  box-shadow: var(--elev-popover);
   z-index: 100;
 }
 
@@ -57,11 +56,9 @@
   padding: 12px 4px;
   border-radius: 0;
   border: none;
-  border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
-  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #121316)) 96%, transparent);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.25);
+  border-left: 1px solid var(--border-strong, rgba(255, 255, 255, 0.12));
+  background-color: var(--surface-3, var(--bg-card, var(--bg-panel, #121316)));
+  box-shadow: var(--elev-popover);
   box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;

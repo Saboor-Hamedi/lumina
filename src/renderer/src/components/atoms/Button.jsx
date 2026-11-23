@@ -1,15 +1,14 @@
 import React from 'react'
+import { Button as UiButton } from '../../ui/Button'
 import './Button.css'
 
 /**
- * Atomic Button Component (Std #9)
- * Standardizes primary and ghost button behaviors.
+ * Atomic Button Component (delegates to shared `src/renderer/src/ui/Button` primitive)
  */
 export const Button = ({ children, variant = 'base', className = '', ...props }) => {
-  const baseClass = variant === 'primary' ? 'btn btn-primary' : 'btn'
   return (
-    <button className={`${baseClass} ${className}`} {...props}>
+    <UiButton variant={variant} size="md" className={className} {...props}>
       {children}
-    </button>
+    </UiButton>
   )
 }

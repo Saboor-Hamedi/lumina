@@ -1,9 +1,7 @@
 .confirm-overlay {
   background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
   z-index: 10001;
-  animation: confirmFadeIn 0.12s ease-out;
+  animation: confirmFadeIn var(--dur-fast, 100ms) ease-out;
 }
 
 .confirm-modal {

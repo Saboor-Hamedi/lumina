@@ -17,7 +17,6 @@
  */
 
 import React, { memo, useState, useEffect, useRef } from 'react'
-import { createPortal } from 'react-dom'
 import {
   Files,
   MessageSquare,
@@ -30,6 +29,7 @@ import {
   HelpCircle
 } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
+import { Popover } from '../../ui'
 import DailyNotes from './components/DailyNotes'
 import ActivityBarMail from './components/ActivityBarMail'
 import { useSettingStore } from '../../core/store/SettingStore'
@@ -65,24 +65,6 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
   })
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const helpMenuRef = useRef<HTMLDivElement | null>(null)
-  const popoverRef = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    if (!isHelpOpen) return
-    const handleOutside = (e: MouseEvent) => {
-      const target = e.target as Node
-      if (
-        helpMenuRef.current &&
-        !helpMenuRef.current.contains(target) &&
-        popoverRef.current &&
-        !popoverRef.current.contains(target)
-      ) {
-        setIsHelpOpen(false)
-      }
-    }
-    window.addEventListener('mousedown', handleOutside)
-    return () => window.removeEventListener('mousedown', handleOutside)
-  }, [isHelpOpen])
   const sidebarActiveView = useSidebarViewStore((s) => s.activeView)
   const activeActivityItem = useSidebarViewStore((s) => s.activeActivityItem)
   const setActiveActivityItem = useSidebarViewStore((s) => s.setActiveActivityItem)
@@ -259,47 +241,40 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
             </button>
           </ToolTip>
 
-          {isHelpOpen &&
-            createPortal(
-              <div
-                ref={popoverRef}
-                className="activity-bar-help-popover"
-                role="menu"
-                style={{
-                  position: 'fixed',
-                  left: `${(helpMenuRef.current?.getBoundingClientRect().right ?? 42) + 6}px`,
-                  bottom: `${Math.max(8, window.innerHeight - (helpMenuRef.current?.getBoundingClientRect().bottom ?? 48))}px`,
-                  zIndex: 100000
-                }}
-              >
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="activity-bar-help-item"
-                  onClick={() => {
-                    setIsHelpOpen(false)
-                    handleOpenDocs()
-                  }}
-                >
-                  <Book size={13} />
-                  <span>Documentation</span>
-                  <kbd>{isMac ? '⌘D' : 'Ctrl+D'}</kbd>
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="activity-bar-help-item"
-                  onClick={() => {
-                    setIsHelpOpen(false)
-                    handleOpenGuide()
-                  }}
-                >
-                  <Compass size={13} />
-                  <span>Lumina Guide</span>
-                </button>
-              </div>,
-              document.body
-            )}
+          <Popover
+            isOpen={isHelpOpen}
+            onClose={() => setIsHelpOpen(false)}
+            anchorRef={helpMenuRef}
+            placement="right-end"
+            className="activity-bar-help-popover"
+            role="menu"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              className="activity-bar-help-item"
+              onClick={() => {
+                setIsHelpOpen(false)
+                handleOpenDocs()
+              }}
+            >
+              <Book size={13} />
+              <span>Documentation</span>
+              <kbd>{isMac ? '⌘D' : 'Ctrl+D'}</kbd>
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="activity-bar-help-item"
+              onClick={() => {
+                setIsHelpOpen(false)
+                handleOpenGuide()
+              }}
+            >
+              <Compass size={13} />
+              <span>Lumina Guide</span>
+            </button>
+          </Popover>
         </div>
 
         {/* Communication & Capsule Mail Hub */}

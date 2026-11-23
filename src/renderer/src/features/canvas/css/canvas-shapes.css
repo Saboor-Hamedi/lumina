@@ -238,12 +238,11 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease, transform 0.15s ease;
-  background: color-mix(in srgb, var(--bg-panel, #18181b) 88%, transparent);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.14));
-  border-radius: 6px;
+  background: var(--surface-3, var(--bg-panel, #18181b));
+  border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.14));
+  border-radius: var(--radius-md, 6px);
   padding: 2px 3px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-  backdrop-filter: blur(8px);
+  box-shadow: var(--elev-popover);
   z-index: 40;
 }
 

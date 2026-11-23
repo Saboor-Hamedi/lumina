@@ -8,15 +8,13 @@
 .context-menu {
   position: fixed;
   min-width: 200px;
-  background: color-mix(in srgb, var(--bg-card, #1e1e2e) 88%, transparent);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
-  border-radius: 8px;
+  background: var(--surface-3, var(--bg-card, #1e1e2e));
+  border: 1px solid var(--border-strong, var(--border-subtle, rgba(255, 255, 255, 0.12)));
+  border-radius: var(--radius-md, 6px);
   padding: 4px;
   z-index: 10000;
-  animation: menuAppear 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--border-dim, rgba(255, 255, 255, 0.05));
+  animation: menuAppear var(--dur-fast, 100ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+  box-shadow: var(--elev-popover);
   user-select: none;
 }
 
@@ -47,12 +45,10 @@
   top: -4px;
   left: calc(100% + 4px) !important;
   margin: 0 !important;
-  background: color-mix(in srgb, var(--bg-card, #1e1e2e) 88%, transparent) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  animation: submenuAppear 0.1s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  background: var(--surface-3, var(--bg-card, #1e1e2e));
+  animation: submenuAppear var(--dur-fast, 100ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
   transform-origin: top left;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.38), 0 4px 12px rgba(0, 0, 0, 0.18), 0 0 0 1px var(--border-dim, rgba(255, 255, 255, 0.05)) !important;
+  box-shadow: var(--elev-popover);
   z-index: 10001 !important;
 }
 

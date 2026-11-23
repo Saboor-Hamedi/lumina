@@ -933,11 +933,9 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--bg-card, var(--bg-panel, rgba(24, 24, 27, 0.9)));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  color: var(--text-main, #e2e8f0);
-  border: 1px solid var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.12)));
+  background: var(--surface-3, var(--bg-card, var(--bg-panel, #18181b)));
+  color: var(--ink-1, var(--text-main, #e2e8f0));
+  border: 1px solid var(--border-strong, var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.12))));
   font-family: var(--font-mono, 'JetBrains Mono', Consolas, monospace);
   font-size: 11px;
   font-weight: 600;
@@ -1102,14 +1100,12 @@
   min-width: 190px;
   max-width: calc(100vw - 16px);
   background: color-mix(in srgb, var(--bg-panel) 85%, transparent);
-  border: 1px solid var(--border-dim);
-  border-radius: 6px !important;
+  border: 1px solid var(--border-strong, var(--border-dim));
+  border-radius: var(--radius-md, 6px) !important;
   padding: 3px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--elev-popover);
   z-index: 100000;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  animation: nativeMenuAppear 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: nativeMenuAppear var(--dur-fast, 100ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1));
   transform-origin: top right;
   overflow-x: auto;
   overflow-y: hidden;
@@ -1295,9 +1291,8 @@
   min-width: 150px;
   max-height: 200px;
   overflow-y: auto;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--elev-popover);
   z-index: 10000;
-  backdrop-filter: blur(10px);
 }
 
 .suggestion-item {
@@ -1425,10 +1420,9 @@
   justify-content: space-between;
   padding: 0 16px;
   height: 32px;
-  background: var(--bg-panel);
-  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-3, var(--bg-panel));
+  border-top: 1px solid var(--border-strong, var(--border-subtle));
   z-index: 1000;
-  backdrop-filter: blur(10px);
   box-shadow: none;
   margin-top: auto;
   font-size: 11px;
@@ -1463,19 +1457,18 @@
 }
 
 .cm-wiki-hover {
-  background: var(--bg-panel, #18181b);
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.15)) !important;
-  border-radius: 2px;
+  background: var(--surface-3, var(--bg-panel, #18181b));
+  border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.15)) !important;
+  border-radius: var(--radius-xs, 4px);
   width: 540px;
   max-width: calc(100vw - 48px);
   min-width: 320px;
   z-index: 999999 !important;
-  backdrop-filter: blur(24px);
   pointer-events: auto;
   display: flex;
   flex-direction: column;
   max-height: 400px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: var(--elev-dialog) !important;
   padding: 0 !important;
   overflow: hidden !important;
   user-select: text;
@@ -1728,13 +1721,12 @@
 }
 
 .cm-tooltip-autocomplete {
-  background: var(--bg-panel) !important;
-  border: 1px solid var(--border-dim) !important;
-  border-radius: 12px !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4) !important;
-  backdrop-filter: blur(8px);
+  background: var(--surface-3, var(--bg-panel)) !important;
+  border: 1px solid var(--border-strong, var(--border-dim)) !important;
+  border-radius: var(--radius-lg, 8px) !important;
+  box-shadow: var(--elev-dialog) !important;
   padding: 4px !important;
-  animation: palette-slide-down 0.2s cubic-bezier(0, 0, 0.2, 1);
+  animation: palette-slide-down var(--dur-base, 160ms) var(--ease-snappy, cubic-bezier(0, 0, 0.2, 1));
   overflow: hidden !important;
 }
 
@@ -2046,12 +2038,10 @@
   padding: 2px 6px !important;
   height: 27px !important;
   box-sizing: border-box;
-  background: var(--bg-card);
-  border: 1px solid var(--border-dim);
-  border-radius: 5px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.06);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--surface-3, var(--bg-card));
+  border: 1px solid var(--border-strong, var(--border-dim));
+  border-radius: var(--radius-xs, 4px);
+  box-shadow: var(--elev-popover);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2134,15 +2124,12 @@
   position: absolute !important;
   min-width: 205px !important;
   max-width: 270px !important;
-  background: var(--bg-panel, #18181c) !important;
-  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.16)) !important;
-  border-radius: 6px !important;
+  background: var(--surface-3, var(--bg-panel, #18181c)) !important;
+  border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.16)) !important;
+  border-radius: var(--radius-md, 6px) !important;
   padding: 4px !important;
-  box-shadow: none !important;
-  -webkit-box-shadow: none !important;
+  box-shadow: var(--elev-popover) !important;
   filter: none !important;
-  backdrop-filter: blur(28px) !important;
-  -webkit-backdrop-filter: blur(28px) !important;
   z-index: 1000 !important;
   pointer-events: auto !important;
   opacity: 1 !important;

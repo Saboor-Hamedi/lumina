@@ -1,16 +1,14 @@
 .nexus-sidebar:not(.lumina-canvas-toolbar-right) {
   width: 280px;
-  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #121316)) 96%, transparent);
+  background-color: var(--surface-3, var(--bg-card, var(--bg-panel, #121316)));
   border: none;
-  border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  border-left: 1px solid var(--border-strong, var(--border-subtle, rgba(255, 255, 255, 0.12)));
   border-radius: 0;
   box-shadow: -1px 0 4px rgba(0, 0, 0, 0.04);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  transition: transform var(--dur-slow, 220ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1)), opacity var(--dur-base, 160ms) ease;
   overflow: hidden;
   position: absolute;
   right: 0;
@@ -30,9 +28,7 @@
 .lumina-canvas-toolbar-right {
   z-index: 200 !important;
   pointer-events: auto !important;
-  backdrop-filter: blur(16px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
-  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.2s ease !important;
+  transition: width var(--dur-slow, 220ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1)), background-color var(--dur-base, 160ms) ease, box-shadow var(--dur-base, 160ms) ease !important;
 }
 
 .lumina-canvas-toolbar-right:not(.is-expanded) {

@@ -147,12 +147,11 @@ export function TerminalProfile({
               top: menuPos.top,
               left: menuPos.left,
               width: 210,
-              background: 'rgba(20, 20, 24, 0.98)',
-              backdropFilter: 'blur(16px)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              borderRadius: 6,
+              background: 'var(--surface-3, var(--bg-panel, #141418))',
+              border: '1px solid var(--border-strong, rgba(255, 255, 255, 0.12))',
+              borderRadius: 'var(--radius-md, 6px)',
               padding: 4,
-              boxShadow: '0 12px 28px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+              boxShadow: 'var(--elev-popover)',
               zIndex: 99999,
               userSelect: 'none'
             }}

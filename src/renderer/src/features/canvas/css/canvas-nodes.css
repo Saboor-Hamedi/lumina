@@ -154,12 +154,10 @@
   align-items: center;
   gap: 3px;
   padding: 3px 5px;
-  background: color-mix(in srgb, var(--bg-card, var(--bg-panel, #18181b)) 85%, transparent);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  background: var(--surface-3, var(--bg-card, var(--bg-panel, #18181b)));
+  border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-md, 6px);
+  box-shadow: var(--elev-popover);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.18s ease, transform 0.18s ease;
@@ -512,12 +510,10 @@
   align-items: center;
   gap: 2px;
   padding: 2px 3px;
-  background: color-mix(in srgb, var(--bg-panel, #18181b) 95%, transparent);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+  background: var(--surface-3, var(--bg-panel, #18181b));
+  border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.12));
   border-radius: 9999px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--elev-popover);
   height: 22px;
   box-sizing: border-box;
 }

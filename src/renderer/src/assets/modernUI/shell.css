@@ -99,20 +99,20 @@
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  border-radius: 0 !important;
-  border: none !important;
+  border-radius: 0;
+  border: none;
   background: var(--bg-editor, var(--bg-app));
   overflow: hidden;
   box-sizing: border-box;
-  box-shadow: none !important;
+  box-shadow: none;
 }
 
 [data-modern-ui='true'] .workspace-container,
 [data-modern-ui='true'] .welcome-page,
 [data-modern-ui='true'] .welcome-container {
-  border: none !important;
-  border-radius: 0 !important;
-  background: transparent !important;
+  border: none;
+  border-radius: 0;
+  background: transparent;
   overflow: hidden;
   flex: 1;
   min-height: 0;
@@ -120,9 +120,9 @@
 }
 
 [data-modern-ui='true'] .welcome-card {
-  border-radius: 6px;
-  box-shadow: none !important;
-  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-md, 6px);
+  box-shadow: none;
+  border: 1px solid var(--border-hairline, var(--border-dim));
   background: var(--bg-card);
 }
 

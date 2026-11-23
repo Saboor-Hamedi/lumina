@@ -7,10 +7,10 @@ import {
   CheckSquare,
   Table,
   X,
-  Check,
-  Search
+  Check
 } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
+import { SearchInput } from '../../ui'
 import useTemplate, {
   createNoteFromTemplate,
   type TemplateItem
@@ -209,28 +209,13 @@ export const Template: React.FC<TemplateProps> = ({
       </div>
 
       {/* Search Bar */}
-      <div className="lumina-drawer-search-wrap">
-        <Search size={13} className="search-icon" />
-        <input
-          ref={searchInputRef}
-          type="text"
-          placeholder="Search templates..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          spellCheck={false}
-          autoFocus
-        />
-        {searchQuery && (
-          <button
-            type="button"
-            className="clear-btn"
-            onClick={() => setSearchQuery('')}
-            aria-label="Clear search"
-          >
-            <X size={12} />
-          </button>
-        )}
-      </div>
+      <SearchInput
+        ref={searchInputRef}
+        placeholder="Search templates..."
+        value={searchQuery}
+        onChange={setSearchQuery}
+        autoFocus
+      />
 
       {/* Template List */}
       <div ref={listRef} className="lumina-drawer-list template-sidebar-list">

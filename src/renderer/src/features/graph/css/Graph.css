@@ -224,11 +224,9 @@
   top: 20px;
   left: 20px;
   width: 320px;
-  background: var(--bg-panel);
-  background: color-mix(in srgb, var(--bg-panel), transparent 15%);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-main, 5px);
+  background: var(--surface-3, var(--bg-panel));
+  border: 1px solid var(--border-strong, var(--border-subtle));
+  border-radius: var(--radius-xs, var(--radius-main, 4px));
   padding: 16px;
   z-index: 1000;
   pointer-events: none;

@@ -52,9 +52,11 @@ export const useDraggableModal = () => {
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true })
     window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener('blur', handleMouseUp)
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('blur', handleMouseUp)
       document.body.style.userSelect = ''
       if (rafId.current) cancelAnimationFrame(rafId.current)
     }

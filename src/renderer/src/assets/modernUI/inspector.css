@@ -112,10 +112,10 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  border-radius: 0 !important;
-  border: none !important;
-  background: var(--bg-sidebar) !important;
-  box-shadow: none !important;
+  border-radius: 0;
+  border: none;
+  background: var(--bg-sidebar);
+  box-shadow: none;
   overflow: hidden;
   box-sizing: border-box;
   min-height: 0;
@@ -123,11 +123,11 @@
 
 .shell-sidebar-right .inspector-sub-header,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-sub-header {
-  height: 28px !important;
-  min-height: 28px !important;
-  max-height: 28px !important;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
   box-sizing: border-box;
-  border-bottom: 1px solid var(--border-dim);
+  border-bottom: 1px solid var(--border-hairline, var(--border-dim));
   padding: 0 10px;
   display: flex;
   align-items: center;
@@ -136,14 +136,14 @@
 /* Inspector Footer Utility Strip */
 .shell-sidebar-right .inspector-footer-section,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-footer-section {
-  height: 28px !important;
-  min-height: 28px !important;
-  max-height: 28px !important;
-  border-radius: 0 !important;
-  border: none !important;
-  border-top: 1px solid var(--border-dim) !important;
-  background: var(--bg-sidebar) !important;
-  box-shadow: none !important;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  border-radius: 0;
+  border: none;
+  border-top: 1px solid var(--border-hairline, var(--border-dim));
+  background: var(--bg-sidebar);
+  box-shadow: none;
   box-sizing: border-box;
   display: flex;
   align-items: center;

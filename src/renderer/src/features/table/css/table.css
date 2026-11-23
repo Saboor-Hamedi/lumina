@@ -271,12 +271,11 @@
   gap: 8px;
   padding: 10px 12px;
   min-width: 240px;
-  background: var(--bg-panel, #18181b);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
-  border-radius: 2px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(20px);
-  animation: tableRenameDropdownIn 0.15s cubic-bezier(0, 0, 0.2, 1);
+  background: var(--surface-3, var(--bg-panel, #18181b));
+  border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-xs, 4px) !important;
+  box-shadow: var(--elev-popover);
+  animation: tableRenameDropdownIn var(--dur-base, 160ms) var(--ease-snappy, cubic-bezier(0, 0, 0.2, 1));
 }
 
 .cm-table-rename-header {
@@ -389,11 +388,10 @@
   padding: 6px !important;
   min-width: 240px !important;
   width: 240px !important;
-  background: var(--bg-panel, #18181b) !important;
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12)) !important;
-  border-radius: 4px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45) !important;
-  backdrop-filter: blur(20px) !important;
+  background: var(--surface-3, var(--bg-panel, #18181b)) !important;
+  border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.12)) !important;
+  border-radius: var(--radius-xs, 4px) !important;
+  box-shadow: var(--elev-popover) !important;
 }
 
 .cm-table-actions-dropdown .dropdown-item {

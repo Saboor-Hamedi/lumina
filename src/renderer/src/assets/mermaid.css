@@ -306,11 +306,9 @@
   right: 24px;
   left: auto;
   transform: none;
-  background: var(--bg-panel, #18181b);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.15)));
-  border-radius: 2px;
+  background: var(--surface-3, var(--bg-panel, #18181b));
+  border: 1px solid var(--border-strong, var(--border-dim, rgba(255, 255, 255, 0.15)));
+  border-radius: var(--radius-xs, 4px);
   padding: 4px 6px;
   display: flex;
   align-items: center;

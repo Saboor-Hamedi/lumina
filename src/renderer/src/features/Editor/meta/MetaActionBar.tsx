@@ -146,13 +146,11 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
               width: position === 'inline' ? 'min(480px, 92vw)' : '100%',
               minWidth: position === 'inline' ? 'min(420px, 90vw)' : '100%',
               maxWidth: '92vw',
-              background: 'var(--bg-panel, #18181c)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
+              background: 'var(--surface-3, var(--bg-panel, #18181c))',
               zIndex: 1000,
-              borderRadius: '8px',
-              border: '1px solid var(--border-color, rgba(255,255,255,0.14))',
-              boxShadow: '0 12px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.25)',
+              borderRadius: 'var(--radius-lg, 8px)',
+              border: '1px solid var(--border-strong, var(--border-color, rgba(255,255,255,0.14)))',
+              boxShadow: 'var(--elev-dialog)',
               overflow: 'hidden'
             }}
           >

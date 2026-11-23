@@ -11,7 +11,7 @@
   align-items: center;
   padding-left: 0;
   background: var(--bg-app, #121218);
-  border-bottom: 1px solid var(--border-dim, rgba(255, 255, 255, 0.04));
+  border-bottom: 1px solid var(--border-hairline, var(--border-dim, rgba(255, 255, 255, 0.04)));
   -webkit-app-region: drag;
   user-select: none;
   cursor: default !important;
@@ -31,14 +31,6 @@
 .titlebar-sidebar-toggle-btn {
   -webkit-app-region: no-drag;
   margin-right: 4px;
-  flex-shrink: 0;
-}
-
-.app-logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-accent);
   flex-shrink: 0;
 }
 
@@ -179,7 +171,7 @@
   color: var(--text-faint, #64748b);
   cursor: pointer !important;
   -webkit-app-region: no-drag;
-  transition: background 0.1s, color 0.1s;
+  transition: background var(--dur-fast, 100ms), color var(--dur-fast, 100ms);
   outline: none;
 }
 
@@ -199,6 +191,10 @@
 
 .control-btn.close {
   border-top-right-radius: 8px;
+}
+
+[data-window-maximized='true'] .control-btn.close {
+  border-top-right-radius: 0;
 }
 
 .control-btn.close:hover {

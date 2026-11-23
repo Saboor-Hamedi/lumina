@@ -2,14 +2,12 @@
 .guide-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4) !important;
-  backdrop-filter: blur(12px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(12px) saturate(180%) !important;
+  background: rgba(0, 0, 0, 0.52) !important;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10005 !important;
-  animation: guideFadeIn 0.2s ease-out;
+  animation: guideFadeIn var(--dur-base, 160ms) ease-out;
 }
 
 @keyframes guideFadeIn {

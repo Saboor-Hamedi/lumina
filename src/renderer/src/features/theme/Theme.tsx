@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback, memo } from 'react'
 import { createPortal } from 'react-dom'
-import { Palette, X, Check, Search } from 'lucide-react'
+import { Palette, X, Check } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
+import { SearchInput } from '../../ui'
 import { useTheme, type ThemeChangeOrigin } from './hooks/useTheme'
 import type { ThemeDefinition } from './hooks/themeDefinitions'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
@@ -260,28 +261,13 @@ export const Theme: React.FC<ThemeProps> = ({
       </div>
 
       {/* Search Bar — matching note search */}
-      <div className="lumina-drawer-search-wrap">
-        <Search size={13} className="search-icon" />
-        <input
-          ref={searchInputRef}
-          type="text"
-          placeholder="Search themes..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          spellCheck={false}
-          autoFocus
-        />
-        {searchQuery && (
-          <button
-            type="button"
-            className="clear-btn"
-            onClick={() => setSearchQuery('')}
-            aria-label="Clear search"
-          >
-            <X size={12} />
-          </button>
-        )}
-      </div>
+      <SearchInput
+        ref={searchInputRef}
+        placeholder="Search themes..."
+        value={searchQuery}
+        onChange={setSearchQuery}
+        autoFocus
+      />
 
       {/* Compact All / Dark / Light Filter */}
       <div className="theme-tone-tabs" role="tablist" aria-label="Filter themes by tone">

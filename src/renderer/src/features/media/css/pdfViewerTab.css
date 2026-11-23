@@ -78,12 +78,10 @@
   align-items: center;
   gap: 4px;
   padding: 4px 6px;
-  background: var(--bg-sidebar, var(--bg-panel, #181d27));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
-  border-radius: 6px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  background: var(--surface-3, var(--bg-sidebar, var(--bg-panel, #181d27)));
+  border: 1px solid var(--border-strong, var(--border-dim, rgba(255, 255, 255, 0.1)));
+  border-radius: var(--radius-md, 6px);
+  box-shadow: var(--elev-popover);
   z-index: 20;
   pointer-events: all;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);

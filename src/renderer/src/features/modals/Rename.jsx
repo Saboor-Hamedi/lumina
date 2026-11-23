@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, memo } from 'react'
-import { createPortal } from 'react-dom'
+import { Dialog } from '../../ui'
 import './css/renameModal.css'
 
 /**
@@ -10,44 +10,21 @@ import './css/renameModal.css'
  * and Enter to submit the renamed title.
  *
  * Wrapped in React.memo to prevent unnecessary re-renders when parent state updates.
- *
- * @param {Object} props
- * @param {boolean} props.isOpen - Whether the rename modal is currently visible.
- * @param {() => void} props.onClose - Callback triggered when modal is closed/dismissed.
- * @param {(newName: string) => void} props.onRename - Callback triggered with the validated new name.
- * @param {string} [props.initialName=''] - Initial name of the item being renamed.
- * @param {'note' | 'folder'} [props.itemType='note'] - Type of item being renamed ('note' or 'folder').
- * @returns {React.ReactPortal | null}
  */
 const Rename = ({ isOpen, onClose, onRename, initialName = '', itemType = 'note' }) => {
   const inputRef = useRef(null)
 
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.value = initialName
-          inputRef.current.focus()
-          inputRef.current.select()
-        }
-      }, 50)
-    }
-  }, [isOpen, initialName])
-
-  useEffect(() => {
     if (!isOpen) return
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        e.stopPropagation()
-        onClose()
+    const timer = setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.value = initialName
+        inputRef.current.focus()
+        inputRef.current.select()
       }
-    }
-    window.addEventListener('keydown', handleKeyDown, { capture: true })
-    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
-  }, [isOpen, onClose])
-
-  if (!isOpen) return null
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [isOpen, initialName])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -59,21 +36,24 @@ const Rename = ({ isOpen, onClose, onRename, initialName = '', itemType = 'note'
     onClose()
   }
 
-  return createPortal(
-    <div className="modal-overlay rename-overlay" onClick={onClose}>
-      <div className="modal-container rename-modal" onClick={(e) => e.stopPropagation()}>
-        <form onSubmit={handleSubmit} className="rename-form">
-          <input
-            ref={inputRef}
-            className="rename-input"
-            type="text"
-            defaultValue={initialName}
-            placeholder={itemType === 'folder' ? 'Rename folder...' : 'Rename note...'}
-          />
-        </form>
-      </div>
-    </div>,
-    document.body
+  return (
+    <Dialog
+      isOpen={isOpen}
+      onClose={onClose}
+      ariaLabel={itemType === 'folder' ? 'Rename folder' : 'Rename note'}
+      overlayClassName="rename-overlay"
+      className="rename-modal"
+    >
+      <form onSubmit={handleSubmit} className="rename-form">
+        <input
+          ref={inputRef}
+          className="rename-input"
+          type="text"
+          defaultValue={initialName}
+          placeholder={itemType === 'folder' ? 'Rename folder...' : 'Rename note...'}
+        />
+      </form>
+    </Dialog>
   )
 }
 

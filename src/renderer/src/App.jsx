@@ -5,6 +5,7 @@ import GlobalErrorHandler from './components/GlobalErrorHandler'
 import { hideScreenLoader } from './components/screenLoader'
 import { useSettingsStore } from './core/store/SettingStore'
 import { useZenWindowDrag } from './core/hooks/useZenWindowDrag'
+import { markWindowResizing } from './core/tauriBridge'
 import './assets/globalErrorHandler.css'
 
 function App() {
@@ -27,6 +28,11 @@ function App() {
   }, [isModernUi])
 
   useZenWindowDrag({ enabled: isZenMode })
+
+  useEffect(() => {
+    window.addEventListener('resize', markWindowResizing, { passive: true })
+    return () => window.removeEventListener('resize', markWindowResizing)
+  }, [])
 
   useEffect(() => {
     if (isZenMode) {

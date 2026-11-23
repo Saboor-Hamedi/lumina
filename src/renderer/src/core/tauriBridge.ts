@@ -8,6 +8,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { getCurrentWindow, PhysicalPosition } from '@tauri-apps/api/window'
+import { getCurrentWebview } from '@tauri-apps/api/webview'
 import {
   listEmails,
   getEmailDetails,
@@ -29,6 +30,24 @@ const batchProgressSubscribers = new Set<(p: any) => void>()
 let batchProgressBridgeBound = false
 
 const isTauriRuntime = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+
+let resizeFreezeTimer: ReturnType<typeof setTimeout> | null = null
+
+export function markWindowResizing(): void {
+  if (typeof document === 'undefined') return
+  document.documentElement.classList.add('is-window-resizing')
+  if (resizeFreezeTimer) clearTimeout(resizeFreezeTimer)
+  resizeFreezeTimer = setTimeout(() => {
+    document.documentElement.classList.remove('is-window-resizing')
+    resizeFreezeTimer = null
+  }, 120)
+}
+
+export async function setWindowBackgroundColor(color: string): Promise<void> {
+  if (!isTauriRuntime || !/^#[0-9a-f]{6}$/i.test(color)) return
+  await getCurrentWindow().setBackgroundColor(color).catch(() => {})
+  await getCurrentWebview().setBackgroundColor(color).catch(() => {})
+}
 
 export function normalizeBinaryAsset(raw: unknown): Uint8Array {
   if (raw instanceof Uint8Array) return raw
@@ -56,6 +75,7 @@ export async function minimizeWindow(): Promise<void> {
 }
 
 export async function toggleMaximizeWindow(): Promise<void> {
+  markWindowResizing()
   if (isTauriRuntime) {
     await getCurrentWindow().toggleMaximize()
   } else {
@@ -337,19 +357,36 @@ export function initTauriBridge(): void {
     minimize: () => minimizeWindow(),
     toggleMaximize: () => toggleMaximizeWindow(),
     isMaximized: async () => (isTauriRuntime ? getCurrentWindow().isMaximized() : false),
+    setWindowBackgroundColor: (color: string) => setWindowBackgroundColor(color),
     onMaximizedChange: (cb: (isMax: boolean) => void) => {
       if (!isTauriRuntime) return () => {}
       let unlisten: (() => void) | null = null
+      let rafId = 0
+      let lastMax: boolean | null = null
       getCurrentWindow()
-        .onResized(async () => {
-          const max = await getCurrentWindow().isMaximized()
-          cb(max)
+        .onResized(() => {
+          markWindowResizing()
+          if (rafId) cancelAnimationFrame(rafId)
+          rafId = requestAnimationFrame(async () => {
+            rafId = 0
+            try {
+              const max = await getCurrentWindow().isMaximized()
+              if (typeof document !== 'undefined') {
+                document.documentElement.setAttribute('data-window-maximized', String(max))
+              }
+              if (max !== lastMax) {
+                lastMax = max
+                cb(max)
+              }
+            } catch {}
+          })
         })
         .then((fn) => {
           unlisten = fn
         })
         .catch(() => {})
       return () => {
+        if (rafId) cancelAnimationFrame(rafId)
         if (unlisten) unlisten()
       }
     },

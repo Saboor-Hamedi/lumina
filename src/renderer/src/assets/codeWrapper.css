@@ -7,10 +7,8 @@
   margin: 0 !important;
   width: 100% !important;
   height: 26px;
-  background: var(--bg-panel, rgba(255, 255, 255, 0.02));
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid var(--border-dim);
+  background: var(--surface-3, var(--bg-panel));
+  border: 1px solid var(--border-hairline, var(--border-dim));
   border-bottom-color: rgba(255, 255, 255, 0.05);
   border-radius: 4px 4px 0 0;
   display: flex;

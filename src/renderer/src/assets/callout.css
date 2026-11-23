@@ -222,12 +222,10 @@
   width: 24px;
   height: 24px;
   padding: 0;
-  border-radius: 4px;
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
-  background: var(--bg-panel, rgba(24, 24, 27, 0.85));
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: var(--text-muted, #94a3b8);
+  border-radius: var(--radius-xs, 4px);
+  border: 1px solid var(--border-hairline, var(--border-dim, rgba(255, 255, 255, 0.1)));
+  background: var(--surface-3, var(--bg-panel, #18181b));
+  color: var(--ink-2, var(--text-muted, #94a3b8));
   cursor: pointer;
   opacity: 0;
   pointer-events: none;

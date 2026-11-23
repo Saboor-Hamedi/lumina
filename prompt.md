@@ -18,9 +18,9 @@ Tackle items **one by one** in strict order (**1 → 2 → 3 → 4**) with zero 
 ---
 
 ## 3. Lumina Signature UI System & 6 DRY Primitives ("Precision Paper & Ink")
-- [ ] Introduce cohesive design tokens (`tokens.css`: 4 tonal surface levels, 3 ink tiers, `1px` hairline borders, `4px` spacing grid, 3 radius stops, 3 unified motion timings) that work cleanly across all 50 themes.
-- [ ] Progressively remove stacked `backdrop-filter` blur layers (117), excessive `box-shadow` declarations (385), redundant `@keyframes` (125), and `!important` overrides (3,097) for 120 FPS compositing without visual bloat.
-- [ ] Build 6 DRY primitives under `src/renderer/src/ui/` (`Button`/`IconButton`, `Popover`/`Menu`, `Dialog`, `Field`/`SearchInput`, single `Tooltip`, existing `PulseLoader`) and consolidate the 3 tooltip implementations, 3 modal-drag hooks, and 10+ custom dropdowns/menus.
+- [x] Introduce cohesive design tokens (`tokens.css`: 4 tonal surface levels, 3 ink tiers, `1px` hairline borders, `4px` spacing grid, 3 radius stops, 3 unified motion timings) that work cleanly across all 50 themes.
+- [x] Progressively remove stacked `backdrop-filter` blur layers (117), excessive `box-shadow` declarations (385), redundant `@keyframes` (125), and `!important` overrides (3,097) for 120 FPS compositing without visual bloat.
+- [x] Build 6 DRY primitives under `src/renderer/src/ui/` (`Button`/`IconButton`, `Popover`/`Menu`, `Dialog`, `Field`/`SearchInput`, single `Tooltip`, existing `PulseLoader`) and consolidate the 3 tooltip implementations, 3 modal-drag hooks, and 10+ custom dropdowns/menus.
 
 ---
 

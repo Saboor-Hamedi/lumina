@@ -1,19 +1,15 @@
 .bc-outline-dropdown-card {
   position: fixed;
   z-index: 99999;
-  background: var(--bg-panel, #18181f);
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.1));
-  border-radius: 6px;
-  box-shadow:
-    0 16px 40px rgba(0, 0, 0, 0.55),
-    0 4px 14px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: var(--surface-3, var(--bg-panel, #18181f));
+  border: 1px solid var(--border-strong, var(--border-dim, rgba(255, 255, 255, 0.1)));
+  border-radius: var(--radius-md, 6px);
+  box-shadow: var(--elev-dialog);
   display: flex;
   flex-direction: column;
   user-select: none;
   overflow: hidden;
-  backdrop-filter: blur(12px);
-  animation: bcOutlineFadeIn 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: bcOutlineFadeIn var(--dur-base, 160ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1));
   width: 320px;
   max-height: 340px;
 }

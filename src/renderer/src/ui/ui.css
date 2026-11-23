@@ -1,0 +1,277 @@
+/* ============================================================================
+   Lumina Shared UI Primitives (`ui.css`)
+   Zero backdrop-filter, zero !important, crisp 1px hairlines.
+   ============================================================================ */
+
+.lumina-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: var(--radius-xs, 4px);
+  border: 1px solid var(--border-hairline, var(--border-dim));
+  background: var(--surface-3, var(--bg-panel));
+  color: var(--ink-2, var(--text-muted));
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition:
+    background var(--dur-fast, 100ms) var(--ease-snappy, ease),
+    color var(--dur-fast, 100ms) var(--ease-snappy, ease),
+    border-color var(--dur-fast, 100ms) var(--ease-snappy, ease);
+}
+
+.lumina-btn:hover:not(:disabled) {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  color: var(--ink-1, var(--text-main));
+  border-color: var(--border-strong, var(--border-subtle));
+}
+
+.lumina-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.lumina-btn.size-xs {
+  height: 22px;
+  padding: 0 8px;
+  font-size: 10.5px;
+}
+
+.lumina-btn.size-sm {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.lumina-btn.variant-primary {
+  background: var(--text-accent, #8b5cf6);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.lumina-btn.variant-primary:hover:not(:disabled) {
+  background: var(--text-accent-hover, var(--text-accent));
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.lumina-btn.variant-ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.lumina-btn.variant-ghost:hover:not(:disabled) {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  border-color: transparent;
+}
+
+.lumina-btn.variant-danger {
+  background: var(--danger, #ef4444);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.lumina-btn.variant-danger:hover:not(:disabled) {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.lumina-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: var(--radius-xs, 4px);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-2, var(--text-muted));
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background var(--dur-fast, 100ms) var(--ease-snappy, ease),
+    color var(--dur-fast, 100ms) var(--ease-snappy, ease);
+}
+
+.lumina-icon-btn.size-xs {
+  width: 20px;
+  height: 20px;
+}
+
+.lumina-icon-btn.size-md {
+  width: 30px;
+  height: 30px;
+}
+
+.lumina-icon-btn:hover:not(:disabled),
+.lumina-icon-btn.is-active {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  color: var(--ink-1, var(--text-main));
+}
+
+.lumina-icon-btn.is-danger:hover:not(:disabled) {
+  color: var(--danger, #ef4444);
+}
+
+.lumina-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.lumina-popover {
+  position: fixed;
+  z-index: 100000;
+  min-width: 175px;
+  padding: var(--space-1, 4px);
+  background: var(--surface-3, var(--bg-panel));
+  border: 1px solid var(--border-strong, var(--border-subtle));
+  border-radius: var(--radius-lg, 8px);
+  box-shadow: var(--elev-popover);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: lumina-pop-in var(--dur-base, 160ms) var(--ease-snappy, ease);
+}
+
+.lumina-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lumina-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  height: 28px;
+  padding: 0 var(--space-2, 8px);
+  border: none;
+  border-radius: var(--radius-xs, 4px);
+  background: transparent;
+  color: var(--ink-1, var(--text-main));
+  font-size: 11.5px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background var(--dur-fast, 100ms) ease, color var(--dur-fast, 100ms) ease;
+}
+
+.lumina-menu-item:hover:not(:disabled),
+.lumina-menu-item.is-active {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+}
+
+.lumina-menu-item.is-danger {
+  color: var(--danger, #ef4444);
+}
+
+.lumina-menu-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.lumina-menu-divider {
+  height: 1px;
+  margin: var(--space-1, 4px) 0;
+  background: var(--border-hairline, var(--border-dim));
+}
+
+.lumina-menu-section {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-3, var(--text-faint));
+  padding: 4px 8px 2px;
+}
+
+.lumina-menu-shortcut {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--ink-3, var(--text-faint));
+}
+
+.lumina-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay, rgba(0, 0, 0, 0.55));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  animation: lumina-fade-in var(--dur-fast, 100ms) ease-out;
+}
+
+.lumina-dialog {
+  background: var(--surface-3, var(--bg-panel));
+  border: 1px solid var(--border-strong, var(--border-subtle));
+  border-radius: var(--radius-lg, 8px);
+  box-shadow: var(--elev-dialog);
+  overflow: hidden;
+  max-height: 90vh;
+  animation: lumina-pop-in var(--dur-base, 160ms) var(--ease-snappy, ease);
+}
+
+.lumina-field-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lumina-field-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-2, var(--text-muted));
+}
+
+.lumina-field-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  background: var(--bg-input, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-hairline, var(--border-dim));
+  border-radius: var(--radius-xs, 4px);
+  transition: border-color var(--dur-fast, 100ms) ease;
+}
+
+.lumina-field-box:focus-within {
+  border-color: var(--text-accent, #8b5cf6);
+}
+
+.lumina-field-box.has-error {
+  border-color: var(--danger, #ef4444);
+}
+
+.lumina-field-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--ink-1, var(--text-main));
+  font-size: 11.5px;
+}
+
+.lumina-field-input::placeholder {
+  color: var(--ink-3, var(--text-faint));
+}
+
+.lumina-field-hint {
+  font-size: 10.5px;
+  color: var(--ink-3, var(--text-faint));
+}
+
+.lumina-field-error {
+  font-size: 10.5px;
+  color: var(--danger, #ef4444);
+}

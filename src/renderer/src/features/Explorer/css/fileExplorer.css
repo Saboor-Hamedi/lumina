@@ -17,21 +17,15 @@
   width: 350px;
   height: 70vh;
   min-height: 350px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-dim);
-  border-radius: 8px;
-  box-shadow:
-    0 16px 40px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
+  background: var(--surface-3, var(--bg-panel));
+  border: 1px solid var(--border-strong, var(--border-dim));
+  border-radius: var(--radius-lg, 8px);
+  box-shadow: var(--elev-dialog);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transform-origin: bottom center;
   animation: startMenuSlideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  /* Optional: acrylic effect if supported by theme */
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-  background-color: var(--bg-panel);
 }
 
 /* Resize Handles */

@@ -514,12 +514,10 @@
   align-items: center;
   gap: 2px;
   padding: 3px 5px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-card);
+  background: var(--surface-3, var(--bg-panel));
+  border: 1px solid var(--border-strong, var(--border-card));
   border-radius: 999px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--elev-popover);
   z-index: 10;
   user-select: none;
   transition: opacity 0.2s ease, transform 0.2s ease;

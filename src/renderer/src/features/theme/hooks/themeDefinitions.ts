@@ -207,6 +207,10 @@ export const applyTheme = (
 
   const runSideEffects = () => {
     localStorage.setItem('lumina_active_theme_colors', JSON.stringify(computedColors))
+    const bgApp = computedColors['--bg-app'] || theme.colors['--bg-app']
+    if (bgApp && /^#[0-9a-f]{6}$/i.test(bgApp)) {
+      ;(window as any).api?.setWindowBackgroundColor?.(bgApp)
+    }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent('theme-changed', {

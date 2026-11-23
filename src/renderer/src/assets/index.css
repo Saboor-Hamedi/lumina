@@ -1,3 +1,5 @@
+@import './tokens.css';
+@import '../ui/ui.css';
 @import './premimum-scroll.css';
 @import './horizontal.css';
 @import './wikilink.css';
@@ -387,8 +389,8 @@ html.theme-fallback-fade * {
   --radius-lg: 8px;
 
   /* Elevation */
-  --shadow-modal: 0 12px 32px rgba(0, 0, 0, 0.25), 0 4px 8px rgba(0, 0, 0, 0.15);
-  --shadow-popup: 0 8px 24px rgba(0, 0, 0, 0.2);
+  --shadow-modal: var(--elev-dialog);
+  --shadow-popup: var(--elev-popover);
 
   /* Theme Tokens - Default to Dark so first-load never flashes light/white */
   --bg-app-rgb: 18, 18, 24;

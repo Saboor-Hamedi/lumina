@@ -3,13 +3,13 @@
   position: fixed;
   display: none;
   align-items: center;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  border-radius: 6px;
+  background: var(--surface-3, #18181f);
+  border: 1px solid var(--border-strong, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-md, 6px);
   padding: 4px;
   gap: 2px;
   z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--elev-popover);
   transform: translateY(-8px);
 }
 

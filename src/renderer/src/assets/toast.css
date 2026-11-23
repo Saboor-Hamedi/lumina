@@ -5,16 +5,12 @@
   right: 24px;
   top: auto;
   padding: 16px 20px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-dim);
-  color: var(--text-main);
-  border-radius: 12px;
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.15),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--surface-3, var(--bg-panel));
+  border: 1px solid var(--border-strong, var(--border-dim));
+  color: var(--ink-1, var(--text-main));
+  border-radius: var(--radius-lg, 8px);
+  box-shadow: var(--elev-popover);
+  animation: toastSlideIn 0.28s var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1));
   z-index: var(--z-toast, 10000);
   display: flex;
   align-items: center;
@@ -23,7 +19,7 @@
   font-weight: 500;
   width: 320px;
   pointer-events: auto;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--dur-base, 160ms) var(--ease-snappy), opacity var(--dur-base, 160ms) ease;
 }
 
 /* Specific positioning for toast in markdown editor */

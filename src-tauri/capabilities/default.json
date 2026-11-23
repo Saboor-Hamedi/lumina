@@ -17,6 +17,8 @@
     "core:window:allow-set-position",
     "core:window:allow-set-size",
     "core:window:allow-set-focus",
+    "core:window:allow-set-background-color",
+    "core:webview:allow-set-webview-background-color",
     "core:event:default"
   ]
 }

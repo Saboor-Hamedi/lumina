@@ -5,14 +5,12 @@
 .icon-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.38);
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.48);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10008;
-  animation: iconFadeIn 0.18s ease-out;
+  animation: iconFadeIn var(--dur-base, 160ms) ease-out;
 }
 
 @keyframes iconFadeIn {

@@ -16,7 +16,6 @@
 import React, { useState, useEffect, useCallback, memo } from 'react'
 import { Square, X, Minus, Search, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
-import logoUrl from '../../assets/logo.png'
 import ToolTip from '../../components/atoms/ToolTip'
 import UpdateDetails from '../../components/update/UpdateDetails'
 import AccentColor from '../theme/AccentColor'
@@ -51,6 +50,12 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
   const [isMaximized, setIsMaximized] = useState<boolean>(false)
 
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-window-maximized', String(isMaximized))
+    }
+  }, [isMaximized])
 
   useEffect(() => {
     if ((window as any).api?.isMaximized) {
@@ -92,23 +97,6 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
           </button>
         </ToolTip>
         <div className="app-logo-wrapper" style={{ display: 'flex', alignItems: 'center', position: 'relative', flexShrink: 0 }}>
-          <div className="app-logo">
-            <div
-              style={{
-                width: 14,
-                height: 14,
-                backgroundColor: 'var(--text-accent)',
-                maskImage: `url(${logoUrl})`,
-                WebkitMaskImage: `url(${logoUrl})`,
-                maskSize: 'contain',
-                WebkitMaskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                maskPosition: 'center',
-                WebkitMaskPosition: 'center'
-              }}
-            />
-          </div>
           <UpdateDetails />
         </div>
       </div>

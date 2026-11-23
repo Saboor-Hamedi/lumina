@@ -6,20 +6,22 @@ https://github.com/user-attachments/assets/f641f391-95f5-4b3f-9209-ffa6124f30cd
 
 <p align="center">
   <a href="https://github.com/Saboor-Hamedi/lumina/releases/latest">
-    <img src="https://img.shields.io/badge/version-1.1.0-blue?style=flat-square" alt="version 1.1.0">
+    <img src="https://img.shields.io/badge/version-1.1.2-blue?style=flat-square" alt="version 1.1.2">
   </a>
-  <img src="https://img.shields.io/badge/unit%20tests-1429%20passing-brightgreen?style=flat-square" alt="1429 unit tests passing">
-  <img src="https://img.shields.io/badge/e2e%20tests-playwright%20verified-blue?style=flat-square" alt="e2e tests">
-  <img src="https://img.shields.io/badge/rust%20core-N--API%20%2B%20ConPTY-orange?style=flat-square" alt="Rust core">
+  <img src="https://img.shields.io/badge/runtime-Tauri%202.0-24C8DB?style=flat-square" alt="Tauri 2.0">
+  <img src="https://img.shields.io/badge/tests-1242%20Vitest%20%2B%2016%20Rust-brightgreen?style=flat-square" alt="1242 Vitest and 16 Rust tests passing">
+  <img src="https://img.shields.io/badge/rust%20core-Async%20IPC%20%2B%20ConPTY-orange?style=flat-square" alt="Rust core Async IPC + ConPTY">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT license">
 </p>
 
 <h3 align="center">
-  Local-first Markdown, Infinite Canvas, AI Copilot, and a Real Terminal — in one fast desktop workspace.
+  Local-first Markdown, Infinite Canvas, AI Copilot, and a Real Terminal — in a native Tauri 2.0 + Rust desktop workspace.
 </h3>
 
 <p align="center">
   <a href="https://github.com/Saboor-Hamedi/lumina/releases/latest"><strong>Download Latest Release (Windows / macOS / Linux)</strong></a>
+  ·
+  <a href="#migrated-from-electron-to-tauri-20">Why Tauri 2.0</a>
   ·
   <a href="#highlights">Features</a>
   ·
@@ -32,23 +34,34 @@ https://github.com/user-attachments/assets/f641f391-95f5-4b3f-9209-ffa6124f30cd
 
 **Lumina** is built for developers, researchers, and writers who are tired of bouncing between Obsidian, VS Code, a whiteboard app, and an external terminal.
 
-Your notes stay on your disk as **100% plain-text `.md` and `.canvas` files**. A compiled **Rust native core** (`crates/lumina_core`) handles parallel vault indexing, instant fuzzy search, and a real **ConPTY/PTY terminal engine**, paired with a **React 19 + CodeMirror 6** editor.
+Your notes stay on your disk as **100% plain-text `.md` and `.canvas` files**. Powered by a native **Tauri 2.0 + Rust** backend directly linked with `crates/lumina_core` for parallel vault indexing, instant fuzzy search, and a real **ConPTY/PTY terminal engine**, paired with a **React 19 + CodeMirror 6** editor.
+
+---
+
+## Migrated from Electron to Tauri 2.0
+
+Lumina moved off Electron + N-API onto **Tauri 2.0** to keep the app lean, native, and responsive:
+
+- **OS Native WebView** — Renders via WebView2 on Windows and WebKit on macOS/Linux instead of bundling Chromium and Node.js.
+- **Direct Rust Linking** — `crates/lumina_core` compiles straight into `src-tauri` with zero Node.js runtime or N-API bridge overhead.
+- **Non-Blocking Async & Raw Binary IPC** — Tauri commands offload disk scans, fuzzy search, exports, and ConPTY I/O via `spawn_blocking`, while images, PDFs, and ZIP archives stream as raw binary `tauri::ipc::Response` buffers instead of JSON byte arrays.
+- **Lean Boot & Paper-and-Ink UI** — Uses a curated Lucide icon registry, curated `highlight.js/lib/core` languages, lazy-loaded non-boot surfaces (~629 kB / 188 kB gzip boot JS), and zero-blur **"Precision Paper & Ink"** tokens + 6 DRY UI primitives (`src/renderer/src/ui/`).
 
 ---
 
 ## Highlights
 
 - **100% Local-First Markdown** — Notes live as standard `.md` files on your filesystem. Zero lock-in, full privacy, and instant disk sync.
-- **Native Rust Core (`crates/lumina_core`)** — Multithreaded Rayon disk scanning, sub-millisecond fuzzy search, and graph construction via N-API bindings.
+- **Native Rust Core (`crates/lumina_core`)** — Multithreaded Rayon disk scanning, sub-millisecond fuzzy search, and knowledge graph construction compiled directly into the Tauri binary.
 - **Integrated ConPTY / PTY Terminal (`Ctrl + J`)** — Real native pseudoterminal powered by `portable-pty` in Rust. Run **Git Bash**, **PowerShell**, **CMD**, **Zsh**, `vim`, `ssh`, `python`, and interactive CLIs with full `Tab` completion, `Ctrl+C`, and resizing right inside your workspace.
 - **Multi-Pane Split Views** — Drag tabs to split horizontally or vertically (`Ctrl + \` / `Ctrl + Alt + \`) with persistent pane layouts.
 - **AI Copilot with Safety Controls** — Works offline with **Ollama** or with cloud providers (DeepSeek, OpenAI, Claude) across 3 focused modes (_Planning & Strategy_, _Execution & Action_, _Research & Analysis_). File edits include inline **Approve / Reject** diff cards and **multi-file Undo**.
 - **Spatial Infinite Canvas (`.canvas`)** — Freeform 2D whiteboard with shapes, magnetic ports, and orthogonal routing.
 - **2D & 3D Knowledge Graph** — Interactive force-directed 2D Canvas and 3D WebGL graph views with cluster physics and persistent node positions.
-- **Global Spotlight (`Ctrl + Space`)** — Instant note search and quick AI chat from anywhere on your OS.
-- **Zen Mode (`Ctrl + .`)** — Smoothly hides chrome and toolbars (preserving running terminal sessions) while letting you pull up any pane whenever you need it.
-- **Theme-Accurate Exports** — Export to print-ready **PDF** (with auto-generated TOC), **Word (`.doc`)**, or self-contained **HTML** across **64+ curated themes**.
-- **Google Drive Sync** — Optional on-demand or scheduled workspace backup to Google Drive.
+- **Global Spotlight (`Ctrl + Space`)** — Instant note search and quick AI chat command palette.
+- **Zen Mode (`Ctrl + .`)** — Hides chrome and toolbars while preserving running terminal sessions, with layered `Escape` handling that dismisses open dialogs, menus, or drawers before exiting Zen Mode.
+- **Theme-Accurate Exports** — Export notes across **50 curated themes** to website-style self-contained **HTML**, **Markdown**, **Plain Text**, print-ready **PDF** (with auto-generated TOC), **Word (`.doc`)**, or **ZIP** archives.
+- **Direct Google Drive Push** — Push a **Single note**, **Bulk folder mirror**, or compressed **ZIP** workspace backup directly to Google Drive.
 
 ---
 
@@ -56,7 +69,7 @@ Your notes stay on your disk as **100% plain-text `.md` and `.canvas` files**. A
 
 | Shortcut           | Action                                                 |
 | ------------------ | ------------------------------------------------------ |
-| `Ctrl + Space`     | Global Spotlight (Search notes & ask AI from anywhere) |
+| `Ctrl + Space`     | Global Spotlight (Search notes & open command palette) |
 | `Ctrl + P`         | Quick note & command search palette                    |
 | `Ctrl + N`         | Create new note                                        |
 | `Ctrl + J`         | Toggle integrated ConPTY / PTY terminal                |
@@ -76,25 +89,32 @@ Your notes stay on your disk as **100% plain-text `.md` and `.canvas` files**. A
 ### Prerequisites
 
 - **Node.js 20+** (LTS) and **npm**
-- **Rust toolchain** (`cargo` / `rustc`, optional unless rebuilding `crates/lumina_core`)
+- **Rust toolchain** (`rustc` 1.90+ and `cargo`)
+- **Tauri 2.0 OS prerequisites**:
+  - **Windows**: Microsoft Edge WebView2 + Visual Studio C++ Build Tools
+  - **macOS**: Xcode Command Line Tools
+  - **Linux**: WebKitGTK (`libwebkit2gtk-4.1-dev`) and standard build essentials
 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/Saboor-Hamedi/lumina.git
 cd lumina
 
-# 2. Install dependencies
+# 2. Install frontend dependencies
 npm install
 
-# 3. Start development mode
+# 3. Start full Tauri 2.0 desktop development mode (Vite HMR + Rust backend)
 npm run dev
+
+# Or run only the Vite frontend renderer during UI work
+npm run dev:renderer
 ```
 
 ### Packaging Installers
 
 ```bash
-npm run build:win    # Windows (.exe installer & portable)
-npm run build:mac    # macOS (.dmg)
+npm run build:win    # Windows (.exe / MSI installer)
+npm run build:mac    # macOS (Universal .dmg)
 npm run build:linux  # Linux (AppImage / .deb)
 ```
 
@@ -104,20 +124,28 @@ npm run build:linux  # Linux (AppImage / .deb)
 
 ```text
 lumina/
-├── crates/lumina_core/      # Native Rust core (Rayon scanner, fuzzy search, graph builder)
-├── src-tauri/               # Tauri 2.0 Rust backend (IPC commands, portable-pty ConPTY engine, Google OAuth)
-└── src/renderer/            # React 19 UI
-    ├── core/                # Zustand stores, CodeMirror 6 extensions, keyboard & terminal hooks
-    └── features/            # Feature modules (Editor, AI + Safety, Terminal, Canvas, Graph, Explorer, Layout)
+├── crates/lumina_core/        # Native Rust core (Rayon scanner, fuzzy search, graph builder)
+├── src-tauri/                 # Tauri 2.0 Rust backend
+│   ├── tauri.conf.json        # Window, bundle, and CSP configuration
+│   └── src/
+│       ├── commands.rs        # Async Tauri IPC commands, ConPTY engine, Google OAuth
+│       ├── export.rs          # Async export, Markdown bundle, and ZIP builders
+│       └── lib.rs             # App setup & command registration
+└── src/renderer/src/          # React 19 UI
+    ├── assets/tokens.css      # Paper & Ink design tokens and motion/elevation variables
+    ├── ui/                    # 6 DRY UI primitives (Button, Popover/Menu, Dialog, Field/SearchInput, Tooltip, PulseLoader)
+    ├── core/                  # Tauri IPC bridge, Zustand stores, CodeMirror 6 extensions, shortcuts
+    └── features/              # Feature modules (Editor, AI + Safety, Terminal, Canvas, Graph, Explorer, Layout)
 ```
 
 ---
 
 ## Testing
 
-Lumina includes unit, integration, and Rust core tests:
+Lumina includes TypeScript checks, Vitest unit/integration tests, and Rust core tests:
 
 ```bash
+npm run test:all    # Run typecheck, Rust core tests, and Vitest suite
 npm run typecheck   # TypeScript verification
 npm run test:run    # Vitest unit & integration suite
 npm run test:rust   # Cargo core unit tests
@@ -140,4 +168,4 @@ Design specs and architecture notes live in [`brain/`](./brain/):
 
 Contributions, bug reports, and feature ideas are welcome! Open an [issue](https://github.com/Saboor-Hamedi/lumina/issues) or submit a pull request.
 
-Released under the [MIT License](./license.md).
+Released under the [MIT License](./LICENSE.md).

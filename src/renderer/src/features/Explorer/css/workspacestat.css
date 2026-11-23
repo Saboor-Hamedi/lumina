@@ -4,11 +4,9 @@
   width: 280px;
   background: var(--bg-card, #1a1a24);
   color: var(--text-main, #f8fafc);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
-  border-radius: 6px;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-strong, var(--border-subtle, rgba(255, 255, 255, 0.12)));
+  border-radius: var(--radius-md, 6px);
+  box-shadow: var(--elev-dialog);
   padding: 12px;
   display: flex;
   flex-direction: column;

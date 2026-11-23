@@ -1,0 +1,98 @@
+/* ============================================================================
+   Lumina Signature UI System — "Precision Paper & Ink" Design Tokens
+   Maps cleanly onto all 50 built-in themes with zero theme breakage.
+   ============================================================================ */
+
+:root {
+  /* 4 Tonal Surface Levels */
+  --surface-0: var(--bg-activitybar, #101014);
+  --surface-1: var(--bg-sidebar, #14141d);
+  --surface-2: var(--bg-app, #121218);
+  --surface-3: var(--bg-panel, #161622);
+
+  /* 3 Ink Tiers */
+  --ink-1: var(--text-main, #e2e8f0);
+  --ink-2: var(--text-muted, #94a3b8);
+  --ink-3: var(--text-faint, #64748b);
+
+  /* 1px Hairline Borders */
+  --border-hairline: var(--border-dim, rgba(255, 255, 255, 0.08));
+  --border-strong: var(--border-subtle, rgba(255, 255, 255, 0.14));
+  --border-accent: color-mix(in srgb, var(--text-accent, #8b5cf6) 45%, transparent);
+
+  /* 4px Spacing Grid */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* 3 Radius Stops */
+  --radius-xs: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* 3 Unified Motion Timings & Easing */
+  --ease-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 100ms;
+  --dur-base: 160ms;
+  --dur-slow: 220ms;
+
+  /* Restrained Ink Elevation */
+  --elev-popover: 0 8px 24px rgba(0, 0, 0, 0.24), 0 1px 2px rgba(0, 0, 0, 0.14);
+  --elev-dialog: 0 16px 40px rgba(0, 0, 0, 0.32), 0 2px 6px rgba(0, 0, 0, 0.18);
+
+  /* Semantic Status & Accent Tints */
+  --accent-soft: color-mix(in srgb, var(--text-accent, #8b5cf6) 14%, transparent);
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --success: #22c55e;
+}
+
+@keyframes lumina-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes lumina-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes lumina-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Freeze CSS transitions during OS window resize/maximize to eliminate pane lag */
+html.is-window-resizing *,
+html.is-window-resizing *::before,
+html.is-window-resizing *::after {
+  transition: none !important;
+  animation-duration: 0.001ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0.001ms;
+    --dur-base: 0.001ms;
+    --dur-slow: 0.001ms;
+  }
+}
