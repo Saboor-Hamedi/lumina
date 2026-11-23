@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useUpdateStore } from '../../core/store/UpdateSetting'
 import { useAppVersion } from './hook/useAppVersion'
+import { PulseLoader } from '../../components/PulseLoader'
 
 /**
  * SettingUpdate Component
@@ -103,7 +104,7 @@ export const SettingUpdate: React.FC = () => {
                 ) : isDownloading ? (
                   <Download size={22} className="animate-bounce" />
                 ) : isChecking ? (
-                  <RefreshCw size={22} className="animate-spin" />
+                  <PulseLoader size="sm" inline delayMs={0} message="" />
                 ) : isAvailable ? (
                   <Sparkles size={22} />
                 ) : isError ? (
@@ -170,7 +171,7 @@ export const SettingUpdate: React.FC = () => {
             >
               {isChecking ? (
                 <>
-                  <RefreshCw size={14} className="animate-spin" />
+                  <PulseLoader size="xs" inline delayMs={0} message="" tone="current" />
                   <span>Checking...</span>
                 </>
               ) : isDownloading ? (

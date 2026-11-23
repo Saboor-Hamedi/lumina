@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useMemo, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Settings, Palette, Cloud, RefreshCw, Check, Loader2, FileArchive, Folder, X, Mail } from 'lucide-react'
+import { Settings, Palette, Cloud, RefreshCw, Check, FileArchive, Folder, X, Mail } from 'lucide-react'
+import { PulseLoader } from '../../../components/PulseLoader'
 import { useSettingsStore } from '../../../core/store/SettingStore'
 import { useCurrentUser } from '../../../core/hooks/useCurrentUser'
 import { useUpdateStore } from '../../../core/store/UpdateSetting'
@@ -595,14 +596,7 @@ export const SettingDropdown: React.FC<SettingDropdownProps> = ({
             >
               {/* Left icon */}
               {isBackingUp ? (
-                <Loader2
-                  size={14}
-                  style={{
-                    animation: 'spin 1s linear infinite',
-                    flexShrink: 0,
-                    color: 'var(--text-accent)'
-                  }}
-                />
+                <PulseLoader size="xs" inline delayMs={0} message="" />
               ) : backupState === 'done' ? (
                 <Check size={14} style={{ flexShrink: 0, color: '#22c55e' }} />
               ) : backupState === 'error' ? (

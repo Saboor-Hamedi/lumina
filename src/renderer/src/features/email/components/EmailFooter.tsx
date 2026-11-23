@@ -1,6 +1,7 @@
 import React from 'react'
 import { Bell, BellOff, RefreshCw, X, User, CheckCircle2 } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
+import { PulseLoader } from '../../../components/PulseLoader'
 
 /**
  * Props for the EmailFooter component
@@ -75,7 +76,7 @@ export const EmailFooter: React.FC<EmailFooterProps> = ({
             disabled={isLoadingList}
             aria-label="Refresh emails"
           >
-            <RefreshCw size={13} className={isLoadingList ? 'animate-spin' : ''} />
+            {isLoadingList ? <PulseLoader size="xs" inline delayMs={0} message="" tone="current" /> : <RefreshCw size={13} />}
           </button>
         </ToolTip>
 

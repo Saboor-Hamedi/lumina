@@ -566,6 +566,22 @@ if ($dlg.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
     }))
 }
 
+fn resolve_allowed_open_target(path: &str) -> Result<PathBuf, String> {
+    let trimmed = path.trim();
+    let ws_path = resolve_workspace_path();
+    if trimmed.is_empty() {
+        return Ok(ws_path);
+    }
+    if let Ok(joined) = safe_join_workspace(&ws_path, trimmed) {
+        return Ok(joined);
+    }
+    let cand = PathBuf::from(trimmed);
+    if cand.is_absolute() && crate::export::is_allowed_export_open(&cand) {
+        return Ok(cand);
+    }
+    Err("Path outside active workspace is not allowed".to_string())
+}
+
 #[tauri::command]
 pub fn open_path_in_os(path: String) -> Result<bool, String> {
     let trimmed = path.trim();
@@ -587,12 +603,7 @@ pub fn open_path_in_os(path: String) -> Result<bool, String> {
         return Ok(true);
     }
 
-    let ws_path = resolve_workspace_path();
-    let target = if trimmed.is_empty() {
-        ws_path
-    } else {
-        safe_join_workspace(&ws_path, trimmed)?
-    };
+    let target = resolve_allowed_open_target(trimmed)?;
     #[cfg(target_os = "windows")]
     {
         let _ = Command::new("explorer").arg(target).spawn();
@@ -604,6 +615,41 @@ pub fn open_path_in_os(path: String) -> Result<bool, String> {
     #[cfg(target_os = "linux")]
     {
         let _ = Command::new("xdg-open").arg(target).spawn();
+    }
+    Ok(true)
+}
+
+#[tauri::command]
+pub fn reveal_path_in_os(path: String) -> Result<bool, String> {
+    let target = resolve_allowed_open_target(path.trim())?;
+    #[cfg(target_os = "windows")]
+    {
+        if target.is_file() {
+            let _ = Command::new("explorer")
+                .arg(format!("/select,{}", target.display()))
+                .spawn();
+        } else {
+            let _ = Command::new("explorer").arg(&target).spawn();
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        if target.is_file() {
+            let _ = Command::new("open")
+                .args(["-R", &target.to_string_lossy()])
+                .spawn();
+        } else {
+            let _ = Command::new("open").arg(&target).spawn();
+        }
+    }
+    #[cfg(target_os = "linux")]
+    {
+        let dir = if target.is_file() {
+            target.parent().unwrap_or(&target)
+        } else {
+            target.as_path()
+        };
+        let _ = Command::new("xdg-open").arg(dir).spawn();
     }
     Ok(true)
 }

@@ -33,7 +33,7 @@ import {
   codeBlockDecorations,
   luminaSyntaxHighlighting
 } from '../../core/code'
-import { Sparkles } from 'lucide-react'
+import { PulseLoader } from '../../components/PulseLoader'
 // Lumina AI Thinking Block
 import { ThinkingBlock } from '../AI/components/LuminaThinkingBlock'
 
@@ -304,10 +304,7 @@ export const PreviewCommandPalette: React.FC<PreviewCommandPaletteProps> = React
                   gap: '12px'
                 }}
               >
-                <div className="mermaid-loading" style={{ opacity: 0.5 }}>
-                  <Sparkles size={24} />
-                </div>
-                <span style={{ fontSize: '12px', opacity: 0.7 }}>Rendering preview...</span>
+                <PulseLoader message="Rendering preview..." delayMs={0} />
               </div>
             )}
             {footerNav}

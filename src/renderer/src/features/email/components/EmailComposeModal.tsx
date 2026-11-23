@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react'
-import { X, Send, Paperclip, FileText, Loader2, Bold, Italic, Code, Link2, Eye, Edit3 } from 'lucide-react'
+import { X, Send, Paperclip, FileText, Bold, Italic, Code, Link2, Eye, Edit3 } from 'lucide-react'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { EmailComposeDraft, EmailAttachment } from '../types'
+import { PulseLoader } from '../../../components/PulseLoader'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { insertMarkdownSyntax, renderEmailBody } from '../services/emailMarkdownService'
 import { useKeyboardShortcuts } from '../../../core/shortcuts'
@@ -385,7 +386,7 @@ export const EmailComposeModal: React.FC<EmailComposeModalProps> = ({
           >
             {isSending ? (
               <>
-                <Loader2 size={12} className="animate-spin" />
+                <PulseLoader size="xs" inline delayMs={0} message="" tone="current" />
                 <span>Sending...</span>
               </>
             ) : (

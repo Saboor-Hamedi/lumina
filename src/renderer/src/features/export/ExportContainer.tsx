@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom'
 import {
   X,
   Download,
-  Loader2,
   CheckCircle2,
   FolderOpen,
   FileDown,
@@ -13,11 +12,15 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   FileText,
-  ArrowLeft
+  ArrowLeft,
+  Clipboard,
+  Check
 } from 'lucide-react'
+import { PulseLoader } from '../../components/PulseLoader'
 import ToolTip from '../../components/atoms/ToolTip'
 import { EXPORT_FORMATS, getFormat, type ExportFormat } from './formats'
 import { PREVIEW_COMPONENTS } from './previews'
+import { formatCopyableContent } from './exportEngine'
 import Toggle from '../../components/toggle/Toggle'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import './css/exportContainer.css'
@@ -102,12 +105,15 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
   const [bundleAssets, setBundleAssets] = useState(false)
   const [compressZip, setCompressZip] = useState(false)
   const [optimizeImages, setOptimizeImages] = useState(true)
+  const [stripMarkdown, setStripMarkdown] = useState(true)
+  const [includeTitle, setIncludeTitle] = useState(true)
   const [previewData, setPreviewData] = useState<{ key: string; html: string; pdfBase64?: string }>({ key: '', html: '' })
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
   const [success, setSuccess] = useState<SuccessState | null>(null)
   const [copied, setCopied] = useState(false)
+  const [copiedOutput, setCopiedOutput] = useState(false)
   const [themeTick, setThemeTick] = useState(0)
   const requestIdRef = useRef(0)
   const previewCacheRef = useRef<Map<string, { key: string; html: string; pdfBase64?: string }>>(new Map())
@@ -124,8 +130,18 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
   const activeFormat = useMemo(() => getFormat(format), [format])
   const PreviewComponent = PREVIEW_COMPONENTS[format]
   const activePreviewKey = useMemo(
-    () => makePreviewKey([format, title, content, includeToc, themeTick]),
-    [format, title, content, includeToc, themeTick]
+    () =>
+      makePreviewKey([
+        format,
+        title,
+        content,
+        includeToc,
+        optimizeImages,
+        stripMarkdown,
+        includeTitle,
+        themeTick
+      ]),
+    [format, title, content, includeToc, optimizeImages, stripMarkdown, includeTitle, themeTick]
   )
 
   // Note statistics
@@ -146,6 +162,8 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     setBundleAssets(false)
     setCompressZip(false)
     setOptimizeImages(true)
+    setStripMarkdown(true)
+    setIncludeTitle(true)
     setPreviewError(null)
     setPreviewData({ key: '', html: '' })
     setPreviewLoading(Boolean(content))
@@ -153,15 +171,17 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     setSuccess(null)
     setExporting(false)
     setCopied(false)
+    setCopiedOutput(false)
     previewCacheRef.current.clear()
   }, [isOpen, initialFormat])
 
   // Clear the previous result when the format changes so you can export again.
   useEffect(() => {
     setSuccess(null)
+    setPreviewError(null)
   }, [format])
 
-  // Generate the preview whenever the dialog opens, format changes, or TOC is toggled.
+  // Generate the preview whenever the dialog opens, format changes, or options are toggled.
   useEffect(() => {
     if (!isOpen || success) return
     if (!content) {
@@ -198,7 +218,10 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
       title,
       content,
       theme: readThemeTokens(),
-      toc: includeToc
+      toc: includeToc,
+      optimizeImages,
+      stripMarkdown,
+      includeTitle
     }).then((res: any) => {
       if (!isMounted || requestId !== requestIdRef.current) return
       if (!res || typeof res.html !== 'string') {
@@ -214,6 +237,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     }).catch((err: any) => {
       if (!isMounted || requestId !== requestIdRef.current) return
       console.error('[ExportContainer] Preview failed:', err)
+      setPreviewData({ key: '', html: '' })
       setPreviewError(err?.message || 'Failed to generate preview.')
       setPreviewLoading(false)
     })
@@ -221,12 +245,25 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     return () => {
       isMounted = false
     }
-  }, [isOpen, format, title, content, success, includeToc, themeTick, activePreviewKey])
+  }, [
+    isOpen,
+    format,
+    title,
+    content,
+    success,
+    includeToc,
+    optimizeImages,
+    stripMarkdown,
+    includeTitle,
+    themeTick,
+    activePreviewKey
+  ])
 
   const handleExport = useCallback(async () => {
     const api = (window as any).api
     const isZip = format === 'zip'
-    const isBundle = isZip || (format === 'markdown' && (bundleAssets || compressZip))
+    const activeCompressZip = format === 'markdown' && bundleAssets && compressZip
+    const isBundle = isZip || (format === 'markdown' && bundleAssets)
     const apiKey = isZip
       ? (typeof api?.exportZip === 'function' ? 'exportZip' : 'exportMarkdownBundle')
       : isBundle
@@ -247,14 +284,17 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
         content,
         language: 'markdown',
         toc: includeToc,
-        compressZip: isZip || (format === 'markdown' && compressZip),
-        optimizeImages
+        compressZip: isZip || activeCompressZip,
+        optimizeImages,
+        stripMarkdown,
+        includeTitle,
+        theme: readThemeTokens()
       })
       if (res?.success) {
         setSuccess({ filePath: res.filePath || '', format })
-        const label = isZip || compressZip
+        const label = isZip || activeCompressZip
           ? 'ZIP archive'
-          : bundleAssets
+          : format === 'markdown' && bundleAssets
             ? 'Markdown bundle'
             : activeFormat.label
         showToast?.(`${label} exported successfully.`, 'success')
@@ -278,6 +318,40 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
     bundleAssets,
     compressZip,
     optimizeImages,
+    stripMarkdown,
+    includeTitle,
+    showToast
+  ])
+
+  const handleCopyOutput = useCallback(async () => {
+    if (!content) return
+    try {
+      const copyable = await formatCopyableContent({
+        format,
+        title,
+        content,
+        toc: includeToc,
+        optimizeImages,
+        stripMarkdown,
+        includeTitle,
+        theme: readThemeTokens()
+      })
+      await navigator.clipboard.writeText(copyable)
+      setCopiedOutput(true)
+      setTimeout(() => setCopiedOutput(false), 1500)
+      showToast?.(`Copied ${activeFormat.label} to clipboard.`, 'success')
+    } catch {
+      showToast?.('Clipboard unavailable.', 'error')
+    }
+  }, [
+    format,
+    title,
+    content,
+    includeToc,
+    optimizeImages,
+    stripMarkdown,
+    includeTitle,
+    activeFormat.label,
     showToast
   ])
 
@@ -481,100 +555,132 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
             <div className={`export-body ${isSidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
               {isSidebarOpen && (
                 <aside className="export-formats" aria-label="Export format">
-                {/* Options / Toggle switches at the TOP */}
-                <div className="export-options-group">
-                  <span className="export-formats-heading">Options</span>
-
-                  {(format === 'pdf' || format === 'docs' || format === 'html') && (
-                    <div className="export-option-row" onClick={() => setIncludeToc((prev) => !prev)}>
-                      <div className="export-option-label">
-                        <span className="export-option-title">Table of Contents</span>
-                      </div>
-                      <Toggle
-                        checked={includeToc}
-                        onCheckedChange={setIncludeToc}
+                  {/* Formats anchored FIRST so clicking any format never shifts layout */}
+                  <div className="export-sidebar-section">
+                    <span className="export-formats-heading">Formats</span>
+                    {EXPORT_FORMATS.map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        className={`export-format-card ${format === f.id ? 'active' : ''}`}
+                        aria-pressed={format === f.id}
+                        onClick={() => setFormat(f.id)}
                         disabled={exporting}
-                        ariaLabel="Include Table of Contents"
-                      />
-                    </div>
-                  )}
+                        style={{ '--card-accent': f.accent } as React.CSSProperties}
+                      >
+                        <span
+                          className="export-format-icon"
+                          style={{ color: format === f.id ? f.accent : 'var(--text-muted)' }}
+                        >
+                          {f.icon}
+                        </span>
+                        <span className="export-format-text">
+                          <span className="export-format-title">{f.title}</span>
+                          <span className="export-format-ext-pill">{f.ext}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
 
-                  {format === 'markdown' && (
-                    <>
-                      <div className="export-option-row" onClick={() => setBundleAssets((prev) => !prev)}>
+                  {/* Format-specific toggles BELOW Formats so scrolling never jumps */}
+                  <div className="export-options-group">
+                    <span className="export-formats-heading">Options</span>
+
+                    {(format === 'pdf' || format === 'docs' || format === 'html') && (
+                      <div className="export-option-row" onClick={() => setIncludeToc((prev) => !prev)}>
                         <div className="export-option-label">
-                          <span className="export-option-title">Bundle Media</span>
+                          <span className="export-option-title">Table of Contents</span>
                         </div>
                         <Toggle
-                          checked={bundleAssets}
-                          onCheckedChange={(checked) => {
-                            setBundleAssets(checked)
-                            if (!checked) setCompressZip(false)
-                          }}
+                          checked={includeToc}
+                          onCheckedChange={setIncludeToc}
                           disabled={exporting}
-                          ariaLabel="Bundle Referenced Media"
+                          ariaLabel="Include Table of Contents"
                         />
                       </div>
+                    )}
 
-                      {bundleAssets && (
-                        <div className="export-option-row" onClick={() => setCompressZip((prev) => !prev)}>
+                    {format === 'markdown' && (
+                      <>
+                        <div className="export-option-row" onClick={() => setBundleAssets((prev) => !prev)}>
                           <div className="export-option-label">
-                            <span className="export-option-title">Compress as ZIP</span>
+                            <span className="export-option-title">Bundle Media</span>
                           </div>
                           <Toggle
-                            checked={compressZip}
-                            onCheckedChange={setCompressZip}
+                            checked={bundleAssets}
+                            onCheckedChange={(checked) => {
+                              setBundleAssets(checked)
+                              if (!checked) setCompressZip(false)
+                            }}
                             disabled={exporting}
-                            ariaLabel="Compress as ZIP Archive"
+                            ariaLabel="Bundle Referenced Media"
                           />
                         </div>
-                      )}
-                    </>
-                  )}
 
-                  {(format === 'pdf' ||
-                    format === 'docs' ||
-                    format === 'html' ||
-                    format === 'zip' ||
-                    (format === 'markdown' && bundleAssets)) && (
-                    <div className="export-option-row" onClick={() => setOptimizeImages((prev) => !prev)}>
-                      <div className="export-option-label">
-                        <span className="export-option-title">Optimize Images</span>
+                        {bundleAssets && (
+                          <div className="export-option-row" onClick={() => setCompressZip((prev) => !prev)}>
+                            <div className="export-option-label">
+                              <span className="export-option-title">Compress as ZIP</span>
+                            </div>
+                            <Toggle
+                              checked={compressZip}
+                              onCheckedChange={setCompressZip}
+                              disabled={exporting}
+                              ariaLabel="Compress as ZIP Archive"
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {(format === 'pdf' ||
+                      format === 'docs' ||
+                      format === 'html' ||
+                      format === 'zip' ||
+                      (format === 'markdown' && bundleAssets)) && (
+                      <div className="export-option-row" onClick={() => setOptimizeImages((prev) => !prev)}>
+                        <div className="export-option-label">
+                          <span className="export-option-title">Optimize Images</span>
+                        </div>
+                        <Toggle
+                          checked={optimizeImages}
+                          onCheckedChange={setOptimizeImages}
+                          disabled={exporting}
+                          ariaLabel="Optimize Images"
+                        />
                       </div>
-                      <Toggle
-                        checked={optimizeImages}
-                        onCheckedChange={setOptimizeImages}
-                        disabled={exporting}
-                        ariaLabel="Optimize Images"
-                      />
-                    </div>
-                  )}
-                </div>
+                    )}
 
-                <span className="export-formats-heading">Formats</span>
-                {EXPORT_FORMATS.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    className={`export-format-card ${format === f.id ? 'active' : ''}`}
-                    aria-pressed={format === f.id}
-                    onClick={() => setFormat(f.id)}
-                    disabled={exporting}
-                    style={{ '--card-accent': f.accent } as React.CSSProperties}
-                  >
-                    <span
-                      className="export-format-icon"
-                      style={{ color: format === f.id ? f.accent : 'var(--text-muted)' }}
-                    >
-                      {f.icon}
-                    </span>
-                    <span className="export-format-text">
-                      <span className="export-format-title">{f.title}</span>
-                      <span className="export-format-ext-pill">{f.ext}</span>
-                    </span>
-                  </button>
-                ))}
-              </aside>
+                    {format === 'text' && (
+                      <>
+                        <div className="export-option-row" onClick={() => setStripMarkdown((prev) => !prev)}>
+                          <div className="export-option-label">
+                            <span className="export-option-title">Strip Formatting</span>
+                          </div>
+                          <Toggle
+                            checked={stripMarkdown}
+                            onCheckedChange={setStripMarkdown}
+                            disabled={exporting}
+                            ariaLabel="Strip Formatting"
+                          />
+                        </div>
+                        <div className="export-option-row" onClick={() => setIncludeTitle((prev) => !prev)}>
+                          <div className="export-option-label">
+                            <span className="export-option-title">Include Title</span>
+                          </div>
+                          <Toggle
+                            checked={includeTitle}
+                            onCheckedChange={setIncludeTitle}
+                            disabled={exporting}
+                            ariaLabel="Include Title"
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="export-format-hint">{activeFormat.description}</div>
+                </aside>
               )}
               <section className="export-preview-pane" aria-label="Preview">
                 {hasContent ? (
@@ -582,7 +688,7 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
                     html={previewData.key === activePreviewKey ? previewData.html : ''}
                     pdfBase64={previewData.pdfBase64}
                     title={title}
-                    loading={previewLoading || previewData.key !== activePreviewKey}
+                    loading={previewLoading}
                     error={previewError}
                   />
                 ) : (
@@ -594,31 +700,45 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
             </div>
 
             <footer className="export-footer">
-              <button
-                type="button"
-                className="export-btn-ghost"
-                onClick={onClose}
-                disabled={exporting}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="export-btn-primary"
-                onClick={handleExport}
-                disabled={exporting || !hasContent}
-                autoFocus
-                title={!hasContent ? 'There is nothing to export' : undefined}
-              >
-                {exporting ? <Loader2 size={15} className="spin" /> : <Download size={15} />}
-                <span>
-                  {exporting
-                    ? 'Exporting…'
-                    : compressZip
-                      ? 'Export as ZIP Archive'
-                      : activeFormat.acceptLabel}
-                </span>
-              </button>
+              {(format === 'text' || format === 'markdown' || format === 'html') && (
+                <button
+                  type="button"
+                  className="export-btn-copy"
+                  onClick={handleCopyOutput}
+                  disabled={exporting || !hasContent}
+                  title={`Copy ${activeFormat.label} to clipboard`}
+                >
+                  {copiedOutput ? <Check size={13} /> : <Clipboard size={13} />}
+                  <span>{copiedOutput ? 'Copied' : `Copy ${activeFormat.label}`}</span>
+                </button>
+              )}
+              <div className="export-footer-right">
+                <button
+                  type="button"
+                  className="export-btn-ghost"
+                  onClick={onClose}
+                  disabled={exporting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="export-btn-primary"
+                  onClick={handleExport}
+                  disabled={exporting || !hasContent}
+                  autoFocus
+                  title={!hasContent ? 'There is nothing to export' : 'Export (Ctrl+Enter)'}
+                >
+                  {exporting ? <PulseLoader size="xs" inline delayMs={0} message="" tone="current" /> : <Download size={15} />}
+                  <span>
+                    {exporting
+                      ? 'Exporting…'
+                      : format === 'markdown' && bundleAssets && compressZip
+                        ? 'Export as ZIP Archive'
+                        : activeFormat.acceptLabel}
+                  </span>
+                </button>
+              </div>
             </footer>
           </>
         )}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react'
 import { useUpdateStore } from '../../core/store/UpdateSetting'
-import { Download, Loader2, CheckCircle2 } from 'lucide-react'
+import { Download, CheckCircle2 } from 'lucide-react'
+import { PulseLoader } from '../PulseLoader'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import UpdateHeader from './UpdateHeader'
 import UpdateFooter from './UpdateFooter'
@@ -273,7 +274,7 @@ export const UpdateDetails: React.FC = () => {
 
     if (status === 'installing') {
       return {
-        triggerIcon: <Loader2 size={13} strokeWidth={2.2} className="spin-animation" />,
+        triggerIcon: <PulseLoader size="xs" inline delayMs={0} message="" tone="current" />,
         triggerTooltip: 'Installing update...',
         triggerClass: 'has-update is-downloading'
       }
@@ -287,7 +288,7 @@ export const UpdateDetails: React.FC = () => {
     }
     if (status === 'downloading') {
       return {
-        triggerIcon: <Loader2 size={13} strokeWidth={2.2} className="spin-animation" />,
+        triggerIcon: <PulseLoader size="xs" inline delayMs={0} message="" tone="current" />,
         triggerTooltip: `Downloading update (${safePercent}%)...`,
         triggerClass: 'has-update is-downloading'
       }
@@ -301,7 +302,7 @@ export const UpdateDetails: React.FC = () => {
     }
     if (status === 'checking') {
       return {
-        triggerIcon: <Loader2 size={13} strokeWidth={2} className="spin-animation" />,
+        triggerIcon: <PulseLoader size="xs" inline delayMs={0} message="" tone="current" />,
         triggerTooltip: 'Checking for updates...',
         triggerClass: 'is-checking'
       }

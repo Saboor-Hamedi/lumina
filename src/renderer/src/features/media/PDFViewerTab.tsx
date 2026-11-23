@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { Loader } from 'lucide-react'
+import { PulseLoader } from '../../components/PulseLoader'
 import { ChromePdfIcon } from '../Icons/FileIcon'
 import { PDFToolbar, type PDFThemeMode } from './PDFToolbar'
 import type { Snippet } from '../../core/editor/types'
@@ -163,8 +163,7 @@ export const PDFViewerTab: React.FC<PDFViewerTabProps> = ({ snippet }) => {
       {/* Loading state (only shown on initial first fetch) */}
       {loading && (
         <div className="pdf-viewer-loading">
-          <Loader size={28} className="pdf-viewer-spin-icon" />
-          <span>Loading PDF...</span>
+          <PulseLoader message="Wait a second…" delayMs={0} />
         </div>
       )}
 

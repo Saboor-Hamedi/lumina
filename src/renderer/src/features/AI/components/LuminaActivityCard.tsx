@@ -5,10 +5,10 @@ import {
   RefreshCw,
   Trash2,
   Check,
-  Loader2,
   ChevronDown,
   ChevronRight
 } from 'lucide-react'
+import { PulseLoader } from '../../../components/PulseLoader'
 import { openNoteInEditor } from './LuminaChatLink'
 import { getEntityIconForTarget } from './LuminaEntityMention'
 import { LuminaTimer } from './LuminaTimer'
@@ -99,7 +99,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = React.memo(({ rawConten
       <div className="lumina-folder-tree-header" onClick={() => setIsExpanded((prev) => !prev)}>
         <div className="lumina-folder-tree-title-group">
           {hasActive ? (
-            <Loader2 size={12} className="lumina-activity-spinner lumina-folder-tree-icon" />
+            <PulseLoader size="xs" inline delayMs={0} message="" className="lumina-folder-tree-icon" />
           ) : (
             <FolderTree size={12} className="lumina-folder-tree-icon" />
           )}

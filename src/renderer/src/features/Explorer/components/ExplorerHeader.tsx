@@ -9,6 +9,7 @@ import {
   FoldVertical
 } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
+import { PulseLoader } from '../../../components/PulseLoader'
 import NoteNumbers from './NoteNumbers'
 
 export interface ExplorerHeaderProps {
@@ -231,7 +232,7 @@ export const ExplorerHeader: React.FC<ExplorerHeaderProps> = ({
                 disabled={isLoading}
                 style={{ opacity: isLoading ? 0.5 : 1 }}
               >
-                <RefreshCw size={14} className={isLoading ? 'spin-animation' : ''} />
+                {isLoading ? <PulseLoader size="xs" inline delayMs={0} message="" tone="current" /> : <RefreshCw size={14} />}
               </button>
             </ToolTip>
             <ToolTip text="Collapse Folders in Explorer">

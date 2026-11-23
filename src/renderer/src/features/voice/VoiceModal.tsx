@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react'
-import { Mic, X, Loader2, AlertCircle, Square } from 'lucide-react'
+import { Mic, X, AlertCircle, Square } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
+import { PulseLoader } from '../../components/PulseLoader'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import type { VoiceModalProps } from './types'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
@@ -147,7 +148,7 @@ export const VoiceModal: React.FC<VoiceModalProps> = ({
           </div>
         ) : isTranscribing ? (
           <div className="voice-transcribing-view">
-            <Loader2 size={16} className="voice-spinner" />
+            <PulseLoader size="sm" inline delayMs={0} message="" />
             <span style={{ fontSize: '10px', color: 'var(--text-muted, #94a3b8)' }}>Transcribing with Groq...</span>
           </div>
         ) : (

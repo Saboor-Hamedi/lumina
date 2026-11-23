@@ -19,6 +19,19 @@ import {
   pickEmailAttachments,
   showEmailNotification
 } from './gmailClient'
+import {
+  exportPreview,
+  exportHTML,
+  exportPDF,
+  exportDocs,
+  exportMarkdown,
+  exportMarkdownBundle,
+  exportZip,
+  exportText,
+  exportBatch,
+  exportCombined,
+  onBatchExportProgress
+} from '../features/export/exportEngine'
 
 const isTauriRuntime = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 
@@ -119,7 +132,7 @@ export function initTauriBridge(): void {
     openVaultFolder: (relativePath = '') => invoke('open_path_in_os', { path: relativePath }),
     openPath: (filePath: string) => invoke('open_path_in_os', { path: filePath }),
     openExternal: (url: string) => invoke('open_path_in_os', { path: url }),
-    showItemInFolder: (filePath: string) => invoke('open_path_in_os', { path: filePath }),
+    showItemInFolder: (filePath: string) => invoke('reveal_path_in_os', { path: filePath }),
     selectWorkspace: async () => {
       const res = await invoke('select_workspace')
       if (res) notifyWorkspaceUpdated()
@@ -176,6 +189,19 @@ export function initTauriBridge(): void {
     saveMemory: (memory: any) => invoke('save_memory', { memory }),
     getUserMemory: () => invoke('load_memory'),
     saveUserMemory: (memory: any) => invoke('save_memory', { memory }),
+
+    // Document Export Pipeline
+    exportPreview: (payload: any) => exportPreview(payload),
+    exportHTML: (payload: any) => exportHTML(payload),
+    exportPDF: (payload: any) => exportPDF(payload),
+    exportDocs: (payload: any) => exportDocs(payload),
+    exportMarkdown: (payload: any) => exportMarkdown(payload),
+    exportMarkdownBundle: (payload: any) => exportMarkdownBundle(payload),
+    exportZip: (payload: any) => exportZip(payload),
+    exportText: (payload: any) => exportText(payload),
+    exportBatch: (payload: any) => exportBatch(payload),
+    exportCombined: (payload: any) => exportCombined(payload),
+    onBatchExportProgress: (callback: (p: any) => void) => onBatchExportProgress(callback),
 
     // Dialogs
     confirmDelete: async (msg: string) => window.confirm(msg || 'Are you sure?'),

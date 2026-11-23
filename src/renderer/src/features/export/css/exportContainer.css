@@ -233,14 +233,17 @@
 
 .export-formats {
   width: 270px;
+  min-height: 0;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   padding: 12px;
   background: var(--bg-sidebar);
   border-right: 1px solid var(--border-dim);
   overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--border-subtle) transparent;
 }
@@ -259,6 +262,13 @@
 }
 .export-formats::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.22);
+}
+
+.export-sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .export-source-card {
@@ -302,15 +312,16 @@
 }
 
 .export-formats-heading {
-  padding: 2px 4px 6px;
+  padding: 2px 4px 4px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--text-faint);
+  flex-shrink: 0;
 }
 
-/* Sleek, compact format row (no bulky info/descriptions) */
+/* Sleek, compact format row */
 .export-format-card {
   display: flex;
   align-items: center;
@@ -318,6 +329,7 @@
   width: 100%;
   height: 32px;
   min-height: 32px;
+  flex-shrink: 0;
   padding: 0 10px;
   text-align: left;
   border: 1px solid transparent;
@@ -335,8 +347,9 @@
 }
 
 .export-format-card.active {
-  background: color-mix(in srgb, var(--card-accent, var(--text-accent)) 8%, transparent);
-  border-color: color-mix(in srgb, var(--card-accent, var(--text-accent)) 38%, transparent);
+  background: color-mix(in srgb, var(--card-accent, var(--text-accent)) 9%, transparent);
+  border-color: color-mix(in srgb, var(--card-accent, var(--text-accent)) 36%, transparent);
+  box-shadow: inset 2.5px 0 0 var(--card-accent, var(--text-accent));
 }
 
 .export-format-card:disabled {
@@ -414,21 +427,23 @@
   display: none !important;
 }
 
-/* ---- Document Options & Toggle Switch (Prominently placed at the TOP) ---- */
+/* ---- Document Options & Toggle Switch (Below fixed Formats list) ---- */
 .export-options-group {
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-dim);
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-dim);
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .export-option-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 10px;
+  flex-shrink: 0;
+  padding: 7px 10px;
   background: var(--bg-panel);
   border: 1px solid var(--border-card);
   border-radius: 8px;
@@ -457,6 +472,18 @@
 
 .export-option-desc {
   display: none !important;
+}
+
+.export-format-hint {
+  margin-top: auto;
+  padding: 8px 10px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-panel) 72%, transparent);
+  border: 1px solid var(--border-dim);
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-muted);
 }
 
 /* ---- Preview ---- */
@@ -601,11 +628,45 @@
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 10px;
   padding: 12px 16px;
   background: var(--bg-sidebar);
   border-top: 1px solid var(--border-dim);
+}
+
+.export-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.export-btn-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-card);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.export-btn-copy:hover:not(:disabled) {
+  background: var(--bg-active);
+  color: var(--text-main);
+  border-color: var(--border-subtle);
+}
+
+.export-btn-copy:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .export-btn-ghost {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { CheckCircle2, Download, Loader2, RefreshCw } from 'lucide-react'
+import { CheckCircle2, Download, RefreshCw } from 'lucide-react'
+import { PulseLoader } from '../PulseLoader'
 import type { UpdateStatus, UpdateProgress } from '../../core/store/UpdateSetting'
 
 export interface UpdateHeaderProps {
@@ -71,7 +72,7 @@ export const UpdateHeader: React.FC<UpdateHeaderProps> = ({
               className="header-action-btn downloading-btn"
               style={{ cursor: 'default' }}
             >
-              <Loader2 size={12} className="spin-animation" />
+              <PulseLoader size="xs" inline delayMs={0} message="" tone="current" />
               <span>{safePercent}%</span>
             </button>
           ) : status === 'ready' ? (
@@ -88,7 +89,7 @@ export const UpdateHeader: React.FC<UpdateHeaderProps> = ({
               disabled
               style={{ cursor: 'default' }}
             >
-              <Loader2 size={12} className="spin-animation" />
+              <PulseLoader size="xs" inline delayMs={0} message="" tone="current" />
               <span>Installing...</span>
             </button>
           ) : status === 'checking' ? (
@@ -97,7 +98,7 @@ export const UpdateHeader: React.FC<UpdateHeaderProps> = ({
               disabled
               style={{ cursor: 'default' }}
             >
-              <RefreshCw size={11} className="spin-animation" />
+              <PulseLoader size="xs" inline delayMs={0} message="" tone="current" />
               <span>Checking...</span>
             </button>
           ) : status === 'not-available' ? (

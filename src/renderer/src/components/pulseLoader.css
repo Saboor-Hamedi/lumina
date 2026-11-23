@@ -96,3 +96,35 @@
     opacity: 0;
   }
 }
+
+.lumina-pulse-loader.size-xs {
+  gap: 6px;
+}
+
+.lumina-pulse-loader.size-xs .lumina-pulse-emblem {
+  width: 14px;
+  height: 14px;
+}
+
+.lumina-pulse-loader.size-xs .lumina-pulse-dot {
+  width: 4px;
+  height: 4px;
+  box-shadow: 0 0 6px var(--accent-primary, #40bafa);
+}
+
+.lumina-pulse-loader.size-xs .lumina-pulse-ring {
+  border-width: 1px;
+}
+
+.lumina-pulse-loader.tone-current .lumina-pulse-dot {
+  background: currentColor;
+  box-shadow: none;
+}
+
+.lumina-pulse-loader.tone-current .lumina-pulse-ring {
+  border-color: currentColor;
+}
+
+.lumina-pulse-message:empty {
+  display: none;
+}

@@ -1,6 +1,7 @@
 import React, { useRef } from 'react'
-import { Mic, Loader2 } from 'lucide-react'
+import { Mic } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
+import { PulseLoader } from '../../components/PulseLoader'
 import { useVoice } from './hooks/Voice'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import type { VoiceButtonProps } from './types'
@@ -106,7 +107,7 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
           style={buttonStyle || undefined}
         >
           {isThisTranscribing ? (
-            <Loader2 size={12} className="voice-spinner" />
+            <PulseLoader size="xs" inline delayMs={0} message="" tone="current" />
           ) : (
             <Mic size={12} className={isThisRecording ? 'voice-mic-icon' : ''} />
           )}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Loader2, CheckCircle2 } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
+import { PulseLoader } from './PulseLoader'
 import '../assets/indexingStatus.css'
 
 const Indexing = () => {
@@ -75,7 +76,7 @@ const Indexing = () => {
           {isComplete ? (
             <CheckCircle2 size={15} />
           ) : (
-            <Loader2 size={15} className="indexing-icon-spin" />
+            <PulseLoader size="xs" inline delayMs={0} message="" />
           )}
         </div>
 

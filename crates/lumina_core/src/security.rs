@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
-fn strip_verbatim_prefix(p: &Path) -> PathBuf {
+pub fn strip_verbatim_prefix(p: &Path) -> PathBuf {
     #[cfg(windows)]
     {
         let s = p.to_string_lossy();
@@ -44,7 +44,7 @@ fn components_equal(a: &Component<'_>, b: &Component<'_>) -> bool {
     }
 }
 
-fn is_within_root(root: &Path, candidate: &Path) -> bool {
+pub fn is_within_root(root: &Path, candidate: &Path) -> bool {
     let root_norm = normalize_path_for_compare(root);
     let cand_norm = normalize_path_for_compare(candidate);
     let root_comps: Vec<_> = root_norm.components().collect();
@@ -58,7 +58,7 @@ fn is_within_root(root: &Path, candidate: &Path) -> bool {
         .all(|(r, c)| components_equal(r, c))
 }
 
-fn is_same_path(a: &Path, b: &Path) -> bool {
+pub fn is_same_path(a: &Path, b: &Path) -> bool {
     is_within_root(a, b) && is_within_root(b, a)
 }
 

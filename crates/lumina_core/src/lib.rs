@@ -5,12 +5,14 @@ pub mod scanner;
 pub mod search;
 pub mod secrets;
 pub mod security;
+pub mod zip_util;
 
 pub use graph::{build_graph_data_impl, GraphData, GraphLink, GraphNode, NoteInput};
 pub use scanner::{scan_vault_impl, ScanResult, ScannedNote};
 pub use search::{search_notes_impl, SearchHit, SearchIndexItem};
 pub use security::{
-    canonicalize_or_normalize, ensure_not_workspace_root, is_safe_external_url, safe_join_workspace,
+    canonicalize_or_normalize, ensure_not_workspace_root, is_safe_external_url, is_same_path,
+    is_within_root, safe_join_workspace, strip_verbatim_prefix,
 };
 
 pub fn get_core_version() -> String {

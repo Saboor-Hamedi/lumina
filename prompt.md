@@ -14,7 +14,7 @@ Tackle items **one by one** in strict order: complete **1 → 2 → 3** first, t
 ---
 
 ## 2. Missing / Stubbed Features from the Electron Migration
-- [ ] **2a. Export pipeline**: Restore `exportPreview`, `exportHTML`, `exportMarkdown`, `exportMarkdownBundle`, `exportText`, `exportPDF`, `exportDocs`, `exportZip`, `exportBatch`, and `onBatchExportProgress` so `ExportContainer` and `BatchExportDialog` work end-to-end.
+- [x] **2a. Export pipeline**: Restore `exportPreview`, `exportHTML`, `exportMarkdown`, `exportMarkdownBundle`, `exportText`, `exportPDF`, `exportDocs`, `exportZip`, `exportBatch`, `exportCombined`, and `onBatchExportProgress` (`src/renderer/src/features/export/exportEngine.ts`, `src-tauri/src/export.rs`, `crates/lumina_core/src/zip_util.rs`), fix the infinite preview spinner, stabilize & polish the export sidebar (including Plain Text options, copy action, and flicker-free pinch zoom), and wire native Chromium/WebView2 PDF printing.
 - [ ] **2b. Backup pipeline**: Restore `backupWorkspace`, `backupFile`, `cancelBackup`, and progress events (Google Drive upload + local ZIP backup).
 - [ ] **2c. Live workspace file watcher**: Watch the active workspace directory in Rust and emit Tauri events to drive `onWorkspaceUpdated` on external file changes.
 - [ ] **2d. Clipboard & remaining bridge stubs**: Implement native clipboard image read/write (`readClipboardImageBuffer`, `writeImageToClipboard` via `arboard`), `getVersion()` via `@tauri-apps/api/app`, `getNotes`/`deleteNote` aliases, `importExternalPaths`, `saveImageFromPath`, `cleanOrphans`, `openFile`, `openDevTools`, `setWindowOpacity`, and `terminalAttach` history replay.

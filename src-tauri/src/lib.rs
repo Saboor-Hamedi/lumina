@@ -1,6 +1,8 @@
 mod commands;
+mod export;
 
 pub use commands::*;
+pub use export::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -47,6 +49,14 @@ pub fn run() {
             bulk_delete,
             select_workspace,
             open_path_in_os,
+            reveal_path_in_os,
+            export_pick_save_path,
+            export_pick_directory,
+            export_unique_path,
+            export_write_file,
+            export_write_markdown_bundle,
+            export_write_zip,
+            export_render_pdf,
             save_workspace_image,
             read_asset_bytes,
             get_setting,

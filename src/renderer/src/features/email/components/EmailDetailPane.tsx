@@ -1,6 +1,7 @@
 import React from 'react'
-import { Mail, Reply, Star, Trash2, Paperclip, Loader2, PanelRightClose, ArrowLeft } from 'lucide-react'
+import { Mail, Reply, Star, Trash2, Paperclip, PanelRightClose, ArrowLeft } from 'lucide-react'
 import { EmailMessageDetails } from '../types'
+import { PulseLoader } from '../../../components/PulseLoader'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { renderEmailBody } from '../services/emailMarkdownService'
 
@@ -179,8 +180,7 @@ export const EmailDetailPane: React.FC<EmailDetailPaneProps> = ({
       <div className="email-detail-scrollable">
         {isLoadingDetails ? (
           <div className="email-empty-state">
-            <Loader2 size={22} className="animate-spin" style={{ color: 'var(--text-accent, #40bafa)' }} />
-            <span style={{ fontSize: '11px' }}>Loading email content...</span>
+            <PulseLoader message="Loading email content..." delayMs={0} />
           </div>
         ) : activeEmailDetails ? (
           <>

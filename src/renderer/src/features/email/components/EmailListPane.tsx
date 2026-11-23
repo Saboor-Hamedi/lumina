@@ -1,6 +1,7 @@
 import React from 'react'
-import { Search, Loader2, Trash2, ShieldAlert, PanelLeftOpen, PanelLeftClose, PanelRightOpen, PanelRightClose } from 'lucide-react'
+import { Search, Trash2, ShieldAlert, PanelLeftOpen, PanelLeftClose, PanelRightOpen, PanelRightClose } from 'lucide-react'
 import { EmailMessageSummary, EmailFolder } from '../types'
+import { PulseLoader } from '../../../components/PulseLoader'
 import ToolTip from '../../../components/atoms/ToolTip'
 
 /**
@@ -134,8 +135,7 @@ export const EmailListPane: React.FC<EmailListPaneProps> = ({
 
         {isLoadingList ? (
           <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-faint)' }}>
-            <Loader2 size={16} className="animate-spin" style={{ margin: '0 auto 8px auto' }} />
-            <span style={{ fontSize: '11px' }}>Loading emails...</span>
+            <PulseLoader message="Loading emails..." delayMs={0} />
           </div>
         ) : emails.length === 0 ? (
           <div style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--text-faint)', fontSize: '11.5px' }}>

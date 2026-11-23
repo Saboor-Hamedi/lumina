@@ -2,7 +2,8 @@ import React, { useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { GripVertical, X, Check, Copy, Loader2 } from 'lucide-react'
+import { GripVertical, X, Check, Copy } from 'lucide-react'
+import { PulseLoader } from '../../components/PulseLoader'
 import { useInlineDragAndPosition } from './hooks/useInlineDragAndPosition'
 import { useInlineContextExtractor } from './hooks/useInlineContextExtractor'
 import { useInlineGeneration } from './hooks/useInlineGeneration'
@@ -118,7 +119,7 @@ const InlineLumina: React.FC<InlineLuminaProps> = ({
             disabled={!query.trim() || isGenerating}
             title="Send (Enter)"
           >
-            {isGenerating ? <Loader2 size={14} className="spinning" /> : <Check size={14} />}
+            {isGenerating ? <PulseLoader size="xs" inline delayMs={0} message="" tone="current" /> : <Check size={14} />}
           </button>
           <button
             type="button"
