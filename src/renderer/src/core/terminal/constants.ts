@@ -6,7 +6,7 @@ import type { ITheme } from '@xterm/xterm'
 export const TERMINAL_FONT = '"JetBrains Mono", "Fira Code", "Cascadia Code", "Cascadia Mono", "Segoe UI Symbol", "Segoe UI Emoji", Consolas, monospace'
 
 export const DEFAULT_FONT_SIZE = 13
-export const DEFAULT_SCROLLBACK = 20_000
+export const DEFAULT_SCROLLBACK = 10_000
 
 /** VSCode / Modern Windows Terminal-grade dark theme tuned for Lumina */
 export const XTERM_THEME: ITheme = {
@@ -83,6 +83,9 @@ export function getActiveTerminalTheme(): ITheme {
       cursor: cursorColor,
       cursorAccent: bg,
       selectionBackground: selectionBg,
+      scrollbarSliderBackground: 'rgba(60, 48, 34, 0.20)',
+      scrollbarSliderHoverBackground: 'rgba(60, 48, 34, 0.38)',
+      scrollbarSliderActiveBackground: 'rgba(60, 48, 34, 0.52)',
       black: '#2b2116',
       red: '#b91c1c',
       green: '#15803d',
@@ -108,6 +111,9 @@ export function getActiveTerminalTheme(): ITheme {
     cursor: cursorColor,
     cursorAccent: bg,
     selectionBackground: selectionBg,
+    scrollbarSliderBackground: 'rgba(160, 160, 160, 0.22)',
+    scrollbarSliderHoverBackground: 'rgba(160, 160, 160, 0.42)',
+    scrollbarSliderActiveBackground: 'rgba(160, 160, 160, 0.55)',
     black: '#18181b',
     red: '#f87171',
     green: '#4ade80',

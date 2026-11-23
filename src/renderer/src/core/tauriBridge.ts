@@ -203,6 +203,52 @@ export function initTauriBridge(): void {
     return '1.1.2'
   }
 
+  let lastIndexStats = { totalChunks: 0, indexedFiles: 0, lastIndexedAt: 0 }
+
+  const emitIndexProgress = (data: any) => {
+    indexProgressListeners.forEach((cb) => {
+      try {
+        cb(data)
+      } catch {}
+    })
+  }
+
+  const runWorkspaceIndexing = async (
+    workspacePath?: string | null,
+    options: { force?: boolean; onProgress?: ((p: number) => void) | null } = {}
+  ) => {
+    emitIndexProgress({ stage: 'starting', indexed: 0, total: 0, progress: 0 })
+    const validPath = workspacePath && typeof workspacePath === 'string' ? workspacePath : null
+    const scan = await invoke<any>('scan_workspace', { vaultPath: validPath })
+    const notes: any[] = Array.isArray(scan?.notes) ? scan.notes : []
+    const total = notes.length || Number(scan?.total_scanned) || 0
+
+    if (!options.force && lastIndexStats.lastIndexedAt > 0 && total === lastIndexStats.indexedFiles) {
+      emitIndexProgress({ stage: 'up-to-date', indexed: total, total, progress: 100 })
+      options.onProgress?.(100)
+      return { success: true, indexed: true, totalFiles: total }
+    }
+
+    const mid = Math.max(0, Math.floor(total * 0.5))
+    emitIndexProgress({ stage: 'indexing', indexed: mid, total, progress: 50 })
+    options.onProgress?.(50)
+
+    const totalChunks = notes.reduce((acc, n) => {
+      const len = typeof n?.content === 'string' ? n.content.length : 0
+      return acc + Math.max(1, Math.ceil(len / 1000))
+    }, 0)
+
+    lastIndexStats = {
+      totalChunks,
+      indexedFiles: total,
+      lastIndexedAt: Date.now()
+    }
+
+    emitIndexProgress({ stage: 'completed', indexed: total, total, progress: 100 })
+    options.onProgress?.(100)
+    return { success: true, indexed: true, totalFiles: total }
+  }
+
   const tauriApi = {
     getPathForFile: (file: any) => file?.path || file?.name || '',
 
@@ -564,10 +610,27 @@ export function initTauriBridge(): void {
     },
 
     // Indexing & Search (Native Rust Rayon Engine)
-    indexWorkspace: async () => ({ indexed: true }),
-    indexVault: async () => ({ indexed: true }),
-    rebuildIndex: async () => ({ indexed: true }),
-    getIndexStats: async () => ({ totalChunks: 0, indexedFiles: 0 }),
+    indexWorkspace: (workspacePath?: string | null, options?: { force?: boolean; onProgress?: ((p: number) => void) | null }) =>
+      runWorkspaceIndexing(workspacePath, options),
+    indexVault: (vaultPath?: string | null, options?: { force?: boolean; onProgress?: ((p: number) => void) | null }) =>
+      runWorkspaceIndexing(vaultPath, options),
+    rebuildIndex: (workspacePath?: string | null) =>
+      runWorkspaceIndexing(workspacePath, { force: true }),
+    getIndexStats: async () => {
+      if (lastIndexStats.lastIndexedAt === 0 && isTauriRuntime) {
+        try {
+          const scan = await invoke<any>('scan_workspace', { vaultPath: null })
+          const notes: any[] = Array.isArray(scan?.notes) ? scan.notes : []
+          const total = notes.length || Number(scan?.total_scanned) || 0
+          const totalChunks = notes.reduce((acc, n) => {
+            const len = typeof n?.content === 'string' ? n.content.length : 0
+            return acc + Math.max(1, Math.ceil(len / 1000))
+          }, 0)
+          lastIndexStats = { totalChunks, indexedFiles: total, lastIndexedAt: Date.now() }
+        } catch {}
+      }
+      return { ...lastIndexStats }
+    },
     onIndexProgress: (cb: (data: any) => void) => {
       indexProgressListeners.add(cb)
       return () => indexProgressListeners.delete(cb)
@@ -597,29 +660,41 @@ export function initTauriBridge(): void {
     terminalKill: (sessionId: string) => invoke('pty_kill_tauri', { sessionId }),
     onTerminalData: (sessionId: string, callback: (data: string) => void) => {
       if (!isTauriRuntime) return () => {}
+      let disposed = false
       let unlisten: (() => void) | null = null
       listen<string>(`terminal:data:${sessionId}`, (event) => {
-        callback(event.payload)
+        if (!disposed) callback(event.payload)
       })
         .then((fn) => {
-          unlisten = fn
+          if (disposed) {
+            fn()
+          } else {
+            unlisten = fn
+          }
         })
         .catch(() => {})
       return () => {
+        disposed = true
         if (unlisten) unlisten()
       }
     },
     onTerminalExit: (sessionId: string, callback: (code: number) => void) => {
       if (!isTauriRuntime) return () => {}
+      let disposed = false
       let unlisten: (() => void) | null = null
       listen<number>(`terminal:exit:${sessionId}`, (event) => {
-        callback(event.payload)
+        if (!disposed) callback(event.payload)
       })
         .then((fn) => {
-          unlisten = fn
+          if (disposed) {
+            fn()
+          } else {
+            unlisten = fn
+          }
         })
         .catch(() => {})
       return () => {
+        disposed = true
         if (unlisten) unlisten()
       }
     },

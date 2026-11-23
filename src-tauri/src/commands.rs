@@ -1571,6 +1571,7 @@ struct TauriPtySession {
     master: Mutex<Box<dyn MasterPty + Send>>,
     writer: Mutex<Box<dyn Write + Send>>,
     killer: Mutex<Box<dyn ChildKiller + Send + Sync>>,
+    last_size: Mutex<(u16, u16)>,
 }
 
 static TAURI_PTY_SESSIONS: OnceLock<Mutex<HashMap<String, Arc<TauriPtySession>>>> = OnceLock::new();
@@ -1589,54 +1590,61 @@ pub struct ShellProfile {
     pub is_default: bool,
 }
 
+static CACHED_SHELLS: OnceLock<Vec<ShellProfile>> = OnceLock::new();
+
 fn terminal_get_shells_sync() -> Vec<ShellProfile> {
-    let mut shells = Vec::new();
-    #[cfg(target_os = "windows")]
-    {
-        let git_bash_candidates = [
-            r"C:\Program Files\Git\bin\bash.exe",
-            r"C:\Program Files\Git\usr\bin\bash.exe",
-            r"C:\Program Files (x86)\Git\bin\bash.exe",
-        ];
-        for candidate in git_bash_candidates {
-            if Path::new(candidate).exists() {
+    CACHED_SHELLS
+        .get_or_init(|| {
+            let mut shells = Vec::new();
+            #[cfg(target_os = "windows")]
+            {
+                let git_bash_candidates = [
+                    r"C:\Program Files\Git\bin\bash.exe",
+                    r"C:\Program Files\Git\usr\bin\bash.exe",
+                    r"C:\Program Files (x86)\Git\bin\bash.exe",
+                ];
+                for candidate in git_bash_candidates {
+                    if Path::new(candidate).exists() {
+                        shells.push(ShellProfile {
+                            id: "git-bash".to_string(),
+                            label: "Git Bash".to_string(),
+                            path: candidate.to_string(),
+                            // Omit --login to skip slow MSYS2 /etc/profile.d probes (3-5x faster startup)
+                            args: vec!["-i".to_string()],
+                            is_default: true,
+                        });
+                        break;
+                    }
+                }
                 shells.push(ShellProfile {
-                    id: "git-bash".to_string(),
-                    label: "Git Bash".to_string(),
-                    path: candidate.to_string(),
-                    args: vec!["--login".to_string(), "-i".to_string()],
+                    id: "powershell".to_string(),
+                    label: "PowerShell".to_string(),
+                    path: "powershell.exe".to_string(),
+                    args: vec!["-NoLogo".to_string()],
+                    is_default: shells.is_empty(),
+                });
+                shells.push(ShellProfile {
+                    id: "cmd".to_string(),
+                    label: "Command Prompt".to_string(),
+                    path: "cmd.exe".to_string(),
+                    args: vec![],
+                    is_default: false,
+                });
+            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                let sh = std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string());
+                shells.push(ShellProfile {
+                    id: "default".to_string(),
+                    label: "Shell".to_string(),
+                    path: sh,
+                    args: vec!["-i".to_string()],
                     is_default: true,
                 });
-                break;
             }
-        }
-        shells.push(ShellProfile {
-            id: "powershell".to_string(),
-            label: "PowerShell".to_string(),
-            path: "powershell.exe".to_string(),
-            args: vec!["-NoLogo".to_string()],
-            is_default: shells.is_empty(),
-        });
-        shells.push(ShellProfile {
-            id: "cmd".to_string(),
-            label: "Command Prompt".to_string(),
-            path: "cmd.exe".to_string(),
-            args: vec![],
-            is_default: false,
-        });
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        let sh = std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string());
-        shells.push(ShellProfile {
-            id: "default".to_string(),
-            label: "Shell".to_string(),
-            path: sh,
-            args: vec!["-l".to_string()],
-            is_default: true,
-        });
-    }
-    shells
+            shells
+        })
+        .clone()
 }
 
 #[tauri::command]
@@ -1701,6 +1709,12 @@ pub async fn terminal_spawn(
         }
         cmd.env("TERM", "xterm-256color");
         cmd.env("COLORTERM", "truecolor");
+        cmd.env("TERM_PROGRAM", "Lumina");
+        #[cfg(target_os = "windows")]
+        {
+            cmd.env("MSYSTEM", "MINGW64");
+            cmd.env("CHERE_INVOKING", "1");
+        }
 
         let mut child = pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;
         let pid = child.process_id().unwrap_or(0);
@@ -1714,6 +1728,7 @@ pub async fn terminal_spawn(
             master: Mutex::new(pair.master),
             writer: Mutex::new(writer),
             killer: Mutex::new(killer),
+            last_size: Mutex::new((cols.max(10), rows.max(2))),
         });
 
         if let Ok(mut map) = tauri_sessions().lock() {
@@ -1728,13 +1743,60 @@ pub async fn terminal_spawn(
         let sid_reader = session_id.clone();
         let app_reader = app.clone();
         std::thread::spawn(move || {
-            let mut buf = [0u8; 8192];
+            let mut buf = [0u8; 16384];
+            let mut pending_utf8: Vec<u8> = Vec::with_capacity(8);
             let channel = format!("terminal:data:{}", sid_reader);
             while let Ok(n) = reader.read(&mut buf) {
                 if n == 0 {
                     break;
                 }
-                let text = String::from_utf8_lossy(&buf[..n]).to_string();
+                let slice: &[u8] = if pending_utf8.is_empty() {
+                    &buf[..n]
+                } else {
+                    pending_utf8.extend_from_slice(&buf[..n]);
+                    &pending_utf8
+                };
+
+                let mut out = String::with_capacity(slice.len());
+                let mut rest = slice;
+                let mut carry: Option<Vec<u8>> = None;
+
+                while !rest.is_empty() {
+                    match std::str::from_utf8(rest) {
+                        Ok(valid) => {
+                            out.push_str(valid);
+                            break;
+                        }
+                        Err(e) => {
+                            let valid_up_to = e.valid_up_to();
+                            if valid_up_to > 0 {
+                                if let Ok(valid) = std::str::from_utf8(&rest[..valid_up_to]) {
+                                    out.push_str(valid);
+                                }
+                            }
+                            if let Some(err_len) = e.error_len() {
+                                out.push('\u{FFFD}');
+                                rest = &rest[valid_up_to + err_len..];
+                            } else {
+                                // Incomplete trailing UTF-8 sequence — carry into next read
+                                carry = Some(rest[valid_up_to..].to_vec());
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                pending_utf8.clear();
+                if let Some(c) = carry {
+                    pending_utf8 = c;
+                }
+
+                if !out.is_empty() {
+                    let _ = app_reader.emit(&channel, out);
+                }
+            }
+            if !pending_utf8.is_empty() {
+                let text = String::from_utf8_lossy(&pending_utf8).to_string();
                 let _ = app_reader.emit(&channel, text);
             }
         });
@@ -1791,10 +1853,17 @@ pub async fn pty_resize_tauri(
             .ok()
             .and_then(|m| m.get(&session_id).cloned());
         if let Some(s) = sess {
+            let clamped = (cols.max(10), rows.max(2));
+            if let Ok(mut last) = s.last_size.lock() {
+                if *last == clamped {
+                    return Ok(true);
+                }
+                *last = clamped;
+            }
             if let Ok(m) = s.master.lock() {
                 let _ = m.resize(PtySize {
-                    rows: rows.max(2),
-                    cols: cols.max(10),
+                    rows: clamped.1,
+                    cols: clamped.0,
                     pixel_width: 0,
                     pixel_height: 0,
                 });
@@ -2075,7 +2144,7 @@ pub async fn login_with_google(app: tauri::AppHandle, client_id: String) -> Resu
             form_body.push_str(&format!("&client_secret={}", percent_encode(&client_secret)));
         }
 
-        let token_out = match Command::new("curl")
+        let token_out = match command_no_window("curl")
             .args([
                 "-s",
                 "-X",
@@ -2110,7 +2179,7 @@ pub async fn login_with_google(app: tauri::AppHandle, client_id: String) -> Resu
             _ => return json!({ "error": "No access token returned by Google." }),
         };
 
-        let user_out = Command::new("curl")
+        let user_out = command_no_window("curl")
             .args([
                 "-s",
                 "-H",
@@ -2231,7 +2300,7 @@ pub async fn get_google_access_token(force_refresh: Option<bool>) -> Result<Valu
             form_body.push_str(&format!("&client_secret={}", percent_encode(&client_secret)));
         }
 
-        let out = match Command::new("curl")
+        let out = match command_no_window("curl")
             .args([
                 "-s",
                 "-X",
@@ -2362,6 +2431,16 @@ fn sanitize_update_filename(name: &str) -> String {
     }
 }
 
+fn command_no_window(program: &str) -> Command {
+    let mut cmd = Command::new(program);
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    cmd
+}
+
 #[tauri::command]
 pub async fn download_app_update(
     app: tauri::AppHandle,
@@ -2387,15 +2466,21 @@ pub async fn download_app_update(
         let part_path = update_dir.join(format!("{}.part", safe_name));
         let _ = fs::remove_file(&part_path);
 
-        let mut child = Command::new("curl")
-            .args([
-                "-fSL",
-                "--silent",
-                "--show-error",
-                "-o",
-                &part_path.to_string_lossy(),
-                &trimmed_url,
-            ])
+        let mut cmd = Command::new("curl");
+        cmd.args([
+            "-fSL",
+            "--silent",
+            "--show-error",
+            "-o",
+            &part_path.to_string_lossy(),
+            &trimmed_url,
+        ]);
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        }
+        let mut child = cmd
             .spawn()
             .map_err(|e| format!("Failed to start download: {}", e))?;
 
@@ -2477,7 +2562,39 @@ pub async fn install_app_update(app: tauri::AppHandle, path: String) -> Result<b
 
     #[cfg(target_os = "windows")]
     {
-        Command::new(&canon_target)
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+        let is_msi = canon_target
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(|e| e.eq_ignore_ascii_case("msi"))
+            .unwrap_or(false);
+
+        let installer_str = canon_target.to_string_lossy().to_string();
+        let current_exe = std::env::current_exe()
+            .ok()
+            .map(|p| p.to_string_lossy().to_string());
+
+        let mut cmd = Command::new("cmd");
+        if is_msi {
+            let script = if let Some(exe) = current_exe {
+                format!("msiexec /i \"{}\" /passive && start \"\" \"{}\"", installer_str, exe)
+            } else {
+                format!("msiexec /i \"{}\" /passive", installer_str)
+            };
+            cmd.args(["/C", &script]);
+        } else {
+            // Silent NSIS upgrade (/S) upgrades in-place without prompting to uninstall first,
+            // then relaunches the updated app with no visible console window.
+            let script = if let Some(exe) = current_exe {
+                format!("\"{}\" /S && start \"\" \"{}\"", installer_str, exe)
+            } else {
+                format!("\"{}\" /S", installer_str)
+            };
+            cmd.args(["/C", &script]);
+        }
+        cmd.creation_flags(CREATE_NO_WINDOW)
             .spawn()
             .map_err(|e| format!("Failed to launch installer: {}", e))?;
         app.exit(0);

@@ -91,10 +91,10 @@ export const Theme: React.FC<ThemeProps> = ({
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const paneRef = useRef<HTMLDivElement | null>(null)
 
-  // Esc key closes modal / sidebar view only when active
+  // Esc key closes standalone modal/drawer only (never the docked left sidebar)
   useKeyboardShortcuts({
     onEscape: () => {
-      if (isOpen && onClose) {
+      if (isOpen && !isEmbedded && onClose) {
         onClose()
         return true
       }

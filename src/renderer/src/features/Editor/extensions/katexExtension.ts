@@ -1,28 +1,52 @@
-import { Decoration, WidgetType, EditorView } from '@codemirror/view'
-import { RangeSetBuilder, StateField } from '@codemirror/state'
+import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view'
+import { type EditorState, RangeSetBuilder, StateField } from '@codemirror/state'
 import katex from 'katex'
 import './katex.css'
 
+export interface MathRange {
+  from: number
+  to: number
+  latex: string
+  isBlock: boolean
+}
+
 class KaTeXWidget extends WidgetType {
-  constructor(latex, isBlock, from, to) {
+  constructor(
+    readonly latex: string,
+    readonly isBlock: boolean,
+    readonly from: number,
+    readonly to: number,
+    readonly isLivePreview = false,
+    readonly editPos?: number
+  ) {
     super()
-    this.latex = latex
-    this.isBlock = isBlock
-    this.from = from
-    this.to = to
   }
 
-  get estimatedHeight() {
+  get estimatedHeight(): number {
     return this.isBlock ? 60 : -1
   }
 
-  eq(other) {
-    return other.latex === this.latex && other.isBlock === this.isBlock
+  eq(other: WidgetType): boolean {
+    return (
+      other instanceof KaTeXWidget &&
+      other.latex === this.latex &&
+      other.isBlock === this.isBlock &&
+      other.isLivePreview === this.isLivePreview &&
+      other.from === this.from &&
+      other.to === this.to
+    )
   }
 
-  toDOM(view) {
+  toDOM(view: EditorView): HTMLElement {
     const el = document.createElement(this.isBlock ? 'div' : 'span')
-    el.className = this.isBlock ? 'cm-katex-block' : 'cm-katex-inline'
+    el.className = this.isBlock
+      ? this.isLivePreview
+        ? 'cm-katex-block cm-katex-live-preview'
+        : 'cm-katex-block'
+      : 'cm-katex-inline'
+    if (this.isBlock) {
+      el.contentEditable = 'false'
+    }
 
     const content = document.createElement(this.isBlock ? 'div' : 'span')
     if (this.isBlock) {
@@ -54,12 +78,12 @@ class KaTeXWidget extends WidgetType {
         '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
       copyBtn.innerHTML = copyIconSvg
 
-      let resetTimer = null
-      copyBtn.addEventListener('mousedown', (e) => {
+      let resetTimer: ReturnType<typeof setTimeout> | null = null
+      copyBtn.addEventListener('mousedown', (e: MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
       })
-      copyBtn.addEventListener('click', async (e) => {
+      copyBtn.addEventListener('click', async (e: MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
         try {
@@ -79,34 +103,74 @@ class KaTeXWidget extends WidgetType {
       el.appendChild(copyBtn)
     }
 
-    el.addEventListener('click', (e) => {
-      if (e.target && e.target.closest && e.target.closest('.cm-katex-copy-btn')) {
-        return
-      }
+    const root =
+      this.isBlock && this.isLivePreview ? document.createElement('div') : el
+
+    if (root !== el) {
+      root.className = 'cm-katex-live-preview-wrap'
+      root.contentEditable = 'false'
+      root.appendChild(el)
+    }
+
+    const focusBlockSource = (e: Event) => {
+      const target = e.target as HTMLElement | null
+      if (target?.closest?.('.cm-katex-copy-btn')) return
       e.preventDefault()
       e.stopPropagation()
+      if (this.isLivePreview) {
+        view.focus()
+        return
+      }
+      const targetPos = this.editPos ?? this.from + (this.isBlock ? 2 : 1)
+      const clampedPos = Math.max(0, Math.min(targetPos, view.state.doc.length))
       view.dispatch({
-        selection: { anchor: this.from + (this.isBlock ? 2 : 1) }
+        selection: { anchor: clampedPos }
       })
       view.focus()
-    })
+    }
 
-    return el
+    if (this.isBlock) {
+      root.addEventListener('mousedown', focusBlockSource)
+      root.addEventListener('click', (e: Event) => {
+        const target = e.target as HTMLElement | null
+        if (target?.closest?.('.cm-katex-copy-btn')) return
+        e.preventDefault()
+        e.stopPropagation()
+      })
+    } else {
+      root.addEventListener('click', focusBlockSource)
+    }
+
+    return root
   }
 
-  ignoreEvent(event) {
-    if (event?.target?.closest?.('.cm-katex-copy-btn')) {
-      return true
+  ignoreEvent(event: Event): boolean {
+    const target = event?.target as HTMLElement | null
+    if (target?.closest?.('.cm-katex-copy-btn')) return true
+    if (this.isBlock) {
+      const type = event?.type
+      if (
+        type === 'mousedown' ||
+        type === 'mouseup' ||
+        type === 'click' ||
+        type === 'dblclick' ||
+        type === 'pointerdown' ||
+        type === 'pointerup' ||
+        type === 'touchstart' ||
+        type === 'touchend'
+      ) {
+        return true
+      }
     }
     return false
   }
 }
 
-function findMathRanges(docText) {
-  const ranges = []
+export function findMathRanges(docText: string): MathRange[] {
+  const ranges: MathRange[] = []
 
   const blockRegex = /\$\$([\s\S]+?)\$\$/g
-  let match
+  let match: RegExpExecArray | null
   while ((match = blockRegex.exec(docText)) !== null) {
     const raw = match[0]
     const latex = match[1].replace(/\r\n/g, '\n').trim()
@@ -158,7 +222,7 @@ function findMathRanges(docText) {
 
   ranges.sort((a, b) => a.from - b.from)
 
-  const nonOverlapping = []
+  const nonOverlapping: MathRange[] = []
   let lastEnd = -1
   for (const r of ranges) {
     if (r.from >= lastEnd) {
@@ -170,8 +234,8 @@ function findMathRanges(docText) {
   return nonOverlapping
 }
 
-function buildKaTeXDecorations(state) {
-  const builder = new RangeSetBuilder()
+function buildKaTeXDecorations(state: EditorState): DecorationSet {
+  const builder = new RangeSetBuilder<Decoration>()
   const docText = state.doc.toString()
   if (!docText) return builder.finish()
 
@@ -179,24 +243,48 @@ function buildKaTeXDecorations(state) {
   const mathRanges = findMathRanges(docText)
 
   for (const item of mathRanges) {
-    const isCursorInside = selection.from <= item.to && selection.to >= item.from
-    if (isCursorInside) {
-      continue
-    }
-
     if (item.isBlock) {
       const lineFrom = state.doc.lineAt(item.from)
       const lineTo = state.doc.lineAt(item.to)
       const lineText = lineFrom.text.trim()
       const mathText = state.sliceDoc(item.from, item.to).trim()
       const isSoloLine = lineText === mathText
+      const isFullBlock = isSoloLine || lineFrom.number !== lineTo.number
 
-      if (isSoloLine || lineFrom.number !== lineTo.number) {
+      const activeFrom = isFullBlock ? lineFrom.from : item.from
+      const activeTo = isFullBlock ? lineTo.to : item.to
+      const isCursorInside = selection.from <= activeTo && selection.to >= activeFrom
+      const editPos =
+        lineFrom.number !== lineTo.number
+          ? state.doc.line(lineFrom.number + 1).from
+          : Math.min(item.from + 2, item.to)
+
+      if (isCursorInside) {
+        for (let n = lineFrom.number; n <= lineTo.number; n++) {
+          const line = state.doc.line(n)
+          const classes = ['cm-katex-source-line']
+          if (n === lineFrom.number) classes.push('cm-katex-source-first')
+          if (n === lineTo.number) classes.push('cm-katex-source-last')
+          builder.add(line.from, line.from, Decoration.line({ class: classes.join(' ') }))
+        }
+        builder.add(
+          lineTo.to,
+          lineTo.to,
+          Decoration.widget({
+            widget: new KaTeXWidget(item.latex, true, activeFrom, activeTo, true, editPos),
+            side: 1,
+            block: true
+          })
+        )
+        continue
+      }
+
+      if (isFullBlock) {
         builder.add(
           lineFrom.from,
           lineTo.to,
           Decoration.replace({
-            widget: new KaTeXWidget(item.latex, true, lineFrom.from, lineTo.to),
+            widget: new KaTeXWidget(item.latex, true, lineFrom.from, lineTo.to, false, editPos),
             block: true
           })
         )
@@ -205,11 +293,14 @@ function buildKaTeXDecorations(state) {
           item.from,
           item.to,
           Decoration.replace({
-            widget: new KaTeXWidget(item.latex, false, item.from, item.to)
+            widget: new KaTeXWidget(item.latex, false, item.from, item.to, false, editPos)
           })
         )
       }
     } else {
+      const isCursorInside = selection.from <= item.to && selection.to >= item.from
+      if (isCursorInside) continue
+
       builder.add(
         item.from,
         item.to,
@@ -223,7 +314,7 @@ function buildKaTeXDecorations(state) {
   return builder.finish()
 }
 
-export const katexExtension = StateField.define({
+export const katexExtension: StateField<DecorationSet> = StateField.define<DecorationSet>({
   create(state) {
     return buildKaTeXDecorations(state)
   },

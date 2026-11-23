@@ -24,6 +24,7 @@ import {
   keymap
 } from '@codemirror/view'
 import { treeGrowthEffect, treeProgressPlugin } from './treeProgress'
+import { findMathRanges } from '../extensions/katexExtension'
 
 export interface InlinePreviewConfig {
   onLinkClick?: (url: string) => void
@@ -278,9 +279,27 @@ function buildInlineDecorations(view: EditorView): DecorationSet {
 
   const tree = ensureSyntaxTree(state, view.viewport.to, 30) ?? syntaxTree(state)
   const activeLinkStarts = new Set<number>()
+  const mathRanges = findMathRanges(doc.toString()) as Array<{
+    from: number
+    to: number
+    isBlock?: boolean
+  }>
+  const overlapsMath = (from: number, to: number) =>
+    mathRanges.some((m) => from < m.to && to > m.from)
+  const CONTAINER_NODES = new Set([
+    'Document',
+    'BulletList',
+    'OrderedList',
+    'ListItem',
+    'Paragraph',
+    'Blockquote'
+  ])
 
   tree.iterate({
     enter: (node) => {
+      if (!CONTAINER_NODES.has(node.name) && overlapsMath(node.from, node.to)) {
+        return false
+      }
       if (node.name === 'FencedCode') {
         const firstLine = doc.lineAt(node.from).number
         const lastLine = doc.lineAt(node.to).number
@@ -313,7 +332,9 @@ function buildInlineDecorations(view: EditorView): DecorationSet {
         const lastLine = doc.lineAt(node.to)
         for (let n = firstLine.number; n <= lastLine.number; n++) {
           const line = doc.line(n)
-          ranges.push(Decoration.line({ class: lineClass }).range(line.from))
+          if (!overlapsMath(line.from, line.to)) {
+            ranges.push(Decoration.line({ class: lineClass }).range(line.from))
+          }
         }
       }
 
@@ -441,7 +462,7 @@ function buildInlineDecorations(view: EditorView): DecorationSet {
   if (view.hasFocus) {
     const head = state.selection.main.head
     const line = doc.lineAt(head)
-    if (activeLines.has(line.number)) {
+    if (activeLines.has(line.number) && !overlapsMath(line.from, line.to)) {
       supplementMidTypingEmphasis(line.text, line.from, head - line.from, ranges)
     }
   }

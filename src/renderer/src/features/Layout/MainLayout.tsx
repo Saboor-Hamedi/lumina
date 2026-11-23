@@ -235,19 +235,57 @@ export const MainLayout: React.FC = () => {
     updateRightSidebarOpen((prev) => !prev)
   }, [updateRightSidebarOpen])
 
-  const [isTerminalOpen, setIsTerminalOpen] = useState(false)
-  const [hasMountedTerminal, setHasMountedTerminal] = useState(false)
-  const [terminalHeight, setTerminalHeight] = useState(260)
+  const [isTerminalOpen, setIsTerminalOpen] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('lumina_terminal_open') === 'true'
+      return isZenModeEnabled ? false : saved
+    } catch {
+      return false
+    }
+  })
+  const [hasMountedTerminal, setHasMountedTerminal] = useState<boolean>(() => {
+    try {
+      return !isZenModeEnabled && localStorage.getItem('lumina_terminal_open') === 'true'
+    } catch {
+      return false
+    }
+  })
+  const [terminalHeight, setTerminalHeight] = useState<number>(() => {
+    try {
+      const raw = Number(localStorage.getItem('lumina_terminal_height'))
+      if (Number.isFinite(raw) && raw >= 120 && raw <= 600) return raw
+    } catch {}
+    return 260
+  })
   const [isTerminalMaximized, setIsTerminalMaximized] = useState(false)
-  const previousTerminalHeightRef = useRef(260)
-  const wasTerminalOpenBeforeZenRef = useRef(false)
+  const previousTerminalHeightRef = useRef(terminalHeight)
+  const wasTerminalOpenBeforeZenRef = useRef<boolean>((() => {
+    try {
+      return isZenModeEnabled && localStorage.getItem('lumina_terminal_open') === 'true'
+    } catch {
+      return false
+    }
+  })())
   const prevZenModeRef = useRef(isZenModeEnabled)
 
   useEffect(() => {
     if (isTerminalOpen) {
       setHasMountedTerminal(true)
     }
-  }, [isTerminalOpen])
+    if (!isZenModeEnabled) {
+      try {
+        localStorage.setItem('lumina_terminal_open', String(isTerminalOpen))
+      } catch {}
+    }
+  }, [isTerminalOpen, isZenModeEnabled])
+
+  useEffect(() => {
+    if (!isTerminalMaximized) {
+      try {
+        localStorage.setItem('lumina_terminal_height', String(terminalHeight))
+      } catch {}
+    }
+  }, [terminalHeight, isTerminalMaximized])
 
   // Hide open terminal when entering Zen Mode (without unmounting/killing sessions),
   // restore when exiting Zen Mode, and allow user to re-open it anytime during Zen Mode.
@@ -1143,17 +1181,19 @@ export const MainLayout: React.FC = () => {
     }
   }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme, handleToggleTerminal])
 
-  // Idle-deferred Editor preload so Welcome/boot paints first while keeping note opening fast
+  // Idle-deferred Editor & Terminal preload so Welcome/boot paints first while opening is instant
   useEffect(() => {
-    if (openTabs.length > 0) return
     const preload = () => {
-      void import('../Editor/Editor')
+      if (openTabs.length === 0) {
+        void import('../Editor/Editor')
+      }
+      void import('../terminal/TerminalPanel')
     }
     if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      const id = (window as any).requestIdleCallback(preload, { timeout: 2500 })
+      const id = (window as any).requestIdleCallback(preload, { timeout: 2000 })
       return () => (window as any).cancelIdleCallback(id)
     }
-    const timer = setTimeout(preload, 1200)
+    const timer = setTimeout(preload, 900)
     return () => clearTimeout(timer)
   }, [openTabs.length])
 
@@ -1265,7 +1305,10 @@ export const MainLayout: React.FC = () => {
         )}
 
         <div className="shell-workbench-column">
-        <div className="shell-workbench-row">
+        <div
+          className="shell-workbench-row"
+          style={isTerminalVisible && isTerminalMaximized ? { display: 'none' } : undefined}
+        >
         <aside className="shell-sidebar-left">
           <GlobalErrorHandler>
             <Sidebar />
@@ -1333,49 +1376,6 @@ export const MainLayout: React.FC = () => {
               )}
             </div>
 
-            {hasMountedTerminal && (
-              <>
-                {isTerminalVisible && !isTerminalMaximized && (
-                  <div
-                    className="terminal-resizer top"
-                    title="Drag to resize terminal (double-click to reset 260px)"
-                    onMouseDown={handleStartTerminalResize}
-                    onDoubleClick={() => setTerminalHeight(260)}
-                  >
-                    <div className="resizer-knob-horizontal">
-                      <span className="knob-dot" />
-                      <span className="knob-dot" />
-                      <span className="knob-dot" />
-                    </div>
-                  </div>
-                )}
-                <div
-                  className="shell-terminal-dock"
-                  style={{
-                    height: isTerminalMaximized ? 'auto' : `${terminalHeight}px`,
-                    flex: isTerminalMaximized ? 1 : 'none',
-                    minHeight: isTerminalMaximized ? 0 : 120,
-                    width: '100%',
-                    display: isTerminalVisible ? 'flex' : 'none',
-                    flexDirection: 'column',
-                    position: 'relative',
-                    flexShrink: isTerminalMaximized ? 1 : 0,
-                    zIndex: 20
-                  }}
-                >
-                  <GlobalErrorHandler>
-                    <React.Suspense fallback={null}>
-                      <TerminalPanel
-                        onClose={() => setIsTerminalOpen(false)}
-                        isMaximized={isTerminalMaximized}
-                        onToggleMaximize={handleToggleTerminalMaximize}
-                      />
-                    </React.Suspense>
-                  </GlobalErrorHandler>
-                </div>
-              </>
-            )}
-
             {workspaceDrop.isOver && (
               <ExternalDropOverlay
                 label={workspaceDrop.label}
@@ -1421,6 +1421,49 @@ export const MainLayout: React.FC = () => {
           </GlobalErrorHandler>
         </aside>
         </div>
+
+        {hasMountedTerminal && (
+          <>
+            {isTerminalVisible && !isTerminalMaximized && (
+              <div
+                className="terminal-resizer top"
+                title="Drag to resize terminal (double-click to reset 260px)"
+                onMouseDown={handleStartTerminalResize}
+                onDoubleClick={() => setTerminalHeight(260)}
+              >
+                <div className="resizer-knob-horizontal">
+                  <span className="knob-dot" />
+                  <span className="knob-dot" />
+                  <span className="knob-dot" />
+                </div>
+              </div>
+            )}
+            <div
+              className="shell-terminal-dock"
+              style={{
+                height: isTerminalMaximized ? 'auto' : `${terminalHeight}px`,
+                flex: isTerminalMaximized ? 1 : 'none',
+                minHeight: isTerminalMaximized ? 0 : 120,
+                width: '100%',
+                display: isTerminalVisible ? 'flex' : 'none',
+                flexDirection: 'column',
+                position: 'relative',
+                flexShrink: isTerminalMaximized ? 1 : 0,
+                zIndex: 20
+              }}
+            >
+              <GlobalErrorHandler>
+                <React.Suspense fallback={null}>
+                  <TerminalPanel
+                    onClose={() => setIsTerminalOpen(false)}
+                    isMaximized={isTerminalMaximized}
+                    onToggleMaximize={handleToggleTerminalMaximize}
+                  />
+                </React.Suspense>
+              </GlobalErrorHandler>
+            </div>
+          </>
+        )}
 
         {isStatusBarVisible && (
           <StatusBar

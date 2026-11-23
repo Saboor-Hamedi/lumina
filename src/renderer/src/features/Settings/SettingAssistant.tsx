@@ -161,11 +161,20 @@ export const SettingAssistant: React.FC = () => {
     }
   }, [settings.activeProvider, settings.deepSeekKey, settings.openaiKey, settings.anthropicKey, fetchCloudModels])
 
+  const isMountedRef = useRef(true)
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+
   /**
    * Fetches installed models from local Ollama (/api/tags) via Main Process IPC or direct fetch
    */
   const fetchOllamaModels = useCallback(
     async (customUrl?: string) => {
+      if (!isMountedRef.current || typeof window === 'undefined') return
       setIsLoadingOllama(true)
       let names: string[] = []
       const targetUrl = customUrl || settings.ollamaUrl || 'http://localhost:11434/api/chat'
@@ -193,11 +202,14 @@ export const SettingAssistant: React.FC = () => {
           ]
 
           for (const url of [...new Set(urlsToTry)]) {
+            if (!isMountedRef.current || typeof window === 'undefined') return
             try {
               const controller = new AbortController()
               const timeoutId = setTimeout(() => controller.abort(), 2500)
               const response = await fetch(url, { signal: controller.signal })
               clearTimeout(timeoutId)
+
+              if (!isMountedRef.current || typeof window === 'undefined') return
 
               if (response.ok) {
                 const data = await response.json()
@@ -214,6 +226,8 @@ export const SettingAssistant: React.FC = () => {
           }
         } catch (_) {}
       }
+
+      if (!isMountedRef.current || typeof window === 'undefined') return
 
       if (names.length > 0) {
         setOllamaModels(names)

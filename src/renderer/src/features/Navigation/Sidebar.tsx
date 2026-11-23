@@ -9,6 +9,7 @@
 
 import React, { memo, useEffect, useState } from 'react'
 import FileExplorer from '../Explorer/FileExplorer'
+import Theme from '../theme/Theme'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import {
   useSidebarViewStore,
@@ -17,7 +18,6 @@ import {
 } from './sidebarViewStore'
 import './css/sidebar.css'
 
-const Theme = React.lazy(() => import('../theme/Theme'))
 const Template = React.lazy(() => import('../template/Template'))
 
 export interface SidebarProps {
@@ -27,11 +27,9 @@ export interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = memo(() => {
   const activeView = useSidebarViewStore((s) => s.activeView)
   const isLeftOpen = useSettingsStore((s: any) => s.settings?.sidebar?.isLeftOpen ?? true)
-  const [hasMountedTheme, setHasMountedTheme] = useState(() => activeView === 'theme')
   const [hasMountedTemplates, setHasMountedTemplates] = useState(() => activeView === 'templates')
 
   useEffect(() => {
-    if (activeView === 'theme') setHasMountedTheme(true)
     if (activeView === 'templates') setHasMountedTemplates(true)
   }, [activeView])
 
@@ -82,15 +80,11 @@ const Sidebar: React.FC<SidebarProps> = memo(() => {
             minHeight: 0
           }}
         >
-          {hasMountedTheme && (
-            <React.Suspense fallback={null}>
-              <Theme
-                isEmbedded={true}
-                isOpen={isLeftOpen && activeView === 'theme'}
-                onClose={closeLeftSidebar}
-              />
-            </React.Suspense>
-          )}
+          <Theme
+            isEmbedded={true}
+            isOpen={isLeftOpen && activeView === 'theme'}
+            onClose={closeLeftSidebar}
+          />
         </div>
 
         <div

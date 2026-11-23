@@ -1876,8 +1876,7 @@
 }
 
 /* Universal Harmonic Selection */
-.markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
-.cm-content ::selection {
+.markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: color-mix(in srgb, var(--text-accent) 18%, transparent) !important;
 }
 
@@ -1891,8 +1890,7 @@
   border-left-color: var(--caret-color, #9c4310) !important;
 }
 
-[data-theme='parchment'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
-[data-theme='parchment'] .cm-content ::selection {
+[data-theme='parchment'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(156, 67, 16, 0.16) !important;
 }
 
@@ -1914,8 +1912,7 @@
   border-left-color: var(--caret-color, #facc15) !important;
 }
 
-[data-theme='celestial'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground,
-[data-theme='celestial'] .cm-content ::selection {
+[data-theme='celestial'] .markdown-editor .cm-editor .cm-scroller .cm-selectionLayer .cm-selectionBackground {
   background-color: rgba(250, 204, 21, 0.16) !important;
 }
 

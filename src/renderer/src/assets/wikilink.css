@@ -46,12 +46,19 @@
   height: 0 !important;
 }
 
-/* Active Editing State: reveals the raw [[brackets]] seamlessly */
+/* Active Editing State: reveals the raw [[brackets]] with a thin 1px border and no background */
 .cm-atomic-wiki-link-active {
   text-decoration: none !important;
-  background: var(--bg-modifier-hover, rgba(96, 165, 250, 0.12)) !important;
-  border-radius: 2px !important;
+  background: transparent !important;
+  border: 1px solid var(--border-dim, rgba(125, 125, 125, 0.28)) !important;
+  border-radius: 3px !important;
   padding: 0 2px;
+}
+
+/* Remove active wikilink border & background during range selection / Ctrl+A */
+.cm-editor:has(.cm-selectionBackground) .cm-atomic-wiki-link-active {
+  background: transparent !important;
+  border-color: transparent !important;
 }
 
 .cm-atomic-wiki-link-active .cm-wikilink-syntax {
@@ -59,9 +66,13 @@
   color: var(--text-faint, #777777) !important;
 }
 
-/* Selection Highlight inside wikilinks */
+/* Prevent native browser ::selection from doubling over CodeMirror's .cm-selectionLayer */
 .cm-atomic-wiki-link::selection,
-.cm-atomic-wiki-link-active::selection {
-  background: var(--bg-selection, rgba(64, 186, 250, 0.35)) !important;
+.cm-atomic-wiki-link *::selection,
+.cm-atomic-wiki-link-active::selection,
+.cm-atomic-wiki-link-active *::selection,
+.cm-wikilink-syntax::selection {
+  background: transparent !important;
   color: inherit !important;
+  text-shadow: none !important;
 }

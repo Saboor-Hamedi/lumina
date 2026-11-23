@@ -1,7 +1,7 @@
 // components/terminal/TerminalPane.tsx
 // A single terminal instance. Handles mounting, PTY binding, and lifecycle.
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTerminalInstance, type PtyTransport } from '../../core/terminal/useTerminalInstance'
 import type { TerminalSession } from '../../core/terminal/types'
 
@@ -13,7 +13,7 @@ interface Props {
   onStatus: (id: string, status: TerminalSession['status'], code?: number) => void
 }
 
-export function TerminalPane({ session, visible, spawnTransport, onStatus }: Props) {
+export const TerminalPane = memo(function TerminalPane({ session, visible, spawnTransport, onStatus }: Props) {
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
   // Spawn the transport once per session. Recreated if the session id changes.
@@ -83,4 +83,4 @@ export function TerminalPane({ session, visible, spawnTransport, onStatus }: Pro
       />
     </div>
   )
-}
+})

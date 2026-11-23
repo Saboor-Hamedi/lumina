@@ -14,7 +14,7 @@ import type { TerminalSession } from './types'
 export interface PtyTransport {
   write(data: string): void
   resize(cols: number, rows: number): void
-  onData(cb: (data: string) => void): () => void
+  onData(cb: (data: string) => void, initialSize?: { cols: number; rows: number }): () => void
   onExit(cb: (code: number) => void): () => void
   kill(): void
 }
@@ -54,7 +54,7 @@ export function createTauriPtyTransport(session: TerminalSession): PtyTransport 
   return {
     write: (data) => api.terminalWrite?.({ sessionId: session.id, data }),
     resize: (cols, rows) => api.terminalResize?.({ sessionId: session.id, cols, rows }),
-    onData: (cb) => {
+    onData: (cb, initialSize) => {
       let receivedBytes = 0
 
       // 1. Subscribe to live stream first so incoming data is never dropped
@@ -65,11 +65,14 @@ export function createTauriPtyTransport(session: TerminalSession): PtyTransport 
           })
         : () => {}
 
-      // 2. Spawn / ensure process is active
+      // 2. Spawn / ensure process is active using the actual fitted viewport cols/rows
+      // so Windows ConPTY doesn't spawn at 24 rows and flush blank lines on initial resize
       api.terminalSpawn?.({
         sessionId: session.id,
         shell: session.shell,
-        cwd: session.cwd
+        cwd: session.cwd,
+        cols: initialSize?.cols && initialSize.cols >= 10 ? initialSize.cols : undefined,
+        rows: initialSize?.rows && initialSize.rows >= 2 ? initialSize.rows : undefined
       })
         ?.then(() => {
           // 3. Attach and replay whatever initial history or backlog was missed
@@ -106,14 +109,39 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
   const [term, setTerm] = useState<Terminal | null>(null)
   const termRef = useRef<Terminal | null>(null)
   const fitRef = useRef<FitAddon | null>(null)
+  const transportRef = useRef<PtyTransport | null>(transport)
+  const onDataRef = useRef(onData)
+  const onExitRef = useRef(onExit)
+  const lastSizeRef = useRef<{ cols: number; rows: number }>({ cols: 0, rows: 0 })
+  const syncScrollRef = useRef<(() => void) | null>(null)
+
+  transportRef.current = transport
+  onDataRef.current = onData
+  onExitRef.current = onExit
+
+  const sendResizeIfChanged = useCallback((cols: number, rows: number) => {
+    if (cols <= 0 || rows <= 0) return
+    if (lastSizeRef.current.cols === cols && lastSizeRef.current.rows === rows) return
+    lastSizeRef.current = { cols, rows }
+    try {
+      transportRef.current?.resize(cols, rows)
+    } catch {}
+  }, [])
 
   // Mount / unmount
   useEffect(() => {
     if (!container) return
 
-    const isWin = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('win')
+    lastSizeRef.current = { cols: 0, rows: 0 }
+
+    const initialRows =
+      container.clientHeight > 40 ? Math.max(2, Math.floor(container.clientHeight / 16)) : 12
+    const initialCols =
+      container.clientWidth > 80 ? Math.max(10, Math.floor((container.clientWidth - 8) / 8)) : 80
 
     const termInstance = new Terminal({
+      cols: initialCols,
+      rows: initialRows,
       fontFamily: TERMINAL_FONT,
       fontSize: DEFAULT_FONT_SIZE,
       theme: getActiveTerminalTheme(),
@@ -123,7 +151,11 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
       cursorWidth: 2,
       lineHeight: 1.2,
       letterSpacing: 0,
-      smoothScrollDuration: 100,
+      smoothScrollDuration: 0,
+      fastScrollModifier: 'shift',
+      fastScrollSensitivity: 4,
+      scrollSensitivity: 1,
+      overviewRuler: { width: 8 },
       windowsMode: false,
       drawBoldTextInBrightColors: true,
       allowProposedApi: true,
@@ -132,6 +164,56 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
     const fit = new FitAddon()
     termInstance.loadAddon(fit)
     termInstance.loadAddon(new WebLinksAddon())
+
+    // Sync scrollbar visibility & fix @xterm/xterm@6.0.0 Viewport._sync bottom-gap desync
+    let scrollSyncRaf = 0
+    const applyScrollSync = () => {
+      scrollSyncRaf = 0
+      try {
+        const activeBuf = termInstance.buffer?.active
+        if (!activeBuf) return
+        const hasScrollback = activeBuf.baseY > 0
+        container.classList.toggle('lumina-term-has-scrollback', hasScrollback)
+
+        const core = (termInstance as any)._core
+        const viewport = core?.viewport
+        const scrollableEl = viewport?._scrollableElement
+        const cellHeight = core?._renderService?.dimensions?.css?.cell?.height
+        if (scrollableEl && cellHeight > 0) {
+          const isAtBottom = activeBuf.viewportY >= activeBuf.baseY
+          if (!hasScrollback || isAtBottom) {
+            const targetScrollTop = hasScrollback ? activeBuf.baseY * cellHeight : 0
+            const pos = scrollableEl.getScrollPosition?.()
+            if (!pos || Math.abs(pos.scrollTop - targetScrollTop) > 1) {
+              viewport._isSyncing = true
+              viewport._suppressOnScrollHandler = true
+              scrollableEl.setScrollPosition({ scrollTop: targetScrollTop })
+              viewport._suppressOnScrollHandler = false
+              viewport._isSyncing = false
+            }
+          }
+        }
+      } catch {}
+    }
+
+    const scheduleScrollSync = () => {
+      if (scrollSyncRaf) return
+      scrollSyncRaf = requestAnimationFrame(applyScrollSync)
+    }
+    syncScrollRef.current = scheduleScrollSync
+
+    // Prevent mouse wheel from wobbling a non-scrollable viewport when there is no scrollback
+    if (typeof termInstance.attachCustomWheelEventHandler === 'function') {
+      termInstance.attachCustomWheelEventHandler(() => {
+        const activeBuf = termInstance.buffer?.active
+        if (!activeBuf) return true
+        const mouseMode = termInstance.modes?.mouseTrackingMode
+        if (activeBuf.type === 'normal' && activeBuf.baseY === 0 && (!mouseMode || mouseMode === 'none')) {
+          return false
+        }
+        return true
+      })
+    }
 
     // Bypass xterm for global Lumina shortcuts (Ctrl+P, Ctrl+J, Ctrl+Shift+F, etc.)
     if (typeof termInstance.attachCustomKeyEventHandler === 'function') {
@@ -160,8 +242,27 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
 
     termInstance.open(container)
     try {
-      fit.fit()
+      if (container.clientWidth > 0 && container.clientHeight > 0) {
+        fit.fit()
+      }
+      // Clear any empty rows pushed into scrollback during initial fit so a fresh tab has zero scrollback
+      termInstance.clear?.()
+      applyScrollSync()
     } catch {}
+
+    const disposables: Array<{ dispose: () => void }> = []
+    if (typeof termInstance.onWriteParsed === 'function') {
+      disposables.push(termInstance.onWriteParsed(scheduleScrollSync))
+    }
+    if (typeof termInstance.onScroll === 'function') {
+      disposables.push(termInstance.onScroll(scheduleScrollSync))
+    }
+    if (typeof termInstance.onResize === 'function') {
+      disposables.push(termInstance.onResize(scheduleScrollSync))
+    }
+    if (typeof termInstance.onLineFeed === 'function') {
+      disposables.push(termInstance.onLineFeed(scheduleScrollSync))
+    }
 
     termRef.current = termInstance
     setTerm(termInstance)
@@ -170,37 +271,42 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
 
     const raf = requestAnimationFrame(() => {
       try {
-        fit.fit()
-        const { cols, rows } = termInstance
-        transport?.resize(cols, rows)
+        if (container.clientWidth > 0 && container.clientHeight > 0) {
+          fit.fit()
+          sendResizeIfChanged(termInstance.cols, termInstance.rows)
+          applyScrollSync()
+        }
       } catch {}
     })
-    const timer = setTimeout(() => {
-      try {
-        fit.fit()
-        const { cols, rows } = termInstance
-        transport?.resize(cols, rows)
-      } catch {}
-    }, 60)
 
-    // Resize observer keeps xterm in sync with the container
+    // Resize observer keeps xterm in sync with the container (RAF-batched fit + debounced PTY IPC)
     let ro: ResizeObserver | null = null
+    let resizeRaf = 0
+    let resizeDebounceTimer: ReturnType<typeof setTimeout> | null = null
     if (typeof ResizeObserver !== 'undefined') {
       ro = new ResizeObserver(() => {
-        try {
-          if (container.clientWidth <= 0 || container.clientHeight <= 0) return
-          fit.fit()
-          const { cols, rows } = termInstance
-          if (cols > 0 && rows > 0) {
-            transport?.resize(cols, rows)
+        if (resizeRaf) return
+        resizeRaf = requestAnimationFrame(() => {
+          resizeRaf = 0
+          try {
+            if (container.clientWidth <= 0 || container.clientHeight <= 0) return
+            fit.fit()
+            scheduleScrollSync()
+            const { cols, rows } = termInstance
+            if (cols > 0 && rows > 0) {
+              if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer)
+              resizeDebounceTimer = setTimeout(() => {
+                resizeDebounceTimer = null
+                sendResizeIfChanged(cols, rows)
+              }, 40)
+            }
+          } catch {
+            /* container may be detached during teardown */
           }
-        } catch {
-          /* container may be detached during teardown */
-        }
+        })
       })
       ro.observe(container)
     }
-
 
     // Dynamically react to Lumina theme changes
     const applyActiveTheme = () => {
@@ -232,54 +338,97 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
 
     return () => {
       cancelAnimationFrame(raf)
-      clearTimeout(timer)
+      if (scrollSyncRaf) cancelAnimationFrame(scrollSyncRaf)
+      if (resizeRaf) cancelAnimationFrame(resizeRaf)
+      if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer)
       ro?.disconnect()
       window.removeEventListener('theme-changed', applyActiveTheme)
       window.removeEventListener('theme-accent-changed', applyActiveTheme)
       themeObserver?.disconnect()
+      disposables.forEach((d) => {
+        try {
+          d.dispose()
+        } catch {}
+      })
+      syncScrollRef.current = null
       termInstance.dispose()
+      termRef.current = null
       setTerm(null)
       fitRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [container])
 
-  // Wire transport I/O: raw bidirectional stream between xterm and shell PTY
+  // Wire transport I/O: RAF-batched bidirectional stream between xterm and shell PTY
   useEffect(() => {
     if (!term || !transport) return
 
-    const offData = transport.onData((data) => {
-      if (!data) return
-      let clean = data
-      if (clean.includes('cannot set terminal process group') || clean.includes('no job control in this shell')) {
-        clean = clean
-          .split(/\r?\n/)
-          .filter((line) => !line.includes('cannot set terminal process group') && !line.includes('no job control in this shell'))
-          .join('\r\n')
-      }
-      if (clean) {
-        term.write(clean)
-      }
-    })
+    let pendingChunks: string[] = []
+    let pendingLen = 0
+    let flushRaf = 0
 
-    const offExit = transport.onExit((code) => onExit?.(code))
+    const flushWrites = () => {
+      flushRaf = 0
+      if (pendingChunks.length === 0) return
+      const batch = pendingChunks.length === 1 ? pendingChunks[0] : pendingChunks.join('')
+      pendingChunks = []
+      pendingLen = 0
+      term.write(batch)
+    }
+
+    const enqueueWrite = (chunk: string) => {
+      pendingChunks.push(chunk)
+      pendingLen += chunk.length
+      if (pendingLen >= 65536) {
+        if (flushRaf) {
+          cancelAnimationFrame(flushRaf)
+          flushRaf = 0
+        }
+        flushWrites()
+        return
+      }
+      if (!flushRaf) {
+        flushRaf = requestAnimationFrame(flushWrites)
+      }
+    }
+
+    const initialCols = term.cols > 0 ? term.cols : 80
+    const initialRows = term.rows > 0 ? term.rows : 12
+    lastSizeRef.current = { cols: initialCols, rows: initialRows }
+
+    const offData = transport.onData(
+      (data) => {
+        if (!data) return
+        let clean = data
+        if (clean.includes('cannot set terminal process group') || clean.includes('no job control in this shell')) {
+          clean = clean
+            .split(/\r?\n/)
+            .filter((line) => !line.includes('cannot set terminal process group') && !line.includes('no job control in this shell'))
+            .join('\r\n')
+        }
+        if (clean) {
+          enqueueWrite(clean)
+        }
+      },
+      { cols: initialCols, rows: initialRows }
+    )
+
+    const offExit = transport.onExit((code) => onExitRef.current?.(code))
 
     const sub = term.onData((data) => {
-      onData?.(data)
+      onDataRef.current?.(data)
       transport.write(data)
     })
 
-    // Push initial size
-    try {
-      transport.resize(term.cols, term.rows)
-    } catch {}
-
     return () => {
+      if (flushRaf) cancelAnimationFrame(flushRaf)
+      pendingChunks = []
+      pendingLen = 0
       offData()
       offExit()
       sub.dispose()
     }
-  }, [term, transport, onData, onExit])
+  }, [term, transport])
 
   const focus = useCallback(() => {
     termRef.current?.focus?.()
@@ -287,6 +436,7 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
 
   const clear = useCallback(() => {
     termRef.current?.clear?.()
+    syncScrollRef.current?.()
   }, [])
 
   const fit = useCallback(() => {
@@ -294,16 +444,18 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
       if (container && container.clientWidth > 0 && container.clientHeight > 0) {
         fitRef.current?.fit?.()
         if (termRef.current && termRef.current.cols > 0 && termRef.current.rows > 0) {
-          transport?.resize(termRef.current.cols, termRef.current.rows)
+          sendResizeIfChanged(termRef.current.cols, termRef.current.rows)
         }
+        syncScrollRef.current?.()
       }
     } catch {}
-  }, [container, transport])
+  }, [container, sendResizeIfChanged])
 
   const refresh = useCallback(() => {
     try {
       if (termRef.current) {
         termRef.current.refresh(0, Math.max(0, termRef.current.rows - 1))
+        syncScrollRef.current?.()
       }
     } catch {}
   }, [])

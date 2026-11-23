@@ -35,6 +35,11 @@
   cursor: default !important;
 }
 
+.title-bar.is-mac {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
 .title-bar.is-mac .title-left {
   padding-left: 74px;
 }

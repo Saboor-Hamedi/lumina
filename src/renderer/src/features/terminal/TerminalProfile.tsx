@@ -97,30 +97,9 @@ export function TerminalProfile({
         aria-label="Select Terminal Shell Profile"
         aria-haspopup="true"
         aria-expanded={isOpen}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 5,
-          background: 'transparent',
-          border: 'none',
-          color: '#a1a1aa',
-          borderRadius: 4,
-          padding: '3px 6px',
-          fontSize: 11.5,
-          cursor: 'pointer',
-          overflow: 'hidden',
-          transition: 'all 0.12s ease'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = '#f4f4f5'
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = '#a1a1aa'
-          e.currentTarget.style.background = 'transparent'
-        }}
+        className="lumina-term-profile-trigger"
       >
-        <TerminalIcon size={12} style={{ color: '#60a5fa', flexShrink: 0 }} />
+        <TerminalIcon size={12} className="lumina-term-profile-trigger-icon" />
         <span
           style={{
             overflow: 'hidden',
@@ -132,7 +111,7 @@ export function TerminalProfile({
         >
           {displayName}
         </span>
-        <ChevronDown size={11} style={{ opacity: 0.6, flexShrink: 0 }} />
+        <ChevronDown size={11} className="lumina-term-profile-trigger-chevron" />
       </button>
 
       {/* Render menu in body portal so it is never clipped by small terminal sessions panel */}
@@ -147,11 +126,6 @@ export function TerminalProfile({
               top: menuPos.top,
               left: menuPos.left,
               width: 210,
-              background: 'var(--surface-3, var(--bg-panel, #141418))',
-              border: '1px solid var(--border-strong, rgba(255, 255, 255, 0.12))',
-              borderRadius: 'var(--radius-md, 6px)',
-              padding: 4,
-              boxShadow: 'var(--elev-popover)',
               zIndex: 99999,
               userSelect: 'none'
             }}
@@ -163,6 +137,7 @@ export function TerminalProfile({
                 currentFav === opt.shell.toLowerCase() ||
                 currentFav.endsWith(opt.id.toLowerCase() + '.exe') ||
                 (opt.id === 'bash' && currentFav.includes('bash')) ||
+                (opt.id === 'git-bash' && currentFav.includes('bash')) ||
                 (opt.id === 'powershell' && currentFav.includes('powershell')) ||
                 (opt.id === 'cmd' && currentFav.includes('cmd'))
 
@@ -173,40 +148,15 @@ export function TerminalProfile({
                     onSelectShell(opt.shell)
                     setIsOpen(false)
                   }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '6px 8px',
-                    borderRadius: 4,
-                    fontSize: 12,
-                    color: isFav ? '#f4f4f5' : '#a1a1aa',
-                    background: 'transparent',
-                    cursor: 'pointer',
-                    transition: 'background 0.1s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent'
-                  }}
+                  className={`lumina-term-profile-item${isFav ? ' is-fav' : ''}`}
                 >
-                  <span style={{ fontWeight: isFav ? 500 : 400 }}>{opt.label}</span>
+                  <span style={{ fontWeight: isFav ? 600 : 450 }}>{opt.label}</span>
                   <button
                     onClick={(e) => onSetDefaultShell(opt.shell, e)}
                     title={isFav ? 'Current Favorite (Default)' : 'Set as Favorite Shell'}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: 2,
-                      color: isFav ? '#fbbf24' : '#52525b',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
+                    className={`lumina-term-profile-star${isFav ? ' is-fav' : ''}`}
                   >
-                    <Star size={13} fill={isFav ? '#fbbf24' : 'none'} />
+                    <Star size={13} fill={isFav ? 'currentColor' : 'none'} />
                   </button>
                 </div>
               )

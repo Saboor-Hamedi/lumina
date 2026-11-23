@@ -45,6 +45,11 @@
       "minimumSystemVersion": "10.15",
       "signingIdentity": "-"
     },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    },
     "android": {
       "debugApplicationIdSuffix": ".debug"
     }

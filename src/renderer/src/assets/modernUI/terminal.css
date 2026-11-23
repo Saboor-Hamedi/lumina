@@ -158,23 +158,34 @@
   transform: scale(1.25);
 }
 
-/* Modern UI Overrides */
+/* Modern UI Overrides: Separated rounded panel matching left/right sidebars & editor */
 [data-modern-ui='true'] .shell-terminal-dock {
-  border-top: none !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border-dim) !important;
   background: var(--bg-editor, var(--bg-app, #0c0c0e)) !important;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
 [data-modern-ui='true'] .terminal-resizer.top {
-  height: 5px !important;
+  height: 6px !important;
   background: transparent !important;
   z-index: 30;
 }
 
+[data-modern-ui='true'] .terminal-resizer.top .resizer-knob-horizontal {
+  display: none !important;
+}
+
 [data-modern-ui='true'] .terminal-resizer.top::before {
   top: 50% !important;
+  left: 8px !important;
+  right: 8px !important;
   transform: translateY(-50%) !important;
-  height: 1px !important;
+  height: 2px !important;
+  border-radius: 2px !important;
+  background: transparent !important;
+  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1) !important;
   z-index: 1 !important;
 }
 
@@ -210,6 +221,8 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+  padding: 4px 6px;
   background: var(--bg-editor, var(--bg-app, #0c0c0e));
 }
 
@@ -220,7 +233,7 @@
   overflow: hidden;
   box-sizing: border-box;
   background: var(--bg-editor, var(--bg-app, #0c0c0e));
-  padding: 4px 6px;
+  padding: 0;
 }
 
 /* Clean, native xterm canvas mapping - remove weird inner padding layers */
@@ -251,42 +264,297 @@
   -webkit-font-smoothing: antialiased !important;
 }
 
+/* xterm.js v6 handles scrolling via .xterm-scrollable-element; suppress native .xterm-viewport scrollbar */
 .lumina-term-container .xterm .xterm-viewport {
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-  scrollbar-width: thin !important;
-  scrollbar-color: var(--scroll-thumb, rgba(128, 128, 128, 0.3)) transparent !important;
+  overflow: hidden !important;
+  scrollbar-width: none !important;
 }
 
 .lumina-term-container .xterm .xterm-viewport::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Never show the vertical scrollbar when there is no actual scrollback (baseY === 0) */
+.lumina-term-container:not(.lumina-term-has-scrollback) .xterm .xterm-scrollable-element > .scrollbar.vertical {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Sleek, subtle xterm.js v6 overlay scrollbar (only visible when scrollback genuinely overflows) */
+.lumina-term-container .xterm .xterm-scrollable-element > .scrollbar.vertical {
   width: 6px !important;
-  height: 0px !important;
-}
-
-.lumina-term-container .xterm .xterm-viewport::-webkit-scrollbar-track {
+  right: 1px !important;
   background: transparent !important;
 }
 
-.lumina-term-container .xterm .xterm-viewport::-webkit-scrollbar-thumb {
-  background: var(--scroll-thumb, rgba(128, 128, 128, 0.3)) !important;
+.lumina-term-container .xterm .xterm-scrollable-element > .scrollbar.vertical > .slider {
+  width: 4px !important;
+  left: 1px !important;
   border-radius: 9999px !important;
-  border: none !important;
-  transition: background 0.15s ease !important;
+  transition: background-color 120ms ease, width 120ms ease, left 120ms ease;
 }
 
-.lumina-term-container .xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted, rgba(160, 160, 160, 0.55)) !important;
+.lumina-term-container .xterm .xterm-scrollable-element > .scrollbar.vertical:hover > .slider {
+  width: 5px !important;
+  left: 0.5px !important;
 }
 
-.lumina-term-container .xterm .xterm-viewport::-webkit-scrollbar-corner {
-  background: transparent !important;
+.lumina-term-container .xterm .xterm-scrollable-element > .shadow {
   display: none !important;
 }
 
-.lumina-term-container .xterm .xterm-viewport::-webkit-scrollbar-button {
-  width: 0px !important;
-  height: 0px !important;
-  display: none !important;
+/* ============================================================
+ * Theme-Aware Terminal Controls, Dropdown & Sessions List
+ * Uses Lumina semantic tokens so light/parchment & dark themes
+ * all render with crisp contrast and tactile hover states.
+ * ============================================================ */
+
+.lumina-term-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-xs, 4px);
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #a1a1aa);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color var(--dur-fast, 100ms) ease, color var(--dur-fast, 100ms) ease;
+}
+
+.lumina-term-icon-btn--sm {
+  width: 22px;
+  height: 22px;
+}
+
+.lumina-term-icon-btn:hover {
+  color: var(--text-main, #f4f4f5);
+  background: var(--bg-hover, color-mix(in srgb, var(--text-main, #f4f4f5) 9%, transparent));
+}
+
+.lumina-term-icon-btn--danger:hover {
+  color: var(--icon-danger, var(--danger, #ef4444));
+  background: color-mix(in srgb, var(--icon-danger, var(--danger, #ef4444)) 14%, transparent);
+}
+
+/* Shell Profile Selector Trigger */
+.lumina-term-profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted, #a1a1aa);
+  border-radius: var(--radius-xs, 4px);
+  padding: 3px 6px;
+  font-size: 11.5px;
+  cursor: pointer;
+  overflow: hidden;
+  min-width: 0;
+  transition: background-color var(--dur-fast, 100ms) ease, color var(--dur-fast, 100ms) ease, border-color var(--dur-fast, 100ms) ease;
+}
+
+.lumina-term-profile-trigger:hover,
+.lumina-term-profile-trigger[aria-expanded='true'] {
+  color: var(--text-main, #f4f4f5);
+  background: var(--bg-hover, color-mix(in srgb, var(--text-main, #f4f4f5) 9%, transparent));
+  border-color: var(--border-dim, rgba(128, 128, 128, 0.16));
+}
+
+.lumina-term-profile-trigger-icon {
+  color: var(--text-accent, #8b5cf6);
+  flex-shrink: 0;
+}
+
+.lumina-term-profile-trigger-chevron {
+  opacity: 0.65;
+  flex-shrink: 0;
+  transition: transform var(--dur-fast, 100ms) ease, opacity var(--dur-fast, 100ms) ease;
+}
+
+.lumina-term-profile-trigger[aria-expanded='true'] .lumina-term-profile-trigger-chevron {
+  transform: rotate(180deg);
+  opacity: 0.95;
+}
+
+/* Shell Profile Dropdown Menu */
+.lumina-term-profile-dropdown {
+  background: var(--bg-card, var(--bg-panel, #141418));
+  border: 1px solid var(--border-subtle, var(--border-dim, rgba(128, 128, 128, 0.22)));
+  border-radius: var(--radius-md, 6px);
+  padding: 4px;
+  box-shadow: var(--elev-popover, 0 8px 24px rgba(0, 0, 0, 0.22));
+  color: var(--text-main, #f4f4f5);
+  animation: lumina-pop-in 110ms var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.lumina-term-profile-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-xs, 4px);
+  font-size: 12px;
+  color: var(--text-muted, #a1a1aa);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color var(--dur-fast, 100ms) ease, color var(--dur-fast, 100ms) ease;
+}
+
+.lumina-term-profile-item.is-fav {
+  color: var(--text-main, #f4f4f5);
+  background: color-mix(in srgb, var(--text-accent, #8b5cf6) 9%, transparent);
+}
+
+.lumina-term-profile-item:hover {
+  color: var(--text-main, #f4f4f5);
+  background: var(--bg-hover, color-mix(in srgb, var(--text-main, #f4f4f5) 9%, transparent));
+}
+
+.lumina-term-profile-item.is-fav:hover {
+  background: color-mix(in srgb, var(--text-accent, #8b5cf6) 15%, transparent);
+}
+
+.lumina-term-profile-star {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  color: var(--text-faint, #71717a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--dur-fast, 100ms) ease, transform var(--dur-fast, 100ms) ease;
+}
+
+.lumina-term-profile-star.is-fav {
+  color: var(--warning, #d97706);
+}
+
+.lumina-term-profile-star:hover {
+  color: var(--warning, #d97706);
+  transform: scale(1.1);
+}
+
+/* Terminal Session List Items */
+.lumina-term-session-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 7px;
+  border-radius: var(--radius-xs, 4px);
+  font-size: 11.5px;
+  cursor: pointer;
+  margin-bottom: 2px;
+  color: var(--text-muted, #8a8a93);
+  background: transparent;
+  border: 1px solid transparent;
+  border-left: 2px solid transparent;
+  font-weight: 450;
+  transition:
+    background-color var(--dur-fast, 100ms) ease,
+    color var(--dur-fast, 100ms) ease,
+    border-color var(--dur-fast, 100ms) ease,
+    opacity var(--dur-fast, 100ms) ease;
+}
+
+.lumina-term-session-item:hover {
+  color: var(--text-main, #f4f4f5);
+  background: var(--bg-hover, color-mix(in srgb, var(--text-main, #f4f4f5) 8%, transparent));
+  border-color: color-mix(in srgb, var(--border-subtle, var(--border-dim, rgba(128, 128, 128, 0.2))) 70%, transparent);
+  border-left-color: color-mix(in srgb, var(--text-accent, #8b5cf6) 45%, transparent);
+}
+
+.lumina-term-session-item.is-active {
+  color: var(--text-main, #f4f4f5);
+  background: var(--bg-active, color-mix(in srgb, var(--text-accent, #8b5cf6) 13%, transparent));
+  border-color: color-mix(in srgb, var(--text-accent, #8b5cf6) 22%, transparent);
+  border-left: 2px solid var(--text-accent, #8b5cf6);
+  font-weight: 600;
+}
+
+.lumina-term-session-item.is-active:hover {
+  background: color-mix(in srgb, var(--text-accent, #8b5cf6) 17%, transparent);
+  border-color: color-mix(in srgb, var(--text-accent, #8b5cf6) 30%, transparent);
+  border-left-color: var(--text-accent, #8b5cf6);
+}
+
+.lumina-term-session-item.is-dragging {
+  cursor: grabbing;
+  opacity: 0.35;
+}
+
+.lumina-term-session-item.is-drag-over {
+  box-shadow: 0 -1.5px 0 0 var(--text-accent, #8b5cf6);
+}
+
+.lumina-term-session-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--text-faint, #71717a);
+  opacity: 0.55;
+  transition: background-color var(--dur-fast, 100ms) ease, opacity var(--dur-fast, 100ms) ease;
+}
+
+.lumina-term-session-dot.is-active {
+  background: var(--success, #22c55e);
+  opacity: 1;
+}
+
+.lumina-term-session-dot.is-exited {
+  background: var(--icon-danger, var(--danger, #ef4444));
+  opacity: 1;
+}
+
+.lumina-term-session-action {
+  background: transparent;
+  border: none;
+  color: var(--text-faint, #71717a);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.4;
+  transition: opacity var(--dur-fast, 100ms) ease, color var(--dur-fast, 100ms) ease, background-color var(--dur-fast, 100ms) ease;
+}
+
+.lumina-term-session-item.is-active .lumina-term-session-action,
+.lumina-term-session-item:hover .lumina-term-session-action {
+  opacity: 0.8;
+}
+
+.lumina-term-session-action:hover {
+  opacity: 1 !important;
+  color: var(--text-main, #f4f4f5);
+  background: var(--bg-hover, color-mix(in srgb, var(--text-main, #f4f4f5) 10%, transparent));
+}
+
+.lumina-term-session-action--danger:hover {
+  color: var(--icon-danger, var(--danger, #ef4444));
+  background: color-mix(in srgb, var(--icon-danger, var(--danger, #ef4444)) 14%, transparent);
+}
+
+.lumina-term-rename-input {
+  background: var(--bg-editor, #18181b);
+  border: 1px solid var(--text-accent, #8b5cf6);
+  color: var(--text-main, #f4f4f5);
+  border-radius: 3px;
+  font-size: 11px;
+  padding: 1px 4px;
+  height: 20px;
+  outline: none;
 }
 
 body.is-terminal-resizing,

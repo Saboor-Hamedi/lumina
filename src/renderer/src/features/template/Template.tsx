@@ -108,10 +108,10 @@ export const Template: React.FC<TemplateProps> = ({
     onClose: isEmbedded ? undefined : onClose
   })
 
-  // Esc key closes drawer / sidebar view only when active
+  // Esc key closes standalone drawer only (never the docked left sidebar)
   useKeyboardShortcuts({
     onEscape: () => {
-      if (isOpen && onClose) {
+      if (isOpen && !isEmbedded && onClose) {
         onClose()
         return true
       }

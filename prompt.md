@@ -1,2 +1,27 @@
-Prompt for your agent:"We received detailed bug reports from a macOS user after our Electron-to-Tauri 2.0 migration. Please inspect the codebase and fix all five issues below:1. macOS Native Title Bar, Traffic Lights & Window Dragging:The issue: On macOS, the app renders custom Windows-style minimize/maximize/close buttons on the top right, lacks native macOS traffic light controls and native macOS fullscreen behavior, and the top bar cannot be dragged to move the window.The fix:In src-tauri/tauri.conf.json (or platform-specific macOS window setup in src-tauri/src/lib.rs), configure native macOS window controls (decorations: true with titleBarStyle: "Overlay" and hiddenTitle: true on macOS) so native red/yellow/green traffic lights and macOS native fullscreen work properly.Detect macOS in the frontend header component (via @tauri-apps/plugin-os or navigator.userAgent/navigator.platform): hide the custom Windows min/max/close buttons on macOS and add left padding (~70–80px) to the top-left bar so traffic lights don't overlap the sidebar toggle icon.Add data-tauri-drag-region to the top title bar background (ensuring interactive buttons/inputs inside it remain clickable) so users can drag the window smoothly across macOS and Windows.2. Fix (Default) Label in Typography Font Dropdown:The issue: JetBrains Mono is intentionally the default font on first launch, but in Settings → Typography → Font Family, Inter (Default) still carries the (Default) label.The fix: Update the Font Family dropdown options so JetBrains Mono (Default) has the (Default) label and Inter is listed plainly as Inter.3. Fix Marked.js Math Block ($$ ... $$) Parsing & Double Backslash (\\) Escaping:The issue: Multi-line display math blocks like:Code snippet$$>   \begin{matrix} >   & 9.999999\dots \\ >   - & 0.999999\dots \\ >   \hline >   & 9.000000\dots >   \end{matrix} >$$
-break in Marked.js because - & 0.999999\dots \\ gets parsed as a Markdown bullet list item first, and Markdown unescaping turns \\ into a single \ before KaTeX renders it.The fix: Add a custom Marked.js block/inline tokenizer extension (or extract/protect $$ ... $$ and $ ... $ blocks before Marked's standard block/inline rules run) so raw LaTeX content inside math delimiters is passed untouched directly to KaTeX without list parsing or backslash stripping.4. Fix CodeMirror Closing Code Fence (```) Enter Key Behavior:The issue: Pressing Enter when the cursor is at the closing ``` line of a fenced code block accidentally inserts/opens a new code block below instead of exiting the code block onto a normal paragraph line.The fix: Inspect our CodeMirror 6 keymap / auto-closing fence extension and fix the Enter handler on closing ``` lines so pressing Enter after a closing fence exits cleanly into a normal Markdown line.5. Fix Broken Auto-Updater / Download Flow on v1.4.1:The issue: Users on v1.4.1 are unable to download new updates properly.The fix: Audit the Tauri updater configuration in tauri.conf.json, the frontend update checker/download handler, and our GitHub Release workflow (latest.json endpoint URLs, asset naming, and signature verification) to ensure in-app update checks and downloads work cleanly across Windows, macOS, and Linux."
+Prompt for your agent:
+
+"In our CodeMirror 6 Live Preview editor (src/renderer/src/core/ or features/Editor/), math blocks ($$ ... $$ and $ ... $) are still being corrupted by Markdown Live Preview decorations, as seen in the screenshot:
+
+1. Stop Markdown Live Preview Decorations Inside Math Ranges ($$ ... $$ and $ ... $):
+
+The issue: Inside a $$ ... $$ block (e.g., \begin{matrix} & 9.999999\dots \\ - & 0.999999\dots \\ \hline & 9.000000\dots \end{matrix}):
+
+The Markdown escape-hiding decorator is hiding the first backslash of \\, making valid LaTeX line breaks (\\) visually appear as single \ in the editor.
+
+The Markdown bullet-list decorator is turning -  at the start of - & 0.999999\dots \\ into a bullet dot (•).
+
+The fix:
+
+Compute all inline $ ... $ and block $$ ... $$ math ranges in the document (or via the Lezer/CodeMirror syntax tree) before building Live Preview decorations.
+
+Skip/exclude all Markdown inline/block formatting decorations (escape-character hiding \, bullet list replacement - → •, bold/italic/strikethrough/heading decorations) whenever a match overlaps with any math range. Raw LaTeX inside $ ... $ and $$ ... $$ must remain completely untouched (\\ stays \\, - stays -).
+
+2. Add Live KaTeX Preview Below Active $$ ... $$ Blocks (Obsidian-style) & Rendered Widget When Blurred:
+
+The issue: In Live Preview mode, editing a $$ ... $$ block shows only raw unrendered text with no rendered math preview.
+
+The fix:
+
+When the cursor is outside a $$ ... $$ block in Live Preview mode, replace/render the block cleanly with KaTeX.
+
+When the cursor is inside a $$ ... $$ block (active editing), keep the syntax-highlighted LaTeX source visible AND render a live KaTeX preview widget immediately below the closing $$ line so the user sees the rendered math update in real time as they type."

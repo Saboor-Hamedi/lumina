@@ -2,6 +2,8 @@
 
 Lumina is designed so you can write and move around without your hands leaving the keyboard. You do not need to memorize everything — start with a few and add more over time.
 
+> **macOS Users:** Everywhere `Ctrl` is listed below, use **`⌘` (Command)** on macOS. Lumina maps shortcuts automatically across Windows, macOS, and Linux.
+
 ---
 
 ## 🔍 Finding & Moving Around

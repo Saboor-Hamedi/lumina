@@ -32,6 +32,10 @@ export const RightActivityBar: React.FC<RightActivityBarProps> = memo(({
   isGraphActive = false,
   isZenHidden = false
 }) => {
+  const isMac =
+    typeof navigator !== 'undefined' &&
+    /mac/i.test(navigator.platform || navigator.userAgent)
+
   return (
     <aside
       className={`lumina-activity-bar lumina-activity-bar-right${isZenHidden ? ' zen-hidden' : ''}`}
@@ -57,7 +61,7 @@ export const RightActivityBar: React.FC<RightActivityBarProps> = memo(({
         })}
 
         {onToggleGraph && (
-          <ToolTip text="Knowledge Graph" position="left">
+          <ToolTip text={`Knowledge Graph (${isMac ? '⌘G' : 'Ctrl+G'})`} position="left">
             <button
               type="button"
               className={`activity-bar-btn${isGraphActive ? ' active' : ''}`}

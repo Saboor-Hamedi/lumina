@@ -122,7 +122,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
         </ToolTip>
       </div>
 
-      <div className="title-right">
+      <div className="title-right" data-tauri-drag-region>
         <div className="window-controls" data-testid="window-controls">
           <CalendarToggle />
           <div className="accent-titlebar-container">
