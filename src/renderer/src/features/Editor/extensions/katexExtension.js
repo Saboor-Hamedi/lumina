@@ -32,7 +32,8 @@ class KaTeXWidget extends WidgetType {
     try {
       content.innerHTML = katex.renderToString(this.latex, {
         displayMode: this.isBlock,
-        throwOnError: false
+        throwOnError: false,
+        output: 'html'
       })
     } catch {
       el.className += ' cm-katex-error'

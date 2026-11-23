@@ -421,45 +421,6 @@ export function rewriteMarkdownAssetLinks(
   return out
 }
 
-function renderMathExpressions(markdown: string): string {
-  const codePlaceholders: string[] = []
-  let text = markdown.replace(/```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]+`/g, (match) => {
-    const token = `\u0000LMCODE_${codePlaceholders.length}\u0000`
-    codePlaceholders.push(match)
-    return token
-  })
-
-  text = text.replace(/\$\$([\s\S]+?)\$\$/g, (_, expr) => {
-    try {
-      const mathml = katex.renderToString(String(expr).trim(), {
-        displayMode: true,
-        throwOnError: false,
-        output: 'mathml'
-      })
-      return `\n<div class="math-block">${mathml}</div>\n`
-    } catch {
-      return `\n<pre class="math-fallback">${escapeHtml(String(expr).trim())}</pre>\n`
-    }
-  })
-
-  text = text.replace(/(^|[^\\])\$(?!\s)([^$\n]+?)\$/g, (full, prefix, inner) => {
-    const expr = String(inner)
-    if (expr.endsWith(' ') || expr.endsWith('\\')) return full
-    try {
-      const mathml = katex.renderToString(expr.trim(), {
-        displayMode: false,
-        throwOnError: false,
-        output: 'mathml'
-      })
-      return `${prefix}<span class="math-inline">${mathml}</span>`
-    } catch {
-      return full
-    }
-  })
-
-  return text.replace(/\u0000LMCODE_(\d+)\u0000/g, (_, idx) => codePlaceholders[Number(idx)] ?? '')
-}
-
 export function convertWikilinks(
   content: string,
   mode: 'span' | 'link' | 'plain' = 'span'
@@ -514,6 +475,70 @@ export function generateTOC(
 function createExportMarked(mermaidEnabled: boolean): Marked {
   const m = new Marked({ gfm: true, breaks: false })
   m.use({
+    extensions: [
+      {
+        name: 'mathBlock',
+        level: 'block',
+        start(src: string) {
+          return src.match(/\$\$/)?.index
+        },
+        tokenizer(src: string) {
+          const match = /^\$\$([\s\S]+?)\$\$(?:\r?\n+|$)/.exec(src)
+          if (match) {
+            return {
+              type: 'mathBlock',
+              raw: match[0],
+              text: match[1].trim()
+            }
+          }
+          return undefined
+        },
+        renderer(token: any) {
+          try {
+            const mathml = katex.renderToString(String(token.text || ''), {
+              displayMode: true,
+              throwOnError: false,
+              output: 'mathml'
+            })
+            return `<div class="math-block">${mathml}</div>\n`
+          } catch {
+            return `<pre class="math-fallback">${escapeHtml(String(token.text || ''))}</pre>\n`
+          }
+        }
+      },
+      {
+        name: 'mathInline',
+        level: 'inline',
+        start(src: string) {
+          return src.match(/(^|[^\\])\$/)?.index
+        },
+        tokenizer(src: string) {
+          const match = /^\$(?!\s)([^$\n\r]+?)\$/.exec(src)
+          if (match) {
+            const inner = match[1]
+            if (inner.endsWith(' ') || inner.endsWith('\\')) return undefined
+            return {
+              type: 'mathInline',
+              raw: match[0],
+              text: inner.trim()
+            }
+          }
+          return undefined
+        },
+        renderer(token: any) {
+          try {
+            const mathml = katex.renderToString(String(token.text || ''), {
+              displayMode: false,
+              throwOnError: false,
+              output: 'mathml'
+            })
+            return `<span class="math-inline">${mathml}</span>`
+          } catch {
+            return escapeHtml(String(token.raw || ''))
+          }
+        }
+      }
+    ],
     renderer: {
       code({ text, lang }: Tokens.Code) {
         const cleanLang = (lang || '').trim().split(/\s+/)[0] || ''
@@ -747,7 +772,6 @@ export async function renderMarkdownForExport(
   } = opts
 
   let processed = await embedImagesAsDataUri(content || '', optimizeImages)
-  processed = renderMathExpressions(processed)
   processed = convertWikilinks(processed, wikilinkMode)
 
   const marked = createExportMarked(mermaidMode !== 'none')

@@ -2,8 +2,8 @@
 
 > **Architectural Source of Truth**: This document defines Lumina's core purpose, mental model, system architecture, architectural decision log, development invariants, known limitations, and strategic future roadmap.
 
-**Version**: `v1.0.65` | **Status**: Active Production | **Knowledge Classification**: Evergreen Architecture  
-**Last Verified**: October 2026 | **Target Audience**: Core Developers & Lumina AI Agents
+**Version**: `v1.4.2` | **Status**: Active Production | **Knowledge Classification**: Evergreen Architecture  
+**Last Verified**: November 2026 | **Target Audience**: Core Developers & Lumina AI Agents
 
 ---
 
@@ -112,11 +112,10 @@ User memory is structured into three clear tiers:
 2. **User Preferences**: Preferred communication styles, technical depth, formatting habits, and language conventions.
 3. **Learned Facts**: Explicit insights and project details curated across sessions.
 
-### Sandboxed Document Export Architecture
-Document generation is strictly decoupled into modular backend pipelines (`src/export/`) and renderer interfaces (`src/renderer/src/features/export/`):
-- **Core Exporters**: `exportPDF.js` (A4 layout, auto-TOC, page counter, print-optimized CSS), `exportBundle.js` (clean self-contained HTML/Markdown bundles), `exportDocs.js` (.doc Word-compatible format), `exportBatch.js` (folder-recursive batch processing), and `exportCombined.js` (single merged volume synthesis).
-- **IPC Preview Pipeline**: `src/export/preview/` generates theme-tokenized HTML previews without touching the filesystem, streamed across IPC channels to sandboxed preview components (`PDFPreview`, `DOCSPreview`, `HTMLPreview`, `MarkdownPreview`, `TEXTPreview`).
-- **Offline Mermaid Runtime**: Diagram rendering executes via an offscreen Electron render window (`mermaidRuntime.js`, `renderWindow.js`), rendering charts directly into inline SVGs before document assembly.
+### Sandboxed Document Export & Native Tauri 2.0 Architecture
+- **Tauri 2.0 + Rust Core (`src-tauri` + `crates/lumina_core`)**: File scanning, Rayon fuzzy search, ConPTY/PTY terminal sessions, Google OAuth, and in-app GitHub Release downloading/installing run natively in Rust without a bundled Chromium or Node.js runtime.
+- **Document Export Engine (`src/renderer/src/features/export/exportEngine.ts`)**: Theme-synchronized export pipelines for HTML, Markdown, Plain Text, Word (`.doc`), ZIP, and print-ready PDF with live sandboxed previews, KaTeX math tokenization, and Mermaid SVG rendering.
+- **Precision Paper & Ink UI**: Dual left/right Activity Bars, parallel StatusBar, uniform 160px tabs (with `Alt`-key Close Others mode), `220px` default sidebars, and 6 DRY UI primitives in `src/renderer/src/ui/`.
 
 ### Modular Knowledge Graph Architecture
 The knowledge topography engine (`src/renderer/src/features/graph/`) operates across specialized, decoupled modules:

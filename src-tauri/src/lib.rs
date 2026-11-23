@@ -32,6 +32,13 @@ pub fn run() {
                     });
                 }
             }
+            #[cfg(target_os = "macos")]
+            {
+                use tauri::Manager;
+                for window in app.webview_windows().values() {
+                    let _ = window.set_decorations(true);
+                }
+            }
             commands::start_workspace_watcher(app.handle().clone());
             Ok(())
         })

@@ -47,15 +47,15 @@ You can also change settings right inside the palette:
 
 ### Show or hide parts of the app
 
-The palette can tidy your workspace too. Search for the part you want and switch it on or off:
+The palette can tidy your workspace too. Even while **Zen Mode** is active, you can search for any individual part and switch it back on or off without leaving Zen Mode:
 
 - Title bar
 - Status bar
-- Activity bar (the row of main icons)
+- Activity bar (left & right icon docks)
 - Tabs
 - Breadcrumbs (the path at the top of a note)
 - Primary sidebar (`Ctrl + B`)
-- Secondary sidebar
+- Secondary sidebar (`Ctrl + I`)
 
 ---
 
@@ -64,9 +64,9 @@ The palette can tidy your workspace too. Search for the part you want and switch
 Press `Ctrl + G` to see your notes as a visual map in its own tab.
 
 - Each note appears as a point, and the links between notes connect them.
-- Search by title or tag to find a note quickly.
-- Click a point to open that note.
-- Save the map as a picture or as a scalable image when you want to share it.
+- **Split-View Independent 2D / 3D**: Split the Graph into multiple panes (`Ctrl + \` / `Ctrl + Alt + \`) and switch any pane between 2D and 3D mode or toggle its sidebar independently without affecting other panes.
+- Search by title or tag to find a note quickly, or view live FPS and node/link counts embedded in the Graph sidebar.
+- Save the map as a PNG image or as a scalable SVG vector when you want to share it.
 
 ---
 

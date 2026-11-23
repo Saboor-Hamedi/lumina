@@ -253,10 +253,10 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
               }}
               className="settings-select"
             >
-              <option value="Inter">Inter (Default)</option>
+              <option value="Inter">Inter</option>
               <option value="Vazirmatn">Vazirmatn (Arabic / Persian / Clean)</option>
               <option value="Roboto">Roboto</option>
-              <option value="JetBrains Mono">JetBrains Mono</option>
+              <option value="JetBrains Mono">JetBrains Mono (Default)</option>
               <option value="Fira Code">Fira Code</option>
               <option value="System Default">System Default</option>
             </select>

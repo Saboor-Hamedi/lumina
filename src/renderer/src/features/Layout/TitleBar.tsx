@@ -49,7 +49,9 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
 
   const [isMaximized, setIsMaximized] = useState<boolean>(false)
 
-  const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
+  const isMac =
+    typeof navigator !== 'undefined' &&
+    /mac/i.test(navigator.platform || navigator.userAgent)
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -84,8 +86,8 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
   }, [])
 
   return (
-    <div className="title-bar" data-testid="title-bar" data-tauri-drag-region>
-      <div className="title-left">
+    <div className={`title-bar${isMac ? ' is-mac' : ''}`} data-testid="title-bar" data-tauri-drag-region>
+      <div className="title-left" data-tauri-drag-region>
         <ToolTip text={isLeftSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'} position="bottom">
           <button
             type="button"
@@ -101,7 +103,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
         </div>
       </div>
 
-      <div className="title-center">
+      <div className="title-center" data-tauri-drag-region>
         <ToolTip text={isMac ? 'Search or Ask AI (⌘P)' : 'Search or Ask AI (Ctrl + P)'} position="bottom">
           <div
             className="unified-search-bar"
@@ -181,28 +183,32 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
               />
             )}
           </div>
-          <span className="titlebar-controls-divider" aria-hidden="true" />
-          <button type="button" onClick={handleMinimize} className="control-btn" aria-label="Minimize">
-            <Minus size={14} strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            onClick={handleToggleMaximize}
-            className="control-btn"
-            aria-label={isMaximized ? 'Restore' : 'Maximize'}
-          >
-            {isMaximized ? (
-              <svg width="11" height="11" viewBox="0 0 11 11" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="3.5" y="1.5" width="6" height="6" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
-                <path d="M1.5 3.5V9.5H7.5" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-              </svg>
-            ) : (
-              <Square size={11} strokeWidth={1.7} />
-            )}
-          </button>
-          <button type="button" onClick={handleClose} className="control-btn close" aria-label="Close">
-            <X size={14} strokeWidth={2} />
-          </button>
+          {!isMac && (
+            <>
+              <span className="titlebar-controls-divider" aria-hidden="true" />
+              <button type="button" onClick={handleMinimize} className="control-btn" aria-label="Minimize">
+                <Minus size={14} strokeWidth={2} />
+              </button>
+              <button
+                type="button"
+                onClick={handleToggleMaximize}
+                className="control-btn"
+                aria-label={isMaximized ? 'Restore' : 'Maximize'}
+              >
+                {isMaximized ? (
+                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3.5" y="1.5" width="6" height="6" rx="0.5" stroke="currentColor" strokeWidth="1.2" />
+                    <path d="M1.5 3.5V9.5H7.5" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+                  </svg>
+                ) : (
+                  <Square size={11} strokeWidth={1.7} />
+                )}
+              </button>
+              <button type="button" onClick={handleClose} className="control-btn close" aria-label="Close">
+                <X size={14} strokeWidth={2} />
+              </button>
+            </>
+          )}
         </div>
       </div>
 

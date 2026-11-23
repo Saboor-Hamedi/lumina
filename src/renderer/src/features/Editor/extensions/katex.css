@@ -27,6 +27,7 @@
   background: var(--card, rgba(125, 125, 125, 0.04));
   border: 1px solid var(--border, rgba(125, 125, 125, 0.15));
   overflow-x: auto;
+  overflow-y: hidden;
   cursor: pointer;
   user-select: text;
   box-sizing: border-box !important;
@@ -35,7 +36,14 @@
 
 .cm-katex-content {
   max-width: 100%;
-  overflow-x: auto;
+  overflow: visible !important;
+}
+
+.cm-katex-block .katex-display,
+.cm-katex-block .katex-display > .katex,
+.cm-katex-block .katex-display > .katex > .katex-html {
+  margin: 0 !important;
+  overflow: visible !important;
 }
 
 .cm-katex-copy-btn {

@@ -74,10 +74,10 @@ export const SETTINGS_REGISTRY: LuminaSettingDefinition[] = [
     type: 'enum',
     settingsTab: 'look-and-feel',
     options: [
-      { label: 'Inter (Default)', value: 'Inter' },
+      { label: 'Inter', value: 'Inter' },
       { label: 'Vazirmatn (Arabic / Persian)', value: 'Vazirmatn' },
       { label: 'Roboto', value: 'Roboto' },
-      { label: 'JetBrains Mono', value: 'JetBrains Mono' },
+      { label: 'JetBrains Mono (Default)', value: 'JetBrains Mono' },
       { label: 'Fira Code', value: 'Fira Code' },
       { label: 'System Default', value: 'System Default' }
     ],

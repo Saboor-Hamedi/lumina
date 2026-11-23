@@ -35,6 +35,10 @@
   cursor: default !important;
 }
 
+.title-bar.is-mac .title-left {
+  padding-left: 74px;
+}
+
 .titlebar-sidebar-toggle-btn {
   -webkit-app-region: no-drag;
   width: 44px;

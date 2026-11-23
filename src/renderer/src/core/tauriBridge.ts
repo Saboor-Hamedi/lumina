@@ -124,7 +124,10 @@ export function initTauriBridge(): void {
 
   const pickPlatformAsset = (assets: any[]): { url: string; name: string; size: number } | null => {
     if (!Array.isArray(assets) || assets.length === 0) return null
-    const ua = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : ''
+    const ua =
+      typeof navigator !== 'undefined'
+        ? (navigator.platform || navigator.userAgent || '').toLowerCase()
+        : ''
     const findBy = (pred: (name: string) => boolean) =>
       assets.find((a) => typeof a?.name === 'string' && pred(a.name.toLowerCase()))
 

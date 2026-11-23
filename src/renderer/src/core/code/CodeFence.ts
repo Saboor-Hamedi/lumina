@@ -32,9 +32,26 @@ export function handleCodeFenceEnter(view: EditorView | null | undefined): boole
 
   const line = state.doc.lineAt(pos)
 
-  // 1. Auto-close unclosed fenced code blocks
+  // 1. Auto-close unclosed fenced code blocks (only when `line` is an opening fence, not a closing fence)
   const openingFenceMatch = line.text.match(/^```[a-zA-Z0-9+#-]*\s*$/)
   if (openingFenceMatch && pos === line.to) {
+    let fenceCountBefore = 0
+    for (let i = 1; i < line.number; i++) {
+      if (state.doc.line(i).text.trim().startsWith('```')) {
+        fenceCountBefore++
+      }
+    }
+
+    // Odd count above means we are closing an open fence: exit cleanly to a normal line.
+    if (fenceCountBefore % 2 === 1) {
+      view.dispatch({
+        changes: { from: line.to, insert: '\n' },
+        selection: { anchor: line.to + 1 },
+        scrollIntoView: true
+      })
+      return true
+    }
+
     let isClosed = false
     for (let i = line.number + 1; i <= state.doc.lines; i++) {
       if (state.doc.line(i).text.trim().startsWith('```')) {

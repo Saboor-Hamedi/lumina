@@ -52,13 +52,13 @@ describe('SettingLookAndFeel', () => {
 
   it('renders font controls with the saved values', () => {
     render(<SettingLookAndFeel />)
-    expect(screen.getByDisplayValue('Inter (Default)')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Inter')).toBeInTheDocument()
     expect(screen.getByText('14px')).toBeInTheDocument()
   })
 
   it('updates fontFamily via the store when changed', () => {
     render(<SettingLookAndFeel />)
-    fireEvent.change(screen.getByDisplayValue('Inter (Default)'), {
+    fireEvent.change(screen.getByDisplayValue('Inter'), {
       target: { value: 'Roboto' }
     })
     expect(useSettingsStore.getState().settings.fontFamily).toBe('Roboto')

@@ -23,6 +23,10 @@ Lumina is designed so you can write and move around without your hands leaving t
 | `Ctrl + Shift + Tab` | **Previous Tab** — Go to the previous open note |
 | `Ctrl + 1` … `Ctrl + 9` | **Jump to a Tab** — Open the first through ninth tab directly |
 | `Ctrl + W` | **Close Tab** — Close the note you are viewing |
+| `Alt + Click` (Tab Close) | **Close Other Tabs** — Hold `Alt` to reveal the **Close Others** icon on tabs and click to close every other tab |
+| `Double-click Tab` | **Rename Tab** — Rename the note directly from the tab bar |
+| `Ctrl + \` | **Split Right** — Split the editor vertically into side-by-side panes |
+| `Ctrl + Alt + \` | **Split Down** — Split the editor horizontally into top/bottom panes |
 | `Escape` | **Cancel** — Close any search bar, menu, or pop-up |
 
 ---

@@ -20,6 +20,8 @@
         "center": true,
         "resizable": true,
         "decorations": false,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
         "transparent": false,
         "fullscreen": false,
         "backgroundColor": "#121218"
