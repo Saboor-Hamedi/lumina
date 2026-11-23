@@ -1,5 +1,5 @@
 import React, { memo } from 'react'
-import { Info, List as ListIcon, Link2 } from 'lucide-react'
+import { Info, List as ListIcon, Link2, Network } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import './css/activitybar.css'
 
@@ -9,6 +9,8 @@ export interface RightActivityBarProps {
   isRightSidebarOpen: boolean
   activeTab: string
   onSelectTab: (tab: RightSidebarTabId) => void
+  onToggleGraph?: () => void
+  isGraphActive?: boolean
   isZenHidden?: boolean
 }
 
@@ -26,6 +28,8 @@ export const RightActivityBar: React.FC<RightActivityBarProps> = memo(({
   isRightSidebarOpen,
   activeTab,
   onSelectTab,
+  onToggleGraph,
+  isGraphActive = false,
   isZenHidden = false
 }) => {
   return (
@@ -51,6 +55,20 @@ export const RightActivityBar: React.FC<RightActivityBarProps> = memo(({
             </ToolTip>
           )
         })}
+
+        {onToggleGraph && (
+          <ToolTip text="Knowledge Graph" position="left">
+            <button
+              type="button"
+              className={`activity-bar-btn${isGraphActive ? ' active' : ''}`}
+              onClick={onToggleGraph}
+              aria-label="Knowledge Graph"
+              aria-pressed={isGraphActive}
+            >
+              <Network size={16} />
+            </button>
+          </ToolTip>
+        )}
       </div>
     </aside>
   )

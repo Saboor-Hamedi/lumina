@@ -13,7 +13,8 @@ import { useChatScroll } from '../hooks/useChatScroll'
 import { useScopedSelectAll } from '../hooks/useScopedSelectAll'
 import { getBrainDocuments } from '../services/brainKnowledge'
 import ToolTip from '../../../components/atoms/ToolTip'
-import { BarChart3, Plus, History, Trash2, Pin } from 'lucide-react'
+import { Popover } from '../../../ui'
+import { BarChart3, Plus, History, Trash2, Pin, MoreHorizontal } from 'lucide-react'
 import '../css/lumina.css'
 import '../css/luminaWorkbench.css'
 
@@ -79,10 +80,8 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
     )
 
     const isInTab = activeTabId === LUMINA_TAB_ID
-    const currentSession = useMemo(() => {
-      return (sessions || []).find((s: any) => s.id === activeSessionId)
-    }, [sessions, activeSessionId])
-    const currentSessionTitle = currentSession?.title || 'Lumina Chat'
+    const [isActionsOpen, setIsActionsOpen] = useState(false)
+    const actionsMenuRef = useRef<HTMLDivElement | null>(null)
 
     const brainDocs = useMemo(() => getBrainDocuments(), [])
 
@@ -306,86 +305,95 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
                     }}
                     aria-label="Toggle Chat History"
                   >
-                    <History size={12} />
-                    <span>History</span>
+                    <History size={13} />
                   </button>
                 </ToolTip>
-
-                <div className="session-header-divider" />
-
-                <span className="session-header-title" title={currentSessionTitle}>
-                  {currentSessionTitle}
-                </span>
               </div>
 
-              <div className="session-header-right">
-                <ToolTip text="New Chat" position="bottom">
+              <div className="session-header-right" ref={actionsMenuRef} style={{ position: 'relative' }}>
+                <ToolTip text="Chat Actions" position="bottom">
                   <button
                     type="button"
-                    className="session-header-btn"
+                    className={`session-header-btn ${isActionsOpen || isWorkbenchOpen ? 'active' : ''}`}
                     onClick={(e) => {
                       e.stopPropagation()
-                      createNewSession()
+                      setIsActionsOpen((prev) => !prev)
                     }}
-                    aria-label="New Chat"
+                    aria-label="Chat Actions"
+                    aria-expanded={isActionsOpen}
                   >
-                    <Plus size={12} />
-                    <span>New</span>
+                    <MoreHorizontal size={14} />
                   </button>
                 </ToolTip>
 
-                <div style={{ position: 'relative' }}>
-                  <ToolTip text="AI Analytics & Telemetry" position="bottom">
+                <Popover
+                  isOpen={isActionsOpen}
+                  onClose={() => setIsActionsOpen(false)}
+                  anchorRef={actionsMenuRef}
+                  placement="bottom-end"
+                  className="activity-bar-help-popover"
+                  role="menu"
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="activity-bar-help-item"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setIsActionsOpen(false)
+                      createNewSession()
+                    }}
+                  >
+                    <Plus size={13} />
+                    <span>New Chat</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="activity-bar-help-item"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setIsActionsOpen(false)
+                      setIsWorkbenchOpen((prev) => !prev)
+                    }}
+                  >
+                    <BarChart3 size={13} />
+                    <span>Analytics</span>
+                  </button>
+                  {chatMessages.length > 0 && (
                     <button
                       type="button"
-                      className={`session-header-btn ${isWorkbenchOpen ? 'active' : ''}`}
+                      role="menuitem"
+                      className="activity-bar-help-item"
                       onClick={(e) => {
                         e.stopPropagation()
-                        setIsWorkbenchOpen((prev) => !prev)
-                      }}
-                      aria-label="AI Analytics"
-                    >
-                      <BarChart3 size={12} />
-                      <span>Analytics</span>
-                    </button>
-                  </ToolTip>
-
-                  {isWorkbenchOpen && (
-                    <LuminaAnalyticsDropdown onClose={() => setIsWorkbenchOpen(false)} />
-                  )}
-                </div>
-
-                {chatMessages.length > 0 && (
-                  <ToolTip text="Clear Messages" position="bottom">
-                    <button
-                      type="button"
-                      className="session-header-btn"
-                      onClick={(e) => {
-                        e.stopPropagation()
+                        setIsActionsOpen(false)
                         if (activeSessionId) clearSessionMessages(activeSessionId)
                       }}
-                      aria-label="Clear Messages"
                     >
-                      <Trash2 size={12} />
+                      <Trash2 size={13} />
+                      <span>Clear Messages</span>
                     </button>
-                  </ToolTip>
-                )}
-
-                {!isInTab && !isSidebar && (
-                  <ToolTip text="Open Lumina as Tab" position="bottom">
+                  )}
+                  {!isInTab && !isSidebar && (
                     <button
                       type="button"
-                      className="session-header-btn"
+                      role="menuitem"
+                      className="activity-bar-help-item"
                       onClick={(e) => {
                         e.stopPropagation()
+                        setIsActionsOpen(false)
                         openLuminaTab()
                       }}
-                      aria-label="Open Lumina as Tab"
                     >
-                      <Pin size={12} />
+                      <Pin size={13} />
                       <span>Open as Tab</span>
                     </button>
-                  </ToolTip>
+                  )}
+                </Popover>
+
+                {isWorkbenchOpen && (
+                  <LuminaAnalyticsDropdown onClose={() => setIsWorkbenchOpen(false)} />
                 )}
               </div>
             </div>

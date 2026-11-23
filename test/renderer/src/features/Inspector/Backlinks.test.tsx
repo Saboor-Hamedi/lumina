@@ -64,26 +64,20 @@ describe('Backlinks Component', () => {
     expect(container.textContent).toContain('This note mentions Quantum Physics in plain text without a link.')
   })
 
-  it('filters backlinks when typing in search input', async () => {
+  it('renders cleanly without a search filter bar', async () => {
     const targetNote = {
       id: 'target-note',
       title: 'Quantum Physics',
       fileName: 'Quantum Physics.md'
     }
 
-    const { container } = render(<Backlinks note={targetNote} />)
+    render(<Backlinks note={targetNote} />)
 
-    // Wait for async backlinks data to load
     await waitFor(() => {
       expect(screen.getByText('2 links')).toBeInTheDocument()
     })
 
-    const searchInput = screen.getByPlaceholderText('Filter backlinks...')
-    fireEvent.change(searchInput, { target: { value: 'basics' } })
-
-    // Only the second mention with "basics" should be visible in linked mentions
-    expect(container.textContent).toContain('Another line with [[Quantum Physics|QP basics]].')
-    expect(container.textContent).not.toContain('Introduction to [[Quantum Physics]] and mechanics.')
+    expect(screen.queryByPlaceholderText('Filter backlinks...')).not.toBeInTheDocument()
   })
 
   it('navigates to source note when clicking note title', async () => {

@@ -6,9 +6,9 @@
 /* Right Sidebar Container */
 .shell-sidebar-right,
 [data-modern-ui='true'] .shell-sidebar-right {
-  background: var(--bg-sidebar) !important;
-  border: none !important;
-  border-left: 1px solid transparent !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
+  border: 0 solid var(--border-dim) !important;
+  border-radius: 8px !important;
   box-shadow: none !important;
   overflow: hidden !important;
   display: flex;
@@ -19,7 +19,8 @@
 
 .app-shell.right-open .shell-sidebar-right,
 [data-modern-ui='true'] .app-shell.right-open .shell-sidebar-right {
-  border-left-color: var(--border-dim) !important;
+  border-width: 1px !important;
+  border-radius: 8px !important;
 }
 
 .shell-sidebar-right .inspector-panel,
@@ -114,7 +115,7 @@
   flex-direction: column;
   border-radius: 0;
   border: none;
-  background: var(--bg-sidebar);
+  background: var(--bg-editor, var(--bg-app));
   box-shadow: none;
   overflow: hidden;
   box-sizing: border-box;
@@ -123,12 +124,13 @@
 
 .shell-sidebar-right .inspector-sub-header,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-sub-header {
-  height: 28px;
-  min-height: 28px;
-  max-height: 28px;
+  height: 33px !important;
+  min-height: 33px !important;
+  max-height: 33px !important;
   box-sizing: border-box;
-  border-bottom: 1px solid var(--border-hairline, var(--border-dim));
-  padding: 0 10px;
+  border-bottom: 1px solid var(--border-dim) !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
+  padding: 0 12px;
   display: flex;
   align-items: center;
 }
@@ -142,7 +144,7 @@
   border-radius: 0;
   border: none;
   border-top: 1px solid var(--border-hairline, var(--border-dim));
-  background: var(--bg-sidebar);
+  background: var(--bg-editor, var(--bg-app));
   box-shadow: none;
   box-sizing: border-box;
   display: flex;
@@ -161,7 +163,7 @@
   border-radius: 0 !important;
   border: none !important;
   border-top: 1px solid var(--border-dim) !important;
-  background: var(--bg-sidebar) !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
   box-shadow: none !important;
   box-sizing: border-box !important;
   padding: 0 !important;

@@ -3,17 +3,17 @@
  * Fixed sticky mode badge, ultra-sleek micro badges, invisible scroll
  * ============================================================ */
 
-/* Status Bar Container: Docked flush edge-to-edge at bottom matching Editor background */
+/* Status Bar Container: Clean parallel footer under main workspace with transparent background */
 .status-bar,
 [data-modern-ui='true'] .status-bar {
-  margin: 0 !important;
+  margin: 2px 0 0 0 !important;
   border-radius: 0 !important;
   border: none !important;
   border-top: none !important;
-  background: var(--bg-editor, var(--bg-app)) !important;
-  height: 24px !important;
-  min-height: 24px !important;
-  max-height: 24px !important;
+  background: transparent !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  max-height: 22px !important;
   width: 100% !important;
   box-sizing: border-box;
   box-shadow: none !important;
@@ -27,7 +27,7 @@
   z-index: 100 !important;
   overflow: hidden !important;
   position: relative !important;
-  transition: height 0.28s cubic-bezier(0.22, 1, 0.36, 1), min-height 0.28s cubic-bezier(0.22, 1, 0.36, 1), max-height 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1) !important;
+  transition: none !important;
 }
 
 .status-bar.zen-hidden,
@@ -35,40 +35,9 @@
   height: 0 !important;
   min-height: 0 !important;
   max-height: 0 !important;
+  margin-top: 0 !important;
   opacity: 0 !important;
   pointer-events: none !important;
-}
-
-/* Lualine Section A: Mode Badge (NORMAL / VISUAL) — Completely Static & Stationary (Zero Shake) */
-.lualine-mode-badge,
-[data-modern-ui='true'] .lualine-mode-badge {
-  width: 42px !important;
-  min-width: 42px !important;
-  max-width: 42px !important;
-  position: relative !important;
-  z-index: 10 !important;
-  height: 24px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 12px 0 10px !important;
-  background: var(--text-accent, #8b5cf6) !important;
-  color: #0b0c10 !important;
-  font-weight: 800 !important;
-  font-size: 8px !important;
-  letter-spacing: 0.8px !important;
-  text-transform: uppercase !important;
-  flex-shrink: 0 !important;
-  clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%) !important;
-  line-height: 24px !important;
-  white-space: nowrap !important;
-  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.3) !important;
-}
-
-.lualine-mode-badge[data-mode='visual'],
-[data-modern-ui='true'] .lualine-mode-badge[data-mode='visual'] {
-  background: #f59e0b !important;
-  color: #0b0c10 !important;
 }
 
 /* Scrollable container for the rest of the status bar */

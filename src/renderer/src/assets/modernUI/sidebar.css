@@ -4,11 +4,17 @@
  * ============================================================ */
 
 /* Left Sidebar Container */
+.shell-sidebar-left,
+[data-modern-ui='true'] .shell-sidebar-left {
+  border-radius: 8px !important;
+  border: 0 solid var(--border-dim) !important;
+}
+
 .app-shell.left-open .shell-sidebar-left,
 [data-modern-ui='true'] .app-shell.left-open .shell-sidebar-left {
-  background: var(--bg-sidebar) !important;
-  border: none !important;
-  border-right: 1px solid var(--border-dim) !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
+  border-width: 1px !important;
+  border-radius: 8px !important;
   box-shadow: none !important;
   overflow: hidden !important;
   display: flex;
@@ -39,7 +45,7 @@
   border-radius: 0 !important;
   border: none !important;
   border-bottom: 1px solid var(--border-dim) !important;
-  background: var(--bg-sidebar) !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
   box-shadow: none !important;
   box-sizing: border-box;
   min-width: 0;
@@ -77,7 +83,7 @@
   flex: 1;
   border-radius: 0 !important;
   border: none !important;
-  background: var(--bg-sidebar) !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
   box-shadow: none !important;
   overflow: hidden;
   box-sizing: border-box;
@@ -185,7 +191,7 @@
   border-radius: 0 !important;
   border: none !important;
   border-top: 1px solid var(--border-dim) !important;
-  background: var(--bg-sidebar) !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
   box-shadow: none !important;
   overflow: hidden;
   flex-shrink: 0;

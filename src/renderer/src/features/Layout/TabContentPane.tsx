@@ -169,7 +169,7 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
           pointerEvents: isSelected ? 'auto' : 'none',
           visibility: isSelected ? 'visible' : 'hidden',
           contentVisibility: isSelected ? 'visible' : 'hidden',
-          contain: isSelected ? 'layout style' : 'strict',
+          contain: isSelected ? 'none' : 'strict',
           // Keep inactive editors mounted to preserve undo/caret state, but take
           // their DOM out of layout so window resizing only lays out the active tab.
           display: isSelected ? 'flex' : 'none',

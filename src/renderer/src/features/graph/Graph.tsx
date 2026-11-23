@@ -572,6 +572,8 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
       style={{
         width: '100%',
         height: '100%',
+        display: 'flex',
+        flexDirection: 'row',
         position: 'relative',
         overflow: 'hidden'
       }}
@@ -582,7 +584,7 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
       />
       <div
         className="nexus-body"
-        style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}
+        style={{ position: 'relative', flex: 1, minWidth: 0, height: '100%', overflow: 'hidden' }}
       >
         <div className={`graph-initializer ${isEngineReady ? 'ready' : ''}`}>
           <div className="pulse-ring"></div>

@@ -40,7 +40,7 @@ export function markWindowResizing(): void {
   resizeFreezeTimer = setTimeout(() => {
     document.documentElement.classList.remove('is-window-resizing')
     resizeFreezeTimer = null
-  }, 120)
+  }, 260)
 }
 
 export async function setWindowBackgroundColor(color: string): Promise<void> {

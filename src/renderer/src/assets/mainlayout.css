@@ -38,10 +38,10 @@
 
 .sidebar-resizer {
   position: relative;
-  width: 1px !important;
+  width: 6px;
   flex-shrink: 0;
   cursor: ew-resize;
-  background: var(--border-dim) !important;
+  background: transparent;
   z-index: 100;
   display: flex;
   align-items: center;
@@ -99,7 +99,7 @@
 .sidebar-resizer:hover,
 .app-shell.is-resizing-left .sidebar-resizer.left,
 .app-shell.is-resizing-right .sidebar-resizer.right {
-  background: var(--text-accent) !important;
+  background: transparent !important;
 }
 
 .sidebar-resizer:hover .resizer-knob .knob-dot,
@@ -233,18 +233,40 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
 }
 
 .app-shell > *,
-.shell-body > * {
+.shell-body > *,
+.shell-workbench-row > * {
   min-height: 0;
 }
 
-/* Only the editor area needs min-width:0 for flex shrink — sidebars must NOT have it */
-.shell-body > .shell-main,
-.app-shell > .shell-main {
+/* Workbench column sits between Left ActivityBar and Right ActivityBar */
+.shell-workbench-column {
   min-width: 0;
+  min-height: 0;
   flex: 1;
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
+}
+
+.shell-workbench-row {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  overflow: hidden;
+}
+
+.shell-body > .shell-main,
+.shell-workbench-row > .shell-main,
+.app-shell > .shell-main {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
@@ -253,9 +275,10 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   position: relative;
   width: 0;
   height: 100%;
-  background: var(--bg-sidebar) !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
   z-index: 10;
-  border-right: 1px solid transparent;
+  border: 0 solid var(--border-dim);
+  border-radius: 8px;
   box-shadow: none;
   pointer-events: none;
   visibility: hidden;
@@ -263,19 +286,18 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  contain: paint;
-  transition: width var(--dur-slow, 220ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1)), border-color 0.2s ease, visibility 0s var(--dur-slow, 220ms);
+  transition: width 100ms cubic-bezier(0.16, 1, 0.3, 1), border-width 0s 100ms, visibility 0s 100ms;
   /* NO contain: inline-size — it breaks the inner width lock */
 }
 
 
 .app-shell.left-open .shell-sidebar-left {
   width: var(--left-sidebar-width, 150px);
-  border-right-color: var(--border-dim);
+  border-width: 1px;
   box-shadow: none;
   pointer-events: auto;
   visibility: visible;
-  transition: width var(--dur-slow, 220ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1)), border-color 0.2s ease, visibility 0s 0s;
+  transition: width 100ms cubic-bezier(0.16, 1, 0.3, 1), border-width 0s 0s, visibility 0s 0s;
 }
 
 .shell-sidebar-left .unified-sidebar,
@@ -327,15 +349,14 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
 
 .shell-main {
   flex: 1;
-  background: var(--bg-app);
+  background: var(--bg-editor, var(--bg-app));
   min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  border-radius: 0;
+  border-radius: 8px;
   border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.05));
-  contain: layout style;
 }
 
 
@@ -367,9 +388,10 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   position: relative;
   width: 0;
   height: 100%;
-  background: var(--bg-sidebar) !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
   z-index: 10;
-  border-left: 1px solid transparent;
+  border: 0 solid var(--border-dim);
+  border-radius: 8px;
   box-shadow: none;
   pointer-events: none;
   visibility: hidden;
@@ -377,17 +399,16 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  contain: paint;
-  transition: width var(--dur-slow, 220ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1)), border-color 0.2s ease, visibility 0s var(--dur-slow, 220ms);
+  transition: width 100ms cubic-bezier(0.16, 1, 0.3, 1), border-width 0s 100ms, visibility 0s 100ms;
 }
 
 .app-shell.right-open .shell-sidebar-right {
   width: var(--right-sidebar-width, 150px);
-  border-left-color: var(--border-dim);
+  border-width: 1px;
   box-shadow: none;
   pointer-events: auto;
   visibility: visible;
-  transition: width var(--dur-slow, 220ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1)), border-color 0.2s ease, visibility 0s 0s;
+  transition: width 100ms cubic-bezier(0.16, 1, 0.3, 1), border-width 0s 0s, visibility 0s 0s;
 }
 
 .shell-sidebar-right .inspector-panel,

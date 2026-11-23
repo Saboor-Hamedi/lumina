@@ -38,6 +38,9 @@
 .xterm .xterm-viewport,
 .lumina-term-sessions-list {
   overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--scroll-thumb, rgba(128, 128, 128, 0.3)) transparent !important;
 }
 
 .xterm .xterm-viewport::-webkit-scrollbar,
@@ -53,7 +56,7 @@
 
 .xterm .xterm-viewport::-webkit-scrollbar-thumb,
 .lumina-term-sessions-list::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15) !important;
+  background: var(--scroll-thumb, rgba(128, 128, 128, 0.3)) !important;
   border-radius: 9999px !important;
   border: none !important;
   transition: background 0.15s ease !important;
@@ -61,7 +64,7 @@
 
 .xterm .xterm-viewport::-webkit-scrollbar-thumb:hover,
 .lumina-term-sessions-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.32) !important;
+  background: var(--text-muted, rgba(160, 160, 160, 0.55)) !important;
 }
 
 .xterm .xterm-viewport::-webkit-scrollbar-corner,

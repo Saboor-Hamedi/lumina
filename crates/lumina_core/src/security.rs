@@ -32,6 +32,27 @@ pub fn canonicalize_or_normalize(p: &Path) -> PathBuf {
         .unwrap_or_else(|_| normalize_path_for_compare(p))
 }
 
+fn canonicalize_with_nonexistent_suffix(p: &Path) -> PathBuf {
+    let norm = normalize_path_for_compare(p);
+    let mut suffix: Vec<std::ffi::OsString> = Vec::new();
+    let mut probe = norm.as_path();
+    while !probe.exists() {
+        let Some(file_name) = probe.file_name() else {
+            break;
+        };
+        suffix.push(file_name.to_os_string());
+        match probe.parent() {
+            Some(parent) => probe = parent,
+            None => break,
+        }
+    }
+    let mut resolved = canonicalize_or_normalize(probe);
+    for seg in suffix.into_iter().rev() {
+        resolved.push(seg);
+    }
+    resolved
+}
+
 fn components_equal(a: &Component<'_>, b: &Component<'_>) -> bool {
     #[cfg(windows)]
     {
@@ -74,8 +95,13 @@ fn check_canonical_within(canon_ws: &Path, target: &Path) -> Result<(), String> 
 
 pub fn ensure_not_workspace_root(ws_path: &Path, target: &Path) -> Result<(), String> {
     let canon_ws = canonicalize_or_normalize(ws_path);
-    let norm_target = normalize_path_for_compare(target);
-    if is_same_path(&canon_ws, &norm_target) {
+    let canon_target = canonicalize_or_normalize(target);
+    if is_same_path(&canon_ws, &canon_target)
+        || is_same_path(
+            &normalize_path_for_compare(ws_path),
+            &normalize_path_for_compare(target),
+        )
+    {
         return Err("Operation on workspace root is not allowed".to_string());
     }
     Ok(())
@@ -109,7 +135,7 @@ pub fn safe_join_workspace(ws_path: &Path, rel: &str) -> Result<PathBuf, String>
                 return Err("Path traversal outside workspace is not allowed".to_string());
             }
         }
-        let lex = normalize_path_for_compare(raw_path);
+        let lex = canonicalize_with_nonexistent_suffix(raw_path);
         if !is_within_root(&canon_ws, &lex) {
             return Err("Path outside active workspace is not allowed".to_string());
         }

@@ -25,7 +25,7 @@ describe('StatusBar.jsx', () => {
     expect(screen.getByText('Settings')).toBeInTheDocument()
     expect(screen.getByText('Details')).toBeInTheDocument()
     expect(screen.getByText('Docs')).toBeInTheDocument()
-    expect(screen.getByText('Guide')).toBeInTheDocument()
+    expect(screen.queryByText('Guide')).not.toBeInTheDocument()
     expect(screen.getByText('Shortcuts')).toBeInTheDocument()
   })
 
@@ -102,7 +102,7 @@ describe('StatusBar.jsx', () => {
       fireEvent.contextMenu(screen.getByTestId('status-bar'))
 
       expect(screen.getByText('Status Bar')).toBeInTheDocument()
-      expect(screen.getByText('Editor Mode')).toBeInTheDocument()
+      expect(screen.queryByText('Editor Mode')).not.toBeInTheDocument()
       expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument()
       expect(screen.getByText('Reading Time')).toBeInTheDocument()
       expect(screen.queryByText('Reset to Defaults')).not.toBeInTheDocument()

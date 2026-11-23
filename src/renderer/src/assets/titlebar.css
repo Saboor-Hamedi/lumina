@@ -10,13 +10,20 @@
   display: flex;
   align-items: center;
   padding-left: 0;
-  background: var(--bg-app, #121218);
-  border-bottom: 1px solid var(--border-hairline, var(--border-dim, rgba(255, 255, 255, 0.04)));
+  background: var(--bg-activitybar, var(--bg-app, #121218));
+  border-bottom: none;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
   -webkit-app-region: drag;
   user-select: none;
   cursor: default !important;
   flex-shrink: 0;
   z-index: 9999;
+}
+
+[data-window-maximized='true'] .title-bar {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
 
 .title-left {
@@ -30,7 +37,8 @@
 
 .titlebar-sidebar-toggle-btn {
   -webkit-app-region: no-drag;
-  margin-right: 4px;
+  width: 44px;
+  margin-right: 0;
   flex-shrink: 0;
 }
 

@@ -843,6 +843,7 @@ export function openCellMenu(view: EditorView, cell: HTMLElement, x: number, y: 
           activeSubmenuEl = submenuEl
 
           const btnRect = btn.getBoundingClientRect()
+          const parentMenuRect = menu.getBoundingClientRect()
           const subRect = submenuEl.getBoundingClientRect()
           const subWidth = subRect.width || 210
           const subHeight = subRect.height || 260
@@ -852,11 +853,11 @@ export function openCellMenu(view: EditorView, cell: HTMLElement, x: number, y: 
           const safeLeft = 10
           const safeRight = window.innerWidth - 10
 
-          // Horizontal positioning (flip left if clipped by window edge)
-          if (btnRect.right + subWidth > safeRight) {
-            submenuEl.style.left = `${Math.max(safeLeft, btnRect.left - subWidth)}px`
+          // Horizontal positioning (align cleanly beside parent menu with 2px gap, flip left if clipped)
+          if (parentMenuRect.right + subWidth + 2 > safeRight) {
+            submenuEl.style.left = `${Math.max(safeLeft, parentMenuRect.left - subWidth - 2)}px`
           } else {
-            submenuEl.style.left = `${btnRect.right}px`
+            submenuEl.style.left = `${parentMenuRect.right + 2}px`
           }
 
           // Vertical positioning (align with item, clamp to window bounds)

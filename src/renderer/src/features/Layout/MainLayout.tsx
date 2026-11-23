@@ -18,6 +18,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Sidebar from '../Navigation/Sidebar'
 import ActivityBar from '../Navigation/ActivityBar'
+import RightActivityBar, { RightSidebarTabId } from '../Navigation/RightActivityBar'
 import { openSidebarView } from '../Navigation/sidebarViewStore'
 import Welcome from '../../Welcome'
 import { SplitNodeRenderer } from './split'
@@ -203,17 +204,19 @@ export const MainLayout: React.FC = () => {
     updateRightSidebarOpen(false)
   }, [updateRightSidebarOpen])
 
-  const handleToggleInspector = useCallback(() => {
+  const handleSelectRightSidebarTab = useCallback((tab: RightSidebarTabId) => {
     if (!isRightSidebarOpenRef.current) {
-      setRightSidebarTab('details')
+      setRightSidebarTab(tab)
       updateRightSidebarOpen(true)
+    } else if (rightSidebarTabRef.current !== tab) {
+      setRightSidebarTab(tab)
     } else {
-      if (rightSidebarTabRef.current !== 'details') {
-        setRightSidebarTab('details')
-      } else {
-        updateRightSidebarOpen(false)
-      }
+      updateRightSidebarOpen(false)
     }
+  }, [updateRightSidebarOpen])
+
+  const handleToggleInspector = useCallback(() => {
+    updateRightSidebarOpen((prev) => !prev)
   }, [updateRightSidebarOpen])
 
   const [isTerminalOpen, setIsTerminalOpen] = useState(false)
@@ -1236,6 +1239,8 @@ export const MainLayout: React.FC = () => {
           />
         )}
 
+        <div className="shell-workbench-column">
+        <div className="shell-workbench-row">
         <aside className="shell-sidebar-left">
           <GlobalErrorHandler>
             <Sidebar />
@@ -1388,22 +1393,35 @@ export const MainLayout: React.FC = () => {
             />
           </GlobalErrorHandler>
         </aside>
-      </div>
+        </div>
 
-      {isStatusBarVisible && (
-        <StatusBar
-          onToggleInspector={handleToggleInspector}
-          onSettingsClick={handleOpenSettings}
-          onThemeClick={handleOpenTheme}
-          onDocsClick={handleOpenDocs}
-          onShortcutsClick={() => {
-            setSettingsInitialTab('shortcuts')
-            setShowSettings(true)
-          }}
-          onGuideClick={() => setShowGuideModal(true)}
-          isZenHidden={isZenModeEnabled}
-        />
-      )}
+        {isStatusBarVisible && (
+          <StatusBar
+            onToggleInspector={handleToggleInspector}
+            onSettingsClick={handleOpenSettings}
+            onThemeClick={handleOpenTheme}
+            onDocsClick={handleOpenDocs}
+            onShortcutsClick={() => {
+              setSettingsInitialTab('shortcuts')
+              setShowSettings(true)
+            }}
+            onGuideClick={() => setShowGuideModal(true)}
+            isZenHidden={isZenModeEnabled}
+          />
+        )}
+        </div>
+
+        {isActivityBarVisible && (
+          <RightActivityBar
+            isRightSidebarOpen={isRightSidebarOpen}
+            activeTab={rightSidebarTab}
+            onSelectTab={handleSelectRightSidebarTab}
+            onToggleGraph={handleToggleGraph}
+            isGraphActive={activeTabId === GRAPH_TAB_ID}
+            isZenHidden={isZenModeEnabled}
+          />
+        )}
+      </div>
 
       <AppModals
         showSettings={showSettings}

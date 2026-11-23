@@ -4,13 +4,12 @@
 
 .lumina-activity-bar,
 [data-modern-ui='true'] .lumina-activity-bar {
-  width: 42px !important;
+  width: 44px !important;
   min-width: 0 !important;
   max-width: none !important;
   height: 100% !important;
   background: var(--bg-activitybar, var(--bg-sidebar)) !important;
   border: none !important;
-  border-right: 1px solid var(--border-dim) !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
@@ -26,12 +25,7 @@
   overflow: hidden !important;
   visibility: visible !important;
   contain: layout paint;
-  will-change: width, opacity;
-  transition:
-    width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-    border-right-color 0.24s ease,
-    visibility 0s 0s !important;
+  transition: none !important;
 }
 
 .lumina-activity-bar.zen-hidden,
@@ -44,18 +38,14 @@
   border-right-color: transparent !important;
   pointer-events: none !important;
   visibility: hidden !important;
-  transition:
-    width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.2s cubic-bezier(0.22, 1, 0.36, 1),
-    border-right-color 0.18s ease,
-    visibility 0s 0.28s !important;
+  transition: none !important;
 }
 
 .activity-bar-top {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  width: 42px !important;
+  width: 44px !important;
   flex-shrink: 0 !important;
   gap: 2px !important;
   transform: translateZ(0);
@@ -66,7 +56,7 @@
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  width: 42px !important;
+  width: 44px !important;
   flex-shrink: 0 !important;
   gap: 2px !important;
   margin-top: auto !important;
@@ -80,7 +70,7 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 42px !important;
+  width: 44px !important;
   height: 38px !important;
   border-radius: 0 !important;
   border: none !important;
@@ -101,26 +91,36 @@
 [data-modern-ui='true'] .activity-bar-btn:hover {
   opacity: 0.9 !important;
   color: var(--text-main) !important;
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: transparent !important;
 }
 
-/* Active State: Razor-sharp solid accent indicator on left edge */
+.activity-bar-btn:hover svg,
+[data-modern-ui='true'] .activity-bar-btn:hover svg {
+  background: color-mix(in srgb, var(--text-main) 7%, transparent) !important;
+}
+
+/* Active State: Razor-sharp solid accent edge indicator + compact padded icon pill */
 .activity-bar-btn.active,
 [data-modern-ui='true'] .activity-bar-btn.active {
   opacity: 1 !important;
   color: var(--text-main) !important;
   border-left: 2px solid var(--text-accent) !important;
-  background: rgba(255, 255, 255, 0.04) !important;
+  background: transparent !important;
 }
 
 .activity-bar-btn.active svg,
 [data-modern-ui='true'] .activity-bar-btn.active svg {
   color: var(--text-main) !important;
-  filter: drop-shadow(0 0 6px rgba(var(--text-accent-rgb, 139, 92, 246), 0.35)) !important;
+  background: color-mix(in srgb, var(--text-accent) 14%, transparent) !important;
+  filter: drop-shadow(0 0 6px rgba(var(--text-accent-rgb, 139, 92, 246), 0.3)) !important;
 }
 
 .activity-bar-btn svg {
   flex-shrink: 0;
+  box-sizing: content-box;
+  padding: 6px;
+  border-radius: 7px;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .activity-bar-btn.mail-btn {
@@ -142,24 +142,15 @@
 .lumina-activity-bar-right,
 [data-modern-ui='true'] .lumina-activity-bar-right {
   align-items: flex-start !important;
-  border-right: none !important;
-  border-left: 1px solid var(--border-dim) !important;
-  transition:
-    width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-    border-left-color 0.24s ease,
-    visibility 0s 0s !important;
+  border: none !important;
+  transition: none !important;
 }
 
 .lumina-activity-bar-right.zen-hidden,
 [data-modern-ui='true'] .lumina-activity-bar-right.zen-hidden {
   border-left-width: 0 !important;
   border-left-color: transparent !important;
-  transition:
-    width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.2s cubic-bezier(0.22, 1, 0.36, 1),
-    border-left-color 0.18s ease,
-    visibility 0s 0.28s !important;
+  transition: none !important;
 }
 
 .lumina-activity-bar-right .activity-bar-btn,

@@ -6,7 +6,7 @@
  * System bottom status bar for Lumina.
  *
  * Architecture & Features:
- * - Registry-driven: every element (mode badge, actions, center blob, metrics)
+ * - Registry-driven: every element (actions, center blob, metrics)
  *   is declared in `STATUS_BAR_ITEM_META` and can be individually toggled.
  * - Right-click anywhere on the bar opens a rich, VS Code-style menu that lets
  *   the user show/hide any item. Visibility is persisted to settings.json
@@ -29,8 +29,6 @@ import {
   LayoutGrid,
   BookOpen,
   Keyboard,
-  Compass,
-  Monitor,
   Type,
   FileCode,
   Clock,
@@ -67,7 +65,7 @@ interface CursorPosition {
   selectedChars: number
 }
 
-type StatusBarGroup = 'mode' | 'left' | 'center' | 'right'
+type StatusBarGroup = 'left' | 'center' | 'right'
 
 export interface StatusBarItemMeta {
   id: string
@@ -84,14 +82,6 @@ export interface StatusBarItemMeta {
  * Order here drives both the rendered layout order and the context-menu order.
  */
 const STATUS_BAR_ITEM_META: StatusBarItemMeta[] = [
-  {
-    id: 'mode',
-    label: 'Editor Mode',
-    group: 'mode',
-    menuGroup: 'Editor',
-    icon: <Monitor size={14} />,
-    defaultVisible: true
-  },
   {
     id: 'capslock',
     label: 'Caps Lock Indicator',
@@ -138,14 +128,6 @@ const STATUS_BAR_ITEM_META: StatusBarItemMeta[] = [
     group: 'left',
     menuGroup: 'Settings',
     icon: <Keyboard size={14} />,
-    defaultVisible: true
-  },
-  {
-    id: 'guide',
-    label: 'Guide',
-    group: 'left',
-    menuGroup: 'Settings',
-    icon: <Compass size={14} />,
     defaultVisible: true
   },
   {
@@ -434,15 +416,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             </button>
           </ToolTip>
         )
-      case 'guide':
-        return (
-          <ToolTip text="Guide" position="top">
-            <button type="button" className="status-bar-btn" onClick={onGuideClick}>
-              <Compass size={11} />
-              <span>Guide</span>
-            </button>
-          </ToolTip>
-        )
       default:
         return null
     }
@@ -534,16 +507,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       data-testid="status-bar"
       onContextMenu={handleContextMenu}
     >
-      {/* Lualine Mode Badge — Completely static on the left (never shakes or jitters) */}
-      {isVisible('mode') && (
-        <div
-          className="lualine-mode-badge"
-          data-mode={cursorPos.selectedChars > 0 ? 'visual' : 'normal'}
-        >
-          {cursorPos.selectedChars > 0 ? 'VISUAL' : 'NORMAL'}
-        </div>
-      )}
-
       {/* Scrollable Status Bar Body */}
       <div className="status-bar-body" ref={scrollableRef}>
         {/* Left utility buttons */}

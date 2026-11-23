@@ -123,8 +123,8 @@ const SortableTabItem = memo<SortableTabItemProps>(
           className={`workspace-tab ${isActive ? 'active' : ''} ${isDirty ? 'is-dirty' : ''} ${isDragging ? 'dragging' : ''} ${isPinned ? 'pinned' : ''} ${isClosing ? 'is-closing' : ''}`}
           style={{
             transform: transform ? `translate3d(${transform.x}px, 0, 0)` : undefined,
-            transition: isDragging ? transition : undefined,
-            opacity: isDragging ? 0.4 : 1
+            transition: transition || undefined,
+            opacity: isDragging ? 0 : 1
           }}
           {...attributes}
           {...listeners}
@@ -624,11 +624,9 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
         style={{
           display: 'flex',
           width: '100%',
-          height: '32px',
           position: 'relative',
           flexShrink: 0,
           minWidth: 0,
-          borderBottom: '1px solid var(--border-dim)',
           boxSizing: 'border-box'
         }}
       >
@@ -660,7 +658,7 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
                   aria-label="Split Right"
                   onClick={() => splitPane('vertical', undefined, paneId, 'after')}
                 >
-                  <Columns2 size={14} />
+                  <Columns2 size={14} strokeWidth={2} />
                 </button>
               </ToolTip>
               <ToolTip text="Split Down (Ctrl+Alt+\\)" position="bottom" delay={400}>
@@ -670,21 +668,9 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
                   aria-label="Split Down"
                   onClick={() => splitPane('horizontal', undefined, paneId, 'after')}
                 >
-                  <Rows2 size={14} />
+                  <Rows2 size={14} strokeWidth={2} />
                 </button>
               </ToolTip>
-              {splitDirection !== 'none' && (
-                <ToolTip text="Close Pane" position="bottom" delay={400}>
-                  <button
-                    type="button"
-                    className="tabbar-split-btn"
-                    aria-label="Close Pane"
-                    onClick={() => closePane(paneId)}
-                  >
-                    <X size={14} />
-                  </button>
-                </ToolTip>
-              )}
             </div>
           </div>
         </SortableContext>

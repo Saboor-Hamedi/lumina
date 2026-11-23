@@ -1,6 +1,6 @@
 {
   "name": "lumina",
-  "version": "1.1.3",
+  "version": "1.4.0",
   "description": "Lumina - A premium, AI-powered thinking environment.",
   "author": "Saboor Hamedi",
   "homepage": "https://github.com/Saboor-Hamedi/lumina",
@@ -11,7 +11,7 @@
     "start": "tauri dev",
     "dev": "tauri dev",
     "dev:renderer": "vite",
-    "tauri": "tauri",
+    "tauri": "tauri",     
     "dev:tauri": "tauri dev",
     "build:tauri": "tauri build",
     "build:renderer": "vite build",

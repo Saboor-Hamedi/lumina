@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { Link2, Link2Off, ChevronRight, Search, X, FileText } from 'lucide-react'
+import React, { useState, useEffect, useMemo } from 'react'
+import { Link2, Link2Off, ChevronRight, FileText } from 'lucide-react'
 import { useWorkspaceStore, WorkspaceNote } from '../../../core/store/workspaceStore'
 import ToolTip from '../../../components/atoms/ToolTip'
 import './Backlinks.css'
@@ -35,7 +35,6 @@ export const Backlinks: React.FC<BacklinksProps> = React.memo(({ note: propNote,
   const notes = useWorkspaceStore((state) => state.notes || [])
   const setSelectedNote = useWorkspaceStore((state) => state.setSelectedNote)
 
-  const [filterQuery, setFilterQuery] = useState('')
   const [showLinked, setShowLinked] = useState(true)
   const [showUnlinked, setShowUnlinked] = useState(true)
   const [collapsedNoteIds, setCollapsedNoteIds] = useState<Set<string>>(new Set())
@@ -160,36 +159,6 @@ export const Backlinks: React.FC<BacklinksProps> = React.memo(({ note: propNote,
 
   const { linkedBacklinks, unlinkedBacklinks } = backlinksData
 
-  // Filter backlinks by search query
-  const filterList = useCallback(
-    (list: BacklinkSource[]) => {
-      const q = filterQuery.trim().toLowerCase()
-      if (!q) return list
-
-      return list
-        .map((group) => {
-          const titleMatches = (group.sourceNote.title || '').toLowerCase().includes(q)
-          const folderMatches = (group.sourceNote.folderId || '').toLowerCase().includes(q)
-          const filteredMentions = group.mentions.filter((m) =>
-            m.lineText.toLowerCase().includes(q)
-          )
-
-          if (titleMatches || folderMatches) {
-            return group
-          }
-          if (filteredMentions.length > 0) {
-            return { ...group, mentions: filteredMentions }
-          }
-          return null
-        })
-        .filter((g): g is BacklinkSource => g !== null)
-    },
-    [filterQuery]
-  )
-
-  const filteredLinked = useMemo(() => filterList(linkedBacklinks), [filterList, linkedBacklinks])
-  const filteredUnlinked = useMemo(() => filterList(unlinkedBacklinks), [filterList, unlinkedBacklinks])
-
   const totalLinkedMentions = useMemo(
     () => linkedBacklinks.reduce((acc, g) => acc + g.mentions.length, 0),
     [linkedBacklinks]
@@ -249,30 +218,6 @@ export const Backlinks: React.FC<BacklinksProps> = React.memo(({ note: propNote,
 
   return (
     <div className="backlinks-container">
-      {/* Search Filter Bar */}
-      <div className="backlinks-filter-bar">
-        <div className="backlinks-search-input-wrap">
-          <Search size={12} style={{ color: 'var(--text-muted)' }} />
-          <input
-            type="text"
-            className="backlinks-search-input"
-            placeholder="Filter backlinks..."
-            value={filterQuery}
-            onChange={(e) => setFilterQuery(e.target.value)}
-          />
-          {filterQuery && (
-            <button
-              type="button"
-              className="backlinks-action-btn"
-              onClick={() => setFilterQuery('')}
-              title="Clear search"
-            >
-              <X size={11} />
-            </button>
-          )}
-        </div>
-      </div>
-
       <div className="backlinks-scroll-area">
         {/* Linked Mentions Section */}
         <div className="backlinks-section">
@@ -295,14 +240,12 @@ export const Backlinks: React.FC<BacklinksProps> = React.memo(({ note: propNote,
 
           {showLinked && (
             <div className="backlinks-groups-list">
-              {filteredLinked.length === 0 ? (
+              {linkedBacklinks.length === 0 ? (
                 <div className="backlinks-empty-state">
-                  <span>
-                    {filterQuery ? 'No matching linked mentions' : 'No linked mentions for this note'}
-                  </span>
+                  <span>No linked mentions for this note</span>
                 </div>
               ) : (
-                filteredLinked.map(({ sourceNote, mentions }) => {
+                linkedBacklinks.map(({ sourceNote, mentions }) => {
                   const isCollapsed = collapsedNoteIds.has(sourceNote.id)
                   const folder = sourceNote.folderId && sourceNote.folderId !== 'root' ? sourceNote.folderId : null
 
@@ -388,14 +331,12 @@ export const Backlinks: React.FC<BacklinksProps> = React.memo(({ note: propNote,
 
           {showUnlinked && (
             <div className="backlinks-groups-list">
-              {filteredUnlinked.length === 0 ? (
+              {unlinkedBacklinks.length === 0 ? (
                 <div className="backlinks-empty-state">
-                  <span>
-                    {filterQuery ? 'No matching unlinked mentions' : 'No unlinked mentions found'}
-                  </span>
+                  <span>No unlinked mentions found</span>
                 </div>
               ) : (
-                filteredUnlinked.map(({ sourceNote, mentions }) => {
+                unlinkedBacklinks.map(({ sourceNote, mentions }) => {
                   const isCollapsed = collapsedNoteIds.has(sourceNote.id)
                   const folder = sourceNote.folderId && sourceNote.folderId !== 'root' ? sourceNote.folderId : null
 

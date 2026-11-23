@@ -345,8 +345,9 @@
 }
 
 .tabbar-outer-wrapper {
-  border-top-left-radius: 5px;
+  border-top-left-radius: 0;
   overflow: hidden;
+  padding: 0;
 }
 
 /* --- WORKSPACE TABBAR --- */
@@ -357,6 +358,8 @@
   height: 100%;
   min-width: 0;
   overflow: hidden;
+  padding: 0;
+  margin: 0;
 }
 
 .pinned-tabs-container {
@@ -369,14 +372,16 @@
 }
 
 .workspace-tabbar {
-  height: 32px;
-  background: var(--bg-editor);
+  height: 33px;
+  background: transparent;
   display: flex;
   align-items: stretch;
   overflow-x: auto; overflow-y: hidden;
   user-select: none;
   flex-shrink: 0;
-  border-top-left-radius: 5px;
+  padding: 0;
+  margin: 0;
+  border-top-left-radius: 0;
 }
 
 .workspace-tabbar::-webkit-scrollbar {
@@ -387,7 +392,9 @@
   display: flex;
   height: 100%;
   align-items: stretch;
-  border-top-left-radius: 5px;
+  padding: 0;
+  margin: 0;
+  border-top-left-radius: 0;
 }
 
 /* Workspace Tabs base layout (theming unified in tabs.css) */

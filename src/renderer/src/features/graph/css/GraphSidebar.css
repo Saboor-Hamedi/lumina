@@ -26,9 +26,14 @@
 }
 
 .lumina-canvas-toolbar-right {
-  z-index: 200 !important;
+  position: relative !important;
+  top: auto !important;
+  bottom: auto !important;
+  right: auto !important;
+  flex-shrink: 0 !important;
+  z-index: 20 !important;
   pointer-events: auto !important;
-  transition: width var(--dur-slow, 220ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1)), background-color var(--dur-base, 160ms) ease, box-shadow var(--dur-base, 160ms) ease !important;
+  transition: none !important;
 }
 
 .lumina-canvas-toolbar-right:not(.is-expanded) {
@@ -36,21 +41,22 @@
   transform: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
-  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #18181b)) 75%, transparent) !important;
+  background-color: var(--bg-editor, var(--bg-app, #18181b)) !important;
   border: none !important;
-  border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
-  box-shadow: -1px 0 3px rgba(0, 0, 0, 0.04) !important;
+  border-left: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08)) !important;
+  box-shadow: none !important;
 }
 
 .lumina-canvas-toolbar-right.is-expanded {
-  width: 280px !important;
+  width: var(--right-sidebar-width, 150px) !important;
+  min-width: 150px !important;
   transform: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
-  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #121316)) 84%, transparent) !important;
+  background-color: var(--bg-editor, var(--bg-app, #121316)) !important;
   border: none !important;
-  border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
-  box-shadow: -1px 0 4px rgba(0, 0, 0, 0.04) !important;
+  border-left: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08)) !important;
+  box-shadow: none !important;
 }
 
 [data-theme='light'] .lumina-canvas-toolbar-right:not(.is-expanded),

@@ -8,8 +8,8 @@
  * as the gutter backdrop so the gaps read as clear separations. Modern UI only —
  * the normal UI stays flush (see mainlayout.css). */
 [data-modern-ui='true'] .lumina-app {
-  gap: 2px !important;
-  padding: 2px !important;
+  gap: 0 !important;
+  padding: 0 !important;
   background: var(--bg-activitybar);
   box-sizing: border-box;
 }
@@ -21,7 +21,7 @@
   min-height: 0;
   min-width: 0;
   padding: 0 !important;
-  gap: 2px !important;
+  gap: 0 !important;
   background: var(--bg-activitybar);
   box-sizing: border-box;
   width: 100%;
@@ -37,16 +37,17 @@
   min-height: 0;
   width: 100%;
   overflow: hidden;
+  padding: 0 0 6px 0 !important;
   gap: 0 !important;
   background: var(--bg-activitybar);
+  box-sizing: border-box;
 }
 
-/* Activity Bar: Docked flush to the left, 1px right border, zero shadows */
+/* Activity Bars: Plain, borderless outer strips blending with TitleBar */
 [data-modern-ui='true'] .lumina-activity-bar {
   border-radius: 0 !important;
   border: none !important;
-  border-right: 1px solid var(--border-dim) !important;
-  background: var(--bg-sidebar) !important;
+  background: var(--bg-activitybar, var(--bg-sidebar)) !important;
   box-shadow: none !important;
   margin: 0 !important;
   height: 100%;
@@ -54,18 +55,40 @@
   z-index: 10;
 }
 
-/* Activity bar: 5px gutter separating it from the sidebar / editor */
-[data-modern-ui='true'] .shell-body > .lumina-activity-bar {
+[data-modern-ui='true'] .shell-body > .lumina-activity-bar:not(.lumina-activity-bar-right) {
   margin-right: 0 !important;
 }
 
-/* Resizers: the 5px gutter between the sidebars and the editor (gutter backdrop
- * shows through); accent highlight on hover keeps the split handle discoverable. */
+[data-modern-ui='true'] .shell-body > .lumina-activity-bar.lumina-activity-bar-right {
+  margin-left: 4px !important;
+}
+
+[data-modern-ui='true'] .lumina-activity-bar.zen-hidden {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* Resizers: clean 6px gap between separated panels; subtle accent line on hover */
 [data-modern-ui='true'] .sidebar-resizer {
-  width: 1px !important;
-  background: var(--border-dim) !important;
-  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1), width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 6px !important;
+  background: transparent !important;
+  transition: none;
   z-index: 20;
+  position: relative;
+}
+
+[data-modern-ui='true'] .sidebar-resizer::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  border-radius: 2px;
+  background: transparent;
+  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
 }
 
 [data-modern-ui='true'] .sidebar-resizer.closed,
@@ -77,19 +100,30 @@
 }
 
 [data-modern-ui='true'] .sidebar-resizer:hover,
-[data-modern-ui='true'] .sidebar-resizer:active {
+[data-modern-ui='true'] .sidebar-resizer:active,
+[data-modern-ui='true'] .app-shell.is-resizing-left .sidebar-resizer.left,
+[data-modern-ui='true'] .app-shell.is-resizing-right .sidebar-resizer.right {
+  background: transparent !important;
+}
+
+[data-modern-ui='true'] .sidebar-resizer:hover::after,
+[data-modern-ui='true'] .sidebar-resizer:active::after,
+[data-modern-ui='true'] .app-shell.is-resizing-left .sidebar-resizer.left::after,
+[data-modern-ui='true'] .app-shell.is-resizing-right .sidebar-resizer.right::after {
   background: var(--text-accent, #8b5cf6) !important;
 }
 
-/* Center Shell & Editor Workspace: Flush, edge-to-edge */
+/* Center Shell & Editor Workspace: Separated rounded panel */
 [data-modern-ui='true'] .shell-main {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  min-height: 0;
   overflow: hidden;
   background: var(--bg-editor, var(--bg-app));
-  border: none !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border-dim) !important;
   box-sizing: border-box;
 }
 
