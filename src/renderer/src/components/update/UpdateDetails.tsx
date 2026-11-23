@@ -3,37 +3,28 @@ import { useUpdateStore } from '../../core/store/UpdateSetting'
 import { Download, CheckCircle2 } from 'lucide-react'
 import { PulseLoader } from '../PulseLoader'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
+import { useAppVersion } from '../../features/Settings/hook/useAppVersion'
 import UpdateHeader from './UpdateHeader'
 import UpdateFooter from './UpdateFooter'
 import ToolTip from '../atoms/ToolTip'
 import './UpdateDetails.css'
 
 export const DEFAULT_RELEASE_NOTES = `New
-- Frosted Glassmorphism Context Menu: Sleek editor right-click menu with backdrop blur, Lumina AI prompt action, and dynamic OS keycaps.
-- Interactive Theme-Synchronized PDF Export: Export notes and entire vaults to polished, publication-ready PDFs with live preview, auto-generated Table of Contents, page numbers, and exact theme matching across Dark, Light, and Porcelain palettes.
-- Knowledge Graph Vector & Image Export (SVG & PNG): Download your 2D knowledge topography as scalable vectors or high-resolution images directly from the graph controls.
-- Persistent Node Layout & Elastic Central Physics: Dragged nodes retain their coordinates across app sessions via localStorage persistence, while central hub notes spring back elastically to equilibrium upon release.
-- Batch Export Engine: Export multiple selected notes or full folder trees into a single combined document or separate files with live progress tracking.
-- Workspace Index Query Engine (luminaQueryIndex): Query your workspace like a database. Search and filter notes across tags (#tag), folders, incoming and outgoing wikilinks, YAML frontmatter, and headings with structured graph records.
-- Spatial Infinite Canvas (.canvas): 2D infinite spatial whiteboard with pan/zoom (10% to 500%), dot-grid canvas, 12+ geometric vector shapes, dynamic shape ports, magnetic snapping, and 90° orthogonal connector routing.
+- Tauri 2.0 Native Rust Engine: Migrated to Tauri 2.0 with direct crates/lumina_core linking, non-blocking async IPC, raw binary asset streaming, and ConPTY/PTY terminal support.
+- In-App Update Downloader & Installer: Download platform installers directly inside Lumina with live progress tracking and one-click install & restart.
+- Independent Split Graph Views (2D & 3D): Split Knowledge Graph panes vertically or horizontally and toggle 2D/3D mode or controls independently per pane.
+- Dual Activity Bars & Docked Graph Sidebar: Dedicated left and right activity bars with compact icon-pill active states, parallel StatusBar alignment, and a docked scrollable Graph sidebar with embedded telemetry.
+- Spatial Infinite Canvas (.canvas): 2D infinite spatial whiteboard with pan/zoom (10% to 500%), dot-grid canvas, vector shapes, magnetic snapping, and 90° orthogonal connector routing.
+- Interactive Theme-Synchronized PDF & Batch Export: Export notes and folders to HTML, Markdown, Plain Text, Word (.doc), ZIP, or print-ready PDF with live preview and Table of Contents.
 
 Improved
-- Robust Borderless Callouts: Card-wrapped callouts without thick left border stripes, matching CodeWrapper geometry with integrated hover copy action.
-- Cross-Platform Shortcut Keycaps: Clean tactile keycap shortcut pills across context menus and command palettes, dynamically rendering Ctrl+ on Windows/Linux and ⌘ on macOS.
-- Parchment Theme Polish: Authentic warm paper palette integration across all export engines, calendar inputs, code syntax highlights, and diagnostic badges.
-- Modularized Graph Subsystem: Fully migrated Graph architecture into strict TypeScript with dedicated 2D canvas (Graph2D), 3D WebGL (Graph3D), and web-worker physics modules.
-- Streamlined Graph Sidebar & HUD: Minimalist header with direct search and instant collapse, zero-scroll controls layout, and unobtrusive performance telemetry.
-- Automated Publishing Pipeline (npm run publish): One-command automated build and GitHub release deployment with zero manual steps.
-- Code Block Image Export: Theme-aware solid backgrounds matching your active color palette instead of gradients.
+- Precision Paper & Ink UI System: Unified solid-surface context menus, submenus (2px gap, 11px typography), uniform 160px workspace tabs, and standardized Popover/Dialog/Button primitives.
+- Sleek Lumina Chat Header & Command Palette: Moved chat actions into a compact icon dropdown, added split-pane and export commands to the Command Palette, and unified keycap styling.
+- Faster Boot & Smoother Sidebars: Deferred heavy editor chunk preloading on the Welcome screen, enabled 220px default sidebars with smooth 100ms collapse transitions, and replaced custom spinners with global PulseLoader.
 
 Fixed
-- Help & Guide Popover Overlap: Portaled Help & Guide dropdown above all UI layers to eliminate clipping and sidebar overlap.
-- Zen Mode State Restoration: Restored full status bar, activity bar, breadcrumbs, and tabs state persistence when toggling Zen mode.
-- Command Palette Empty Preview: Restored centered empty preview placeholder layout with frosted overlay blur and keycap badges.
-- Central Hub Drag Freeze: Fixed issue where dragging central nodes caused them to stay frozen in place instead of smoothly springing back to equilibrium.
-- Dynamic Import Resolution: Resolved path casing and module resolution bugs across graph components.
-- Theme Fallbacks: Corrected dark background fallbacks on light themes across graph panels and export previews.
-- Hex Color Tag Collision: Prevented 3/6-digit hex color codes (#38bdf8, #ffffff) from being falsely matched as tags.
+- Zen Mode Individual Toggles & Breadcrumbs: Toggling Tabs, Title Bar, Activity Bar, Status Bar, or Breadcrumbs from the Command Palette now works individually inside Zen Mode, and Breadcrumbs renders on root notes by default.
+- Google OAuth & Linker Reliability: Fixed Windows URL parameter handling in external OAuth sign-in and ensured clean cross-platform native builds.
 - Breadcrumbs Long-Title Truncation: Long note titles truncate gracefully with responsive clamping and full hover tooltips.`
 
 export interface ReleaseCategory {
@@ -202,7 +193,7 @@ export const parseReleaseNotes = (notes?: unknown): ReleaseCategory[] => {
 
 export const UpdateDetails: React.FC = () => {
   const { status, updateInfo, progress, download, install, check, lastChecked } = useUpdateStore()
-  const [currentVersion, setCurrentVersion] = useState<string>('1.0.65')
+  const currentVersion = useAppVersion()
   const [isOpen, setIsOpen] = useState<boolean>(false)
   const dropdownRef = useRef<HTMLDivElement | null>(null)
 
@@ -214,17 +205,6 @@ export const UpdateDetails: React.FC = () => {
         }
       : null
   })
-
-  useEffect(() => {
-    if ((window as any).api?.getVersion) {
-      (window as any).api
-        .getVersion()
-        .then((ver: string) => {
-          if (ver) setCurrentVersion(ver)
-        })
-        .catch(() => {})
-    }
-  }, [])
 
   useEffect(() => {
     const handleClickOutside = (e: PointerEvent) => {

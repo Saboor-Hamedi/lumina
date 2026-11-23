@@ -111,7 +111,45 @@ export function initTauriBridge(): void {
   const workspaceListeners = new Set<() => void>()
   const indexProgressListeners = new Set<(data: any) => void>()
   const updateListeners = new Set<(payload: { status: string; data?: any }) => void>()
-  let latestReleaseInfo: { version: string; releaseNotes: string; releaseDate: string; url: string } | null = null
+  let latestReleaseInfo: {
+    version: string
+    releaseNotes: string
+    releaseDate: string
+    url: string
+    assetUrl?: string
+    assetName?: string
+    assetSize?: number
+  } | null = null
+  let downloadedInstallerPath: string | null = null
+
+  const pickPlatformAsset = (assets: any[]): { url: string; name: string; size: number } | null => {
+    if (!Array.isArray(assets) || assets.length === 0) return null
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : ''
+    const findBy = (pred: (name: string) => boolean) =>
+      assets.find((a) => typeof a?.name === 'string' && pred(a.name.toLowerCase()))
+
+    let chosen: any = null
+    if (ua.includes('win')) {
+      chosen =
+        findBy((n) => n.endsWith('-setup.exe') || n.endsWith('.exe')) ||
+        findBy((n) => n.endsWith('.msi'))
+    } else if (ua.includes('mac')) {
+      chosen =
+        findBy((n) => n.includes('universal') && n.endsWith('.dmg')) ||
+        findBy((n) => n.endsWith('.dmg'))
+    } else {
+      chosen =
+        findBy((n) => n.endsWith('.appimage')) ||
+        findBy((n) => n.endsWith('.deb'))
+    }
+
+    if (!chosen?.browser_download_url) return null
+    return {
+      url: String(chosen.browser_download_url),
+      name: String(chosen.name),
+      size: Number(chosen.size) || 0
+    }
+  }
 
   const notifyWorkspaceUpdated = () => {
     workspaceListeners.forEach((cb) => {
@@ -435,11 +473,15 @@ export function initTauriBridge(): void {
         const tag = String(release?.tag_name || '').trim()
         const remoteVer = tag.replace(/^v/i, '')
         if (remoteVer && compareSemver(remoteVer, currentVer) > 0) {
+          const asset = pickPlatformAsset(release?.assets)
           latestReleaseInfo = {
             version: remoteVer,
             releaseNotes: String(release?.body || ''),
             releaseDate: String(release?.published_at || ''),
-            url: String(release?.html_url || 'https://github.com/Saboor-Hamedi/lumina/releases')
+            url: String(release?.html_url || 'https://github.com/Saboor-Hamedi/lumina/releases'),
+            assetUrl: asset?.url,
+            assetName: asset?.name,
+            assetSize: asset?.size
           }
           notifyUpdateStatus('available', latestReleaseInfo)
           return { updateAvailable: true, ...latestReleaseInfo }
@@ -452,6 +494,38 @@ export function initTauriBridge(): void {
       }
     },
     downloadUpdate: async () => {
+      if (latestReleaseInfo?.assetUrl && latestReleaseInfo?.assetName) {
+        let unlisten: (() => void) | null = null
+        try {
+          notifyUpdateStatus('downloading', {
+            percent: 0,
+            transferred: 0,
+            total: latestReleaseInfo.assetSize || 0
+          })
+          unlisten = await listen<any>('update-download-progress', (ev) => {
+            notifyUpdateStatus('downloading', ev.payload || { percent: 0 })
+          })
+          const savedPath = await invoke<string>('download_app_update', {
+            url: latestReleaseInfo.assetUrl,
+            fileName: latestReleaseInfo.assetName,
+            totalBytes: latestReleaseInfo.assetSize || null
+          })
+          downloadedInstallerPath = savedPath
+          notifyUpdateStatus('ready', latestReleaseInfo)
+          return
+        } catch (err: any) {
+          const msg = String(err || '')
+          if (msg.includes('cancelled')) {
+            notifyUpdateStatus('available', latestReleaseInfo)
+          } else {
+            notifyUpdateStatus('error', msg || 'Download failed')
+          }
+          return
+        } finally {
+          if (unlisten) unlisten()
+        }
+      }
+
       const targetUrl = latestReleaseInfo?.url || 'https://github.com/Saboor-Hamedi/lumina/releases'
       try {
         await invoke('open_path_in_os', { path: targetUrl })
@@ -464,8 +538,20 @@ export function initTauriBridge(): void {
         notifyUpdateStatus('not-available')
       }
     },
-    cancelUpdate: async () => {},
+    cancelUpdate: async () => {
+      await invoke('cancel_app_update').catch(() => {})
+    },
     quitAndInstall: async () => {
+      if (downloadedInstallerPath) {
+        notifyUpdateStatus('installing', latestReleaseInfo)
+        try {
+          await invoke('install_app_update', { path: downloadedInstallerPath })
+          return
+        } catch (err: any) {
+          notifyUpdateStatus('error', String(err || 'Failed to launch installer'))
+          return
+        }
+      }
       const targetUrl = latestReleaseInfo?.url || 'https://github.com/Saboor-Hamedi/lumina/releases'
       await invoke('open_path_in_os', { path: targetUrl })
     },

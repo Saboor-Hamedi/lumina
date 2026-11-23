@@ -87,7 +87,10 @@ pub fn run() {
             get_google_user,
             logout_from_google,
             get_google_access_token,
-            pick_email_attachments
+            pick_email_attachments,
+            download_app_update,
+            cancel_app_update,
+            install_app_update
         ])
         .run(tauri::generate_context!())
         .expect("error while building tauri application");
