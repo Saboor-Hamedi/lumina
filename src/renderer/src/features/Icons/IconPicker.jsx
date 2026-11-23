@@ -12,13 +12,13 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Search, X, Sparkles, Check } from 'lucide-react'
-import * as LucideIcons from 'lucide-react'
+import { getLucideIconByName } from './iconRegistry'
 import ToolTip from '../../components/atoms/ToolTip'
 import { EMOJI_INDEX } from './icons'
 import './IconPicker.css'
 
 const IconItem = React.memo(({ item, index, isActive, isFocused, onSelect }) => {
-  const IconComponent = item.isLucide ? LucideIcons[item.char] : null
+  const IconComponent = item.isLucide ? getLucideIconByName(item.char) : null
 
   const handleClick = useCallback((e) => {
     e.stopPropagation()

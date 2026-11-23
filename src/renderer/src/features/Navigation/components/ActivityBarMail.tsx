@@ -3,7 +3,13 @@ import { createPortal } from 'react-dom'
 import { Mail } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
 import { useCurrentUser } from '../../../core/hooks/useCurrentUser'
-import { EmailContainer, playNewEmailTone } from '../../email'
+import { playNewEmailTone } from '../../email/services/emailSoundService'
+
+const EmailContainer = React.lazy(() =>
+  import('../../email/components/EmailContainer').then((m) => ({
+    default: m.EmailContainer
+  }))
+)
 
 export const ActivityBarMail: React.FC = memo(() => {
   const [isMailOpen, setIsMailOpen] = useState(false)
@@ -111,11 +117,13 @@ export const ActivityBarMail: React.FC = memo(() => {
       </ToolTip>
       {isMailOpen &&
         createPortal(
-          <EmailContainer
-            isOpen={isMailOpen}
-            onClose={() => setIsMailOpen(false)}
-            anchor="left"
-          />,
+          <React.Suspense fallback={null}>
+            <EmailContainer
+              isOpen={isMailOpen}
+              onClose={() => setIsMailOpen(false)}
+              anchor="left"
+            />
+          </React.Suspense>,
           document.body
         )}
     </div>

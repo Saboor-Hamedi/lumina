@@ -15,8 +15,14 @@
  */
 
 import React from 'react'
-import { LuminaChatContent } from './features/AI/components/LuminaChatContent'
+import { PulseLoader } from './components/PulseLoader'
 import './assets/welcome.css'
+
+const LuminaChatContent = React.lazy(() =>
+  import('./features/AI/components/LuminaChatContent').then((m) => ({
+    default: m.LuminaChatContent
+  }))
+)
 
 export interface WelcomeProps {
   /** Callback triggered to create a new note */
@@ -35,7 +41,15 @@ export const Welcome: React.FC<WelcomeProps> = () => {
   return (
     <div className="welcome-page lumina-welcome-workspace">
       <div className="welcome-chat-stage">
-        <LuminaChatContent isSidebar={false} isModal={false} />
+        <React.Suspense
+          fallback={
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+              <PulseLoader size="md" />
+            </div>
+          }
+        >
+          <LuminaChatContent isSidebar={false} isModal={false} />
+        </React.Suspense>
       </div>
     </div>
   )

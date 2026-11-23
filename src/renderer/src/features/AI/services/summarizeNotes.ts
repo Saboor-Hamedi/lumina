@@ -1,6 +1,5 @@
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/SettingStore'
-import { AIProviderFactory, resolveProviderConfig } from '../providers/index'
 
 function sanitizeTitle(str?: string): string {
   return (str || 'Untitled').replace(/[/\\:*?"<>|]/g, '').trim()
@@ -69,6 +68,7 @@ export async function summarizeNotes(inputNotes: any | any[], options: Summarize
   const validNotes = (Array.isArray(inputNotes) ? inputNotes : [inputNotes]).filter(Boolean)
   if (validNotes.length === 0) return null
 
+  const { AIProviderFactory, resolveProviderConfig } = await import('../providers/index')
   const settingsObj = (useSettingsStore as any).getState().settings || {}
   const { providerType, activeModel, apiKey, baseUrl } = resolveProviderConfig(settingsObj)
 

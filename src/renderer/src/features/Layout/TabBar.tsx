@@ -58,12 +58,13 @@ import {
 import { useShallow } from 'zustand/react/shallow'
 import ContextMenu from '../modals/ContextMenu'
 import PromptModal from '../modals/PromptModal'
-import IconPicker from '../Icons/IconPicker'
 import { getSnippetIcon } from '../Icons/FileIcon'
 import ToolTip from '../../components/atoms/ToolTip'
 import { useExternalFileDrop } from '../Explorer/drop'
 // AI note summarization
 import { summarizeNotes } from '../AI/services/summarizeNotes'
+
+const IconPicker = React.lazy(() => import('../Icons/IconPicker'))
 
 interface SortableTabItemProps {
   id: string
@@ -806,16 +807,20 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
         onDiscard={handleDiscard}
       />
 
-      <IconPicker
-        isOpen={Boolean(iconPickerId)}
-        onClose={() => setIconPickerId(null)}
-        currentIcon={iconPickerId ? snippetMap.get(iconPickerId)?.customIcon : undefined}
-        onSelect={(iconName: string) => {
-          if (!iconPickerId) return
-          const s = snippetMap.get(iconPickerId)
-          if (s) saveSnippet({ ...s, customIcon: iconName })
-        }}
-      />
+      {Boolean(iconPickerId) && (
+        <React.Suspense fallback={null}>
+          <IconPicker
+            isOpen={Boolean(iconPickerId)}
+            onClose={() => setIconPickerId(null)}
+            currentIcon={iconPickerId ? snippetMap.get(iconPickerId)?.customIcon : undefined}
+            onSelect={(iconName: string) => {
+              if (!iconPickerId) return
+              const s = snippetMap.get(iconPickerId)
+              if (s) saveSnippet({ ...s, customIcon: iconName })
+            }}
+          />
+        </React.Suspense>
+      )}
 
       {typeof document !== 'undefined' &&
         createPortal(

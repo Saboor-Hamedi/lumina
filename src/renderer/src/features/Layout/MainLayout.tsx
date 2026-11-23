@@ -48,7 +48,10 @@ import { useShallow } from 'zustand/react/shallow'
 import RightSidebar from '../Inspector/RightSidebar'
 import StatusBar from './StatusBar'
 import { useSidebarResize } from './resizeSidebar'
-import { TerminalPanel } from '../terminal/TerminalPanel'
+
+const TerminalPanel = React.lazy(() =>
+  import('../terminal/TerminalPanel').then((m) => ({ default: m.TerminalPanel }))
+)
 
 export const MainLayout: React.FC = () => {
   countExplorerPerfRender('MainLayout')
@@ -1121,24 +1124,9 @@ export const MainLayout: React.FC = () => {
     }
   }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme, handleToggleTerminal])
 
-  // Mount-once module preloading so Editor and Canvas open instantaneously
+  // Mount-once module preloading so the active Editor opens instantaneously
   useEffect(() => {
     void import('../Editor/Editor')
-
-    const canvasPreloadTimer = setTimeout(() => {
-      void import('../canvas/CanvasTabPane')
-    }, 150)
-
-    const secondaryPreloadTimer = setTimeout(() => {
-      void import('../graph/Graph')
-      void import('../Docs/Documentation')
-      void import('../modals/Guide')
-    }, 1000)
-
-    return () => {
-      clearTimeout(canvasPreloadTimer)
-      clearTimeout(secondaryPreloadTimer)
-    }
   }, [])
 
   useEffect(() => {
@@ -1345,11 +1333,13 @@ export const MainLayout: React.FC = () => {
                     zIndex: 20
                   }}
                 >
-                  <TerminalPanel
-                    onClose={() => setIsTerminalOpen(false)}
-                    isMaximized={isTerminalMaximized}
-                    onToggleMaximize={handleToggleTerminalMaximize}
-                  />
+                  <React.Suspense fallback={null}>
+                    <TerminalPanel
+                      onClose={() => setIsTerminalOpen(false)}
+                      isMaximized={isTerminalMaximized}
+                      onToggleMaximize={handleToggleTerminalMaximize}
+                    />
+                  </React.Suspense>
                 </div>
               </>
             )}

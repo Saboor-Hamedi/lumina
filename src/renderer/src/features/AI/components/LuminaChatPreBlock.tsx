@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { Folder, Code as CodeIcon, Copy, Check, ChevronDown } from 'lucide-react'
-import hljs from 'highlight.js'
+import hljs from '../../../core/code/hljsCore'
 import { LuminaFolderTree, isAsciiTree } from './luminaFolderTree'
 import '../css/chatCode.css'
 

@@ -7,7 +7,6 @@ import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/SettingStore'
 import ContextMenu from '../../modals/ContextMenu'
 import Confirm from '../../modals/Confirm'
-import IconPicker from '../../Icons/IconPicker'
 import ToolTip from '../../../components/atoms/ToolTip'
 import FileHoverPreview from '../../Explorer/components/FileHoverPreview'
 import { getSnippetIcon } from '../../Icons/FileIcon'
@@ -17,6 +16,8 @@ import { useContextMenu } from '../hooks/useContextMenu'
 import { isSnippetActive } from '../../Explorer/utils/explorerSelectionHelper'
 import { useUnsaved, UnsavedIndicator } from '../../../core/hooks/unsave'
 import { summarizeNotes } from '../../AI/services/summarizeNotes'
+
+const IconPicker = React.lazy(() => import('../../Icons/IconPicker'))
 
 const emptyDragImage = typeof window !== 'undefined' ? new Image() : null
 if (emptyDragImage) {
@@ -338,12 +339,14 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
         />
       )}
       {showIconPicker && (
-        <IconPicker
-          isOpen={showIconPicker}
-          onClose={() => setShowIconPicker(false)}
-          currentIcon={snippet.customIcon}
-          onSelect={(iconName: string) => saveSnippet({ ...snippet, customIcon: iconName })}
-        />
+        <React.Suspense fallback={null}>
+          <IconPicker
+            isOpen={showIconPicker}
+            onClose={() => setShowIconPicker(false)}
+            currentIcon={snippet.customIcon}
+            onSelect={(iconName: string) => saveSnippet({ ...snippet, customIcon: iconName })}
+          />
+        </React.Suspense>
       )}
 
       {showDeleteConfirm && (

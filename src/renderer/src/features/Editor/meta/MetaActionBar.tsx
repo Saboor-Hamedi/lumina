@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import InlineGraph from '../../graph/InlineGraph'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../../core/shortcuts'
+import { PulseLoader } from '../../../components/PulseLoader'
 import MetaActions from './MetaActions'
 import MetaTools from './MetaTools'
 import type { Snippet } from '../../../core/editor/types'
+
+const InlineGraph = React.lazy(() => import('../../graph/InlineGraph'))
 
 export interface MetaActionBarProps {
   snippet?: Snippet | null
@@ -154,10 +156,25 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
               overflow: 'hidden'
             }}
           >
-            <InlineGraph
-              focusNodeId={snippet.id}
-              onNavigate={handleGraphNavigate}
-            />
+            <React.Suspense
+              fallback={
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: 220
+                  }}
+                >
+                  <PulseLoader size="sm" />
+                </div>
+              }
+            >
+              <InlineGraph
+                focusNodeId={snippet.id}
+                onNavigate={handleGraphNavigate}
+              />
+            </React.Suspense>
           </div>
         )}
       </div>

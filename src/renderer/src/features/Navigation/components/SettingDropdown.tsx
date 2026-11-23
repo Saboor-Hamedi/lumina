@@ -180,6 +180,10 @@ export const SettingDropdown: React.FC<SettingDropdownProps> = ({
       } else if (data.stage === 'cancelled') {
         setBackupState('idle')
         setBackupProgress(0)
+      } else if (data.stage === 'error') {
+        setBackupState('error')
+        setBackupProgress(0)
+        setTimeout(() => setBackupState('idle'), 3000)
       } else if (data.stage === 'completed' || data.progress >= 100) {
         setBackupState('done')
         setBackupProgress(100)

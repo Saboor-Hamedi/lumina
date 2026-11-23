@@ -8,7 +8,7 @@
  */
 
 import React from 'react'
-import * as LucideIcons from 'lucide-react'
+import { getLucideIconByName } from './iconRegistry'
 import './IconPicker.css'
 import {
   FileText,
@@ -348,8 +348,9 @@ export const getSnippetIcon = (snippet, size = 14, className = 'item-icon', colo
 
   // Custom icon selection (Lucide icon name)
   if (snippet.customIcon && snippet.customIcon !== 'null' && snippet.customIcon !== 'undefined') {
-    if (LucideIcons[snippet.customIcon]) {
-      Icon = LucideIcons[snippet.customIcon]
+    const customLucideIcon = getLucideIconByName(snippet.customIcon)
+    if (customLucideIcon) {
+      Icon = customLucideIcon
     } else {
       // Fallback for custom unicode symbols/emojis
       return (

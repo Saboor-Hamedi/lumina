@@ -60,10 +60,10 @@ describe('MetaHeader', () => {
     expect(onInlineAI).toHaveBeenCalled()
   })
 
-  it('toggles local graph view on click', () => {
+  it('toggles local graph view on click', async () => {
     render(<MetaHeader {...baseProps} />)
     fireEvent.click(screen.getByText('Local Graph'))
-    expect(screen.getByTestId('inline-graph')).toBeInTheDocument()
+    expect(await screen.findByTestId('inline-graph')).toBeInTheDocument()
     fireEvent.click(screen.getByText('Local Graph'))
     expect(screen.queryByTestId('inline-graph')).toBeNull()
   })

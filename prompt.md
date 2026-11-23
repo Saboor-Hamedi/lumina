@@ -12,8 +12,8 @@ Tackle items **one by one** in strict order (**1 → 2 → 3 → 4**) with zero 
 ---
 
 ## 2. Eliminate Remaining Bundle Bloat (Curated Icon Registry & Non-Boot Lazy Loading)
-- [ ] Replace `import * as LucideIcons from 'lucide-react'` in `src/renderer/src/features/Icons/FileIcon.jsx` and `src/renderer/src/features/Icons/IconPicker.jsx` (~581 KB `vendor-icons` chunk) with a curated icon registry + lazy-loaded icon picker dictionary.
-- [ ] Lazy-load non-boot surfaces (Email, Calendar, Terminal, Canvas, Graph) so initial boot JavaScript (`index-*.js`) stays fast and lean (target under 800 KB).
+- [x] Replace `import * as LucideIcons from 'lucide-react'` in `src/renderer/src/features/Icons/FileIcon.jsx` and `src/renderer/src/features/Icons/IconPicker.jsx` (~581 KB `vendor-icons` chunk → 83.23 kB) with a curated icon registry (`iconRegistry.ts`), switch full `highlight.js` imports to shared curated `hljsCore.ts` (~980 KB `vendor-highlight` → 162.92 kB), and lazy-load `IconPicker`.
+- [x] Lazy-load non-boot surfaces (`EmailContainer`, `CalendarDropdown`, `TerminalPanel`, `InlineGraph`, `CommandPalette`, `Theme`, `Template`, `LuminaChatContent` on Welcome, and dynamic AI provider import in `summarizeNotes`) so initial boot JavaScript (`index-*.js`) stays fast and lean (target under 800 KB → 623.50 kB / 188.54 kB gzip).
 
 ---
 

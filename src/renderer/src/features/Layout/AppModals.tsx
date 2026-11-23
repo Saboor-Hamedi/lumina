@@ -20,10 +20,8 @@
  */
 
 import React from 'react'
-import { CommandPalette } from '../commandpalette'
 import Confirm from '../modals/Confirm'
 import Rename from '../modals/Rename'
-import IconPicker from '../Icons/IconPicker'
 import ToastNotification from '../../core/notification'
 import Indexing from '../../components/Indexing'
 import { VoiceCapsule } from '../voice'
@@ -52,6 +50,10 @@ const lazyWithRetry = <T extends React.ComponentType<any>>(
 // Lazy-load heavy modals and panels to optimize initial bundle evaluation time
 const LuminaChat = lazyWithRetry(() => import('../AI/Lumina'))
 const Settings = lazyWithRetry(() => import('../Settings/Settings'))
+const CommandPalette = lazyWithRetry(() =>
+  import('../commandpalette').then((m) => ({ default: m.CommandPalette }))
+)
+const IconPicker = lazyWithRetry(() => import('../Icons/IconPicker'))
 const Documentation = lazyWithRetry(() => import('../Docs/Documentation'))
 const Guide = lazyWithRetry(() => import('../modals/Guide'))
 
@@ -202,29 +204,33 @@ export const AppModals: React.FC<AppModalsProps> = ({
       )}
 
       {/* Universal Command Palette / Quick Switcher */}
-      <CommandPalette
-        isOpen={showPalette}
-        initialQuery={paletteInitialQuery}
-        onClose={() => setShowPalette(false)}
-        items={snippets}
-        onSelect={(snippet) => {
-          setSelectedSnippet(snippet)
-          setActiveTab('files')
-        }}
-        onNew={handleNew}
-        onToggleSettings={(tab) => {
-          setSettingsInitialTab(tab || 'look-and-feel')
-          setShowSettings(true)
-        }}
-        onToggleGraph={() => useWorkspaceStore.getState().openGraphTab()}
-        onToggleChat={() => setShowAIChatModal(true)}
-        onToggleDocs={() => setShowDocsModal(true)}
-        onRename={() => {
-          if (selectedSnippet) {
-            setRenameModal({ isOpen: true, item: selectedSnippet, newName: selectedSnippet.title })
-          }
-        }}
-      />
+      {showPalette && (
+        <React.Suspense fallback={null}>
+          <CommandPalette
+            isOpen={showPalette}
+            initialQuery={paletteInitialQuery}
+            onClose={() => setShowPalette(false)}
+            items={snippets}
+            onSelect={(snippet) => {
+              setSelectedSnippet(snippet)
+              setActiveTab('files')
+            }}
+            onNew={handleNew}
+            onToggleSettings={(tab) => {
+              setSettingsInitialTab(tab || 'look-and-feel')
+              setShowSettings(true)
+            }}
+            onToggleGraph={() => useWorkspaceStore.getState().openGraphTab()}
+            onToggleChat={() => setShowAIChatModal(true)}
+            onToggleDocs={() => setShowDocsModal(true)}
+            onRename={() => {
+              if (selectedSnippet) {
+                setRenameModal({ isOpen: true, item: selectedSnippet, newName: selectedSnippet.title })
+              }
+            }}
+          />
+        </React.Suspense>
+      )}
 
       {/* Help & Documentation Modal */}
       {showDocsModal && (
@@ -298,17 +304,19 @@ export const AppModals: React.FC<AppModalsProps> = ({
 
       {/* Note Icon Picker */}
       {showActiveIconPicker && (
-        <IconPicker
-          isOpen={showActiveIconPicker}
-          onClose={() => setShowActiveIconPicker(false)}
-          currentIcon={(selectedSnippet || snippets.find((s) => s.id === activeTabId))?.customIcon}
-          onSelect={(iconName: string) => {
-            const active = selectedSnippet || snippets.find((s) => s.id === activeTabId)
-            if (active) {
-              saveSnippet({ ...active, customIcon: iconName })
-            }
-          }}
-        />
+        <React.Suspense fallback={null}>
+          <IconPicker
+            isOpen={showActiveIconPicker}
+            onClose={() => setShowActiveIconPicker(false)}
+            currentIcon={(selectedSnippet || snippets.find((s) => s.id === activeTabId))?.customIcon}
+            onSelect={(iconName: string) => {
+              const active = selectedSnippet || snippets.find((s) => s.id === activeTabId)
+              if (active) {
+                saveSnippet({ ...active, customIcon: iconName })
+              }
+            }}
+          />
+        </React.Suspense>
       )}
 
       {/* System Toast Alerts */}

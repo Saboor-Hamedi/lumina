@@ -22,6 +22,9 @@ import {
 let exportEnginePromise: Promise<typeof import('../features/export/exportEngine')> | null = null
 const loadExportEngine = () => (exportEnginePromise ??= import('../features/export/exportEngine'))
 
+let googleDriveClientPromise: Promise<typeof import('./googleDriveClient')> | null = null
+const loadGoogleDriveClient = () => (googleDriveClientPromise ??= import('./googleDriveClient'))
+
 const batchProgressSubscribers = new Set<(p: any) => void>()
 let batchProgressBridgeBound = false
 
@@ -94,6 +97,14 @@ export function initTauriBridge(): void {
     workspaceListeners.forEach((cb) => {
       try {
         cb()
+      } catch {}
+    })
+  }
+
+  const emitBackupProgress = (data: any) => {
+    indexProgressListeners.forEach((cb) => {
+      try {
+        cb(data)
       } catch {}
     })
   }
@@ -309,22 +320,13 @@ export function initTauriBridge(): void {
       }
     },
 
-    // Slim Local ZIP Backup Pipeline
-    backupWorkspace: (_mode?: string) => invoke('backup_workspace_zip'),
-    backupFile: async (note: any) => {
-      let content = note?.code ?? note?.content ?? ''
-      if (!content && note?.id) {
-        try {
-          const full = await invoke<any>('read_snippet', { id: note.id })
-          if (full?.code) content = full.code
-        } catch {}
-      }
-      return invoke('backup_single_note_zip', {
-        title: note?.title || 'Untitled',
-        content
-      })
-    },
-    cancelBackup: () => invoke('cancel_backup'),
+    // Direct Google Drive Push Pipeline (Single, Bulk Folder, and ZIP Backup)
+    backupWorkspace: async (mode: 'zip' | 'folder' = 'zip') =>
+      (await loadGoogleDriveClient()).backupWorkspaceToDrive(mode, emitBackupProgress),
+    backupFile: async (note: any) =>
+      (await loadGoogleDriveClient()).backupFileToDrive(note, emitBackupProgress),
+    cancelBackup: async () =>
+      (await loadGoogleDriveClient()).cancelGoogleDriveBackup(),
 
     // Dialogs
     confirmDelete: async (msg: string) => window.confirm(msg || 'Are you sure?'),

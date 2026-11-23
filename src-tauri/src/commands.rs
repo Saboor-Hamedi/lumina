@@ -1218,205 +1218,93 @@ pub fn cancel_backup() -> Result<bool, String> {
     Ok(true)
 }
 
-#[tauri::command]
-pub async fn backup_workspace_zip(
-    app: AppHandle,
-    window: tauri::WebviewWindow,
-) -> Result<Value, String> {
-    BACKUP_CANCELLED.store(false, Ordering::SeqCst);
-    let _ = &window;
-    #[cfg(target_os = "windows")]
-    let parent_hwnd: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
-    #[cfg(not(target_os = "windows"))]
-    let parent_hwnd: Option<isize> = None;
+fn collect_workspace_backup_files(root: &Path) -> Vec<(PathBuf, String)> {
+    const IGNORED_NAMES: [&str; 7] = [
+        ".git",
+        ".obsidian",
+        ".lumina",
+        ".trash",
+        "node_modules",
+        ".DS_Store",
+        "Thumbs.db",
+    ];
 
-    let picked = tauri::async_runtime::spawn_blocking(move || {
-        crate::export::pick_save_path_native(
-            parent_hwnd,
-            "Backup Workspace as ZIP".to_string(),
-            "Lumina-Backup.zip".to_string(),
-            "ZIP Archive".to_string(),
-            vec!["zip".to_string()],
-        )
+    let root_canon = canonicalize_or_normalize(root);
+    let mut results: Vec<(PathBuf, String)> = Vec::new();
+    let mut stack = vec![root_canon.clone()];
+
+    while let Some(dir) = stack.pop() {
+        let Ok(read) = fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in read.flatten() {
+            let name = entry.file_name().to_string_lossy().to_string();
+            if name.starts_with('.') || IGNORED_NAMES.contains(&name.as_str()) {
+                continue;
+            }
+            let p = entry.path();
+            if p.is_dir() {
+                stack.push(p);
+            } else if p.is_file() {
+                if let Ok(rel) = p.strip_prefix(&root_canon) {
+                    let rel_str = rel.to_string_lossy().replace('\\', "/");
+                    if !rel_str.is_empty() {
+                        results.push((p, rel_str));
+                    }
+                }
+            }
+        }
+    }
+
+    results.sort_by(|a, b| a.1.cmp(&b.1));
+    results
+}
+
+#[tauri::command]
+pub async fn list_workspace_files() -> Result<Vec<String>, String> {
+    run_blocking(move || {
+        let ws_path = resolve_workspace_path();
+        if !ws_path.exists() {
+            return Err("Workspace directory does not exist".to_string());
+        }
+        let files = collect_workspace_backup_files(&ws_path);
+        Ok(files.into_iter().map(|(_, rel)| rel).collect())
     })
     .await
-    .map_err(|e| e.to_string())??;
+}
 
-    let Some(dest_str) = picked else {
-        return Ok(json!({ "cancelled": true }));
-    };
-
-    let _ = app.emit(
-        "backup:progress",
-        json!({ "type": "backup", "stage": "scanning", "progress": 15 }),
-    );
-
-    let app_clone = app.clone();
-    let dest_clone = dest_str.clone();
-
-    tauri::async_runtime::spawn_blocking(move || -> Result<Value, String> {
+#[tauri::command]
+pub async fn build_workspace_zip_bytes() -> Result<tauri::ipc::Response, String> {
+    let zip_bytes = run_blocking(move || {
+        BACKUP_CANCELLED.store(false, Ordering::SeqCst);
         let ws_path = resolve_workspace_path();
-        let dest_norm = canonicalize_or_normalize(Path::new(&dest_clone));
-        let ws_canon = canonicalize_or_normalize(&ws_path);
-        let mut entries: Vec<ZipEntry> = Vec::new();
-        let mut stack = vec![ws_canon.clone()];
+        if !ws_path.exists() {
+            return Err("Workspace directory does not exist".to_string());
+        }
 
-        while let Some(dir) = stack.pop() {
+        let files = collect_workspace_backup_files(&ws_path);
+        let mut entries: Vec<ZipEntry> = Vec::with_capacity(files.len());
+        for (full_path, rel_str) in files {
             if BACKUP_CANCELLED.load(Ordering::SeqCst) {
-                let _ = app_clone.emit(
-                    "backup:progress",
-                    json!({ "type": "backup", "stage": "cancelled", "progress": 0 }),
-                );
-                return Ok(json!({ "cancelled": true }));
+                return Err("Backup cancelled".to_string());
             }
-            let Ok(read) = fs::read_dir(&dir) else {
-                continue;
-            };
-            for entry in read.flatten() {
-                let name = entry.file_name().to_string_lossy().to_string();
-                if name.starts_with('.') || name == "node_modules" {
-                    continue;
-                }
-                let p = entry.path();
-                if canonicalize_or_normalize(&p) == dest_norm {
-                    continue;
-                }
-                if p.is_dir() {
-                    stack.push(p);
-                } else if p.is_file() {
-                    let Ok(rel) = p.strip_prefix(&ws_canon) else {
-                        continue;
-                    };
-                    let rel_str = rel.to_string_lossy().replace('\\', "/");
-                    if rel_str.is_empty() {
-                        continue;
-                    }
-                    if let Ok(bytes) = fs::read(&p) {
-                        entries.push(ZipEntry {
-                            name: rel_str,
-                            data: bytes,
-                        });
-                    }
-                }
+            if let Ok(bytes) = fs::read(&full_path) {
+                entries.push(ZipEntry {
+                    name: rel_str,
+                    data: bytes,
+                });
             }
         }
 
         if BACKUP_CANCELLED.load(Ordering::SeqCst) {
-            let _ = app_clone.emit(
-                "backup:progress",
-                json!({ "type": "backup", "stage": "cancelled", "progress": 0 }),
-            );
-            return Ok(json!({ "cancelled": true }));
+            return Err("Backup cancelled".to_string());
         }
 
-        let _ = app_clone.emit(
-            "backup:progress",
-            json!({ "type": "backup", "stage": "uploading", "progress": 75 }),
-        );
-
-        let count = entries.len();
-        let zip_bytes = build_zip_bytes(&entries)?;
-        if let Some(parent) = Path::new(&dest_clone).parent() {
-            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-        }
-        fs::write(&dest_clone, &zip_bytes).map_err(|e| e.to_string())?;
-
-        let _ = app_clone.emit(
-            "backup:progress",
-            json!({ "type": "backup", "stage": "completed", "progress": 100 }),
-        );
-
-        Ok(json!({
-            "success": true,
-            "filePath": dest_clone,
-            "fileCount": count
-        }))
+        build_zip_bytes(&entries)
     })
-    .await
-    .map_err(|e| e.to_string())?
-}
+    .await?;
 
-#[tauri::command]
-pub async fn backup_single_note_zip(
-    app: AppHandle,
-    window: tauri::WebviewWindow,
-    title: String,
-    content: String,
-) -> Result<Value, String> {
-    BACKUP_CANCELLED.store(false, Ordering::SeqCst);
-    let _ = &window;
-    #[cfg(target_os = "windows")]
-    let parent_hwnd: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
-    #[cfg(not(target_os = "windows"))]
-    let parent_hwnd: Option<isize> = None;
-
-    let safe_stem = sanitize_filename(if title.trim().is_empty() { "Untitled" } else { &title });
-    let default_zip = format!("{safe_stem}.zip");
-
-    let picked = tauri::async_runtime::spawn_blocking(move || {
-        crate::export::pick_save_path_native(
-            parent_hwnd,
-            "Backup Note as ZIP".to_string(),
-            default_zip,
-            "ZIP Archive".to_string(),
-            vec!["zip".to_string()],
-        )
-    })
-    .await
-    .map_err(|e| e.to_string())??;
-
-    let Some(dest_str) = picked else {
-        return Ok(json!({ "cancelled": true }));
-    };
-
-    run_blocking(move || {
-        let ws_path = resolve_workspace_path();
-        let mut entries = vec![ZipEntry {
-            name: format!("{safe_stem}.md"),
-            data: content.as_bytes().to_vec(),
-        }];
-
-        let lower_content = content.to_lowercase();
-        let assets_dir = ws_path.join("assets");
-        if assets_dir.exists() && assets_dir.is_dir() {
-            if let Ok(read) = fs::read_dir(&assets_dir) {
-                for entry in read.flatten() {
-                    let p = entry.path();
-                    if p.is_file() {
-                        if let Some(fname) = p.file_name().and_then(|s| s.to_str()) {
-                            let lf = fname.to_lowercase();
-                            if lower_content.contains(&lf)
-                                || lower_content.contains(&lf.replace(' ', "%20"))
-                            {
-                                if let Ok(bytes) = fs::read(&p) {
-                                    entries.push(ZipEntry {
-                                        name: format!("assets/{fname}"),
-                                        data: bytes,
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        let zip_bytes = build_zip_bytes(&entries)?;
-        if let Some(parent) = Path::new(&dest_str).parent() {
-            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-        }
-        fs::write(&dest_str, &zip_bytes).map_err(|e| e.to_string())?;
-        let _ = app.emit(
-            "backup:progress",
-            json!({ "type": "backup", "stage": "completed", "progress": 100 }),
-        );
-        Ok(json!({
-            "success": true,
-            "filePath": dest_str,
-            "successCount": entries.len()
-        }))
-    })
-    .await
+    Ok(tauri::ipc::Response::new(zip_bytes))
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -2283,7 +2171,8 @@ pub async fn login_with_google(app: tauri::AppHandle, client_id: String) -> Resu
 }
 
 #[tauri::command]
-pub async fn get_google_access_token() -> Result<Value, String> {
+pub async fn get_google_access_token(force_refresh: Option<bool>) -> Result<Value, String> {
+    let force = force_refresh.unwrap_or(false);
     let res = tauri::async_runtime::spawn_blocking(move || -> Value {
         use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -2322,7 +2211,10 @@ pub async fn get_google_access_token() -> Result<Value, String> {
         let email = obj.get("email").cloned().unwrap_or(Value::Null);
         let name = obj.get("name").cloned().unwrap_or(Value::Null);
 
-        if !access_token.is_empty() && (expiry_date == 0 || now_ms + 60_000 < expiry_date) {
+        if !force
+            && !access_token.is_empty()
+            && (expiry_date == 0 || now_ms + 60_000 < expiry_date)
+        {
             return json!({
                 "accessToken": access_token,
                 "email": email,

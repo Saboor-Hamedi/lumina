@@ -1,5 +1,5 @@
 import { Marked, type Tokens } from 'marked'
-import hljs from 'highlight.js'
+import hljs from '../../core/code/hljsCore'
 import katex from 'katex'
 import hljsLightCss from 'highlight.js/styles/github.min.css?raw'
 import { invoke } from '@tauri-apps/api/core'

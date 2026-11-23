@@ -13,9 +13,12 @@ import React, { useState, useEffect, useCallback, memo } from 'react'
 import { createPortal } from 'react-dom'
 import { Calendar, Bell } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
-import { CalendarDropdown } from './CalendarDropdown'
 import { calendarEngine } from './utils/calendarEngine'
 import './css/calender.css'
+
+const CalendarDropdown = React.lazy(() =>
+  import('./CalendarDropdown').then((m) => ({ default: m.CalendarDropdown }))
+)
 
 interface CalendarAlertDetail {
   readonly title: string
@@ -85,7 +88,11 @@ export const CalendarToggle: React.FC = memo(() => {
         </button>
       </ToolTip>
 
-      <CalendarDropdown isOpen={isOpen} onClose={handleClose} />
+      {isOpen && (
+        <React.Suspense fallback={null}>
+          <CalendarDropdown isOpen={isOpen} onClose={handleClose} />
+        </React.Suspense>
+      )}
 
       {currentAlert &&
         typeof document !== 'undefined' &&

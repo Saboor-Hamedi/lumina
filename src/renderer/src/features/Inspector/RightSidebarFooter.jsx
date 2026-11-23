@@ -1,42 +1,10 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState } from 'react'
 import { Copy, Check, X, FileText } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
-// Lumina AI Composer & Store
-import { Composer } from '../AI/Composer'
-import { useAIStore } from '../AI/tools/lumina'
 
 export const RightSidebarFooter = ({ selectedNote, selectedSnippet = null, rightSidebarTab, onClose }) => {
   const note = selectedNote || selectedSnippet
   const [copied, setCopied] = useState(false)
-  const sendChatMessage = useAIStore((state) => state.sendChatMessage)
-  const isChatLoading = useAIStore((state) => state.isChatLoading)
-  const cancelChat = useAIStore((state) => state.cancelChat)
-
-  const handleSendMessage = useCallback(
-    async (text, mode = 'Standard', attachedMentions = []) => {
-      if (!text.trim() && attachedMentions.length === 0) return
-
-      try {
-        const contextSnippets = []
-        const addedIds = new Set()
-
-        if (attachedMentions.length > 0) {
-          attachedMentions.forEach((item) => {
-            contextSnippets.push(item)
-            addedIds.add(item.id)
-          })
-        } else if (note && !addedIds.has(note.id)) {
-          contextSnippets.push(note)
-          addedIds.add(note.id)
-        }
-
-        await sendChatMessage(text, contextSnippets, mode, attachedMentions)
-      } catch (err) {
-        console.error('Error sending message:', err)
-      }
-    },
-    [note, sendChatMessage]
-  )
 
   const wordCount = note?.code
     ? note.code.trim().split(/\s+/).filter(Boolean).length

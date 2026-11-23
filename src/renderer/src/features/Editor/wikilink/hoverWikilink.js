@@ -1,7 +1,7 @@
 import { marked } from 'marked'
 import { renderMermaidToElement } from '../../../core/mermaid'
 import { renderPulseLoaderHtml } from '../../../components/PulseLoader'
-import hljs from 'highlight.js'
+import hljs from '../../../core/code/hljsCore'
 import 'highlight.js/styles/atom-one-dark.css'
 
 export function setupWikilinkHover(wrapper, getVaultStore) {
