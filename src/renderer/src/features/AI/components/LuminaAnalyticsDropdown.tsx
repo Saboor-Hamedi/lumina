@@ -69,7 +69,11 @@ export const LuminaAnalyticsDropdown: React.FC<LuminaAnalyticsDropdownProps> = (
       }
     }
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        onClose()
+      }
     }
     window.addEventListener('mousedown', handleOutsideClick)
     window.addEventListener('keydown', handleKeyDown)

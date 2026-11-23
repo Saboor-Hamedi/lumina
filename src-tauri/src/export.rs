@@ -187,6 +187,478 @@ impl Drop for ComApartmentGuard {
     }
 }
 
+pub(crate) fn pick_save_path_native(
+    parent_hwnd: Option<isize>,
+    title: String,
+    default_name: String,
+    filter_name: String,
+    extensions: Vec<String>,
+) -> Result<Option<String>, String> {
+    let _ = parent_hwnd;
+
+    #[cfg(target_os = "windows")]
+    {
+        use windows::core::PCWSTR;
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::System::Com::{
+            CoCreateInstance, CoInitializeEx, CoTaskMemFree, CLSCTX_INPROC_SERVER,
+            COINIT_APARTMENTTHREADED,
+        };
+        use windows::Win32::UI::Shell::Common::COMDLG_FILTERSPEC;
+        use windows::Win32::UI::Shell::{
+            FileSaveDialog, IFileSaveDialog, FOS_FILEMUSTEXIST, FOS_FORCEFILESYSTEM,
+            FOS_NOREADONLYRETURN, FOS_OVERWRITEPROMPT, FOS_PATHMUSTEXIST, SIGDN_FILESYSPATH,
+        };
+
+        const HR_CANCELLED: i32 = 0x8007_04C7u32 as i32;
+
+        unsafe {
+            let hr = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+            let _com_guard = ComApartmentGuard(hr.is_ok());
+
+            let dialog: IFileSaveDialog =
+                CoCreateInstance(&FileSaveDialog, None, CLSCTX_INPROC_SERVER)
+                    .map_err(|e| format!("Failed to open native save dialog: {e}"))?;
+
+            let opts = dialog.GetOptions().unwrap_or_default();
+            let _ = dialog.SetOptions(
+                (opts
+                    | FOS_OVERWRITEPROMPT
+                    | FOS_FORCEFILESYSTEM
+                    | FOS_PATHMUSTEXIST
+                    | FOS_NOREADONLYRETURN)
+                    & !FOS_FILEMUSTEXIST,
+            );
+
+            let title_w = to_wide_null(if title.trim().is_empty() {
+                "Save File"
+            } else {
+                title.trim()
+            });
+            let _ = dialog.SetTitle(PCWSTR(title_w.as_ptr()));
+
+            let ok_w = to_wide_null("Save");
+            let _ = dialog.SetOkButtonLabel(PCWSTR(ok_w.as_ptr()));
+
+            let clean_exts: Vec<String> = extensions
+                .iter()
+                .map(|e| e.trim().trim_start_matches('.').to_string())
+                .filter(|e| !e.is_empty())
+                .collect();
+
+            let mut wide_pairs: Vec<(Vec<u16>, Vec<u16>)> = Vec::new();
+            if !clean_exts.is_empty() {
+                let pattern = clean_exts
+                    .iter()
+                    .map(|e| format!("*.{e}"))
+                    .collect::<Vec<_>>()
+                    .join(";");
+                let name_w = to_wide_null(if filter_name.trim().is_empty() {
+                    "Files"
+                } else {
+                    filter_name.trim()
+                });
+                let pat_w = to_wide_null(&pattern);
+                wide_pairs.push((name_w, pat_w));
+            }
+            wide_pairs.push((to_wide_null("All Files"), to_wide_null("*.*")));
+
+            let specs: Vec<COMDLG_FILTERSPEC> = wide_pairs
+                .iter()
+                .map(|(name_w, pat_w)| COMDLG_FILTERSPEC {
+                    pszName: PCWSTR(name_w.as_ptr()),
+                    pszSpec: PCWSTR(pat_w.as_ptr()),
+                })
+                .collect();
+
+            let _ = dialog.SetFileTypes(&specs);
+            let _ = dialog.SetFileTypeIndex(1);
+
+            if let Some(first_ext) = clean_exts.first() {
+                let def_ext_w = to_wide_null(first_ext);
+                let _ = dialog.SetDefaultExtension(PCWSTR(def_ext_w.as_ptr()));
+            }
+
+            let fname_w = to_wide_null(&default_name);
+            let _ = dialog.SetFileName(PCWSTR(fname_w.as_ptr()));
+
+            let owner = parent_hwnd.map(|raw| HWND(raw as *mut std::ffi::c_void));
+            if let Err(e) = dialog.Show(owner) {
+                if e.code().0 == HR_CANCELLED {
+                    return Ok(None);
+                }
+                return Err(format!("Save dialog error: {e}"));
+            }
+            drop(wide_pairs);
+
+            let item = dialog
+                .GetResult()
+                .map_err(|e| format!("Failed to read selected save location: {e}"))?;
+            let pwstr = item
+                .GetDisplayName(SIGDN_FILESYSPATH)
+                .map_err(|e| format!("Failed to resolve save file path: {e}"))?;
+            let path_str = pwstr.to_string().unwrap_or_default();
+            CoTaskMemFree(Some(pwstr.0 as _));
+
+            if path_str.trim().is_empty() {
+                Ok(None)
+            } else {
+                Ok(Some(path_str))
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let escaped_title = title.replace('"', "\\\"");
+        let escaped_name = default_name.replace('"', "\\\"");
+        let script = format!(
+            r#"POSIX path of (choose file name with prompt "{escaped_title}" default name "{escaped_name}")"#
+        );
+        let output = std::process::Command::new("osascript")
+            .args(["-e", &script])
+            .output()
+            .map_err(|e| e.to_string())?;
+        if !output.status.success() {
+            return Ok(None);
+        }
+        let p = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        return Ok(if p.is_empty() { None } else { Some(p) });
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let mut cmd = std::process::Command::new("zenity");
+        cmd.args([
+            "--file-selection",
+            "--save",
+            "--confirm-overwrite",
+            &format!("--title={}", if title.is_empty() { "Save File" } else { &title }),
+            &format!("--filename={}", default_name),
+        ]);
+        let output = cmd.output().map_err(|e| e.to_string())?;
+        if !output.status.success() {
+            return Ok(None);
+        }
+        let p = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        return Ok(if p.is_empty() { None } else { Some(p) });
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    {
+        Err("Native save dialog is unsupported on this OS".to_string())
+    }
+}
+
+pub(crate) fn pick_directory_native(
+    parent_hwnd: Option<isize>,
+    title: String,
+    ok_label: String,
+) -> Result<Option<String>, String> {
+    let _ = (parent_hwnd, &ok_label);
+
+    #[cfg(target_os = "windows")]
+    {
+        use windows::core::PCWSTR;
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::System::Com::{
+            CoCreateInstance, CoInitializeEx, CoTaskMemFree, CLSCTX_INPROC_SERVER,
+            COINIT_APARTMENTTHREADED,
+        };
+        use windows::Win32::UI::Shell::{
+            FileOpenDialog, IFileOpenDialog, FOS_FILEMUSTEXIST, FOS_FORCEFILESYSTEM,
+            FOS_PATHMUSTEXIST, FOS_PICKFOLDERS, SIGDN_FILESYSPATH,
+        };
+
+        const HR_CANCELLED: i32 = 0x8007_04C7u32 as i32;
+
+        unsafe {
+            let hr = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+            let _com_guard = ComApartmentGuard(hr.is_ok());
+
+            let dialog: IFileOpenDialog =
+                CoCreateInstance(&FileOpenDialog, None, CLSCTX_INPROC_SERVER)
+                    .map_err(|e| format!("Failed to open native folder dialog: {e}"))?;
+
+            let opts = dialog.GetOptions().unwrap_or_default();
+            let _ = dialog.SetOptions(
+                (opts | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST)
+                    & !FOS_FILEMUSTEXIST,
+            );
+
+            let title_w = to_wide_null(if title.trim().is_empty() {
+                "Choose Folder"
+            } else {
+                title.trim()
+            });
+            let _ = dialog.SetTitle(PCWSTR(title_w.as_ptr()));
+
+            let ok_w = to_wide_null(if ok_label.trim().is_empty() {
+                "Select Folder"
+            } else {
+                ok_label.trim()
+            });
+            let _ = dialog.SetOkButtonLabel(PCWSTR(ok_w.as_ptr()));
+
+            let owner = parent_hwnd.map(|raw| HWND(raw as *mut std::ffi::c_void));
+            if let Err(e) = dialog.Show(owner) {
+                if e.code().0 == HR_CANCELLED {
+                    return Ok(None);
+                }
+                return Err(format!("Folder dialog error: {e}"));
+            }
+
+            let item = dialog
+                .GetResult()
+                .map_err(|e| format!("Failed to read selected folder: {e}"))?;
+            let pwstr = item
+                .GetDisplayName(SIGDN_FILESYSPATH)
+                .map_err(|e| format!("Failed to resolve selected folder path: {e}"))?;
+            let path_str = pwstr.to_string().unwrap_or_default();
+            CoTaskMemFree(Some(pwstr.0 as _));
+
+            if path_str.trim().is_empty() {
+                Ok(None)
+            } else {
+                Ok(Some(path_str))
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let escaped_title = title.replace('"', "\\\"");
+        let script = format!(r#"POSIX path of (choose folder with prompt "{escaped_title}")"#);
+        let output = std::process::Command::new("osascript")
+            .args(["-e", &script])
+            .output()
+            .map_err(|e| e.to_string())?;
+        if !output.status.success() {
+            return Ok(None);
+        }
+        let p = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        return Ok(if p.is_empty() { None } else { Some(p) });
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let output = std::process::Command::new("zenity")
+            .args([
+                "--file-selection",
+                "--directory",
+                &format!(
+                    "--title={}",
+                    if title.is_empty() {
+                        "Choose Folder"
+                    } else {
+                        &title
+                    }
+                ),
+            ])
+            .output()
+            .map_err(|e| e.to_string())?;
+        if !output.status.success() {
+            return Ok(None);
+        }
+        let p = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        return Ok(if p.is_empty() { None } else { Some(p) });
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    {
+        Err("Native folder dialog is unsupported on this OS".to_string())
+    }
+}
+
+pub(crate) fn pick_open_files_native(
+    parent_hwnd: Option<isize>,
+    title: String,
+    allow_multi: bool,
+    filter_name: String,
+    extensions: Vec<String>,
+) -> Result<Vec<String>, String> {
+    let _ = (parent_hwnd, allow_multi, &filter_name, &extensions);
+
+    #[cfg(target_os = "windows")]
+    {
+        use windows::core::PCWSTR;
+        use windows::Win32::Foundation::HWND;
+        use windows::Win32::System::Com::{
+            CoCreateInstance, CoInitializeEx, CoTaskMemFree, CLSCTX_INPROC_SERVER,
+            COINIT_APARTMENTTHREADED,
+        };
+        use windows::Win32::UI::Shell::Common::COMDLG_FILTERSPEC;
+        use windows::Win32::UI::Shell::{
+            FileOpenDialog, IFileOpenDialog, FILEOPENDIALOGOPTIONS, FOS_ALLOWMULTISELECT,
+            FOS_FILEMUSTEXIST, FOS_FORCEFILESYSTEM, FOS_PATHMUSTEXIST, SIGDN_FILESYSPATH,
+        };
+
+        const HR_CANCELLED: i32 = 0x8007_04C7u32 as i32;
+
+        unsafe {
+            let hr = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
+            let _com_guard = ComApartmentGuard(hr.is_ok());
+
+            let dialog: IFileOpenDialog =
+                CoCreateInstance(&FileOpenDialog, None, CLSCTX_INPROC_SERVER)
+                    .map_err(|e| format!("Failed to open native file dialog: {e}"))?;
+
+            let opts = dialog.GetOptions().unwrap_or_default();
+            let multi_flag = if allow_multi {
+                FOS_ALLOWMULTISELECT
+            } else {
+                FILEOPENDIALOGOPTIONS(0)
+            };
+            let _ = dialog.SetOptions(
+                opts | FOS_FILEMUSTEXIST | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | multi_flag,
+            );
+
+            let title_w = to_wide_null(if title.trim().is_empty() {
+                "Open File"
+            } else {
+                title.trim()
+            });
+            let _ = dialog.SetTitle(PCWSTR(title_w.as_ptr()));
+
+            let clean_exts: Vec<String> = extensions
+                .iter()
+                .map(|e| e.trim().trim_start_matches('.').to_string())
+                .filter(|e| !e.is_empty())
+                .collect();
+
+            let mut wide_pairs: Vec<(Vec<u16>, Vec<u16>)> = Vec::new();
+            if !clean_exts.is_empty() {
+                let pattern = clean_exts
+                    .iter()
+                    .map(|e| format!("*.{e}"))
+                    .collect::<Vec<_>>()
+                    .join(";");
+                let name_w = to_wide_null(if filter_name.trim().is_empty() {
+                    "Supported Files"
+                } else {
+                    filter_name.trim()
+                });
+                let pat_w = to_wide_null(&pattern);
+                wide_pairs.push((name_w, pat_w));
+            }
+            wide_pairs.push((to_wide_null("All Files"), to_wide_null("*.*")));
+
+            let specs: Vec<COMDLG_FILTERSPEC> = wide_pairs
+                .iter()
+                .map(|(name_w, pat_w)| COMDLG_FILTERSPEC {
+                    pszName: PCWSTR(name_w.as_ptr()),
+                    pszSpec: PCWSTR(pat_w.as_ptr()),
+                })
+                .collect();
+
+            let _ = dialog.SetFileTypes(&specs);
+            let _ = dialog.SetFileTypeIndex(1);
+
+            let owner = parent_hwnd.map(|raw| HWND(raw as *mut std::ffi::c_void));
+            if let Err(e) = dialog.Show(owner) {
+                if e.code().0 == HR_CANCELLED {
+                    return Ok(Vec::new());
+                }
+                return Err(format!("Open dialog error: {e}"));
+            }
+            drop(wide_pairs);
+
+            let mut out = Vec::new();
+            if allow_multi {
+                let items = dialog
+                    .GetResults()
+                    .map_err(|e| format!("Failed to read selected files: {e}"))?;
+                let count = items
+                    .GetCount()
+                    .map_err(|e| format!("Failed to count selected files: {e}"))?;
+                for idx in 0..count {
+                    if let Ok(item) = items.GetItemAt(idx) {
+                        if let Ok(pwstr) = item.GetDisplayName(SIGDN_FILESYSPATH) {
+                            let s = pwstr.to_string().unwrap_or_default();
+                            CoTaskMemFree(Some(pwstr.0 as _));
+                            if !s.trim().is_empty() {
+                                out.push(s);
+                            }
+                        }
+                    }
+                }
+            } else {
+                let item = dialog
+                    .GetResult()
+                    .map_err(|e| format!("Failed to read selected file: {e}"))?;
+                let pwstr = item
+                    .GetDisplayName(SIGDN_FILESYSPATH)
+                    .map_err(|e| format!("Failed to resolve selected file path: {e}"))?;
+                let s = pwstr.to_string().unwrap_or_default();
+                CoTaskMemFree(Some(pwstr.0 as _));
+                if !s.trim().is_empty() {
+                    out.push(s);
+                }
+            }
+            Ok(out)
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let escaped_title = title.replace('"', "\\\"");
+        let multi = if allow_multi { " with multiple selections allowed" } else { "" };
+        let script = format!(
+            r#"set res to choose file with prompt "{escaped_title}"{multi}
+if class of res is list then
+  set out to ""
+  repeat with f in res
+    set out to out & POSIX path of f & linefeed
+  end repeat
+  return out
+else
+  return POSIX path of res
+end if"#
+        );
+        let output = std::process::Command::new("osascript")
+            .args(["-e", &script])
+            .output()
+            .map_err(|e| e.to_string())?;
+        if !output.status.success() {
+            return Ok(Vec::new());
+        }
+        return Ok(String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .map(|l| l.trim().to_string())
+            .filter(|l| !l.is_empty())
+            .collect());
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let mut args = vec![
+            "--file-selection".to_string(),
+            format!("--title={}", if title.is_empty() { "Open File" } else { &title }),
+        ];
+        if allow_multi {
+            args.push("--multiple".to_string());
+            args.push("--separator=\n".to_string());
+        }
+        let output = std::process::Command::new("zenity")
+            .args(&args)
+            .output()
+            .map_err(|e| e.to_string())?;
+        if !output.status.success() {
+            return Ok(Vec::new());
+        }
+        return Ok(String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .map(|l| l.trim().to_string())
+            .filter(|l| !l.is_empty())
+            .collect());
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    {
+        Err("Native open dialog is unsupported on this OS".to_string())
+    }
+}
+
 #[tauri::command]
 pub async fn export_pick_save_path(
     window: tauri::WebviewWindow,
@@ -198,160 +670,11 @@ pub async fn export_pick_save_path(
     let _ = &window;
     #[cfg(target_os = "windows")]
     let parent_hwnd: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
+    #[cfg(not(target_os = "windows"))]
+    let parent_hwnd: Option<isize> = None;
 
-    let picked = tauri::async_runtime::spawn_blocking(move || -> Result<Option<String>, String> {
-        #[cfg(target_os = "windows")]
-        {
-            use windows::core::PCWSTR;
-            use windows::Win32::Foundation::HWND;
-            use windows::Win32::System::Com::{
-                CoCreateInstance, CoInitializeEx, CoTaskMemFree, CLSCTX_INPROC_SERVER,
-                COINIT_APARTMENTTHREADED,
-            };
-            use windows::Win32::UI::Shell::Common::COMDLG_FILTERSPEC;
-            use windows::Win32::UI::Shell::{
-                FileSaveDialog, IFileSaveDialog, FOS_FILEMUSTEXIST, FOS_FORCEFILESYSTEM,
-                FOS_NOREADONLYRETURN, FOS_OVERWRITEPROMPT, FOS_PATHMUSTEXIST, SIGDN_FILESYSPATH,
-            };
-
-            const HR_CANCELLED: i32 = 0x8007_04C7u32 as i32;
-
-            unsafe {
-                let hr = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
-                let _com_guard = ComApartmentGuard(hr.is_ok());
-
-                let dialog: IFileSaveDialog =
-                    CoCreateInstance(&FileSaveDialog, None, CLSCTX_INPROC_SERVER)
-                        .map_err(|e| format!("Failed to open native save dialog: {e}"))?;
-
-                let opts = dialog.GetOptions().unwrap_or_default();
-                let _ = dialog.SetOptions(
-                    (opts
-                        | FOS_OVERWRITEPROMPT
-                        | FOS_FORCEFILESYSTEM
-                        | FOS_PATHMUSTEXIST
-                        | FOS_NOREADONLYRETURN)
-                        & !FOS_FILEMUSTEXIST,
-                );
-
-                let title_w = to_wide_null(if title.trim().is_empty() {
-                    "Export File"
-                } else {
-                    title.trim()
-                });
-                let _ = dialog.SetTitle(PCWSTR(title_w.as_ptr()));
-
-                let ok_w = to_wide_null("Save");
-                let _ = dialog.SetOkButtonLabel(PCWSTR(ok_w.as_ptr()));
-
-                let clean_exts: Vec<String> = extensions
-                    .iter()
-                    .map(|e| e.trim().trim_start_matches('.').to_string())
-                    .filter(|e| !e.is_empty())
-                    .collect();
-
-                let mut wide_pairs: Vec<(Vec<u16>, Vec<u16>)> = Vec::new();
-                if !clean_exts.is_empty() {
-                    let pattern = clean_exts
-                        .iter()
-                        .map(|e| format!("*.{e}"))
-                        .collect::<Vec<_>>()
-                        .join(";");
-                    let name_w = to_wide_null(if filter_name.trim().is_empty() {
-                        "Export Files"
-                    } else {
-                        filter_name.trim()
-                    });
-                    let pat_w = to_wide_null(&pattern);
-                    wide_pairs.push((name_w, pat_w));
-                }
-                wide_pairs.push((to_wide_null("All Files"), to_wide_null("*.*")));
-
-                let specs: Vec<COMDLG_FILTERSPEC> = wide_pairs
-                    .iter()
-                    .map(|(name_w, pat_w)| COMDLG_FILTERSPEC {
-                        pszName: PCWSTR(name_w.as_ptr()),
-                        pszSpec: PCWSTR(pat_w.as_ptr()),
-                    })
-                    .collect();
-
-                let _ = dialog.SetFileTypes(&specs);
-                let _ = dialog.SetFileTypeIndex(1);
-
-                if let Some(first_ext) = clean_exts.first() {
-                    let def_ext_w = to_wide_null(first_ext);
-                    let _ = dialog.SetDefaultExtension(PCWSTR(def_ext_w.as_ptr()));
-                }
-
-                let fname_w = to_wide_null(&default_name);
-                let _ = dialog.SetFileName(PCWSTR(fname_w.as_ptr()));
-
-                let owner = parent_hwnd.map(|raw| HWND(raw as *mut std::ffi::c_void));
-                if let Err(e) = dialog.Show(owner) {
-                    if e.code().0 == HR_CANCELLED {
-                        return Ok(None);
-                    }
-                    return Err(format!("Save dialog error: {e}"));
-                }
-                drop(wide_pairs);
-
-                let item = dialog
-                    .GetResult()
-                    .map_err(|e| format!("Failed to read selected save location: {e}"))?;
-                let pwstr = item
-                    .GetDisplayName(SIGDN_FILESYSPATH)
-                    .map_err(|e| format!("Failed to resolve save file path: {e}"))?;
-                let path_str = pwstr.to_string().unwrap_or_default();
-                CoTaskMemFree(Some(pwstr.0 as _));
-
-                if path_str.trim().is_empty() {
-                    Ok(None)
-                } else {
-                    Ok(Some(path_str))
-                }
-            }
-        }
-
-        #[cfg(target_os = "macos")]
-        {
-            let escaped_title = title.replace('"', "\\\"");
-            let escaped_name = default_name.replace('"', "\\\"");
-            let script = format!(
-                r#"POSIX path of (choose file name with prompt "{escaped_title}" default name "{escaped_name}")"#
-            );
-            let output = std::process::Command::new("osascript")
-                .args(["-e", &script])
-                .output()
-                .map_err(|e| e.to_string())?;
-            if !output.status.success() {
-                return Ok(None);
-            }
-            let p = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            return Ok(if p.is_empty() { None } else { Some(p) });
-        }
-
-        #[cfg(target_os = "linux")]
-        {
-            let mut cmd = std::process::Command::new("zenity");
-            cmd.args([
-                "--file-selection",
-                "--save",
-                "--confirm-overwrite",
-                &format!("--title={}", if title.is_empty() { "Export File" } else { &title }),
-                &format!("--filename={}", default_name),
-            ]);
-            let output = cmd.output().map_err(|e| e.to_string())?;
-            if !output.status.success() {
-                return Ok(None);
-            }
-            let p = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            return Ok(if p.is_empty() { None } else { Some(p) });
-        }
-
-        #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-        {
-            Err("Native save dialog is unsupported on this OS".to_string())
-        }
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        pick_save_path_native(parent_hwnd, title, default_name, filter_name, extensions)
     })
     .await
     .map_err(|e| e.to_string())??;
@@ -371,117 +694,19 @@ pub async fn export_pick_directory(
     let _ = &window;
     #[cfg(target_os = "windows")]
     let parent_hwnd: Option<isize> = window.hwnd().ok().map(|h| h.0 as isize);
+    #[cfg(not(target_os = "windows"))]
+    let parent_hwnd: Option<isize> = None;
 
-    let picked = tauri::async_runtime::spawn_blocking(move || -> Result<Option<String>, String> {
-        #[cfg(target_os = "windows")]
-        {
-            use windows::core::PCWSTR;
-            use windows::Win32::Foundation::HWND;
-            use windows::Win32::System::Com::{
-                CoCreateInstance, CoInitializeEx, CoTaskMemFree, CLSCTX_INPROC_SERVER,
-                COINIT_APARTMENTTHREADED,
-            };
-            use windows::Win32::UI::Shell::{
-                FileOpenDialog, IFileOpenDialog, FOS_FILEMUSTEXIST, FOS_FORCEFILESYSTEM,
-                FOS_PATHMUSTEXIST, FOS_PICKFOLDERS, SIGDN_FILESYSPATH,
-            };
-
-            const HR_CANCELLED: i32 = 0x8007_04C7u32 as i32;
-
-            unsafe {
-                let hr = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
-                let _com_guard = ComApartmentGuard(hr.is_ok());
-
-                let dialog: IFileOpenDialog =
-                    CoCreateInstance(&FileOpenDialog, None, CLSCTX_INPROC_SERVER)
-                        .map_err(|e| format!("Failed to open native folder dialog: {e}"))?;
-
-                let opts = dialog.GetOptions().unwrap_or_default();
-                let _ = dialog.SetOptions(
-                    (opts | FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST)
-                        & !FOS_FILEMUSTEXIST,
-                );
-
-                let title_w = to_wide_null(if title.trim().is_empty() {
-                    "Choose Export Folder"
-                } else {
-                    title.trim()
-                });
-                let _ = dialog.SetTitle(PCWSTR(title_w.as_ptr()));
-
-                let ok_w = to_wide_null("Export Here");
-                let _ = dialog.SetOkButtonLabel(PCWSTR(ok_w.as_ptr()));
-
-                let owner = parent_hwnd.map(|raw| HWND(raw as *mut std::ffi::c_void));
-                if let Err(e) = dialog.Show(owner) {
-                    if e.code().0 == HR_CANCELLED {
-                        return Ok(None);
-                    }
-                    return Err(format!("Folder dialog error: {e}"));
-                }
-
-                let item = dialog
-                    .GetResult()
-                    .map_err(|e| format!("Failed to read selected folder: {e}"))?;
-                let pwstr = item
-                    .GetDisplayName(SIGDN_FILESYSPATH)
-                    .map_err(|e| format!("Failed to resolve selected folder path: {e}"))?;
-                let path_str = pwstr.to_string().unwrap_or_default();
-                CoTaskMemFree(Some(pwstr.0 as _));
-
-                if path_str.trim().is_empty() {
-                    Ok(None)
-                } else {
-                    Ok(Some(path_str))
-                }
-            }
-        }
-
-        #[cfg(target_os = "macos")]
-        {
-            let escaped_title = title.replace('"', "\\\"");
-            let script = format!(
-                r#"POSIX path of (choose folder with prompt "{escaped_title}")"#
-            );
-            let output = std::process::Command::new("osascript")
-                .args(["-e", &script])
-                .output()
-                .map_err(|e| e.to_string())?;
-            if !output.status.success() {
-                return Ok(None);
-            }
-            let p = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            return Ok(if p.is_empty() { None } else { Some(p) });
-        }
-
-        #[cfg(target_os = "linux")]
-        {
-            let output = std::process::Command::new("zenity")
-                .args([
-                    "--file-selection",
-                    "--directory",
-                    &format!(
-                        "--title={}",
-                        if title.is_empty() {
-                            "Select Export Folder"
-                        } else {
-                            &title
-                        }
-                    ),
-                ])
-                .output()
-                .map_err(|e| e.to_string())?;
-            if !output.status.success() {
-                return Ok(None);
-            }
-            let p = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            return Ok(if p.is_empty() { None } else { Some(p) });
-        }
-
-        #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-        {
-            Err("Native folder dialog is unsupported on this OS".to_string())
-        }
+    let picked = tauri::async_runtime::spawn_blocking(move || {
+        pick_directory_native(
+            parent_hwnd,
+            if title.trim().is_empty() {
+                "Choose Export Folder".to_string()
+            } else {
+                title
+            },
+            "Export Here".to_string(),
+        )
     })
     .await
     .map_err(|e| e.to_string())??;
@@ -494,130 +719,151 @@ pub async fn export_pick_directory(
 }
 
 #[tauri::command]
-pub fn export_unique_path(dir: String, base_name: String, ext: String) -> Result<String, String> {
-    let dir_path = normalize_export_path(Path::new(&dir))?;
-    let is_allowed_dir = allowed_dirs()
-        .lock()
-        .map(|dirs| dirs.iter().any(|d| is_within_root(d, &dir_path)))
-        .unwrap_or(false);
-    if !is_allowed_dir {
-        return Err("Unauthorized export directory".to_string());
-    }
+pub async fn export_unique_path(
+    dir: String,
+    base_name: String,
+    ext: String,
+) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || -> Result<String, String> {
+        let dir_path = normalize_export_path(Path::new(&dir))?;
+        let is_allowed_dir = allowed_dirs()
+            .lock()
+            .map(|dirs| dirs.iter().any(|d| is_within_root(d, &dir_path)))
+            .unwrap_or(false);
+        if !is_allowed_dir {
+            return Err("Unauthorized export directory".to_string());
+        }
 
-    let safe_base = sanitize_filename_segment(&base_name);
-    let clean_ext = ext.trim().trim_start_matches('.');
-    let dot_ext = if clean_ext.is_empty() {
-        String::new()
-    } else {
-        format!(".{clean_ext}")
-    };
+        let safe_base = sanitize_filename_segment(&base_name);
+        let clean_ext = ext.trim().trim_start_matches('.');
+        let dot_ext = if clean_ext.is_empty() {
+            String::new()
+        } else {
+            format!(".{clean_ext}")
+        };
 
-    let mut candidate = dir_path.join(format!("{safe_base}{dot_ext}"));
-    let mut counter: usize = 1;
-    while candidate.exists() {
-        candidate = dir_path.join(format!("{safe_base} ({counter}){dot_ext}"));
-        counter += 1;
-    }
+        let mut candidate = dir_path.join(format!("{safe_base}{dot_ext}"));
+        let mut counter: usize = 1;
+        while candidate.exists() {
+            candidate = dir_path.join(format!("{safe_base} ({counter}){dot_ext}"));
+            counter += 1;
+        }
 
-    Ok(candidate.to_string_lossy().to_string())
+        Ok(candidate.to_string_lossy().to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn export_write_file(
+pub async fn export_write_file(
     file_path: String,
     content: Option<String>,
     bytes: Option<Vec<u8>>,
 ) -> Result<Value, String> {
-    let target = ensure_authorized_export_write(Path::new(&file_path))?;
-    if let Some(parent) = target.parent() {
-        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    }
-    if let Some(raw_bytes) = bytes {
-        fs::write(&target, raw_bytes).map_err(|e| e.to_string())?;
-    } else {
-        fs::write(&target, content.unwrap_or_default().as_bytes()).map_err(|e| e.to_string())?;
-    }
-    Ok(json!({
-        "success": true,
-        "filePath": file_path
-    }))
+    tauri::async_runtime::spawn_blocking(move || -> Result<Value, String> {
+        let target = ensure_authorized_export_write(Path::new(&file_path))?;
+        if let Some(parent) = target.parent() {
+            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+        if let Some(raw_bytes) = bytes {
+            fs::write(&target, raw_bytes).map_err(|e| e.to_string())?;
+        } else {
+            fs::write(&target, content.unwrap_or_default().as_bytes())
+                .map_err(|e| e.to_string())?;
+        }
+        Ok(json!({
+            "success": true,
+            "filePath": file_path
+        }))
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn export_write_markdown_bundle(
+pub async fn export_write_markdown_bundle(
     file_path: String,
     markdown: String,
     assets: Vec<ExportAssetInput>,
 ) -> Result<Value, String> {
-    let target = ensure_authorized_export_write(Path::new(&file_path))?;
-    let parent_dir = target
-        .parent()
-        .ok_or_else(|| "Invalid markdown bundle output path".to_string())?;
-    fs::create_dir_all(parent_dir).map_err(|e| e.to_string())?;
-    fs::write(&target, markdown.as_bytes()).map_err(|e| e.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || -> Result<Value, String> {
+        let target = ensure_authorized_export_write(Path::new(&file_path))?;
+        let parent_dir = target
+            .parent()
+            .ok_or_else(|| "Invalid markdown bundle output path".to_string())?;
+        fs::create_dir_all(parent_dir).map_err(|e| e.to_string())?;
+        fs::write(&target, markdown.as_bytes()).map_err(|e| e.to_string())?;
 
-    let mut written_assets = 0usize;
-    let bundle_dir = if assets.is_empty() {
-        None
-    } else {
-        let assets_dir = parent_dir.join("assets");
-        fs::create_dir_all(&assets_dir).map_err(|e| e.to_string())?;
-        for asset in assets {
-            let safe_asset_name = Path::new(&asset.filename)
-                .file_name()
-                .and_then(|s| s.to_str())
-                .map(sanitize_filename_segment)
-                .unwrap_or_else(|| "asset.bin".to_string());
-            fs::write(assets_dir.join(safe_asset_name), asset.bytes)
-                .map_err(|e| e.to_string())?;
-            written_assets += 1;
-        }
-        Some(parent_dir.to_string_lossy().to_string())
-    };
+        let mut written_assets = 0usize;
+        let bundle_dir = if assets.is_empty() {
+            None
+        } else {
+            let assets_dir = parent_dir.join("assets");
+            fs::create_dir_all(&assets_dir).map_err(|e| e.to_string())?;
+            for asset in assets {
+                let safe_asset_name = Path::new(&asset.filename)
+                    .file_name()
+                    .and_then(|s| s.to_str())
+                    .map(sanitize_filename_segment)
+                    .unwrap_or_else(|| "asset.bin".to_string());
+                fs::write(assets_dir.join(safe_asset_name), asset.bytes)
+                    .map_err(|e| e.to_string())?;
+                written_assets += 1;
+            }
+            Some(parent_dir.to_string_lossy().to_string())
+        };
 
-    Ok(json!({
-        "success": true,
-        "filePath": file_path,
-        "bundleDir": bundle_dir,
-        "assetCount": written_assets
-    }))
+        Ok(json!({
+            "success": true,
+            "filePath": file_path,
+            "bundleDir": bundle_dir,
+            "assetCount": written_assets
+        }))
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn export_write_zip(
+pub async fn export_write_zip(
     file_path: String,
     entries: Vec<ExportZipEntryInput>,
 ) -> Result<Value, String> {
-    let target = ensure_authorized_export_write(Path::new(&file_path))?;
-    if let Some(parent) = target.parent() {
-        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    }
+    tauri::async_runtime::spawn_blocking(move || -> Result<Value, String> {
+        let target = ensure_authorized_export_write(Path::new(&file_path))?;
+        if let Some(parent) = target.parent() {
+            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
 
-    let zip_entries: Vec<ZipEntry> = entries
-        .into_iter()
-        .map(|entry| {
-            let data = if let Some(raw) = entry.bytes {
-                raw
-            } else {
-                entry.text.unwrap_or_default().into_bytes()
-            };
-            ZipEntry {
-                name: entry.name,
-                data,
-            }
-        })
-        .collect();
+        let zip_entries: Vec<ZipEntry> = entries
+            .into_iter()
+            .map(|entry| {
+                let data = if let Some(raw) = entry.bytes {
+                    raw
+                } else {
+                    entry.text.unwrap_or_default().into_bytes()
+                };
+                ZipEntry {
+                    name: entry.name,
+                    data,
+                }
+            })
+            .collect();
 
-    let zip_bytes = build_zip_bytes(&zip_entries)?;
-    fs::write(&target, &zip_bytes).map_err(|e| e.to_string())?;
+        let zip_bytes = build_zip_bytes(&zip_entries)?;
+        fs::write(&target, &zip_bytes).map_err(|e| e.to_string())?;
 
-    Ok(json!({
-        "success": true,
-        "filePath": file_path,
-        "totalBytes": zip_bytes.len(),
-        "entryCount": zip_entries.len(),
-        "isZip": true
-    }))
+        Ok(json!({
+            "success": true,
+            "filePath": file_path,
+            "totalBytes": zip_bytes.len(),
+            "entryCount": zip_entries.len(),
+            "isZip": true
+        }))
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -627,18 +873,27 @@ pub async fn export_render_pdf(
     file_path: String,
     landscape: Option<bool>,
 ) -> Result<Value, String> {
-    let target = ensure_authorized_export_write(Path::new(&file_path))?;
-    if let Some(parent) = target.parent() {
-        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    }
-
     let seq = PDF_WORKER_SEQ.fetch_add(1, Ordering::Relaxed);
     let temp_html = std::env::temp_dir().join(format!(
         "lumina-pdf-render-{}-{}.html",
         std::process::id(),
         seq
     ));
-    fs::write(&temp_html, html.as_bytes()).map_err(|e| e.to_string())?;
+    let target = {
+        let file_path_clone = file_path.clone();
+        let temp_html_clone = temp_html.clone();
+        let html_clone = html;
+        tauri::async_runtime::spawn_blocking(move || -> Result<PathBuf, String> {
+            let target = ensure_authorized_export_write(Path::new(&file_path_clone))?;
+            if let Some(parent) = target.parent() {
+                fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+            }
+            fs::write(&temp_html_clone, html_clone.as_bytes()).map_err(|e| e.to_string())?;
+            Ok(target)
+        })
+        .await
+        .map_err(|e| e.to_string())??
+    };
 
     #[cfg(target_os = "windows")]
     let render_res: Result<(), String> = {

@@ -1,7 +1,6 @@
 import { Marked, type Tokens } from 'marked'
 import hljs from 'highlight.js'
 import katex from 'katex'
-import mermaid from 'mermaid'
 import hljsLightCss from 'highlight.js/styles/github.min.css?raw'
 import { invoke } from '@tauri-apps/api/core'
 
@@ -211,12 +210,26 @@ async function readWorkspaceAssetBytes(relativePath: string): Promise<Uint8Array
     if (typeof api?.readAsset === 'function') {
       const res = await api.readAsset(relativePath)
       if (res instanceof Uint8Array && res.length > 0) return res
+      if (res instanceof ArrayBuffer && res.byteLength > 0) return new Uint8Array(res)
+      if (ArrayBuffer.isView(res) && res.byteLength > 0) {
+        return new Uint8Array(res.buffer, res.byteOffset, res.byteLength)
+      }
       if (Array.isArray(res) && res.length > 0) return new Uint8Array(res)
     }
     if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
-      const bytes = await invoke<number[]>('read_asset_bytes', { relativePath })
-      if (Array.isArray(bytes) && bytes.length > 0) {
-        return new Uint8Array(bytes)
+      const raw = await invoke<unknown>('read_asset_bytes', { relativePath })
+      const bytes =
+        raw instanceof Uint8Array
+          ? raw
+          : raw instanceof ArrayBuffer
+            ? new Uint8Array(raw)
+            : ArrayBuffer.isView(raw)
+              ? new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength)
+              : Array.isArray(raw)
+                ? new Uint8Array(raw)
+                : null
+      if (bytes && bytes.length > 0) {
+        return bytes
       }
     }
   } catch {
@@ -647,6 +660,8 @@ export async function renderMermaidBlocksInHtml(
     const doc = parser.parseFromString(`<body>${html}</body>`, 'text/html')
     const blocks = Array.from(doc.querySelectorAll('.mermaid'))
     if (blocks.length === 0) return html
+
+    const { default: mermaid } = await import('mermaid')
 
     try {
       mermaid.initialize({

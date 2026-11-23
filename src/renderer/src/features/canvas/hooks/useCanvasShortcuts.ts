@@ -120,6 +120,17 @@ export function useCanvasShortcuts({
           setSelectedEdgeId(null)
         }
       } else if (e.key === 'Escape') {
+        const hasActiveCanvasAction = Boolean(
+          connectingRef?.current ||
+            snappedTargetRef?.current ||
+            selectedNodeIds.length > 0 ||
+            selectedEdgeId ||
+            (activeEl && containerRef.current?.contains(activeEl) && isInputActive)
+        )
+        if (hasActiveCanvasAction) {
+          e.preventDefault()
+          e.stopPropagation()
+        }
         setConnecting(null)
         if (connectingRef) connectingRef.current = null
         setSnappedTarget(null)

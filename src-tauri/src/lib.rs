@@ -32,6 +32,7 @@ pub fn run() {
                     });
                 }
             }
+            commands::start_workspace_watcher(app.handle().clone());
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -48,6 +49,13 @@ pub fn run() {
             delete_folder,
             bulk_delete,
             select_workspace,
+            open_file_dialog,
+            import_external_paths,
+            save_image_from_path,
+            clean_orphans,
+            backup_workspace_zip,
+            backup_single_note_zip,
+            cancel_backup,
             open_path_in_os,
             reveal_path_in_os,
             export_pick_save_path,

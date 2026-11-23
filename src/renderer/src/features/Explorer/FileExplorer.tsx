@@ -47,8 +47,9 @@ import {
 import { useExplorerPaste } from './useExplorerPaste'
 import { ExplorerVirtuosoList } from './ExplorerVirtuosoList'
 import { ExplorerModals } from './ExplorerModals'
-import { BatchExportDialog } from '../export'
 import { resolveExportNotes, resolveFolderExportNotes } from './utils/exportSelection'
+
+const BatchExportDialog = React.lazy(() => import('../export/batch/BatchExportDialog'))
 
 export interface FileExplorerProps {
   isOpen?: boolean
@@ -785,21 +786,25 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
         </div>
       </div>
 
-      <BatchExportDialog
-        isOpen={!!batchExportNotes}
-        notes={batchExportNotes || []}
-        folderName={
-          batchExportNotes && batchExportNotes.length === 1
-            ? batchExportNotes[0].title || 'Note Export'
-            : lastClickedFolder
-            ? typeof lastClickedFolder === 'string'
-              ? lastClickedFolder.split('/').pop() || 'Folder Export'
-              : 'Folder Export'
-            : 'Folder Export'
-        }
-        initialFormat="pdf"
-        onClose={() => setBatchExportNotes(null)}
-      />
+      {batchExportNotes && (
+        <React.Suspense fallback={null}>
+          <BatchExportDialog
+            isOpen
+            notes={batchExportNotes}
+            folderName={
+              batchExportNotes.length === 1
+                ? batchExportNotes[0].title || 'Note Export'
+                : lastClickedFolder
+                ? typeof lastClickedFolder === 'string'
+                  ? lastClickedFolder.split('/').pop() || 'Folder Export'
+                  : 'Folder Export'
+                : 'Folder Export'
+            }
+            initialFormat="pdf"
+            onClose={() => setBatchExportNotes(null)}
+          />
+        </React.Suspense>
+      )}
     </>
   )
 

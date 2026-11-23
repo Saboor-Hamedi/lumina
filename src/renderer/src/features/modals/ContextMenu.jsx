@@ -123,7 +123,11 @@ const ContextMenu = ({ x, y, options, onClose }) => {
       onClose()
     }
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        onClose()
+      }
     }
     window.addEventListener('mousedown', handleGlobalClick)
     window.addEventListener('keydown', handleKeyDown)

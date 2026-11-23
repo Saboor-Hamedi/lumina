@@ -137,6 +137,8 @@ export const WorkspaceStat: React.FC<WorkspaceStatProps> = ({ isOpen, onClose, a
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
         onClose()
       }
     }

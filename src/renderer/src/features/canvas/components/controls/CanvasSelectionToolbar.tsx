@@ -96,6 +96,8 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
 
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
+          e.preventDefault()
+          e.stopPropagation()
           setIsReplaceOpen(false)
         }
       }

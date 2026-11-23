@@ -66,6 +66,8 @@ export function StudioDropdown<T extends string = string>({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
         setIsOpen(false)
       }
     }

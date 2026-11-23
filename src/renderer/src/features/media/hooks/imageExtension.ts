@@ -3,14 +3,12 @@
  * Markdown Image Widget Extension (`imageExtension.ts`)
  * =========================================================================================
  *
- * Purpose:
- * Renders Obsidian-style inline live-preview image cards for markdown `![alt|size|align](url)` tokens.
- * Features:
- * - Alignment controls (left, center, right)
- * - Interactive drag resizing
- * - Dual view toggle (rendered image view vs. raw markdown source view)
+ * Renders borderless inline/floated live-preview image widgets for markdown
+ * `![alt|size|align](url)` tokens, matching CodeWrapper's minimal hover aesthetic:
+ * - Hover-reveal floating action toolbar (Wrap Left, Center, Wrap Right, Source, Copy, Delete)
+ * - Side-by-side writing and text wrapping when left- or right-aligned or placed inline
+ * - Slim hover-reveal edge resize handle with live width readout during drag
  * - High-resolution pan & zoom lightbox modal via `attachLightbox`
- * - Direct 1-click clipboard copying and deletion
  * =========================================================================================
  */
 
@@ -18,12 +16,33 @@ import { WidgetType, EditorView, Decoration, type DecorationSet } from '@codemir
 import { StateField, type EditorState } from '@codemirror/state'
 import '../css/imageExtension.css'
 import { attachLightbox } from '../../../core/mermaid'
+import { renderPulseLoaderHtml } from '../../../components/PulseLoader'
 import { copyImageToClipboard } from './imageClipboard'
 import { createCaptionElement } from './imageCaption'
 
 const urlCache = new Map<string, Promise<string | null>>()
 
-// Helper icon parser
+const IMAGE_MIME_BY_EXT: Record<string, string> = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  svg: 'image/svg+xml',
+  bmp: 'image/bmp',
+  avif: 'image/avif'
+}
+
+function inferImageMime(url: string): string {
+  const clean = url.split('?')[0].split('#')[0]
+  const ext = clean.split('.').pop()?.toLowerCase() || ''
+  return IMAGE_MIME_BY_EXT[ext] || 'image/png'
+}
+
+function isDirectImageUrl(url: string): boolean {
+  return /^(https?:|data:|blob:|asset:)/i.test(url)
+}
+
 const createIcon = (svgString: string): Node | null => {
   const template = document.createElement('template')
   template.innerHTML = svgString.trim()
@@ -35,10 +54,53 @@ const icons = {
   center: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="21" y1="12" x2="3" y2="12"></line><polyline points="8 7 3 12 8 17"></polyline><polyline points="16 17 21 12 16 7"></polyline></svg>`,
   right: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="12" x2="21" y2="12"></line><polyline points="16 7 21 12 16 17"></polyline><line x1="3" y1="19" x2="3" y2="5"></line></svg>`,
   code: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>`,
-  image: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`,
   copy: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`,
   check: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
   trash: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`
+}
+
+function resolveLocalAssetUrl(rawUrl: string): Promise<string | null> {
+  if (urlCache.has(rawUrl)) {
+    return urlCache.get(rawUrl)!
+  }
+
+  const cleanUrl = rawUrl.startsWith('/') ? rawUrl.slice(1) : rawUrl
+  const mimeType = inferImageMime(cleanUrl)
+
+  const fetchWithRetry = async (retries = 3, delay = 50): Promise<string | null> => {
+    const readAsset = (window as any).api?.readAsset
+    if (!readAsset) return null
+
+    for (let i = 0; i < retries; i++) {
+      try {
+        const res = await readAsset(cleanUrl)
+        if (!res) return null
+        if (res.dataUrl) return res.dataUrl
+        if (res.buffer && !(res instanceof Uint8Array)) {
+          return URL.createObjectURL(
+            new Blob([res.buffer], { type: res.mimeType || mimeType })
+          )
+        }
+        if (
+          res instanceof Uint8Array ||
+          res instanceof ArrayBuffer ||
+          (typeof Buffer !== 'undefined' && Buffer.isBuffer(res))
+        ) {
+          const buf = res instanceof Uint8Array ? new Uint8Array(res) : res
+          return URL.createObjectURL(new Blob([buf as BlobPart], { type: mimeType }))
+        }
+        return null
+      } catch {
+        if (i === retries - 1) return null
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
+    }
+    return null
+  }
+
+  const promise = fetchWithRetry()
+  urlCache.set(rawUrl, promise)
+  return promise
 }
 
 export class ImageWidget extends WidgetType {
@@ -51,13 +113,15 @@ export class ImageWidget extends WidgetType {
   actualAlt: string
   width: string
   align: string
+  isStandaloneLine: boolean
 
   constructor(
     altText: string,
     url: string,
     pos: number,
     originalLength: number,
-    onUpdate: ((newText: string) => void) | null = null
+    onUpdate: ((newText: string) => void) | null = null,
+    isStandaloneLine: boolean = true
   ) {
     super()
     this.altText = altText
@@ -65,14 +129,14 @@ export class ImageWidget extends WidgetType {
     this.pos = pos
     this.originalLength = originalLength
     this.onUpdate = onUpdate
+    this.isStandaloneLine = isStandaloneLine
 
-    // Unescape markdown pipes in alt text before parsing
     const unescapedAltText = (altText || '').replace(/\\\|/g, '|')
     this.parts = unescapedAltText.split('|')
     this.actualAlt = this.parts[0] ? this.parts[0].trim() : ''
 
     this.width = 'auto'
-    this.align = 'center' // Default to center for images
+    this.align = 'center'
 
     for (let i = 1; i < this.parts.length; i++) {
       const part = this.parts[i].toLowerCase().trim()
@@ -96,7 +160,7 @@ export class ImageWidget extends WidgetType {
     if (!isNaN(parsedWidth) && this.width.includes('px')) {
       return parsedWidth * 0.75
     }
-    return 300
+    return 240
   }
 
   eq(other: ImageWidget): boolean {
@@ -104,7 +168,8 @@ export class ImageWidget extends WidgetType {
       other.url === this.url &&
       other.align === this.align &&
       other.width === this.width &&
-      other.actualAlt === this.actualAlt
+      other.actualAlt === this.actualAlt &&
+      other.isStandaloneLine === this.isStandaloneLine
     )
   }
 
@@ -113,65 +178,69 @@ export class ImageWidget extends WidgetType {
   }
 
   toDOM(view: EditorView): HTMLElement {
-    const wrap = document.createElement('div') as HTMLElement & { __imageWidget?: ImageWidget }
-    wrap.className = `cm-image-widget-wrapper align-${this.align}`
+    const isFloated = this.align === 'left' || this.align === 'right'
+    const isInline = !this.isStandaloneLine || isFloated
+
+    const wrap = document.createElement('span') as HTMLElement & { __imageWidget?: ImageWidget }
+    wrap.className = [
+      'cm-image-widget-wrapper',
+      `align-${this.align}`,
+      isFloated ? 'is-floated' : '',
+      isInline ? 'is-inline' : ''
+    ]
+      .filter(Boolean)
+      .join(' ')
     wrap.setAttribute('contenteditable', 'false')
     wrap.__imageWidget = this
 
-    const card = document.createElement('div')
+    const card = document.createElement('span')
     card.className = 'cm-image-card'
     card.setAttribute('contenteditable', 'false')
 
-    // Prevent mousedown from bubbling up and selecting the heading above
     wrap.addEventListener('mousedown', (e) => e.stopPropagation())
     card.addEventListener('mousedown', (e) => e.stopPropagation())
 
-    // ----------------------------------------------------------------
-    // HEADER (Table-like design)
-    // ----------------------------------------------------------------
-    const header = document.createElement('div')
-    header.className = 'image-widget-header'
+    const locateImageMatch = (): { altText: string; url: string; from: number; len: number } | null => {
+      let pos: number | null = null
+      try {
+        pos = view.posAtDOM(wrap)
+      } catch {
+        pos = null
+      }
+      if ((pos === null || pos === undefined) && wrap.__imageWidget) {
+        pos = wrap.__imageWidget.pos
+      }
+      if (pos === null || pos === undefined) return null
 
-    const leftGroup = document.createElement('div')
-    leftGroup.className = 'image-widget-left'
+      const docStr = view.state.doc.toString()
+      const searchStart = Math.max(0, pos - 500)
+      const searchEnd = Math.min(docStr.length, pos + 2000)
+      const windowStr = docStr.slice(searchStart, searchEnd)
 
-    const rightGroup = document.createElement('div')
-    rightGroup.className = 'image-widget-right'
+      const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
+      let match: RegExpExecArray | null = null
+      let closestMatch: { match: RegExpExecArray; pos: number } | null = null
+      let minDistance = Infinity
 
-    // View Mode Toggle: [ Image | Source ]
-    const viewToggle = document.createElement('div')
-    viewToggle.className = 'cm-table-view-toggle'
+      while ((match = regex.exec(windowStr)) !== null) {
+        if (match[2] === wrap.__imageWidget?.url) {
+          const matchPos = searchStart + match.index
+          const distance = Math.abs(matchPos - pos)
+          if (distance < minDistance) {
+            minDistance = distance
+            closestMatch = { match, pos: matchPos }
+          }
+        }
+      }
 
-    const imageBtn = document.createElement('button')
-    imageBtn.type = 'button'
-    imageBtn.className = 'palette-header-btn cm-table-view-btn active'
-    imageBtn.innerHTML = `
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-        <polyline points="21 15 16 10 5 21"></polyline>
-      </svg>
-      <span>Image</span>
-    `
-    imageBtn.setAttribute('data-tooltip', 'Rendered Image View')
-
-    const sourceBtn = document.createElement('button')
-    sourceBtn.type = 'button'
-    sourceBtn.className = 'palette-header-btn cm-table-view-btn'
-    sourceBtn.innerHTML = `
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="16 18 22 12 16 6"></polyline>
-        <polyline points="8 6 2 12 8 18"></polyline>
-      </svg>
-      <span>Source</span>
-    `
-    sourceBtn.setAttribute('data-tooltip', 'Markdown Source View')
-
-    viewToggle.appendChild(imageBtn)
-    viewToggle.appendChild(sourceBtn)
-    leftGroup.appendChild(viewToggle)
-
-    header.appendChild(leftGroup)
+      if (!closestMatch) return null
+      return {
+        altText: closestMatch.match[1],
+        url: closestMatch.match[2],
+        from: closestMatch.pos,
+        len: closestMatch.match[0].length
+      }
+    }
 
     const updateImage = (
       newWidth?: string,
@@ -188,41 +257,16 @@ export class ImageWidget extends WidgetType {
         currentAltText = this.altText
         currentUrl = this.url
       } else {
-        let pos = view.posAtDOM(wrap)
-        if (pos === null && wrap.__imageWidget) pos = wrap.__imageWidget.pos
-        if (pos === null || pos === undefined) return
-
-        const docStr = view.state.doc.toString()
-        const searchStart = Math.max(0, pos - 500)
-        const searchEnd = Math.min(docStr.length, pos + 2000)
-        const windowStr = docStr.slice(searchStart, searchEnd)
-
-        const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
-        let match: RegExpExecArray | null = null
-        let closestMatch: { match: RegExpExecArray; pos: number } | null = null
-        let minDistance = Infinity
-
-        while ((match = regex.exec(windowStr)) !== null) {
-          if (match[2] === wrap.__imageWidget?.url) {
-            const matchPos = searchStart + match.index
-            const distance = Math.abs(matchPos - pos)
-            if (distance < minDistance) {
-              minDistance = distance
-              closestMatch = { match, pos: matchPos }
-            }
-          }
-        }
-
-        if (!closestMatch) return
-
-        currentAltText = closestMatch.match[1]
-        currentUrl = closestMatch.match[2]
-        currentLen = closestMatch.match[0].length
-        actualPos = closestMatch.pos
+        const found = locateImageMatch()
+        if (!found) return
+        currentAltText = found.altText
+        currentUrl = found.url
+        currentLen = found.len
+        actualPos = found.from
       }
 
       const parts = currentAltText.split('|')
-      const actualAlt = newAltText !== undefined ? newAltText : (parts[0] ? parts[0].trim() : '')
+      const actualAlt = newAltText !== undefined ? newAltText : parts[0] ? parts[0].trim() : ''
       const finalUrl = newUrl !== undefined ? newUrl : currentUrl
 
       let currentWidth = 'auto'
@@ -265,8 +309,13 @@ export class ImageWidget extends WidgetType {
       })
     }
 
-    // Align Buttons
-    const btnLeft = this.createBtn(icons.left, 'Align Left', () => updateImage(undefined, 'left'))
+    // Floating Hover Toolbar (matches CodeWrapper compact aesthetic)
+    const toolbar = document.createElement('span')
+    toolbar.className = 'image-widget-toolbar'
+
+    const btnLeft = this.createBtn(icons.left, 'Float Left & Wrap Text', () =>
+      updateImage(undefined, 'left')
+    )
     if (this.align === 'left') btnLeft.classList.add('active')
 
     const btnCenter = this.createBtn(icons.center, 'Align Center', () =>
@@ -274,16 +323,17 @@ export class ImageWidget extends WidgetType {
     )
     if (this.align === 'center') btnCenter.classList.add('active')
 
-    const btnRight = this.createBtn(icons.right, 'Align Right', () =>
+    const btnRight = this.createBtn(icons.right, 'Float Right & Wrap Text', () =>
       updateImage(undefined, 'right')
     )
     if (this.align === 'right') btnRight.classList.add('active')
 
-    rightGroup.appendChild(btnLeft)
-    rightGroup.appendChild(btnCenter)
-    rightGroup.appendChild(btnRight)
+    const divider = document.createElement('span')
+    divider.className = 'image-widget-toolbar-divider'
 
-    // Copy Image Button
+    let isSourceMode = false
+    const btnSource = this.createBtn(icons.code, 'Edit Markdown Source')
+
     const btnCopy = this.createBtn(icons.copy, 'Copy Image', () => {
       const origHtml = btnCopy.innerHTML
       copyImageToClipboard(this.url, () => {
@@ -295,81 +345,48 @@ export class ImageWidget extends WidgetType {
         }, 2000)
       })
     })
-    rightGroup.appendChild(btnCopy)
 
-    // Delete Button
     const btnDelete = this.createBtn(icons.trash, 'Delete Image', (e) => {
       e.preventDefault()
       e.stopPropagation()
       if (view.state.readOnly) return
 
-      if (this.onUpdate) {
-        if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
-          const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url
-          if ((window as any).api && (window as any).api.deleteAsset) {
-            (window as any).api.deleteAsset(cleanUrl).catch((err: any) => {
-              if (!err.message?.includes('ENOENT')) {
-                console.error('Failed to delete asset:', err)
-              }
-            })
-          }
-        }
-        this.onUpdate('')
-        return
-      }
-
-      if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
+      if (this.url && !isDirectImageUrl(this.url)) {
         const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url
-        if ((window as any).api && (window as any).api.deleteAsset) {
-          (window as any).api.deleteAsset(cleanUrl).catch((err: any) => {
-            console.error('Failed to delete asset:', err)
+        if ((window as any).api?.deleteAsset) {
+          ;(window as any).api.deleteAsset(cleanUrl).catch((err: any) => {
+            if (!err?.message?.includes('ENOENT')) {
+              console.error('Failed to delete asset:', err)
+            }
           })
         }
       }
 
-      let pos = view.posAtDOM(wrap)
-      if (pos === null && wrap.__imageWidget) pos = wrap.__imageWidget.pos
-      if (pos === null || pos === undefined) return
-
-      const docStr = view.state.doc.toString()
-      const searchStart = Math.max(0, pos - 500)
-      const searchEnd = Math.min(docStr.length, pos + 2000)
-      const windowStr = docStr.slice(searchStart, searchEnd)
-
-      const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
-      let match: RegExpExecArray | null = null
-      let closestMatch: { match: RegExpExecArray; pos: number } | null = null
-      let minDistance = Infinity
-
-      while ((match = regex.exec(windowStr)) !== null) {
-        if (match[2] === wrap.__imageWidget?.url) {
-          const matchPos = searchStart + match.index
-          const distance = Math.abs(matchPos - pos)
-          if (distance < minDistance) {
-            minDistance = distance
-            closestMatch = { match, pos: matchPos }
-          }
-        }
+      if (this.onUpdate) {
+        this.onUpdate('')
+        return
       }
 
-      if (closestMatch) {
-        const { match: m, pos: actualPos } = closestMatch
-        const currentLen = m[0].length
+      const found = locateImageMatch()
+      if (found) {
         view.dispatch({
-          changes: { from: actualPos, to: actualPos + currentLen, insert: '' }
+          changes: { from: found.from, to: found.from + found.len, insert: '' }
         })
       }
     })
     btnDelete.classList.add('delete')
-    rightGroup.appendChild(btnDelete)
 
-    header.appendChild(rightGroup)
-    card.appendChild(header)
+    toolbar.appendChild(btnLeft)
+    toolbar.appendChild(btnCenter)
+    toolbar.appendChild(btnRight)
+    toolbar.appendChild(divider)
+    toolbar.appendChild(btnSource)
+    toolbar.appendChild(btnCopy)
+    toolbar.appendChild(btnDelete)
+    card.appendChild(toolbar)
 
-    // ----------------------------------------------------------------
-    // SOURCE CONTAINER
-    // ----------------------------------------------------------------
-    const sourceContainer = document.createElement('div')
+    // Inline Markdown Source Editor
+    const sourceContainer = document.createElement('span')
     sourceContainer.className = 'image-widget-source-container'
     sourceContainer.setAttribute('contenteditable', 'false')
 
@@ -384,7 +401,6 @@ export class ImageWidget extends WidgetType {
     }
 
     const stopPropagation = (e: Event) => e.stopPropagation()
-    sourceTextarea.addEventListener('keydown', stopPropagation)
     sourceTextarea.addEventListener('keyup', stopPropagation)
     sourceTextarea.addEventListener('keypress', stopPropagation)
     sourceTextarea.addEventListener('input', (e) => {
@@ -406,172 +422,142 @@ export class ImageWidget extends WidgetType {
     sourceContainer.addEventListener('mousedown', stopPropagation)
     sourceContainer.addEventListener('pointerdown', stopPropagation)
     sourceContainer.addEventListener('click', stopPropagation)
-
     sourceContainer.appendChild(sourceTextarea)
     card.appendChild(sourceContainer)
 
+    // Body & Image
+    const body = document.createElement('span')
+    body.className = 'image-widget-body'
+
     const caption = createCaptionElement(this.actualAlt)
 
-    imageBtn.addEventListener('click', (e) => {
-      e.preventDefault()
-      e.stopPropagation()
-      if (imageBtn.classList.contains('active')) return
-      imageBtn.classList.add('active')
-      sourceBtn.classList.remove('active')
-
-      const rawText = sourceTextarea.value.trim()
-      const m = rawText.match(/!\[([^\]]*)\]\(([^)]+)\)/)
-      if (m) {
-        const newAltFull = m[1]
-        const newUrl = m[2]
-        const parts = newAltFull.split('|')
-        const newAltText = parts[0] ? parts[0].trim() : ''
-        let newWidth: string | undefined = undefined
-        let newAlign: string | undefined = undefined
-        for (let i = 1; i < parts.length; i++) {
-          const p = parts[i].toLowerCase().trim()
-          if (['left', 'center', 'right'].includes(p)) newAlign = p
-          else newWidth = p
+    const toggleSourceMode = (commit: boolean) => {
+      if (!isSourceMode) {
+        isSourceMode = true
+        btnSource.classList.add('active')
+        wrap.classList.add('is-source-mode')
+        const currentW = card.offsetWidth || body.offsetWidth
+        if (currentW > 0) {
+          card.style.width = `${Math.max(240, currentW)}px`
         }
-        updateImage(newWidth, newAlign, newAltText, newUrl)
-      }
-
-      body.style.display = 'flex'
-      sourceContainer.style.display = 'none'
-      if (caption) caption.style.display = 'block'
-      if (this.width !== 'auto') {
-        card.style.width = this.width
-        body.style.width = this.width
+        sourceTextarea.value = `![${this.altText}](${this.url})`
+        body.style.display = 'none'
+        sourceContainer.style.display = 'block'
+        if (caption) caption.style.display = 'none'
+        adjustHeight()
+        sourceTextarea.focus()
+        if (view?.requestMeasure) view.requestMeasure()
       } else {
-        card.style.width = 'fit-content'
-        body.style.width = 'auto'
+        isSourceMode = false
+        btnSource.classList.remove('active')
+        wrap.classList.remove('is-source-mode')
+        if (commit) {
+          const rawText = sourceTextarea.value.trim()
+          const m = rawText.match(/!\[([^\]]*)\]\(([^)]+)\)/)
+          if (m) {
+            const parts = m[1].split('|')
+            const newAltText = parts[0] ? parts[0].trim() : ''
+            let newWidth: string | undefined = undefined
+            let newAlign: string | undefined = undefined
+            for (let i = 1; i < parts.length; i++) {
+              const p = parts[i].toLowerCase().trim()
+              if (['left', 'center', 'right'].includes(p)) newAlign = p
+              else newWidth = p
+            }
+            updateImage(newWidth, newAlign, newAltText, m[2])
+          }
+        }
+        sourceContainer.style.display = 'none'
+        body.style.display = 'flex'
+        if (caption) caption.style.display = 'block'
+        if (this.width !== 'auto') {
+          card.style.width = this.width
+          body.style.width = this.width
+        } else {
+          card.style.width = 'fit-content'
+          body.style.width = 'auto'
+        }
+        if (view?.requestMeasure) view.requestMeasure()
       }
-      if (view && view.requestMeasure) view.requestMeasure()
+    }
+
+    sourceTextarea.addEventListener('keydown', (e) => {
+      e.stopPropagation()
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        toggleSourceMode(false)
+      } else if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        toggleSourceMode(true)
+      }
     })
 
-    sourceBtn.addEventListener('click', (e) => {
+    btnSource.addEventListener('click', (e) => {
       e.preventDefault()
       e.stopPropagation()
-      if (sourceBtn.classList.contains('active')) return
-      sourceBtn.classList.add('active')
-      imageBtn.classList.remove('active')
-
-      const currentW = card.offsetWidth || body.offsetWidth
-      if (currentW > 0) {
-        card.style.width = `${currentW}px`
-      }
-
-      sourceTextarea.value = `![${this.altText}](${this.url})`
-      body.style.display = 'none'
-      sourceContainer.style.display = 'block'
-      if (caption) caption.style.display = 'none'
-      adjustHeight()
-      sourceTextarea.focus()
-      if (view && view.requestMeasure) view.requestMeasure()
+      toggleSourceMode(isSourceMode)
     })
-
-    // ----------------------------------------------------------------
-    // BODY & IMAGE
-    // ----------------------------------------------------------------
-    const body = document.createElement('div')
-    body.className = 'image-widget-body'
 
     const img = document.createElement('img')
     img.alt = this.actualAlt
     img.draggable = false
-
     attachLightbox(img)
 
-    img.onload = () => {
-      if (view && view.requestMeasure) {
-        view.requestMeasure()
-      }
-    }
-
-    img.onerror = () => {
+    const showImageError = () => {
       const widget = wrap.__imageWidget
       const errorDiv = document.createElement('div')
       errorDiv.className = 'image-widget-error'
-      errorDiv.style.padding = '16px'
-      errorDiv.style.textAlign = 'center'
-      errorDiv.style.color = 'var(--text-faint, #858585)'
-      errorDiv.style.fontSize = '12px'
-      errorDiv.style.background = 'var(--bg-app, rgba(0,0,0,0.2))'
-      errorDiv.style.borderRadius = '4px'
-      errorDiv.style.border = '1px dashed var(--border-subtle, rgba(255,255,255,0.1))'
-      errorDiv.innerHTML = `🖼️ Image Not Found: <code>${widget?.actualAlt || widget?.url}</code>`
+      const codeEl = document.createElement('code')
+      codeEl.textContent = widget?.actualAlt || widget?.url || 'image'
+      const msg = document.createElement('span')
+      msg.textContent = 'Image Not Found: '
+      msg.appendChild(codeEl)
+      errorDiv.appendChild(msg)
 
+      loadingEl?.remove()
       if (img.parentNode) {
         body.replaceChild(errorDiv, img)
       } else {
         body.appendChild(errorDiv)
       }
-
-      if (view && view.requestMeasure) view.requestMeasure()
+      if (view?.requestMeasure) view.requestMeasure()
     }
 
-    if (this.url && !this.url.startsWith('http') && !this.url.startsWith('data:')) {
-      const cleanUrl = this.url.startsWith('/') ? this.url.slice(1) : this.url
+    let loadingEl: HTMLElement | null = null
 
-      if (urlCache.has(this.url)) {
-        urlCache
-          .get(this.url)!
-          .then((objectUrl) => {
-            if (objectUrl) {
-              img.src = objectUrl
-            } else {
-              img.onerror?.(new Event('error'))
-            }
-          })
-          .catch(() => {
-            img.onerror?.(new Event('error'))
-          })
-      } else {
-        const fetchWithRetry = async (url: string, retries = 3, delay = 50): Promise<string | null> => {
-          if (!(window as any).api || !(window as any).api.readAsset) return null
-          for (let i = 0; i < retries; i++) {
-            try {
-              const res = await (window as any).api.readAsset(url)
-              if (!res) return null
-              if (res.dataUrl) return res.dataUrl
-              if (res.buffer) {
-                return URL.createObjectURL(
-                  new Blob([res.buffer], { type: res.mimeType || 'image/png' })
-                )
-              }
-              if (
-                res instanceof ArrayBuffer ||
-                res instanceof Uint8Array ||
-                (typeof Buffer !== 'undefined' && Buffer.isBuffer(res))
-              ) {
-                return URL.createObjectURL(new Blob([res as any]))
-              }
-              return null
-            } catch {
-              if (i === retries - 1) return null
-              await new Promise((resolve) => setTimeout(resolve, delay))
-            }
+    img.onload = () => {
+      loadingEl?.remove()
+      loadingEl = null
+      img.style.display = 'block'
+      if (view?.requestMeasure) view.requestMeasure()
+    }
+
+    img.onerror = () => {
+      showImageError()
+    }
+
+    if (this.url && !isDirectImageUrl(this.url)) {
+      loadingEl = document.createElement('span')
+      loadingEl.className = 'image-widget-loading'
+      loadingEl.innerHTML = renderPulseLoaderHtml('', 'xs', true)
+      img.style.display = 'none'
+      body.appendChild(loadingEl)
+      body.appendChild(img)
+
+      resolveLocalAssetUrl(this.url)
+        .then((objectUrl) => {
+          if (objectUrl) {
+            img.src = objectUrl
+          } else {
+            showImageError()
           }
-          return null
-        }
-
-        const fetchPromise = fetchWithRetry(cleanUrl)
-        urlCache.set(this.url, fetchPromise)
-
-        fetchPromise
-          .then((objectUrl) => {
-            if (objectUrl) {
-              img.src = objectUrl
-            } else {
-              img.onerror?.(new Event('error'))
-            }
-          })
-          .catch(() => {
-            img.onerror?.(new Event('error'))
-          })
-      }
+        })
+        .catch(() => {
+          showImageError()
+        })
     } else {
       img.src = this.url
+      body.appendChild(img)
     }
 
     if (this.width !== 'auto') {
@@ -579,13 +565,13 @@ export class ImageWidget extends WidgetType {
       card.style.width = this.width
     }
 
-    body.appendChild(img)
+    // Slim Edge Resize Handle + Live Width Badge
+    const sizeBadge = document.createElement('span')
+    sizeBadge.className = 'image-widget-size-badge'
 
-    // ----------------------------------------------------------------
-    // NATIVE DRAG RESIZE HANDLE
-    // ----------------------------------------------------------------
-    const handle = document.createElement('div')
+    const handle = document.createElement('span')
     handle.className = 'image-widget-resize-handle'
+    handle.setAttribute('aria-label', 'Resize image')
 
     handle.onmousedown = (e: MouseEvent) => {
       if (view.state.readOnly) return
@@ -593,28 +579,28 @@ export class ImageWidget extends WidgetType {
       e.stopPropagation()
 
       const startX = e.clientX
-      const startWidth = body.offsetWidth
+      const startWidth = body.offsetWidth || img.naturalWidth || 240
       wrap.classList.add('resizing')
 
       const align = wrap.__imageWidget?.align || 'center'
+      sizeBadge.textContent = `${Math.round(startWidth)}px`
       let animationFrame: number | null = null
 
       const onMouseMove = (moveEvent: MouseEvent) => {
         if (animationFrame) cancelAnimationFrame(animationFrame)
-
         animationFrame = requestAnimationFrame(() => {
           let deltaX = moveEvent.clientX - startX
-
           if (align === 'center') {
             deltaX *= 2
           } else if (align === 'right') {
             deltaX = -deltaX
           }
 
-          const newWidth = Math.max(80, startWidth + deltaX)
+          const newWidth = Math.max(80, Math.round(startWidth + deltaX))
           body.style.width = `${newWidth}px`
           card.style.width = `${newWidth}px`
-          if (view && view.requestMeasure) view.requestMeasure()
+          sizeBadge.textContent = `${newWidth}px`
+          if (view?.requestMeasure) view.requestMeasure()
         })
       }
 
@@ -623,7 +609,7 @@ export class ImageWidget extends WidgetType {
         window.removeEventListener('mouseup', onMouseUp)
         wrap.classList.remove('resizing')
 
-        const finalWidth = body.offsetWidth
+        const finalWidth = Math.max(80, Math.round(body.offsetWidth))
         const widget = wrap.__imageWidget
         if (widget) {
           updateImage(`${finalWidth}px`, widget.align)
@@ -635,6 +621,7 @@ export class ImageWidget extends WidgetType {
     }
 
     body.appendChild(handle)
+    body.appendChild(sizeBadge)
     card.appendChild(body)
     wrap.appendChild(card)
 
@@ -645,11 +632,17 @@ export class ImageWidget extends WidgetType {
     return wrap
   }
 
-  createBtn(content: string | Node, title: string, onClick?: (e: MouseEvent) => void): HTMLButtonElement {
+  createBtn(
+    content: string | Node,
+    title: string,
+    onClick?: (e: MouseEvent) => void
+  ): HTMLButtonElement {
     const btn = document.createElement('button')
+    btn.type = 'button'
     btn.className = 'image-widget-btn'
     if (title) {
       btn.setAttribute('data-tooltip', title)
+      btn.setAttribute('aria-label', title)
     }
 
     if (typeof content === 'string' && !content.startsWith('<')) {
@@ -682,10 +675,10 @@ function buildDecorations(state: EditorState): DecorationSet {
   const widgets: any[] = []
   const selection = state.selection.main
 
-  // Iterate over visible doc lines
   for (let i = 1; i <= state.doc.lines; i++) {
     const line = state.doc.line(i)
     const text = line.text
+    if (!lineHasImageSyntax(text)) continue
 
     const regex = /!\[([^\]]*)\]\(([^)]+)\)/g
     let match: RegExpExecArray | null = null
@@ -693,22 +686,30 @@ function buildDecorations(state: EditorState): DecorationSet {
       const matchFrom = line.from + match.index
       const matchTo = matchFrom + match[0].length
 
-      // EXACT boundary checking.
       const intersects = selection.from < matchTo && selection.to > matchFrom
+      if (intersects) continue
 
-      if (!intersects) {
-        // Cursor is OUTSIDE: render image block widget and hide raw markdown text
-        const widget = new ImageWidget(match[1], match[2], matchFrom, match[0].length)
+      const isStandaloneLine = text.trim() === match[0]
+      const widget = new ImageWidget(match[1], match[2], matchFrom, match[0].length, null, isStandaloneLine)
+
+      if (widget.align === 'center' && isStandaloneLine) {
         widgets.push(
           Decoration.widget({
-            widget: widget,
+            widget,
             block: true,
             side: -1
           }).range(matchFrom)
         )
-
         widgets.push(
           Decoration.replace({
+            inclusive: false
+          }).range(matchFrom, matchTo)
+        )
+      } else {
+        // Inline/floated widget preserves `.cm-line` so users can type directly to the left/right
+        widgets.push(
+          Decoration.replace({
+            widget,
             inclusive: false
           }).range(matchFrom, matchTo)
         )

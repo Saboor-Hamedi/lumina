@@ -760,6 +760,10 @@ export const MainLayout: React.FC = () => {
         setShowActiveIconPicker(false)
         return true
       }
+      if (renameModal.isOpen) {
+        setRenameModal({ isOpen: false, item: null, newName: '' })
+        return true
+      }
       if (showAIChatModal) {
         setShowAIChatModal(false)
         return true
@@ -778,6 +782,10 @@ export const MainLayout: React.FC = () => {
       }
       if (showDocsModal) {
         setShowDocsModal(false)
+        return true
+      }
+      if (showGuideModal) {
+        setShowGuideModal(false)
         return true
       }
       return false

@@ -147,7 +147,17 @@ export function useExplorerSelection({
       if (isInput) return
 
       if (e.key === 'Escape') {
-        clearSelection()
+        const hasSelection =
+          selectedNoteIds.size > 0 || selectedFolderIds.size > 0 || sidebarFocus !== null
+        const isExplorerActive =
+          isOpen ||
+          Boolean(modalRef.current?.matches(':hover')) ||
+          Boolean(modalRef?.current?.contains(document.activeElement))
+        if (hasSelection && isExplorerActive) {
+          e.preventDefault()
+          e.stopPropagation()
+          clearSelection()
+        }
         return
       }
 

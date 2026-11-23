@@ -45,6 +45,8 @@ export const LuminaSessionMenu: React.FC<LuminaSessionMenuProps> = ({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
         onClose()
       }
     }

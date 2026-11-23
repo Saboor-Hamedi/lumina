@@ -2,7 +2,6 @@ import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
 import { Decoration, WidgetType, EditorView, ViewPlugin } from '@codemirror/view'
 import { StateField, StateEffect, type Extension, type Transaction } from '@codemirror/state'
 import { treeGrowthEffect } from '../../features/table/tableParserProgress'
-import mermaid from 'mermaid'
 import { copyMermaidAsImage } from './mermaidAsImage'
 import { openMermaidLightbox } from './mermaidBox'
 import { computeMermaidFit, getMermaidNaturalSize } from './mermaidFit'
@@ -52,11 +51,14 @@ export const editingMermaidField = StateField.define<number | null>({
 const mermaidSvgCache = new Map<string, string>()
 const activeEditorViews = new Set<EditorView>()
 let mermaidThemeVersion = 0
+let mermaidInitializedVersion = -1
+let mermaidModulePromise: Promise<any> | null = null
+let mermaidInstance: any = null
 let currentAccent = '#40bafa'
 let currentFont = 'monospace'
 
-function initializeMermaid(): void {
-  if (typeof window === 'undefined') return
+function initializeMermaid(mermaid: any): void {
+  if (typeof window === 'undefined' || !mermaid) return
   const computed = getComputedStyle(document.documentElement)
   const raw = computed.getPropertyValue('--text-accent').trim()
   currentAccent = raw
@@ -128,12 +130,26 @@ function initializeMermaid(): void {
       }
     `
   })
+  mermaidInitializedVersion = mermaidThemeVersion
+}
+
+async function getMermaid(): Promise<any> {
+  if (!mermaidInstance) {
+    mermaidModulePromise ??= import('mermaid').then((mod) => mod.default)
+    mermaidInstance = await mermaidModulePromise
+  }
+  if (mermaidInitializedVersion !== mermaidThemeVersion) {
+    initializeMermaid(mermaidInstance)
+  }
+  return mermaidInstance
 }
 
 export function clearMermaidCache(): void {
   mermaidSvgCache.clear()
   mermaidThemeVersion++
-  initializeMermaid() // re-initialize with new accent/font before re-renders start
+  if (mermaidInstance) {
+    initializeMermaid(mermaidInstance)
+  }
   for (const view of activeEditorViews) {
     if (!view.state) continue
     try {
@@ -145,7 +161,6 @@ export function clearMermaidCache(): void {
 }
 
 if (typeof window !== 'undefined') {
-  initializeMermaid()
   window.addEventListener('theme-changed', clearMermaidCache)
   const cleanupStrayMermaid = () => {
     document.querySelectorAll('body > [id^="dmermaid"], body > svg[id^="mermaid-"]').forEach((el) => {
@@ -557,15 +572,16 @@ export function renderMermaidToElement(
       await new Promise((r) => setTimeout(r, 0))
 
       try {
+        const mermaid = await getMermaid()
         const isValid = await mermaid.parse(code, { suppressErrors: true })
         if (isValid === false) {
           throw new Error('Invalid Mermaid syntax')
         }
 
-        let { svg } = await mermaid.render(uniqueId, code)
+        let { svg } = (await mermaid.render(uniqueId, code)) as { svg: string }
 
         // Force accent color variable on text elements so CSS variable changes apply live
-        svg = svg.replace(/<(text|tspan)(\s[^>]*)?>/g, (match, tag, attrs = '') => {
+        svg = svg.replace(/<(text|tspan)(\s[^>]*)?>/g, (_match: string, tag: string, attrs = '') => {
           if (/fill\s*=/.test(attrs)) {
             attrs = attrs.replace(/fill\s*=\s*["'][^"']*["']/, 'fill="var(--text-accent, #40bafa)"')
           } else {

@@ -1,11 +1,16 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Folder, Code as CodeIcon, Copy, Check, ChevronDown } from 'lucide-react'
-// @ts-ignore
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-// @ts-ignore
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import hljs from 'highlight.js'
 import { LuminaFolderTree, isAsciiTree } from './luminaFolderTree'
 import '../css/chatCode.css'
+
+function escapeCodeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
 
 export interface ChatPreBlockProps {
   children?: React.ReactNode
@@ -41,6 +46,21 @@ export const ChatPreBlock: React.FC<ChatPreBlockProps> = React.memo(({ children,
   const isDelete = lang.startsWith('lumina-delete')
   const isTree = lang === 'lumina-tree' || lang === 'tree' || isAsciiTree(codeString)
   const lineCount = codeString ? codeString.split('\n').length : 0
+
+  const highlightedHtml = useMemo(() => {
+    if (isTree || isDelete) return ''
+    try {
+      if (lang && lang !== 'text' && hljs.getLanguage(lang)) {
+        return hljs.highlight(codeString, { language: lang }).value
+      }
+      if (lang === 'markdown') {
+        return hljs.highlight(codeString, { language: 'markdown' }).value
+      }
+      return hljs.highlightAuto(codeString).value
+    } catch {
+      return escapeCodeHtml(codeString)
+    }
+  }, [codeString, lang, isTree, isDelete])
 
   if (isTree) {
     return <LuminaFolderTree rawCode={codeString} />
@@ -87,26 +107,12 @@ export const ChatPreBlock: React.FC<ChatPreBlockProps> = React.memo(({ children,
         )}
       </div>
       {!isDelete && (
-        <SyntaxHighlighter
-          style={vscDarkPlus as any}
-          language={lang === 'text' ? 'markdown' : lang}
-          PreTag="div"
-          className="seamless-scrollbar"
-          customStyle={{
-            margin: 0,
-            background: 'transparent',
-            padding: '10px 14px',
-            fontSize: '12px',
-            lineHeight: '1.5',
-            fontFamily: 'var(--font-mono, monospace)',
-            fontVariantLigatures: 'normal',
-            fontFeatureSettings: '"liga" 1, "calt" 1',
-            textRendering: 'optimizeLegibility'
-          }}
-          {...props}
-        >
-          {codeString}
-        </SyntaxHighlighter>
+        <pre className="chat-code-pre seamless-scrollbar">
+          <code
+            className={`hljs language-${lang === 'text' ? 'markdown' : lang}`}
+            dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+          />
+        </pre>
       )}
     </div>
   )

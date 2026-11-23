@@ -474,6 +474,7 @@ export const ConvasShapes: React.FC<ConvasShapesProps> = ({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault()
         e.stopPropagation()
         onClose()
       }

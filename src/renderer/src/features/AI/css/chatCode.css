@@ -119,3 +119,101 @@
   color: #4ade80;
   font-weight: 600;
 }
+
+.chat-code-pre {
+  margin: 0;
+  background: transparent;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  font-family: var(--font-mono, monospace);
+  font-variant-ligatures: normal;
+  font-feature-settings: "liga" 1, "calt" 1;
+  text-rendering: optimizeLegibility;
+  color: var(--text-main, #e2e8f0);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.chat-code-pre .hljs {
+  background: transparent !important;
+  padding: 0;
+  color: inherit;
+  font-family: inherit;
+}
+
+.chat-code-pre .hljs-keyword,
+.chat-code-pre .hljs-selector-tag,
+.chat-code-pre .hljs-literal,
+.chat-code-pre .hljs-section {
+  color: #569cd6;
+}
+
+.chat-code-pre .hljs-string,
+.chat-code-pre .hljs-regexp {
+  color: #ce9178;
+}
+
+.chat-code-pre .hljs-title,
+.chat-code-pre .hljs-title.function_,
+.chat-code-pre .hljs-title.class_ {
+  color: #dcdcaa;
+}
+
+.chat-code-pre .hljs-comment,
+.chat-code-pre .hljs-quote {
+  color: #6a9955;
+  font-style: italic;
+}
+
+.chat-code-pre .hljs-number,
+.chat-code-pre .hljs-attr,
+.chat-code-pre .hljs-variable,
+.chat-code-pre .hljs-params {
+  color: #9cdcfe;
+}
+
+.chat-code-pre .hljs-built_in,
+.chat-code-pre .hljs-type,
+.chat-code-pre .hljs-symbol {
+  color: #4ec9b0;
+}
+
+[data-theme='light'] .chat-code-pre .hljs-keyword,
+[data-theme='porcelain'] .chat-code-pre .hljs-keyword,
+[data-theme='parchment'] .chat-code-pre .hljs-keyword {
+  color: #0000ff;
+}
+
+[data-theme='light'] .chat-code-pre .hljs-string,
+[data-theme='porcelain'] .chat-code-pre .hljs-string,
+[data-theme='parchment'] .chat-code-pre .hljs-string {
+  color: #a31515;
+}
+
+[data-theme='light'] .chat-code-pre .hljs-title,
+[data-theme='light'] .chat-code-pre .hljs-title.function_,
+[data-theme='porcelain'] .chat-code-pre .hljs-title,
+[data-theme='parchment'] .chat-code-pre .hljs-title {
+  color: #795e26;
+}
+
+[data-theme='light'] .chat-code-pre .hljs-comment,
+[data-theme='porcelain'] .chat-code-pre .hljs-comment,
+[data-theme='parchment'] .chat-code-pre .hljs-comment {
+  color: #008000;
+}
+
+[data-theme='light'] .chat-code-pre .hljs-number,
+[data-theme='light'] .chat-code-pre .hljs-variable,
+[data-theme='porcelain'] .chat-code-pre .hljs-variable,
+[data-theme='parchment'] .chat-code-pre .hljs-variable {
+  color: #001080;
+}
+
+[data-theme='light'] .chat-code-pre .hljs-built_in,
+[data-theme='light'] .chat-code-pre .hljs-type,
+[data-theme='porcelain'] .chat-code-pre .hljs-type,
+[data-theme='parchment'] .chat-code-pre .hljs-type {
+  color: #267f99;
+}

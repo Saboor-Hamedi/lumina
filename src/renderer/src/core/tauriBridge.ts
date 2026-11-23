@@ -19,21 +19,23 @@ import {
   pickEmailAttachments,
   showEmailNotification
 } from './gmailClient'
-import {
-  exportPreview,
-  exportHTML,
-  exportPDF,
-  exportDocs,
-  exportMarkdown,
-  exportMarkdownBundle,
-  exportZip,
-  exportText,
-  exportBatch,
-  exportCombined,
-  onBatchExportProgress
-} from '../features/export/exportEngine'
+let exportEnginePromise: Promise<typeof import('../features/export/exportEngine')> | null = null
+const loadExportEngine = () => (exportEnginePromise ??= import('../features/export/exportEngine'))
+
+const batchProgressSubscribers = new Set<(p: any) => void>()
+let batchProgressBridgeBound = false
 
 const isTauriRuntime = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+
+export function normalizeBinaryAsset(raw: unknown): Uint8Array {
+  if (raw instanceof Uint8Array) return raw
+  if (raw instanceof ArrayBuffer) return new Uint8Array(raw)
+  if (ArrayBuffer.isView(raw)) {
+    return new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength)
+  }
+  if (Array.isArray(raw)) return new Uint8Array(raw)
+  return new Uint8Array(0)
+}
 
 export async function invokeNative(cmd: string, args: Record<string, any> = {}): Promise<any> {
   if (isTauriRuntime) {
@@ -66,6 +68,17 @@ export async function closeWindow(): Promise<void> {
   }
 }
 
+function compareSemver(a: string, b: string): number {
+  const pa = a.replace(/^v/i, '').split('-')[0].split('.').map((n) => parseInt(n, 10) || 0)
+  const pb = b.replace(/^v/i, '').split('-')[0].split('.').map((n) => parseInt(n, 10) || 0)
+  const len = Math.max(pa.length, pb.length, 3)
+  for (let i = 0; i < len; i++) {
+    const diff = (pa[i] ?? 0) - (pb[i] ?? 0)
+    if (diff !== 0) return diff > 0 ? 1 : -1
+  }
+  return 0
+}
+
 export function initTauriBridge(): void {
   if (typeof window === 'undefined') return
   // If window.api is already injected (e.g., unit test mocks), preserve it
@@ -73,6 +86,9 @@ export function initTauriBridge(): void {
 
   const settingsListeners = new Set<(s: any) => void>()
   const workspaceListeners = new Set<() => void>()
+  const indexProgressListeners = new Set<(data: any) => void>()
+  const updateListeners = new Set<(payload: { status: string; data?: any }) => void>()
+  let latestReleaseInfo: { version: string; releaseNotes: string; releaseDate: string; url: string } | null = null
 
   const notifyWorkspaceUpdated = () => {
     workspaceListeners.forEach((cb) => {
@@ -82,11 +98,45 @@ export function initTauriBridge(): void {
     })
   }
 
+  const notifyUpdateStatus = (status: string, data?: any) => {
+    updateListeners.forEach((cb) => {
+      try {
+        cb({ status, data })
+      } catch {}
+    })
+  }
+
+  if (isTauriRuntime) {
+    listen('workspace:updated', () => {
+      notifyWorkspaceUpdated()
+    }).catch(() => {})
+
+    listen<any>('backup:progress', (event) => {
+      indexProgressListeners.forEach((cb) => {
+        try {
+          cb(event.payload)
+        } catch {}
+      })
+    }).catch(() => {})
+  }
+
+  const getAppVersion = async (): Promise<string> => {
+    if (isTauriRuntime) {
+      try {
+        const mod = await import('@tauri-apps/api/app')
+        const ver = await mod.getVersion()
+        if (ver) return ver
+      } catch {}
+    }
+    return '1.1.2'
+  }
+
   const tauriApi = {
     getPathForFile: (file: any) => file?.path || file?.name || '',
 
     // Workspace & Notes
     getSnippets: () => invoke('get_snippets'),
+    getNotes: () => invoke('get_snippets'),
     readSnippet: (id: string) => invoke('read_snippet', { id }),
     readNotePreview: (id: string) => invoke('read_snippet', { id }),
     saveSnippet: async (snippet: any) => {
@@ -102,10 +152,44 @@ export function initTauriBridge(): void {
       notifyWorkspaceUpdated()
       return res
     },
+    deleteNote: async (id: string) => {
+      const res = await invoke('delete_snippet', { id })
+      notifyWorkspaceUpdated()
+      return res
+    },
     deleteAsset: (relativePath: string) => invoke('delete_snippet', { id: relativePath }),
     readAsset: async (relativePath: string) => {
-      const bytes = await invoke<number[]>('read_asset_bytes', { relativePath })
-      return new Uint8Array(bytes)
+      const raw = await invoke<unknown>('read_asset_bytes', { relativePath })
+      return normalizeBinaryAsset(raw)
+    },
+    readClipboardImageBuffer: async (): Promise<Uint8Array | null> => {
+      try {
+        if (typeof navigator === 'undefined' || !navigator.clipboard?.read) return null
+        const items = await navigator.clipboard.read()
+        for (const item of items) {
+          const imageType = item.types.find((t) => t.startsWith('image/'))
+          if (imageType) {
+            const blob = await item.getType(imageType)
+            return new Uint8Array(await blob.arrayBuffer())
+          }
+        }
+      } catch {
+        /* Clipboard unavailable or does not contain an image */
+      }
+      return null
+    },
+    writeImageToClipboard: async (dataUrl: string): Promise<boolean> => {
+      try {
+        if (typeof navigator === 'undefined' || !navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+          return false
+        }
+        const response = await fetch(dataUrl)
+        const blob = await response.blob()
+        await navigator.clipboard.write([new ClipboardItem({ [blob.type || 'image/png']: blob })])
+        return true
+      } catch {
+        return false
+      }
     },
     saveImage: (buffer: Uint8Array | number[], name?: string) =>
       invoke('save_workspace_image', {
@@ -113,7 +197,11 @@ export function initTauriBridge(): void {
         targetFolder: '',
         name: name || null
       }),
-    saveImageFromPath: async () => null,
+    saveImageFromPath: (filePath: string, filename?: string) =>
+      invoke<string | null>('save_image_from_path', {
+        filePath,
+        filename: filename || null
+      }),
     saveWorkspaceImage: (buffer: Uint8Array | number[], targetFolder?: string, name?: string) =>
       invoke('save_workspace_image', {
         bytes: Array.from(buffer || []),
@@ -126,7 +214,7 @@ export function initTauriBridge(): void {
         targetFolder: targetFolder || '',
         name: name || null
       }),
-    cleanOrphans: async () => ({ deleted: 0 }),
+    cleanOrphans: () => invoke<{ deleted: number }>('clean_orphans'),
 
     openWorkspaceFolder: (relativePath = '') => invoke('open_path_in_os', { path: relativePath }),
     openVaultFolder: (relativePath = '') => invoke('open_path_in_os', { path: relativePath }),
@@ -154,7 +242,8 @@ export function initTauriBridge(): void {
     bulkDelete: ({ folderIds, snippetIds }: { folderIds?: string[]; snippetIds?: string[] }) =>
       invoke('bulk_delete', { folderIds, snippetIds }),
     deleteChunks: async () => true,
-    importExternalPaths: async () => ({ imported: 0 }),
+    importExternalPaths: (paths: string[], targetFolder = '') =>
+      invoke('import_external_paths', { paths, targetFolder: targetFolder || '' }),
 
     onWorkspaceUpdated: (cb: () => void) => {
       workspaceListeners.add(cb)
@@ -190,23 +279,57 @@ export function initTauriBridge(): void {
     getUserMemory: () => invoke('load_memory'),
     saveUserMemory: (memory: any) => invoke('save_memory', { memory }),
 
-    // Document Export Pipeline
-    exportPreview: (payload: any) => exportPreview(payload),
-    exportHTML: (payload: any) => exportHTML(payload),
-    exportPDF: (payload: any) => exportPDF(payload),
-    exportDocs: (payload: any) => exportDocs(payload),
-    exportMarkdown: (payload: any) => exportMarkdown(payload),
-    exportMarkdownBundle: (payload: any) => exportMarkdownBundle(payload),
-    exportZip: (payload: any) => exportZip(payload),
-    exportText: (payload: any) => exportText(payload),
-    exportBatch: (payload: any) => exportBatch(payload),
-    exportCombined: (payload: any) => exportCombined(payload),
-    onBatchExportProgress: (callback: (p: any) => void) => onBatchExportProgress(callback),
+    // Document Export Pipeline (lazy-loaded on first export / preview open)
+    exportPreview: async (payload: any) => (await loadExportEngine()).exportPreview(payload),
+    exportHTML: async (payload: any) => (await loadExportEngine()).exportHTML(payload),
+    exportPDF: async (payload: any) => (await loadExportEngine()).exportPDF(payload),
+    exportDocs: async (payload: any) => (await loadExportEngine()).exportDocs(payload),
+    exportMarkdown: async (payload: any) => (await loadExportEngine()).exportMarkdown(payload),
+    exportMarkdownBundle: async (payload: any) => (await loadExportEngine()).exportMarkdownBundle(payload),
+    exportZip: async (payload: any) => (await loadExportEngine()).exportZip(payload),
+    exportText: async (payload: any) => (await loadExportEngine()).exportText(payload),
+    exportBatch: async (payload: any) => (await loadExportEngine()).exportBatch(payload),
+    exportCombined: async (payload: any) => (await loadExportEngine()).exportCombined(payload),
+    onBatchExportProgress: (callback: (p: any) => void) => {
+      batchProgressSubscribers.add(callback)
+      void loadExportEngine().then((mod) => {
+        if (!batchProgressBridgeBound) {
+          batchProgressBridgeBound = true
+          mod.onBatchExportProgress((progress) => {
+            batchProgressSubscribers.forEach((fn) => {
+              try {
+                fn(progress)
+              } catch {}
+            })
+          })
+        }
+      })
+      return () => {
+        batchProgressSubscribers.delete(callback)
+      }
+    },
+
+    // Slim Local ZIP Backup Pipeline
+    backupWorkspace: (_mode?: string) => invoke('backup_workspace_zip'),
+    backupFile: async (note: any) => {
+      let content = note?.code ?? note?.content ?? ''
+      if (!content && note?.id) {
+        try {
+          const full = await invoke<any>('read_snippet', { id: note.id })
+          if (full?.code) content = full.code
+        } catch {}
+      }
+      return invoke('backup_single_note_zip', {
+        title: note?.title || 'Untitled',
+        content
+      })
+    },
+    cancelBackup: () => invoke('cancel_backup'),
 
     // Dialogs
     confirmDelete: async (msg: string) => window.confirm(msg || 'Are you sure?'),
     confirmWorkspaceChange: async () => true,
-    openFile: async () => null,
+    openFile: () => invoke('open_file_dialog'),
 
     // Window Controls
     minimize: () => minimizeWindow(),
@@ -249,23 +372,78 @@ export function initTauriBridge(): void {
       await getCurrentWindow().setPosition(new PhysicalPosition(Math.round(x), Math.round(y)))
     },
     onToggleCommandPalette: () => () => {},
-    getVersion: async () => '1.1.2',
+    getVersion: () => getAppVersion(),
     isPackaged: async () => !import.meta.env.DEV,
     onAppError: () => () => {},
 
-    // Auto-Updater stubs
-    checkForUpdates: async () => ({ updateAvailable: false }),
-    downloadUpdate: async () => {},
+    // Lightweight GitHub Releases Update Check
+    checkForUpdates: async () => {
+      notifyUpdateStatus('checking')
+      try {
+        const currentVer = await getAppVersion()
+        const signal = typeof AbortSignal !== 'undefined' && typeof (AbortSignal as any).timeout === 'function'
+          ? (AbortSignal as any).timeout(3500)
+          : undefined
+        const res = await fetch('https://api.github.com/repos/Saboor-Hamedi/lumina/releases/latest', {
+          headers: { Accept: 'application/vnd.github+json' },
+          signal
+        })
+        if (!res.ok) {
+          notifyUpdateStatus('not-available', { version: currentVer })
+          return { updateAvailable: false }
+        }
+        const release = await res.json()
+        const tag = String(release?.tag_name || '').trim()
+        const remoteVer = tag.replace(/^v/i, '')
+        if (remoteVer && compareSemver(remoteVer, currentVer) > 0) {
+          latestReleaseInfo = {
+            version: remoteVer,
+            releaseNotes: String(release?.body || ''),
+            releaseDate: String(release?.published_at || ''),
+            url: String(release?.html_url || 'https://github.com/Saboor-Hamedi/lumina/releases')
+          }
+          notifyUpdateStatus('available', latestReleaseInfo)
+          return { updateAvailable: true, ...latestReleaseInfo }
+        }
+        notifyUpdateStatus('not-available', { version: currentVer })
+        return { updateAvailable: false }
+      } catch {
+        notifyUpdateStatus('not-available')
+        return { updateAvailable: false }
+      }
+    },
+    downloadUpdate: async () => {
+      const targetUrl = latestReleaseInfo?.url || 'https://github.com/Saboor-Hamedi/lumina/releases'
+      try {
+        await invoke('open_path_in_os', { path: targetUrl })
+      } catch {
+        if (typeof window !== 'undefined') window.open(targetUrl, '_blank', 'noopener,noreferrer')
+      }
+      if (latestReleaseInfo) {
+        notifyUpdateStatus('available', latestReleaseInfo)
+      } else {
+        notifyUpdateStatus('not-available')
+      }
+    },
     cancelUpdate: async () => {},
-    quitAndInstall: async () => {},
-    onUpdateStatus: () => () => {},
+    quitAndInstall: async () => {
+      const targetUrl = latestReleaseInfo?.url || 'https://github.com/Saboor-Hamedi/lumina/releases'
+      await invoke('open_path_in_os', { path: targetUrl })
+    },
+    onUpdateStatus: (cb: (payload: { status: string; data?: any }) => void) => {
+      updateListeners.add(cb)
+      return () => updateListeners.delete(cb)
+    },
 
     // Indexing & Search (Native Rust Rayon Engine)
     indexWorkspace: async () => ({ indexed: true }),
     indexVault: async () => ({ indexed: true }),
     rebuildIndex: async () => ({ indexed: true }),
     getIndexStats: async () => ({ totalChunks: 0, indexedFiles: 0 }),
-    onIndexProgress: () => () => {},
+    onIndexProgress: (cb: (data: any) => void) => {
+      indexProgressListeners.add(cb)
+      return () => indexProgressListeners.delete(cb)
+    },
     searchWorkspace: (query: string, options?: any) =>
       invoke('search_workspace', { query: query || '', limit: options?.limit ?? 40 }),
     searchVault: (query: string, options?: any) =>

@@ -290,6 +290,8 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose,
     if (!isOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
         if (isComposeOpen) {
           setIsComposeOpen(false)
         } else {

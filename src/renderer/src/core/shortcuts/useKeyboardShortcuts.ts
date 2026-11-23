@@ -11,6 +11,120 @@ export { buildShortcutGroups, SHORTCUT_DISPLAY_GROUPS }
  */
 type EscapeHandler = (e: KeyboardEvent) => boolean | void
 const escapeHandlers: EscapeHandler[] = []
+const blockedZenEscapeEvents = new WeakSet<KeyboardEvent>()
+
+export const ZEN_ESCAPE_BLOCKING_SELECTORS = [
+  '[role="dialog"]',
+  '[role="alertdialog"]',
+  '[aria-modal="true"]',
+  '[role="menu"]',
+  '[role="listbox"]',
+  '.modal-overlay',
+  '.icon-modal-overlay',
+  '.notification-wrapper',
+  '.shortcut-modal-overlay',
+  '.inline-lumina-overlay',
+  '.inline-lumina-modal',
+  '.voice-capsule-container',
+  '.mermaid-lightbox-overlay.show',
+  '.image-lightbox-overlay.show',
+  '.cm-wiki-hover',
+  '.wikilink-hover-card',
+  '.hover-preview-card',
+  '.context-menu',
+  '.native-dropdown-menu',
+  '.setting-dropdown-menu',
+  '.calender-dropdown-menu',
+  '.bc-dropdown-card',
+  '.bc-outline-dropdown-card',
+  '.lumina-analytics-dropdown',
+  '.lumina-session-menu',
+  '.studio-dropdown-menu',
+  '.lumina-term-profile-dropdown',
+  '.vault-stats-popover',
+  '.email-dropdown-container',
+  '.accent-dropdown-menu',
+  '.lumina-canvas-shapes-menu',
+  '.lumina-canvas-selection-toolbar',
+  '.vs-find-part',
+  '.editor-slash-palette',
+  '.slash-menu-container',
+  '.mention-menu-container',
+  '.cm-tooltip-autocomplete',
+  '.cm-image-widget-wrapper.is-source-mode',
+  '.cm-table-cell-selected',
+  '.cm-atomic-table-menu-backdrop'
+].join(', ')
+
+function isElementVisible(el: Element): boolean {
+  if (el.hasAttribute('hidden') || el.getAttribute('aria-hidden') === 'true') {
+    return false
+  }
+  if (el.closest('[hidden], [aria-hidden="true"]')) {
+    return false
+  }
+  if (typeof window !== 'undefined' && typeof window.getComputedStyle === 'function') {
+    const style = window.getComputedStyle(el)
+    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+      return false
+    }
+  }
+  return true
+}
+
+function isBlockingEditableControl(el: HTMLElement | null): boolean {
+  if (!el) return false
+  if (el.closest('.xterm, .lumina-terminal, .xterm-helper-textarea')) {
+    return true
+  }
+  const tag = el.tagName?.toUpperCase()
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+    return true
+  }
+  if (el.isContentEditable || Boolean(el.closest('[contenteditable="true"]'))) {
+    if (el.closest('.cm-atomic-table-cell-source, .cm-atomic-table')) {
+      return true
+    }
+    if (el.closest('.cm-content')) {
+      return false
+    }
+    return true
+  }
+  return false
+}
+
+export function hasOpenEscapeConsumer(e?: KeyboardEvent): boolean {
+  if (typeof document === 'undefined') return false
+
+  if (typeof window !== 'undefined' && (window as any).__isRecordingShortcut) {
+    return true
+  }
+
+  const recorderNodes = document.querySelectorAll(
+    '.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay'
+  )
+  for (let i = 0; i < recorderNodes.length; i++) {
+    if (isElementVisible(recorderNodes[i])) {
+      return true
+    }
+  }
+
+  if (isBlockingEditableControl(document.activeElement as HTMLElement | null)) {
+    return true
+  }
+  if (e?.target instanceof HTMLElement && isBlockingEditableControl(e.target)) {
+    return true
+  }
+
+  const blockingOverlays = document.querySelectorAll(ZEN_ESCAPE_BLOCKING_SELECTORS)
+  for (let i = 0; i < blockingOverlays.length; i++) {
+    if (isElementVisible(blockingOverlays[i])) {
+      return true
+    }
+  }
+
+  return false
+}
 
 const handleGlobalKeyDown = (e: KeyboardEvent): void => {
   if (e.key === 'Escape' || e.key === 'Esc') {
@@ -19,12 +133,14 @@ const handleGlobalKeyDown = (e: KeyboardEvent): void => {
       (window as any).__isRecordingShortcut ||
       document.querySelector('.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay')
     ) {
+      blockedZenEscapeEvents.add(e)
       return
     }
 
     // 1. Check topmost ephemeral hover cards first
     const hoverCard = document.querySelector('.cm-wiki-hover, .wikilink-hover-card, .hover-preview-card')
     if (hoverCard) {
+      blockedZenEscapeEvents.add(e)
       e.preventDefault()
       e.stopPropagation()
       e.stopImmediatePropagation()
@@ -36,6 +152,7 @@ const handleGlobalKeyDown = (e: KeyboardEvent): void => {
     // 2. Lightboxes (Mermaid or Image Lightbox)
     const lightbox = document.querySelector('.mermaid-lightbox-overlay.show, .image-lightbox-overlay.show')
     if (lightbox) {
+      blockedZenEscapeEvents.add(e)
       e.preventDefault()
       e.stopPropagation()
       e.stopImmediatePropagation()
@@ -44,22 +161,46 @@ const handleGlobalKeyDown = (e: KeyboardEvent): void => {
     }
 
     // 3. Process registered stack-based handlers in strict LIFO order
+    let handledByStack = false
     for (let i = escapeHandlers.length - 1; i >= 0; i--) {
       const handler = escapeHandlers[i]
       const handled = handler(e)
       if (handled) {
+        handledByStack = true
+        blockedZenEscapeEvents.add(e)
         e.preventDefault()
         e.stopPropagation()
         e.stopImmediatePropagation()
         break
       }
     }
+
+    // Snapshot pre-dispatch open overlays before bubble-phase handlers mutate/close them
+    if (!handledByStack && (e.isComposing || e.keyCode === 229 || hasOpenEscapeConsumer(e))) {
+      blockedZenEscapeEvents.add(e)
+    }
   }
 }
 
-// Single singleton listener for Escape stack
+const handleZenModeEscapeBubble = (e: KeyboardEvent): void => {
+  if (e.key !== 'Escape' && e.key !== 'Esc') return
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
+  if (e.isComposing || e.keyCode === 229) return
+  if (e.defaultPrevented || blockedZenEscapeEvents.has(e)) return
+  if (hasOpenEscapeConsumer(e)) return
+
+  const settingsState = useSettingsStore.getState()
+  if (settingsState.settings?.zenMode?.enabled === true) {
+    e.preventDefault()
+    e.stopPropagation()
+    void settingsState.exitZenMode()
+  }
+}
+
+// Single singleton listeners for Escape stack (capture) and Zen Mode fallback exit (bubble)
 if (typeof window !== 'undefined') {
   window.addEventListener('keydown', handleGlobalKeyDown, { capture: true })
+  window.addEventListener('keydown', handleZenModeEscapeBubble, false)
 }
 
 /**

@@ -38,7 +38,8 @@ import { EditorSlash, type SlashState } from '../slash'
 import EditorCreatedAt from './components/EditorCreatedAt'
 import MetaHeader from './meta/MetaHeader'
 import EditorZoomHud from './components/EditorZoomHud'
-import { ExportContainer } from '../export'
+
+const ExportContainer = React.lazy(() => import('../export/ExportContainer'))
 
 import type { Snippet, EditorHandle } from '../../core/editor/types'
 import type { EditorView } from '@codemirror/view'
@@ -500,14 +501,18 @@ export const Editor: React.FC<EditorProps> = memo(
           />
         </div>
 
-        <ExportContainer
-          isOpen={isExportDialogOpen}
-          title={title}
-          content={isExportDialogOpen ? getExportDialogContent() : ''}
-          initialFormat="pdf"
-          onClose={() => setIsExportDialogOpen(false)}
-          showToast={showToast}
-        />
+        {isExportDialogOpen && (
+          <React.Suspense fallback={null}>
+            <ExportContainer
+              isOpen={isExportDialogOpen}
+              title={title}
+              content={getExportDialogContent()}
+              initialFormat="pdf"
+              onClose={() => setIsExportDialogOpen(false)}
+              showToast={showToast}
+            />
+          </React.Suspense>
+        )}
       </div>
     )
   },

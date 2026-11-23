@@ -102,7 +102,11 @@ export const CalendarDropdown: React.FC<CalendarDropdownProps> = memo(({ isOpen,
       }
     }
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        onClose()
+      }
     }
 
     document.addEventListener('pointerdown', handleClickOutside, { capture: true })
