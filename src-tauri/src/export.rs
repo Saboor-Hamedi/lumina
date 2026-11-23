@@ -5,9 +5,15 @@ use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, OnceLock};
-use tauri::{AppHandle, WebviewUrl, WebviewWindowBuilder};
+#[cfg(target_os = "windows")]
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicU64, Ordering};
+#[cfg(target_os = "windows")]
+use std::sync::Arc;
+use std::sync::{Mutex, OnceLock};
+use tauri::AppHandle;
+#[cfg(target_os = "windows")]
+use tauri::{WebviewUrl, WebviewWindowBuilder};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -194,7 +200,7 @@ pub(crate) fn pick_save_path_native(
     filter_name: String,
     extensions: Vec<String>,
 ) -> Result<Option<String>, String> {
-    let _ = parent_hwnd;
+    let _ = (parent_hwnd, &filter_name, &extensions);
 
     #[cfg(target_os = "windows")]
     {
@@ -873,6 +879,7 @@ pub async fn export_render_pdf(
     file_path: String,
     landscape: Option<bool>,
 ) -> Result<Value, String> {
+    let _ = (&app, landscape);
     let seq = PDF_WORKER_SEQ.fetch_add(1, Ordering::Relaxed);
     let temp_html = std::env::temp_dir().join(format!(
         "lumina-pdf-render-{}-{}.html",

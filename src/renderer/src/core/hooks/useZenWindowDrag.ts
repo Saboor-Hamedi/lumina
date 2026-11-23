@@ -37,17 +37,24 @@ export function useZenWindowDrag({ enabled }: UseZenWindowDragOptions): void {
       const selection = window.getSelection?.()
       if (selection && selection.toString().trim().length > 0) return
 
-      // Restrict dragging: do not drag from interactive inputs, controls, resizers, or scrollbars
+      // Restrict dragging: do not drag from interactive inputs, controls, resizers, or tooltips
       const isInteractive = target.closest(
-        'button, input, textarea, select, [role="button"], a, [contenteditable="true"], .sidebar-resizer, .terminal-resizer, .floating-window-controls, .cm-tooltip, .cm-cursor'
+        'button, input, textarea, select, [role="button"], a, .sidebar-resizer, .terminal-resizer, .floating-window-controls, .cm-tooltip'
       )
       if (isInteractive) return
 
-      isDraggingRef.current = true
-      lastPosRef.current = { x: e.screenX, y: e.screenY }
-
       e.preventDefault()
       e.stopPropagation()
+
+      // Prefer native OS window dragging (Tauri startDragging) for zero-lag, multi-monitor smooth movement
+      const api = (window as any).api
+      if (api && typeof api.startWindowDrag === 'function') {
+        api.startWindowDrag().catch?.(() => {})
+        return
+      }
+
+      isDraggingRef.current = true
+      lastPosRef.current = { x: e.screenX, y: e.screenY }
     }
 
     const handleMouseMove = (e: MouseEvent) => {

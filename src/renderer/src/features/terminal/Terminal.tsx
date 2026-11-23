@@ -173,7 +173,7 @@ export function Terminal({
         minHeight: 0,
         background: 'var(--bg-editor, var(--bg-app, #0c0c0e))',
         overflow: 'hidden',
-        fontFamily: '"Cascadia Code", "Cascadia Mono", "JetBrains Mono", "Fira Code", Consolas, "SF Mono", monospace'
+        fontFamily: 'var(--editor-font-family, var(--font-editor, "JetBrains Mono", "Fira Code", "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", Consolas, monospace))'
       }}
     >
       {/* ── Right: Sessions Sidebar Column (Header + Sessions List) ── */}
@@ -184,7 +184,7 @@ export function Terminal({
           minWidth: sessionListWidth,
           maxWidth: sessionListWidth,
           height: '100%',
-          background: 'var(--bg-sidebar, #0e0e11)',
+          background: 'var(--bg-editor, var(--bg-app, #0c0c0e))',
           borderLeft: '1px solid var(--border-dim, rgba(255, 255, 255, 0.08))',
           display: 'flex',
           flexDirection: 'column',
@@ -201,7 +201,7 @@ export function Terminal({
             height: 32,
             minHeight: 32,
             padding: '0 8px',
-            background: 'var(--bg-sidebar, #0e0e11)',
+            background: 'var(--bg-editor, var(--bg-app, #0c0c0e))',
             borderBottom: '1px solid var(--border-dim, rgba(255, 255, 255, 0.08))',
             userSelect: 'none',
             flexShrink: 0,

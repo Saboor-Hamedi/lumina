@@ -79,6 +79,11 @@ describe('SettingStore - Zen Mode and Visibility Management', () => {
     // Editor Metadata
     await store.toggleEditorMetadata()
     expect(useSettingStore.getState().settings.inlineMetadata).toBe(false)
+
+    await store.toggleRightActivityBar()
+    expect(useSettingStore.getState().settings.rightActivityBarVisible).toBe(false)
+    await store.toggleRightActivityBar()
+    expect(useSettingStore.getState().settings.rightActivityBarVisible).toBe(true)
   })
 
   it('entering Zen Mode saves exact pre-state and hides configured components', async () => {
@@ -89,6 +94,7 @@ describe('SettingStore - Zen Mode and Visibility Management', () => {
         titleBarVisible: true,
         statusBarVisible: true,
         activityBarVisible: true,
+        rightActivityBarVisible: true,
         sidebar: { width: 260, isLeftOpen: true },
         rightSidebar: { width: 300, isRightOpen: false },
         zenMode: {
@@ -112,6 +118,7 @@ describe('SettingStore - Zen Mode and Visibility Management', () => {
       titleBarVisible: true,
       statusBarVisible: true,
       activityBarVisible: true,
+      rightActivityBarVisible: true,
       tabsVisible: true,
       breadcrumbsVisible: true,
       isLeftOpen: true,

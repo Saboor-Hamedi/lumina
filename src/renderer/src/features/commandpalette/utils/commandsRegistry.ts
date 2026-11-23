@@ -78,10 +78,20 @@ export const COMMANDS_REGISTRY: LuminaCommand[] = [
     id: 'view.toggleActivityBar',
     title: 'View: Toggle Activity Bar',
     category: 'View',
-    keywords: ['activity bar', 'icon dock', 'left dock', 'navigation icons', 'toggle', 'show activity bar', 'hide activity bar', 'restore activity bar', 'bring back activity bar'],
+    keywords: ['activity bar', 'left activity bar', 'icon dock', 'left dock', 'navigation icons', 'toggle', 'show activity bar', 'hide activity bar', 'restore activity bar', 'bring back activity bar'],
     iconName: 'LayoutGrid',
     execute: async () => {
       await useSettingsStore.getState().toggleActivityBar()
+    }
+  },
+  {
+    id: 'view.toggleRightActivityBar',
+    title: 'View: Toggle Right Activity Bar',
+    category: 'View',
+    keywords: ['right activity bar', 'right icon dock', 'right dock', 'right bar', 'activity bar right', 'inspector bar', 'toggle right activity bar', 'show right activity bar', 'hide right activity bar', 'restore right activity bar'],
+    iconName: 'PanelRight',
+    execute: async () => {
+      await useSettingsStore.getState().toggleRightActivityBar()
     }
   },
   {

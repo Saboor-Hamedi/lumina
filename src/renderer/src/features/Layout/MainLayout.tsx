@@ -154,11 +154,17 @@ export const MainLayout: React.FC = () => {
   const hideActivityBarInZen = useSettingsStore(
     (state) => state.settings?.zenMode?.hideActivityBar !== false
   )
+  const hideRightActivityBarInZen = useSettingsStore(
+    (state) => state.settings?.zenMode?.hideRightActivityBar !== false
+  )
   const hideStatusBarInZen = useSettingsStore(
     (state) => state.settings?.zenMode?.hideStatusBar !== false
   )
   const isActivityBarVisible = useSettingsStore(
     (state) => state.settings?.activityBarVisible !== false
+  )
+  const isRightActivityBarVisible = useSettingsStore(
+    (state) => state.settings?.rightActivityBarVisible !== false
   )
   const isStatusBarVisible = useSettingsStore((state) => state.settings?.statusBarVisible === true)
   const isTabsVisible = useSettingsStore((state) => state.settings?.tabsVisible !== false)
@@ -1470,25 +1476,19 @@ export const MainLayout: React.FC = () => {
             onToggleInspector={handleToggleInspector}
             onSettingsClick={handleOpenSettings}
             onThemeClick={handleOpenTheme}
-            onDocsClick={handleOpenDocs}
-            onShortcutsClick={() => {
-              setSettingsInitialTab('shortcuts')
-              setShowSettings(true)
-            }}
-            onGuideClick={() => setShowGuideModal(true)}
             isZenHidden={isZenModeEnabled && hideStatusBarInZen}
           />
         )}
         </div>
 
-        {isActivityBarVisible && (
+        {isRightActivityBarVisible && (
           <RightActivityBar
             isRightSidebarOpen={isRightSidebarOpen}
             activeTab={rightSidebarTab}
             onSelectTab={handleSelectRightSidebarTab}
             onToggleGraph={handleToggleGraph}
             isGraphActive={activeTabId === GRAPH_TAB_ID}
-            isZenHidden={isZenModeEnabled && hideActivityBarInZen}
+            isZenHidden={isZenModeEnabled && hideRightActivityBarInZen}
           />
         )}
       </div>

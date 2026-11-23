@@ -7,9 +7,7 @@ import { useSettingsStore } from '../../../../../src/renderer/src/core/store/Set
 
 describe('StatusBar.jsx', () => {
   const defaultProps = () => ({
-    onToggleInspector: vi.fn(),
-    onDocsClick: vi.fn(),
-    onShortcutsClick: vi.fn()
+    onToggleInspector: vi.fn()
   })
 
   beforeEach(() => {
@@ -20,13 +18,14 @@ describe('StatusBar.jsx', () => {
     }))
   })
 
-  it('renders left utility buttons', () => {
+  it('renders only Settings on the left and omits redundant buttons', () => {
     render(<StatusBar {...defaultProps()} />)
     expect(screen.getByText('Settings')).toBeInTheDocument()
-    expect(screen.getByText('Details')).toBeInTheDocument()
-    expect(screen.getByText('Docs')).toBeInTheDocument()
+    expect(screen.queryByText('Details')).not.toBeInTheDocument()
+    expect(screen.queryByText('Canvas')).not.toBeInTheDocument()
+    expect(screen.queryByText('Docs')).not.toBeInTheDocument()
     expect(screen.queryByText('Guide')).not.toBeInTheDocument()
-    expect(screen.getByText('Shortcuts')).toBeInTheDocument()
+    expect(screen.queryByText('Shortcuts')).not.toBeInTheDocument()
   })
 
   it('toggles settings dropdown when Settings button is clicked', () => {
@@ -41,28 +40,7 @@ describe('StatusBar.jsx', () => {
     expect(screen.getByRole('button', { name: /Theme/i })).toBeInTheDocument()
   })
 
-  it('calls onToggleInspector when Details button is clicked', () => {
-    const props = defaultProps()
-    render(<StatusBar {...props} />)
-    fireEvent.click(screen.getByText('Details'))
-    expect(props.onToggleInspector).toHaveBeenCalled()
-  })
-
-  it('calls onDocsClick when Docs button is clicked', () => {
-    const props = defaultProps()
-    render(<StatusBar {...props} />)
-    fireEvent.click(screen.getByText('Docs'))
-    expect(props.onDocsClick).toHaveBeenCalled()
-  })
-
-  it('calls onShortcutsClick when Shortcuts button is clicked', () => {
-    const props = defaultProps()
-    render(<StatusBar {...props} />)
-    fireEvent.click(screen.getByText('Shortcuts'))
-    expect(props.onShortcutsClick).toHaveBeenCalled()
-  })
-
-  it('renders document statistics when a snippet is selected', () => {
+  it('renders document statistics when a snippet is selected without reading time or Markdown', () => {
     const note = {
       id: '1',
       title: 'Note',
@@ -77,8 +55,8 @@ describe('StatusBar.jsx', () => {
     expect(screen.getByText(/Ln 1, Col 1/)).toBeInTheDocument()
     expect(screen.getByText(/7 words/)).toBeInTheDocument()
     expect(screen.getByText(/31 chars/)).toBeInTheDocument()
-    expect(screen.getByText(/1 min read/)).toBeInTheDocument()
-    expect(screen.getByText('Markdown')).toBeInTheDocument()
+    expect(screen.queryByText(/min read/)).not.toBeInTheDocument()
+    expect(screen.queryByText('Markdown')).not.toBeInTheDocument()
     expect(screen.getByText('UTF-8')).toBeInTheDocument()
   })
 
@@ -97,14 +75,16 @@ describe('StatusBar.jsx', () => {
   })
 
   describe('right-click toggle menu', () => {
-    it('opens a rich menu with sections and every toggleable item', () => {
+    it('opens a rich menu with sections and toggleable items', () => {
       render(<StatusBar {...defaultProps()} />)
       fireEvent.contextMenu(screen.getByTestId('status-bar'))
 
       expect(screen.getByText('Status Bar')).toBeInTheDocument()
       expect(screen.queryByText('Editor Mode')).not.toBeInTheDocument()
-      expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument()
-      expect(screen.getByText('Reading Time')).toBeInTheDocument()
+      expect(screen.queryByText('Keyboard Shortcuts')).not.toBeInTheDocument()
+      expect(screen.queryByText('Reading Time')).not.toBeInTheDocument()
+      expect(screen.queryByText('Language Mode')).not.toBeInTheDocument()
+      expect(screen.getByText('Word Count')).toBeInTheDocument()
       expect(screen.queryByText('Reset to Defaults')).not.toBeInTheDocument()
     })
 
@@ -132,12 +112,11 @@ describe('StatusBar.jsx', () => {
 
     it('hides an element that a saved preference turned off', () => {
       useSettingsStore.setState((state) => ({
-        settings: { ...state.settings, statusBarItems: { details: false } }
+        settings: { ...state.settings, statusBarItems: { account: false } }
       }))
 
       render(<StatusBar {...defaultProps()} />)
-      expect(screen.queryByText('Details')).not.toBeInTheDocument()
-      expect(screen.getByText('Docs')).toBeInTheDocument()
+      expect(screen.queryByText('Settings')).not.toBeInTheDocument()
     })
 
     it('toggles an item back on and appears in the status bar', () => {
@@ -145,21 +124,21 @@ describe('StatusBar.jsx', () => {
         selectedSnippet: { id: '1', title: 'Note', code: 'Hello world this is a test note' }
       })
       useSettingsStore.setState((state) => ({
-        settings: { ...state.settings, statusBarItems: { words: false, details: false } }
+        settings: { ...state.settings, statusBarItems: { words: false, encoding: false } }
       }))
 
       render(<StatusBar {...defaultProps()} />)
       expect(screen.queryByText(/words/)).not.toBeInTheDocument()
-      expect(screen.queryByText('Details')).not.toBeInTheDocument()
+      expect(screen.queryByText('UTF-8')).not.toBeInTheDocument()
 
       fireEvent.contextMenu(screen.getByTestId('status-bar'))
       fireEvent.click(screen.getByText('Word Count'))
-      fireEvent.click(screen.getByText('Details'))
+      fireEvent.click(screen.getByText('Encoding'))
 
       expect(useSettingsStore.getState().settings.statusBarItems.words).toBe(true)
-      expect(useSettingsStore.getState().settings.statusBarItems.details).toBe(true)
+      expect(useSettingsStore.getState().settings.statusBarItems.encoding).toBe(true)
       expect(screen.getByText(/7 words/)).toBeInTheDocument()
-      expect(screen.getAllByText('Details').length).toBeGreaterThanOrEqual(2)
+      expect(screen.getByText('UTF-8')).toBeInTheDocument()
     })
   })
 })

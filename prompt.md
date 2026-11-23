@@ -1,27 +1,50 @@
-Prompt for your agent:
-
-"In our CodeMirror 6 Live Preview editor (src/renderer/src/core/ or features/Editor/), math blocks ($$ ... $$ and $ ... $) are still being corrupted by Markdown Live Preview decorations, as seen in the screenshot:
-
-1. Stop Markdown Live Preview Decorations Inside Math Ranges ($$ ... $$ and $ ... $):
-
-The issue: Inside a $$ ... $$ block (e.g., \begin{matrix} & 9.999999\dots \\ - & 0.999999\dots \\ \hline & 9.000000\dots \end{matrix}):
-
-The Markdown escape-hiding decorator is hiding the first backslash of \\, making valid LaTeX line breaks (\\) visually appear as single \ in the editor.
-
-The Markdown bullet-list decorator is turning -  at the start of - & 0.999999\dots \\ into a bullet dot (•).
-
-The fix:
-
-Compute all inline $ ... $ and block $$ ... $$ math ranges in the document (or via the Lezer/CodeMirror syntax tree) before building Live Preview decorations.
-
-Skip/exclude all Markdown inline/block formatting decorations (escape-character hiding \, bullet list replacement - → •, bold/italic/strikethrough/heading decorations) whenever a match overlaps with any math range. Raw LaTeX inside $ ... $ and $$ ... $$ must remain completely untouched (\\ stays \\, - stays -).
-
-2. Add Live KaTeX Preview Below Active $$ ... $$ Blocks (Obsidian-style) & Rendered Widget When Blurred:
-
-The issue: In Live Preview mode, editing a $$ ... $$ block shows only raw unrendered text with no rendered math preview.
-
-The fix:
-
-When the cursor is outside a $$ ... $$ block in Live Preview mode, replace/render the block cleanly with KaTeX.
-
-When the cursor is inside a $$ ... $$ block (active editing), keep the syntax-highlighted LaTeX source visible AND render a live KaTeX preview widget immediately below the closing $$ line so the user sees the rendered math update in real time as they type."
+warning: unused import: `AtomicBool`
+ --> src-tauri/src/export.rs:8:25
+  |
+8 | use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+  |                         ^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+warning: unused import: `Arc`
+ --> src-tauri/src/export.rs:9:17
+  |
+9 | use std::sync::{Arc, Mutex, OnceLock};
+  |                 ^^^
+warning: unused imports: `WebviewUrl` and `WebviewWindowBuilder`
+  --> src-tauri/src/export.rs:10:24
+   |
+10 | use tauri::{AppHandle, WebviewUrl, WebviewWindowBuilder};
+   |                        ^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^
+warning: variable does not need to be mutable
+    --> src-tauri/src/commands.rs:2435:9
+     |
+2435 |     let mut cmd = Command::new(program);
+     |         ----^^^
+     |         |
+     |         help: remove this `mut`
+     |
+     = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+warning: unused variable: `filter_name`
+   --> src-tauri/src/export.rs:194:5
+    |
+194 |     filter_name: String,
+    |     ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_filter_name`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+warning: unused variable: `extensions`
+   --> src-tauri/src/export.rs:195:5
+    |
+195 |     extensions: Vec<String>,
+    |     ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_extensions`
+warning: unused variable: `app`
+   --> src-tauri/src/export.rs:871:5
+    |
+871 |     app: AppHandle,
+    |     ^^^ help: if this is intentional, prefix it with an underscore: `_app`
+warning: unused variable: `landscape`
+   --> src-tauri/src/export.rs:874:5
+    |
+874 |     landscape: Option<bool>,
+    |     ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_landscape`
+warning: `app` (lib) generated 8 warnings (run `cargo fix --lib -p app` to apply 8 suggestions)
+    Finished `release` profile [optimized] target(s) in 5m 06s

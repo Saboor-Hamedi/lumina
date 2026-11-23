@@ -7,7 +7,12 @@ import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
 import '@xterm/xterm/css/xterm.css'
-import { DEFAULT_FONT_SIZE, DEFAULT_SCROLLBACK, TERMINAL_FONT, XTERM_THEME, getActiveTerminalTheme } from './constants'
+import {
+  DEFAULT_FONT_SIZE,
+  DEFAULT_SCROLLBACK,
+  getActiveTerminalFontFamily,
+  getActiveTerminalTheme
+} from './constants'
 import type { TerminalSession } from './types'
 
 /** Minimal transport contract — implement for Tauri PTY (portable-pty), WS, SSH, etc. */
@@ -139,10 +144,12 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
     const initialCols =
       container.clientWidth > 80 ? Math.max(10, Math.floor((container.clientWidth - 8) / 8)) : 80
 
+    const initialFontFamily = getActiveTerminalFontFamily()
+
     const termInstance = new Terminal({
       cols: initialCols,
       rows: initialRows,
-      fontFamily: TERMINAL_FONT,
+      fontFamily: initialFontFamily,
       fontSize: DEFAULT_FONT_SIZE,
       theme: getActiveTerminalTheme(),
       scrollback: DEFAULT_SCROLLBACK,
@@ -308,17 +315,35 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
       ro.observe(container)
     }
 
-    // Dynamically react to Lumina theme changes
+    // Dynamically react to Lumina theme and unified Editor font changes
+    let currentFontFamily = initialFontFamily
+    const applyActiveFont = () => {
+      try {
+        const nextFont = getActiveTerminalFontFamily()
+        if (nextFont !== currentFontFamily && (termInstance as any)?.options) {
+          currentFontFamily = nextFont
+          ;(termInstance as any).options.fontFamily = nextFont
+          if (container.clientWidth > 0 && container.clientHeight > 0) {
+            fit.fit()
+            sendResizeIfChanged(termInstance.cols, termInstance.rows)
+            scheduleScrollSync()
+          }
+        }
+      } catch {}
+    }
+
     const applyActiveTheme = () => {
       try {
         if ((termInstance as any)?.options) {
           ;(termInstance as any).options.theme = getActiveTerminalTheme()
         }
       } catch {}
+      applyActiveFont()
     }
 
     window.addEventListener('theme-changed', applyActiveTheme)
     window.addEventListener('theme-accent-changed', applyActiveTheme)
+    window.addEventListener('caret-style-update', applyActiveFont)
 
     let themeObserver: MutationObserver | null = null
     if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
@@ -344,6 +369,7 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
       ro?.disconnect()
       window.removeEventListener('theme-changed', applyActiveTheme)
       window.removeEventListener('theme-accent-changed', applyActiveTheme)
+      window.removeEventListener('caret-style-update', applyActiveFont)
       themeObserver?.disconnect()
       disposables.forEach((d) => {
         try {

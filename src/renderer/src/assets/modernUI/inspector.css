@@ -7,7 +7,8 @@
 .shell-sidebar-right,
 [data-modern-ui='true'] .shell-sidebar-right {
   background: var(--bg-editor, var(--bg-app)) !important;
-  border: 0 solid var(--border-dim) !important;
+  border-style: solid !important;
+  border-color: transparent;
   border-radius: 8px !important;
   box-shadow: none !important;
   overflow: hidden !important;
@@ -20,6 +21,7 @@
 .app-shell.right-open .shell-sidebar-right,
 [data-modern-ui='true'] .app-shell.right-open .shell-sidebar-right {
   border-width: 1px !important;
+  border-color: var(--border-dim) !important;
   border-radius: 8px !important;
 }
 
@@ -33,7 +35,6 @@
   flex-direction: column;
   height: 100%;
   gap: 0 !important;
-  min-width: 0;
 }
 
 /* Header Tabs: Docked top with 1px bottom border */

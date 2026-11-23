@@ -3,7 +3,45 @@
 
 import type { ITheme } from '@xterm/xterm'
 
-export const TERMINAL_FONT = '"JetBrains Mono", "Fira Code", "Cascadia Code", "Cascadia Mono", "Segoe UI Symbol", "Segoe UI Emoji", Consolas, monospace'
+const TERMINAL_EMOJI_FALLBACK = '"Segoe UI Emoji", "Segoe UI Symbol", "Apple Color Emoji", "Noto Color Emoji"'
+
+export const TERMINAL_FONT = `"JetBrains Mono", "Fira Code", "Cascadia Code", "Cascadia Mono", ${TERMINAL_EMOJI_FALLBACK}, Consolas, monospace`
+
+/**
+ * Resolves the active terminal font family from the unified Editor font CSS variables
+ * (--editor-font-family / --font-editor), defaulting to JetBrains Mono with emoji/symbol
+ * and monospace fallbacks so both ligatures and stickers/emojis render cleanly.
+ */
+export function getActiveTerminalFontFamily(): string {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return TERMINAL_FONT
+  }
+
+  try {
+    const cs = window.getComputedStyle(document.documentElement)
+    const raw = (
+      cs.getPropertyValue('--editor-font-family').trim() ||
+      cs.getPropertyValue('--font-editor').trim()
+    )
+    if (!raw) return TERMINAL_FONT
+
+    const lower = raw.toLowerCase()
+    const hasEmoji =
+      lower.includes('segoe ui emoji') ||
+      lower.includes('apple color emoji') ||
+      lower.includes('noto color emoji')
+
+    if (lower.includes('monospace')) {
+      if (hasEmoji) return raw
+      // Insert emoji/symbol fonts right before the generic monospace fallback
+      return raw.replace(/,\s*monospace\b/i, `, ${TERMINAL_EMOJI_FALLBACK}, monospace`)
+    }
+
+    return hasEmoji ? `${raw}, monospace` : `${raw}, ${TERMINAL_FONT}`
+  } catch {
+    return TERMINAL_FONT
+  }
+}
 
 export const DEFAULT_FONT_SIZE = 13
 export const DEFAULT_SCROLLBACK = 10_000

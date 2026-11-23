@@ -27,7 +27,7 @@ function App() {
     document.documentElement.setAttribute('data-modern-ui', String(isModernUi))
   }, [isModernUi])
 
-  useZenWindowDrag({ enabled: isZenMode })
+  useZenWindowDrag({ enabled: true })
 
   useEffect(() => {
     window.addEventListener('resize', markWindowResizing, { passive: true })

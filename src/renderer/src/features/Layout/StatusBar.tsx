@@ -21,17 +21,12 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import {
-  PanelRight,
   FileText,
   Hash,
   Navigation,
   Settings,
-  LayoutGrid,
-  BookOpen,
-  Keyboard,
   Type,
   FileCode,
-  Clock,
   TextSelect
 } from 'lucide-react'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
@@ -49,12 +44,6 @@ export interface StatusBarProps {
   onSettingsClick?: () => void
   /** Open theme picker */
   onThemeClick?: () => void
-  /** Open documentation */
-  onDocsClick?: () => void
-  /** Open keyboard shortcuts dialog */
-  onShortcutsClick?: () => void
-  /** Open guide */
-  onGuideClick?: () => void
   /** Smoothly hide status bar during Zen Mode */
   isZenHidden?: boolean
 }
@@ -99,38 +88,6 @@ const STATUS_BAR_ITEM_META: StatusBarItemMeta[] = [
     defaultVisible: true
   },
   {
-    id: 'details',
-    label: 'Details',
-    group: 'left',
-    menuGroup: 'Settings',
-    icon: <PanelRight size={14} />,
-    defaultVisible: true
-  },
-  {
-    id: 'canvas',
-    label: 'Canvas',
-    group: 'left',
-    menuGroup: 'Settings',
-    icon: <LayoutGrid size={14} />,
-    defaultVisible: true
-  },
-  {
-    id: 'docs',
-    label: 'Documentation',
-    group: 'left',
-    menuGroup: 'Settings',
-    icon: <BookOpen size={14} />,
-    defaultVisible: true
-  },
-  {
-    id: 'shortcuts',
-    label: 'Keyboard Shortcuts',
-    group: 'left',
-    menuGroup: 'Settings',
-    icon: <Keyboard size={14} />,
-    defaultVisible: true
-  },
-  {
     id: 'cursor',
     label: 'Cursor Position',
     group: 'right',
@@ -164,24 +121,6 @@ const STATUS_BAR_ITEM_META: StatusBarItemMeta[] = [
     responsiveClass: 'status-bar-hide-sm'
   },
   {
-    id: 'readTime',
-    label: 'Reading Time',
-    group: 'right',
-    menuGroup: 'Document',
-    icon: <Clock size={14} />,
-    defaultVisible: true,
-    responsiveClass: 'status-bar-hide-xs'
-  },
-  {
-    id: 'language',
-    label: 'Language Mode',
-    group: 'right',
-    menuGroup: 'Document',
-    icon: <Type size={14} />,
-    defaultVisible: true,
-    responsiveClass: 'status-bar-hide-xs'
-  },
-  {
     id: 'encoding',
     label: 'Encoding',
     group: 'right',
@@ -196,9 +135,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   onToggleInspector,
   onSettingsClick,
   onThemeClick,
-  onDocsClick,
-  onShortcutsClick,
-  onGuideClick,
   isZenHidden = false
 }) => {
   const selectedSnippet = useWorkspaceStore((s) => s.selectedNote || (s as any).selectedSnippet)
@@ -209,20 +145,11 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   const settingsBtnRef = useRef<HTMLButtonElement | null>(null)
   const { user, isLoggedIn } = useCurrentUser()
   const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform)
-  const userShortcuts = useSettingsStore((s) => s.settings.shortcuts) || {}
   const statusBarItems = useSettingsStore((s) => s.settings.statusBarItems) as
     | Record<string, boolean>
     | null
     | undefined
   const updateSetting = useSettingsStore((s) => s.updateSetting)
-  const inspectorShortcut = userShortcuts.toggleInspector || (isMac ? '⌘I' : 'Ctrl + I')
-  const rawCanvas = userShortcuts.canvasDrawer || userShortcuts.canvas
-  const canvasShortcut =
-    rawCanvas && rawCanvas !== 'Ctrl + Shift + /'
-      ? rawCanvas
-      : isMac
-        ? '⌘⇧;'
-        : 'Ctrl + Shift + ;'
 
   // Resolve item visibility. Absent keys fall back to the item default, so newly
   // added status bar items remain visible for users with a saved preference map.
@@ -248,11 +175,9 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   const shortcutFor = useCallback(
     (id: string): string | undefined => {
       if (id === 'account') return isMac ? '⌘,' : 'Ctrl + ,'
-      if (id === 'details') return inspectorShortcut
-      if (id === 'canvas') return canvasShortcut
       return undefined
     },
-    [isMac, inspectorShortcut, canvasShortcut]
+    [isMac]
   )
 
   const toggleDropdown = useCallback((e?: React.MouseEvent) => {
@@ -280,16 +205,14 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   // Calculate live document statistics
   const stats = useMemo(() => {
     if (!selectedSnippet || !selectedSnippet.code) {
-      return { chars: '0', words: '0', readTime: '0 min read' }
+      return { chars: '0', words: '0' }
     }
     const text = selectedSnippet.code.trim()
     const chars = selectedSnippet.code.length
     const words = text ? text.split(/\s+/).filter(Boolean).length : 0
-    const readTime = Math.max(1, Math.ceil(words / 200)) + ' min read'
     return {
       chars: chars.toLocaleString(),
-      words: words.toLocaleString(),
-      readTime
+      words: words.toLocaleString()
     }
   }, [selectedSnippet?.id, selectedSnippet?.code])
 
@@ -376,46 +299,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             />
           </>
         )
-      case 'details':
-        return (
-          <ToolTip text={`Toggle Details (${inspectorShortcut})`} position="top">
-            <button type="button" className="status-bar-btn" onClick={onToggleInspector}>
-              <PanelRight size={11} />
-              <span>Details</span>
-            </button>
-          </ToolTip>
-        )
-      case 'canvas':
-        return (
-          <ToolTip text={`Canvas (${canvasShortcut})`} position="top">
-            <button
-              type="button"
-              className="status-bar-btn"
-              onClick={() => window.dispatchEvent(new CustomEvent('open-canvas-tab'))}
-            >
-              <LayoutGrid size={11} />
-              <span className="status-bar-label-collapse">Canvas</span>
-            </button>
-          </ToolTip>
-        )
-      case 'docs':
-        return (
-          <ToolTip text="Documentation" position="top">
-            <button type="button" className="status-bar-btn" onClick={onDocsClick}>
-              <BookOpen size={11} />
-              <span>Docs</span>
-            </button>
-          </ToolTip>
-        )
-      case 'shortcuts':
-        return (
-          <ToolTip text="Keyboard Shortcuts" position="top">
-            <button type="button" className="status-bar-btn" onClick={onShortcutsClick}>
-              <Keyboard size={11} />
-              <span>Shortcuts</span>
-            </button>
-          </ToolTip>
-        )
       default:
         return null
     }
@@ -466,23 +349,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             >
               <Hash size={11} />
               <span>{stats.chars} chars</span>
-            </span>
-          </ToolTip>
-        )
-      case 'readTime':
-        return (
-          <ToolTip text="Reading Time" position="top">
-            <span className={`status-bar-item${responsive}`}>
-              <span>{stats.readTime}</span>
-            </span>
-          </ToolTip>
-        )
-      case 'language':
-        return (
-          <ToolTip text="Language Mode" position="top">
-            <span className={`status-bar-item${responsive}`}>
-              <Type size={11} />
-              <span>Markdown</span>
             </span>
           </ToolTip>
         )

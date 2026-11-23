@@ -3,9 +3,9 @@
 .cm-katex-inline {
   display: inline-flex;
   align-items: center;
-  padding: 0 4px;
+  padding: 0 2px;
   border-radius: 4px;
-  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
+  background: transparent;
   cursor: pointer;
   vertical-align: baseline;
   user-select: text;
@@ -13,7 +13,7 @@
 }
 
 .cm-katex-inline:hover {
-  background: var(--bg-active, rgba(125, 125, 125, 0.16));
+  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
 }
 
 .cm-katex-block {

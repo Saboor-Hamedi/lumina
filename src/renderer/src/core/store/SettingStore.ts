@@ -32,6 +32,7 @@ export interface ZenModeSettings {
   hideTitleBar: boolean
   hideStatusBar: boolean
   hideActivityBar: boolean
+  hideRightActivityBar?: boolean
   hidePrimarySidebar: boolean
   hideSecondarySidebar: boolean
   hideTabs?: boolean
@@ -41,6 +42,7 @@ export interface ZenPreState {
   titleBarVisible?: boolean
   statusBarVisible?: boolean
   activityBarVisible?: boolean
+  rightActivityBarVisible?: boolean
   tabsVisible?: boolean
   breadcrumbsVisible?: boolean
   isLeftOpen?: boolean
@@ -113,6 +115,7 @@ export interface Settings {
   titleBarVisible: boolean
   statusBarVisible: boolean
   activityBarVisible: boolean
+  rightActivityBarVisible?: boolean
   tabsVisible?: boolean
   breadcrumbsVisible?: boolean
   zenMode: ZenModeSettings
@@ -179,6 +182,7 @@ export interface SettingStoreState {
   toggleTitleBar: () => Promise<void>
   toggleStatusBar: () => Promise<void>
   toggleActivityBar: () => Promise<void>
+  toggleRightActivityBar: () => Promise<void>
   toggleTabs: () => Promise<void>
   toggleBreadcrumbs: () => Promise<void>
   togglePrimarySidebar: () => Promise<void>
@@ -280,6 +284,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     titleBarVisible: true,
     statusBarVisible: false,
     activityBarVisible: true,
+    rightActivityBarVisible: true,
     tabsVisible: true,
     breadcrumbsVisible: true,
     zenMode: {
@@ -287,6 +292,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       hideTitleBar: true,
       hideStatusBar: true,
       hideActivityBar: true,
+      hideRightActivityBar: true,
       hidePrimarySidebar: true,
       hideSecondarySidebar: true,
       hideTabs: true
@@ -580,6 +586,21 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     await get().updateSetting('activityBarVisible', !current)
   },
 
+  toggleRightActivityBar: async () => {
+    const s = get().settings
+    if (s.zenMode?.enabled) {
+      const currentlyHidden =
+        s.zenMode.hideRightActivityBar !== false || s.rightActivityBarVisible === false
+      await get().updateSettings({
+        rightActivityBarVisible: currentlyHidden,
+        zenMode: { ...s.zenMode, hideRightActivityBar: !currentlyHidden }
+      })
+      return
+    }
+    const current = s.rightActivityBarVisible ?? true
+    await get().updateSetting('rightActivityBarVisible', !current)
+  },
+
   toggleTabs: async () => {
     const s = get().settings
     if (s.zenMode?.enabled) {
@@ -633,6 +654,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       titleBarVisible: s.titleBarVisible ?? true,
       statusBarVisible: s.statusBarVisible ?? true,
       activityBarVisible: s.activityBarVisible ?? true,
+      rightActivityBarVisible: s.rightActivityBarVisible ?? true,
       tabsVisible: s.tabsVisible ?? true,
       breadcrumbsVisible: s.breadcrumbsVisible ?? true,
       isLeftOpen: s.sidebar?.isLeftOpen ?? true,
@@ -674,6 +696,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
         hideTitleBar: true,
         hideStatusBar: true,
         hideActivityBar: true,
+        hideRightActivityBar: true,
         hideTabs: true
       },
       zenPreState: null
@@ -683,6 +706,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       if (pre.titleBarVisible !== undefined) updates.titleBarVisible = pre.titleBarVisible
       if (pre.statusBarVisible !== undefined) updates.statusBarVisible = pre.statusBarVisible
       if (pre.activityBarVisible !== undefined) updates.activityBarVisible = pre.activityBarVisible
+      if (pre.rightActivityBarVisible !== undefined) updates.rightActivityBarVisible = pre.rightActivityBarVisible
       if (pre.tabsVisible !== undefined) updates.tabsVisible = pre.tabsVisible
       if (pre.breadcrumbsVisible !== undefined) updates.breadcrumbsVisible = pre.breadcrumbsVisible
       if (pre.isLeftOpen !== undefined) {
@@ -701,6 +725,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       updates.titleBarVisible = true
       updates.statusBarVisible = true
       updates.activityBarVisible = true
+      updates.rightActivityBarVisible = true
       updates.tabsVisible = true
       updates.breadcrumbsVisible = true
       updates.sidebar = { ...(s.sidebar || { width: 150, isLeftOpen: true }), isLeftOpen: true }

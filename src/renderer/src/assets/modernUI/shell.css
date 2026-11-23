@@ -68,11 +68,11 @@
   margin-right: 0 !important;
 }
 
-/* Resizers: clean 6px gap between separated panels; subtle accent line on hover */
+/* Resizers: clean 6px gap between separated panels; glides smoothly with sidebar open/close */
 [data-modern-ui='true'] .sidebar-resizer {
-  width: 6px !important;
+  width: 6px;
   background: transparent !important;
-  transition: none;
+  transition: width 260ms cubic-bezier(0.22, 1, 0.36, 1);
   z-index: 20;
   position: relative;
 }
@@ -158,6 +158,62 @@
   box-shadow: none;
   border: 1px solid var(--border-hairline, var(--border-dim));
   background: var(--bg-card);
+}
+
+/* ============================================================
+ * Zen Mode: True Edge-to-Edge Full-Bleed Editor (Zero Gaps)
+ * Removes outer gutter padding, card borders, and corner radii
+ * so the editor fills 100% of left, right, top, and bottom.
+ * ============================================================ */
+[data-zen-mode='true'] .lumina-app,
+[data-modern-ui='true'][data-zen-mode='true'] .lumina-app,
+[data-zen-mode='true'] .app-shell,
+[data-modern-ui='true'][data-zen-mode='true'] .app-shell {
+  background: var(--bg-editor, var(--bg-app)) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+}
+
+[data-zen-mode='true'] .shell-body,
+[data-modern-ui='true'][data-zen-mode='true'] .shell-body {
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
+}
+
+[data-zen-mode='true'] .shell-workbench-column,
+[data-zen-mode='true'] .shell-workbench-row {
+  padding: 0 !important;
+  margin: 0 !important;
+  gap: 0 !important;
+}
+
+[data-zen-mode='true'] .shell-main,
+[data-modern-ui='true'][data-zen-mode='true'] .shell-main,
+[data-zen-mode='true'] .shell-center-workspace,
+[data-modern-ui='true'][data-zen-mode='true'] .shell-center-workspace {
+  border: none !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+[data-modern-ui='true'][data-zen-mode='true'] .shell-body > .lumina-activity-bar.zen-hidden {
+  width: 0 !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+[data-zen-mode='true'] .app-shell.left-closed .shell-sidebar-left,
+[data-zen-mode='true'] .app-shell.right-closed .shell-sidebar-right {
+  width: 0 !important;
+  border-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 

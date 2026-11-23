@@ -482,6 +482,10 @@ export function initTauriBridge(): void {
     quitApp: () => closeWindow(),
     setWindowOpacity: async () => true,
     getWindowOpacity: async () => 1.0,
+    startWindowDrag: async () => {
+      if (!isTauriRuntime) return
+      await getCurrentWindow().startDragging()
+    },
     moveWindow: async (deltaX: number, deltaY: number) => {
       if (!isTauriRuntime) return
       const win = getCurrentWindow()

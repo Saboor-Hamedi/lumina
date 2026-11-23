@@ -2432,6 +2432,7 @@ fn sanitize_update_filename(name: &str) -> String {
 }
 
 fn command_no_window(program: &str) -> Command {
+    #[allow(unused_mut)]
     let mut cmd = Command::new(program);
     #[cfg(target_os = "windows")]
     {
