@@ -5,7 +5,6 @@
  */
 
 export { CalendarToggle } from './CalendarToggle'
-export { CalendarDropdown } from './CalendarDropdown'
 export { CalendarTab } from './CalendarTab'
 export { TimerTab } from './TimerTab'
 export { CountdownTab } from './CountdownTab'

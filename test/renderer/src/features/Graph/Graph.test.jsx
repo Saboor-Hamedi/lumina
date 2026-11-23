@@ -125,8 +125,9 @@ describe('Graph', () => {
     expect(screen.getByTestId('graph-sidebar')).toBeInTheDocument()
   })
 
-  it('renders performance panel', async () => {
+  it('does not render a floating performance panel overlay over the graph', async () => {
     render(<Graph isOpen={true} onNavigate={vi.fn()} />)
-    expect(screen.getByTestId('perf-panel')).toBeInTheDocument()
+    expect(screen.queryByTestId('perf-panel')).not.toBeInTheDocument()
+    expect(screen.getByTestId('graph-sidebar')).toBeInTheDocument()
   })
 })

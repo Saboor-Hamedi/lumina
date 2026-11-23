@@ -48,8 +48,13 @@
 }
 
 .lumina-canvas-toolbar-right.is-expanded {
-  width: var(--right-sidebar-width, 150px) !important;
-  min-width: 150px !important;
+  width: var(--right-sidebar-width, 220px) !important;
+  min-width: 220px !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
   transform: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
@@ -95,11 +100,13 @@
 
 .nexus-sidebar-content {
   flex: 1;
+  min-height: 0;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 24px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .nexus-search-wrap {

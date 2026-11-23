@@ -71,15 +71,15 @@ describe('PerformancePanel', () => {
     expect(screen.getByText('[GPU]')).toBeInTheDocument()
   })
 
-  it('renders recenter button when onRecenter provided', () => {
-    const onRecenter = vi.fn()
-    render(<PerformancePanel onRecenter={onRecenter} />)
+  it('renders embedded sidebar metrics without recenter button', () => {
+    render(<PerformancePanel embedded={true} is3DMode={true} />)
     runFrame()
-    fireEvent.click(screen.getByTitle('Recenter Graph'))
-    expect(onRecenter).toHaveBeenCalled()
+    expect(screen.getByText('60 FPS')).toBeInTheDocument()
+    expect(screen.getByText('GPU')).toBeInTheDocument()
+    expect(screen.queryByTitle('Recenter Graph')).toBeNull()
   })
 
-  it('does not render recenter button without onRecenter', () => {
+  it('does not render recenter button in floating mode', () => {
     render(<PerformancePanel />)
     runFrame()
     expect(screen.queryByTitle('Recenter Graph')).toBeNull()

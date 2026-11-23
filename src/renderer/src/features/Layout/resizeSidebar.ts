@@ -22,11 +22,11 @@ import { useSettingsStore } from '../../core/store/SettingStore'
 // Boundary Constants (in pixels)
 export const CLOSE_DRAG_THRESHOLD = 140
 export const MIN_LEFT_WIDTH = 130
-export const DEFAULT_LEFT_WIDTH = 150
+export const DEFAULT_LEFT_WIDTH = 220
 export const MAX_LEFT_WIDTH = 600
 
 export const MIN_RIGHT_WIDTH = 130
-export const DEFAULT_RIGHT_WIDTH = 150
+export const DEFAULT_RIGHT_WIDTH = 220
 export const MAX_RIGHT_WIDTH = 750
 
 export type SidebarSide = 'left' | 'right'

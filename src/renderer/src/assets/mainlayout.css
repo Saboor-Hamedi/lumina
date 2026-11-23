@@ -292,7 +292,7 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
 
 
 .app-shell.left-open .shell-sidebar-left {
-  width: var(--left-sidebar-width, 150px);
+  width: var(--left-sidebar-width, 220px);
   border-width: 1px;
   box-shadow: none;
   pointer-events: auto;
@@ -304,7 +304,7 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
 .shell-sidebar-left .error-boundary {
   flex-shrink: 0 !important;
   min-width: var(--left-sidebar-content-width, 130px) !important;
-  width: var(--left-sidebar-content-width, var(--left-sidebar-width, 150px)) !important;
+  width: var(--left-sidebar-content-width, var(--left-sidebar-width, 220px)) !important;
   max-width: none !important;
   height: 100% !important;
   box-sizing: border-box !important;
@@ -403,7 +403,7 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
 }
 
 .app-shell.right-open .shell-sidebar-right {
-  width: var(--right-sidebar-width, 150px);
+  width: var(--right-sidebar-width, 220px);
   border-width: 1px;
   box-shadow: none;
   pointer-events: auto;
@@ -415,7 +415,7 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
 .shell-sidebar-right .error-boundary {
   flex-shrink: 0 !important;
   min-width: var(--right-sidebar-content-width, 130px) !important;
-  width: var(--right-sidebar-content-width, var(--right-sidebar-width, 150px)) !important;
+  width: var(--right-sidebar-content-width, var(--right-sidebar-width, 220px)) !important;
   max-width: none !important;
   height: 100% !important;
   box-sizing: border-box !important;

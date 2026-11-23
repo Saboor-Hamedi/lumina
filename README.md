@@ -1,6 +1,6 @@
 https://github.com/user-attachments/assets/f641f391-95f5-4b3f-9209-ffa6124f30cd
 
-# Lumina
+# Lumina — Local-First Markdown, AI Copilot & Terminal
 
 <!-- ![banner](./banner.png?v=2) -->
 
@@ -21,31 +21,18 @@ https://github.com/user-attachments/assets/f641f391-95f5-4b3f-9209-ffa6124f30cd
 <p align="center">
   <a href="https://github.com/Saboor-Hamedi/lumina/releases/latest"><strong>Download Latest Release (Windows / macOS / Linux)</strong></a>
   ·
-  <a href="#migrated-from-electron-to-tauri-20">Why Tauri 2.0</a>
-  ·
   <a href="#highlights">Features</a>
   ·
   <a href="#essential-shortcuts">Shortcuts</a>
   ·
   <a href="#build-from-source">Build from Source</a>
+  ·
+  <a href="#migrated-from-electron-to-tauri-20">Why Tauri 2.0</a>
 </p>
-
----
 
 **Lumina** is built for developers, researchers, and writers who are tired of bouncing between Obsidian, VS Code, a whiteboard app, and an external terminal.
 
 Your notes stay on your disk as **100% plain-text `.md` and `.canvas` files**. Powered by a native **Tauri 2.0 + Rust** backend directly linked with `crates/lumina_core` for parallel vault indexing, instant fuzzy search, and a real **ConPTY/PTY terminal engine**, paired with a **React 19 + CodeMirror 6** editor.
-
----
-
-## Migrated from Electron to Tauri 2.0
-
-Lumina moved off Electron + N-API onto **Tauri 2.0** to keep the app lean, native, and responsive:
-
-- **OS Native WebView** — Renders via WebView2 on Windows and WebKit on macOS/Linux instead of bundling Chromium and Node.js.
-- **Direct Rust Linking** — `crates/lumina_core` compiles straight into `src-tauri` with zero Node.js runtime or N-API bridge overhead.
-- **Non-Blocking Async & Raw Binary IPC** — Tauri commands offload disk scans, fuzzy search, exports, and ConPTY I/O via `spawn_blocking`, while images, PDFs, and ZIP archives stream as raw binary `tauri::ipc::Response` buffers instead of JSON byte arrays.
-- **Lean Boot & Paper-and-Ink UI** — Uses a curated Lucide icon registry, curated `highlight.js/lib/core` languages, lazy-loaded non-boot surfaces (~629 kB / 188 kB gzip boot JS), and zero-blur **"Precision Paper & Ink"** tokens + 6 DRY UI primitives (`src/renderer/src/ui/`).
 
 ---
 
@@ -117,6 +104,17 @@ npm run build:win    # Windows (.exe / MSI installer)
 npm run build:mac    # macOS (Universal .dmg)
 npm run build:linux  # Linux (AppImage / .deb)
 ```
+
+---
+
+## Migrated from Electron to Tauri 2.0
+
+Lumina moved off Electron + N-API onto **Tauri 2.0** to keep the app lean, native, and responsive:
+
+- **OS Native WebView** — Renders via WebView2 on Windows and WebKit on macOS/Linux instead of bundling Chromium and Node.js.
+- **Direct Rust Linking** — `crates/lumina_core` compiles straight into `src-tauri` with zero Node.js runtime or N-API bridge overhead.
+- **Non-Blocking Async & Raw Binary IPC** — Tauri commands offload disk scans, fuzzy search, exports, and ConPTY I/O via `spawn_blocking`, while images, PDFs, and ZIP archives stream as raw binary `tauri::ipc::Response` buffers instead of JSON byte arrays.
+- **Lean Boot & Paper-and-Ink UI** — Uses a curated Lucide icon registry, curated `highlight.js/lib/core` languages, lazy-loaded non-boot surfaces (~629 kB / 188 kB gzip boot JS), and zero-blur **"Precision Paper & Ink"** tokens + 6 DRY UI primitives (`src/renderer/src/ui/`).
 
 ---
 

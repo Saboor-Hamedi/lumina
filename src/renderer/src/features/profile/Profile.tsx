@@ -62,6 +62,12 @@ export const Profile: React.FC<ProfileProps> = memo(({
     const res = await login()
     if (res?.success && onActionComplete) {
       onActionComplete()
+    } else if (res?.error) {
+      window.dispatchEvent(
+        new CustomEvent('show-toast', {
+          detail: { message: res.error, type: 'error' }
+        })
+      )
     }
   }
 

@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useState, useMemo, useLayoutEffect } from 'react'
-import { createPortal } from 'react-dom'
+import React, { useEffect, useState, useMemo } from 'react'
 import { Settings, Palette, Cloud, RefreshCw, Check, FileArchive, Folder, X, Mail } from 'lucide-react'
+import { Popover } from '../../../ui'
 import { PulseLoader } from '../../../components/PulseLoader'
 import { useSettingsStore } from '../../../core/store/SettingStore'
 import { useCurrentUser } from '../../../core/hooks/useCurrentUser'
@@ -114,7 +114,6 @@ export const SettingDropdown: React.FC<SettingDropdownProps> = ({
   onThemeClick,
   anchorRef
 }) => {
-  const dropdownRef = useRef<HTMLDivElement | null>(null)
   const { user: googleUser } = useCurrentUser()
   const lastSync = useSettingsStore((state) => state.settings?.lastSync)
   const { status, progress, download, install } = useUpdateStore()
@@ -131,7 +130,6 @@ export const SettingDropdown: React.FC<SettingDropdownProps> = ({
     }
   })
   const [focusedIndex, setFocusedIndex] = useState(-1)
-  const [coords, setCoords] = useState<{ bottom: number; left: number } | null>(null)
 
   // Pre-warm Settings component bundle when dropdown is open or mounted for instant opening
   useEffect(() => {
@@ -139,22 +137,6 @@ export const SettingDropdown: React.FC<SettingDropdownProps> = ({
       import('../../Settings/Settings').catch(() => {})
     }
   }, [isOpen])
-
-  useLayoutEffect(() => {
-    if (!isOpen || !anchorRef?.current) return
-
-    const updatePosition = () => {
-      if (!anchorRef.current) return
-      const rect = anchorRef.current.getBoundingClientRect()
-      const bottom = Math.round(window.innerHeight - rect.top + 6)
-      const left = Math.max(6, Math.min(Math.round(rect.left), window.innerWidth - 266))
-      setCoords({ bottom, left })
-    }
-
-    updatePosition()
-    window.addEventListener('resize', updatePosition)
-    return () => window.removeEventListener('resize', updatePosition)
-  }, [isOpen, anchorRef])
 
   const handleSetBackupMode = (mode: 'zip' | 'folder') => {
     setBackupMode(mode)
@@ -313,26 +295,11 @@ export const SettingDropdown: React.FC<SettingDropdownProps> = ({
     setFocusedIndex(-1)
   }, [isOpen])
 
-  // Click-outside & keyboard navigation
+  // Arrow-key navigation (Popover handles outside-click & Escape)
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(target) &&
-        anchorRef.current &&
-        !anchorRef.current.contains(target)
-      ) {
-        onClose()
-      }
-    }
-
+    if (!isOpen) return
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        e.stopPropagation()
-        onClose()
-      } else if (e.key === 'ArrowDown') {
+      if (e.key === 'ArrowDown') {
         e.preventDefault()
         setFocusedIndex((prev) => (menuItems.length > 0 ? (prev + 1) % menuItems.length : -1))
       } else if (e.key === 'ArrowUp') {
@@ -345,42 +312,28 @@ export const SettingDropdown: React.FC<SettingDropdownProps> = ({
         }
       }
     }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, menuItems, focusedIndex])
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      document.addEventListener('keydown', handleKeyDown)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen, onClose, anchorRef, menuItems, focusedIndex])
-
-  if (!isOpen) return null
-
-  const dropdownElement = (
-    <div
-      ref={dropdownRef}
+  return (
+    <Popover
+      isOpen={isOpen}
+      onClose={onClose}
+      anchorRef={anchorRef}
+      placement="top-start"
+      offset={6}
       className="setting-dropdown-menu"
-      onClick={(e) => e.stopPropagation()}
+      role="menu"
+      ariaLabel="Settings menu"
       style={{
-        position: 'fixed',
-        bottom: coords ? `${coords.bottom}px` : '36px',
-        left: coords ? `${coords.left}px` : '8px',
         width: '260px',
-        backgroundColor: 'var(--surface-3, var(--bg-panel, #18181b))',
-        border: '1px solid var(--border-strong, var(--border-dim, rgba(255, 255, 255, 0.15)))',
-        borderRadius: 'var(--radius-lg, 8px)',
-        boxShadow: 'var(--elev-dialog)',
-        overflow: 'hidden',
         padding: '4px',
-        zIndex: 9999,
         display: 'flex',
         flexDirection: 'column',
         gap: '2px',
-        boxSizing: 'border-box',
-        animation: 'settingDropdownFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1)'
+        overflow: 'hidden',
+        boxSizing: 'border-box'
       }}
     >
       {/* ── Unified Profile header ── */}
@@ -701,14 +654,8 @@ export const SettingDropdown: React.FC<SettingDropdownProps> = ({
           </div>
         </div>
       )}
-    </div>
+    </Popover>
   )
-
-  if (typeof document !== 'undefined') {
-    return createPortal(dropdownElement, document.body)
-  }
-
-  return dropdownElement
 }
 
 export default SettingDropdown

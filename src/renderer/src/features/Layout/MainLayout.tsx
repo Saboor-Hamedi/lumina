@@ -50,9 +50,19 @@ import RightSidebar from '../Inspector/RightSidebar'
 import StatusBar from './StatusBar'
 import { useSidebarResize } from './resizeSidebar'
 
-const TerminalPanel = React.lazy(() =>
-  import('../terminal/TerminalPanel').then((m) => ({ default: m.TerminalPanel }))
-)
+const TerminalPanel = React.lazy(async () => {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const m = await import('../terminal/TerminalPanel')
+      return { default: m.TerminalPanel }
+    } catch (err) {
+      if (attempt >= 3) throw err
+      await new Promise((r) => setTimeout(r, 350 * attempt))
+    }
+  }
+  const m = await import('../terminal/TerminalPanel')
+  return { default: m.TerminalPanel }
+})
 
 export const MainLayout: React.FC = () => {
   countExplorerPerfRender('MainLayout')
@@ -141,13 +151,19 @@ export const MainLayout: React.FC = () => {
   const appShellRef = useRef<HTMLDivElement | null>(null)
 
   const isZenModeEnabled = useSettingsStore((state) => state.settings?.zenMode?.enabled === true)
+  const hideActivityBarInZen = useSettingsStore(
+    (state) => state.settings?.zenMode?.hideActivityBar !== false
+  )
+  const hideStatusBarInZen = useSettingsStore(
+    (state) => state.settings?.zenMode?.hideStatusBar !== false
+  )
   const isActivityBarVisible = useSettingsStore(
     (state) => state.settings?.activityBarVisible !== false
   )
   const isStatusBarVisible = useSettingsStore((state) => state.settings?.statusBarVisible === true)
   const isTabsVisible = useSettingsStore((state) => state.settings?.tabsVisible !== false)
   const isBreadcrumbsVisible = useSettingsStore(
-    (state) => state.settings?.breadcrumbsVisible === true
+    (state) => state.settings?.breadcrumbsVisible !== false
   )
 
   const isLeftSidebarOpenRef = useRef(isLeftSidebarOpen)
@@ -1127,10 +1143,19 @@ export const MainLayout: React.FC = () => {
     }
   }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme, handleToggleTerminal])
 
-  // Mount-once module preloading so the active Editor opens instantaneously
+  // Idle-deferred Editor preload so Welcome/boot paints first while keeping note opening fast
   useEffect(() => {
-    void import('../Editor/Editor')
-  }, [])
+    if (openTabs.length > 0) return
+    const preload = () => {
+      void import('../Editor/Editor')
+    }
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const id = (window as any).requestIdleCallback(preload, { timeout: 2500 })
+      return () => (window as any).cancelIdleCallback(id)
+    }
+    const timer = setTimeout(preload, 1200)
+    return () => clearTimeout(timer)
+  }, [openTabs.length])
 
   useEffect(() => {
     const onSplitEditor = (e: Event) => {
@@ -1235,7 +1260,7 @@ export const MainLayout: React.FC = () => {
             onOpenTheme={handleOpenTheme}
             onOpenDocs={handleOpenDocs}
             onOpenGuide={() => setShowGuideModal(true)}
-            isZenHidden={isZenModeEnabled}
+            isZenHidden={isZenModeEnabled && hideActivityBarInZen}
           />
         )}
 
@@ -1248,7 +1273,7 @@ export const MainLayout: React.FC = () => {
         </aside>
         <div
           className={`sidebar-resizer left ${isLeftSidebarOpen ? 'open' : 'closed'}`}
-          title="Double-click to reset default width (150px)"
+          title="Double-click to reset default width (220px)"
           onMouseDown={(e) => handleStartResize('left', e)}
           onDoubleClick={(e) => {
             if (!isLeftSidebarOpen) return
@@ -1338,13 +1363,15 @@ export const MainLayout: React.FC = () => {
                     zIndex: 20
                   }}
                 >
-                  <React.Suspense fallback={null}>
-                    <TerminalPanel
-                      onClose={() => setIsTerminalOpen(false)}
-                      isMaximized={isTerminalMaximized}
-                      onToggleMaximize={handleToggleTerminalMaximize}
-                    />
-                  </React.Suspense>
+                  <GlobalErrorHandler>
+                    <React.Suspense fallback={null}>
+                      <TerminalPanel
+                        onClose={() => setIsTerminalOpen(false)}
+                        isMaximized={isTerminalMaximized}
+                        onToggleMaximize={handleToggleTerminalMaximize}
+                      />
+                    </React.Suspense>
+                  </GlobalErrorHandler>
                 </div>
               </>
             )}
@@ -1361,7 +1388,7 @@ export const MainLayout: React.FC = () => {
 
         <div
           className={`sidebar-resizer right ${isRightSidebarOpen ? 'open' : 'closed'}`}
-          title="Double-click to reset default width (150px)"
+          title="Double-click to reset default width (220px)"
           onMouseDown={(e) => handleStartResize('right', e)}
           onDoubleClick={(e) => {
             if (!isRightSidebarOpen) return
@@ -1406,7 +1433,7 @@ export const MainLayout: React.FC = () => {
               setShowSettings(true)
             }}
             onGuideClick={() => setShowGuideModal(true)}
-            isZenHidden={isZenModeEnabled}
+            isZenHidden={isZenModeEnabled && hideStatusBarInZen}
           />
         )}
         </div>
@@ -1418,7 +1445,7 @@ export const MainLayout: React.FC = () => {
             onSelectTab={handleSelectRightSidebarTab}
             onToggleGraph={handleToggleGraph}
             isGraphActive={activeTabId === GRAPH_TAB_ID}
-            isZenHidden={isZenModeEnabled}
+            isZenHidden={isZenModeEnabled && hideActivityBarInZen}
           />
         )}
       </div>

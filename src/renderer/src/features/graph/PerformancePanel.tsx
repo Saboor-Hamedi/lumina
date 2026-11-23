@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react'
 import { usePerformanceStore, type PerformanceMetrics } from './usePerformanceStore'
-import { Target } from 'lucide-react'
 
 export interface PerformancePanelProps {
   compact?: boolean
+  embedded?: boolean
   is3DMode?: boolean
   onRecenter?: (e?: any) => void
 }
 
 export const PerformancePanel: React.FC<PerformancePanelProps> = ({
   compact = false,
-  is3DMode = false,
-  onRecenter
+  embedded = false,
+  is3DMode = false
 }) => {
   const [localMetrics, setLocalMetrics] = useState<PerformanceMetrics>(() => usePerformanceStore.getState().metrics)
 
@@ -32,10 +32,61 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
   }, [])
 
   if (
-    !localMetrics ||
-    (localMetrics.fps === 0 && localMetrics.frameTime === 0 && localMetrics.nodeCount === 0)
+    !embedded &&
+    (!localMetrics ||
+      (localMetrics.fps === 0 && localMetrics.frameTime === 0 && localMetrics.nodeCount === 0))
   ) {
     return null
+  }
+
+  if (embedded) {
+    return (
+      <div
+        className="graph-performance-embedded"
+        style={{
+          width: '100%',
+          background: 'var(--bg-editor, var(--bg-app))',
+          color: 'var(--text-main, #f8fafc)',
+          fontFamily: 'monospace',
+          padding: '5px 8px',
+          borderRadius: '6px',
+          fontSize: '10.5px',
+          border: '1px solid var(--border-dim, rgba(255, 255, 255, 0.08))',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '6px',
+          boxSizing: 'border-box',
+          minWidth: 0
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            minWidth: 0,
+            overflow: 'hidden',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          <span style={{ fontWeight: 600, flexShrink: 0 }}>
+            {localMetrics?.fps ? `${Math.round(localMetrics.fps)} FPS` : '— FPS'}
+          </span>
+          <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>
+            {localMetrics?.frameTime ? `${localMetrics.frameTime.toFixed(1)}ms` : '0ms'}
+          </span>
+          <span style={{ color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {localMetrics?.nodeCount ?? 0}N·{localMetrics?.linkCount ?? 0}L
+          </span>
+          {is3DMode && (
+            <span style={{ color: 'var(--text-accent)', fontWeight: 600, flexShrink: 0 }}>
+              GPU
+            </span>
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -75,37 +126,6 @@ export const PerformancePanel: React.FC<PerformancePanelProps> = ({
           : `N: ${localMetrics.nodeCount} | L: ${localMetrics.linkCount}`}
       </span>
       {is3DMode && <span style={{ color: 'var(--text-accent)', flexShrink: 0 }}>[GPU]</span>}
-
-      {onRecenter && (
-        <button
-          onClick={onRecenter}
-          title="Recenter Graph"
-          style={{
-            background: 'var(--bg-editor, var(--bg-panel))',
-            border: '1px solid var(--border-dim)',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            color: 'var(--text-main)',
-            padding: compact ? '2px 3px' : '4px',
-            marginLeft: '2px',
-            flexShrink: 0,
-            transition: 'all 0.2s'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--text-accent)'
-            e.currentTarget.style.color = '#fff'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'var(--bg-editor, var(--bg-panel))'
-            e.currentTarget.style.color = 'var(--text-main)'
-          }}
-        >
-          <Target size={compact ? 11 : 12} />
-        </button>
-      )}
     </div>
   )
 }

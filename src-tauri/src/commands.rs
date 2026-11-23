@@ -757,34 +757,20 @@ fn open_path_in_os_sync(path: String) -> Result<bool, String> {
     if is_safe_external_url(&trimmed) {
         #[cfg(target_os = "windows")]
         {
+            // Avoid `open::that` for URLs on Windows because `cmd /c start` splits on `&` query params.
             let _ = Command::new("rundll32")
                 .args(["url.dll,FileProtocolHandler", &trimmed])
                 .spawn();
         }
-        #[cfg(target_os = "macos")]
+        #[cfg(not(target_os = "windows"))]
         {
-            let _ = Command::new("open").arg(&trimmed).spawn();
-        }
-        #[cfg(target_os = "linux")]
-        {
-            let _ = Command::new("xdg-open").arg(&trimmed).spawn();
+            let _ = open::that(&trimmed);
         }
         return Ok(true);
     }
 
     let target = resolve_allowed_open_target(&trimmed)?;
-    #[cfg(target_os = "windows")]
-    {
-        let _ = Command::new("explorer").arg(target).spawn();
-    }
-    #[cfg(target_os = "macos")]
-    {
-        let _ = Command::new("open").arg(target).spawn();
-    }
-    #[cfg(target_os = "linux")]
-    {
-        let _ = Command::new("xdg-open").arg(target).spawn();
-    }
+    let _ = open::that(target);
     Ok(true)
 }
 

@@ -16,6 +16,7 @@ import '../canvas/css/canvas-studio.css'
 import './css/GraphSidebar.css'
 import '../../assets/toggle-theme.css'
 import Toggle from '../../components/toggle'
+import PerformancePanel from './PerformancePanel'
 
 export interface GraphSidebarProps {
   isOpen?: boolean
@@ -243,16 +244,21 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
         className="lumina-canvas-studio-body nexus-sidebar-content"
         style={{
           flex: 1,
+          minHeight: 0,
           overflowY: 'auto',
+          overflowX: 'hidden',
           padding: '8px 12px',
           display: 'flex',
           flexDirection: 'column',
           gap: '10px'
         }}
       >
+        {/* Unified Performance & Recenter Bar */}
+        <PerformancePanel embedded={true} is3DMode={is3DMode} onRecenter={onRecenter} />
+
         {/* Export & Reset Row in the Body */}
         {(onExportPNG || onExportSVG || onResetLayout) && (
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
             {onExportPNG && (
               <ToolTip text="Export PNG Image" position="bottom">
                 <button
@@ -366,11 +372,12 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                gap: '8px',
                 fontSize: '11px',
                 color: 'var(--text-main)'
               }}
             >
-              <span>Show Tags</span>
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Tags</span>
               <Toggle
                 checked={!settings.graphHideTags}
                 onChange={(e: any) => updateSetting('graphHideTags', !e.target.checked)}
@@ -381,11 +388,12 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                gap: '8px',
                 fontSize: '11px',
                 color: 'var(--text-main)'
               }}
             >
-              <span>Show Unresolved Links</span>
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Unresolved</span>
               <Toggle
                 checked={!settings.graphHideGhosts}
                 onChange={(e: any) => updateSetting('graphHideGhosts', !e.target.checked)}
@@ -396,11 +404,12 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                gap: '8px',
                 fontSize: '11px',
                 color: 'var(--text-main)'
               }}
             >
-              <span>Show Orphans</span>
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Orphans</span>
               <Toggle
                 checked={!settings.graphHideOrphans}
                 onChange={(e: any) => updateSetting('graphHideOrphans', !e.target.checked)}
@@ -411,14 +420,21 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                gap: '8px',
                 fontSize: '11px',
                 color: 'var(--text-main)'
               }}
             >
-              <span>3D Sphere Mode</span>
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>3D Mode</span>
               <Toggle
-                checked={settings.graph3DMode ?? false}
-                onChange={(e: any) => updateSetting('graph3DMode', e.target.checked)}
+                checked={is3DMode ?? (settings.graph3DMode ?? false)}
+                onChange={(e: any) => {
+                  if (onToggle3D) {
+                    onToggle3D()
+                  } else {
+                    updateSetting('graph3DMode', e.target.checked)
+                  }
+                }}
               />
             </div>
           </div>

@@ -262,6 +262,46 @@ export const COMMANDS_REGISTRY: LuminaCommand[] = [
       await useWorkspaceStore.getState().loadWorkspace()
     }
   },
+  {
+    id: 'file.exportNote',
+    title: 'File: Export Current Note (PDF / HTML / Markdown)',
+    category: 'File',
+    keywords: ['export', 'pdf', 'html', 'markdown', 'print', 'download', 'share'],
+    iconName: 'FileText',
+    execute: () => {
+      window.dispatchEvent(new CustomEvent('open-export-dialog'))
+    }
+  },
+  {
+    id: 'view.splitVertical',
+    title: 'View: Split Editor Right (Vertical)',
+    category: 'View',
+    keywords: ['split', 'vertical', 'right', 'pane', 'side by side'],
+    iconName: 'Layout',
+    execute: () => {
+      window.dispatchEvent(new CustomEvent('split-editor', { detail: { direction: 'vertical' } }))
+    }
+  },
+  {
+    id: 'view.splitHorizontal',
+    title: 'View: Split Editor Down (Horizontal)',
+    category: 'View',
+    keywords: ['split', 'horizontal', 'down', 'pane', 'top bottom'],
+    iconName: 'Layout',
+    execute: () => {
+      window.dispatchEvent(new CustomEvent('split-editor', { detail: { direction: 'horizontal' } }))
+    }
+  },
+  {
+    id: 'view.closeSplit',
+    title: 'View: Close Split Pane',
+    category: 'View',
+    keywords: ['close split', 'unsplit', 'single pane'],
+    iconName: 'X',
+    execute: () => {
+      useWorkspaceStore.getState().closeSplit()
+    }
+  },
 
   // --- Navigation & Tabs ---
   {

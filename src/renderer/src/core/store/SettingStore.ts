@@ -257,9 +257,9 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       width: (() => {
         try {
           const w = Number(typeof localStorage !== 'undefined' ? localStorage.getItem('lumina_left_sidebar_width') : 0)
-          return w >= 130 && w <= 600 ? w : 150
+          return w >= 130 && w <= 600 ? w : 220
         } catch {
-          return 150
+          return 220
         }
       })(),
       isLeftOpen: true
@@ -268,9 +268,9 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       width: (() => {
         try {
           const w = Number(typeof localStorage !== 'undefined' ? localStorage.getItem('lumina_right_sidebar_width') : 0)
-          return w >= 130 && w <= 750 ? w : 150
+          return w >= 130 && w <= 750 ? w : 220
         } catch {
-          return 150
+          return 220
         }
       })(),
       isRightOpen: false
@@ -281,7 +281,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     statusBarVisible: false,
     activityBarVisible: true,
     tabsVisible: true,
-    breadcrumbsVisible: false,
+    breadcrumbsVisible: true,
     zenMode: {
       enabled: false,
       hideTitleBar: true,
@@ -539,22 +539,58 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     }
   },
   toggleTitleBar: async () => {
-    const current = get().settings.titleBarVisible ?? true
+    const s = get().settings
+    if (s.zenMode?.enabled) {
+      const currentlyHidden = s.zenMode.hideTitleBar !== false || s.titleBarVisible === false
+      await get().updateSettings({
+        titleBarVisible: currentlyHidden,
+        zenMode: { ...s.zenMode, hideTitleBar: !currentlyHidden }
+      })
+      return
+    }
+    const current = s.titleBarVisible ?? true
     await get().updateSetting('titleBarVisible', !current)
   },
 
   toggleStatusBar: async () => {
-    const current = get().settings.statusBarVisible ?? false
+    const s = get().settings
+    if (s.zenMode?.enabled) {
+      const currentlyHidden = s.zenMode.hideStatusBar !== false || s.statusBarVisible === false
+      await get().updateSettings({
+        statusBarVisible: currentlyHidden,
+        zenMode: { ...s.zenMode, hideStatusBar: !currentlyHidden }
+      })
+      return
+    }
+    const current = s.statusBarVisible ?? false
     await get().updateSetting('statusBarVisible', !current)
   },
 
   toggleActivityBar: async () => {
-    const current = get().settings.activityBarVisible ?? true
+    const s = get().settings
+    if (s.zenMode?.enabled) {
+      const currentlyHidden = s.zenMode.hideActivityBar !== false || s.activityBarVisible === false
+      await get().updateSettings({
+        activityBarVisible: currentlyHidden,
+        zenMode: { ...s.zenMode, hideActivityBar: !currentlyHidden }
+      })
+      return
+    }
+    const current = s.activityBarVisible ?? true
     await get().updateSetting('activityBarVisible', !current)
   },
 
   toggleTabs: async () => {
-    const current = get().settings.tabsVisible ?? true
+    const s = get().settings
+    if (s.zenMode?.enabled) {
+      const currentlyHidden = s.zenMode.hideTabs !== false || s.tabsVisible === false
+      await get().updateSettings({
+        tabsVisible: currentlyHidden,
+        zenMode: { ...s.zenMode, hideTabs: !currentlyHidden }
+      })
+      return
+    }
+    const current = s.tabsVisible ?? true
     await get().updateSetting('tabsVisible', !current)
   },
 
@@ -632,7 +668,14 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     const pre = s.zenPreState
 
     const updates: Partial<Settings> = {
-      zenMode: { ...zen, enabled: false },
+      zenMode: {
+        ...zen,
+        enabled: false,
+        hideTitleBar: true,
+        hideStatusBar: true,
+        hideActivityBar: true,
+        hideTabs: true
+      },
       zenPreState: null
     }
 

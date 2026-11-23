@@ -24,6 +24,7 @@ log = "0.4"
 tauri = { version = "2.12.7", features = [] }
 tauri-plugin-log = "2"
 portable-pty = "0.8"
+open = "5"
 lumina_core = { path = "../crates/lumina_core" }
 
 [target.'cfg(windows)'.dependencies]

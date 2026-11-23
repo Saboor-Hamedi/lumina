@@ -16,6 +16,7 @@ import {
   type WorkspacePaneId
 } from '../../core/store/workspaceStore'
 import { useShallow } from 'zustand/react/shallow'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import { useTabDragStore } from './tabDragDrop'
 
 const Graph = React.lazy(() => import('../graph/Graph'))
@@ -149,6 +150,7 @@ export const WorkspacePane: React.FC<WorkspacePaneProps> = React.memo(
       }))
     )
 
+    const hideTabsInZen = useSettingsStore((s) => s.settings?.zenMode?.hideTabs !== false)
     const dropZone = useTabDragStore((state) =>
       state.dropTarget?.targetPane === paneId ? state.dropTarget.zone : null
     )
@@ -209,7 +211,7 @@ export const WorkspacePane: React.FC<WorkspacePaneProps> = React.memo(
         {showTabHeader && (
           <>
             {isTabsVisible && (
-              <div className={`zen-collapsible-bar${isZenModeEnabled ? ' zen-hidden' : ''}`}>
+              <div className={`zen-collapsible-bar${isZenModeEnabled && hideTabsInZen ? ' zen-hidden' : ''}`}>
                 <TabBar
                   paneId={paneId}
                   isSidebarOpen={isRightSidebarOpen}
@@ -221,9 +223,8 @@ export const WorkspacePane: React.FC<WorkspacePaneProps> = React.memo(
             )}
             {isBreadcrumbsVisible &&
               !isTerminalMaximized &&
-              activeSnippet &&
-              Boolean(activeSnippet.folderId) && (
-                <div className={`zen-collapsible-bar${isZenModeEnabled ? ' zen-hidden' : ''}`}>
+              activeSnippet && (
+                <div className="zen-collapsible-bar">
                   <Breadcrumbs snippet={activeSnippet} />
                 </div>
               )}

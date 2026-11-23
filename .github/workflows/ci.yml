@@ -54,6 +54,9 @@ jobs:
       - name: Run Rust Core Tests
         run: cargo test -p lumina_core
 
+      - name: Check Tauri Backend
+        run: cargo check --manifest-path src-tauri/Cargo.toml
+
       - name: Run Automated Frontend Tests
         run: npm run test:run
 

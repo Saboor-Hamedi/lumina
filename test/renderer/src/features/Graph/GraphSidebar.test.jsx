@@ -49,16 +49,16 @@ describe('GraphSidebar', () => {
   })
 
 
-  it('toggles Show Tags checkbox', () => {
+  it('toggles Tags checkbox', () => {
     render(<GraphSidebar {...defaultProps} />)
-    const checkbox = screen.getByText('Show Tags').nextElementSibling.querySelector('input')
+    const checkbox = screen.getByText('Tags').nextElementSibling.querySelector('input')
     fireEvent.click(checkbox)
     expect(useSettingsStore.getState().settings.graphHideTags).toBe(true)
   })
 
-  it('toggles 3D Sphere Mode checkbox', () => {
+  it('toggles 3D Mode checkbox', () => {
     render(<GraphSidebar {...defaultProps} />)
-    const checkbox = screen.getByText('3D Sphere Mode').nextElementSibling.querySelector('input')
+    const checkbox = screen.getByText('3D Mode').nextElementSibling.querySelector('input')
     fireEvent.click(checkbox)
     expect(useSettingsStore.getState().settings.graph3DMode).toBe(true)
   })

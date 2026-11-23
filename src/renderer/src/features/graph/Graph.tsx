@@ -6,9 +6,9 @@ import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useAIStore } from '../AI/tools/lumina'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { usePerformanceStore } from './usePerformanceStore'
-import PerformancePanel from './PerformancePanel'
 import { buildGraphData, buildSemanticLinks } from '../../core/utils/graphBuilder'
 import GraphSidebar from './GraphSidebar'
+import PulseLoader from '../../components/PulseLoader'
 import '../canvas/css/canvas-toolbar.css'
 import '../canvas/css/canvas-studio.css'
 import './css/Graph.css'
@@ -107,11 +107,12 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
   const graphHideGhosts = useSettingsStore((s) => s.settings.graphHideGhosts)
   const graphHideOrphans = useSettingsStore((s) => s.settings.graphHideOrphans)
 
-  const [localSidebarOpen, setLocalSidebarOpen] = useState(true)
-  const storeSidebarOpen = useSettingsStore((s) => s.settings.graphSidebarOpen)
-  const isSidebarOpen = storeSidebarOpen !== undefined ? storeSidebarOpen : localSidebarOpen
-
-  const is3DMode = useSettingsStore((s) => s.settings.graph3DMode ?? false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(
+    () => useSettingsStore.getState().settings.graphSidebarOpen ?? true
+  )
+  const [is3DMode, setIs3DMode] = useState<boolean>(
+    () => useSettingsStore.getState().settings.graph3DMode ?? false
+  )
   const graphNodeSize = useSettingsStore((s) => s.settings.graphNodeSize || 1.5)
 
   const [hoverNode, setHoverNode] = useState<any>(null)
@@ -185,20 +186,11 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
   })
 
   const handleToggleSidebar = useCallback(() => {
-    const next = !isSidebarOpen
-    setLocalSidebarOpen(next)
-    const { updateSetting } = useSettingsStore.getState()
-    if (typeof updateSetting === 'function') {
-      updateSetting('graphSidebarOpen', next)
-    }
-  }, [isSidebarOpen])
+    setIsSidebarOpen((prev) => !prev)
+  }, [])
 
   const handleToggle3D = useCallback(() => {
-    const { settings, updateSetting } = useSettingsStore.getState()
-    const next = !settings.graph3DMode
-    if (typeof updateSetting === 'function') {
-      updateSetting('graph3DMode', next)
-    }
+    setIs3DMode((prev) => !prev)
   }, [])
 
   useEffect(() => {
@@ -578,17 +570,12 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
         overflow: 'hidden'
       }}
     >
-      <PerformancePanel
-        onRecenter={handleRecenter}
-        is3DMode={is3DMode}
-      />
       <div
         className="nexus-body"
         style={{ position: 'relative', flex: 1, minWidth: 0, height: '100%', overflow: 'hidden' }}
       >
         <div className={`graph-initializer ${isEngineReady ? 'ready' : ''}`}>
-          <div className="pulse-ring"></div>
-          <div className="graph-initializer-text">Initializing Physics</div>
+          <PulseLoader message="Initializing Physics" size="md" delayMs={0} />
         </div>
 
         {is3DMode ? (
