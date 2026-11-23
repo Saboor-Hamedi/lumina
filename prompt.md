@@ -1,19 +1,23 @@
-Please update README.md to improve SEO/search discoverability, visual conversion, and section flow for first-time visitors:
+Prompt for your agent:
 
-1. Sharpen the H1 Title for Searchability:
+"Please update README.md to sync our latest v1.4.0 release assets and add clear installation instructions—specifically unblocking macOS users hitting Apple Gatekeeper:
 
-Change the top # Lumina heading to # Lumina — Local-First Markdown, AI Copilot & Terminal so GitHub and Google index the exact keywords people search for instead of just the crowded single word 'Lumina'.
+1. Update the Version Badge:
 
-2. Add a Static Hero Screenshot Below the Demo Video:
+Update the top version badge from 1.1.2 to 1.4.0 ([https://img.shields.io/badge/version-1.4.0-blue?style=flat-square](https://img.shields.io/badge/version-1.4.0-blue?style=flat-square)).
 
-Keep the top demo video ([https://github.com/user-attachments/assets/f641f391-95f5-4b3f-9209-ffa6124f30cd](https://github.com/user-attachments/assets/f641f391-95f5-4b3f-9209-ffa6124f30cd)), and directly below the quick-links navigation bar, add a crisp static preview screenshot (e.g., ![Lumina Workspace Preview](./docs/preview.png) or a clean placeholder image reference so I can drop in my screenshot) showing the Markdown editor, AI Copilot, and integrated terminal together. That way, visitors on slow connections or who don't click play still see the UI immediately.
+2. Add a Download & Install (v1.4.0) Section:
 
-3. Reorder Sections (Lead with User Value, Move Migration Notes Down):
+Right below the main intro paragraph (above ## Highlights), add a clean download table listing all v1.4.0 installers from [https://github.com/Saboor-Hamedi/lumina/releases/latest](https://github.com/Saboor-Hamedi/lumina/releases/latest):
 
-Move the ## Highlights section up so it appears immediately after the intro paragraph (before any technical architecture or migration details), ensuring new visitors immediately see what they can do with Lumina.
+Windows: Lumina_1.4.0_x64-setup.exe or Lumina_1.4.0_x64_en-US.msi (note SmartScreen More info → Run anyway if prompted)
 
-Move ## Migrated from Electron to Tauri 2.0 down so it sits right above ## Architecture (and update the top navigation anchor links to match the new section order).
+macOS (Apple Silicon & Intel): Lumina_1.4.0_universal.dmg — include clear instructions that since builds are not yet Apple-notarized, users should drag Lumina.app to Applications and run xattr -cr /Applications/Lumina.app once in Terminal if Gatekeeper blocks opening.
 
-4. Keep Everything Else Intact:
+Linux (Debian / Ubuntu): Lumina_1.4.0_amd64.deb (sudo apt install ./Lumina_1.4.0_amd64.deb)
 
-Preserve all existing badges, download links, feature descriptions, keyboard shortcuts table, build/packaging commands, test commands, and MIT license section."
+Linux (Portable): Lumina_1.4.0_amd64.AppImage (chmod +x Lumina_1.4.0_amd64.AppImage)
+
+3. Keep Existing Content Intact:
+
+Preserve all existing sections, shortcuts, architecture notes, and MIT license details."
