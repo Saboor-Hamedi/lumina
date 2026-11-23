@@ -8,7 +8,7 @@
   min-width: 0 !important;
   max-width: none !important;
   height: 100% !important;
-  background: var(--bg-sidebar) !important;
+  background: var(--bg-activitybar, var(--bg-sidebar)) !important;
   border: none !important;
   border-right: 1px solid var(--border-dim) !important;
   display: flex !important;
@@ -135,7 +135,43 @@
   height: 6px;
   border-radius: 9999px;
   background: #ef4444;
-  box-shadow: 0 0 0 1.5px var(--bg-sidebar);
+  box-shadow: 0 0 0 1.5px var(--bg-activitybar, var(--bg-sidebar));
+}
+
+/* Right Activity Bar: Mirrored edge alignment & active indicator */
+.lumina-activity-bar-right,
+[data-modern-ui='true'] .lumina-activity-bar-right {
+  align-items: flex-start !important;
+  border-right: none !important;
+  border-left: 1px solid var(--border-dim) !important;
+  transition:
+    width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    border-left-color 0.24s ease,
+    visibility 0s 0s !important;
+}
+
+.lumina-activity-bar-right.zen-hidden,
+[data-modern-ui='true'] .lumina-activity-bar-right.zen-hidden {
+  border-left-width: 0 !important;
+  border-left-color: transparent !important;
+  transition:
+    width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    border-left-color 0.18s ease,
+    visibility 0s 0.28s !important;
+}
+
+.lumina-activity-bar-right .activity-bar-btn,
+[data-modern-ui='true'] .lumina-activity-bar-right .activity-bar-btn {
+  border-left: none !important;
+  border-right: 2px solid transparent !important;
+}
+
+.lumina-activity-bar-right .activity-bar-btn.active,
+[data-modern-ui='true'] .lumina-activity-bar-right .activity-bar-btn.active {
+  border-left: none !important;
+  border-right: 2px solid var(--text-accent) !important;
 }
 
 .activity-bar-help-wrap {
