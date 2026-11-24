@@ -15,6 +15,7 @@
 pub mod assets;
 pub mod common;
 pub mod google_oauth;
+pub mod links;
 pub mod search;
 pub mod settings;
 pub mod terminal;
@@ -25,6 +26,7 @@ pub mod workspace;
 pub use assets::*;
 pub use common::{mark_internal_workspace_write, resolve_workspace_path, start_workspace_watcher};
 pub use google_oauth::*;
+pub use links::*;
 pub use search::*;
 pub use settings::*;
 pub use terminal::*;

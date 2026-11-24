@@ -1,0 +1,241 @@
+/* ============================================================================
+   Lumina Link Preview Cards & Borderless YouTube Cinema Modal (`linkEmbed.css`)
+   ============================================================================ */
+
+/* --- Standalone Editor Link & YouTube Cards --- */
+.lumina-link-card {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  max-width: 640px;
+  margin: 6px 0;
+  padding: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: 9px;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.14s ease, background 0.14s ease;
+}
+
+.lumina-link-card:hover {
+  border-color: var(--border-subtle, var(--text-accent));
+  background: color-mix(in srgb, var(--text-main) 3%, var(--bg-card));
+}
+
+.lumina-link-card-thumb.is-yt-thumb {
+  position: relative;
+  width: 156px;
+  min-width: 156px;
+  aspect-ratio: 16 / 9;
+  background: #09090b;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.lumina-link-card-thumb.is-yt-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.lumina-yt-play-badge {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 2px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.lumina-link-card:hover .lumina-yt-play-badge {
+  background: #ef4444;
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.lumina-link-card-body {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 32px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+}
+
+.lumina-link-card.is-youtube .lumina-link-card-body {
+  padding-left: 2px;
+}
+
+.lumina-link-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lumina-link-card-desc {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.lumina-link-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+
+.lumina-link-card-favicon {
+  width: 13px;
+  height: 13px;
+  border-radius: 2px;
+  object-fit: contain;
+}
+
+.lumina-link-card-og-thumb {
+  width: 112px;
+  min-width: 112px;
+  background: var(--bg-panel);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.lumina-link-card-og-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.lumina-link-card-edit {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-app);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease, color 0.12s ease;
+}
+
+.lumina-link-card:hover .lumina-link-card-edit {
+  opacity: 1;
+}
+
+.lumina-link-card-edit:hover {
+  color: var(--text-main);
+}
+
+/* --- Borderless 16:9 YouTube Cinema Lightbox Modal --- */
+.yt-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 250000;
+  background: rgba(0, 0, 0, 0.84);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+
+.yt-modal-overlay.show {
+  opacity: 1;
+}
+
+.yt-modal-stage {
+  position: relative;
+  width: min(1040px, 92vw);
+  aspect-ratio: 16 / 9;
+  max-height: 88vh;
+  background: #000000;
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.72);
+  transform: scale(0.96);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.yt-modal-overlay.show .yt-modal-stage {
+  transform: scale(1);
+}
+
+.yt-modal-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  background: #000000;
+}
+
+.yt-modal-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.58);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 2;
+}
+
+.yt-modal-stage:hover .yt-modal-controls,
+.yt-modal-controls:focus-within {
+  opacity: 1;
+}
+
+.yt-modal-ctrl-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.88);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.yt-modal-ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}

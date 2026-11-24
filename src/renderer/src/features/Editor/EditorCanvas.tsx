@@ -27,6 +27,7 @@ import type { Snippet, EditorHandle } from '../../core/editor/types'
 import type { ToastType } from '../../core/notification'
 import { markExplorerPerf } from '../Explorer/utils/explorerPerf'
 import { stripMarkdownFrontmatter } from '../../../../shared/frontmatter'
+import { handleExternalLinkClick } from '../links'
 
 interface ErrorBoundaryProps {
   children: ReactNode
@@ -243,11 +244,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
             codeLanguages={languages}
             extensions={finalExtensions}
             onLinkClick={(url: string) => {
-              if (window.api?.openExternal) {
-                window.api.openExternal(url)
-              } else {
-                window.open(url, '_blank', 'noopener,noreferrer')
-              }
+              handleExternalLinkClick(url)
             }}
           />
         </EditorCanvasErrorBoundary>

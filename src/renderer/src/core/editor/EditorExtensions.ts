@@ -16,8 +16,9 @@ import {
   luminaSyntaxHighlighting,
   handleCodeFenceEnter
 } from '../code'
-// Media extensions
+// Media & Link Embed extensions
 import { imageDropExtension, imageWidgetExtension } from '../../features/media'
+import { linkEmbedExtension } from '../../features/links'
 import { htmlWidgetExtension } from '../../features/Editor/extensions/htmlExtension'
 import { katexExtension } from '../../features/Editor/extensions/katexExtension'
 import { tagMentionExtension } from '../../features/Editor/extensions/tagMentionExtension'
@@ -498,6 +499,7 @@ export function useEditorExtensions({
       dropExtension,
       Prec.highest(imageWidgetExtension),
       htmlWidgetExtension,
+      linkEmbedExtension,
       katexExtension,
       calloutExtension,
       highlightExtension,

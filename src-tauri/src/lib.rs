@@ -97,7 +97,8 @@ pub fn run() {
             pick_email_attachments,
             download_app_update,
             cancel_app_update,
-            install_app_update
+            install_app_update,
+            fetch_link_metadata
         ])
         .run(tauri::generate_context!())
         .expect("error while building tauri application");
