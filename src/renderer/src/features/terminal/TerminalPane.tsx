@@ -2,8 +2,10 @@
 // A single terminal instance. Handles mounting, PTY binding, and lifecycle.
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ChevronUp, ChevronDown, X } from 'lucide-react'
 import { useTerminalInstance, type PtyTransport } from '../../core/terminal/useTerminalInstance'
 import type { TerminalSession } from '../../core/terminal/types'
+import { openNoteInEditor } from '../AI/components/LuminaChatLink'
 
 interface Props {
   session: TerminalSession
@@ -15,6 +17,10 @@ interface Props {
 
 export const TerminalPane = memo(function TerminalPane({ session, visible, spawnTransport, onStatus }: Props) {
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [caseSensitive, setCaseSensitive] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Spawn the transport once per session. Recreated if the session id changes.
   const transport = useMemo(() => spawnTransport(session), [session.id, session.shell, session.cwd])
@@ -24,11 +30,40 @@ export const TerminalPane = memo(function TerminalPane({ session, visible, spawn
     [session.id, onStatus]
   )
 
-  const { focus, fit, refresh } = useTerminalInstance({
+  const handleOpenSearch = useCallback(() => {
+    setIsSearchOpen(true)
+    requestAnimationFrame(() => {
+      searchInputRef.current?.focus()
+      searchInputRef.current?.select()
+    })
+  }, [])
+
+  const handleOpenFilePath = useCallback((filePath: string) => {
+    if (!filePath) return
+    openNoteInEditor(filePath)
+  }, [])
+
+  const { focus, fit, refresh, findNext, findPrevious, clearSearch } = useTerminalInstance({
     container,
     transport,
-    onExit: handleExit
+    onExit: handleExit,
+    onOpenSearch: handleOpenSearch,
+    onOpenFilePath: handleOpenFilePath
   })
+
+  const handleCloseSearch = useCallback(() => {
+    setIsSearchOpen(false)
+    clearSearch()
+    focus()
+  }, [clearSearch, focus])
+
+  useEffect(() => {
+    if (isSearchOpen && searchQuery) {
+      findNext(searchQuery, caseSensitive)
+    } else if (isSearchOpen && !searchQuery) {
+      clearSearch()
+    }
+  }, [isSearchOpen, searchQuery, caseSensitive, findNext, clearSearch])
 
   useEffect(() => {
     onStatus(session.id, 'running')
@@ -67,6 +102,74 @@ export const TerminalPane = memo(function TerminalPane({ session, visible, spawn
         background: 'var(--bg-editor, var(--bg-app, #0c0c0e))'
       }}
     >
+      {isSearchOpen && (
+        <div
+          className="lumina-term-search-bar"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              e.preventDefault()
+              e.stopPropagation()
+              handleCloseSearch()
+            }
+          }}
+        >
+          <input
+            ref={searchInputRef}
+            type="text"
+            value={searchQuery}
+            placeholder="Find in terminal…"
+            aria-label="Find in terminal"
+            className="lumina-term-search-input"
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                if (e.shiftKey) {
+                  findPrevious(searchQuery, caseSensitive)
+                } else {
+                  findNext(searchQuery, caseSensitive)
+                }
+              }
+            }}
+          />
+          <button
+            type="button"
+            className={`lumina-term-search-btn${caseSensitive ? ' is-active' : ''}`}
+            title="Match Case"
+            aria-label="Match Case"
+            onClick={() => setCaseSensitive((v) => !v)}
+          >
+            Aa
+          </button>
+          <button
+            type="button"
+            className="lumina-term-search-btn"
+            title="Previous Match (Shift+Enter)"
+            aria-label="Previous Match"
+            onClick={() => findPrevious(searchQuery, caseSensitive)}
+          >
+            <ChevronUp size={13} />
+          </button>
+          <button
+            type="button"
+            className="lumina-term-search-btn"
+            title="Next Match (Enter)"
+            aria-label="Next Match"
+            onClick={() => findNext(searchQuery, caseSensitive)}
+          >
+            <ChevronDown size={13} />
+          </button>
+          <button
+            type="button"
+            className="lumina-term-search-btn"
+            title="Close Search (Esc)"
+            aria-label="Close Search"
+            onClick={handleCloseSearch}
+          >
+            <X size={13} />
+          </button>
+        </div>
+      )}
       <div
         ref={setContainer}
         className="lumina-term-container"

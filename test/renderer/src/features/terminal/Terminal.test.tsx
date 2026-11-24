@@ -65,6 +65,21 @@ vi.mock('@xterm/addon-web-links', () => ({
   WebLinksAddon: class {}
 }))
 
+vi.mock('@xterm/addon-search', () => ({
+  SearchAddon: class {
+    findNext = vi.fn()
+    findPrevious = vi.fn()
+    clearDecorations = vi.fn()
+  }
+}))
+
+vi.mock('@xterm/addon-webgl', () => ({
+  WebglAddon: class {
+    onContextLoss = vi.fn()
+    dispose = vi.fn()
+  }
+}))
+
 describe('Terminal Feature & Navigation Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks()

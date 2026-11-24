@@ -78,7 +78,7 @@
 .shell-sidebar-right .inspector-tab:hover,
 [data-modern-ui='true'] .shell-sidebar-right .inspector-tab:hover {
   color: var(--text-main) !important;
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: var(--bg-hover, color-mix(in srgb, var(--text-main) 6%, transparent)) !important;
 }
 
 .shell-sidebar-right .inspector-tab.active,

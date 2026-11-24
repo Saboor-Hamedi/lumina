@@ -103,6 +103,7 @@ jobs:
       - name: Build Tauri 2.0 Installers
         env:
           APPLE_SIGNING_IDENTITY: '-'
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: npx tauri build ${{ matrix.args }}
 
       - name: Upload Release Installers to GitHub Release

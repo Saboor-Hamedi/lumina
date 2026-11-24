@@ -2,9 +2,14 @@ import { invoke } from '@tauri-apps/api/core'
 
 const GMAIL_API_BASE = 'https://gmail.googleapis.com/gmail/v1/users/me'
 
-async function getTokenInfo(): Promise<{ accessToken: string; email?: string; name?: string } | { error: string }> {
+async function getTokenInfo(
+  forceRefresh = false
+): Promise<{ accessToken: string; email?: string; name?: string } | { error: string }> {
   try {
-    const res = (await invoke('get_google_access_token')) as any
+    const res = (await invoke(
+      'get_google_access_token',
+      forceRefresh ? { forceRefresh: true } : {}
+    )) as any
     if (!res || res.error || !res.accessToken) {
       return { error: res?.error || 'Not logged in to Google' }
     }
@@ -15,21 +20,33 @@ async function getTokenInfo(): Promise<{ accessToken: string; email?: string; na
 }
 
 async function gmailFetch(path: string, init: RequestInit = {}): Promise<any> {
-  const tokenRes = await getTokenInfo()
+  const tokenRes = await getTokenInfo(false)
   if ('error' in tokenRes) {
     return { error: tokenRes.error }
   }
 
-  const headers = new Headers(init.headers || {})
-  headers.set('Authorization', `Bearer ${tokenRes.accessToken}`)
-  if (init.body && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json')
+  const doFetch = (accessToken: string) => {
+    const headers = new Headers(init.headers || {})
+    headers.set('Authorization', `Bearer ${accessToken}`)
+    if (init.body && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json')
+    }
+    return fetch(`${GMAIL_API_BASE}${path}`, {
+      ...init,
+      headers
+    })
   }
 
-  const res = await fetch(`${GMAIL_API_BASE}${path}`, {
-    ...init,
-    headers
-  })
+  let res = await doFetch(tokenRes.accessToken)
+
+  // If Google rejected the token (401), force-refresh once and retry seamlessly
+  if (res.status === 401) {
+    const refreshed = await getTokenInfo(true)
+    if ('error' in refreshed) {
+      return { error: refreshed.error }
+    }
+    res = await doFetch(refreshed.accessToken)
+  }
 
   if (!res.ok) {
     const errText = await res.text().catch(() => res.statusText)

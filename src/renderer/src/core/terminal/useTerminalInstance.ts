@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Terminal } from '@xterm/xterm'
 import { FitAddon } from '@xterm/addon-fit'
 import { WebLinksAddon } from '@xterm/addon-web-links'
+import { SearchAddon } from '@xterm/addon-search'
 import '@xterm/xterm/css/xterm.css'
 import {
   DEFAULT_FONT_SIZE,
@@ -14,6 +15,11 @@ import {
   getActiveTerminalTheme
 } from './constants'
 import type { TerminalSession } from './types'
+
+const MIN_FONT_SIZE = 9
+const MAX_FONT_SIZE = 24
+const FILE_PATH_LINK_REGEX =
+  /(?:[A-Za-z]:\\|\.{1,2}[\\/]|[\\/])?(?:[\w.\- ]+[\\/])*[\w.\-]+\.(?:md|markdown|txt|ts|tsx|js|jsx|mjs|cjs|json|css|scss|html|rs|py|yml|yaml|toml|sh|pdf|png|jpg|jpeg|svg|webp)(?::\d+(?::\d+)?)?/g
 
 /** Minimal transport contract — implement for Tauri PTY (portable-pty), WS, SSH, etc. */
 export interface PtyTransport {
@@ -108,21 +114,36 @@ interface Options {
   onData?: (data: string) => void
   onExit?: (code: number) => void
   onReady?: (term: Terminal) => void
+  onOpenSearch?: () => void
+  onOpenFilePath?: (filePath: string) => void
 }
 
-export function useTerminalInstance({ container, transport, onData, onExit, onReady }: Options) {
+export function useTerminalInstance({
+  container,
+  transport,
+  onData,
+  onExit,
+  onReady,
+  onOpenSearch,
+  onOpenFilePath
+}: Options) {
   const [term, setTerm] = useState<Terminal | null>(null)
   const termRef = useRef<Terminal | null>(null)
   const fitRef = useRef<FitAddon | null>(null)
+  const searchRef = useRef<SearchAddon | null>(null)
   const transportRef = useRef<PtyTransport | null>(transport)
   const onDataRef = useRef(onData)
   const onExitRef = useRef(onExit)
+  const onOpenSearchRef = useRef(onOpenSearch)
+  const onOpenFilePathRef = useRef(onOpenFilePath)
   const lastSizeRef = useRef<{ cols: number; rows: number }>({ cols: 0, rows: 0 })
   const syncScrollRef = useRef<(() => void) | null>(null)
 
   transportRef.current = transport
   onDataRef.current = onData
   onExitRef.current = onExit
+  onOpenSearchRef.current = onOpenSearch
+  onOpenFilePathRef.current = onOpenFilePath
 
   const sendResizeIfChanged = useCallback((cols: number, rows: number) => {
     if (cols <= 0 || rows <= 0) return
@@ -171,6 +192,14 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
     const fit = new FitAddon()
     termInstance.loadAddon(fit)
     termInstance.loadAddon(new WebLinksAddon())
+    let searchAddon: SearchAddon | null = null
+    try {
+      searchAddon = new SearchAddon()
+      termInstance.loadAddon(searchAddon)
+    } catch {
+      searchAddon = null
+    }
+    searchRef.current = searchAddon
 
     // Sync scrollbar visibility & fix @xterm/xterm@6.0.0 Viewport._sync bottom-gap desync
     let scrollSyncRaf = 0
@@ -223,8 +252,46 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
     }
 
     // Bypass xterm for global Lumina shortcuts (Ctrl+P, Ctrl+J, Ctrl+Shift+F, etc.)
+    // while supporting Ctrl+F (terminal search) and Ctrl+=/-/0 (terminal font zoom)
     if (typeof termInstance.attachCustomKeyEventHandler === 'function') {
       termInstance.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+        if (e.type === 'keydown' && (e.ctrlKey || e.metaKey) && !e.altKey) {
+          // Ctrl+F (without Shift): open terminal inline search bar
+          if ((e.key === 'f' || e.key === 'F') && !e.shiftKey && onOpenSearchRef.current) {
+            e.preventDefault()
+            e.stopPropagation()
+            onOpenSearchRef.current()
+            return false
+          }
+
+          // Terminal font size zoom: Ctrl+= / Ctrl++ / Ctrl+- / Ctrl+0
+          if (e.key === '=' || e.key === '+' || e.key === '-' || e.key === '_' || e.key === '0') {
+            const opts = (termInstance as any)?.options
+            if (opts) {
+              const current = typeof opts.fontSize === 'number' ? opts.fontSize : DEFAULT_FONT_SIZE
+              const next =
+                e.key === '0'
+                  ? DEFAULT_FONT_SIZE
+                  : e.key === '-' || e.key === '_'
+                    ? Math.max(MIN_FONT_SIZE, current - 1)
+                    : Math.min(MAX_FONT_SIZE, current + 1)
+              if (next !== current) {
+                opts.fontSize = next
+                try {
+                  if (container.clientWidth > 0 && container.clientHeight > 0) {
+                    fit.fit()
+                    sendResizeIfChanged(termInstance.cols, termInstance.rows)
+                    scheduleScrollSync()
+                  }
+                } catch {}
+              }
+            }
+            e.preventDefault()
+            e.stopPropagation()
+            return false
+          }
+        }
+
         // Allow Ctrl+C to interrupt process unless there's an active text selection
         if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C') && !e.shiftKey && !e.altKey) {
           if (termInstance.hasSelection && termInstance.hasSelection()) {
@@ -248,6 +315,69 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
     }
 
     termInstance.open(container)
+
+    // Enable GPU-accelerated WebGL renderer when WebGL2 is supported, with automatic fallback on context loss
+    let disposed = false
+    let webglAddon: { dispose: () => void; onContextLoss?: (cb: () => void) => void } | null = null
+    if (typeof window !== 'undefined' && typeof (window as any).WebGL2RenderingContext !== 'undefined') {
+      import('@xterm/addon-webgl')
+        .then(({ WebglAddon }) => {
+          if (disposed) return
+          try {
+            const addon = new WebglAddon()
+            addon.onContextLoss?.(() => {
+              try {
+                addon.dispose()
+              } catch {}
+              if (webglAddon === addon) webglAddon = null
+            })
+            termInstance.loadAddon(addon)
+            webglAddon = addon
+          } catch {
+            webglAddon = null
+          }
+        })
+        .catch(() => {})
+    }
+
+    // Register clickable file path links in terminal output (opens matching workspace file in Lumina)
+    let fileLinkDisposable: { dispose: () => void } | null = null
+    if (typeof termInstance.registerLinkProvider === 'function') {
+      fileLinkDisposable = termInstance.registerLinkProvider({
+        provideLinks(bufferLineNumber, callback) {
+          try {
+            const line = termInstance.buffer?.active?.getLine(bufferLineNumber - 1)
+            if (!line) {
+              callback(undefined)
+              return
+            }
+            const text = line.translateToString(true)
+            const links: any[] = []
+            FILE_PATH_LINK_REGEX.lastIndex = 0
+            let match: RegExpExecArray | null
+            while ((match = FILE_PATH_LINK_REGEX.exec(text)) !== null) {
+              const raw = match[0]
+              const startX = match.index + 1
+              const endX = startX + raw.length - 1
+              links.push({
+                range: {
+                  start: { x: startX, y: bufferLineNumber },
+                  end: { x: endX, y: bufferLineNumber }
+                },
+                text: raw,
+                activate(_event: MouseEvent, matchedText: string) {
+                  const cleanPath = matchedText.replace(/:\d+(?::\d+)?$/, '')
+                  onOpenFilePathRef.current?.(cleanPath)
+                }
+              })
+            }
+            callback(links.length > 0 ? links : undefined)
+          } catch {
+            callback(undefined)
+          }
+        }
+      })
+    }
     try {
       if (container.clientWidth > 0 && container.clientHeight > 0) {
         fit.fit()
@@ -362,6 +492,7 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
     }
 
     return () => {
+      disposed = true
       cancelAnimationFrame(raf)
       if (scrollSyncRaf) cancelAnimationFrame(scrollSyncRaf)
       if (resizeRaf) cancelAnimationFrame(resizeRaf)
@@ -376,6 +507,13 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
           d.dispose()
         } catch {}
       })
+      try {
+        fileLinkDisposable?.dispose()
+      } catch {}
+      try {
+        webglAddon?.dispose()
+      } catch {}
+      searchRef.current = null
       syncScrollRef.current = null
       termInstance.dispose()
       termRef.current = null
@@ -486,12 +624,39 @@ export function useTerminalInstance({ container, transport, onData, onExit, onRe
     } catch {}
   }, [])
 
+  const findNext = useCallback((query: string, caseSensitive = false) => {
+    if (!query) return false
+    try {
+      return Boolean(searchRef.current?.findNext(query, { caseSensitive, incremental: false }))
+    } catch {
+      return false
+    }
+  }, [])
+
+  const findPrevious = useCallback((query: string, caseSensitive = false) => {
+    if (!query) return false
+    try {
+      return Boolean(searchRef.current?.findPrevious(query, { caseSensitive }))
+    } catch {
+      return false
+    }
+  }, [])
+
+  const clearSearch = useCallback(() => {
+    try {
+      searchRef.current?.clearDecorations?.()
+    } catch {}
+  }, [])
+
   return {
     term,
     write: (data: string) => termRef.current?.write(data),
     focus,
     clear,
     fit,
-    refresh
+    refresh,
+    findNext,
+    findPrevious,
+    clearSearch
   }
 }
