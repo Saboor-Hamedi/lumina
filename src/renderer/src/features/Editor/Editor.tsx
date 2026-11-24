@@ -413,6 +413,39 @@ export const Editor: React.FC<EditorProps> = memo(
         <ToastNotification toast={toast} onClose={clearToast} />
         <RulerScrollbar scrollerRef={scrollerRef} isActive={isActive} />
 
+        {inlineMetadata && metaPosition === 'top' && snippet && (
+          <div
+            className="meta-floating-container meta-floating-top"
+            data-testid="meta-floating-container"
+          >
+            <MetaHeader
+              snippet={snippet}
+              title={title}
+              setIsDirty={setIsDirty}
+              isDirty={isDirty}
+              onInlineAI={() => setIsInlineAIOpen(true)}
+              position="top"
+              showTools={false}
+              showMenu={false}
+              onOpenExportDialog={() => setIsExportDialogOpen(true)}
+              onToggleInspector={onToggleInspector}
+              editorMenu={
+                <EditorMenu
+                  title={title}
+                  snippet={snippet}
+                  setSelectedSnippet={setSelectedNote}
+                  isDirty={isDirty}
+                  isSaving={isSaving}
+                  onSave={handleSave}
+                  onToggleInspector={onToggleInspector}
+                  onInlineAI={() => setIsInlineAIOpen(true)}
+                  onOpenExportDialog={() => setIsExportDialogOpen(true)}
+                />
+              }
+            />
+          </div>
+        )}
+
         <div className="editor-scroller" ref={scrollerRef}>
           {isInlineAIOpen && (
             <InlineLumina
@@ -434,39 +467,6 @@ export const Editor: React.FC<EditorProps> = memo(
             confirmText="Overwrite"
             cancelText="Keep My Edits"
           />
-
-          {inlineMetadata && metaPosition !== 'inline' && snippet && (
-          <div
-            className={`meta-floating-container meta-floating-${metaPosition}`}
-            data-testid="meta-floating-container"
-          >
-            <MetaHeader
-              snippet={snippet}
-              title={title}
-              setIsDirty={setIsDirty}
-              isDirty={isDirty}
-              onInlineAI={() => setIsInlineAIOpen(true)}
-              position={metaPosition}
-              showTools={false}
-              showMenu={false}
-              onOpenExportDialog={() => setIsExportDialogOpen(true)}
-              onToggleInspector={onToggleInspector}
-              editorMenu={
-                <EditorMenu
-                  title={title}
-                  snippet={snippet}
-                  setSelectedSnippet={setSelectedNote}
-                  isDirty={isDirty}
-                  isSaving={isSaving}
-                  onSave={handleSave}
-                  onToggleInspector={onToggleInspector}
-                  onInlineAI={() => setIsInlineAIOpen(true)}
-                  onOpenExportDialog={() => setIsExportDialogOpen(true)}
-                />
-              }
-            />
-          </div>
-        )}
 
         <EditorCanvas
             snippet={snippet}
@@ -500,6 +500,39 @@ export const Editor: React.FC<EditorProps> = memo(
             }
           />
         </div>
+
+        {inlineMetadata && metaPosition === 'bottom' && snippet && (
+          <div
+            className="meta-floating-container meta-floating-bottom"
+            data-testid="meta-floating-container"
+          >
+            <MetaHeader
+              snippet={snippet}
+              title={title}
+              setIsDirty={setIsDirty}
+              isDirty={isDirty}
+              onInlineAI={() => setIsInlineAIOpen(true)}
+              position={metaPosition}
+              showTools={false}
+              showMenu={false}
+              onOpenExportDialog={() => setIsExportDialogOpen(true)}
+              onToggleInspector={onToggleInspector}
+              editorMenu={
+                <EditorMenu
+                  title={title}
+                  snippet={snippet}
+                  setSelectedSnippet={setSelectedNote}
+                  isDirty={isDirty}
+                  isSaving={isSaving}
+                  onSave={handleSave}
+                  onToggleInspector={onToggleInspector}
+                  onInlineAI={() => setIsInlineAIOpen(true)}
+                  onOpenExportDialog={() => setIsExportDialogOpen(true)}
+                />
+              }
+            />
+          </div>
+        )}
 
         {isExportDialogOpen && (
           <React.Suspense fallback={null}>

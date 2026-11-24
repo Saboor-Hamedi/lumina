@@ -160,7 +160,7 @@ fn strip_windows_verbatim(path: &Path) -> String {
 }
 
 #[tauri::command]
-pub async fn install_app_update(_app: tauri::AppHandle, path: String) -> Result<bool, String> {
+pub async fn install_app_update(app: tauri::AppHandle, path: String) -> Result<bool, String> {
     let target = PathBuf::from(path.trim());
     let update_dir = std::env::temp_dir().join("lumina-updates");
     let canon_dir = fs::canonicalize(&update_dir).map_err(|e| e.to_string())?;
@@ -180,8 +180,8 @@ pub async fn install_app_update(_app: tauri::AppHandle, path: String) -> Result<
         // Strip `\\?\` verbatim prefix so Windows Explorer, msiexec, and NSIS never fail on the path.
         let installer_str = strip_windows_verbatim(&canon_target);
 
-        // Launch the interactive Setup Wizard modal ("Next -> Next -> Install") visibly on top of
-        // Lumina without closing/hiding the app prematurely.
+        // Launch the visible interactive Setup Wizard ("Next -> Next -> Install") immediately,
+        // then exit Lumina so all file locks on Lumina.exe are released before installation begins.
         if is_msi {
             Command::new("msiexec.exe")
                 .args(["/i", &installer_str])
@@ -196,6 +196,7 @@ pub async fn install_app_update(_app: tauri::AppHandle, path: String) -> Result<
                 .or_else(|_| open::that(&installer_str))
                 .map_err(|e| format!("Failed to launch installer: {}", e))?;
         }
+        app.exit(0);
     }
     #[cfg(not(target_os = "windows"))]
     {
@@ -214,6 +215,7 @@ pub async fn install_app_update(_app: tauri::AppHandle, path: String) -> Result<
             }
         }
         open::that(&canon_target).map_err(|e| format!("Failed to open installer: {}", e))?;
+        app.exit(0);
     }
 
     Ok(true)

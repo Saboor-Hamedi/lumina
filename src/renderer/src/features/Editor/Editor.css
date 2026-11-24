@@ -742,6 +742,9 @@
 .editor-scroller {
   flex: 1;
   min-height: 0;
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   background: var(--bg-editor, var(--bg-app));
@@ -2010,52 +2013,59 @@
   box-sizing: border-box;
 }
 
-/* Push editor canvas down when meta bar floats at top so title is NEVER occluded */
+/* Top meta bar sits cleanly above .editor-scroller so text & Mermaid never overlap it */
 .markdown-editor.meta-pos-top .editor-scroller {
-  padding-top: 40px !important;
+  padding-top: 4px !important;
 }
 
-/* Offset creation timer when meta bar floats at top so they never collide */
+/* Offset creation timer when meta bar sits at top */
 .markdown-editor.meta-pos-top .editor-created-at-banner {
-  top: 38px !important;
+  top: 34px !important;
 }
 
-/* Push editor canvas up when meta bar floats at bottom */
+/* Bottom meta bar sits cleanly below .editor-scroller so text & Mermaid never overlap it */
 .markdown-editor.meta-pos-bottom .editor-scroller {
-  padding-bottom: 38px !important;
+  padding-bottom: 4px !important;
 }
 
 /* ==========================================================================
-   Floating Editor Meta Action Bar (Ultra-compact 22px, sleek unobtrusive pill)
+   Editor Meta Action Bar (Ultra-compact 25px, non-overlapping top/bottom dock)
    ========================================================================== */
 .meta-floating-container {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
-  pointer-events: none;
+  position: relative;
+  left: auto;
+  top: auto;
+  bottom: auto;
+  transform: none;
+  flex-shrink: 0;
+  width: 100%;
+  z-index: 250;
+  isolation: isolate;
+  background: var(--bg-editor, var(--bg-app));
+  pointer-events: auto;
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
+  box-sizing: border-box;
+  transition: opacity 0.15s ease;
 }
 
 .meta-floating-bottom {
-  bottom: 8px;
+  padding: 2px 8px 4px;
 }
 
 .meta-floating-top {
-  top: 5px;
+  padding: 4px 8px 2px;
 }
 
 .meta-floating-container .editor-metadata-bar {
   pointer-events: auto;
   margin: 0 !important;
-  padding: 2px 6px !important;
-  height: 27px !important;
+  padding: 1px 6px !important;
+  height: 25px !important;
   box-sizing: border-box;
-  background: var(--surface-3, var(--bg-card));
-  border: 1px solid var(--border-strong, var(--border-dim));
+  background: var(--bg-card, var(--bg-panel));
+  border: 1px solid var(--border-subtle, var(--border-dim));
   border-radius: var(--radius-xs, 4px);
   box-shadow: var(--elev-popover);
   display: inline-flex;
