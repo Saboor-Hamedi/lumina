@@ -27,9 +27,27 @@ import { calloutExtension } from './useCallout'
 import { highlightExtension } from './useHighlight'
 import { useCollapsible } from '../../features/Editor/collapse/useCollapsible'
 import { emptyLineSelectionFix } from './useEmptyLine'
-import { handleTaskEnter, taskMarkKeymap } from './useMark'
+import { handleTaskEnter, toggleTaskMark } from './useMark'
 import { handleQuoteEnter } from './useQuote'
-import { handleListEnter, isListLine } from './useList'
+import {
+  handleListEnter,
+  handleListShiftEnter,
+  handleListBackspace,
+  indentListLines,
+  outdentListLines,
+  moveLinesUp,
+  moveLinesDown,
+  duplicateLines,
+  isListLine,
+  smartWrapSelectionExtension
+} from './useList'
+import {
+  createKeymapModeCompartment,
+  resolveKeymapModeExtension,
+  DEFAULT_KEYMAP_MODE
+} from './keymapMode'
+import { getActiveShortcut, matchesShortcutEvent } from '../shortcuts/defaultShortcuts'
+import { useSettingsStore } from '../store/SettingStore'
 import { handleArrowUp, handleArrowDown } from './ArrowNavigation'
 import { useWikilinkCompletion } from '../../features/Editor/wikilink/useWikilinkCompletion'
 import { createEditorSlashPlugin } from '../../features/slash'
@@ -152,6 +170,7 @@ export function useEditorExtensions({
 
   const dropExtension = useMemo(() => imageDropExtension(), [])
   const collapsibleExtension = useCollapsible()
+  const keymapModeCompartment = useMemo(() => createKeymapModeCompartment(), [])
 
   const {
     autocompleteTriggerListener,
@@ -165,6 +184,9 @@ export function useEditorExtensions({
     () => [
       ...collapsibleExtension,
       luminaSyntaxHighlighting,
+      // Reserved pluggable keymap mode compartment (e.g. `@replit/codemirror-vim`).
+      // Positioned before `Prec.highest` UI-overlay bindings so Escape closes overlays first.
+      keymapModeCompartment.of(resolveKeymapModeExtension(DEFAULT_KEYMAP_MODE)),
       Prec.highest(
         keymap.of([
           {
@@ -181,28 +203,11 @@ export function useEditorExtensions({
               const state = view.state
               const sel = state.selection.main
 
-              // Multi-line selection: indent all selected lines by 2 spaces
+              // Multi-line selection or list/task line: indent + auto-renumber ordered lists
               const startLine = state.doc.lineAt(sel.from)
               const endLine = state.doc.lineAt(sel.to)
-              if (startLine.number !== endLine.number) {
-                const changes = []
-                for (let l = startLine.number; l <= endLine.number; l++) {
-                  const line = state.doc.line(l)
-                  changes.push({ from: line.from, insert: '  ' })
-                }
-                view.dispatch({ changes })
-                return true
-              }
-
-              const line = state.doc.lineAt(sel.head)
-              if (isListLine(line.text)) {
-                // Indent list or task item: add 2 spaces at line start
-                view.dispatch({
-                  changes: { from: line.from, insert: '  ' },
-                  selection: { anchor: sel.head + 2 },
-                  scrollIntoView: true
-                })
-                return true
+              if (startLine.number !== endLine.number || isListLine(startLine.text)) {
+                return indentListLines(view)
               }
 
               // Standard Tab: insert 2 spaces at cursor / replace selection
@@ -219,45 +224,23 @@ export function useEditorExtensions({
             run: (view: EditorView) => {
               if (isComposing(view)) return false
               if (!isActiveRef.current) return false
-              const state = view.state
-              const sel = state.selection.main
-
-              // Multi-line selection: outdent all selected lines
-              const startLine = state.doc.lineAt(sel.from)
-              const endLine = state.doc.lineAt(sel.to)
-              if (startLine.number !== endLine.number) {
-                const changes = []
-                for (let l = startLine.number; l <= endLine.number; l++) {
-                  const line = state.doc.line(l)
-                  if (line.text.startsWith('  ')) {
-                    changes.push({ from: line.from, to: line.from + 2, insert: '' })
-                  } else if (line.text.startsWith(' ')) {
-                    changes.push({ from: line.from, to: line.from + 1, insert: '' })
-                  }
-                }
-                if (changes.length > 0) {
-                  view.dispatch({ changes, scrollIntoView: true })
-                }
-                return true
-              }
-
-              const line = state.doc.lineAt(sel.head)
-              if (line.text.startsWith('  ')) {
-                view.dispatch({
-                  changes: { from: line.from, to: line.from + 2, insert: '' },
-                  selection: { anchor: Math.max(line.from, sel.head - 2) },
-                  scrollIntoView: true
-                })
-                return true
-              } else if (line.text.startsWith(' ')) {
-                view.dispatch({
-                  changes: { from: line.from, to: line.from + 1, insert: '' },
-                  selection: { anchor: Math.max(line.from, sel.head - 1) },
-                  scrollIntoView: true
-                })
-                return true
-              }
-              return true
+              return outdentListLines(view)
+            }
+          },
+          {
+            key: 'Shift-Enter',
+            run: (view: EditorView) => {
+              if (isComposing(view)) return false
+              if (!isActiveRef.current) return false
+              return handleListShiftEnter(view)
+            }
+          },
+          {
+            key: 'Backspace',
+            run: (view: EditorView) => {
+              if (isComposing(view)) return false
+              if (!isActiveRef.current) return false
+              return handleListBackspace(view)
             }
           },
           {
@@ -454,7 +437,39 @@ export function useEditorExtensions({
       emptyLineSelectionFix,
       wikiLinksExtension,
       bidiExtension,
-      taskMarkKeymap(isActiveRef),
+      smartWrapSelectionExtension,
+      // Live customizable editor shortcuts (rebindable in Settings -> Shortcuts without recreating view)
+      Prec.highest(
+        EditorView.domEventHandlers({
+          keydown: (e: KeyboardEvent, view: EditorView) => {
+            if (isComposing(view) || !isActiveRef.current) return false
+            if ((window as any).__isRecordingShortcut) return false
+            const customShortcuts = useSettingsStore.getState().settings?.shortcuts
+
+            if (matchesShortcutEvent(e, getActiveShortcut('duplicateLineUp', customShortcuts))) {
+              e.preventDefault()
+              return duplicateLines(view, 'up')
+            }
+            if (matchesShortcutEvent(e, getActiveShortcut('duplicateLineDown', customShortcuts))) {
+              e.preventDefault()
+              return duplicateLines(view, 'down')
+            }
+            if (matchesShortcutEvent(e, getActiveShortcut('moveLineUp', customShortcuts))) {
+              e.preventDefault()
+              return moveLinesUp(view)
+            }
+            if (matchesShortcutEvent(e, getActiveShortcut('moveLineDown', customShortcuts))) {
+              e.preventDefault()
+              return moveLinesDown(view)
+            }
+            if (matchesShortcutEvent(e, getActiveShortcut('toggleTask', customShortcuts))) {
+              e.preventDefault()
+              return toggleTaskMark(view)
+            }
+            return false
+          }
+        })
+      ),
       ...(onSlashStateChange ? createEditorSlashPlugin({ onSlashStateChange, slashHandlerRef }) : [])
     ],
     [
@@ -462,6 +477,7 @@ export function useEditorExtensions({
       autocompleteTriggerListener,
       wikiLinkCompletionSource,
       collapsibleExtension,
+      keymapModeCompartment,
       captureViewPlugin,
       isActiveRef,
       showFindWidgetRef,

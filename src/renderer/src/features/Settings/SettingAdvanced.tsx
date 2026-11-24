@@ -79,9 +79,15 @@ export const SettingAdvanced: React.FC = () => {
                   Summon the Command Palette globally from any desktop application.
                 </div>
               </div>
-              <div className="shortcut-badge" style={{ fontSize: '13px' }}>
-                {formatShortcutKey('Ctrl+Space')}
-              </div>
+              <span className="shortcut-keycaps-group">
+                {formatShortcutKey('Ctrl+Space')
+                  .split('+')
+                  .map((k, idx) => (
+                    <kbd key={idx} className="shortcut-kbd">
+                      {k}
+                    </kbd>
+                  ))}
+              </span>
             </div>
           </section>
 

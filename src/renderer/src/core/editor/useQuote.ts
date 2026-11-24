@@ -1,4 +1,5 @@
 import type { EditorView } from '@codemirror/view'
+import { isInsideCodeFence, parseListLine } from './useList'
 
 /**
  * Returns the blockquote depth (number of `>`) of a line, or 0 if not a blockquote.
@@ -62,25 +63,42 @@ export function toggleQuoteMark(view: EditorView): boolean {
 
 /**
  * Handles Enter key on blockquote lines:
- * - If the current quote line is empty (`> ` with no content) → clears the marker and exits.
- * - If the line has content → auto-continues the next line with the same depth marker.
+ * - Skips inside fenced code blocks.
+ * - Defers quoted list/task lines (`> - item`, `> 1. item`, `> - [ ] task`) to `handleListEnter`/`handleTaskEnter`.
+ * - If the current quote line is empty:
+ *   - Nested (`>> ` / `> > `) → steps down one quote level (`> `).
+ *   - Depth 1 (`> `) → clears the marker and exits.
+ * - If the line has content → replaces selection and auto-continues at the same depth.
  */
 export function handleQuoteEnter(view: EditorView): boolean {
   if (!view || !view.state) return false
 
   const state = view.state
-  const pos = state.selection?.main?.head
-  if (typeof pos !== 'number') return false
+  const sel = state.selection?.main
+  if (!sel) return false
 
-  const line = state.doc.lineAt(pos)
+  if (isInsideCodeFence(state, sel.from)) return false
+
+  const line = state.doc.lineAt(sel.from)
+  if (sel.to > line.to) return false
+
   const lineText = line.text
 
-  // 1. Exit empty blockquote line on Enter (any depth: `> `, `>> `, `>>> `)
-  const emptyQuoteMatch = lineText.match(/^(\s*>+\s*)$/)
-  if (emptyQuoteMatch && pos === line.to) {
+  // Let list/task handlers manage quoted lists (`> - item`, `> 1. item`, `> - [ ] task`)
+  if (parseListLine(lineText) !== null) return false
+
+  const col = sel.from - line.from
+
+  // 1. Empty blockquote line on Enter (step down nested depth, or exit depth 1)
+  const emptyQuoteMatch = lineText.match(/^(\s*(?:>\s*)+)$/)
+  if (emptyQuoteMatch && sel.empty && col >= lineText.trimEnd().length) {
+    const depth = getQuoteDepth(lineText)
+    const leadingIndent = lineText.match(/^(\s*)/)?.[1] ?? ''
+    const replacement = depth > 1 ? `${leadingIndent}${quotePrefix(depth - 1)}` : ''
     view.dispatch({
-      changes: { from: line.from, to: line.to, insert: '' },
-      selection: { anchor: line.from }
+      changes: { from: line.from, to: line.to, insert: replacement },
+      selection: { anchor: line.from + replacement.length },
+      scrollIntoView: true
     })
     return true
   }
@@ -88,11 +106,16 @@ export function handleQuoteEnter(view: EditorView): boolean {
   // 2. Continue active blockquote at the same depth on Enter
   const quoteMatch = lineText.match(/^(\s*(?:>\s*)+)(.*)$/)
   if (quoteMatch && quoteMatch[2].trim().length > 0) {
+    const prefixLen = quoteMatch[1].length
+    if (col < prefixLen) return false
+
+    const leadingIndent = lineText.match(/^(\s*)/)?.[1] ?? ''
     const marker = quoteMatch[1].trim()
-    const insertText = `\n${marker} `
+    const insertText = `\n${leadingIndent}${marker} `
     view.dispatch({
-      changes: { from: pos, insert: insertText },
-      selection: { anchor: pos + insertText.length }
+      changes: { from: sel.from, to: sel.to, insert: insertText },
+      selection: { anchor: sel.from + insertText.length },
+      scrollIntoView: true
     })
     return true
   }

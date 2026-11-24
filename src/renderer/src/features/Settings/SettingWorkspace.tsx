@@ -26,12 +26,14 @@ export const SettingWorkspace: React.FC = () => {
       </div>
 
       <section>
+        <h3>Storage Location</h3>
         <div
           className="settings-block"
           style={{
             padding: '16px',
-            background: 'var(--bg-primary, rgba(255, 255, 255, 0.02))',
-            borderRadius: '6px'
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-dim)',
+            borderRadius: '10px'
           }}
         >
           <div className="row-info" style={{ marginBottom: '14px' }}>

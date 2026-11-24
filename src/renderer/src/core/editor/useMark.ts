@@ -1,10 +1,11 @@
 import React from 'react'
 import { Prec, type Extension } from '@codemirror/state'
 import { keymap, type EditorView } from '@codemirror/view'
+import { isInsideCodeFence, parseListLine } from './useList'
 
 /**
  * Toggles or converts lines to markdown task items (`- [ ]` <-> `- [x]`).
- * Supports single line caret position and multi-line range selections.
+ * Supports single line caret position, multi-line range selections, and quoted tasks (`> - [ ]`).
  */
 export function toggleTaskMark(view: EditorView): boolean {
   if (!view || !view.state) return false
@@ -20,20 +21,24 @@ export function toggleTaskMark(view: EditorView): boolean {
   for (let l = startLine.number; l <= endLine.number; l++) {
     const line = state.doc.line(l)
     const text = line.text
+    const parsed = parseListLine(text)
 
-    if (text.includes('- [ ]')) {
-      changes.push({ from: line.from, to: line.to, insert: text.replace('- [ ]', '- [x]') })
-    } else if (text.includes('- [x]') || text.includes('- [X]')) {
-      changes.push({ from: line.from, to: line.to, insert: text.replace(/- \[[xX]\]/, '- [ ]') })
-    } else if (text.match(/^\s*[-*+]\s+/)) {
-      // Convert bullet to task item
-      changes.push({ from: line.from, to: line.to, insert: text.replace(/^(\s*)[-*+]\s+/, '$1- [ ] ') })
+    if (parsed?.kind === 'task') {
+      const nextState = parsed.taskState === 'x' || parsed.taskState === 'X' ? ' ' : 'x'
+      const bullet = parsed.bullet ?? '-'
+      const nextLine = `${parsed.quotePrefix}${parsed.indent}${bullet} [${nextState}] ${parsed.content}`
+      changes.push({ from: line.from, to: line.to, insert: nextLine })
+    } else if (parsed && (parsed.kind === 'bullet' || parsed.kind === 'ordered-num' || parsed.kind === 'ordered-alpha')) {
+      // Convert existing bullet/ordered item to a task item, preserving quotePrefix & indent
+      const nextLine = `${parsed.quotePrefix}${parsed.indent}- [ ] ${parsed.content}`
+      changes.push({ from: line.from, to: line.to, insert: nextLine })
     } else {
-      // Convert plain text line to task item
-      const matchIndent = text.match(/^(\s*)(.*)$/)
-      const indent = matchIndent ? matchIndent[1] : ''
-      const rest = matchIndent ? matchIndent[2] : text
-      changes.push({ from: line.from, to: line.to, insert: `${indent}- [ ] ${rest}` })
+      // Convert plain text (or plain blockquote) line to task item
+      const quoteMatch = text.match(/^(\s*(?:>\s*)+)?(\s*)(.*)$/)
+      const qp = quoteMatch?.[1] ?? ''
+      const indent = quoteMatch?.[2] ?? ''
+      const rest = quoteMatch?.[3] ?? text
+      changes.push({ from: line.from, to: line.to, insert: `${qp}${indent}- [ ] ${rest}` })
     }
   }
 
@@ -45,24 +50,59 @@ export function toggleTaskMark(view: EditorView): boolean {
 }
 
 /**
- * Handles Enter key on task list lines:
- * - If task line is empty (`- [ ] `), clears it and exits task list.
- * - If task line has content, auto-continues next line with `- [ ] `.
- * Returns true if handled, false otherwise.
+ * Handles Enter key on task list lines (including quoted tasks `> - [ ]`):
+ * - Skips inside fenced code blocks.
+ * - If task line is empty:
+ *   - If indented -> outdents one level instead of destroying nesting.
+ *   - If quoted (`> - [ ] `) -> strips task marker and keeps `> `.
+ *   - Otherwise clears it and exits task list.
+ * - If task line has content -> replaces selection and auto-continues with unchecked `- [ ] `.
  */
 export function handleTaskEnter(view: EditorView): boolean {
   if (!view || !view.state) return false
 
   const state = view.state
-  const pos = state.selection?.main?.head
-  if (typeof pos !== 'number') return false
+  const sel = state.selection?.main
+  if (!sel) return false
 
-  const line = state.doc.lineAt(pos)
-  const lineText = line.text
+  if (isInsideCodeFence(state, sel.from)) return false
 
-  // 1. Exit empty task item on Enter
-  const emptyTaskMatch = lineText.match(/^(\s*[-*+]\s+\[[ xX]?\]\s*)$/)
-  if (emptyTaskMatch && pos === line.to) {
+  const line = state.doc.lineAt(sel.from)
+  if (sel.to > line.to) return false
+
+  const parsed = parseListLine(line.text)
+  if (!parsed || parsed.kind !== 'task') return false
+
+  const col = sel.from - line.from
+  const bullet = parsed.bullet ?? '-'
+  const isEmptyTask = parsed.content.trim() === ''
+
+  // 1. Exit or outdent empty task item on Enter
+  if (isEmptyTask && sel.empty && col >= line.text.trimEnd().length) {
+    if (parsed.indent.length > 0) {
+      const newIndent = parsed.indent.endsWith('\t')
+        ? parsed.indent.slice(0, -1)
+        : parsed.indent.endsWith('  ')
+          ? parsed.indent.slice(0, -2)
+          : parsed.indent.slice(0, -1)
+      const replacement = `${parsed.quotePrefix}${newIndent}${bullet} [ ] `
+      view.dispatch({
+        changes: { from: line.from, to: line.to, insert: replacement },
+        selection: { anchor: line.from + replacement.length },
+        scrollIntoView: true
+      })
+      return true
+    }
+
+    if (parsed.quotePrefix.length > 0) {
+      view.dispatch({
+        changes: { from: line.from, to: line.to, insert: parsed.quotePrefix },
+        selection: { anchor: line.from + parsed.quotePrefix.length },
+        scrollIntoView: true
+      })
+      return true
+    }
+
     view.dispatch({
       changes: { from: line.from, to: line.to, insert: '' },
       selection: { anchor: line.from },
@@ -71,21 +111,19 @@ export function handleTaskEnter(view: EditorView): boolean {
     return true
   }
 
-  // 2. Continue active task item on Enter
-  const textBefore = lineText.slice(0, pos - line.from)
-  const taskMatch = textBefore.match(/^(\s*[-*+]\s+\[[ xX]?\])\s+(.*)$/)
-  if (taskMatch) {
-    const indentAndBox = taskMatch[1].replace(/\[[xX]\]/, '[ ]')
-    const insertText = `\n${indentAndBox} `
-    view.dispatch({
-      changes: { from: pos, insert: insertText },
-      selection: { anchor: pos + insertText.length },
-      scrollIntoView: true
-    })
-    return true
+  // If cursor is inside the task marker prefix itself, let default newline run
+  if (col < parsed.prefixLength) {
+    return false
   }
 
-  return false
+  // 2. Continue active task item on Enter (always unchecked `[ ]`)
+  const insertText = `\n${parsed.quotePrefix}${parsed.indent}${bullet} [ ] `
+  view.dispatch({
+    changes: { from: sel.from, to: sel.to, insert: insertText },
+    selection: { anchor: sel.from + insertText.length },
+    scrollIntoView: true
+  })
+  return true
 }
 
 /**

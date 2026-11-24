@@ -66,6 +66,9 @@ Combine asterisks (`*`) or underscores (`_`) for italic, bold, and combined form
 ==This is highlighted==
 ```
 
+> [!TIP]
+> **Smart Selection Wrapping:** Select any text and press `*`, `_`, `` ` ``, `~`, `(`, `[`, `{`, `"`, or `'` to wrap it without overwriting your selection. The inner text stays selected, so pressing `*` twice turns `word` into `**word**`.
+
 ---
 
 ## Lists
@@ -96,6 +99,17 @@ Use numbers followed by a period:
 
 > [!NOTE]
 > Markdown automatically handles list numbering sequentially even if the raw numbers differ.
+
+### Smart List Editing in Lumina
+
+Lumina includes smart list continuation and Markdown quality-of-life behaviors out of the box:
+
+- **Auto-renumbering ordered lists:** Inserting an item in the middle of a numbered list (`Enter`), indenting/outdenting (`Tab` / `Shift + Tab`), moving lines (`Alt + Up / Down`), or duplicating lines (`Shift + Alt + Up / Down`) automatically renumbers sibling items at that indentation level in a single undoable step.
+- **Smart nested exit:** Pressing `Enter` on an indented empty item (`    - `) outdents it one level (`  - `) instead of wiping the whole line. Pressing `Enter` on an empty root item (`- `) exits the list cleanly.
+- **Quoted lists:** Lists inside blockquotes (`> - item`, `> 1. item`) continue with the quote prefix intact; pressing `Enter` on an empty quoted bullet drops the bullet while keeping `> `.
+- **Soft list continuation (`Shift + Enter`):** Inserts an aligned continuation line inside a list item for multi-paragraph bullets without creating a new marker.
+- **Smart Backspace:** Pressing `Backspace` at the end of an empty list, task, or quote marker (`- `, `1. `, `- [ ] `, `> `) outdents if nested or removes the entire marker in one press.
+- **Code-fence safe:** List, task, and blockquote continuation automatically stay inactive inside fenced code blocks (```` ``` ````).
 
 ---
 
@@ -156,6 +170,9 @@ Blockquotes are formatted with the greater-than `>` character:
 >> Nested blockquote level 2
 >>> Nested blockquote level 3
 ```
+
+> [!TIP]
+> Pressing `Enter` on an empty nested blockquote (`>> `) steps down one level (`> `) before exiting the quote. Blockquotes containing lists (`> - item`, `> 1. item`, `> - [ ] task`) automatically continue as quoted lists.
 
 ---
 

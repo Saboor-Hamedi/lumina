@@ -16,6 +16,7 @@ export * from './useCallout'
 export * from './useHighlight'
 export * from './useEmptyLine'
 export * from './useZoom'
+export * from './keymapMode'
 
 // Pipeline & State Hooks
 export * from './useEditorExports'

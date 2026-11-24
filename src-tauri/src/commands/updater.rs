@@ -147,6 +147,76 @@ pub fn cancel_app_update() -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(any(target_os = "windows", test))]
+fn strip_windows_verbatim(path: &Path) -> String {
+    let s = path.to_string_lossy();
+    if let Some(rest) = s.strip_prefix(r"\\?\UNC\") {
+        format!(r"\\{}", rest)
+    } else if let Some(rest) = s.strip_prefix(r"\\?\") {
+        rest.to_string()
+    } else {
+        s.to_string()
+    }
+}
+
+#[cfg(any(target_os = "windows", test))]
+fn build_windows_update_script(
+    pid: u32,
+    installer_str: &str,
+    is_msi: bool,
+    current_exe: Option<&str>,
+    log_path: &str,
+) -> String {
+    let mut bat = String::new();
+    bat.push_str("@echo off\r\n");
+    bat.push_str("setlocal\r\n");
+    bat.push_str(&format!(
+        "echo [Lumina Updater] Waiting for PID {pid} to exit... > \"{log_path}\"\r\n"
+    ));
+    // Wait up to ~20 seconds for the exiting Lumina process to fully terminate.
+    // `ping -n 2 127.0.0.1` waits ~1 second per iteration (unlike `-n 1`, which exits immediately).
+    bat.push_str(&format!(
+        "for /L %%i in (1,1,20) do (\r\n  tasklist /FI \"PID eq {pid}\" 2>NUL | find /I \"{pid}\" >NUL || goto :settled\r\n  ping -n 2 127.0.0.1 >NUL\r\n)\r\n"
+    ));
+    bat.push_str(":settled\r\n");
+    // Brief 2-second settle so WebView2 child processes release all file handles cleanly.
+    bat.push_str("ping -n 3 127.0.0.1 >NUL\r\n");
+    if is_msi {
+        bat.push_str(&format!(
+            "echo [Lumina Updater] Running MSI installer... >> \"{log_path}\"\r\n"
+        ));
+        bat.push_str(&format!(
+            "start \"\" /wait msiexec /i \"{installer_str}\" /passive\r\n"
+        ));
+    } else {
+        // VS Code-style silent NSIS in-place upgrade (/S) with `start "" /wait` so cmd.exe
+        // actually waits for the GUI-subsystem installer before relaunching Lumina.
+        // Falls back to the interactive installer if silent returns a non-zero exit code.
+        bat.push_str(&format!(
+            "echo [Lumina Updater] Running silent NSIS installer... >> \"{log_path}\"\r\n"
+        ));
+        bat.push_str(&format!(
+            "start \"\" /wait \"{installer_str}\" /S\r\n"
+        ));
+        bat.push_str(&format!(
+            "if errorlevel 1 (\r\n  echo [Lumina Updater] Silent install returned %ERRORLEVEL%, launching interactive installer... >> \"{log_path}\"\r\n  start \"\" /wait \"{installer_str}\"\r\n)\r\n"
+        ));
+    }
+    // Wait 1 second for installer file flush before relaunching.
+    bat.push_str("ping -n 2 127.0.0.1 >NUL\r\n");
+    if let Some(exe) = current_exe {
+        bat.push_str(&format!(
+            "if exist \"{exe}\" (\r\n  echo [Lumina Updater] Relaunching {exe} >> \"{log_path}\"\r\n  start \"\" \"{exe}\"\r\n) else if exist \"%LOCALAPPDATA%\\Lumina\\Lumina.exe\" (\r\n  echo [Lumina Updater] Relaunching default install >> \"{log_path}\"\r\n  start \"\" \"%LOCALAPPDATA%\\Lumina\\Lumina.exe\"\r\n)\r\n"
+        ));
+    } else {
+        bat.push_str(&format!(
+            "if exist \"%LOCALAPPDATA%\\Lumina\\Lumina.exe\" (\r\n  echo [Lumina Updater] Relaunching default install >> \"{log_path}\"\r\n  start \"\" \"%LOCALAPPDATA%\\Lumina\\Lumina.exe\"\r\n)\r\n"
+        ));
+    }
+    bat.push_str("del /f /q \"%~f0\" >NUL 2>&1\r\n");
+    bat
+}
+
 #[tauri::command]
 pub async fn install_app_update(app: tauri::AppHandle, path: String) -> Result<bool, String> {
     let target = PathBuf::from(path.trim());
@@ -160,21 +230,11 @@ pub async fn install_app_update(app: tauri::AppHandle, path: String) -> Result<b
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
+        // Note: CREATE_NO_WINDOW and DETACHED_PROCESS are mutually exclusive in Win32
+        // CreateProcessW. Use CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP so the runner
+        // stays hidden, detached from our process group, and survives app.exit(0).
         const CREATE_NO_WINDOW: u32 = 0x08000000;
-        const DETACHED_PROCESS: u32 = 0x00000008;
-
-        // Strip Windows verbatim prefix (\\?\) returned by fs::canonicalize, because
-        // cmd.exe, msiexec, and NSIS installers fail on \\?\ paths.
-        let strip_verbatim = |p: &Path| -> String {
-            let s = p.to_string_lossy();
-            if let Some(rest) = s.strip_prefix(r"\\?\UNC\") {
-                format!(r"\\{}", rest)
-            } else if let Some(rest) = s.strip_prefix(r"\\?\") {
-                rest.to_string()
-            } else {
-                s.to_string()
-            }
-        };
+        const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
 
         let is_msi = canon_target
             .extension()
@@ -182,52 +242,29 @@ pub async fn install_app_update(app: tauri::AppHandle, path: String) -> Result<b
             .map(|e| e.eq_ignore_ascii_case("msi"))
             .unwrap_or(false);
 
-        let installer_str = strip_verbatim(&canon_target);
+        let installer_str = strip_windows_verbatim(&canon_target);
         let current_exe = std::env::current_exe()
             .ok()
-            .map(|p| strip_verbatim(&p));
+            .map(|p| strip_windows_verbatim(&p));
         let pid = std::process::id();
 
-        // Write a tiny batch helper in the update temp dir so we completely avoid
-        // cmd.exe /C quote-stripping & Rust Command::arg \" escaping bugs, wait for
-        // the current Lumina process to release file locks, run the installer, and
-        // relaunch Lumina cleanly.
         let runner_path = update_dir.join("run-update.cmd");
-        let mut bat = String::new();
-        bat.push_str("@echo off\r\n");
-        bat.push_str("setlocal\r\n");
-        // Wait up to ~10 seconds for the exiting Lumina process to release exe locks
-        bat.push_str(&format!(
-            "for /L %%i in (1,1,20) do (\r\n  tasklist /FI \"PID eq {pid}\" 2>NUL | find /I \"{pid}\" >NUL || goto :run_installer\r\n  ping -n 1 -w 500 127.0.0.1 >NUL\r\n)\r\n"
-        ));
-        bat.push_str(":run_installer\r\n");
-        if is_msi {
-            bat.push_str(&format!(
-                "msiexec /i \"{}\" /passive\r\n",
-                installer_str
-            ));
-        } else {
-            // Silent NSIS in-place upgrade; if silent fails (e.g. UAC/custom state), fall back to interactive UI
-            bat.push_str(&format!(
-                "\"{}\" /S\r\nif errorlevel 1 \"{}\"\r\n",
-                installer_str, installer_str
-            ));
-        }
-        if let Some(exe) = current_exe {
-            bat.push_str(&format!(
-                "if exist \"{}\" start \"\" \"{}\"\r\n",
-                exe, exe
-            ));
-        }
-        bat.push_str("del /f /q \"%~f0\" >NUL 2>&1\r\n");
+        let log_path = strip_windows_verbatim(&update_dir.join("last-update.log"));
+        let bat = build_windows_update_script(
+            pid,
+            &installer_str,
+            is_msi,
+            current_exe.as_deref(),
+            &log_path,
+        );
 
         fs::write(&runner_path, bat)
             .map_err(|e| format!("Failed to prepare update runner: {}", e))?;
 
-        let runner_str = strip_verbatim(&runner_path);
+        let runner_str = strip_windows_verbatim(&runner_path);
         Command::new("cmd")
-            .args(["/C", &runner_str])
-            .creation_flags(CREATE_NO_WINDOW | DETACHED_PROCESS)
+            .args(["/D", "/C", &runner_str])
+            .creation_flags(CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP)
             .spawn()
             .map_err(|e| format!("Failed to launch installer: {}", e))?;
         app.exit(0);
@@ -253,5 +290,55 @@ pub async fn install_app_update(app: tauri::AppHandle, path: String) -> Result<b
     }
 
     Ok(true)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn strips_windows_verbatim_prefixes() {
+        assert_eq!(
+            strip_windows_verbatim(Path::new(r"\\?\C:\Users\Alice\setup.exe")),
+            r"C:\Users\Alice\setup.exe"
+        );
+        assert_eq!(
+            strip_windows_verbatim(Path::new(r"\\?\UNC\server\share\setup.exe")),
+            r"\\server\share\setup.exe"
+        );
+        assert_eq!(
+            strip_windows_verbatim(Path::new(r"C:\Temp\setup.exe")),
+            r"C:\Temp\setup.exe"
+        );
+    }
+
+    #[test]
+    fn builds_silent_nsis_script_with_wait_and_fallback() {
+        let script = build_windows_update_script(
+            4242,
+            r"C:\Temp\Lumina_1.4.7_x64-setup.exe",
+            false,
+            Some(r"C:\Users\Alice\AppData\Local\Lumina\Lumina.exe"),
+            r"C:\Temp\last-update.log",
+        );
+        assert!(script.contains("PID eq 4242"));
+        assert!(script.contains("ping -n 2 127.0.0.1"));
+        assert!(script.contains("start \"\" /wait \"C:\\Temp\\Lumina_1.4.7_x64-setup.exe\" /S"));
+        assert!(script.contains("if errorlevel 1"));
+        assert!(script.contains("start \"\" \"C:\\Users\\Alice\\AppData\\Local\\Lumina\\Lumina.exe\""));
+    }
+
+    #[test]
+    fn builds_msi_script_with_wait() {
+        let script = build_windows_update_script(
+            9001,
+            r"C:\Temp\Lumina_1.4.7_x64.msi",
+            true,
+            None,
+            r"C:\Temp\last-update.log",
+        );
+        assert!(script.contains("start \"\" /wait msiexec /i \"C:\\Temp\\Lumina_1.4.7_x64.msi\" /passive"));
+        assert!(script.contains("%LOCALAPPDATA%\\Lumina\\Lumina.exe"));
+    }
 }
 

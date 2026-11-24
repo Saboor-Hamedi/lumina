@@ -59,6 +59,8 @@ export interface Settings {
   cursorStyle: string
   cursor?: { [key: string]: any }
   smoothScrolling: boolean
+  /** Reserved editor keymap mode slot (`'default'` | `'vim'`). Vim mode wired later. */
+  editorKeymapMode?: 'default' | 'vim'
   sidebarCollapsedSections: SidebarSectionCollapsedState
   sortBy: string
   sortDirection: string

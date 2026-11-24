@@ -55,9 +55,14 @@ Lumina is designed so you can write and move around without your hands leaving t
 | `Ctrl + V` | **Paste with Formatting** — Keep lists, tables, and images when pasting |
 | `Ctrl + Shift + V` | **Paste as Plain Text** — Paste without any formatting |
 | `Ctrl + Shift + H` | **Highlight** — Mark important words with a highlight |
-| `Alt + Up / Down` | **Move Line** — Slide the current line up or down |
-| `Tab` | **Indent** — Move a line or checklist item one level deeper |
-| `Shift + Tab` | **Outdent** — Move an indented line back out |
+| `Ctrl + Shift + X` | **Toggle Task / Checklist** — Toggle `- [ ]` ↔ `- [x]` or convert plain/bullet lines into tasks (supports multi-line selections and quoted tasks) |
+| `Alt + Up / Down` | **Move Line Up / Down** — Move the current line or selection up/down (auto-renumbers ordered lists) |
+| `Shift + Alt + Up / Down` | **Duplicate Line Up / Down** — Duplicate the current line or selection above/below (auto-renumbers ordered lists) |
+| `Tab` | **Indent** — Indent a line, list, or task one level deeper (auto-renumbers ordered lists) |
+| `Shift + Tab` | **Outdent** — Move an indented line, list, or task back out (auto-renumbers ordered lists) |
+| `Shift + Enter` | **Soft List Continuation** — Insert a newline aligned to the current list or task text column without creating a new bullet |
+| `Backspace` (on empty marker) | **Smart Marker Delete** — Outdent a nested empty list/task/quote marker, or remove a root marker (`- `, `1. `, `- [ ] `, `> `) in one press |
+| Select + `*` `_` `` ` `` `~` `(` `[` `{` `"` `'` | **Smart Selection Wrapping** — Wrap selected text in matching pairs while keeping the text selected (press `*` twice for `**bold**`) |
 
 ---
 

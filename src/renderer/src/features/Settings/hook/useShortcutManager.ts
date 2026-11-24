@@ -47,6 +47,14 @@ export function normalizeCombo(str: string): string {
       mainKey = '\\'
     } else if (p === 'space' || p === ' ') {
       mainKey = 'space'
+    } else if (p === 'arrowup' || p === 'up') {
+      mainKey = 'up'
+    } else if (p === 'arrowdown' || p === 'down') {
+      mainKey = 'down'
+    } else if (p === 'arrowleft' || p === 'left') {
+      mainKey = 'left'
+    } else if (p === 'arrowright' || p === 'right') {
+      mainKey = 'right'
     } else {
       mainKey = p
     }
@@ -126,6 +134,10 @@ export function getMainKey(e: KeyboardEvent): string | null {
 
   if (code === 'Space' || key === ' ') return 'Space'
   if (code === 'Tab' || key === 'Tab') return 'Tab'
+  if (code === 'ArrowUp' || key === 'ArrowUp') return 'Up'
+  if (code === 'ArrowDown' || key === 'ArrowDown') return 'Down'
+  if (code === 'ArrowLeft' || key === 'ArrowLeft') return 'Left'
+  if (code === 'ArrowRight' || key === 'ArrowRight') return 'Right'
   if (code === 'Slash' || key === '/' || key === '?') return '/'
   if (code === 'Period' || key === '.' || key === '>') return '.'
   if (code === 'Comma' || key === ',' || key === '<') return ','

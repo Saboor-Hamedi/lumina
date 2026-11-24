@@ -82,3 +82,10 @@ Task lists allow interactive checking and unchecking:
 - [ ] Export note as PDF
   - [x] Generate print stylesheet
   - [ ] Add header/footer pagination
+
+### Smart Task Editing in Lumina
+
+- **Toggle or convert (`Ctrl + Shift + X` / `⌘ + Shift + X`):** Toggles `- [ ]` ↔ `- [x]` on the current line or multi-line selection, and converts plain lines, bullets, or ordered items into tasks (preserving indentation and blockquote prefixes like `> - [ ]`).
+- **Smart continuation & nested exit (`Enter`):** Pressing `Enter` on a task continues with a fresh unchecked `- [ ] `. Pressing `Enter` on an empty indented task outdents one level; pressing `Enter` on an empty root task exits the list cleanly.
+- **Soft continuation (`Shift + Enter`):** Adds an aligned continuation line inside a task item without starting a new checkbox.
+- **One-press clear (`Backspace`):** Pressing `Backspace` right after an empty `- [ ] ` outdents if nested or clears the entire checkbox marker in one keystroke.
