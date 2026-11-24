@@ -10,7 +10,7 @@ describe('SettingShortcuts', () => {
   it('renders search input and shortcut categories', () => {
     render(<SettingShortcuts />)
     expect(screen.getByPlaceholderText(/Find a shortcut/i)).toBeInTheDocument()
-    expect(screen.getByText('General')).toBeInTheDocument()
+    expect(screen.getAllByText('General').length).toBeGreaterThan(0)
   })
 
   it('filters shortcuts based on search query', () => {
@@ -33,7 +33,7 @@ describe('SettingShortcuts', () => {
     fireEvent.click(clearBtn)
 
     expect(searchInput.value).toBe('')
-    expect(screen.getByText('General')).toBeInTheDocument()
+    expect(screen.getAllByText('General').length).toBeGreaterThan(0)
   })
 
   it('renders no results message when query has no matches', () => {

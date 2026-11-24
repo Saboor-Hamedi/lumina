@@ -99,7 +99,7 @@ export const SettingShortcuts: React.FC = () => {
           <input
             type="text"
             className="shortcuts-search-input"
-            placeholder="Search shortcuts by name or key..."
+            placeholder="Find a shortcut by name or key combination..."
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
           />

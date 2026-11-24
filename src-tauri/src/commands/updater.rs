@@ -160,6 +160,11 @@ fn strip_windows_verbatim(path: &Path) -> String {
 }
 
 #[cfg(any(target_os = "windows", test))]
+fn ps_single_quote(s: &str) -> String {
+    format!("'{}'", s.replace('\'', "''"))
+}
+
+#[cfg(any(target_os = "windows", test))]
 fn build_windows_update_script(
     pid: u32,
     installer_str: &str,
@@ -167,54 +172,59 @@ fn build_windows_update_script(
     current_exe: Option<&str>,
     log_path: &str,
 ) -> String {
-    let mut bat = String::new();
-    bat.push_str("@echo off\r\n");
-    bat.push_str("setlocal\r\n");
-    bat.push_str(&format!(
-        "echo [Lumina Updater] Waiting for PID {pid} to exit... > \"{log_path}\"\r\n"
+    let ps_log = ps_single_quote(log_path);
+    let ps_installer = ps_single_quote(installer_str);
+    let mut ps = String::new();
+    ps.push_str("$ErrorActionPreference = 'Continue'\r\n");
+    ps.push_str(&format!("$log = {ps_log}\r\n"));
+    ps.push_str(&format!(
+        "\"[Lumina Updater] Waiting for PID {pid} to exit...\" | Set-Content -Path $log -Encoding UTF8\r\n"
     ));
-    // Wait up to ~20 seconds for the exiting Lumina process to fully terminate.
-    // `ping -n 2 127.0.0.1` waits ~1 second per iteration (unlike `-n 1`, which exits immediately).
-    bat.push_str(&format!(
-        "for /L %%i in (1,1,20) do (\r\n  tasklist /FI \"PID eq {pid}\" 2>NUL | find /I \"{pid}\" >NUL || goto :settled\r\n  ping -n 2 127.0.0.1 >NUL\r\n)\r\n"
+    // Native Win32 WaitForSingleObject on the exiting Lumina PID (up to 20s).
+    ps.push_str(&format!(
+        "try {{ Wait-Process -Id {pid} -Timeout 20 -ErrorAction SilentlyContinue }} catch {{}}\r\n"
     ));
-    bat.push_str(":settled\r\n");
     // Brief 2-second settle so WebView2 child processes release all file handles cleanly.
-    bat.push_str("ping -n 3 127.0.0.1 >NUL\r\n");
+    ps.push_str("Start-Sleep -Seconds 2\r\n");
+
     if is_msi {
-        bat.push_str(&format!(
-            "echo [Lumina Updater] Running MSI installer... >> \"{log_path}\"\r\n"
+        ps.push_str("\"[Lumina Updater] Running MSI installer...\" | Add-Content -Path $log -Encoding UTF8\r\n");
+        ps.push_str(&format!(
+            "$p = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i', {ps_installer}, '/passive') -Wait -PassThru\r\n"
         ));
-        bat.push_str(&format!(
-            "start \"\" /wait msiexec /i \"{installer_str}\" /passive\r\n"
-        ));
+        ps.push_str("\"[Lumina Updater] MSI installer exited with code $($p.ExitCode)\" | Add-Content -Path $log -Encoding UTF8\r\n");
     } else {
-        // VS Code-style silent NSIS in-place upgrade (/S) with `start "" /wait` so cmd.exe
-        // actually waits for the GUI-subsystem installer before relaunching Lumina.
-        // Falls back to the interactive installer if silent returns a non-zero exit code.
-        bat.push_str(&format!(
-            "echo [Lumina Updater] Running silent NSIS installer... >> \"{log_path}\"\r\n"
+        // VS Code-style silent NSIS in-place upgrade (/S) with -Wait so relaunch never races
+        // against file replacement; falls back to interactive installer if silent returns non-zero.
+        ps.push_str("\"[Lumina Updater] Running silent NSIS installer...\" | Add-Content -Path $log -Encoding UTF8\r\n");
+        ps.push_str(&format!(
+            "$p = Start-Process -FilePath {ps_installer} -ArgumentList '/S' -Wait -PassThru\r\n"
         ));
-        bat.push_str(&format!(
-            "start \"\" /wait \"{installer_str}\" /S\r\n"
+        ps.push_str("\"[Lumina Updater] Silent installer exited with code $($p.ExitCode)\" | Add-Content -Path $log -Encoding UTF8\r\n");
+        ps.push_str("if ($null -eq $p -or $p.ExitCode -ne 0) {\r\n");
+        ps.push_str("  \"[Lumina Updater] Launching interactive installer fallback...\" | Add-Content -Path $log -Encoding UTF8\r\n");
+        ps.push_str(&format!(
+            "  Start-Process -FilePath {ps_installer} -Wait\r\n"
         ));
-        bat.push_str(&format!(
-            "if errorlevel 1 (\r\n  echo [Lumina Updater] Silent install returned %ERRORLEVEL%, launching interactive installer... >> \"{log_path}\"\r\n  start \"\" /wait \"{installer_str}\"\r\n)\r\n"
-        ));
+        ps.push_str("}\r\n");
     }
-    // Wait 1 second for installer file flush before relaunching.
-    bat.push_str("ping -n 2 127.0.0.1 >NUL\r\n");
+
+    ps.push_str("Start-Sleep -Seconds 1\r\n");
     if let Some(exe) = current_exe {
-        bat.push_str(&format!(
-            "if exist \"{exe}\" (\r\n  echo [Lumina Updater] Relaunching {exe} >> \"{log_path}\"\r\n  start \"\" \"{exe}\"\r\n) else if exist \"%LOCALAPPDATA%\\Lumina\\Lumina.exe\" (\r\n  echo [Lumina Updater] Relaunching default install >> \"{log_path}\"\r\n  start \"\" \"%LOCALAPPDATA%\\Lumina\\Lumina.exe\"\r\n)\r\n"
-        ));
+        let ps_exe = ps_single_quote(exe);
+        ps.push_str(&format!("$targetExe = {ps_exe}\r\n"));
+        ps.push_str("if (-not (Test-Path -LiteralPath $targetExe)) {\r\n");
+        ps.push_str("  $targetExe = Join-Path $env:LOCALAPPDATA 'Lumina\\Lumina.exe'\r\n");
+        ps.push_str("}\r\n");
     } else {
-        bat.push_str(&format!(
-            "if exist \"%LOCALAPPDATA%\\Lumina\\Lumina.exe\" (\r\n  echo [Lumina Updater] Relaunching default install >> \"{log_path}\"\r\n  start \"\" \"%LOCALAPPDATA%\\Lumina\\Lumina.exe\"\r\n)\r\n"
-        ));
+        ps.push_str("$targetExe = Join-Path $env:LOCALAPPDATA 'Lumina\\Lumina.exe'\r\n");
     }
-    bat.push_str("del /f /q \"%~f0\" >NUL 2>&1\r\n");
-    bat
+    ps.push_str("if (Test-Path -LiteralPath $targetExe) {\r\n");
+    ps.push_str("  \"[Lumina Updater] Relaunching $targetExe\" | Add-Content -Path $log -Encoding UTF8\r\n");
+    ps.push_str("  Start-Process -FilePath $targetExe\r\n");
+    ps.push_str("}\r\n");
+    ps.push_str("Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force -ErrorAction SilentlyContinue\r\n");
+    ps
 }
 
 #[tauri::command]
@@ -230,9 +240,8 @@ pub async fn install_app_update(app: tauri::AppHandle, path: String) -> Result<b
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
-        // Note: CREATE_NO_WINDOW and DETACHED_PROCESS are mutually exclusive in Win32
-        // CreateProcessW. Use CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP so the runner
-        // stays hidden, detached from our process group, and survives app.exit(0).
+        // CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP keeps the updater runner hidden
+        // and independent of Lumina's process group so it survives app.exit(0).
         const CREATE_NO_WINDOW: u32 = 0x08000000;
         const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
 
@@ -248,9 +257,9 @@ pub async fn install_app_update(app: tauri::AppHandle, path: String) -> Result<b
             .map(|p| strip_windows_verbatim(&p));
         let pid = std::process::id();
 
-        let runner_path = update_dir.join("run-update.cmd");
+        let runner_path = update_dir.join("run-update.ps1");
         let log_path = strip_windows_verbatim(&update_dir.join("last-update.log"));
-        let bat = build_windows_update_script(
+        let script = build_windows_update_script(
             pid,
             &installer_str,
             is_msi,
@@ -258,12 +267,21 @@ pub async fn install_app_update(app: tauri::AppHandle, path: String) -> Result<b
             &log_path,
         );
 
-        fs::write(&runner_path, bat)
+        fs::write(&runner_path, script)
             .map_err(|e| format!("Failed to prepare update runner: {}", e))?;
 
         let runner_str = strip_windows_verbatim(&runner_path);
-        Command::new("cmd")
-            .args(["/D", "/C", &runner_str])
+        Command::new("powershell.exe")
+            .args([
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-WindowStyle",
+                "Hidden",
+                "-File",
+                &runner_str,
+            ])
             .creation_flags(CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP)
             .spawn()
             .map_err(|e| format!("Failed to launch installer: {}", e))?;
@@ -321,11 +339,10 @@ mod tests {
             Some(r"C:\Users\Alice\AppData\Local\Lumina\Lumina.exe"),
             r"C:\Temp\last-update.log",
         );
-        assert!(script.contains("PID eq 4242"));
-        assert!(script.contains("ping -n 2 127.0.0.1"));
-        assert!(script.contains("start \"\" /wait \"C:\\Temp\\Lumina_1.4.7_x64-setup.exe\" /S"));
-        assert!(script.contains("if errorlevel 1"));
-        assert!(script.contains("start \"\" \"C:\\Users\\Alice\\AppData\\Local\\Lumina\\Lumina.exe\""));
+        assert!(script.contains("Wait-Process -Id 4242"));
+        assert!(script.contains("Start-Process -FilePath 'C:\\Temp\\Lumina_1.4.7_x64-setup.exe' -ArgumentList '/S' -Wait -PassThru"));
+        assert!(script.contains("if ($null -eq $p -or $p.ExitCode -ne 0)"));
+        assert!(script.contains("C:\\Users\\Alice\\AppData\\Local\\Lumina\\Lumina.exe"));
     }
 
     #[test]
@@ -337,8 +354,8 @@ mod tests {
             None,
             r"C:\Temp\last-update.log",
         );
-        assert!(script.contains("start \"\" /wait msiexec /i \"C:\\Temp\\Lumina_1.4.7_x64.msi\" /passive"));
-        assert!(script.contains("%LOCALAPPDATA%\\Lumina\\Lumina.exe"));
+        assert!(script.contains("Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i', 'C:\\Temp\\Lumina_1.4.7_x64.msi', '/passive') -Wait -PassThru"));
+        assert!(script.contains("Join-Path $env:LOCALAPPDATA 'Lumina\\Lumina.exe'"));
     }
 }
 

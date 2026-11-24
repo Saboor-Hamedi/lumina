@@ -1,50 +1,326 @@
-warning: unused import: `AtomicBool`
- --> src-tauri/src/export.rs:8:25
-  |
-8 | use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-  |                         ^^^^^^^^^^
-  |
-  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
-warning: unused import: `Arc`
- --> src-tauri/src/export.rs:9:17
-  |
-9 | use std::sync::{Arc, Mutex, OnceLock};
-  |                 ^^^
-warning: unused imports: `WebviewUrl` and `WebviewWindowBuilder`
-  --> src-tauri/src/export.rs:10:24
-   |
-10 | use tauri::{AppHandle, WebviewUrl, WebviewWindowBuilder};
-   |                        ^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^
-warning: variable does not need to be mutable
-    --> src-tauri/src/commands.rs:2435:9
-     |
-2435 |     let mut cmd = Command::new(program);
-     |         ----^^^
-     |         |
-     |         help: remove this `mut`
-     |
-     = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
-warning: unused variable: `filter_name`
-   --> src-tauri/src/export.rs:194:5
-    |
-194 |     filter_name: String,
-    |     ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_filter_name`
-    |
-    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
-warning: unused variable: `extensions`
-   --> src-tauri/src/export.rs:195:5
-    |
-195 |     extensions: Vec<String>,
-    |     ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_extensions`
-warning: unused variable: `app`
-   --> src-tauri/src/export.rs:871:5
-    |
-871 |     app: AppHandle,
-    |     ^^^ help: if this is intentional, prefix it with an underscore: `_app`
-warning: unused variable: `landscape`
-   --> src-tauri/src/export.rs:874:5
-    |
-874 |     landscape: Option<bool>,
-    |     ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_landscape`
-warning: `app` (lib) generated 8 warnings (run `cargo fix --lib -p app` to apply 8 suggestions)
-    Finished `release` profile [optimized] target(s) in 5m 06s
+Error: TestingLibraryElementError: Unable to find an element with the placeholder text of: /Find a shortcut/i
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="settings-pane shortcuts-pane"
+      >
+      <div
+        class="settings-pane-header"
+        >
+        <div
+          class="settings-pane-header-info"
+          >
+          <h2
+            class="settings-pane-title"
+            >
+            Keyboard Shortcuts
+          </h2>
+          <p
+            class="settings-pane-subtitle"
+            >
+            Click any binding to rebind it. Press Enter to save, Backspace to reset, or Esc to cancel.
+          </p>
+        </div>
+      </div>
+      <div
+        class="shortcuts-toolbar"
+        >
+        <div
+          class="shortcuts-search-wrap"
+          >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-search shortcuts-search-icon"
+            fill="none"
+            height="13"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="13"
+            xmlns="http://www.w3.org/2000/svg"
+            >
+            <path
+              d="m21 21-4.34-4.34"
+              />
+            <circle
+              cx="11"
+              cy="11"
+              r="8"
+              />
+          </svg>
+          <input
+            class="shortcuts-search-input"
+            placeholder="Search shortcuts by name or key..."
+            type="text"
+            value=""
+            />
+        </div>
+        <div
+          aria-label="Shortcut categories"
+          class="shortcuts-category-pills"
+          role="tablist"
+          >
+          <button
+            aria-selected="true"
+            class="shortcuts-category-pill is-active"
+            role="tab"
+            type="button"
+            >
+            All
+          </button>
+          <button
+            aria-selected="false"
+            class="shortcuts-category-pill"
+            role="tab"
+            type="button"
+            >
+            General
+          </button>
+          <button
+            aria-selected="false"
+            class="shortcuts-category-pill"
+            role="tab"
+            type="button"
+            >
+            File
+          </button>
+          <button
+            aria-selected="false"
+            class="shortcuts-category-pill"
+            role="tab"
+            type="button"
+            >
+            Navigation
+          </button>
+          <button
+            aria-selected="false"
+            class="shortcuts-category-pill"
+            role="tab"
+            type="button"
+            >
+            Editor
+          </button>
+        </div>
+      </div>
+      <div
+        class="shortcuts-groups"
+        >
+        <section
+          class="shortcuts-group"
+          >
+          <div
+            class="shortcuts-group-header"
+            >
+            <span>
+              General
+            </span>
+            <span
+              class="shortcuts-group-count"
+              >
+              10
+            </span>
+          </div>
+          <div
+            class="shortcuts-group-surface"
+            >
+            <div
+              class="shortcut-list-row"
+              >
+              <div
+                class="shortcut-row-label"
+                >
+                <span
+                  class="shortcut-row-title"
+                  >
+                  Spotlight (Internal & Global)
+                </span>
+              </div>
+              <div
+                class="shortcut-row-right"
+                >
+                <button
+                  class="shortcut-keycaps-btn"
+                  title="Click to customize"
+                  type="button"
+                  >
+                  <span
+                    class="shortcut-keycaps-group"
+                    >
+                    <kbd
+                      class="shortcut-kbd"
+                      >
+                      Ctrl
+                    </kbd>
+                    <kbd
+                      class="shortcut-kbd"
+                      >
+                      Space
+
+
+Error: TestingLibraryElementError: Unable to find an element with the placeholder text of: /Find a shortcut/i
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="settings-pane shortcuts-pane"
+    >
+      <div
+        class="settings-pane-header"
+      >
+        <div
+          class="settings-pane-header-info"
+        >
+          <h2
+            class="settings-pane-title"
+          >
+            Keyboard Shortcuts
+          </h2>
+          <p
+            class="settings-pane-subtitle"
+          >
+            Click any binding to rebind it. Press Enter to save, Backspace to reset, or Esc to cancel.
+          </p>
+        </div>
+      </div>
+      <div
+        class="shortcuts-toolbar"
+      >
+        <div
+          class="shortcuts-search-wrap"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-search shortcuts-search-icon"
+            fill="none"
+            height="13"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="13"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m21 21-4.34-4.34"
+            />
+            <circle
+              cx="11"
+              cy="11"
+              r="8"
+            />
+          </svg>
+          <input
+            class="shortcuts-search-input"
+            placeholder="Search shortcuts by name or key..."
+            type="text"
+            value=""
+          />
+        </div>
+        <div
+          aria-label="Shortcut categories"
+          class="shortcuts-category-pills"
+          role="tablist"
+        >
+          <button
+            aria-selected="true"
+            class="shortcuts-category-pill is-active"
+            role="tab"
+            type="button"
+          >
+            All
+          </button>
+          <button
+            aria-selected="false"
+            class="shortcuts-category-pill"
+            role="tab"
+            type="button"
+          >
+            General
+          </button>
+          <button
+            aria-selected="false"
+            class="shortcuts-category-pill"
+            role="tab"
+            type="button"
+          >
+            File
+          </button>
+          <button
+            aria-selected="false"
+            class="shortcuts-category-pill"
+            role="tab"
+            type="button"
+          >
+            Navigation
+          </button>
+          <button
+            aria-selected="false"
+            class="shortcuts-category-pill"
+            role="tab"
+            type="button"
+          >
+            Editor
+          </button>
+        </div>
+      </div>
+      <div
+        class="shortcuts-groups"
+      >
+        <section
+          class="shortcuts-group"
+        >
+          <div
+            class="shortcuts-group-header"
+          >
+            <span>
+              General
+            </span>
+            <span
+              class="shortcuts-group-count"
+            >
+              10
+            </span>
+          </div>
+          <div
+            class="shortcuts-group-surface"
+          >
+            <div
+              class="shortcut-list-row"
+            >
+              <div
+                class="shortcut-row-label"
+              >
+                <span
+                  class="shortcut-row-title"
+                >
+                  Spotlight (Internal & Global)
+                </span>
+              </div>
+              <div
+                class="shortcut-row-right"
+              >
+                <button
+                  class="shortcut-keycaps-btn"
+                  title="Click to customize"
+                  type="button"
+                >
+                  <span
+                    class="shortcut-keycaps-group"
+                  >
+                    <kbd
+                      class="shortcut-kbd"
+                    >
+                      Ctrl
+                    </kbd>
+                    <kbd
+                      class="shortcut-kbd"
+                    >
+                      Space
+
+Error: Process completed with exit code 1.
