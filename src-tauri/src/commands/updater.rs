@@ -159,76 +159,8 @@ fn strip_windows_verbatim(path: &Path) -> String {
     }
 }
 
-#[cfg(any(target_os = "windows", test))]
-fn ps_single_quote(s: &str) -> String {
-    format!("'{}'", s.replace('\'', "''"))
-}
-
-#[cfg(any(target_os = "windows", test))]
-fn build_windows_update_script(
-    pid: u32,
-    installer_str: &str,
-    is_msi: bool,
-    current_exe: Option<&str>,
-    log_path: &str,
-) -> String {
-    let ps_log = ps_single_quote(log_path);
-    let ps_installer = ps_single_quote(installer_str);
-    let mut ps = String::new();
-    ps.push_str("$ErrorActionPreference = 'Continue'\r\n");
-    ps.push_str(&format!("$log = {ps_log}\r\n"));
-    ps.push_str(&format!(
-        "\"[Lumina Updater] Waiting for PID {pid} to exit...\" | Set-Content -Path $log -Encoding UTF8\r\n"
-    ));
-    // Native Win32 WaitForSingleObject on the exiting Lumina PID (up to 20s).
-    ps.push_str(&format!(
-        "try {{ Wait-Process -Id {pid} -Timeout 20 -ErrorAction SilentlyContinue }} catch {{}}\r\n"
-    ));
-    // Brief 2-second settle so WebView2 child processes release all file handles cleanly.
-    ps.push_str("Start-Sleep -Seconds 2\r\n");
-
-    if is_msi {
-        ps.push_str("\"[Lumina Updater] Running MSI installer...\" | Add-Content -Path $log -Encoding UTF8\r\n");
-        ps.push_str(&format!(
-            "$p = Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i', {ps_installer}, '/passive') -Wait -PassThru\r\n"
-        ));
-        ps.push_str("\"[Lumina Updater] MSI installer exited with code $($p.ExitCode)\" | Add-Content -Path $log -Encoding UTF8\r\n");
-    } else {
-        // VS Code-style silent NSIS in-place upgrade (/S) with -Wait so relaunch never races
-        // against file replacement; falls back to interactive installer if silent returns non-zero.
-        ps.push_str("\"[Lumina Updater] Running silent NSIS installer...\" | Add-Content -Path $log -Encoding UTF8\r\n");
-        ps.push_str(&format!(
-            "$p = Start-Process -FilePath {ps_installer} -ArgumentList '/S' -Wait -PassThru\r\n"
-        ));
-        ps.push_str("\"[Lumina Updater] Silent installer exited with code $($p.ExitCode)\" | Add-Content -Path $log -Encoding UTF8\r\n");
-        ps.push_str("if ($null -eq $p -or $p.ExitCode -ne 0) {\r\n");
-        ps.push_str("  \"[Lumina Updater] Launching interactive installer fallback...\" | Add-Content -Path $log -Encoding UTF8\r\n");
-        ps.push_str(&format!(
-            "  Start-Process -FilePath {ps_installer} -Wait\r\n"
-        ));
-        ps.push_str("}\r\n");
-    }
-
-    ps.push_str("Start-Sleep -Seconds 1\r\n");
-    if let Some(exe) = current_exe {
-        let ps_exe = ps_single_quote(exe);
-        ps.push_str(&format!("$targetExe = {ps_exe}\r\n"));
-        ps.push_str("if (-not (Test-Path -LiteralPath $targetExe)) {\r\n");
-        ps.push_str("  $targetExe = Join-Path $env:LOCALAPPDATA 'Lumina\\Lumina.exe'\r\n");
-        ps.push_str("}\r\n");
-    } else {
-        ps.push_str("$targetExe = Join-Path $env:LOCALAPPDATA 'Lumina\\Lumina.exe'\r\n");
-    }
-    ps.push_str("if (Test-Path -LiteralPath $targetExe) {\r\n");
-    ps.push_str("  \"[Lumina Updater] Relaunching $targetExe\" | Add-Content -Path $log -Encoding UTF8\r\n");
-    ps.push_str("  Start-Process -FilePath $targetExe\r\n");
-    ps.push_str("}\r\n");
-    ps.push_str("Remove-Item -LiteralPath $MyInvocation.MyCommand.Path -Force -ErrorAction SilentlyContinue\r\n");
-    ps
-}
-
 #[tauri::command]
-pub async fn install_app_update(app: tauri::AppHandle, path: String) -> Result<bool, String> {
+pub async fn install_app_update(_app: tauri::AppHandle, path: String) -> Result<bool, String> {
     let target = PathBuf::from(path.trim());
     let update_dir = std::env::temp_dir().join("lumina-updates");
     let canon_dir = fs::canonicalize(&update_dir).map_err(|e| e.to_string())?;
@@ -239,53 +171,31 @@ pub async fn install_app_update(app: tauri::AppHandle, path: String) -> Result<b
 
     #[cfg(target_os = "windows")]
     {
-        use std::os::windows::process::CommandExt;
-        // CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP keeps the updater runner hidden
-        // and independent of Lumina's process group so it survives app.exit(0).
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
-        const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
-
         let is_msi = canon_target
             .extension()
             .and_then(|e| e.to_str())
             .map(|e| e.eq_ignore_ascii_case("msi"))
             .unwrap_or(false);
 
+        // Strip `\\?\` verbatim prefix so Windows Explorer, msiexec, and NSIS never fail on the path.
         let installer_str = strip_windows_verbatim(&canon_target);
-        let current_exe = std::env::current_exe()
-            .ok()
-            .map(|p| strip_windows_verbatim(&p));
-        let pid = std::process::id();
 
-        let runner_path = update_dir.join("run-update.ps1");
-        let log_path = strip_windows_verbatim(&update_dir.join("last-update.log"));
-        let script = build_windows_update_script(
-            pid,
-            &installer_str,
-            is_msi,
-            current_exe.as_deref(),
-            &log_path,
-        );
-
-        fs::write(&runner_path, script)
-            .map_err(|e| format!("Failed to prepare update runner: {}", e))?;
-
-        let runner_str = strip_windows_verbatim(&runner_path);
-        Command::new("powershell.exe")
-            .args([
-                "-NoProfile",
-                "-NonInteractive",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-WindowStyle",
-                "Hidden",
-                "-File",
-                &runner_str,
-            ])
-            .creation_flags(CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP)
-            .spawn()
-            .map_err(|e| format!("Failed to launch installer: {}", e))?;
-        app.exit(0);
+        // Launch the interactive Setup Wizard modal ("Next -> Next -> Install") visibly on top of
+        // Lumina without closing/hiding the app prematurely.
+        if is_msi {
+            Command::new("msiexec.exe")
+                .args(["/i", &installer_str])
+                .spawn()
+                .map(|_| ())
+                .or_else(|_| open::that(&installer_str))
+                .map_err(|e| format!("Failed to launch MSI installer: {}", e))?;
+        } else {
+            Command::new(&installer_str)
+                .spawn()
+                .map(|_| ())
+                .or_else(|_| open::that(&installer_str))
+                .map_err(|e| format!("Failed to launch installer: {}", e))?;
+        }
     }
     #[cfg(not(target_os = "windows"))]
     {
@@ -304,7 +214,6 @@ pub async fn install_app_update(app: tauri::AppHandle, path: String) -> Result<b
             }
         }
         open::that(&canon_target).map_err(|e| format!("Failed to open installer: {}", e))?;
-        app.exit(0);
     }
 
     Ok(true)
@@ -331,31 +240,11 @@ mod tests {
     }
 
     #[test]
-    fn builds_silent_nsis_script_with_wait_and_fallback() {
-        let script = build_windows_update_script(
-            4242,
-            r"C:\Temp\Lumina_1.4.7_x64-setup.exe",
-            false,
-            Some(r"C:\Users\Alice\AppData\Local\Lumina\Lumina.exe"),
-            r"C:\Temp\last-update.log",
+    fn sanitizes_update_filenames() {
+        assert_eq!(
+            sanitize_update_filename("Lumina_1.4.7_x64-setup.exe"),
+            "Lumina_1.4.7_x64-setup.exe"
         );
-        assert!(script.contains("Wait-Process -Id 4242"));
-        assert!(script.contains("Start-Process -FilePath 'C:\\Temp\\Lumina_1.4.7_x64-setup.exe' -ArgumentList '/S' -Wait -PassThru"));
-        assert!(script.contains("if ($null -eq $p -or $p.ExitCode -ne 0)"));
-        assert!(script.contains("C:\\Users\\Alice\\AppData\\Local\\Lumina\\Lumina.exe"));
-    }
-
-    #[test]
-    fn builds_msi_script_with_wait() {
-        let script = build_windows_update_script(
-            9001,
-            r"C:\Temp\Lumina_1.4.7_x64.msi",
-            true,
-            None,
-            r"C:\Temp\last-update.log",
-        );
-        assert!(script.contains("Start-Process -FilePath 'msiexec.exe' -ArgumentList @('/i', 'C:\\Temp\\Lumina_1.4.7_x64.msi', '/passive') -Wait -PassThru"));
-        assert!(script.contains("Join-Path $env:LOCALAPPDATA 'Lumina\\Lumina.exe'"));
     }
 }
 

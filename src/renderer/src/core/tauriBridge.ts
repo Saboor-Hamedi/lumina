@@ -204,6 +204,67 @@ export function initTauriBridge(): void {
   }
 
   let lastIndexStats = { totalChunks: 0, indexedFiles: 0, lastIndexedAt: 0 }
+  let downloadedInstallerVersion: string | null = null
+  let activeDownloadPromise: Promise<void> | null = null
+
+  const downloadReleaseAsset = async (openBrowserFallback = false): Promise<void> => {
+    if (activeDownloadPromise) return activeDownloadPromise
+
+    if (latestReleaseInfo?.assetUrl && latestReleaseInfo?.assetName) {
+      if (downloadedInstallerPath && downloadedInstallerVersion === latestReleaseInfo.version) {
+        notifyUpdateStatus('ready', latestReleaseInfo)
+        return
+      }
+
+      activeDownloadPromise = (async () => {
+        let unlisten: (() => void) | null = null
+        try {
+          notifyUpdateStatus('downloading', {
+            percent: 0,
+            transferred: 0,
+            total: latestReleaseInfo.assetSize || 0
+          })
+          unlisten = await listen<any>('update-download-progress', (ev) => {
+            notifyUpdateStatus('downloading', ev.payload || { percent: 0 })
+          })
+          const savedPath = await invoke<string>('download_app_update', {
+            url: latestReleaseInfo.assetUrl,
+            fileName: latestReleaseInfo.assetName,
+            totalBytes: latestReleaseInfo.assetSize || null
+          })
+          downloadedInstallerPath = savedPath
+          downloadedInstallerVersion = latestReleaseInfo.version || null
+          notifyUpdateStatus('ready', latestReleaseInfo)
+        } catch (err: any) {
+          const msg = String(err || '')
+          if (msg.includes('cancelled')) {
+            notifyUpdateStatus('available', latestReleaseInfo)
+          } else {
+            notifyUpdateStatus('error', msg || 'Download failed')
+          }
+        } finally {
+          if (unlisten) unlisten()
+          activeDownloadPromise = null
+        }
+      })()
+
+      return activeDownloadPromise
+    }
+
+    if (openBrowserFallback) {
+      const targetUrl = latestReleaseInfo?.url || 'https://github.com/Saboor-Hamedi/lumina/releases'
+      try {
+        await invoke('open_path_in_os', { path: targetUrl })
+      } catch {
+        if (typeof window !== 'undefined') window.open(targetUrl, '_blank', 'noopener,noreferrer')
+      }
+      if (latestReleaseInfo) {
+        notifyUpdateStatus('available', latestReleaseInfo)
+      } else {
+        notifyUpdateStatus('not-available')
+      }
+    }
+  }
 
   const emitIndexProgress = (data: any) => {
     indexProgressListeners.forEach((cb) => {
@@ -536,7 +597,16 @@ export function initTauriBridge(): void {
             assetName: asset?.name,
             assetSize: asset?.size
           }
-          notifyUpdateStatus('available', latestReleaseInfo)
+          if (downloadedInstallerPath && downloadedInstallerVersion === remoteVer) {
+            notifyUpdateStatus('ready', latestReleaseInfo)
+          } else {
+            notifyUpdateStatus('available', latestReleaseInfo)
+            if (latestReleaseInfo.assetUrl && latestReleaseInfo.assetName) {
+              // Automatically download the new version silently in the background
+              // so the user is presented with "Restart & Install" as soon as it's ready.
+              void downloadReleaseAsset(false)
+            }
+          }
           return { updateAvailable: true, ...latestReleaseInfo }
         }
         notifyUpdateStatus('not-available', { version: currentVer })
@@ -547,49 +617,7 @@ export function initTauriBridge(): void {
       }
     },
     downloadUpdate: async () => {
-      if (latestReleaseInfo?.assetUrl && latestReleaseInfo?.assetName) {
-        let unlisten: (() => void) | null = null
-        try {
-          notifyUpdateStatus('downloading', {
-            percent: 0,
-            transferred: 0,
-            total: latestReleaseInfo.assetSize || 0
-          })
-          unlisten = await listen<any>('update-download-progress', (ev) => {
-            notifyUpdateStatus('downloading', ev.payload || { percent: 0 })
-          })
-          const savedPath = await invoke<string>('download_app_update', {
-            url: latestReleaseInfo.assetUrl,
-            fileName: latestReleaseInfo.assetName,
-            totalBytes: latestReleaseInfo.assetSize || null
-          })
-          downloadedInstallerPath = savedPath
-          notifyUpdateStatus('ready', latestReleaseInfo)
-          return
-        } catch (err: any) {
-          const msg = String(err || '')
-          if (msg.includes('cancelled')) {
-            notifyUpdateStatus('available', latestReleaseInfo)
-          } else {
-            notifyUpdateStatus('error', msg || 'Download failed')
-          }
-          return
-        } finally {
-          if (unlisten) unlisten()
-        }
-      }
-
-      const targetUrl = latestReleaseInfo?.url || 'https://github.com/Saboor-Hamedi/lumina/releases'
-      try {
-        await invoke('open_path_in_os', { path: targetUrl })
-      } catch {
-        if (typeof window !== 'undefined') window.open(targetUrl, '_blank', 'noopener,noreferrer')
-      }
-      if (latestReleaseInfo) {
-        notifyUpdateStatus('available', latestReleaseInfo)
-      } else {
-        notifyUpdateStatus('not-available')
-      }
+      await downloadReleaseAsset(true)
     },
     cancelUpdate: async () => {
       await invoke('cancel_app_update').catch(() => {})
@@ -599,6 +627,8 @@ export function initTauriBridge(): void {
         notifyUpdateStatus('installing', latestReleaseInfo)
         try {
           await invoke('install_app_update', { path: downloadedInstallerPath })
+          // Keep Lumina open and restore 'ready' state while the Setup Wizard modal is shown
+          notifyUpdateStatus('ready', latestReleaseInfo)
           return
         } catch (err: any) {
           notifyUpdateStatus('error', String(err || 'Failed to launch installer'))
@@ -723,6 +753,13 @@ export function initTauriBridge(): void {
   }
 
   ;(window as any).api = tauriApi
+
+  // Silently check and auto-download updates in the background shortly after desktop boot
+  if (isTauriRuntime) {
+    setTimeout(() => {
+      void tauriApi.checkForUpdates()
+    }, 3500)
+  }
 }
 
 export const isTauri = isTauriRuntime
