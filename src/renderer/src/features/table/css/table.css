@@ -146,22 +146,22 @@
 }
 
 .cm-table-ui-search-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--text-main) 8%, transparent);
   color: var(--text-main, #e2e8f0);
 }
 
 .cm-table-ui-btn--active {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: color-mix(in srgb, var(--text-accent) 14%, transparent) !important;
   color: var(--text-accent, #818cf8) !important;
 }
 
-/* Table / Source Mode Segmented Toggle */
+/* Table / Source Mode Segmented Toggle (theme-adaptive across Parchment, Light & Dark) */
 .cm-table-view-toggle {
   display: inline-flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.04) !important;
-  border: 1px solid rgba(255, 255, 255, 0.05) !important;
-  border-radius: 4px !important;
+  background: color-mix(in srgb, var(--text-main) 6%, var(--bg-panel, transparent)) !important;
+  border: 1px solid var(--border-dim, rgba(128, 128, 128, 0.2)) !important;
+  border-radius: 5px !important;
   padding: 1.5px !important;
   gap: 1px !important;
   user-select: none;
@@ -171,7 +171,7 @@
 .cm-table-view-btn {
   font-size: 11px !important;
   font-weight: 500 !important;
-  border-radius: 3px !important;
+  border-radius: 3.5px !important;
   height: 20px !important;
   padding: 0 7px !important;
   background: transparent !important;
@@ -188,24 +188,48 @@
 }
 
 .cm-table-view-btn:hover {
-  background: rgba(255, 255, 255, 0.05) !important;
-  color: var(--text-main, #d4d4d8) !important;
+  background: color-mix(in srgb, var(--text-main) 7%, transparent) !important;
+  color: var(--text-main) !important;
 }
 
 .cm-table-view-btn.active {
-  background: rgba(255, 255, 255, 0.1) !important;
-  color: #ffffff !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
-  font-weight: 500 !important;
+  background: var(--bg-card, var(--bg-app)) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-dim, transparent) !important;
+  box-shadow: 0 1px 2px var(--shadow-soft, rgba(0, 0, 0, 0.12)) !important;
+  font-weight: 600 !important;
 }
 
 .cm-table-view-btn svg {
-  opacity: 0.7;
+  opacity: 0.72;
 }
 
 .cm-table-view-btn.active svg {
   opacity: 1;
-  color: #ffffff !important;
+  color: var(--text-accent, var(--text-main)) !important;
+}
+
+/* Smooth inline links inside table cells (supports hover preview dropdown without column overflow) */
+.cm-atomic-table td a,
+.cm-atomic-table th a {
+  display: inline-block;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  color: var(--text-accent) !important;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--text-accent) 45%, transparent);
+  padding: 0 2px;
+  border-radius: 3px;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.cm-atomic-table td a:hover,
+.cm-atomic-table th a:hover {
+  background: color-mix(in srgb, var(--text-accent) 10%, transparent);
+  border-bottom-color: var(--text-accent);
 }
 
 /* Table Markdown Source Container & Editor */

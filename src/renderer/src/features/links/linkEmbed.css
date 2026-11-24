@@ -1,42 +1,259 @@
 /* ============================================================================
-   Lumina Link Preview Cards & Borderless YouTube Cinema Modal (`linkEmbed.css`)
+   Lumina Smart Link Strip, Zero-Jump Source Editing & Borderless Modals
    ============================================================================ */
 
-/* --- Standalone Editor Link & YouTube Cards --- */
+/* Pointer cursor on all inline & table links */
+.cm-atomic-link,
+.cm-atomic-link-wrap[data-url] {
+  cursor: pointer !important;
+}
+
+/* Shared row height token keeps cards crisp and consistent */
+:root {
+  --link-row-h: 44px;
+}
+
+:root[data-link-card-size='compact'] {
+  --link-row-h: 36px;
+}
+
+:root[data-link-card-size='large'] {
+  --link-row-h: 54px;
+}
+
+:root[data-link-card-desc='hide'] {
+  --link-row-h: 34px;
+}
+
+:root[data-link-card-style='card'] {
+  --link-row-h: 72px;
+}
+
+:root[data-link-card-style='minimal'] {
+  --link-row-h: 30px;
+}
+
+/* --- Source Edit Mode Bar & Flat Line Styling --- */
+.lumina-link-source-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 8px;
+  margin-top: 4px;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  border: 1px solid var(--border-dim);
+  border-bottom: none;
+  background: var(--bg-panel, color-mix(in srgb, var(--text-main) 4%, transparent));
+  user-select: none;
+}
+
+.lumina-link-source-hint {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-faint);
+  letter-spacing: 0.02em;
+}
+
+.lumina-link-source-done-btn {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-card, var(--bg-app));
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.lumina-link-source-done-btn:hover {
+  border-color: var(--text-accent);
+  color: var(--text-accent);
+}
+
+.cm-line.lumina-link-source-line {
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  background: color-mix(in srgb, var(--text-accent) 5%, transparent);
+  box-shadow: inset 2px 0 0 var(--text-accent);
+}
+
+/* --- Default: Flat, Calm, Real Full-Width Link Strip --- */
 .lumina-link-card {
   position: relative;
   display: flex;
+  flex-direction: row;
   align-items: stretch;
-  gap: 12px;
   width: 100%;
-  max-width: 640px;
-  margin: 6px 0;
+  max-width: 100%;
+  min-width: 0;
+  height: var(--link-row-h);
+  min-height: var(--link-row-h);
+  max-height: var(--link-row-h);
+  margin: 4px 0;
   padding: 0;
+  box-sizing: border-box;
   background: var(--bg-card);
   border: 1px solid var(--border-dim);
-  border-radius: 9px;
+  border-radius: 7px;
   overflow: hidden;
   cursor: pointer;
   user-select: none;
-  transition: border-color 0.14s ease, background 0.14s ease;
+  line-height: 1.3;
 }
 
 .lumina-link-card:hover {
-  border-color: var(--border-subtle, var(--text-accent));
-  background: color-mix(in srgb, var(--text-main) 3%, var(--bg-card));
+  border-color: var(--border-subtle, var(--border-main, var(--border-dim)));
 }
 
-.lumina-link-card-thumb.is-yt-thumb {
-  position: relative;
-  width: 156px;
-  min-width: 156px;
-  aspect-ratio: 16 / 9;
-  background: #09090b;
-  overflow: hidden;
+.lumina-link-card:focus-visible {
+  outline: 2px solid var(--text-accent);
+  outline-offset: 2px;
+}
+
+/* --- Left Column: Tight Editorial Content --- */
+.lumina-link-card-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 4px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+}
+
+.lumina-link-card-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.lumina-link-card-icon-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
+  color: var(--text-faint);
 }
 
-.lumina-link-card-thumb.is-yt-thumb img {
+.lumina-link-card-icon-slot.is-yt {
+  color: #ef4444;
+}
+
+.lumina-link-card-icon-slot.is-pinterest {
+  color: #e60023;
+}
+
+.lumina-link-card-favicon {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  object-fit: contain;
+  display: block;
+}
+
+.lumina-link-card-title {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-main);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+.lumina-link-card-source {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 10 auto;
+  min-width: 0;
+  padding-left: 2px;
+}
+
+.lumina-link-card-source::before {
+  content: '·';
+  margin-right: 5px;
+  opacity: 0.55;
+}
+
+.lumina-link-card-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.3;
+  padding-left: 21px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Inline Hover Action Micro-Buttons --- */
+.lumina-link-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.lumina-link-card:hover .lumina-link-card-actions,
+.lumina-link-card:focus-within .lumina-link-card-actions {
+  opacity: 1;
+}
+
+.lumina-link-card-action {
+  width: 21px;
+  height: 21px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.lumina-link-card-action:hover {
+  background: color-mix(in srgb, var(--text-main) 9%, transparent);
+  color: var(--text-main);
+}
+
+.lumina-link-card-action.is-copied {
+  color: #22c55e;
+}
+
+/* --- Right Column: Sleek Edge-to-Edge Thumbnail (Both Website & YouTube) --- */
+.lumina-link-card-media {
+  position: relative;
+  width: 84px;
+  min-width: 84px;
+  height: 100%;
+  flex-shrink: 0;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border-dim);
+  overflow: hidden;
+}
+
+.lumina-link-card-media.is-yt-media {
+  background: #09090b;
+}
+
+.lumina-link-card-media img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -48,8 +265,8 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 36px;
-  height: 36px;
+  width: 24px;
+  height: 24px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.72);
   color: #ffffff;
@@ -57,7 +274,7 @@
   align-items: center;
   justify-content: center;
   padding-left: 2px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
   transition: transform 0.15s ease, background 0.15s ease;
 }
 
@@ -66,78 +283,180 @@
   transform: translate(-50%, -50%) scale(1.08);
 }
 
-.lumina-link-card-body {
-  flex: 1;
-  min-width: 0;
-  padding: 10px 32px 10px 12px;
+.lumina-media-peek-badge {
+  position: absolute;
+  inset: 0;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  background: rgba(0, 0, 0, 0.44);
+  color: #ffffff;
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+
+.lumina-link-card-media.is-og-media:hover .lumina-media-peek-badge {
+  opacity: 1;
+}
+
+/* ============================================================================
+   Style & Density Customization Variants
+   ============================================================================ */
+
+:root[data-link-card-style='card'] .lumina-link-card {
+  border-radius: 8px;
+  background: var(--bg-card);
+}
+
+:root[data-link-card-style='card'] .lumina-link-card-body {
+  padding: 8px 12px;
   gap: 3px;
 }
 
-.lumina-link-card.is-youtube .lumina-link-card-body {
-  padding-left: 2px;
-}
-
-.lumina-link-card-title {
+:root[data-link-card-style='card'] .lumina-link-card-title {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text-main);
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.lumina-link-card-desc {
-  font-size: 11.5px;
-  color: var(--text-muted);
-  line-height: 1.4;
+:root[data-link-card-style='card'] .lumina-link-card-desc {
+  padding-left: 0;
+  white-space: normal;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
-.lumina-link-card-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 2px;
-  font-size: 10.5px;
-  color: var(--text-faint);
+:root[data-link-card-style='card'] .lumina-link-card-media {
+  width: 144px;
+  min-width: 144px;
 }
 
-.lumina-link-card-favicon {
-  width: 13px;
-  height: 13px;
-  border-radius: 2px;
-  object-fit: contain;
+:root[data-link-card-style='card'] .lumina-yt-play-badge {
+  width: 32px;
+  height: 32px;
 }
 
-.lumina-link-card-og-thumb {
-  width: 112px;
-  min-width: 112px;
-  background: var(--bg-panel);
-  overflow: hidden;
-  flex-shrink: 0;
+:root[data-link-card-style='minimal'] .lumina-link-card {
+  border-radius: 6px;
 }
 
-.lumina-link-card-og-thumb img {
+:root[data-link-card-style='minimal'] .lumina-link-card-body {
+  padding: 0 8px;
+  gap: 0;
+}
+
+:root[data-link-card-style='minimal'] .lumina-link-card-desc,
+:root[data-link-card-style='minimal'] .lumina-link-card-media {
+  display: none;
+}
+
+:root[data-link-card-width='full'] .lumina-link-card {
+  max-width: 100%;
+}
+
+:root[data-link-card-width='medium'] .lumina-link-card {
+  max-width: 680px;
+}
+
+:root[data-link-card-width='compact'] .lumina-link-card {
+  max-width: 520px;
+}
+
+:root[data-link-card-size='compact'] .lumina-link-card-body {
+  padding: 2px 8px;
+}
+
+:root[data-link-card-size='compact'] .lumina-link-card-media {
+  width: 68px;
+  min-width: 68px;
+}
+
+:root[data-link-card-size='large'] .lumina-link-card-body {
+  padding: 6px 12px;
+}
+
+:root[data-link-card-size='large'] .lumina-link-card-media {
+  width: 110px;
+  min-width: 110px;
+}
+
+:root[data-link-card-thumb='left'] .lumina-link-card {
+  flex-direction: row-reverse;
+}
+
+:root[data-link-card-thumb='left'] .lumina-link-card-media {
+  border-left: none;
+  border-right: 1px solid var(--border-dim);
+}
+
+:root[data-link-card-thumb='hidden'] .lumina-link-card-media {
+  display: none;
+}
+
+:root[data-link-card-desc='hide'] .lumina-link-card-desc {
+  display: none;
+}
+
+/* ============================================================================
+   1, 2, and 3-Column Side-by-Side Link Grids (` ```links [1-3] `)
+   ============================================================================ */
+.lumina-link-grid {
+  position: relative;
+  display: grid;
+  gap: 8px;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+  max-width: 100%;
+  min-width: 0;
+  margin: 6px 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  user-select: none;
 }
 
-.lumina-link-card-edit {
+.lumina-link-grid.cols-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.lumina-link-grid.cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lumina-link-grid.cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.lumina-link-card.is-in-grid {
+  margin: 0;
+  min-width: 0;
+}
+
+.lumina-link-card.is-grid-span-full {
+  grid-column: 1 / -1;
+}
+
+.lumina-link-grid.cols-2 .lumina-link-card-media {
+  width: 64px;
+  min-width: 64px;
+}
+
+.lumina-link-grid.cols-3 .lumina-link-card-media {
+  width: 52px;
+  min-width: 52px;
+}
+
+.lumina-link-grid.cols-3 .lumina-link-card-source {
+  display: none;
+}
+
+.lumina-link-grid-edit {
   position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 22px;
-  height: 22px;
-  border-radius: 5px;
+  top: 6px;
+  right: 6px;
+  z-index: 4;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   border: 1px solid var(--border-dim);
   background: var(--bg-app);
   color: var(--text-muted);
@@ -146,27 +465,299 @@
   justify-content: center;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.12s ease, color 0.12s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+  transition: opacity 0.14s ease, color 0.12s ease;
 }
 
-.lumina-link-card:hover .lumina-link-card-edit {
+.lumina-link-grid:hover .lumina-link-grid-edit,
+.lumina-link-grid:focus-within .lumina-link-grid-edit {
   opacity: 1;
 }
 
-.lumina-link-card-edit:hover {
+.lumina-link-grid-edit:hover {
   color: var(--text-main);
 }
 
-/* --- Borderless 16:9 YouTube Cinema Lightbox Modal --- */
-.yt-modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 250000;
-  background: rgba(0, 0, 0, 0.84);
+.lumina-link-grid-tile {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: 7px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.lumina-link-grid-tile:hover {
+  border-color: var(--border-subtle, var(--border-main, var(--border-dim)));
+}
+
+.lumina-grid-tile-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-dim);
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+}
+
+.lumina-grid-tile-media.is-yt {
+  background: #09090b;
+}
+
+.lumina-grid-tile-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.lumina-grid-tile-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.lumina-grid-tile-brand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  overflow: hidden;
+  color: var(--text-muted);
+}
+
+.lumina-grid-brand-favicon {
+  width: 20px !important;
+  height: 20px !important;
+  object-fit: contain !important;
+}
+
+.lumina-grid-tile-brand-host {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+  max-width: 90%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lumina-grid-tile-body {
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.lumina-grid-tile-title {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-main);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lumina-grid-tile-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lumina-grid-tile-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 2px;
+  min-width: 0;
+}
+
+.lumina-grid-tile-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.lumina-grid-tile-source {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.lumina-grid-tile-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.lumina-link-grid-tile:hover .lumina-grid-tile-actions {
+  opacity: 1;
+}
+
+/* ============================================================================
+   Smart Inline Link Hover Card Popover (High-Contrast on White/Light & Dark)
+   ============================================================================ */
+.lumina-link-popover {
+  position: fixed;
+  z-index: 210000;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  width: 304px;
+  max-width: calc(100vw - 24px);
+  background: var(--bg-panel, var(--bg-card));
+  border: 1px solid var(--border-subtle, var(--border-main, var(--border-dim)));
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  pointer-events: auto;
+}
+
+.lumina-link-popover[data-placement='bottom'] {
+  transform: translateY(-3px);
+}
+
+.lumina-link-popover.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lumina-link-popover-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 3px;
+  cursor: pointer;
+}
+
+.lumina-link-popover-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lumina-link-popover-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.lumina-link-popover-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.lumina-link-popover-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.lumina-link-popover-source {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lumina-link-popover-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.lumina-link-popover-media {
+  position: relative;
+  width: 84px;
+  min-width: 84px;
+  flex-shrink: 0;
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border-dim);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.lumina-link-popover-media.is-yt {
+  background: #09090b;
+}
+
+.lumina-link-popover-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.lumina-link-popover-media:hover .lumina-media-peek-badge {
+  opacity: 1;
+}
+
+/* ============================================================================
+   Borderless 16:9 YouTube Cinema Modal & Visual Media Peek Modal (Large Cinema Size)
+   ============================================================================ */
+.yt-modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 250000;
+  background: rgba(0, 0, 0, 0.86);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
   opacity: 0;
   transition: opacity 0.16s ease;
 }
@@ -177,19 +768,20 @@
 
 .yt-modal-stage {
   position: relative;
-  width: min(1040px, 92vw);
-  aspect-ratio: 16 / 9;
-  max-height: 88vh;
+  width: min(1240px, 92vw);
+  height: min(698px, calc(92vw * 9 / 16), 88vh);
+  flex-shrink: 0;
   background: #000000;
   border: none;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.72);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.78);
   transform: scale(0.96);
   transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.yt-modal-overlay.show .yt-modal-stage {
+.yt-modal-overlay.show .yt-modal-stage,
+.yt-modal-overlay.show .peek-modal-stage {
   transform: scale(1);
 }
 
@@ -199,6 +791,58 @@
   border: none;
   display: block;
   background: #000000;
+}
+
+.peek-modal-stage {
+  position: relative;
+  min-width: min(440px, 84vw);
+  max-width: min(1160px, 92vw);
+  max-height: 90vh;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #0a0a0c;
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(0.96);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.peek-modal-img {
+  display: block;
+  max-width: min(1160px, 92vw);
+  max-height: 90vh;
+  min-height: min(360px, 55vh);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.peek-modal-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 28px 16px 12px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0));
+  color: #ffffff;
+  pointer-events: none;
+}
+
+.peek-modal-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.peek-modal-sub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.72);
+  margin-top: 2px;
 }
 
 .yt-modal-controls {
@@ -217,6 +861,7 @@
 }
 
 .yt-modal-stage:hover .yt-modal-controls,
+.peek-modal-stage:hover .yt-modal-controls,
 .yt-modal-controls:focus-within {
   opacity: 1;
 }

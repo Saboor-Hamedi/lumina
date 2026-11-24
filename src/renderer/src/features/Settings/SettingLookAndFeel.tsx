@@ -3,6 +3,7 @@ import { Palette, Type, MousePointer, Check, RotateCcw } from 'lucide-react'
 import { getTheme } from '../theme/hooks/themeDefinitions'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
+import { resolveLinkCardSettings } from '../links/linkCardConfig'
 import Toggle from '../../components/toggle'
 
 const PRESET_PALETTE: readonly string[] = [
@@ -155,6 +156,7 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
     10
   )
   const currentCaretWidth = parseInt(String(caretWidth || 2), 10)
+  const linkCardCfg = resolveLinkCardSettings(settings)
 
   return (
     <div className="settings-pane">
@@ -242,8 +244,137 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
               />
             </div>
           </div>
+        </section>
 
+        <section>
+          <h3>Link &amp; YouTube Cards</h3>
 
+          <div className="settings-row">
+            <div className="row-info">
+              <div className="row-label">Rich Link Preview Cards</div>
+              <div className="row-hint">
+                Render standalone website and YouTube URLs as interactive cards in the editor.
+              </div>
+            </div>
+            <Toggle
+              checked={linkCardCfg.linkCardsEnabled}
+              onChange={(e) => updateSetting('linkCardsEnabled', e.target.checked)}
+            />
+          </div>
+
+          {linkCardCfg.linkCardsEnabled && (
+            <>
+              <div className="settings-row">
+                <div className="row-info">
+                  <div className="row-label">Link Style</div>
+                  <div className="row-hint">
+                    Choose between the ultra-tight Smart Strip, compact Card, or Minimal bar.
+                  </div>
+                </div>
+                <select
+                  value={linkCardCfg.linkCardStyle}
+                  onChange={(e) => updateSetting('linkCardStyle', e.target.value)}
+                  className="settings-select"
+                >
+                  <option value="strip">Smart Strip (Default)</option>
+                  <option value="card">Compact Card</option>
+                  <option value="minimal">Minimal Bar</option>
+                </select>
+              </div>
+
+              <div className="settings-row">
+                <div className="row-info">
+                  <div className="row-label">Grid Columns</div>
+                  <div className="row-hint">
+                    Arrange consecutive standalone links into 1, 2, or 3 side-by-side cards.
+                  </div>
+                </div>
+                <select
+                  value={String(linkCardCfg.linkCardColumns)}
+                  onChange={(e) => updateSetting('linkCardColumns', Number(e.target.value))}
+                  className="settings-select"
+                >
+                  <option value="1">1 Column (Full-Width Strips)</option>
+                  <option value="2">2 Columns</option>
+                  <option value="3">3 Columns (Max)</option>
+                </select>
+              </div>
+
+              <div className="settings-row">
+                <div className="row-info">
+                  <div className="row-label">Card Width</div>
+                  <div className="row-hint">Horizontal span of link cards across the editor.</div>
+                </div>
+                <select
+                  value={linkCardCfg.linkCardWidth}
+                  onChange={(e) => updateSetting('linkCardWidth', e.target.value)}
+                  className="settings-select"
+                >
+                  <option value="full">Full Width (100%)</option>
+                  <option value="medium">Medium (680px)</option>
+                  <option value="compact">Compact (520px)</option>
+                </select>
+              </div>
+
+              <div className="settings-row">
+                <div className="row-info">
+                  <div className="row-label">Card Size</div>
+                  <div className="row-hint">Vertical density and thumbnail scale.</div>
+                </div>
+                <select
+                  value={linkCardCfg.linkCardSize}
+                  onChange={(e) => updateSetting('linkCardSize', e.target.value)}
+                  className="settings-select"
+                >
+                  <option value="compact">Compact</option>
+                  <option value="default">Default</option>
+                  <option value="large">Large</option>
+                </select>
+              </div>
+
+              <div className="settings-row">
+                <div className="row-info">
+                  <div className="row-label">Thumbnail Position</div>
+                  <div className="row-hint">
+                    Placement for website preview images and YouTube thumbnails.
+                  </div>
+                </div>
+                <select
+                  value={linkCardCfg.linkCardThumbnailPosition}
+                  onChange={(e) => updateSetting('linkCardThumbnailPosition', e.target.value)}
+                  className="settings-select"
+                >
+                  <option value="right">Right (Default)</option>
+                  <option value="left">Left</option>
+                  <option value="hidden">Hidden</option>
+                </select>
+              </div>
+
+              <div className="settings-row">
+                <div className="row-info">
+                  <div className="row-label">Show Description</div>
+                  <div className="row-hint">Display page summary or short path inside cards.</div>
+                </div>
+                <Toggle
+                  checked={linkCardCfg.linkCardShowDescription}
+                  onChange={(e) => updateSetting('linkCardShowDescription', e.target.checked)}
+                />
+              </div>
+
+              <div className="settings-row">
+                <div className="row-info">
+                  <div className="row-label">YouTube Borderless Player</div>
+                  <div className="row-hint">
+                    Open YouTube links in an in-app 16:9 cinema modal instead of the browser.
+                  </div>
+                </div>
+                <Toggle
+                  checked={linkCardCfg.youtubeOpenInModal}
+                  onChange={(e) => updateSetting('youtubeOpenInModal', e.target.checked)}
+                />
+              </div>
+            </>
+          )}
         </section>
       </div>
 

@@ -10,6 +10,16 @@
 
 import { create } from 'zustand'
 import { applyTheme } from '../../features/theme/hooks/themeDefinitions'
+import {
+  applyLinkCardDomAttributes,
+  DEFAULT_LINK_CARD_SETTINGS,
+  LINK_CARDS_CONFIG_EVENT,
+  type LinkCardColumns,
+  type LinkCardSize,
+  type LinkCardStyle,
+  type LinkCardThumbnailPosition,
+  type LinkCardWidth
+} from '../../features/links/linkCardConfig'
 
 export interface SidebarSectionCollapsedState {
   pinned: boolean
@@ -68,6 +78,15 @@ export interface Settings {
   inlineMetadata: boolean
   metaPosition?: 'bottom' | 'top' | 'inline'
   inlineTitle: boolean
+  // Link & YouTube Preview Cards
+  linkCardsEnabled?: boolean
+  linkCardStyle?: LinkCardStyle
+  linkCardWidth?: LinkCardWidth
+  linkCardSize?: LinkCardSize
+  linkCardThumbnailPosition?: LinkCardThumbnailPosition
+  linkCardColumns?: LinkCardColumns
+  linkCardShowDescription?: boolean
+  youtubeOpenInModal?: boolean
   graphTheme: string
   graphNodeSize: number
   graphShowTexts: boolean
@@ -215,6 +234,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     inlineMetadata: true,
     metaPosition: 'bottom',
     inlineTitle: true,
+    ...DEFAULT_LINK_CARD_SETTINGS,
     graphTheme: 'default',
     graphNodeSize: 1.5,
     graphShowTexts: true,
@@ -368,6 +388,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
           if (typeof document !== 'undefined') {
             const root = document.documentElement
             applyTheme(activeTheme)
+            applyLinkCardDomAttributes(mergedSettings)
             root.setAttribute('data-modern-ui', String(Boolean(mergedSettings.modernUi)))
             root.style.setProperty('--font-editor', mergedSettings.fontFamily)
             root.style.setProperty('--font-size-editor', `${mergedSettings.fontSize}px`)
@@ -389,6 +410,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
                       root.setAttribute('data-theme', updatedParams.theme)
                     }
                     root.setAttribute('data-modern-ui', String(Boolean(updatedParams.modernUi)))
+                    applyLinkCardDomAttributes(updatedParams)
                     root.style.setProperty('--font-editor', updatedParams.fontFamily)
                     root.style.setProperty('--font-size-editor', `${updatedParams.fontSize}px`)
                     root.style.setProperty('--cursor-style', updatedParams.cursorStyle)
@@ -460,6 +482,21 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       }
       if (key === 'fontFamily') root.style.setProperty('--font-editor', value)
       if (key === 'fontSize') root.style.setProperty('--font-size-editor', `${value}px`)
+      if (
+        key === 'linkCardsEnabled' ||
+        key === 'linkCardStyle' ||
+        key === 'linkCardWidth' ||
+        key === 'linkCardSize' ||
+        key === 'linkCardThumbnailPosition' ||
+        key === 'linkCardColumns' ||
+        key === 'linkCardShowDescription' ||
+        key === 'youtubeOpenInModal'
+      ) {
+        applyLinkCardDomAttributes(get().settings)
+        if ((key === 'linkCardsEnabled' || key === 'linkCardColumns') && typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent(LINK_CARDS_CONFIG_EVENT))
+        }
+      }
     }
 
     if (typeof localStorage !== 'undefined') {
@@ -774,6 +811,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       inlineMetadata: true,
       metaPosition: 'bottom',
       inlineTitle: true,
+      ...DEFAULT_LINK_CARD_SETTINGS,
       graphTheme: 'default',
       graphNodeSize: 1.5,
       graphShowTexts: true,
@@ -829,6 +867,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
 
     if (typeof document !== 'undefined') {
       applyTheme('light', true)
+      applyLinkCardDomAttributes(DEFAULT_LINK_CARD_SETTINGS)
       const root = document.documentElement
       root.setAttribute('data-modern-ui', 'true')
       root.style.setProperty('--font-size-editor', '12px')

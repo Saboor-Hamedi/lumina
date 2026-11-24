@@ -350,11 +350,17 @@ function buildDecorations(state: EditorState) {
         const match = firstLine.match(/^(`{3,}|~{3,})\s*(\S+)?/)
         const lang = (match && match[2]) || ''
 
-        // Exclude mermaid diagrams entirely — mermaid is handled by mermaidWidgetExtension
+        // Exclude mermaid diagrams and link grids — handled by their dedicated extensions
+        const lowerLang = lang.toLowerCase()
         if (
-          lang.toLowerCase() === 'mermaid' ||
+          lowerLang === 'mermaid' ||
+          lowerLang === 'link' ||
+          lowerLang === 'links' ||
+          lowerLang === 'link-grid' ||
+          lowerLang === 'links-grid' ||
           text.startsWith('```mermaid') ||
-          text.startsWith('~~~mermaid')
+          text.startsWith('~~~mermaid') ||
+          /^`{3,}\s*(?:links?|links?-grid)(?:\s+\d+)?\s*$/i.test(firstLine.trim())
         ) {
           return
         }

@@ -18,7 +18,7 @@ import {
 } from '../code'
 // Media & Link Embed extensions
 import { imageDropExtension, imageWidgetExtension } from '../../features/media'
-import { linkEmbedExtension } from '../../features/links'
+import { handleExternalLinkClick, isHttpUrl, linkEmbedExtension } from '../../features/links'
 import { htmlWidgetExtension } from '../../features/Editor/extensions/htmlExtension'
 import { katexExtension } from '../../features/Editor/extensions/katexExtension'
 import { tagMentionExtension } from '../../features/Editor/extensions/tagMentionExtension'
@@ -499,11 +499,21 @@ export function useEditorExtensions({
       dropExtension,
       Prec.highest(imageWidgetExtension),
       htmlWidgetExtension,
-      linkEmbedExtension,
+      Prec.highest(linkEmbedExtension),
       katexExtension,
       calloutExtension,
       highlightExtension,
-      Prec.highest(tables({ onLinkClick: handleTableLinkClick }))
+      Prec.highest(
+        tables({
+          onLinkClick: (url: string) => {
+            if (isHttpUrl(url)) {
+              handleExternalLinkClick(url)
+            } else {
+              handleTableLinkClick(url)
+            }
+          }
+        })
+      )
     ],
     // Stable per note instance: CodeMirror should NEVER reconfigure on tab switch
     [noteId]
