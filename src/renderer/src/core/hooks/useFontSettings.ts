@@ -7,12 +7,12 @@ import { buildFontFamilyStack } from '../i18n'
  */
 const DEFAULTS = {
   FONT_FAMILY: 'JetBrains Mono',
-  FONT_SIZE: 14,
+  FONT_SIZE: 12,
   CARET_WIDTH: '2px',
   CARET_WIDTH_MIN: 1,
   CARET_WIDTH_MAX: 10,
   CARET_STYLE: 'smooth',
-  THEME: 'dark'
+  THEME: 'light'
 } as const
 
 /**
@@ -587,9 +587,32 @@ export const useFontSettings = (): FontSettings => {
     }
     window.addEventListener('theme-changed', handleThemeUpdate)
 
+    const handleSettingsReset = () => {
+      setEditorFontFamily(DEFAULTS.FONT_FAMILY)
+      setEditorFontSize(DEFAULTS.FONT_SIZE)
+      setPreviewFontFamily(DEFAULTS.FONT_FAMILY)
+      setPreviewFontSize(DEFAULTS.FONT_SIZE)
+      setCaretStyle(DEFAULTS.CARET_STYLE)
+      setCaretWidth(DEFAULTS.CARET_WIDTH)
+      setCaretColor('')
+      setThemeAccentColor('')
+      setBaseThemeName(DEFAULTS.THEME)
+      setBaseColors({
+        editorFontFamily: DEFAULTS.FONT_FAMILY,
+        editorFontSize: DEFAULTS.FONT_SIZE,
+        previewFontFamily: DEFAULTS.FONT_FAMILY,
+        previewFontSize: DEFAULTS.FONT_SIZE,
+        caretWidth: 2,
+        caretStyle: DEFAULTS.CARET_STYLE,
+        caretColor: ''
+      })
+    }
+    window.addEventListener('lumina-settings-reset', handleSettingsReset)
+
     return () => {
       window.removeEventListener('caret-style-update', handleCaretUpdate)
       window.removeEventListener('theme-changed', handleThemeUpdate)
+      window.removeEventListener('lumina-settings-reset', handleSettingsReset)
       if (settingsChangedUnsubscribe) {
         settingsChangedUnsubscribe()
       }

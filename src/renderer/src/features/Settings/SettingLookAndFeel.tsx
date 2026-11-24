@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Palette, Type, MousePointer, Check } from 'lucide-react'
+import { Palette, Type, MousePointer, Check, RotateCcw } from 'lucide-react'
 import { getTheme } from '../theme/hooks/themeDefinitions'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
@@ -123,9 +123,9 @@ export interface SettingLookAndFeelProps {
 type LookSubTab = 'appearance' | 'typography' | 'cursor'
 
 export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTheme }) => {
-  const { settings, updateSetting } = useSettingsStore()
-  const currentThemeAccent = getTheme(settings.theme || 'dark').colors['--text-accent'] || '#52b788'
-  const themeColors = getTheme(settings.theme || 'dark').colors
+  const { settings, updateSetting, resetToDefaults } = useSettingsStore()
+  const currentThemeAccent = getTheme(settings.theme || 'light').colors['--text-accent'] || '#0284c7'
+  const themeColors = getTheme(settings.theme || 'light').colors
   const currentCaretDefault = themeColors['--caret-color'] || currentThemeAccent
   const [activeSubTab, setActiveSubTab] = useState<LookSubTab>('appearance')
 
@@ -151,7 +151,7 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
   }
 
   const currentFontSize = parseInt(
-    String((settings as any).fontSize ?? editorFontSize ?? 14),
+    String((settings as any).fontSize ?? editorFontSize ?? 12),
     10
   )
   const currentCaretWidth = parseInt(String(caretWidth || 2), 10)
@@ -164,6 +164,17 @@ export const SettingLookAndFeel: React.FC<SettingLookAndFeelProps> = ({ onOpenTh
           <p className="settings-pane-subtitle">
             Theme accents, typography styles, cursor physics, and sound preferences.
           </p>
+        </div>
+        <div className="settings-pane-actions">
+          <button
+            type="button"
+            className="shortcuts-reset-all-btn"
+            onClick={() => void resetToDefaults()}
+            title="Reset settings to default"
+          >
+            <RotateCcw size={12} />
+            <span>Reset to Defaults</span>
+          </button>
         </div>
       </div>
 

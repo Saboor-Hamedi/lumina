@@ -21,6 +21,7 @@
   border-radius: 0 !important;
   box-shadow: none !important;
   outline: none !important;
+  transition: none !important;
 }
 
 /* Override blockquote styling when on a callout line */
@@ -105,15 +106,8 @@
 .cm-line.lumina-callout-line.lumina-callout-line-quote {
   font-style: italic !important;
   color: var(--text-muted) !important;
-  background-color: color-mix(in srgb, #94a3b8 6%, var(--bg-panel, rgba(0, 0, 0, 0.15))) !important;
-}
-
-/* Light / Parchment / Porcelain themes */
-[data-theme='light'] .cm-line.lumina-callout-line,
-[data-theme='porcelain'] .cm-line.lumina-callout-line,
-[data-theme='parchment'] .cm-line.lumina-callout-line {
-  background: var(--bg-card, #f7f7f7) !important;
-  border-color: var(--border-dim, rgba(0, 0, 0, 0.1)) !important;
+  background-color: var(--bg-panel) !important;
+  border-color: var(--border-dim) !important;
 }
 
 /* Callout Header Widget Typography */
@@ -192,7 +186,7 @@
 .lumina-callout-caution,
 .lumina-callout-danger,
 .lumina-callout-bug { color: #f87171; }
-.lumina-callout-quote { color: #94a3b8; }
+.lumina-callout-quote { color: var(--text-muted); }
 
 .lumina-callout-icon {
   display: inline-flex;

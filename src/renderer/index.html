@@ -19,7 +19,7 @@
     <script>
       // Prevent Flash of Unstyled Content (FOUC) on First Launch & Refresh
       try {
-        const themeId = localStorage.getItem('theme-id') || 'dark'
+        const themeId = localStorage.getItem('theme-id') || 'light'
         document.documentElement.setAttribute('data-theme', themeId)
 
         const activeColorsRaw = localStorage.getItem('lumina_active_theme_colors')

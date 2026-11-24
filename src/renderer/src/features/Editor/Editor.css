@@ -7,7 +7,7 @@
 }
 
 .cm-editor {
-  font-size: var(--font-size-editor, 16px) !important;
+  font-size: var(--font-size-editor, 12px) !important;
   font-variant-ligatures: normal !important;
   font-feature-settings: "liga" 1, "calt" 1, "zero" 1 !important;
   text-rendering: optimizeLegibility !important;
@@ -15,10 +15,10 @@
 
 .cm-content {
   font-family: var(--font-editor, 'Inter', system-ui, sans-serif) !important;
-  font-size: var(--font-size-editor, 16px) !important;
+  font-size: var(--font-size-editor, 12px) !important;
   line-height: var(--line-height-editor, 1.6) !important;
   padding: 0 0 0 0 !important;
-  color: var(--text-main);
+  color: var(--text-main) !important;
   max-width: none !important;
   width: 100% !important;
   user-select: text !important;
@@ -68,10 +68,10 @@
 .cm-line.cm-atomic-h4,
 .cm-line:has(.cm-heading4) {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: calc(var(--font-size-editor, 16px) * 0.9375) !important;
-  font-weight: 550 !important;
+  font-size: calc(var(--font-size-editor, 12px) * 0.9375) !important;
+  font-weight: 600 !important;
   line-height: 1.45 !important;
-  color: var(--text-muted) !important;
+  color: var(--text-main) !important;
 }
 
 .cm-line.cm-atomic-h5,
@@ -79,10 +79,10 @@
 .cm-line:has(.cm-heading5),
 .cm-line:has(.cm-heading6) {
   font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
-  font-size: calc(var(--font-size-editor, 16px) * 0.875) !important;
-  font-weight: 500 !important;
+  font-size: calc(var(--font-size-editor, 12px) * 0.875) !important;
+  font-weight: 550 !important;
   line-height: 1.5 !important;
-  color: var(--text-muted) !important;
+  color: var(--text-main) !important;
 }
 
 /* Reset all inline heading mark spans so they inherit line geometry and keep baseline 1:1 */
@@ -1885,7 +1885,19 @@
   border-radius: 2px;
 }
 
-/* Parchment Manuscript Atmosphere */
+/* Parchment Manuscript Atmosphere & Crisp Ink-Black Light Theme Contrast */
+[data-theme='light'] .markdown-editor .cm-content,
+[data-theme='light'] .markdown-editor .cm-line,
+[data-theme='light'] .editor-title-input {
+  color: #000000;
+}
+
+[data-theme='parchment'] .markdown-editor .cm-content,
+[data-theme='parchment'] .markdown-editor .cm-line,
+[data-theme='parchment'] .editor-title-input {
+  color: #120d07;
+}
+
 [data-theme='parchment'] .cm-cursor {
   border-left-color: var(--caret-color, #9c4310) !important;
 }

@@ -186,4 +186,30 @@ describe('SettingStore', () => {
       expect(state.settings.fontSize).toBe(22)
     })
   })
+
+  describe('resetToDefaults', () => {
+    it('resets theme to light and fontSize to 12 while preserving all AI API keys', async () => {
+      useSettingStore.setState((state) => ({
+        settings: {
+          ...state.settings,
+          theme: 'dracula',
+          fontSize: 20,
+          deepSeekKey: 'sk-deepseek-keep',
+          openaiKey: 'sk-openai-keep',
+          anthropicKey: 'sk-anthropic-keep',
+          groqKey: 'gsk-groq-keep'
+        }
+      }))
+
+      await useSettingStore.getState().resetToDefaults()
+
+      const s = useSettingStore.getState().settings
+      expect(s.theme).toBe('light')
+      expect(s.fontSize).toBe(12)
+      expect(s.deepSeekKey).toBe('sk-deepseek-keep')
+      expect(s.openaiKey).toBe('sk-openai-keep')
+      expect(s.anthropicKey).toBe('sk-anthropic-keep')
+      expect(s.groqKey).toBe('gsk-groq-keep')
+    })
+  })
 })

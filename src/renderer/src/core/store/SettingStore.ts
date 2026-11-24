@@ -190,13 +190,14 @@ export interface SettingStoreState {
   togglePrimarySidebar: () => Promise<void>
   toggleSecondarySidebar: () => Promise<void>
   toggleEditorMetadata: () => Promise<void>
+  resetToDefaults: () => Promise<void>
 }
 
 export const useSettingStore = create<SettingStoreState>((set, get) => ({
   settings: {
     theme:
-      (typeof localStorage !== 'undefined' && localStorage.getItem('theme-id')) || 'dark',
-    fontSize: 16,
+      (typeof localStorage !== 'undefined' && localStorage.getItem('theme-id')) || 'light',
+    fontSize: 12,
     fontFamily: 'Inter',
     lineHeight: 1.6,
     showLineNumbers: false,
@@ -344,7 +345,7 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
           const activeTheme =
             mergedSettings.theme && mergedSettings.theme !== 'default'
               ? mergedSettings.theme
-              : ((typeof localStorage !== 'undefined' && localStorage.getItem('theme-id')) || 'dark')
+              : ((typeof localStorage !== 'undefined' && localStorage.getItem('theme-id')) || 'light')
           mergedSettings.theme = activeTheme
           if (mergedSettings.shortcuts?.canvasDrawer === 'Ctrl + Shift + /') {
             mergedSettings.shortcuts.canvasDrawer = 'Ctrl + Shift + ;'
@@ -743,6 +744,103 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       await get().exitZenMode()
     } else {
       await get().enterZenMode()
+    }
+  },
+
+  resetToDefaults: async () => {
+    const current = get().settings
+    const defaultCursor = {
+      caretWidth: 2,
+      caretStyle: 'smooth',
+      caretColor: '',
+      editorFontFamily: 'JetBrains Mono',
+      editorFontSize: 12,
+      previewFontFamily: 'JetBrains Mono',
+      previewFontSize: 12
+    }
+
+    // Reset all UI, theme, typography, layout, and shortcut settings to Lumina defaults
+    // while strictly preserving AI/Agent API keys, models, and workspace paths.
+    const updates: Partial<Settings> = {
+      theme: 'light',
+      fontSize: 12,
+      fontFamily: 'JetBrains Mono',
+      lineHeight: 1.6,
+      showLineNumbers: false,
+      autoSave: true,
+      cursorStyle: 'smooth',
+      cursor: defaultCursor,
+      smoothScrolling: true,
+      inlineMetadata: true,
+      metaPosition: 'bottom',
+      inlineTitle: true,
+      graphTheme: 'default',
+      graphNodeSize: 1.5,
+      graphShowTexts: true,
+      graphNodeColor: '#0284c7',
+      graphSidebarOpen: true,
+      windowOpacity: 1.0,
+      modernUi: true,
+      statusBarItems: null,
+      shortcuts: {},
+      sidebar: { width: 220, isLeftOpen: true },
+      rightSidebar: { width: 220, isRightOpen: false },
+      titleBarVisible: true,
+      statusBarVisible: false,
+      activityBarVisible: true,
+      rightActivityBarVisible: true,
+      tabsVisible: true,
+      breadcrumbsVisible: true,
+      zenMode: {
+        enabled: false,
+        hideTitleBar: true,
+        hideStatusBar: true,
+        hideActivityBar: true,
+        hideRightActivityBar: true,
+        hidePrimarySidebar: true,
+        hideSecondarySidebar: true,
+        hideTabs: true
+      },
+      zenPreState: null,
+      // Explicitly retain AI / Agent credentials & workspace location
+      deepSeekKey: current.deepSeekKey,
+      deepSeekModel: current.deepSeekModel,
+      huggingFaceKey: current.huggingFaceKey,
+      openaiKey: current.openaiKey,
+      anthropicKey: current.anthropicKey,
+      groqKey: current.groqKey,
+      ollamaUrl: current.ollamaUrl,
+      ollamaModel: current.ollamaModel,
+      activeProvider: current.activeProvider,
+      activeModel: current.activeModel,
+      activeModelProvider: current.activeModelProvider,
+      aiModelsByProvider: current.aiModelsByProvider,
+      aiAvailableModelsByProvider: current.aiAvailableModelsByProvider,
+      activeAIMode: current.activeAIMode,
+      aiChatDisplayMode: current.aiChatDisplayMode
+    }
+
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('theme-id', 'light')
+      localStorage.setItem('theme-colors', JSON.stringify(defaultCursor))
+      localStorage.setItem('lumina_left_sidebar_width', '220')
+      localStorage.setItem('lumina_right_sidebar_width', '220')
+    }
+
+    if (typeof document !== 'undefined') {
+      applyTheme('light', true)
+      const root = document.documentElement
+      root.setAttribute('data-modern-ui', 'true')
+      root.style.setProperty('--font-size-editor', '12px')
+      root.style.setProperty('--editor-font-size', `${12 / 16}rem`)
+      root.style.setProperty('--preview-font-size', `${12 / 16}rem`)
+      root.style.setProperty('--preview-font-size-px', '12px')
+    }
+
+    await get().updateSettings(updates)
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('lumina-settings-reset', { detail: defaultCursor }))
     }
   }
 

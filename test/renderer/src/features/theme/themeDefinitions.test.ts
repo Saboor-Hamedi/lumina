@@ -8,7 +8,7 @@ describe('Theme Definitions & Parchment', () => {
     expect(theme).toBeDefined()
     expect(theme.name).toBe('Parchment')
     expect(theme.colors['--bg-app']).toBe('#f5eedc')
-    expect(theme.colors['--text-main']).toBe('#2b2116')
+    expect(theme.colors['--text-main']).toBe('#120d07')
     expect(theme.colors['--text-accent']).toBe('#9c4310')
   })
 
@@ -32,7 +32,7 @@ describe('Theme Definitions & Parchment', () => {
 
     expect(root.getAttribute('data-theme')).toBe('parchment')
     expect(root.style.getPropertyValue('--bg-app')).toBe('#f5eedc')
-    expect(root.style.getPropertyValue('--text-main')).toBe('#2b2116')
+    expect(root.style.getPropertyValue('--text-main')).toBe('#120d07')
     expect(root.style.getPropertyValue('--bg-hover')).toContain('color-mix')
   })
 

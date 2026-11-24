@@ -186,18 +186,53 @@ export const applyTheme = (
   // Ensure editor and dynamic hover tokens match current theme foreground and accents
   const textMain = computedColors['--text-main'] || theme.colors['--text-main'] || '#e2e8f0'
   const textMuted = computedColors['--text-muted'] || theme.colors['--text-muted'] || '#94a3b8'
+  const textFaint = computedColors['--text-faint'] || theme.colors['--text-faint'] || '#64748b'
   const textAccent = computedColors['--text-accent'] || theme.colors['--text-accent'] || '#8b5cf6'
   const borderDim = computedColors['--border-dim'] || theme.colors['--border-dim'] || 'rgba(255, 255, 255, 0.06)'
   const bgPanel = computedColors['--bg-panel'] || theme.colors['--bg-panel'] || '#161622'
+  const bgEditor = computedColors['--bg-editor'] || computedColors['--bg-app'] || '#ffffff'
 
+  root.style.setProperty('--atomic-editor-bg', bgEditor)
   root.style.setProperty('--atomic-editor-fg', textMain)
   root.style.setProperty('--atomic-editor-fg-muted', textMuted)
+  root.style.setProperty('--atomic-editor-fg-faint', textFaint)
   root.style.setProperty('--atomic-editor-accent', textAccent)
+  root.style.setProperty('--atomic-editor-accent-soft', `color-mix(in srgb, ${textAccent} 55%, transparent)`)
   root.style.setProperty('--atomic-editor-link', textAccent)
   root.style.setProperty('--atomic-editor-border', borderDim)
   root.style.setProperty('--atomic-editor-bg-surface', bgPanel)
   root.style.setProperty('--bg-hover', `color-mix(in srgb, ${textMain} 8%, transparent)`)
   root.style.setProperty('--bg-input', `color-mix(in srgb, ${textMain} 4%, transparent)`)
+
+  const isLightSurface =
+    themeId === 'light' ||
+    themeId === 'parchment' ||
+    themeId === 'porcelain' ||
+    themeId === 'rosePineDawn' ||
+    themeId === 'matchaLatte' ||
+    themeId === 'mintCondition'
+
+  if (isLightSurface) {
+    root.style.setProperty('--atomic-editor-hl-variable', textMain)
+    root.style.setProperty('--atomic-editor-hl-operator', textMuted)
+    root.style.setProperty('--atomic-editor-hl-keyword', themeId === 'parchment' ? '#9c4310' : '#0369a1')
+    root.style.setProperty('--atomic-editor-hl-string', themeId === 'parchment' ? '#3f6212' : '#15803d')
+    root.style.setProperty('--atomic-editor-hl-number', themeId === 'parchment' ? '#9a3412' : '#b45309')
+    root.style.setProperty('--atomic-editor-hl-comment', textFaint)
+    root.style.setProperty('--atomic-editor-hl-type', themeId === 'parchment' ? '#0f766e' : '#0e7490')
+    root.style.setProperty('--atomic-editor-hl-function', themeId === 'parchment' ? '#7c2d12' : '#1d4ed8')
+    root.style.setProperty('--atomic-editor-hl-property', textMain)
+  } else {
+    root.style.removeProperty('--atomic-editor-hl-variable')
+    root.style.removeProperty('--atomic-editor-hl-operator')
+    root.style.removeProperty('--atomic-editor-hl-keyword')
+    root.style.removeProperty('--atomic-editor-hl-string')
+    root.style.removeProperty('--atomic-editor-hl-number')
+    root.style.removeProperty('--atomic-editor-hl-comment')
+    root.style.removeProperty('--atomic-editor-hl-type')
+    root.style.removeProperty('--atomic-editor-hl-function')
+    root.style.removeProperty('--atomic-editor-hl-property')
+  }
 
   // Set data attribute
   root.setAttribute('data-theme', themeId)

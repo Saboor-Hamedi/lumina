@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { SlidersHorizontal, Share2 } from 'lucide-react'
+import { SlidersHorizontal, Share2, RotateCcw } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import Toggle from '../../components/toggle'
 
@@ -11,7 +11,7 @@ type AdvancedSubTab = 'system' | 'graph'
  * and developer tooling, with a fixed sticky update bar at the bottom.
  */
 export const SettingAdvanced: React.FC = () => {
-  const { settings, updateSetting } = useSettingsStore()
+  const { settings, updateSetting, resetToDefaults } = useSettingsStore()
   const [activeSubTab, setActiveSubTab] = useState<AdvancedSubTab>('system')
   const isMac = typeof navigator !== 'undefined' && navigator.userAgent.toLowerCase().includes('mac')
 
@@ -102,6 +102,23 @@ export const SettingAdvanced: React.FC = () => {
                 checked={settings.enableDevTools ?? true}
                 onChange={(e) => updateSetting('enableDevTools', e.target.checked)}
               />
+            </div>
+
+            <div className="settings-row">
+              <div className="row-info">
+                <div className="row-label">Reset Settings to Default</div>
+                <div className="row-hint">
+                  Restore default theme, typography, and layout preferences.
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => void resetToDefaults()}
+              >
+                <RotateCcw size={12} />
+                <span>Reset Settings</span>
+              </button>
             </div>
           </section>
         </div>

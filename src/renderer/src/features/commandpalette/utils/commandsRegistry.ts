@@ -540,6 +540,26 @@ export const COMMANDS_REGISTRY: LuminaCommand[] = [
     }
   },
   {
+    id: 'preferences.resetSettings',
+    title: 'Preferences: Reset Settings to Default',
+    category: 'Preferences',
+    keywords: [
+      'reset setting',
+      'reset settings',
+      'reset to default',
+      'default settings',
+      'restore defaults',
+      'factory reset',
+      'white theme',
+      'light theme',
+      '12px'
+    ],
+    iconName: 'RotateCcw',
+    execute: async () => {
+      await useSettingsStore.getState().resetToDefaults()
+    }
+  },
+  {
     id: 'application.quit',
     title: 'Application: Close the App',
     category: 'Application',

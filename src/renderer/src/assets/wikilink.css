@@ -7,22 +7,34 @@
   display: none !important;
 }
 
-/* Base Wikilink Text (100% Native Document Text) */
-.cm-atomic-wiki-link {
+/* Base Wikilink Text (100% Native Document Text — Single 1px Accent Underline) */
+.cm-atomic-wiki-link,
+.cm-atomic-wiki-link-active {
   display: inline !important;
   white-space: normal !important;
   word-break: break-word !important;
   overflow-wrap: break-word !important;
   color: var(--text-accent, #40bafa) !important;
   text-decoration: underline !important;
-  text-decoration-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.35) !important;
+  text-decoration-color: rgba(var(--text-accent-rgb, 64, 186, 250), 0.45) !important;
   text-decoration-thickness: 1px !important;
   text-underline-offset: 3px !important;
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
   cursor: pointer !important;
   user-select: text !important;
   -webkit-user-select: text !important;
   border-radius: 2px !important;
   transition: color 0.15s ease, background-color 0.15s ease, opacity 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+/* Prevent nested spans inside wikilinks from drawing a second underline or border */
+.cm-atomic-wiki-link *,
+.cm-atomic-wiki-link-active *,
+.cm-atomic-wikilink-wrap * {
+  text-decoration: none !important;
+  border: none !important;
 }
 
 .cm-atomic-wiki-link:hover,
@@ -44,21 +56,6 @@
   content: none !important;
   width: 0 !important;
   height: 0 !important;
-}
-
-/* Active Editing State: reveals the raw [[brackets]] with a thin 1px border and no background */
-.cm-atomic-wiki-link-active {
-  text-decoration: none !important;
-  background: transparent !important;
-  border: 1px solid var(--border-dim, rgba(125, 125, 125, 0.28)) !important;
-  border-radius: 3px !important;
-  padding: 0 2px;
-}
-
-/* Remove active wikilink border & background during range selection / Ctrl+A */
-.cm-editor:has(.cm-selectionBackground) .cm-atomic-wiki-link-active {
-  background: transparent !important;
-  border-color: transparent !important;
 }
 
 .cm-atomic-wiki-link-active .cm-wikilink-syntax {
