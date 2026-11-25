@@ -904,6 +904,8 @@ export function initTauriBridge(): void {
     resumeGlobalShortcuts: async () => {},
     isCapsLockOn: async () => false,
     fetchLinkMetadata: (url: string) => invoke<any>('fetch_link_metadata', { url }),
+    webSearch: (query: string, maxResults?: number) =>
+      invoke<any>('web_search', { query, maxResults }),
 
     // Google OAuth & Gmail
     loginWithGoogle: (clientId: string) => invoke('login_with_google', { clientId }),

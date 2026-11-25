@@ -17,7 +17,8 @@ export const IntentCategory = {
   MEMORY_OP: 'MEMORY_OP',
   DIAGNOSTICS: 'DIAGNOSTICS',
   AUDIT_WIKILINKS: 'AUDIT_WIKILINKS',
-  QUERY_INDEX: 'QUERY_INDEX'
+  QUERY_INDEX: 'QUERY_INDEX',
+  WEB_SEARCH: 'WEB_SEARCH'
 } as const
 
 export type IntentCategoryType = (typeof IntentCategory)[keyof typeof IntentCategory]
@@ -33,6 +34,13 @@ export const detectUserIntent = (
     /\b(let'?s talk|just talk|talk first|don'?t write|do not write|don'?t create|do not create|don'?t run|do not run|no files?(?: yet)?|don'?t save|do not save|just discuss|discuss first|in chat(?: only)?|brainstorm(?:ing)? (?:in|only in) chat|keep (?:it )?in chat|without (?:writing|creating|saving))\b/i
   if (conversationalOverridePatterns.test(clean)) {
     return IntentCategory.CONVERSATIONAL_EXPLAIN
+  }
+
+  const webSearchPatterns =
+    /(?:^|\s)\/(?:web|search|google)\b|\b((?:go\s+)?search\s+(?:online|the\s+web|on\s+google|google|internet|web)|look\s+up\s+(?:online|on\s+google|on\s+the\s+web)|google\s+(?:for|about|this|what|how|who|latest)|browse\s+(?:the\s+)?(?:web|online|internet)|find\s+(?:online|on\s+google|websites?\s+for|web\s+links?)|check\s+(?:online|the\s+web|google)|latest\s+(?:news|release|version|updates?)\s+(?:on|for|about|of))\b/i
+
+  if (webSearchPatterns.test(clean)) {
+    return IntentCategory.WEB_SEARCH
   }
 
   const diagnosticPatterns =
@@ -379,6 +387,14 @@ User: "Show notes in folder AI with backlinks to [[Overview]]"
 Execution:
 1. Call \`luminaQueryIndex\` with folder="AI", linksTo="Overview".
 2. Detail results in chat.`
+
+    case IntentCategory.WEB_SEARCH:
+      return `\n**EXEMPLAR FOR LIVE WEB SEARCH**:
+User: "go search online for Tauri v2 window events" or "search google for latest React 19 features"
+Execution:
+1. Immediately invoke the \`webSearch\` tool with a crisp, focused \`query\` (e.g. \`query="Tauri v2 window events documentation"\`).
+2. Synthesize a clear, up-to-date answer grounded in the returned live web results.
+3. Include clickable Markdown links with the website name for every source you reference (e.g. [tauri.app](https://v2.tauri.app/...), [github.com](https://github.com/...)) both inline and in a compact **Sources** list so the user can click to open the website directly.`
 
     case IntentCategory.CONVERSATIONAL_EXPLAIN:
     default:

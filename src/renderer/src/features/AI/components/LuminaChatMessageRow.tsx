@@ -139,21 +139,6 @@ export const ChatMessageRow: React.FC<ChatMessageRowProps> = React.memo(
                   onCopy={handleCopy}
                   onSkipThinking={() => useAIStore.getState().skipThinking?.()}
                 />
-                {msg.role === 'assistant' && Boolean(msg.sources?.length) && (
-                  <div className="lumina-workspace-sources" aria-label="Workspace notes provided as context">
-                    <span className="lumina-workspace-sources-label">Workspace context</span>
-                    {Array.from(new Set(msg.sources || [])).map((source) => {
-                      const label = source.split(/[\\/]/).pop()?.replace(/\.[^.]+$/, '') || source
-                      return (
-                        <LuminaEntityMention
-                          key={source}
-                          target={source.replace(/\.(?:md|markdown)$/i, '')}
-                          label={label}
-                        />
-                      )
-                    })}
-                  </div>
-                )}
                 {isLast && isChatLoading && (
                   <div style={{ marginTop: '8px' }}>
                     <ThinkingIndicator

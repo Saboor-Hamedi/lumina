@@ -18,6 +18,7 @@ import { luminaDiagnoseSystemTool, diagnoseSystemTool } from './luminaDiagnoseSy
 import { auditWikilinksTool } from './auditWikilinks'
 import { luminaQueryIndexTool, queryIndexTool } from './luminaQueryIndex'
 import { undoChangesTool } from './undoChanges'
+import { webSearchTool } from './webSearch'
 import { saveMemoryTool, updateMemoryTool, forgetMemoryTool } from '../../../core/ai/memory'
 
 export {
@@ -26,7 +27,8 @@ export {
   auditWikilinksTool,
   luminaQueryIndexTool,
   queryIndexTool,
-  grepWorkspaceTool
+  grepWorkspaceTool,
+  webSearchTool
 }
 
 export const getAITools = (blockReadFile?: boolean, allowOpenFile: boolean = false): Record<string, any> => {
@@ -35,6 +37,7 @@ export const getAITools = (blockReadFile?: boolean, allowOpenFile: boolean = fal
     readFile: getReadFileTool(blockReadFile),
     checkFile: checkFileTool,
     grepWorkspace: grepWorkspaceTool,
+    webSearch: webSearchTool,
     // Expose one public tool name: advertising both aliases makes some models
     // execute the same diagnostics twice. The legacy name remains understood
     // by the stream parser for old model responses.
@@ -69,6 +72,7 @@ export const getAITools = (blockReadFile?: boolean, allowOpenFile: boolean = fal
 
 export const getMemoryTools = (): Record<string, any> => {
   return {
+    webSearch: webSearchTool,
     saveMemory: saveMemoryTool,
     updateMemory: updateMemoryTool,
     forgetMemory: forgetMemoryTool,

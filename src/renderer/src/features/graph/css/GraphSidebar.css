@@ -25,19 +25,20 @@
   pointer-events: none;
 }
 
-.lumina-canvas-toolbar-right {
+.nexus-sidebar.lumina-canvas-toolbar-right {
   position: relative !important;
   top: auto !important;
   bottom: auto !important;
   right: auto !important;
   flex-shrink: 0 !important;
-  z-index: 20 !important;
+  z-index: 220 !important;
   pointer-events: auto !important;
   transition: none !important;
 }
 
-.lumina-canvas-toolbar-right:not(.is-expanded) {
+.nexus-sidebar.lumina-canvas-toolbar-right:not(.is-expanded) {
   width: 44px !important;
+  padding-top: 44px !important;
   transform: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
@@ -47,9 +48,10 @@
   box-shadow: none !important;
 }
 
-.lumina-canvas-toolbar-right.is-expanded {
-  width: var(--right-sidebar-width, 220px) !important;
+.nexus-sidebar.lumina-canvas-toolbar-right.is-expanded {
+  width: var(--right-sidebar-width, 240px) !important;
   min-width: 220px !important;
+  padding-top: 38px !important;
   height: 100% !important;
   max-height: 100% !important;
   overflow: hidden !important;
@@ -64,15 +66,15 @@
   box-shadow: none !important;
 }
 
-[data-theme='light'] .lumina-canvas-toolbar-right:not(.is-expanded),
-.theme-light .lumina-canvas-toolbar-right:not(.is-expanded) {
+[data-theme='light'] .nexus-sidebar.lumina-canvas-toolbar-right:not(.is-expanded),
+.theme-light .nexus-sidebar.lumina-canvas-toolbar-right:not(.is-expanded) {
   background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #ffffff)) 80%, transparent) !important;
   border-left: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08)) !important;
   box-shadow: -1px 0 3px rgba(0, 0, 0, 0.03) !important;
 }
 
-[data-theme='light'] .lumina-canvas-toolbar-right.is-expanded,
-.theme-light .lumina-canvas-toolbar-right.is-expanded {
+[data-theme='light'] .nexus-sidebar.lumina-canvas-toolbar-right.is-expanded,
+.theme-light .nexus-sidebar.lumina-canvas-toolbar-right.is-expanded {
   background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #ffffff)) 88%, transparent) !important;
   border-left: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08)) !important;
   box-shadow: -1px 0 4px rgba(0, 0, 0, 0.04) !important;

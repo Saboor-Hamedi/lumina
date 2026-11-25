@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react'
-import { ChevronDown, Check } from 'lucide-react'
+import React, { useState, useCallback, useMemo } from 'react'
+import { ChevronDown, Check, Search, X } from 'lucide-react'
 import { CanvasShapeType, CanvasNodeColor } from '../types'
 import {
   CANVAS_SHAPES,
@@ -64,6 +64,18 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
     const [activeColor, setActiveColor] = useState<CanvasNodeColor>(
       selectedColor || 'default'
     )
+    const [searchQuery, setSearchQuery] = useState('')
+
+    const normalizedQuery = searchQuery.trim().toLowerCase()
+    const filteredShapes = useMemo(() => {
+      if (!normalizedQuery) return null
+      return CANVAS_SHAPES.filter(
+        (s) =>
+          s.label.toLowerCase().includes(normalizedQuery) ||
+          s.description.toLowerCase().includes(normalizedQuery) ||
+          s.id.toLowerCase().includes(normalizedQuery)
+      )
+    }, [normalizedQuery])
 
     // Accordion state for draw.io-style category dropdowns
     const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
@@ -101,27 +113,31 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
 
     return (
       <div className="lumina-canvas-studio-tab-pane">
-        <div className="studio-section-banner">
-          <span className="banner-title">
-            {selectedCount > 0 ? 'Theme & Shapes' : 'Geometric Shapes'}
-          </span>
-          <span className="banner-sub">
-            {selectedCount > 0
-              ? `Apply theme to ${selectedCount > 1 ? `${selectedCount} selected items` : 'selected item'}`
-              : 'Drag to add'}
-          </span>
+        {/* Live Shape Search */}
+        <div className="lumina-canvas-studio-search">
+          <Search size={12} className="studio-search-icon" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={`Search ${CANVAS_SHAPES.length} shapes...`}
+            className="studio-search-input"
+            aria-label="Search shapes"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="studio-search-clear"
+              onClick={() => setSearchQuery('')}
+              aria-label="Clear search"
+            >
+              <X size={11} />
+            </button>
+          )}
         </div>
 
-        {/* Feature 1: Theme Color Swatch Panels (Select Option Removed) */}
-        <div className="lumina-canvas-studio-card-box">
-          <div className="studio-field-header">
-            <span className="studio-field-label">Theme Color</span>
-            {selectedCount > 0 && (
-              <span className="studio-field-sub">Recolors selection</span>
-            )}
-          </div>
-
-          {/* Quick Swatches Row - Robust color panel matching AccentColor.jsx (no border, no shadow) */}
+        {/* Clean Color Swatch Bar */}
+        <div className="lumina-canvas-studio-card-box compact">
           <div className="lumina-canvas-studio-colors-row">
             {SHAPE_COLOR_OPTIONS.map((c) => {
               const isSelected = activeColor === c.id
@@ -156,7 +172,43 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
           </div>
         </div>
 
-        {/* Feature 2: draw.io style Collapsible Category Dropdowns with Dropdown Icon */}
+        {/* Search results or Collapsible Category Dropdowns */}
+        {filteredShapes ? (
+          <div className="lumina-canvas-studio-shapes-grid">
+            {filteredShapes.length === 0 ? (
+              <div className="studio-search-empty">No matching shapes</div>
+            ) : (
+              filteredShapes.map((shape) => (
+                <button
+                  key={shape.id}
+                  type="button"
+                  className="lumina-canvas-studio-shape-card"
+                  onClick={() => onAddShape?.(shape.id, shape.defaultWidth, shape.defaultHeight, activeColor)}
+                  draggable
+                  onDragStart={(e) => {
+                    const shapePayload = JSON.stringify({
+                      shapeType: shape.id,
+                      width: shape.defaultWidth,
+                      height: shape.defaultHeight,
+                      color: activeColor
+                    })
+                    e.dataTransfer.setData('application/lumina-shape', shapePayload)
+                    e.dataTransfer.setData('application/lumina-shape-meta', shapePayload)
+                    e.dataTransfer.effectAllowed = 'copy'
+                  }}
+                  title={`${shape.label} — ${shape.description}`}
+                >
+                  <div className="shape-preview-svg" style={{ color: activeColorHex }}>
+                    <svg viewBox="0 0 100 100" width="100%" height="100%">
+                      {renderShapeSVG(shape.id, activeColorHex, activeColorHex, 0.08, 1.5)}
+                    </svg>
+                  </div>
+                  <span className="shape-label">{shape.label}</span>
+                </button>
+              ))
+            )}
+          </div>
+        ) : (
         <div className="lumina-canvas-studio-categories-list">
           {SHAPE_CATEGORIES.map((cat) => {
             const isOpen = !!openCategories[cat.id]
@@ -220,6 +272,7 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
             )
           })}
         </div>
+        )}
       </div>
     )
   }

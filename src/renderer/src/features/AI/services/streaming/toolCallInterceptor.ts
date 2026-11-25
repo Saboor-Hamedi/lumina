@@ -47,6 +47,7 @@ export const TOOL_TAG_NAMES = [
   'forgetMemory',
   'forgeMemory',
   'grepWorkspace',
+  'webSearch',
   'checkFile',
   'createFile',
   'updateFile',

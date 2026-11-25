@@ -120,6 +120,16 @@
   opacity: 0.35;
 }
 
+/* Marquee Box Selection (Shift + Drag) */
+.lumina-canvas-marquee-box {
+  position: absolute;
+  border: 1.5px solid var(--text-accent, #38bdf8);
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 12%, transparent);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 40;
+}
+
 /* Coarse pointer / touchscreen ergonomic hit targets on canvas */
 @media (pointer: coarse) {
   .lumina-canvas-port {

@@ -57,6 +57,7 @@ export interface ConvasToolBarRightProps {
   onApplyToAllEdges?: (style: CanvasEdgeLineStyle) => void
   onAlignSelection?: (alignment: CanvasAlignmentType) => void
   onDistributeSelection?: (direction: CanvasDistributionType) => void
+  onInsertTemplate?: (template: 'flowchart' | 'architecture' | 'mindmap') => void
   onUndo?: () => void
   canUndo?: boolean
   onRedo?: () => void

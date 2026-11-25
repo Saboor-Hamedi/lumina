@@ -1,6 +1,9 @@
 import React from 'react'
 import {
   Grid,
+  GitBranch,
+  Layers,
+  Share2,
   AlignLeft,
   AlignCenter,
   AlignRight,
@@ -30,6 +33,7 @@ export interface StudioLayoutTabProps {
   onToggleMiniMap?: () => void
   onAlignSelection?: (alignment: CanvasAlignmentType) => void
   onDistributeSelection?: (direction: CanvasDistributionType) => void
+  onInsertTemplate?: (template: 'flowchart' | 'architecture' | 'mindmap') => void
 }
 
 const ALIGNMENT_OPTIONS: StudioDropdownOption<CanvasAlignmentType>[] = [
@@ -63,14 +67,46 @@ export const StudioLayoutTab: React.FC<StudioLayoutTabProps> = React.memo(
     onToggleSnapToGrid,
     onSnapAllToGrid,
     onAlignSelection,
-    onDistributeSelection
+    onDistributeSelection,
+    onInsertTemplate
   }) => {
     return (
       <div className="lumina-canvas-studio-tab-pane">
-        <div className="studio-section-banner">
-          <span className="banner-title">Layout & Precision</span>
-          <span className="banner-sub">Snapping, alignment, and distribution</span>
-        </div>
+        {/* Quick Diagram Templates */}
+        {onInsertTemplate && (
+          <div className="lumina-canvas-studio-card-box">
+            <span className="card-box-label">Quick Diagrams</span>
+            <div className="studio-template-grid">
+              <button
+                type="button"
+                className="lumina-canvas-studio-action-btn"
+                onClick={() => onInsertTemplate('flowchart')}
+                title="Insert starter flowchart diagram"
+              >
+                <GitBranch size={12} />
+                <span>Flowchart</span>
+              </button>
+              <button
+                type="button"
+                className="lumina-canvas-studio-action-btn"
+                onClick={() => onInsertTemplate('architecture')}
+                title="Insert client-server-database architecture diagram"
+              >
+                <Layers size={12} />
+                <span>System</span>
+              </button>
+              <button
+                type="button"
+                className="lumina-canvas-studio-action-btn"
+                onClick={() => onInsertTemplate('mindmap')}
+                title="Insert radial mind map"
+              >
+                <Share2 size={12} />
+                <span>Mind Map</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Feature 1: Grid Snapping Controls */}
         <div className="lumina-canvas-studio-card-box">

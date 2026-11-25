@@ -82,6 +82,8 @@ export const getToolStatusDescription = (toolName: string, args: Record<string, 
       return `🔍 *Querying workspace index (${args.tag ? '#' + args.tag : ''}${args.folder ? ' in ' + args.folder : ''}${args.query ? ' "' + args.query + '"' : ''})...*`
     case 'grepWorkspace':
       return `🔎 *Searching workspace lines for "${args.query || '...'}"${args.folder ? ' in ' + args.folder : ''}...*`
+    case 'webSearch':
+      return `🌐 *Searching the web for "${args.query || '...'}"...*`
     default:
       return `⚙️ *Working on ${toolName}...*`
   }
@@ -99,6 +101,8 @@ export const getToolInputStartStatus = (toolName?: string): string => {
       return 'Querying workspace index...'
     case 'grepWorkspace':
       return 'Searching workspace lines...'
+    case 'webSearch':
+      return 'Searching the web...'
     case 'createFolder':
       return 'Planning folder creation...'
     case 'createFile':

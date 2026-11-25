@@ -34,6 +34,7 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
     const {
       chatMessages,
       isChatLoading,
+      sessionsLoaded,
       activeThinkingStatus,
       chatError,
       sendChatMessage,
@@ -52,6 +53,7 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
       useShallow((s) => ({
         chatMessages: s.chatMessages,
         isChatLoading: s.isChatLoading,
+        sessionsLoaded: s.sessionsLoaded,
         activeThinkingStatus: s.activeThinkingStatus,
         chatError: s.chatError,
         sendChatMessage: s.sendChatMessage,
@@ -224,7 +226,7 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
       handleRating
     ])
 
-    const isCenteredWelcome = !isSidebar && visibleMessages.length === 0
+    const isCenteredWelcome = !isSidebar && sessionsLoaded && visibleMessages.length === 0
 
     return (
       <div

@@ -133,6 +133,7 @@ export interface AIStoreState {
   // Chat state
   chatError: string | null
   isChatLoading: boolean
+  sessionsLoaded: boolean
   chatController: AbortController | null
   sessions: ChatSession[]
   activeSessionId: string | null

@@ -157,6 +157,10 @@ export function useCanvasGestures({
     return false
   }
 
+  // Marquee box selection (Shift + Drag on empty canvas)
+  const [marqueeBox, setMarqueeBox] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
+  const marqueeStartRef = useRef<{ x: number; y: number } | null>(null)
+
   // Drag & pan tracking
   const [isPanningState, setIsPanningState] = useState(false)
   const [alignmentGuides, setAlignmentGuides] = useState<AlignmentGuide[]>([])
@@ -349,6 +353,20 @@ export function useCanvasGestures({
         setEditingNodeId(newNode.id)
         setEditingField('text')
         setToolMode?.('select')
+        return
+      }
+
+      // Shift + Drag on empty canvas starts a sleek Marquee Box Selection
+      if (e.shiftKey && toolMode === 'select' && !isSpacePressed && (e.button === 0 || isTouch) && containerRef.current) {
+        e.preventDefault()
+        const rect = containerRef.current.getBoundingClientRect()
+        const pt = screenToCanvas(e.clientX, e.clientY, rect)
+        marqueeStartRef.current = pt
+        setMarqueeBox({ x: pt.x, y: pt.y, width: 0, height: 0 })
+        setSelectedEdgeId?.(null)
+        setSelectedEdgeIds?.([])
+        setEditingNodeId(null)
+        setEditingField(null)
         return
       }
 
@@ -551,11 +569,32 @@ export function useCanvasGestures({
         }
       }
 
-      // Immediate high-frequency sampling for Pencil drawing (no dropped points on fast strokes)
+      // Immediate high-frequency sampling for Pencil drawing (Shift snaps straight 0°/45°/90° lines!)
       if (isDrawingRef.current && activeStrokeRef.current && containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect()
         const canvasPos = screenToCanvas(e.clientX, e.clientY, rect)
         const pts = activeStrokeRef.current.points
+
+        if (e.shiftKey && pts.length >= 1) {
+          const origin = pts[0]
+          const dx = canvasPos.x - origin.x
+          const dy = canvasPos.y - origin.y
+          const dist = Math.hypot(dx, dy)
+          // Snap angle to nearest 15° increment for architectural straight lines
+          const angle = Math.round(Math.atan2(dy, dx) / (Math.PI / 12)) * (Math.PI / 12)
+          const endPt: CanvasStrokePoint = {
+            x: Math.round((origin.x + Math.cos(angle) * dist) * 10) / 10,
+            y: Math.round((origin.y + Math.sin(angle) * dist) * 10) / 10
+          }
+          const updated: CanvasStroke = {
+            ...activeStrokeRef.current,
+            points: [origin, endPt]
+          }
+          activeStrokeRef.current = updated
+          setActiveStroke(updated)
+          return
+        }
+
         const prev = pts[pts.length - 1]
         const minStep = 1.6 / (stateRef.current.viewport.zoom || 1)
         if (!prev || Math.hypot(canvasPos.x - prev.x, canvasPos.y - prev.y) >= minStep) {
@@ -590,6 +629,29 @@ export function useCanvasGestures({
           }
           deleteStrokes(hitIds, false)
         }
+        return
+      }
+
+      // Marquee selection box live update
+      if (marqueeStartRef.current && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        const pt = screenToCanvas(e.clientX, e.clientY, rect)
+        const start = marqueeStartRef.current
+        const x = Math.min(start.x, pt.x)
+        const y = Math.min(start.y, pt.y)
+        const width = Math.abs(pt.x - start.x)
+        const height = Math.abs(pt.y - start.y)
+        setMarqueeBox({ x, y, width, height })
+        const matched = stateRef.current.nodes
+          .filter(
+            (n) =>
+              n.x < x + width &&
+              n.x + (n.width || 140) > x &&
+              n.y < y + height &&
+              n.y + (n.height || 100) > y
+          )
+          .map((n) => n.id)
+        setSelectedNodeIds(matched)
         return
       }
 
@@ -742,6 +804,12 @@ export function useCanvasGestures({
           }
           addStroke(simplified)
         }
+        return
+      }
+
+      if (marqueeStartRef.current) {
+        marqueeStartRef.current = null
+        setMarqueeBox(null)
         return
       }
 
@@ -924,6 +992,7 @@ export function useCanvasGestures({
     snappedTargetRef,
     mouseCanvasPos,
     activeStroke,
+    marqueeBox,
     isPanningState,
     isPanningRef,
     panPrevRef,

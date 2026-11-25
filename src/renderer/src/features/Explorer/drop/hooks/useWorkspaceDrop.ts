@@ -30,6 +30,94 @@ export function useWorkspaceDrop(): {
   const dragCounterRef = useRef(0)
 
   useEffect(() => {
+    // ── Native Tauri v2 OS File Drag-and-Drop (PDFs, Markdown, Images, Folders) ──
+    // Works everywhere in the window: over Notes, Lumina AI, Welcome, Canvas, or Explorer,
+    // on Windows, macOS, and Linux (where HTML5 dataTransfer.files strips local file paths).
+    let unlistenTauriDragDrop: (() => void) | null = null
+    let isMounted = true
+
+    const isTauriRuntime =
+      typeof window !== 'undefined' &&
+      Boolean((window as any).__TAURI_INTERNALS__ || (window as any).__TAURI__)
+
+    if (isTauriRuntime) {
+      import('@tauri-apps/api/webview')
+        .then(({ getCurrentWebview }) => {
+          if (!isMounted) return
+          return getCurrentWebview().onDragDropEvent(async (event) => {
+            if (!isMounted) return
+            const payload = event.payload as any
+            const type = payload?.type
+
+            if (type === 'enter' || type === 'over') {
+              const count = Array.isArray(payload?.paths) && payload.paths.length > 0 ? payload.paths.length : 1
+              setDropState((prev) =>
+                prev.isOver && prev.isExternal && prev.count === count
+                  ? prev
+                  : { isOver: true, isExternal: true, title: 'Files', count }
+              )
+            } else if (type === 'leave') {
+              dragCounterRef.current = 0
+              setDropState((prev) =>
+                prev.isOver ? { isOver: false, isExternal: false, title: '', count: 1 } : prev
+              )
+            } else if (type === 'drop') {
+              dragCounterRef.current = 0
+              setDropState({ isOver: false, isExternal: false, title: '', count: 1 })
+
+              const paths: string[] = Array.isArray(payload?.paths)
+                ? payload.paths.filter((p: unknown): p is string => typeof p === 'string' && p.length > 0)
+                : []
+              if (paths.length === 0 || !(window as any).api?.importExternalPaths) return
+
+              // Optional: detect if dropped directly onto a folder in the left Explorer sidebar
+              let targetFolder = ''
+              const pos = payload?.position
+              if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
+                const dpr = window.devicePixelRatio || 1
+                const el =
+                  document.elementFromPoint(pos.x / dpr, pos.y / dpr) ||
+                  document.elementFromPoint(pos.x, pos.y)
+                const folderEl = el?.closest?.('[data-folder-path], [data-folder-id]') as HTMLElement | null
+                if (folderEl) {
+                  targetFolder =
+                    folderEl.getAttribute('data-folder-path') ||
+                    folderEl.getAttribute('data-folder-id') ||
+                    ''
+                }
+              }
+
+              try {
+                const res = await (window as any).api.importExternalPaths(paths, targetFolder)
+                await useWorkspaceStore.getState().loadWorkspace()
+                const importedIds = res?.importedNoteIds || res?.importedSnippetIds || []
+                if (importedIds.length > 0) {
+                  const allNotes = useWorkspaceStore.getState().notes || []
+                  const found = allNotes.find((n: any) => n.id === importedIds[0])
+                  if (found) {
+                    useWorkspaceStore.getState().setSelectedNote(found)
+                  }
+                }
+              } catch (err) {
+                console.error('[useWorkspaceDrop] Native Tauri file import failed:', err)
+              }
+            }
+          })
+        })
+        .then((unlisten) => {
+          if (typeof unlisten === 'function') {
+            if (isMounted) {
+              unlistenTauriDragDrop = unlisten
+            } else {
+              unlisten()
+            }
+          }
+        })
+        .catch(() => {
+          // Non-Tauri environment (tests / browser)
+        })
+    }
+
     const handleWorkspaceDragHover = (e: Event) => {
       const detail = (e as CustomEvent).detail || {
         isOver: false,
@@ -83,6 +171,12 @@ export function useWorkspaceDrop(): {
     window.addEventListener('dragend', handleWindowDropOrEnd)
 
     return () => {
+      isMounted = false
+      if (unlistenTauriDragDrop) {
+        try {
+          unlistenTauriDragDrop()
+        } catch {}
+      }
       window.removeEventListener('lumina:workspace-drag-hover', handleWorkspaceDragHover)
       window.removeEventListener('dragleave', handleWindowDragLeave)
       window.removeEventListener('drop', handleWindowDropOrEnd)

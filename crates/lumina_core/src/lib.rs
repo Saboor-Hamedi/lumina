@@ -6,6 +6,7 @@ pub mod search;
 pub mod secrets;
 pub mod security;
 pub mod updater;
+pub mod web_search;
 pub mod zip_util;
 
 pub use graph::{build_graph_data_impl, GraphData, GraphLink, GraphNode, NoteInput};
@@ -18,6 +19,7 @@ pub use security::{
 pub use updater::{
     DownloadProgressInfo, GitHubReleasesResponse, ReleaseAssetInfo, ReleaseNoteEntry,
 };
+pub use web_search::{search_web_impl, WebSearchResponse, WebSearchResult};
 
 pub fn get_core_version() -> String {
     "lumina-core-rust/0.1.0".to_string()

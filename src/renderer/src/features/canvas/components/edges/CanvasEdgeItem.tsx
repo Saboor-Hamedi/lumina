@@ -268,12 +268,12 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
           }}
         />
 
-        {/* Generous hover retention zone encompassing wire midpoint, label, and controls badge */}
+        {/* Generous hover retention zone encompassing wire midpoint, label, and controls badge above it */}
         <rect
           x={midX - 68}
-          y={edge.label ? midY - 38 : midY - 22}
+          y={edge.label ? midY - 46 : midY - 38}
           width={136}
-          height={edge.label ? 62 : 44}
+          height={edge.label ? 66 : 56}
           rx={12}
           fill="transparent"
           style={{ pointerEvents: (isHovered || isSelected) && !isMultiSelectionActive ? 'all' : 'none' }}
@@ -295,32 +295,53 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
             e.stopPropagation()
             onSelectEdge?.(e, edge.id)
           }}
+          onMouseDown={(e) => {
+            e.stopPropagation()
+            onSelectEdge?.(e, edge.id)
+          }}
           onClick={(e) => {
             e.stopPropagation()
             onSelectEdge?.(e, edge.id)
           }}
+          onDoubleClick={(e) => {
+            e.stopPropagation()
+            setIsEditingLabel(true)
+          }}
         />
 
-        {/* Edge Text Label with clean pill backdrop so text is legible over lines/grid */}
+        {/* Edge Text Label (No background box; crisp paint-order halo for legibility + 1-click rename) */}
         {edge.label && !isEditingLabel && (
           <g
             className="lumina-canvas-edge-label-badge"
             transform={`translate(${midX}, ${midY})`}
+            style={{ cursor: 'text', pointerEvents: 'all' }}
+            onPointerDown={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              setIsEditingLabel(true)
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              setIsEditingLabel(true)
+            }}
             onClick={(e) => {
               e.stopPropagation()
               setIsEditingLabel(true)
             }}
+            onDoubleClick={(e) => {
+              e.stopPropagation()
+              setIsEditingLabel(true)
+            }}
           >
+            {/* Transparent click target around text so clicking anywhere on the label renames effortlessly */}
             <rect
-              x={-Math.max(24, edge.label.length * 3.8 + 10)}
-              y={-10}
-              width={Math.max(48, edge.label.length * 7.6 + 20)}
-              height={20}
-              rx={10}
-              fill="var(--bg-app, #0c0d10)"
-              fillOpacity={0.92}
-              stroke="var(--border-subtle, rgba(255, 255, 255, 0.14))"
-              strokeWidth={1}
+              x={-Math.max(28, edge.label.length * 4 + 10)}
+              y={-12}
+              width={Math.max(56, edge.label.length * 8 + 20)}
+              height={24}
+              fill="transparent"
+              stroke="none"
             />
             <text
               x={0}
@@ -329,6 +350,12 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
               dominantBaseline="central"
               alignmentBaseline="central"
               className={`lumina-canvas-edge-label-text edge-${targetColor}`}
+              style={{
+                paintOrder: 'stroke',
+                stroke: 'var(--bg-app, #0c0d10)',
+                strokeWidth: 4.5,
+                strokeLinejoin: 'round'
+              }}
             >
               {edge.label}
             </text>
@@ -338,10 +365,10 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
         {/* Inline Label Editor */}
         {isEditingLabel && (
           <foreignObject
-            x={midX - 55}
-            y={midY - 11}
-            width={110}
-            height={22}
+            x={midX - 70}
+            y={midY - 13}
+            width={140}
+            height={26}
             className="lumina-canvas-edge-label-editor-container"
           >
             <input
@@ -357,13 +384,12 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
                 setIsEditingLabel(false)
               }}
               onKeyDown={(e) => {
+                e.stopPropagation()
                 if (e.key === 'Enter') {
-                  e.stopPropagation()
                   e.preventDefault()
                   onUpdateLabel?.(edge.id, e.currentTarget.value.trim())
                   setIsEditingLabel(false)
                 } else if (e.key === 'Escape') {
-                  e.stopPropagation()
                   e.preventDefault()
                   isEscapedRef.current = true
                   setIsEditingLabel(false)
@@ -371,17 +397,18 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
               }}
               onClick={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
             />
           </foreignObject>
         )}
 
-        {/* Interactive hover / selection controls badge at wire midpoint (hidden during multi-selection) */}
+        {/* Interactive hover / selection controls badge positioned cleanly ABOVE the label so it never blocks renaming */}
         {!isEditingLabel && !isMultiSelectionActive && (
           <foreignObject
             x={midX - 58}
-            y={edge.label ? midY - 30 : midY - 11}
+            y={edge.label ? midY - 40 : midY - 32}
             width={116}
-            height={22}
+            height={24}
             className="lumina-canvas-edge-controls-container"
           >
             <div

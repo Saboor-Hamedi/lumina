@@ -19,12 +19,13 @@
  * ============================================================================
  */
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
+import { PanelRightClose } from 'lucide-react'
+import ToolTip from '../../../components/atoms/ToolTip'
 import {
   StudioTab,
   ConvasToolBarRightProps
 } from './types'
-import { StudioHeader } from './StudioHeader'
 import { StudioTabsBar } from './StudioTabsBar'
 import { StudioShapesTab } from './StudioShapesTab'
 import { StudioWiresTab } from './StudioWiresTab'
@@ -69,6 +70,7 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     onApplyToAllEdges,
     onAlignSelection,
     onDistributeSelection,
+    onInsertTemplate,
     onUndo,
     canUndo,
     onRedo,
@@ -127,23 +129,26 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
       return (
         <aside
           className="lumina-canvas-toolbar lumina-canvas-toolbar-right is-expanded"
-          aria-label="Canvas Studio"
+          aria-label="Canvas Inspector"
           onWheel={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
           tabIndex={-1}
         >
-          {/* Studio Header */}
-          <StudioHeader
-            cardCount={nodes.length}
-            onCollapse={toggleExpanded}
-            onUndo={onUndo}
-            canUndo={canUndo}
-            onRedo={onRedo}
-            canRedo={canRedo}
-          />
-
-          {/* Segmented Navigation Bar */}
-          <StudioTabsBar activeTab={activeTab} onSelectTab={setActiveTab} />
+          {/* Single Minimal Top Bar: Segmented Navigation + Collapse Button */}
+          <div className="lumina-canvas-studio-topbar">
+            <StudioTabsBar activeTab={activeTab} onSelectTab={setActiveTab} />
+            <ToolTip text="Collapse Panel" position="bottom">
+              <button
+                type="button"
+                className="lumina-canvas-studio-header-btn"
+                onClick={toggleExpanded}
+                aria-label="Collapse Panel"
+              >
+                <PanelRightClose size={14} />
+              </button>
+            </ToolTip>
+          </div>
 
           {/* Studio Scrollable Body with Clean Dedicated Subcomponents */}
           <div className="lumina-canvas-studio-body" onWheel={(e) => e.stopPropagation()}>
@@ -177,6 +182,7 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
                 onSnapAllToGrid={onSnapAllToGrid}
                 onAlignSelection={onAlignSelection}
                 onDistributeSelection={onDistributeSelection}
+                onInsertTemplate={onInsertTemplate}
               />
             )}
 

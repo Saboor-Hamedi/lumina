@@ -129,18 +129,29 @@ export function extractMemoryCapture(message: string): MemoryCapture | null {
   if (/\b(?:forget|remove|delete|clear)\b.{0,35}\b(?:memory|remember|preference|fact|my name|my role)\b/i.test(text)) return null
   if (/\b(?:(?:what|do|can|could|would)\s+(?:do\s+)?you\s+remember|what do you know about me|show my memory)\b/i.test(text)) return null
 
-  // Allow ordinary lead-ins ("also, please remember...") while avoiding
+  // Allow ordinary lead-ins ("also, please remember...", "save to remember...") while avoiding
   // questions such as "do you remember..." and reminder tasks ("remember to call").
-  const explicit = text.match(/\b(?:please\s+)?(?:remember that|remember|keep in mind that|keep in mind|don't forget that|don't forget|do not forget that|do not forget|save(?: this)? to memory)(?!\s+to\b)\s*[:,]?\s*(.+)$/i)
+  const explicit = text.match(/\b(?:please\s+)?(?:remember that|remember|keep in mind that|keep in mind|don't forget that|don't forget|do not forget that|do not forget|save(?: this)? to (?:memory|remember))(?!\s+to\b)\s*[:,]?\s*(.+)$/i)
   let fact = ''
   let category: MemoryCategory = 'facts'
   let key: UserMemoryKey | undefined
   let automatic = false
 
+  const isQuestion = /\?\s*$/.test(text) || /^(?:what|who|where|when|why|how|can|could|would|do|does|did|is|are|should)\b/i.test(text)
+
   const captureName = text.match(/\b(?:my name is|call me)\s+([\p{L}][\p{L}\p{M}'’ -]{0,79}?)(?=\s+(?:and|but|because)\s+(?:i|my|we)\b|[,.!?;\n]|$)/iu)
-  const captureRole = text.match(/\b(?:my (?:job|role|profession) is|i work as|i am an? )\s+([^!?;\n]{2,100}?)(?=,?\s+(?:and|but|because)\s+(?:i|my|we)\b|[.!?;\n]|$)/i)
-  const roleWords = /\b(?:developer|engineer|designer|teacher|student|researcher|writer|doctor|nurse|manager|founder|artist|analyst|scientist|architect|accountant|lawyer|consultant|programmer|lecturer|professor)\b/i
-  const capturePreference = text.match(/\b(?:i (?:really )?(?:prefer|like|love|dislike|hate)|i (?:do not|don't) like|please always|please never)\s+([^!?;\n]{2,220}?)(?=,?\s+(?:and|but|because)\s+(?:i|my|we)\b|[.!?;\n]|$)/i)
+  const captureRole = text.match(/\b(?:my (?:job|role|profession) is|i work as|i am an? |i'm an? )\s*([^!?;\n]{2,100}?)(?=,?\s+(?:and|but|because)\s+(?:i|my|we)\b|[.!?;\n]|$)/i)
+  const roleWords = /\b(?:developer|engineer|designer|teacher|student|researcher|writer|doctor|nurse|manager|founder|artist|analyst|scientist|architect|accountant|lawyer|consultant|programmer|lecturer|professor|creator|builder)\b/i
+  const capturePreference = text.match(/\b(?:i (?:really )?(?:prefer|like|love|dislike|hate)|i (?:do not|don't) like|please always|please never|always (?:reply|respond|answer|write|use)|never (?:reply|respond|use)|keep (?:your )?(?:answers|replies|responses))\s+([^!?;\n]{2,220}?)(?=,?\s+(?:and|but|because)\s+(?:i|my|we)\b|[.!?;\n]|$)/i)
+  const captureProject = !isQuestion
+    ? text.match(/\b(?:i(?:'m| am) (?:currently )?(?:building|working on|developing|creating)|my (?:main )?(?:project|app|product|startup|company) is(?: called)?)\s+([^!?;\n]{2,160}?)(?=[.!?\n]|$)/i)
+    : null
+  const captureLocation = !isQuestion
+    ? text.match(/\b(?:i live in|i(?:'m| am) (?:from|based in|located in))\s+([\p{L}][\p{L}\p{M},'’ -]{1,80}?)(?=\s+(?:and|but|because)\s+(?:i|my|we)\b|[.!?\n]|$)/iu)
+    : null
+  const captureLearningOrStack = !isQuestion
+    ? text.match(/\b(?:i(?:'m| am) (?:currently )?(?:learning|studying)|my (?:tech )?stack is|i (?:mainly )?(?:code|program|develop) in|my goal is to)\s+([^!?;\n]{2,160}?)(?=[.!?\n]|$)/i)
+    : null
 
   if (captureName) {
     fact = captureName[1]
@@ -173,6 +184,19 @@ export function extractMemoryCapture(message: string): MemoryCapture | null {
       fact = `${explicitPreference[0]} ${explicitPreference[1]}`
       category = 'preferences'
     }
+  } else if (captureProject) {
+    fact = captureProject[0]
+    category = 'facts'
+    automatic = true
+  } else if (captureLocation) {
+    fact = captureLocation[0]
+    category = 'user'
+    key = 'bio'
+    automatic = true
+  } else if (captureLearningOrStack) {
+    fact = captureLearningOrStack[0]
+    category = 'facts'
+    automatic = true
   } else {
     return null
   }

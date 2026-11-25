@@ -20,6 +20,7 @@ pub mod search;
 pub mod settings;
 pub mod terminal;
 pub mod updater;
+pub mod web_search;
 pub mod workspace;
 
 // Re-export every Tauri command and public helper so `lib.rs` stays flat.
@@ -31,4 +32,5 @@ pub use search::*;
 pub use settings::*;
 pub use terminal::*;
 pub use updater::*;
+pub use web_search::*;
 pub use workspace::*;

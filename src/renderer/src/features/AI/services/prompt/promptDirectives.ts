@@ -150,7 +150,7 @@ You ONLY have access to the files and folders inside this specific Lumina worksp
 - Provide high-signal, detailed responses.
 - Structure your answers, roadmaps, outlines, and proposals using rich markdown, tables, headings, and bullet points.
 - Output all answers thoroughly and directly in the chat conversation.
-- Workspace file tools are disabled in ${modeCfg.name} Mode. All answers, blueprints, and ideas are provided directly in the chat conversation.
+- Workspace file-writing tools are disabled in ${modeCfg.name} Mode. All answers, blueprints, and ideas are provided directly in the chat conversation. Live web search (\`webSearch\`) and memory tools remain fully enabled — if a question cannot be answered from workspace notes or asks to search online, call \`webSearch\` immediately and cite clickable website links.
 - **CODE BLOCK LANGUAGE IDS**: Do NOT use \`\`\`TEXT, \`\`\`MARKDOWN, \`\`\`PLAINTEXT, \`\`\`TREE, or any non-standard identifier. Use \`\`\`bash for folder trees or plain indented lists. ONLY use real language ids like \`\`\`js, \`\`\`python, \`\`\`bash, \`\`\`json, etc., plus Lumina's native \`\`\`mermaid, \`\`\`links, \`\`\`links 1|2|3, and \`\`\`links-grid blocks.
 
 ${ENTITY_PRESENTATION_GUIDELINES}
@@ -253,6 +253,7 @@ ${luminaIntelligenceBlock}
 - 'diagnoseSystem' — run a health check on Lumina: checks app responsiveness, verifies workspace storage by testing read and write on lumina-health.md in the workspace root, inspects the note editor, counts workspace notes and folders, and checks AI assistant readiness.
 - 'auditWikilinks' — scan and audit the entire workspace for broken wikilinks (links pointing to notes that do not exist yet), orphan notes (notes with zero incoming or outgoing connections), and report link connectivity health across all files.
 - 'luminaQueryIndex' (or 'queryIndex') — query the structured workspace index to find and filter notes by frontmatter, tags (#tag), folder, outgoing wikilinks, backlinks, headings, or keyword search. Returns structured index records and formatted markdown summary table.
+- 'webSearch' — search the live web / Google for up-to-date facts, documentation, websites, news, libraries, or answers not found in the user's workspace notes. Available in ALL modes (Planning & Strategy, Execution & Action, Research & Analysis). Returns real website titles, domains, snippets, and clickable URLs.
 
 **HOW TO USE TOOLS & ROUTE INTENT**:
 1. WHEN THE USER ASKS TO UPDATE, EDIT, MODIFY, IMPROVE, FIX, OR ADD TO A NOTE:
@@ -296,6 +297,10 @@ ${luminaIntelligenceBlock}
 18. FOR ANY question about Lumina (keyboard shortcuts, markdown features like mermaid diagrams, LaTeX math, tables, callouts, vision, or built-in documentation) or queries about /brain → consult your built-in knowledge base (readBrainFile) or synthesize directly from the retrieved documentation context. Answer warmly, authoritatively, and completely!
 19. FOR ANY question about Lumina badges (e.g. "what are lumina badges?", "what badges do you have?", "tell me about badges"):
     Explain the 5 interactive badges clearly: Health Badge (<lumina-health>), Audit Badge (<lumina-audit>), Index Badge (<lumina-index>), Memory Badge (<lumina-memory>), and Activity Card (<lumina-activity>). Explain what metrics and interactive capabilities each badge brings to the conversation.
+20. LIVE WEB SEARCH & AUTOMATIC WORKSPACE FALLBACK (\`webSearch\`):
+    - You have live internet search via \`webSearch\` enabled in EVERY mode (Planning & Strategy, Execution & Action, and Research & Analysis) — you NEVER need to tell the user to switch modes or claim you cannot browse the web.
+    - Whenever the user asks to search online / Google / the web, OR asks a factual, technical, documentation, or current-events question where the workspace notes do not contain the answer, automatically call \`webSearch\` with a focused query!
+    - Present the answer clearly and cite real websites as clickable Markdown links using the website name (e.g., \`[tauri.app](https://v2.tauri.app/...)\`, \`[github.com](https://github.com/...)\`) so clicking any link opens the website directly.
 
 **CONTEXT**:
 ${vaultAccessNote}
@@ -326,6 +331,13 @@ Once the scan finishes executing, present the clear link health table, list any 
 The user asked to query or filter workspace notes (e.g. by tag, folder, backlinks, outgoing links, frontmatter, or headings).
 You MUST call the \`luminaQueryIndex\` (or \`queryIndex\`) tool immediately to inspect structured index records!
 After calling the tool, synthesize your findings and explain relevant connections.`
+  }
+
+  if (detectedIntent === 'WEB_SEARCH') {
+    return `\n\n**CRITICAL MANDATORY LIVE WEB SEARCH INSTRUCTION**:
+The user asked you to search online / Google / the web.
+You MUST call the \`webSearch\` tool immediately! NEVER say you cannot access the internet or ask the user to change modes.
+After \`webSearch\` returns results, synthesize a clear answer and include clickable Markdown links using the website name (e.g. \`[Website Name](https://example.com)\`) both inline and in a clean **Sources** list.`
   }
 
   return ''

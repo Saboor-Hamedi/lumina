@@ -125,6 +125,34 @@
 }
 
 /* Enhanced Markdown Chat Bubble & Text Styling */
+.chat-messages,
+.chat-msg-list,
+.chat-row,
+.chat-bubble,
+.user-message-inline {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+.chat-bubble p,
+.chat-bubble li,
+.chat-bubble h1,
+.chat-bubble h2,
+.chat-bubble h3,
+.chat-bubble h4,
+.chat-bubble h5,
+.chat-bubble h6,
+.chat-bubble blockquote,
+.chat-bubble td,
+.chat-bubble th,
+.chat-bubble code,
+.chat-bubble pre,
+.chat-bubble span,
+.chat-bubble a {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
 .chat-bubble {
   font-size: 13.5px;
   line-height: 1.65;
@@ -134,6 +162,7 @@
   padding: 10px 14px;
   border-radius: 8px;
   max-width: 100%;
+  cursor: text;
 }
 
 .chat-bubble.user {

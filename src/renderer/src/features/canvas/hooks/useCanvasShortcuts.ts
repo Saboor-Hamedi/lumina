@@ -226,6 +226,13 @@ export function useCanvasShortcuts({
       } else if ((e.ctrlKey || e.metaKey) && e.key === '0' && !isInputActive) {
         e.preventDefault()
         resetViewport()
+      } else if ((e.key === 'Enter' || e.key === 'F2') && !isInputActive && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (selectedNodeIds.length === 1) {
+          e.preventDefault()
+          e.stopPropagation()
+          setEditingNodeId(selectedNodeIds[0])
+          setEditingField('text')
+        }
       } else if ((e.key === 'v' || e.key === 'V') && !isInputActive && !e.ctrlKey && !e.metaKey) {
         setToolMode('select')
       } else if ((e.key === 'h' || e.key === 'H') && !isInputActive && !e.ctrlKey && !e.metaKey) {

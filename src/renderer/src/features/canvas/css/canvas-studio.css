@@ -2,10 +2,12 @@
    Canvas Studio Mode (Expanded Right Toolbar - Full Height Sidebar)
    ========================================================================== */
 .lumina-canvas-toolbar-right.is-expanded {
-  width: 300px;
+  position: absolute;
+  width: 268px;
   top: 0;
   bottom: 0;
   right: 0;
+  left: auto;
   height: 100%;
   max-height: 100vh;
   transform: none;
@@ -15,11 +17,123 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background-color: color-mix(in srgb, var(--bg-card, var(--bg-panel, #121316)) 96%, transparent);
+  background-color: var(--bg-sidebar, var(--bg-panel, #121316));
   border: none;
-  border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.45);
-  z-index: 60;
+  border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  box-shadow: -4px 0 18px rgba(0, 0, 0, 0.24);
+  z-index: 120;
+}
+
+/* Single Clean Top Bar (Tabs + Collapse) */
+.lumina-canvas-studio-topbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px 8px 10px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.07));
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.lumina-canvas-studio-topbar .lumina-canvas-studio-tabs-bar {
+  flex: 1;
+  padding: 2px;
+  background: color-mix(in srgb, var(--bg-app, #000000) 40%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+  border-radius: 7px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
+}
+
+.lumina-canvas-studio-topbar .studio-tab-item {
+  padding: 4px 5px;
+  font-size: 10.5px;
+  border-radius: 5px;
+  gap: 3px;
+}
+
+.lumina-canvas-studio-topbar .studio-tab-item.active {
+  background: var(--bg-card, var(--bg-panel, #1e2028));
+  border-color: var(--border-subtle, rgba(255, 255, 255, 0.1));
+  color: var(--text-main);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+/* Studio Live Shape Search */
+.lumina-canvas-studio-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg-app, #000000) 42%, transparent);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  transition: border-color 0.15s ease;
+}
+
+.lumina-canvas-studio-search:focus-within {
+  border-color: color-mix(in srgb, var(--text-accent, #38bdf8) 55%, transparent);
+}
+
+.studio-search-icon {
+  color: var(--text-faint);
+  flex-shrink: 0;
+}
+
+.studio-search-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-main);
+  font-size: 11.5px;
+  padding: 0;
+}
+
+.studio-search-input::placeholder {
+  color: var(--text-faint);
+}
+
+.studio-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.studio-search-clear:hover {
+  color: var(--text-main);
+  background: var(--bg-active);
+}
+
+.studio-search-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 20px 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.lumina-canvas-studio-card-box.compact {
+  padding: 7px 8px;
+}
+
+.studio-template-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+.studio-template-grid .lumina-canvas-studio-action-btn {
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 4px;
+  font-size: 10px;
 }
 
 [data-theme='light'] .lumina-canvas-toolbar-right.is-expanded,
@@ -508,31 +622,33 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 6px 4px;
+  padding: 7px 4px;
   background: color-mix(in srgb, var(--bg-card, #18191d) 50%, transparent);
   border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.2s ease;
   user-select: none;
 }
 
 .lumina-canvas-studio-shape-card:hover {
-  background: color-mix(in srgb, var(--text-accent, #38bdf8) 12%, transparent);
-  border-color: var(--text-accent, #38bdf8);
-  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 14%, var(--bg-card, #18191d));
+  border-color: color-mix(in srgb, var(--text-accent, #38bdf8) 55%, transparent);
+  transform: translateY(-3px) scale(1.06);
+  box-shadow: 0 8px 18px -4px rgba(0, 0, 0, 0.36);
+  z-index: 4;
 }
 
-.lumina-canvas-studio-shape-card.active,
-.lumina-canvas-studio-wire-card.active {
-  background: color-mix(in srgb, var(--text-accent, #38bdf8) 16%, transparent) !important;
-  border-color: var(--text-accent, #38bdf8) !important;
+.lumina-canvas-studio-shape-card:hover .shape-preview-svg {
+  transform: scale(1.16);
+  filter: drop-shadow(0 3px 8px color-mix(in srgb, var(--text-accent, #38bdf8) 38%, transparent));
 }
 
-.lumina-canvas-studio-shape-card.active .shape-label,
-.lumina-canvas-studio-wire-card.active .wire-card-label {
-  color: var(--text-accent, #38bdf8);
-  font-weight: 600;
+.lumina-canvas-studio-shape-card:hover .shape-label {
+  color: var(--text-main);
 }
 
 .lumina-canvas-studio-shape-card .shape-preview-svg {
@@ -541,6 +657,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), filter 0.2s ease;
 }
 
 .lumina-canvas-studio-shape-card .shape-preview-svg svg {

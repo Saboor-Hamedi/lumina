@@ -293,6 +293,7 @@ export const useAIStore = create<AIStore>((set, get) => {
     // Chat state
     chatError: null,
     isChatLoading: false,
+    sessionsLoaded: false,
     chatController: null,
     sessions: [],
     activeSessionId: null,
@@ -474,7 +475,7 @@ export const useAIStore = create<AIStore>((set, get) => {
 
           // If actively generating, do NOT overwrite active messages in memory
           if (isChatLoading) {
-            set({ sessions, activeSessionId, aiUsageStats: newUsageStats })
+            set({ sessions, activeSessionId, aiUsageStats: newUsageStats, sessionsLoaded: true })
             return
           }
           const activeSession = sessions.find((s) => s.id === activeSessionId)
@@ -482,8 +483,12 @@ export const useAIStore = create<AIStore>((set, get) => {
             sessions,
             activeSessionId,
             chatMessages: activeSession?.messages || [],
-            aiUsageStats: newUsageStats
+            aiUsageStats: newUsageStats,
+            sessionsLoaded: true
           })
+        } catch (err) {
+          set({ sessionsLoaded: true })
+          throw err
         } finally {
           loadSessionsPromise = null
         }
@@ -1331,7 +1336,8 @@ export const useAIStore = create<AIStore>((set, get) => {
             providerType === 'ollama' ||
             detectedIntent === IntentCategory.DIAGNOSTICS ||
             detectedIntent === IntentCategory.AUDIT_WIKILINKS ||
-            detectedIntent === IntentCategory.QUERY_INDEX) &&
+            detectedIntent === IntentCategory.QUERY_INDEX ||
+            detectedIntent === IntentCategory.WEB_SEARCH) &&
           !isConversationalOverride
         ) {
           sdkTools = getAITools(blockReadFile, isOpenIntent)
