@@ -1,6 +1,6 @@
-## Lumina v2.1.2 — Islands UI, In-App Release Notes & Native Performance Suite
+## Lumina v2.1.3 — Islands UI, In-App Release Notes & Native Performance Suite
 
-Lumina **v2.1.2** introduces an in-app **What's New** release center with offline ETag caching, a detached one-click TitleBar update & restart button with toast notifications, native Win32 window transparency, WebView2 GPU/RAM optimizations below 200 MB, theme-synchronized PDF & Breadcrumbs UI, and terminal emoji/Nerd Font ligature isolation.
+Lumina **v2.1.3** introduces an in-app **What's New** release center with offline ETag caching, a detached one-click TitleBar update & restart button with toast notifications, native Win32 window transparency, WebView2 GPU/RAM optimizations below 200 MB, theme-synchronized PDF & Breadcrumbs UI, and terminal emoji/Nerd Font ligature isolation.
 
 ---
 

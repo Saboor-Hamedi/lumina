@@ -9,7 +9,9 @@ function Version() {
     }
   }, [])
 
-  const cleanVersion = String(version || '2.1.1').replace(/^v/i, '')
+  if (!version) return null
+
+  const cleanVersion = String(version).replace(/^v/i, '')
 
   return (
     <span className="select-none font-sans whitespace-nowrap">
