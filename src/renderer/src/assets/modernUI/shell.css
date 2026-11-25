@@ -11,6 +11,11 @@
   box-sizing: border-box;
 }
 
+/* Fallback WebView opacity when native OS DWM layered alpha is not active */
+html:not([data-native-opacity='true']) .lumina-app {
+  opacity: var(--app-opacity, 1);
+}
+
 .app-shell,
 [data-modern-ui='true'] .app-shell {
   display: flex;
@@ -39,6 +44,7 @@
   gap: 0 !important;
   background: var(--bg-shell);
   box-sizing: border-box;
+  transition: padding 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* Maintain clean outer padding if an Activity Bar or Status Bar is hidden */
@@ -54,6 +60,7 @@
   background: var(--bg-shell);
   padding: 0 !important;
   gap: 0 !important;
+  transition: padding 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 [data-modern-ui='true'] .shell-workbench-column:not(:has(> .status-bar:not(.zen-hidden))) {
@@ -101,7 +108,7 @@
 [data-modern-ui='true'] .sidebar-resizer {
   width: var(--island-gap, 6px) !important;
   background: transparent !important;
-  transition: width var(--dur-slow, 220ms) var(--ease-snappy);
+  transition: width 200ms cubic-bezier(0.22, 1, 0.36, 1);
   z-index: 20;
   position: relative;
   overflow: visible;
@@ -170,6 +177,9 @@
   overflow: hidden;
   box-sizing: border-box;
   box-shadow: none !important;
+  transition:
+    border-radius 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease;
 }
 
 /* Multi-Pane Split Mode: Each split leaf becomes its own 10px floating island separated by 6px --bg-shell gaps */
@@ -279,7 +289,7 @@
 [data-zen-mode='true'] .app-shell.left-closed .shell-sidebar-left,
 [data-zen-mode='true'] .app-shell.right-closed .shell-sidebar-right {
   width: 0 !important;
-  border-width: 0 !important;
+  border-color: transparent !important;
   margin: 0 !important;
   padding: 0 !important;
 }

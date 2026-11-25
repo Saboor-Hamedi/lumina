@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * Lumina Breadcrumb Outline Dropdown (`BreadcrumbOutlineDropdown.tsx`)
- * Modern, high-performance Table of Contents picker for active Markdown notes.
+ * Theme-Token-Driven Table of Contents Picker Aligned with Islands UI
  * ============================================================================
  */
 
@@ -12,15 +12,9 @@ import ToolTip from '../../components/atoms/ToolTip'
 import type { HeadingItem } from './utils/breadcrumbUtils'
 import './css/BreadcrumbOutlineDropdown.css'
 
-/**
- * Props for the {@link BreadcrumbOutlineDropdown} component.
- */
 export interface BreadcrumbOutlineDropdownProps {
-  /** Array of headings parsed from the active Markdown document */
   headings?: HeadingItem[]
-  /** The currently active heading based on editor cursor position */
   activeHeading?: HeadingItem | null
-  /** Bounding rectangle of the anchor breadcrumb button for floating portal positioning */
   anchorRect?: {
     top: number
     bottom: number
@@ -29,13 +23,9 @@ export interface BreadcrumbOutlineDropdownProps {
     width?: number
     height?: number
   } | null
-  /** Callback fired when the dropdown requests closing */
   onClose: () => void
 }
 
-/**
- * Interactive floating dropdown presenting hierarchical Markdown headings for rapid navigation.
- */
 export const BreadcrumbOutlineDropdown: React.FC<BreadcrumbOutlineDropdownProps> = ({
   headings = [],
   activeHeading,
@@ -53,14 +43,22 @@ export const BreadcrumbOutlineDropdown: React.FC<BreadcrumbOutlineDropdownProps>
   const dropdownRef = useRef<HTMLDivElement | null>(null)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
-  // Filter headings based on instant search query
+  useEffect(() => {
+    if (headings.length > 5) {
+      const id = window.requestAnimationFrame(() => {
+        searchInputRef.current?.focus({ preventScroll: true })
+      })
+      return () => window.cancelAnimationFrame(id)
+    }
+    return undefined
+  }, [headings.length])
+
   const filteredHeadings = useMemo(() => {
     const q = searchQuery.trim().toLowerCase()
     if (!q) return headings
     return headings.filter((h) => (h.text || '').toLowerCase().includes(q))
   }, [headings, searchQuery])
 
-  // Synchronize active item when activeHeading changes or query updates
   useEffect(() => {
     if (!searchQuery && activeHeading) {
       const idx = filteredHeadings.findIndex((h) => h.line === activeHeading.line)
@@ -70,7 +68,6 @@ export const BreadcrumbOutlineDropdown: React.FC<BreadcrumbOutlineDropdownProps>
     }
   }, [activeHeading, searchQuery, filteredHeadings])
 
-  // Auto-scroll active item into view within list container
   useLayoutEffect(() => {
     const el = listRef.current?.children[activeIndex] as HTMLElement | undefined
     if (el && typeof el.scrollIntoView === 'function') {
@@ -78,7 +75,6 @@ export const BreadcrumbOutlineDropdown: React.FC<BreadcrumbOutlineDropdownProps>
     }
   }, [activeIndex])
 
-  // Select heading and trigger smooth scroll in editor
   const handleSelectHeading = useCallback(
     (heading: HeadingItem) => {
       if (heading?.line) {
@@ -91,7 +87,6 @@ export const BreadcrumbOutlineDropdown: React.FC<BreadcrumbOutlineDropdownProps>
     [onClose]
   )
 
-  // Keyboard navigation within outline dropdown
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -119,7 +114,6 @@ export const BreadcrumbOutlineDropdown: React.FC<BreadcrumbOutlineDropdownProps>
     return () => document.removeEventListener('keydown', onKey, true)
   }, [filteredHeadings, activeIndex, handleSelectHeading, onClose])
 
-  // Close when clicking outside portal boundary
   useEffect(() => {
     const onPointerDown = (e: PointerEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -130,12 +124,11 @@ export const BreadcrumbOutlineDropdown: React.FC<BreadcrumbOutlineDropdownProps>
     return () => document.removeEventListener('pointerdown', onPointerDown, { capture: true })
   }, [onClose])
 
-  // Floating portal layout calculation (docked 3px under breadcrumb button)
   const style = useMemo<React.CSSProperties>(() => {
     if (!anchorRect) return {}
-    const width = 320
+    const width = 316
     const maxH = 340
-    const gap = 3
+    const gap = 4
 
     let top = anchorRect.bottom + gap
     let left = anchorRect.left
@@ -170,7 +163,6 @@ export const BreadcrumbOutlineDropdown: React.FC<BreadcrumbOutlineDropdownProps>
       role="dialog"
       aria-label="Table of contents"
     >
-      {/* Header bar */}
       <div className="bc-outline-header-bar">
         <div className="bc-outline-title-wrap">
           <Hash size={12} className="bc-outline-hash-icon" />
@@ -181,7 +173,6 @@ export const BreadcrumbOutlineDropdown: React.FC<BreadcrumbOutlineDropdownProps>
         </ToolTip>
       </div>
 
-      {/* Filter box for notes with more than 5 headings */}
       {headings.length > 5 && (
         <div className="bc-outline-search-box">
           <Search size={12} className="bc-outline-search-icon" />
@@ -195,7 +186,7 @@ export const BreadcrumbOutlineDropdown: React.FC<BreadcrumbOutlineDropdownProps>
             spellCheck={false}
             autoComplete="off"
           />
-          {searchQuery && (
+          {searchQuery ? (
             <ToolTip text="Clear filter" position="bottom">
               <button
                 type="button"
@@ -206,11 +197,12 @@ export const BreadcrumbOutlineDropdown: React.FC<BreadcrumbOutlineDropdownProps>
                 <X size={11} />
               </button>
             </ToolTip>
+          ) : (
+            <kbd className="bc-outline-kbd-hint">Esc</kbd>
           )}
         </div>
       )}
 
-      {/* Scrollable list */}
       {filteredHeadings.length === 0 ? (
         <div className="bc-outline-empty-notice">
           {searchQuery ? 'No matching headings' : 'No headings in note'}
@@ -231,7 +223,7 @@ export const BreadcrumbOutlineDropdown: React.FC<BreadcrumbOutlineDropdownProps>
                 ]
                   .filter(Boolean)
                   .join(' ')}
-                style={{ paddingLeft: `${8 + Math.max(0, h.level - 1) * 12}px` }}
+                style={{ paddingLeft: `${10 + Math.max(0, h.level - 1) * 11}px` }}
                 role="option"
                 aria-selected={isActive}
                 onMouseEnter={() => setActiveIndex(idx)}

@@ -20,8 +20,6 @@ import React, { memo, useState, useEffect } from 'react'
 import {
   Files,
   MessageSquare,
-  Network,
-  LayoutDashboard,
   Terminal,
   Palette,
   Book
@@ -30,7 +28,6 @@ import ToolTip from '../../components/atoms/ToolTip'
 import DailyNotes from './components/DailyNotes'
 import ActivityBarMail from './components/ActivityBarMail'
 import { useSettingStore } from '../../core/store/SettingStore'
-import { useWorkspaceStore, GRAPH_TAB_ID } from '../../core/store/workspaceStore'
 import { useSidebarViewStore, toggleSidebarView } from './sidebarViewStore'
 import './css/activitybar.css'
 
@@ -101,16 +98,6 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
     }
   }
 
-  const handleToggleGraph = () => {
-    setActiveActivityItem('graph')
-    onToggleGraph?.()
-  }
-
-  const handleNewCanvas = () => {
-    setActiveActivityItem('canvas')
-    window.dispatchEvent(new CustomEvent('trigger-new-canvas'))
-  }
-
   const handleOpenDocs = () => {
     setActiveActivityItem('docs')
     if (onOpenDocs) {
@@ -135,86 +122,76 @@ export const ActivityBar: React.FC<ActivityBarProps> = memo(({
 
   return (
     <aside className={`lumina-activity-bar${isZenHidden ? ' zen-hidden' : ''}`} data-testid="activity-bar" aria-label="Activity Bar">
-      <div className="activity-bar-top">
-        {/* 0. Explorer / Files (Active indicator when sidebar is open) */}
-        <ToolTip text={`Explorer (${isMac ? '⌘B' : 'Ctrl+B'})`} position="right">
-          <button
-            type="button"
-            className={`activity-bar-btn ${isLeftSidebarOpen && activeActivityItem === 'files' ? 'active' : ''}`}
-            onClick={handleToggleExplorer}
-            aria-label="Explorer"
-          >
-            <Files size={16} />
-          </button>
-        </ToolTip>
+      <div className="activity-bar-inner">
+        <div className="activity-bar-top">
+          {/* 0. Explorer / Files (Active indicator when sidebar is open) */}
+          <ToolTip text={`Explorer (${isMac ? '⌘B' : 'Ctrl+B'})`} position="right">
+            <button
+              type="button"
+              className={`activity-bar-btn ${isLeftSidebarOpen && activeActivityItem === 'files' ? 'active' : ''}`}
+              onClick={handleToggleExplorer}
+              aria-label="Explorer"
+            >
+              <Files size={16} />
+            </button>
+          </ToolTip>
 
-        {/* 1. Lumina AI */}
-        <ToolTip text={`Lumina AI (${isMac ? '⌘⇧\\' : 'Ctrl+Shift+\\'})`} position="right">
-          <button
-            type="button"
-            className={`activity-bar-btn ${activeActivityItem === 'lumina' ? 'active' : ''}`}
-            onClick={handleOpenLumina}
-            aria-label="Lumina AI"
-          >
-            <MessageSquare size={16} />
-          </button>
-        </ToolTip>
+          {/* 1. Lumina AI */}
+          <ToolTip text={`Lumina AI (${isMac ? '⌘⇧\\' : 'Ctrl+Shift+\\'})`} position="right">
+            <button
+              type="button"
+              className={`activity-bar-btn ${activeActivityItem === 'lumina' ? 'active' : ''}`}
+              onClick={handleOpenLumina}
+              aria-label="Lumina AI"
+            >
+              <MessageSquare size={16} />
+            </button>
+          </ToolTip>
 
-        {/* 2. Daily Note */}
-        <DailyNotes isActivityBar={true} />
+          {/* 2. Daily Note */}
+          <DailyNotes isActivityBar={true} />
 
-        {/* 3. Infinite Canvas */}
-        <ToolTip text="Infinite Canvas" position="right">
-          <button
-            type="button"
-            className={`activity-bar-btn ${activeActivityItem === 'canvas' ? 'active' : ''}`}
-            onClick={handleNewCanvas}
-            aria-label="Infinite Canvas"
-          >
-            <LayoutDashboard size={16} />
-          </button>
-        </ToolTip>
+          {/* 3. Terminal */}
+          <ToolTip text={`Terminal (${isMac ? '⌘J' : 'Ctrl+J'})`} position="right">
+            <button
+              type="button"
+              className={`activity-bar-btn ${isTerminalOpen && activeActivityItem === 'terminal' ? 'active' : ''}`}
+              onClick={handleToggleTerminal}
+              aria-label="Terminal"
+            >
+              <Terminal size={16} />
+            </button>
+          </ToolTip>
 
-        {/* 5. Terminal */}
-        <ToolTip text={`Terminal (${isMac ? '⌘J' : 'Ctrl+J'})`} position="right">
-          <button
-            type="button"
-            className={`activity-bar-btn ${isTerminalOpen && activeActivityItem === 'terminal' ? 'active' : ''}`}
-            onClick={handleToggleTerminal}
-            aria-label="Terminal"
-          >
-            <Terminal size={16} />
-          </button>
-        </ToolTip>
+          {/* 4. Theme & Look-and-Feel Customizer */}
+          <ToolTip text="Theme Settings" position="right">
+            <button
+              type="button"
+              className={`activity-bar-btn ${isLeftSidebarOpen && activeActivityItem === 'theme' ? 'active' : ''}`}
+              onClick={handleOpenTheme}
+              aria-label="Theme Settings"
+            >
+              <Palette size={16} />
+            </button>
+          </ToolTip>
+        </div>
 
-        {/* 6. Theme & Look-and-Feel Customizer */}
-        <ToolTip text="Theme Settings" position="right">
-          <button
-            type="button"
-            className={`activity-bar-btn ${isLeftSidebarOpen && activeActivityItem === 'theme' ? 'active' : ''}`}
-            onClick={handleOpenTheme}
-            aria-label="Theme Settings"
-          >
-            <Palette size={16} />
-          </button>
-        </ToolTip>
-      </div>
+        <div className="activity-bar-bottom">
+          {/* Documentation */}
+          <ToolTip text={`Documentation (${isMac ? '⌘D' : 'Ctrl+D'})`} position="right">
+            <button
+              type="button"
+              className={`activity-bar-btn ${activeActivityItem === 'docs' ? 'active' : ''}`}
+              onClick={handleOpenDocs}
+              aria-label="Documentation"
+            >
+              <Book size={16} />
+            </button>
+          </ToolTip>
 
-      <div className="activity-bar-bottom">
-        {/* Documentation */}
-        <ToolTip text={`Documentation (${isMac ? '⌘D' : 'Ctrl+D'})`} position="right">
-          <button
-            type="button"
-            className={`activity-bar-btn ${activeActivityItem === 'docs' ? 'active' : ''}`}
-            onClick={handleOpenDocs}
-            aria-label="Documentation"
-          >
-            <Book size={16} />
-          </button>
-        </ToolTip>
-
-        {/* Communication & Capsule Mail Hub */}
-        <ActivityBarMail />
+          {/* Communication & Capsule Mail Hub */}
+          <ActivityBarMail />
+        </div>
       </div>
     </aside>
   )

@@ -19,7 +19,7 @@
   box-shadow: none !important;
   flex-shrink: 0 !important;
   display: flex !important;
-  align-items: center !important;
+  align-items: flex-start !important;
   padding: 0 !important;
   font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace) !important;
   font-size: 11px !important;
@@ -28,7 +28,13 @@
   z-index: 100 !important;
   overflow: hidden !important;
   position: relative !important;
-  transition: none !important;
+  transform: none !important;
+  will-change: height, margin;
+  transition:
+    height 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    min-height 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    max-height 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin 200ms cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 
 [data-modern-ui='true'] .status-bar {
@@ -40,8 +46,7 @@
   height: 0 !important;
   min-height: 0 !important;
   max-height: 0 !important;
-  margin-top: 0 !important;
-  opacity: 0 !important;
+  margin: 0 !important;
   pointer-events: none !important;
 }
 
@@ -50,7 +55,8 @@
 [data-modern-ui='true'] .status-bar-body {
   flex: 1 1 0% !important;
   min-width: 0 !important;
-  height: 100% !important;
+  height: 26px !important;
+  min-height: 26px !important;
   background: var(--bg-shell) !important;
   display: flex !important;
   align-items: center !important;

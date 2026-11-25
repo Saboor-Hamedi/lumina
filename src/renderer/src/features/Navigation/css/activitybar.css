@@ -15,9 +15,9 @@
   border: none !important;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-  padding: 6px 0 !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  padding: 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
   flex-shrink: 0 !important;
@@ -28,7 +28,30 @@
   overflow: hidden !important;
   visibility: visible !important;
   contain: layout paint;
-  transition: none !important;
+  transform: none !important;
+  will-change: width;
+  transition:
+    width 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    min-width 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    max-width 200ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.activity-bar-inner {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  height: 100% !important;
+  padding: 6px 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  transform: translate3d(0, 0, 0) !important;
+  will-change: transform;
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 
 .lumina-activity-bar.zen-hidden,
@@ -39,12 +62,22 @@
   min-width: 0 !important;
   max-width: 0 !important;
   padding: 0 !important;
-  opacity: 0 !important;
   overflow: hidden !important;
   border: none !important;
   pointer-events: none !important;
-  visibility: hidden !important;
-  transition: none !important;
+  transform: none !important;
+}
+
+/* Left rail pushes straight back (-40px) in exact 1:1 sync with its 40px -> 0px slot */
+.lumina-activity-bar:not(.lumina-activity-bar-right).zen-hidden .activity-bar-inner,
+[data-modern-ui='true'] .lumina-activity-bar:not(.lumina-activity-bar-right).zen-hidden .activity-bar-inner {
+  transform: translate3d(-40px, 0, 0) !important;
+}
+
+/* Right rail sits at localX=0 while its slot's left edge moves right from (W-40) -> W */
+.lumina-activity-bar-right.zen-hidden .activity-bar-inner,
+[data-modern-ui='true'] .lumina-activity-bar-right.zen-hidden .activity-bar-inner {
+  transform: translate3d(0, 0, 0) !important;
 }
 
 .activity-bar-top {
@@ -52,7 +85,8 @@
   flex-direction: column !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  width: 100% !important;
+  width: 40px !important;
+  min-width: 40px !important;
   padding: 0 !important;
   margin: 0 auto !important;
   flex-shrink: 0 !important;
@@ -66,7 +100,8 @@
   flex-direction: column !important;
   align-items: center !important;
   justify-content: flex-end !important;
-  width: 100% !important;
+  width: 40px !important;
+  min-width: 40px !important;
   padding: 0 !important;
   margin: auto auto 0 auto !important;
   flex-shrink: 0 !important;

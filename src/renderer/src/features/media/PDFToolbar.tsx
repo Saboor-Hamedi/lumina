@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { FolderOpen, ChevronDown, ChevronUp, Sun, Moon, BookOpen } from 'lucide-react'
 import { ChromePdfIcon } from '../Icons/FileIcon'
+import ToolTip from '../../components/atoms/ToolTip'
 import type { Snippet } from '../../core/editor/types'
 
 export type PDFThemeMode = 'original' | 'dark' | 'sepia' | 'invert'
@@ -12,9 +13,6 @@ export interface PDFToolbarProps {
   onSetTheme?: (theme: PDFThemeMode) => void
 }
 
-/**
- * Format raw bytes into human-readable file size strings.
- */
 function formatFileSize(bytes?: number): string {
   if (!bytes || bytes <= 0) return ''
   if (bytes < 1024) return `${bytes} B`
@@ -22,20 +20,14 @@ function formatFileSize(bytes?: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-/**
- * PDFToolbar
- *
- * Floating quick-access toolbar in the bottom-right corner of the native PDF viewer.
- * Hosts file size metadata, reading themes (Original / Dark Inverted / Sepia),
- * and folder revelation without cluttering native PDF controls.
- */
 export const PDFToolbar: React.FC<PDFToolbarProps> = ({
   snippet,
   onOpenInFolder,
-  currentTheme = 'dark',
+  currentTheme = 'original',
   onSetTheme
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(true)
+  const formattedSize = formatFileSize(snippet?.size)
 
   return (
     <div
@@ -45,72 +37,85 @@ export const PDFToolbar: React.FC<PDFToolbarProps> = ({
     >
       {isExpanded && (
         <div className="pdf-viewer-toolbar-content">
-          <ChromePdfIcon size={14} />
-          {snippet?.size && (
-            <span className="pdf-viewer-badge">{formatFileSize(snippet.size)}</span>
-          )}
-          <span className="pdf-viewer-badge uppercase">PDF</span>
+          <div className="pdf-meta-group">
+            <span className="pdf-icon-wrap" aria-hidden="true">
+              <ChromePdfIcon size={14} />
+            </span>
+            <span className="pdf-viewer-badge is-format">PDF</span>
+            {formattedSize && (
+              <span className="pdf-viewer-badge is-size">{formattedSize}</span>
+            )}
+          </div>
 
           {onSetTheme && (
             <>
-              <div className="pdf-viewer-divider" />
-              <div className="pdf-theme-switch-group" role="group" aria-label="PDF Display Themes">
-                <button
-                  type="button"
-                  className={`pdf-theme-btn ${currentTheme === 'original' ? 'active' : ''}`}
-                  title="Original (Standard PDF pages)"
-                  aria-label="Set theme to Original"
-                  onClick={() => onSetTheme('original')}
-                >
-                  <Sun size={12} />
-                  <span>Original</span>
-                </button>
-                <button
-                  type="button"
-                  className={`pdf-theme-btn ${currentTheme === 'dark' || currentTheme === 'invert' ? 'active' : ''}`}
-                  title="Dark Mode (Inverted pages to match dark theme)"
-                  aria-label="Set theme to Dark Mode"
-                  onClick={() => onSetTheme('dark')}
-                >
-                  <Moon size={12} />
-                  <span>Dark</span>
-                </button>
-                <button
-                  type="button"
-                  className={`pdf-theme-btn ${currentTheme === 'sepia' ? 'active' : ''}`}
-                  title="Sepia Mode (Warm paper tone for easy reading)"
-                  aria-label="Set theme to Sepia Tone"
-                  onClick={() => onSetTheme('sepia')}
-                >
-                  <BookOpen size={12} />
-                  <span>Sepia</span>
-                </button>
+              <div className="pdf-viewer-divider" aria-hidden="true" />
+              <div className="pdf-theme-switch-group" role="group" aria-label="PDF Reading Appearance">
+                <ToolTip text="Light pages (Original)" position="top">
+                  <button
+                    type="button"
+                    className={`pdf-theme-btn ${currentTheme === 'original' ? 'active' : ''}`}
+                    aria-label="Light PDF appearance"
+                    aria-pressed={currentTheme === 'original'}
+                    onClick={() => onSetTheme('original')}
+                  >
+                    <Sun size={12} />
+                    <span>Light</span>
+                  </button>
+                </ToolTip>
+                <ToolTip text="Dark pages" position="top">
+                  <button
+                    type="button"
+                    className={`pdf-theme-btn ${currentTheme === 'dark' || currentTheme === 'invert' ? 'active' : ''}`}
+                    aria-label="Dark PDF appearance"
+                    aria-pressed={currentTheme === 'dark' || currentTheme === 'invert'}
+                    onClick={() => onSetTheme('dark')}
+                  >
+                    <Moon size={12} />
+                    <span>Dark</span>
+                  </button>
+                </ToolTip>
+                <ToolTip text="Warm parchment pages" position="top">
+                  <button
+                    type="button"
+                    className={`pdf-theme-btn ${currentTheme === 'sepia' ? 'active' : ''}`}
+                    aria-label="Parchment PDF appearance"
+                    aria-pressed={currentTheme === 'sepia'}
+                    onClick={() => onSetTheme('sepia')}
+                  >
+                    <BookOpen size={12} />
+                    <span>Parchment</span>
+                  </button>
+                </ToolTip>
               </div>
             </>
           )}
 
-          <div className="pdf-viewer-divider" />
-          <button
-            type="button"
-            className="pdf-viewer-btn"
-            title="Open Containing Folder"
-            aria-label="Open Containing Folder"
-            onClick={onOpenInFolder}
-          >
-            <FolderOpen size={14} />
-          </button>
-          <div className="pdf-viewer-divider" />
+          <div className="pdf-viewer-divider" aria-hidden="true" />
+          <ToolTip text="Reveal in system file manager" position="top">
+            <button
+              type="button"
+              className="pdf-viewer-btn"
+              aria-label="Open Containing Folder"
+              onClick={onOpenInFolder}
+            >
+              <FolderOpen size={14} />
+            </button>
+          </ToolTip>
         </div>
       )}
-      <button
-        type="button"
-        className="pdf-viewer-btn pdf-viewer-toggle-btn"
-        title={isExpanded ? 'Collapse toolbar' : 'Expand toolbar'}
-        aria-expanded={isExpanded}
-        onClick={() => setIsExpanded((prev) => !prev)}
-      >
-        {isExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-      </button>
+
+      <ToolTip text={isExpanded ? 'Collapse PDF toolbar' : 'Expand PDF toolbar'} position="top">
+        <button
+          type="button"
+          className="pdf-viewer-btn pdf-viewer-toggle-btn"
+          aria-label={isExpanded ? 'Collapse PDF toolbar' : 'Expand PDF toolbar'}
+          aria-expanded={isExpanded}
+          onClick={() => setIsExpanded((prev) => !prev)}
+        >
+          {isExpanded ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+        </button>
+      </ToolTip>
     </div>
   )
 }

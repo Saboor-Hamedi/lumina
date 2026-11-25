@@ -1,5 +1,5 @@
 import React, { memo } from 'react'
-import { Info, List as ListIcon, Link2, Network } from 'lucide-react'
+import { Info, List as ListIcon, Link2, Network, LayoutDashboard } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import './css/activitybar.css'
 
@@ -11,6 +11,8 @@ export interface RightActivityBarProps {
   onSelectTab: (tab: RightSidebarTabId) => void
   onToggleGraph?: () => void
   isGraphActive?: boolean
+  onToggleCanvas?: () => void
+  isCanvasActive?: boolean
   isZenHidden?: boolean
 }
 
@@ -30,11 +32,21 @@ export const RightActivityBar: React.FC<RightActivityBarProps> = memo(({
   onSelectTab,
   onToggleGraph,
   isGraphActive = false,
+  onToggleCanvas,
+  isCanvasActive = false,
   isZenHidden = false
 }) => {
   const isMac =
     typeof navigator !== 'undefined' &&
     /mac/i.test(navigator.platform || navigator.userAgent)
+
+  const handleCanvasClick = () => {
+    if (onToggleCanvas) {
+      onToggleCanvas()
+    } else {
+      window.dispatchEvent(new CustomEvent('trigger-new-canvas'))
+    }
+  }
 
   return (
     <aside
@@ -42,37 +54,51 @@ export const RightActivityBar: React.FC<RightActivityBarProps> = memo(({
       data-testid="right-activity-bar"
       aria-label="Right Activity Bar"
     >
-      <div className="activity-bar-top">
-        {RIGHT_TABS.map(({ id, label, icon: Icon }) => {
-          const isActive = isRightSidebarOpen && activeTab === id
-          return (
-            <ToolTip key={id} text={label} position="left">
+      <div className="activity-bar-inner">
+        <div className="activity-bar-top">
+          {RIGHT_TABS.map(({ id, label, icon: Icon }) => {
+            const isActive = isRightSidebarOpen && activeTab === id
+            return (
+              <ToolTip key={id} text={label} position="left">
+                <button
+                  type="button"
+                  className={`activity-bar-btn${isActive ? ' active' : ''}`}
+                  onClick={() => onSelectTab(id)}
+                  aria-label={label}
+                  aria-pressed={isActive}
+                >
+                  <Icon size={16} />
+                </button>
+              </ToolTip>
+            )
+          })}
+
+          {onToggleGraph && (
+            <ToolTip text={`Knowledge Graph (${isMac ? '⌘G' : 'Ctrl+G'})`} position="left">
               <button
                 type="button"
-                className={`activity-bar-btn${isActive ? ' active' : ''}`}
-                onClick={() => onSelectTab(id)}
-                aria-label={label}
-                aria-pressed={isActive}
+                className={`activity-bar-btn${isGraphActive ? ' active' : ''}`}
+                onClick={onToggleGraph}
+                aria-label="Knowledge Graph"
+                aria-pressed={isGraphActive}
               >
-                <Icon size={16} />
+                <Network size={16} />
               </button>
             </ToolTip>
-          )
-        })}
+          )}
 
-        {onToggleGraph && (
-          <ToolTip text={`Knowledge Graph (${isMac ? '⌘G' : 'Ctrl+G'})`} position="left">
+          <ToolTip text="Infinite Canvas" position="left">
             <button
               type="button"
-              className={`activity-bar-btn${isGraphActive ? ' active' : ''}`}
-              onClick={onToggleGraph}
-              aria-label="Knowledge Graph"
-              aria-pressed={isGraphActive}
+              className={`activity-bar-btn${isCanvasActive ? ' active' : ''}`}
+              onClick={handleCanvasClick}
+              aria-label="Infinite Canvas"
+              aria-pressed={isCanvasActive}
             >
-              <Network size={16} />
+              <LayoutDashboard size={16} />
             </button>
           </ToolTip>
-        )}
+        </div>
       </div>
     </aside>
   )

@@ -1,12 +1,34 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { PulseLoader } from '../../components/PulseLoader'
 import { ChromePdfIcon } from '../Icons/FileIcon'
+import { useSettingsStore } from '../../core/store/SettingStore'
 import { PDFToolbar, type PDFThemeMode } from './PDFToolbar'
 import type { Snippet } from '../../core/editor/types'
 import './css/pdfViewerTab.css'
 
 export interface PDFViewerTabProps {
   snippet?: Partial<Snippet> | any
+}
+
+const LIGHT_APP_THEMES = new Set([
+  'light',
+  'porcelain',
+  'rosePineDawn',
+  'matchaLatte',
+  'mintCondition'
+])
+
+/**
+ * Maps Lumina's active workspace theme to the matching PDF page appearance.
+ * - Light themes (`light`, `porcelain`, etc.) -> `'original'` (clean white pages)
+ * - Warm vellum (`parchment`) -> `'sepia'`
+ * - All dark themes -> `'dark'`
+ */
+function resolvePdfThemeFromApp(appTheme?: string): PDFThemeMode {
+  if (!appTheme) return 'dark'
+  if (appTheme === 'parchment') return 'sepia'
+  if (LIGHT_APP_THEMES.has(appTheme)) return 'original'
+  return 'dark'
 }
 
 /**
@@ -16,20 +38,14 @@ export interface PDFViewerTabProps {
  */
 const pdfBlobCache = new Map<string, string>()
 
-/**
- * PDFViewerTab
- *
- * Renders workspace PDFs using Chromium's native PDF engine via blob URLs.
- * High-performance architecture:
- *   1. Checks in-memory cache for instant 0ms tab switching.
- *   2. Reads binary directly via Tauri IPC `window.api.readAsset`.
- *   3. Falls back gracefully to `fetch(assetUrl)` if IPC is unavailable.
- *   4. Feeds the blob URL to the <iframe> so Chromium renders it natively with
- *      all its native toolbar features (zoom, download, print, page navigation).
- *   5. Wraps the native viewer in customizable reading themes (Original, Dark, Sepia)
- *      controlled via the bottom-right floating pill toolbar with zero screen clutter.
- */
 export const PDFViewerTab: React.FC<PDFViewerTabProps> = ({ snippet }) => {
+  const storeTheme = useSettingsStore((state) => state.settings?.theme)
+  const activeDomTheme =
+    typeof document !== 'undefined'
+      ? document.documentElement.getAttribute('data-theme') || undefined
+      : undefined
+  const appTheme = storeTheme || activeDomTheme
+
   const relPath =
     snippet?.relativePath ||
     (snippet?.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet?.fileName)
@@ -43,24 +59,40 @@ export const PDFViewerTab: React.FC<PDFViewerTabProps> = ({ snippet }) => {
   }, [relPath])
 
   // If already cached, start with the cached blob URL immediately (0ms delay)
-  const [blobUrl, setBlobUrl] = useState<string | null>(() => (relPath ? pdfBlobCache.get(relPath) || null : null))
+  const [blobUrl, setBlobUrl] = useState<string | null>(() =>
+    relPath ? pdfBlobCache.get(relPath) || null : null
+  )
   const [loading, setLoading] = useState<boolean>(() => !pdfBlobCache.has(relPath || ''))
   const [error, setError] = useState<string | null>(null)
 
-  // Preferred viewing theme mode: original, dark, sepia (defaults to dark to match theme)
-  const [theme, setTheme] = useState<PDFThemeMode>(() => {
-    const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('lumina-pdf-theme') : null
-    if (saved === 'dark' || saved === 'sepia' || saved === 'original') {
-      return saved
+  // Sync PDF reading surface with active app theme automatically; allow session override via toolbar
+  const [theme, setTheme] = useState<PDFThemeMode>(() => resolvePdfThemeFromApp(appTheme))
+
+  useEffect(() => {
+    try {
+      localStorage.removeItem('lumina-pdf-theme')
+    } catch {
+      // Ignore storage cleanup errors
     }
-    return 'dark'
-  })
+  }, [])
+
+  useEffect(() => {
+    setTheme(resolvePdfThemeFromApp(appTheme))
+  }, [appTheme])
+
+  useEffect(() => {
+    const onThemeChanged = (e: Event) => {
+      const nextThemeId = (e as CustomEvent<{ themeId?: string }>).detail?.themeId
+      if (nextThemeId) {
+        setTheme(resolvePdfThemeFromApp(nextThemeId))
+      }
+    }
+    window.addEventListener('theme-changed', onThemeChanged)
+    return () => window.removeEventListener('theme-changed', onThemeChanged)
+  }, [])
 
   const handleSetTheme = useCallback((newTheme: PDFThemeMode) => {
     setTheme(newTheme)
-    try {
-      localStorage.setItem('lumina-pdf-theme', newTheme)
-    } catch {}
   }, [])
 
   useEffect(() => {
@@ -70,7 +102,6 @@ export const PDFViewerTab: React.FC<PDFViewerTabProps> = ({ snippet }) => {
       return
     }
 
-    // Already cached — no work needed!
     if (pdfBlobCache.has(relPath)) {
       setBlobUrl(pdfBlobCache.get(relPath) || null)
       setLoading(false)
@@ -117,14 +148,12 @@ export const PDFViewerTab: React.FC<PDFViewerTabProps> = ({ snippet }) => {
       if (!active) return
 
       if (blob) {
-        // Revoke any previous URL for the same path
         const existingUrl = pdfBlobCache.get(relPath)
         if (existingUrl) {
           URL.revokeObjectURL(existingUrl)
           pdfBlobCache.delete(relPath)
         }
 
-        // Evict oldest entries if cache exceeds 6 PDFs to prevent memory bloat
         while (pdfBlobCache.size >= 6) {
           const oldestKey = pdfBlobCache.keys().next().value
           if (oldestKey) {
@@ -151,7 +180,6 @@ export const PDFViewerTab: React.FC<PDFViewerTabProps> = ({ snippet }) => {
     }
   }, [relPath, assetUrl])
 
-  /** Open the containing folder in the system explorer */
   const handleOpenInFolder = useCallback(() => {
     const relFolder = snippet?.folderId || ''
     const openFn = (window as any).api?.openWorkspaceFolder || (window as any).api?.openVaultFolder
@@ -160,14 +188,12 @@ export const PDFViewerTab: React.FC<PDFViewerTabProps> = ({ snippet }) => {
 
   return (
     <div className="pdf-viewer-container">
-      {/* Loading state (only shown on initial first fetch) */}
       {loading && (
         <div className="pdf-viewer-loading">
-          <PulseLoader message="Wait a second…" delayMs={0} />
+          <PulseLoader message="Loading document…" delayMs={0} />
         </div>
       )}
 
-      {/* Error state */}
       {!loading && error && (
         <div className="pdf-viewer-error">
           <ChromePdfIcon size={28} />
@@ -175,7 +201,6 @@ export const PDFViewerTab: React.FC<PDFViewerTabProps> = ({ snippet }) => {
         </div>
       )}
 
-      {/* Native Chromium PDF iframe via Blob URL wrapped with dynamic theme filter */}
       {!loading && !error && blobUrl && (
         <div className={`pdf-viewer-frame-wrapper theme-${theme}`}>
           <iframe
@@ -186,7 +211,6 @@ export const PDFViewerTab: React.FC<PDFViewerTabProps> = ({ snippet }) => {
         </div>
       )}
 
-      {/* Floating toolbar — open/close expandable panel with theme selector in the bottom right */}
       <PDFToolbar
         snippet={snippet}
         onOpenInFolder={handleOpenInFolder}

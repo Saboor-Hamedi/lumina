@@ -5,7 +5,7 @@
 .export-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--bg-overlay, color-mix(in srgb, var(--bg-shell) 62%, transparent));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26,7 +26,7 @@
 @keyframes exportPop {
   from {
     opacity: 0;
-    transform: scale(0.98);
+    transform: scale(0.985);
   }
   to {
     opacity: 1;
@@ -45,29 +45,20 @@
   height: 76vh;
   max-width: 94vw;
   min-height: 480px;
-  max-height: 82vh;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
+  max-height: 80vh;
+  background: var(--bg-shell);
+  border: 1px solid var(--border-strong);
   border-radius: 12px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--elev-dialog);
   overflow: hidden;
   color: var(--text-main);
   position: relative;
-  animation: exportPop 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), height 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: exportPop 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: width 0.2s cubic-bezier(0.22, 1, 0.36, 1), height 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-radius 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .export-container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1.5px;
-  background: linear-gradient(90deg, transparent 5%, var(--text-accent) 30%, var(--text-accent) 70%, transparent 95%);
-  opacity: 0.7;
-  pointer-events: none;
-  z-index: 100;
+  display: none;
 }
 
 .export-container.is-maximized {
@@ -80,7 +71,7 @@
   box-shadow: none !important;
 }
 
-/* ---- Header (Matches Documentation.jsx modal header) ---- */
+/* ---- Frameless 36px Header sitting directly on --bg-shell ---- */
 .export-header {
   height: 36px;
   min-height: 36px;
@@ -89,9 +80,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border-dim);
+  padding: 0 10px;
+  background: var(--bg-shell);
+  border-bottom: none;
   user-select: none;
   cursor: default !important;
   z-index: 10;
@@ -215,53 +206,74 @@
 }
 
 .export-close:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
+  background: var(--danger);
+  color: var(--bg-surface);
 }
 
 .export-close:disabled {
   opacity: 0.4;
 }
 
-/* ---- Body split ---- */
+/* ---- Body split (Islands Architecture) ---- */
 .export-body {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: row;
+  background: var(--bg-shell);
+  padding: 0 6px;
+  gap: 0;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .export-body {
+  gap: var(--island-gap, 6px);
+}
+
+.export-body.sidebar-closed,
+[data-modern-ui='true'] .export-body.sidebar-closed {
+  gap: 0 !important;
 }
 
 .export-formats {
-  width: 270px;
+  width: 260px;
   min-height: 0;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: 5px;
   padding: 12px;
-  background: var(--bg-sidebar);
-  border-right: 1px solid var(--border-dim);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-right: none;
+  border-radius: var(--island-radius, 10px) 0 0 var(--island-radius, 10px);
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: var(--border-subtle) transparent;
+  scrollbar-color: var(--scroll-thumb, var(--border-strong)) transparent;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .export-formats {
+  border-right: 1px solid var(--border-color);
+  border-radius: var(--island-radius, 10px);
 }
 
 .export-formats::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 .export-formats::-webkit-scrollbar-track {
   background: transparent;
 }
 .export-formats::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--scroll-thumb, var(--border-strong));
   border-radius: 4px;
   border: none;
-  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background 120ms ease;
 }
 .export-formats::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--text-muted);
 }
 
 .export-sidebar-section {
@@ -276,8 +288,8 @@
   flex-direction: column;
   gap: 4px;
   padding: 9px 11px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-card);
+  background: color-mix(in srgb, var(--bg-panel) 45%, var(--bg-surface));
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   margin-bottom: 6px;
 }
@@ -342,14 +354,14 @@
 }
 
 .export-format-card:hover:not(:disabled) {
-  background: var(--bg-active);
-  border-color: rgba(255, 255, 255, 0.04);
+  background: var(--bg-hover);
+  border-color: transparent;
 }
 
 .export-format-card.active {
-  background: color-mix(in srgb, var(--card-accent, var(--text-accent)) 9%, transparent);
-  border-color: color-mix(in srgb, var(--card-accent, var(--text-accent)) 36%, transparent);
-  box-shadow: inset 2.5px 0 0 var(--card-accent, var(--text-accent));
+  background: color-mix(in srgb, var(--card-accent, var(--accent-color)) 11%, transparent);
+  border-color: color-mix(in srgb, var(--card-accent, var(--accent-color)) 32%, transparent);
+  box-shadow: none;
 }
 
 .export-format-card:disabled {
@@ -410,17 +422,17 @@
   font-weight: 600;
   font-family: var(--font-mono, monospace);
   padding: 1px 5px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  background: var(--bg-surface);
   color: var(--text-muted);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-color);
   flex-shrink: 0;
 }
 
 .export-format-card.active .export-format-ext-pill {
-  background: color-mix(in srgb, var(--card-accent, var(--text-accent)) 16%, transparent);
-  color: var(--card-accent, var(--text-accent));
-  border-color: color-mix(in srgb, var(--card-accent, var(--text-accent)) 32%, transparent);
+  background: color-mix(in srgb, var(--card-accent, var(--accent-color)) 15%, transparent);
+  color: var(--card-accent, var(--accent-color));
+  border-color: color-mix(in srgb, var(--card-accent, var(--accent-color)) 32%, transparent);
 }
 
 .export-format-desc {
@@ -431,10 +443,10 @@
 .export-options-group {
   margin-top: 8px;
   padding-top: 10px;
-  border-top: 1px solid var(--border-dim);
+  border-top: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   flex-shrink: 0;
 }
 
@@ -444,17 +456,17 @@
   justify-content: space-between;
   flex-shrink: 0;
   padding: 7px 10px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-card);
+  background: color-mix(in srgb, var(--bg-panel) 42%, var(--bg-surface));
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   cursor: pointer;
   user-select: none;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.14s ease, border-color 0.14s ease;
 }
 
 .export-option-row:hover {
-  background: var(--bg-active);
-  border-color: var(--border-subtle);
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
 }
 
 .export-option-label {
@@ -465,7 +477,7 @@
 }
 
 .export-option-title {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 500;
   color: var(--text-main);
 }
@@ -479,21 +491,30 @@
   padding: 8px 10px;
   flex-shrink: 0;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--bg-panel) 72%, transparent);
-  border: 1px solid var(--border-dim);
+  background: color-mix(in srgb, var(--bg-panel) 42%, var(--bg-surface));
+  border: 1px solid var(--border-color);
   font-size: 11px;
   line-height: 1.45;
   color: var(--text-muted);
 }
 
-/* ---- Preview ---- */
+/* ---- Preview Right Island ---- */
 .export-preview-pane {
   flex: 1;
   min-width: 0;
   position: relative;
-  background: var(--bg-editor);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 0 var(--island-radius, 10px) var(--island-radius, 10px) 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-sizing: border-box;
+}
+
+.export-body.sidebar-closed .export-preview-pane,
+[data-modern-ui='true'] .export-preview-pane {
+  border-radius: var(--island-radius, 10px);
 }
 
 .export-preview-wrap {
@@ -621,22 +642,24 @@
   padding: 24px;
 }
 
-/* ---- Footer ---- */
+/* ---- Footer sitting directly on --bg-shell ---- */
 .export-footer {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 12px 16px;
-  background: var(--bg-sidebar);
-  border-top: 1px solid var(--border-dim);
+  height: 44px;
+  padding: 0 12px;
+  background: var(--bg-shell);
+  border-top: none;
+  box-sizing: border-box;
 }
 
 .export-footer-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-left: auto;
 }
 
@@ -644,22 +667,22 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 32px;
+  height: 30px;
   padding: 0 12px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--text-muted);
-  background: var(--bg-panel);
-  border: 1px solid var(--border-card);
-  border-radius: 6px;
+  color: var(--text-main);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
 }
 
 .export-btn-copy:hover:not(:disabled) {
-  background: var(--bg-active);
+  background: var(--bg-hover);
   color: var(--text-main);
-  border-color: var(--border-subtle);
+  border-color: var(--border-strong);
 }
 
 .export-btn-copy:disabled {
@@ -668,22 +691,22 @@
 }
 
 .export-btn-ghost {
-  height: 34px;
-  padding: 0 14px;
-  font-size: 13px;
+  height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-muted);
   background: transparent;
-  border: none;
-  border-radius: 6px;
+  border: 1px solid transparent;
+  border-radius: 7px;
   cursor: pointer;
   transition:
-    background 0.15s ease,
-    color 0.15s ease;
+    background 0.14s ease,
+    color 0.14s ease;
 }
 
 .export-btn-ghost:hover:not(:disabled) {
-  background: var(--bg-active);
+  background: var(--bg-hover);
   color: var(--text-main);
 }
 
@@ -697,22 +720,22 @@
   align-items: center;
   justify-content: center;
   gap: 7px;
-  height: 34px;
-  padding: 0 20px;
-  font-size: 13px;
+  height: 30px;
+  padding: 0 16px;
+  font-size: 12px;
   font-weight: 600;
-  color: #ffffff;
-  background: var(--text-accent);
-  border: none;
-  border-radius: 6px;
+  color: var(--bg-surface);
+  background: var(--accent-color);
+  border: 1px solid var(--accent-color);
+  border-radius: 7px;
   cursor: pointer;
   transition:
-    background 0.15s ease,
-    opacity 0.15s ease;
+    background 0.14s ease,
+    opacity 0.14s ease;
 }
 
 .export-btn-primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--text-accent), black 10%);
+  background: color-mix(in srgb, var(--accent-color) 88%, var(--text-main));
 }
 
 .export-btn-primary:disabled {
@@ -720,7 +743,7 @@
   cursor: not-allowed;
 }
 
-/* ---- Success panel ---- */
+/* ---- Success panel (Floating Island Card) ---- */
 .export-success {
   flex: 1;
   display: flex;
@@ -728,8 +751,12 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
+  margin: 0 6px 6px 6px;
   padding: 32px;
   text-align: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--island-radius, 10px);
 }
 
 .export-success-icon {

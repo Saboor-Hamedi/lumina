@@ -29,7 +29,20 @@
 .note-cover-empty-right {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+}
+
+.note-cover-inline-time {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--accent-color, var(--text-accent)) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0.9;
 }
 
 .note-cover-top-menu {
@@ -39,7 +52,7 @@
   z-index: 8;
 }
 
-/* Clear note timestamp badge on the cover background */
+/* Clean note timestamp on the cover background — no pill background, app accent text */
 .note-cover-timestamp {
   position: absolute;
   top: 8px;
@@ -48,16 +61,21 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 2px 7px;
-  border-radius: 5px;
-  background: color-mix(in srgb, var(--bg-app, #121216) 82%, transparent);
-  border: 1px solid color-mix(in srgb, var(--border-dim) 75%, transparent);
-  color: var(--text-main);
-  font-size: 10px;
-  font-weight: 500;
+  padding: 0;
+  border-radius: 0;
+  background: transparent !important;
+  border: none !important;
+  color: var(--accent-color, var(--text-accent)) !important;
+  font-size: 10.5px;
+  font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1.3;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16);
+  box-shadow: none !important;
+}
+
+.note-cover-timestamp svg {
+  color: var(--accent-color, var(--text-accent)) !important;
+  flex-shrink: 0;
 }
 
 /* Notion-style Profile Emoji Avatar */
@@ -469,21 +487,30 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  border: 1px solid color-mix(in srgb, var(--border-dim) 85%, transparent);
-  background: color-mix(in srgb, var(--bg-app, #121216) 88%, transparent);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 5px;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
   color: var(--text-muted);
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  transition: color 120ms ease, opacity 120ms ease;
 }
 
-.meta-compact-trigger:hover,
-.meta-compact-trigger.active {
+.meta-compact-trigger:hover {
   color: var(--text-main);
-  border-color: var(--border-subtle, var(--border-dim));
-  background: color-mix(in srgb, var(--bg-panel, #1c1c22) 92%, transparent);
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.meta-compact-trigger.active {
+  color: var(--accent-color, var(--text-accent));
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .meta-compact-tools-row {

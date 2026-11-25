@@ -23,9 +23,22 @@ function App() {
     (state) => state.settings?.modernUi !== false
   )
 
+  const windowOpacity = useSettingsStore(
+    (state) => state.settings?.windowOpacity ?? 1.0
+  )
+
   useEffect(() => {
     document.documentElement.setAttribute('data-modern-ui', String(isModernUi))
   }, [isModernUi])
+
+  useEffect(() => {
+    const num = typeof windowOpacity === 'number' ? windowOpacity : 1.0
+    const normalized = num > 1.0 ? Math.max(0.2, Math.min(1.0, num / 100)) : Math.max(0.2, Math.min(1.0, num))
+    document.documentElement.style.setProperty('--app-opacity', String(normalized))
+    if (window.api?.setWindowOpacity) {
+      window.api.setWindowOpacity(normalized).catch(() => {})
+    }
+  }, [windowOpacity])
 
   useZenWindowDrag({ enabled: true })
 
@@ -80,7 +93,7 @@ function App() {
           position: 'relative'
         }}
       >
-        {isTitleBarVisible && <TitleBar />}
+        <TitleBar isHidden={!isTitleBarVisible} />
         <GlobalErrorHandler>
           <MainLayout />
         </GlobalErrorHandler>

@@ -1,22 +1,20 @@
-/* Documentation Modal Container - Matches Guide Modal exactly */
+/* Documentation Modal Container — Lumina Islands UI */
 .docs-modal-container {
   width: 900px;
   max-width: 94vw;
   height: 76vh;
   min-height: 480px;
   max-height: 78vh;
-  background: var(--bg-panel, #16161e);
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
-  border-radius: 14px;
+  background: var(--bg-shell);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  box-shadow:
-    0 20px 40px -12px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.04);
+  box-shadow: var(--elev-dialog);
   overflow: hidden;
   position: relative;
-  animation: guideSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  transition: width 0.2s cubic-bezier(0.16, 1, 0.3, 1), height 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: guideSlideUp 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: width 0.2s cubic-bezier(0.22, 1, 0.36, 1), height 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-radius 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .docs-modal-container.maximized {
@@ -25,18 +23,20 @@
   max-width: none !important;
   max-height: none !important;
   border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
-/* Docs Header matching Guide */
+/* Frameless 36px Header sitting directly on --bg-shell */
 .docs-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 36px;
   min-height: 36px;
-  padding: 0 12px;
-  background: var(--bg-panel, #16161e);
-  border-bottom: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  padding: 0 10px;
+  background: var(--bg-shell);
+  border-bottom: none;
   user-select: none;
   flex-shrink: 0;
   z-index: 10;
@@ -120,39 +120,59 @@
   min-height: 0;
   height: 100%;
   width: 100%;
-  background: var(--bg-app);
+  background: var(--bg-shell);
   color: var(--text-main);
+  padding: 0 6px 6px 6px;
+  gap: 0;
+  box-sizing: border-box;
   overflow: hidden;
   position: relative;
 }
 
+[data-modern-ui='true'] .docs-container {
+  gap: var(--island-gap, 6px);
+}
+
+[data-modern-ui='true'] .docs-container:has(.docs-sidebar.closed) {
+  gap: 0;
+}
+
 .docs-sidebar {
-  width: 232px;
-  background: var(--bg-sidebar, #121218);
-  border: none;
-  border-right: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
-  border-radius: 0;
+  width: 224px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-right: none;
+  border-radius: var(--island-radius, 10px) 0 0 var(--island-radius, 10px);
   box-shadow: none;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  transition: width 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.18s ease,
-    border-color 0.18s ease;
+  transition: width 0.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.16s ease,
+    border-color 0.16s ease;
   overflow: hidden;
   position: relative;
   z-index: 1;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .docs-sidebar {
+  border-right: 1px solid var(--border-color);
+  border-radius: var(--island-radius, 10px);
 }
 
 .docs-sidebar.closed {
-  width: 0;
+  width: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border-width: 0 !important;
   opacity: 0;
-  border-right-color: transparent;
+  border-color: transparent;
   pointer-events: none;
 }
 
 .docs-sidebar-header {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border-dim, rgba(255, 255, 255, 0.06));
+  padding: 10px 10px;
+  border-bottom: 1px solid var(--border-color);
   background: transparent;
 }
 
@@ -190,9 +210,9 @@
 
 .docs-search-input {
   width: 100%;
-  background: var(--bg-card, rgba(127, 127, 127, 0.06));
-  border: 1px solid var(--border-dim, rgba(127, 127, 127, 0.15));
-  border-radius: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
   color: var(--text-main);
   padding: 6px 26px 6px 28px;
   font-size: 12px;
@@ -201,9 +221,9 @@
 }
 
 .docs-search-input:focus {
-  border-color: var(--text-accent, #8b5cf6);
-  box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb, 139, 92, 246), 0.18);
-  background: var(--bg-card, rgba(127, 127, 127, 0.08));
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  background: var(--bg-surface);
 }
 
 .docs-sidebar-scrollable {
@@ -212,7 +232,7 @@
   overflow-x: hidden;
   padding: 8px;
   scrollbar-width: thin;
-  scrollbar-color: var(--border-subtle, rgba(255, 255, 255, 0.12)) transparent;
+  scrollbar-color: var(--scroll-thumb, var(--border-strong)) transparent;
 }
 
 .docs-sidebar-scrollable::-webkit-scrollbar {
@@ -225,12 +245,12 @@
 }
 
 .docs-sidebar-scrollable::-webkit-scrollbar-thumb {
-  background: var(--border-subtle, rgba(255, 255, 255, 0.12));
+  background: var(--scroll-thumb, var(--border-strong));
   border-radius: 6px;
 }
 
 .docs-sidebar-scrollable::-webkit-scrollbar-thumb:hover {
-  background: var(--text-faint, rgba(255, 255, 255, 0.28));
+  background: var(--text-muted);
 }
 
 .docs-sidebar-group {
@@ -240,7 +260,7 @@
 .docs-sidebar-group-title {
   font-size: 10px;
   text-transform: uppercase;
-  color: var(--text-faint, rgba(255, 255, 255, 0.4));
+  color: var(--text-faint);
   padding: 4px 8px 2px 8px;
   font-weight: 700;
   letter-spacing: 0.8px;
@@ -311,25 +331,18 @@
 }
 
 .docs-sidebar-item:hover {
-  background: var(--bg-hover, rgba(127, 127, 127, 0.1));
+  background: var(--bg-hover);
   color: var(--text-main);
 }
 
 .docs-sidebar-item.active {
-  background: rgba(var(--text-accent-rgb, 139, 92, 246), 0.1);
-  color: var(--text-accent, #8b5cf6);
+  background: var(--accent-soft);
+  color: var(--accent-color);
   font-weight: 600;
 }
 
 .docs-sidebar-item.active::before {
-  content: '';
-  position: absolute;
-  left: 2px;
-  top: 6px;
-  bottom: 6px;
-  width: 2px;
-  border-radius: 2px;
-  background: var(--text-accent, #8b5cf6);
+  display: none;
 }
 
 .docs-sidebar-subitems-wrap {
@@ -344,7 +357,7 @@
   top: 4px;
   bottom: 6px;
   width: 1px;
-  background: var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: var(--border-color);
 }
 
 .docs-content {
@@ -353,12 +366,20 @@
   min-height: 0;
   height: 100%;
   padding: 0;
-  background: var(--bg-app);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 0 var(--island-radius, 10px) var(--island-radius, 10px) 0;
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
   margin-left: 0;
+  box-sizing: border-box;
+}
+
+.docs-container:has(.docs-sidebar.closed) .docs-content,
+[data-modern-ui='true'] .docs-content {
+  border-radius: var(--island-radius, 10px);
 }
 
 .docs-container .preview-body {
@@ -522,19 +543,19 @@
   width: 100%;
   margin-top: 28px;
   padding-top: 14px;
-  border-top: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
+  border-top: 1px solid var(--border-color);
   box-sizing: border-box;
 }
 
 .docs-nav-btn {
   display: flex;
   flex-direction: column;
-  padding: 8px 12px;
-  background: var(--bg-panel, rgba(255, 255, 255, 0.02));
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
-  border-radius: 6px;
+  padding: 9px 12px;
+  background: color-mix(in srgb, var(--bg-panel) 42%, var(--bg-surface));
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
   text-decoration: none;
   width: 100%;
   box-sizing: border-box;
@@ -553,9 +574,9 @@
 }
 
 .docs-nav-btn:hover {
-  background: var(--bg-hover, rgba(127, 127, 127, 0.1));
-  border-color: var(--text-accent, #8b5cf6);
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  background: var(--bg-hover);
+  border-color: var(--accent-color);
+  box-shadow: none;
   transform: translateY(-1px);
 }
 
@@ -564,7 +585,7 @@
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 0.6px;
-  color: var(--text-faint, #64748b);
+  color: var(--text-faint);
   margin-bottom: 2px;
   display: flex;
   align-items: center;
@@ -573,13 +594,13 @@
 }
 
 .docs-nav-btn:hover .docs-nav-btn-label {
-  color: var(--text-accent, #8b5cf6);
+  color: var(--accent-color);
 }
 
 .docs-nav-btn-title {
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--text-main, #f8fafc);
+  color: var(--text-main);
   line-height: 1.35;
   white-space: nowrap;
   overflow: hidden;

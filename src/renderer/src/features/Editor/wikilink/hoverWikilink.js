@@ -40,7 +40,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     hoverCard = document.createElement('div')
     hoverCard.className = 'cm-wiki-hover horizontal'
     hoverCard.style.position = 'fixed'
-    hoverCard.style.borderRadius = '2px'
+    hoverCard.style.borderRadius = '5px'
     hoverCard.style.visibility = 'hidden'
 
     if (contentSnippet !== null && contentSnippet !== undefined) {
@@ -49,22 +49,21 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       header.style.display = 'flex'
       header.style.alignItems = 'center'
       header.style.justifyContent = 'space-between'
-      header.style.padding = '8px 12px 4px 12px'
+      header.style.padding = '8px 12px'
       header.style.flexShrink = '0'
 
       const headerTitle = document.createElement('div')
       headerTitle.textContent = title
       headerTitle.title = title
-      headerTitle.style.fontSize = '12px'
+      headerTitle.style.fontSize = '12.5px'
       headerTitle.style.fontWeight = '600'
       headerTitle.style.lineHeight = '1.3'
-      headerTitle.style.color = 'var(--text-faint)'
+      headerTitle.style.color = 'var(--text-main)'
       headerTitle.style.overflow = 'hidden'
       headerTitle.style.textOverflow = 'ellipsis'
       headerTitle.style.whiteSpace = 'nowrap'
       headerTitle.style.flex = '1'
       headerTitle.style.minWidth = '0'
-      headerTitle.style.transform = 'translateY(1px)'
 
       header.appendChild(headerTitle)
 
@@ -75,18 +74,19 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         expandIcon.style.alignItems = 'center'
         expandIcon.style.justifyContent = 'center'
         expandIcon.style.cursor = 'pointer'
-        expandIcon.style.color = 'var(--text-faint)'
-        expandIcon.style.transition = 'all 0.2s'
+        expandIcon.style.color = 'var(--text-muted)'
+        expandIcon.style.transition = 'all 0.14s ease'
         expandIcon.style.marginLeft = '8px'
-        expandIcon.style.padding = '2px'
-        expandIcon.style.borderRadius = '2px'
+        expandIcon.style.width = '22px'
+        expandIcon.style.height = '22px'
+        expandIcon.style.borderRadius = '5px'
 
         expandIcon.onmouseover = () => {
-          expandIcon.style.color = 'var(--text-accent)'
-          expandIcon.style.background = 'var(--bg-modifier-hover, rgba(255, 255, 255, 0.05))'
+          expandIcon.style.color = 'var(--accent-color, var(--text-accent))'
+          expandIcon.style.background = 'var(--bg-hover)'
         }
         expandIcon.onmouseout = () => {
-          expandIcon.style.color = 'var(--text-faint)'
+          expandIcon.style.color = 'var(--text-muted)'
           expandIcon.style.background = 'transparent'
         }
 
@@ -129,7 +129,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       allImages.forEach((img) => {
         const url = img.getAttribute('src')
         img.style.maxWidth = '100%'
-        img.style.borderRadius = '2px'
+        img.style.borderRadius = '5px'
         img.style.marginTop = '8px'
 
         if (url && !url.startsWith('http') && !url.startsWith('data:')) {
@@ -165,7 +165,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
           const widgetWrap = document.createElement('div')
           widgetWrap.className = 'cm-mermaid-widget'
           widgetWrap.style.margin = '10px 0'
-          widgetWrap.style.borderRadius = '2px'
+          widgetWrap.style.borderRadius = '5px'
 
           const scrollWrap = document.createElement('div')
           scrollWrap.className = 'mermaid-scroll-wrap'
@@ -202,10 +202,10 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
         codeWrapper.style.display = 'block'
         codeWrapper.style.marginTop = '12px'
         codeWrapper.style.marginBottom = '12px'
-        codeWrapper.style.borderRadius = '2px'
+        codeWrapper.style.borderRadius = '5px'
         codeWrapper.style.overflow = 'hidden'
-        codeWrapper.style.background = 'var(--bg-editor, #1e1e1e)'
-        codeWrapper.style.border = '1px solid var(--border-dim, rgba(255,255,255,0.05))'
+        codeWrapper.style.background = 'var(--bg-surface, var(--bg-editor))'
+        codeWrapper.style.border = '1px solid var(--border-color, var(--border-dim))'
 
         const header = document.createElement('div')
         header.style.position = 'relative'
@@ -308,7 +308,7 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       hoverCard.dataset.noteId = noteId
     } else {
       hoverCard.className = 'cm-wiki-hover rename-modal-style not-found-modal'
-      hoverCard.style.borderRadius = '2px'
+      hoverCard.style.borderRadius = '5px'
 
       const contentBox = document.createElement('div')
       contentBox.className = 'not-found-rename-box'
@@ -379,9 +379,9 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
       }
     }
 
-    const maxAllowedWidth = Math.max(220, Math.min(540, contentRect.width, wrapperRect.width - 24))
+    const maxAllowedWidth = Math.max(220, Math.min(510, contentRect.width, wrapperRect.width - 24))
     hoverCard.style.maxWidth = `${maxAllowedWidth}px`
-    if (contentRect.width < 540) {
+    if (contentRect.width < 510) {
       hoverCard.style.minWidth = 'auto'
       hoverCard.style.whiteSpace = 'normal'
     }

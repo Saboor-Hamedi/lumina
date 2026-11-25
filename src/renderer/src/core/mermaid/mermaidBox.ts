@@ -264,18 +264,16 @@ export function openMermaidLightbox(svgEl: SVGSVGElement | HTMLElement | null): 
 
   overlay.focus()
 
-  // Fill the large modal with the diagram (contain-fit, aspect preserved) instead of
-  // leaving it at its intrinsic size in the corner. Measured from the viewBox so it is
-  // stable; maxZoom matches the toolbar's 600% ceiling.
+  // Fit the diagram comfortably inside the popup lightbox without over-magnifying small charts.
   const fitCloneToViewport = () => {
     const natural = getMermaidNaturalSize(clone as SVGSVGElement)
     if (!natural) return
     const style = getComputedStyle(canvas)
     const padX = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0)
     const padY = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0)
-    const availWidth = canvas.clientWidth - padX
-    const availHeight = canvas.clientHeight - padY
-    const fit = computeMermaidFit(natural.width, natural.height, availWidth, availHeight, 6, 0.05)
+    const availWidth = Math.max(120, canvas.clientWidth - padX - 48)
+    const availHeight = Math.max(120, canvas.clientHeight - padY - 48)
+    const fit = computeMermaidFit(natural.width, natural.height, availWidth, availHeight, 1.35, 0.1)
     if (!fit) return
     clone.style.width = `${Math.round(fit.width)}px`
     clone.style.height = `${Math.round(fit.height)}px`

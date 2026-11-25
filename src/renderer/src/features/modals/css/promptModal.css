@@ -1,34 +1,49 @@
 .prompt-overlay {
-  z-index: 1100;
-  background: rgba(0, 0, 0, 0.4);
+  z-index: 10005;
+  background: var(--bg-overlay, color-mix(in srgb, var(--bg-shell) 62%, transparent));
 }
 
 .prompt-container {
-  max-width: 400px;
+  max-width: 420px;
   width: 90%;
-  animation: promptIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--bg-shell) !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--elev-dialog) !important;
+  overflow: hidden;
+  animation: promptIn 0.16s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes promptIn {
-  from { opacity: 0; transform: translateY(10px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .prompt-icon-warning {
-  color: #f59e0b;
+  color: var(--warning);
 }
 
 .prompt-icon-danger {
-  color: #ef4444;
+  color: var(--danger);
 }
 
 .prompt-body {
-  padding: 20px 24px;
+  margin: 0 6px;
+  padding: 18px 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--island-radius, 10px);
 }
 
 .prompt-message {
-  font-size: 13.5px;
-  line-height: 1.6;
+  font-size: 12.5px;
+  line-height: 1.55;
   color: var(--text-muted);
   margin: 0;
 }
@@ -37,10 +52,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  background: var(--bg-sidebar);
-  border-top: 1px solid var(--border-dim);
-  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bg-shell);
+  border-top: none;
+  gap: 10px;
 }
 
 .prompt-actions-primary {
@@ -48,41 +63,45 @@
   gap: 8px;
 }
 
-.btn {
-  height: 32px;
-  padding: 0 16px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: var(--radius-main, 5px);
-  border: 1px solid var(--border-dim);
-  background: var(--bg-app);
+.prompt-container .btn {
+  height: 30px;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 7px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
   color: var(--text-main);
   cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-.btn:hover {
-  background: var(--bg-active);
+.prompt-container .btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
 }
 
-.btn-primary {
-  background: var(--text-accent);
-  color: white;
-  border-color: var(--text-accent);
+.prompt-container .btn-primary {
+  background: var(--accent-color);
+  color: var(--bg-surface);
+  border-color: var(--accent-color);
+  font-weight: 600;
 }
 
-.btn-primary:hover {
-  background: color-mix(in srgb, var(--text-accent), black 10%);
+.prompt-container .btn-primary:hover {
+  background: color-mix(in srgb, var(--accent-color) 88%, var(--text-main));
 }
 
-.btn-danger {
-  color: #ef4444;
+.prompt-container .btn-danger {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
 }
 
-.btn-danger:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
+.prompt-container .btn-danger:hover {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 50%, transparent);
 }

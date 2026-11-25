@@ -194,3 +194,48 @@ pub async fn save_memory(memory: Value) -> Result<bool, String> {
     })
     .await
 }
+
+#[tauri::command]
+pub fn set_window_opacity(window: tauri::WebviewWindow, opacity: f64) -> Result<bool, String> {
+    let clamped = opacity.clamp(0.2, 1.0);
+    #[cfg(target_os = "windows")]
+    {
+        #[link(name = "user32")]
+        unsafe extern "system" {
+            fn GetWindowLongPtrW(hwnd: isize, index: i32) -> isize;
+            fn SetWindowLongPtrW(hwnd: isize, index: i32, new_long: isize) -> isize;
+            fn SetLayeredWindowAttributes(
+                hwnd: isize,
+                cr_key: u32,
+                b_alpha: u8,
+                dw_flags: u32,
+            ) -> i32;
+        }
+
+        const GWL_EXSTYLE: i32 = -20;
+        const WS_EX_LAYERED: isize = 0x0008_0000;
+        const LWA_ALPHA: u32 = 0x0000_0002;
+
+        let hwnd = window.hwnd().map_err(|e| e.to_string())?;
+        let raw_hwnd = hwnd.0 as isize;
+        let alpha = (clamped * 255.0).round() as u8;
+
+        unsafe {
+            let ex_style = GetWindowLongPtrW(raw_hwnd, GWL_EXSTYLE);
+            if alpha >= 255 {
+                let _ = SetLayeredWindowAttributes(raw_hwnd, 0, 255, LWA_ALPHA);
+                let _ = SetWindowLongPtrW(raw_hwnd, GWL_EXSTYLE, ex_style & !WS_EX_LAYERED);
+            } else {
+                if (ex_style & WS_EX_LAYERED) == 0 {
+                    let _ = SetWindowLongPtrW(raw_hwnd, GWL_EXSTYLE, ex_style | WS_EX_LAYERED);
+                }
+                let _ = SetLayeredWindowAttributes(raw_hwnd, 0, alpha, LWA_ALPHA);
+            }
+        }
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = (window, clamped);
+    }
+    Ok(true)
+}

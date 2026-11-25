@@ -27,9 +27,10 @@ import '../../assets/titlebar.css'
 
 export interface TitleBarProps {
   className?: string
+  isHidden?: boolean
 }
 
-export const TitleBar: React.FC<TitleBarProps> = memo(() => {
+export const TitleBar: React.FC<TitleBarProps> = memo(({ isHidden = false }) => {
   const handleMinimize = useCallback(() => minimizeWindow(), [])
   const handleToggleMaximize = useCallback(() => toggleMaximizeWindow(), [])
   const handleClose = useCallback(() => closeWindow(), [])
@@ -38,6 +39,12 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
   const { themeAccentColor, updateThemeAccentColor } = useFontSettings()
   const { user, isLoggedIn } = useCurrentUser()
   const [imgError, setImgError] = useState<boolean>(false)
+
+  useEffect(() => {
+    if (isHidden) {
+      setIsAccentOpen(false)
+    }
+  }, [isHidden])
 
   useEffect(() => {
     setImgError(false)
@@ -86,7 +93,13 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
   }, [])
 
   return (
-    <div className={`title-bar${isMac ? ' is-mac' : ''}`} data-testid="title-bar" data-tauri-drag-region>
+    <div
+      className={`title-bar${isMac ? ' is-mac' : ''}${isHidden ? ' zen-hidden' : ''}`}
+      aria-hidden={isHidden || undefined}
+      data-testid="title-bar"
+      data-tauri-drag-region
+    >
+      <div className="title-bar-inner" data-tauri-drag-region>
       <div className="title-left" data-tauri-drag-region>
         <ToolTip text={isLeftSidebarOpen ? 'Close Sidebar' : 'Open Sidebar'} position="bottom">
           <button
@@ -210,6 +223,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
             </>
           )}
         </div>
+      </div>
       </div>
 
     </div>

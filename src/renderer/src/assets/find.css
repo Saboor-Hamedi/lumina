@@ -1,48 +1,58 @@
 /*
  * =========================================================================================
- * Pixel-Perfect VS Code Find & Replace Widget Styles (`FindWidget.css`)
+ * Lumina Islands Find & Replace Widget (`find.css`)
  * =========================================================================================
- 
+ * Theme-token-driven floating Find/Replace surface with locked geometry so Find and Replace
+ * input rows always share identical width (256px) and height (30px) without layout shifts.
  */
 
 .vs-find-part {
+  --find-input-width: 256px;
+  --find-row-height: 30px;
+  --find-row-gap: 5px;
+
   position: absolute;
-  top: 0px;
-  right: 15px;
+  top: 8px;
+  right: 16px;
   z-index: 1000;
   display: flex;
   align-items: flex-start;
-  gap: 4px;
-  background: var(--bg-panel, #252526);
-  border: 1px solid var(--border-dim, #454545);
-  border-radius: 5px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-  padding: 4px;
+  gap: 6px;
+  background: var(--bg-surface, var(--bg-panel));
+  border: 1px solid var(--border-strong, var(--border-color));
+  border-radius: 6px;
+  box-shadow: var(--elev-dialog, 0 8px 24px rgba(0, 0, 0, 0.28));
+  padding: 6px;
   box-sizing: border-box;
   user-select: none;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  animation: vsDropIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  animation: vsDropIn 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes vsDropIn {
+  from {
+    transform: translate3d(0, -8px, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
 }
 
 /* Search Highlights Across Editor and Tables */
 .cm-searchMatch,
 .cm-table-search-match {
-  background-color: rgba(234, 179, 8, 0.38) !important;
-  border-bottom: 1.5px solid #eab308 !important;
+  background-color: color-mix(in srgb, var(--accent-color, #eab308) 24%, rgba(234, 179, 8, 0.28)) !important;
+  border-bottom: 1.5px solid color-mix(in srgb, var(--accent-color, #eab308) 68%, #eab308) !important;
   border-radius: 2px !important;
   color: inherit !important;
   display: inline !important;
 }
 
-@keyframes vsDropIn {
-  from {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+.cm-searchMatch.cm-searchMatch-selected {
+  background-color: color-mix(in srgb, var(--accent-color, #f59e0b) 42%, rgba(245, 158, 11, 0.38)) !important;
+  border-bottom: 2px solid var(--accent-color, #f59e0b) !important;
 }
 
 /* ==========================================
@@ -52,18 +62,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 24px;
-  flex-shrink: 0;
+  width: 22px;
+  min-width: 22px;
+  max-width: 22px;
+  height: var(--find-row-height);
+  flex: 0 0 22px;
   box-sizing: border-box;
-  transition: all 0.15s ease;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  transition: height 140ms cubic-bezier(0.22, 1, 0.36, 1), background-color 120ms ease, border-color 120ms ease;
 }
 
 .vs-toggle-col.expanded {
-  height: 52px;
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.02);
+  height: calc(var(--find-row-height) * 2 + var(--find-row-gap));
+  background: var(--bg-hover);
+  border-color: var(--border-color);
 }
 
 .vs-toggle-btn {
@@ -74,107 +87,134 @@
   height: 100%;
   background: transparent;
   border: none;
-  color: var(--text-muted, #858585);
+  color: var(--text-muted);
   cursor: pointer;
   padding: 0;
-  border-radius: 2px;
-  transition: color 0.15s ease;
+  border-radius: 4px;
+  transition: color 120ms ease, background-color 120ms ease;
 }
 
 .vs-toggle-btn:hover {
-  color: var(--text-main, #ffffff);
+  color: var(--text-main);
+  background: var(--bg-hover);
 }
 
 /* ==========================================
-   CENTER COLUMN: INPUTS
+   CENTER COLUMN: LOCKED FIND & REPLACE INPUTS
    ========================================== */
 .vs-inputs-col {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  flex-shrink: 0;
+  gap: var(--find-row-gap);
+  width: var(--find-input-width);
+  min-width: var(--find-input-width);
+  max-width: var(--find-input-width);
+  flex: 0 0 var(--find-input-width);
+  box-sizing: border-box;
 }
 
-.vs-input-box {
+.vs-input-box,
+.vs-replace-input-box {
   display: flex;
   align-items: center;
-  width: 240px;
-  height: 24px;
-  background: var(--bg-app, #1e1e1e);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
-  border-radius: 2px;
-  padding: 0 2px 0 6px;
+  gap: 4px;
+  width: var(--find-input-width);
+  min-width: var(--find-input-width);
+  max-width: var(--find-input-width);
+  height: var(--find-row-height);
+  min-height: var(--find-row-height);
+  max-height: var(--find-row-height);
+  flex: 0 0 var(--find-row-height);
+  background: var(--bg-shell, var(--bg-app));
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  padding: 0 4px 0 9px;
   box-sizing: border-box;
-  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  overflow: hidden;
+  transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
 }
 
-.vs-input-box:focus-within {
-  border-color: var(--text-accent, #8b5cf6) !important;
-  outline: 1px solid var(--text-accent, #8b5cf6);
+.vs-input-box:hover,
+.vs-replace-input-box:hover {
+  border-color: var(--border-strong, var(--border-color));
 }
 
-.vs-input-box.no-results {
-  border-color: #f87171 !important;
+.vs-input-box:focus-within,
+.vs-replace-input-box:focus-within {
+  border-color: var(--accent-color, var(--text-accent)) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-color, var(--text-accent)) 22%, transparent);
+  outline: none;
 }
 
+.vs-input-box.no-results,
 .vs-input-box.no-results:focus-within {
-  border-color: #f87171 !important;
-  outline: 1px solid #f87171 !important;
+  border-color: var(--danger, #ef4444) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger, #ef4444) 24%, transparent);
+  outline: none;
 }
 
 .vs-text-input {
-  flex: 1;
-  min-width: 30px;
-  height: 100%;
-  border: none;
-  background: transparent;
-  color: var(--text-main, #cccccc);
-  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace);
-  font-size: 12px;
-  line-height: 22px;
-  outline: none;
-  padding: 0;
-  margin: 0;
+  flex: 1 1 0%;
+  width: 0;
+  min-width: 0;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text-main);
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+  font-size: 12.5px;
+  line-height: calc(var(--find-row-height) - 2px);
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
 .vs-text-input::placeholder {
-  color: var(--text-faint, #6a6a6a);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 12px;
+  color: var(--text-muted);
+  opacity: 0.72;
+  font-size: 12.5px;
 }
 
 /* Inline Action Toggles inside Input (Aa, ab, .*, AB) */
 .vs-inline-actions {
   display: flex;
   align-items: center;
-  gap: 1px;
-  flex-shrink: 0;
+  gap: 2px;
+  height: 22px;
+  flex: 0 0 auto;
 }
 
 .vs-action-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 18px;
+  width: 21px;
+  height: 21px;
+  min-width: 21px;
+  min-height: 21px;
   padding: 0;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 2px;
-  color: var(--text-muted, #858585);
+  border-radius: 4px;
+  color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.1s ease;
+  flex-shrink: 0;
+  transition: background-color 110ms ease, color 110ms ease, border-color 110ms ease;
 }
 
 .vs-action-toggle:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-main, #ffffff);
+  background: var(--bg-hover);
+  color: var(--text-main);
 }
 
 .vs-action-toggle.active {
-  background: var(--bg-active, rgba(139, 92, 246, 0.25));
-  border-color: var(--text-accent, #8b5cf6);
-  color: var(--text-accent, #a78bfa);
+  background: var(--accent-soft, color-mix(in srgb, var(--accent-color) 16%, transparent));
+  border-color: color-mix(in srgb, var(--accent-color, var(--text-accent)) 55%, transparent);
+  color: var(--accent-color, var(--text-accent));
 }
 
 /* ==========================================
@@ -183,72 +223,88 @@
 .vs-controls-col {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--find-row-gap);
   flex-shrink: 0;
 }
 
-.vs-control-row {
+.vs-control-row,
+.vs-replace-control-row {
   display: flex;
   align-items: center;
-  height: 24px;
-  gap: 2px;
+  height: var(--find-row-height);
+  min-height: var(--find-row-height);
+  max-height: var(--find-row-height);
+  gap: 3px;
+  box-sizing: border-box;
 }
 
 .vs-count-badge {
-  font-size: 12px;
-  color: var(--text-muted, #858585);
-  min-width: 68px;
-  text-align: right;
-  padding: 0 4px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  width: 76px;
+  min-width: 76px;
+  max-width: 76px;
+  text-align: left;
+  padding: 0 4px 0 2px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-variant-numeric: tabular-nums;
-  flex-shrink: 0;
+  flex: 0 0 76px;
+  box-sizing: border-box;
   user-select: none;
 }
 
+.vs-count-badge.is-idle {
+  opacity: 0.55;
+}
+
 .vs-count-badge.no-results-text {
-  color: #f87171 !important;
-  font-weight: 500;
+  color: var(--danger, #ef4444) !important;
+  opacity: 1;
 }
 
 .vs-tool-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
   padding: 0;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 3px;
-  color: var(--text-muted, #858585);
+  border-radius: 4px;
+  color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition: background-color 110ms ease, color 110ms ease, border-color 110ms ease;
   flex-shrink: 0;
 }
 
 .vs-tool-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-main, #ffffff);
+  background: var(--bg-hover);
+  color: var(--text-main);
 }
 
 .vs-tool-btn.active {
-  background: var(--bg-active, rgba(139, 92, 246, 0.25));
-  border-color: var(--text-accent, #8b5cf6);
-  color: var(--text-accent, #a78bfa);
+  background: var(--accent-soft, color-mix(in srgb, var(--accent-color) 16%, transparent));
+  border-color: color-mix(in srgb, var(--accent-color, var(--text-accent)) 55%, transparent);
+  color: var(--accent-color, var(--text-accent));
 }
 
 .vs-tool-btn:disabled {
-  opacity: 0.35;
+  opacity: 0.34;
   cursor: default;
 }
 
-.vs-close-icon-btn:hover {
-  background: rgba(239, 68, 68, 0.2) !important;
-  color: #f87171 !important;
+.vs-close-icon-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger, #ef4444) 16%, transparent) !important;
+  color: var(--danger, #ef4444) !important;
 }
 
 .vs-replace-control-row {
   justify-content: flex-start;
-  margin-left: auto;
+  padding-left: 0;
 }

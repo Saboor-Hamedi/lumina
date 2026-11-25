@@ -81,7 +81,7 @@
   width: fit-content;
   min-width: 64px;
   max-width: 100%;
-  border-radius: 6px;
+  border-radius: 5px;
   border: 1px solid transparent;
   background: transparent;
   box-sizing: border-box;
@@ -216,7 +216,7 @@
 .image-widget-body img {
   display: block;
   max-width: 100%;
-  max-height: 75vh;
+  max-height: 400px;
   object-fit: contain;
   width: 100%;
   border-radius: 5px;
@@ -356,13 +356,13 @@
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.56);
+  background: var(--bg-overlay, color-mix(in srgb, var(--bg-shell) 62%, transparent));
   z-index: 999999;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.25s ease;
+  transition: opacity 0.18s ease;
   cursor: zoom-out;
   outline: none;
 }
@@ -373,9 +373,11 @@
 
 .image-lightbox-wrapper {
   position: relative;
-  display: inline-block;
-  transform: scale(0.95);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(0.96);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .image-lightbox-overlay.show .image-lightbox-wrapper {
@@ -384,35 +386,35 @@
 
 .image-lightbox-image {
   display: block;
-  max-width: 95vw;
-  max-height: 95vh;
-  border-radius: 8px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  max-width: min(76vw, 860px);
+  max-height: min(72vh, 560px);
+  border-radius: 5px;
+  box-shadow: var(--elev-dialog);
 }
 
 .image-lightbox-close {
   position: absolute;
   top: 10px;
   right: 10px;
-  width: 24px;
-  height: 24px;
-  border-radius: 2px;
-  background: var(--bg-panel, #18181b);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.15));
-  color: var(--text-muted, #94a3b8);
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  background: var(--bg-shell);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.14s ease;
   z-index: 1000000;
-  opacity: 0.9;
-  box-shadow: var(--shadow-soft, 0 2px 8px rgba(0, 0, 0, 0.2));
+  opacity: 0.92;
+  box-shadow: var(--elev-popover);
 }
 
 .image-lightbox-close svg {
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
 }
 
 .image-lightbox-wrapper:hover .image-lightbox-close {
@@ -420,44 +422,31 @@
 }
 
 .image-lightbox-close:hover {
-  background: var(--bg-active, rgba(255, 255, 255, 0.1));
-  border-color: var(--border-subtle, rgba(255, 255, 255, 0.25));
-  color: var(--text-main, #ffffff);
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--bg-surface);
 }
 
-/* Bottom-Right Floating Control Panel for Image Lightbox */
+/* Bottom-Right Floating Control Panel for Image & Mermaid Lightbox */
 .image-lightbox-toolbar-right {
   position: absolute !important;
-  bottom: 20px !important;
-  right: 24px !important;
+  bottom: 14px !important;
+  right: 14px !important;
   left: auto !important;
   transform: none !important;
-  background: var(--surface-3, var(--bg-card, var(--bg-panel, #18181b))) !important;
-  border: 1px solid var(--border-strong, var(--border-dim, rgba(255, 255, 255, 0.15))) !important;
-  border-radius: var(--radius-lg, 8px) !important;
-  padding: 4px 8px !important;
+  background: var(--bg-shell) !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 5px !important;
+  padding: 3px 6px !important;
   display: flex !important;
   align-items: center !important;
-  gap: 4px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+  gap: 3px !important;
+  box-shadow: var(--elev-popover) !important;
   z-index: 100 !important;
   user-select: none !important;
   color: var(--text-main) !important;
 }
 
-[data-theme='light'] .image-lightbox-toolbar-right,
-.theme-light .image-lightbox-toolbar-right {
-  background: var(--bg-card, var(--bg-panel, #ffffff)) !important;
-  border: 1px solid var(--border-subtle, var(--border-dim, rgba(0, 0, 0, 0.12))) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
-  color: var(--text-main, #0f172a) !important;
-}
-
 .image-lightbox-toolbar-right .mermaid-toolbar-zoom-text {
-  color: var(--text-main, #e2e8f0) !important;
-}
-
-[data-theme='light'] .image-lightbox-toolbar-right .mermaid-toolbar-zoom-text,
-.theme-light .image-lightbox-toolbar-right .mermaid-toolbar-zoom-text {
-  color: var(--text-main, #0f172a) !important;
+  color: var(--text-main) !important;
 }

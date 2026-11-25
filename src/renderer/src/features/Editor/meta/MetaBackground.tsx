@@ -398,7 +398,14 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
                 <span>Add cover</span>
               </button>
             </div>
-            {menuSlot && <div className="note-cover-empty-right">{menuSlot}</div>}
+            <div className="note-cover-empty-right">
+              {displayTimestamp && (
+                <ToolTip text={timestampTooltip} position="bottom">
+                  <span className="note-cover-inline-time">{displayTimestamp}</span>
+                </ToolTip>
+              )}
+              {menuSlot}
+            </div>
           </div>
         )}
 

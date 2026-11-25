@@ -541,8 +541,32 @@ export function initTauriBridge(): void {
     openDevTools: async () => {},
     closeWindow: () => closeWindow(),
     quitApp: () => closeWindow(),
-    setWindowOpacity: async () => true,
-    getWindowOpacity: async () => 1.0,
+    setWindowOpacity: async (opacity: number) => {
+      const num = typeof opacity === 'number' ? opacity : parseFloat(String(opacity))
+      const normalized = isNaN(num) ? 1.0 : num > 1.0 ? Math.max(0.2, Math.min(1.0, num / 100)) : Math.max(0.2, Math.min(1.0, num))
+      ;(window as any).__luminaWindowOpacity = normalized
+      if (typeof document !== 'undefined') {
+        document.documentElement.style.setProperty('--app-opacity', String(normalized))
+      }
+      if (!isTauriRuntime) return true
+      try {
+        await invoke('set_window_opacity', { opacity: normalized })
+        if (typeof document !== 'undefined') {
+          document.documentElement.setAttribute('data-native-opacity', 'true')
+        }
+        return true
+      } catch {
+        if (typeof document !== 'undefined') {
+          document.documentElement.removeAttribute('data-native-opacity')
+        }
+        return false
+      }
+    },
+    getWindowOpacity: async () => {
+      return typeof (window as any).__luminaWindowOpacity === 'number'
+        ? (window as any).__luminaWindowOpacity
+        : 1.0
+    },
     startWindowDrag: async () => {
       if (!isTauriRuntime) return
       await getCurrentWindow().startDragging()

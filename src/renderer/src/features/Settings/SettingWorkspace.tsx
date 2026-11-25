@@ -27,16 +27,8 @@ export const SettingWorkspace: React.FC = () => {
 
       <section>
         <h3>Storage Location</h3>
-        <div
-          className="settings-block"
-          style={{
-            padding: '16px',
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-dim)',
-            borderRadius: '10px'
-          }}
-        >
-          <div className="row-info" style={{ marginBottom: '14px' }}>
+        <div className="setting-block workspace-storage-card">
+          <div className="row-info" style={{ marginBottom: '12px' }}>
             <div className="row-label">Storage Location</div>
             <div className="row-hint">
               Local directory where your markdown notes and assets are stored.
@@ -44,11 +36,11 @@ export const SettingWorkspace: React.FC = () => {
           </div>
 
           <div className="vault-path-display">
-            <Folder size={16} className="vault-icon" />
+            <Folder size={15} className="vault-icon" />
             <span className="path-text">{currentWorkspacePath}</span>
           </div>
 
-          <div className="vault-actions" style={{ display: 'flex', gap: '8px' }}>
+          <div className="vault-actions">
             <button className="btn btn-secondary" onClick={handleOpenFolder} type="button">
               Open in Explorer
             </button>

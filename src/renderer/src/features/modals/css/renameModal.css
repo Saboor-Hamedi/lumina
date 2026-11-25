@@ -1,34 +1,28 @@
 .rename-overlay {
-  background: rgba(0, 0, 0, 0.52);
+  background: var(--bg-overlay, color-mix(in srgb, var(--bg-shell) 62%, transparent));
   z-index: 10001;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: calc(15vh - 70px);
+  padding-top: 16vh;
 }
 
 .rename-modal {
-  background: var(--surface-3, var(--bg-app));
-  border-radius: var(--radius-lg, 8px);
-  padding: 12px 24px;
-  width: 420px;
-  border: 1px solid var(--border-strong, var(--border-dim));
+  background: var(--bg-surface);
+  border-radius: var(--island-radius, 10px);
+  padding: 10px 16px;
+  width: 400px;
+  max-width: 90vw;
+  border: 1px solid var(--border-strong);
+  outline: 5px solid var(--bg-shell);
   box-shadow: var(--elev-dialog);
-  animation: lumina-pop-in var(--dur-base, 160ms) var(--ease-snappy, ease-out);
+  animation: lumina-pop-in var(--dur-base, 140ms) var(--ease-snappy, ease-out);
   position: relative;
   overflow: hidden;
 }
 
 .rename-modal::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  height: 2px;
-  width: 100%;
-  background: radial-gradient(ellipse at center, var(--text-accent) 0%, transparent 70%);
-  opacity: 0.8;
-  pointer-events: none;
+  display: none;
 }
 
 .rename-form {
@@ -42,10 +36,10 @@
   border: none;
   color: var(--text-main);
   font-family: var(--font-editor, 'Inter'), sans-serif;
-  font-size: 18px;
+  font-size: 14.5px;
   font-weight: 500;
   outline: none;
-  padding: 8px 0;
+  padding: 4px 0;
   text-align: center;
 }
 

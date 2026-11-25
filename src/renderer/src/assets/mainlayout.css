@@ -197,15 +197,35 @@ body.zen-instant-transition * {
 .zen-collapsible-bar {
   overflow: hidden;
   flex-shrink: 0;
-  max-height: 32px;
-  opacity: 1;
-  transition: max-height 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: height;
+  transition: height 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.zen-collapsible-bar.zen-tabs-bar {
+  height: 33px;
+}
+
+.zen-collapsible-bar.zen-breadcrumbs-bar {
+  height: 25px;
+}
+
+.zen-collapsible-bar > * {
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .zen-collapsible-bar.zen-hidden {
-  max-height: 0;
-  opacity: 0;
+  height: 0 !important;
   pointer-events: none;
+}
+
+.zen-collapsible-bar.zen-tabs-bar.zen-hidden > * {
+  transform: translate3d(0, -33px, 0);
+}
+
+.zen-collapsible-bar.zen-breadcrumbs-bar.zen-hidden > * {
+  transform: translate3d(0, -25px, 0);
 }
 
 .app-shell.is-resizing .workspace-container,
@@ -275,7 +295,7 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   overflow: hidden;
 }
 
-/* Left Sidebar — curtain outer: clips via overflow:hidden, width glides smoothly without squishing children */
+/* Left Sidebar — curtain outer: clips via overflow:hidden, width pushes back/forward cleanly */
 .shell-sidebar-left {
   position: relative;
   width: 0;
@@ -293,10 +313,10 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   flex-direction: column;
   will-change: width;
   transition:
-    width 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 200ms ease,
-    border-width 0s 260ms,
-    visibility 0s 260ms;
+    width 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
+    border-width 0s 200ms,
+    visibility 0s 200ms;
   /* NO contain: inline-size — it breaks the inner width lock */
 }
 
@@ -309,8 +329,8 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   pointer-events: auto;
   visibility: visible;
   transition:
-    width 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 200ms ease,
+    width 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
     border-width 0s 0s,
     visibility 0s 0s;
 }
@@ -328,19 +348,15 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   display: flex !important;
   flex-direction: column !important;
   contain: layout paint;
-  transform: translate3d(-12px, 0, 0);
-  opacity: 0;
-  will-change: transform, opacity;
-  transition:
-    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translate3d(-100%, 0, 0);
+  will-change: transform;
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .app-shell.left-open .shell-sidebar-left > *,
 .app-shell.left-open .shell-sidebar-left .unified-sidebar,
 .app-shell.left-open .shell-sidebar-left .error-boundary {
   transform: translate3d(0, 0, 0);
-  opacity: 1;
 }
 
 .shell-sidebar-left .sidebar-header-section,
@@ -412,7 +428,7 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   background: var(--bg-app);
 }
 
-/* Right Sidebar — curtain outer: clips via overflow:hidden, width glides smoothly without squishing children */
+/* Right Sidebar — curtain outer: clips via overflow:hidden, width pushes back/forward cleanly */
 .shell-sidebar-right {
   position: relative;
   width: 0;
@@ -430,10 +446,10 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   flex-direction: column;
   will-change: width;
   transition:
-    width 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 200ms ease,
-    border-width 0s 260ms,
-    visibility 0s 260ms;
+    width 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
+    border-width 0s 200ms,
+    visibility 0s 200ms;
 }
 
 .app-shell.right-open .shell-sidebar-right {
@@ -444,8 +460,8 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   pointer-events: auto;
   visibility: visible;
   transition:
-    width 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 200ms ease,
+    width 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
     border-width 0s 0s,
     visibility 0s 0s;
 }
@@ -463,19 +479,15 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   display: flex !important;
   flex-direction: column !important;
   contain: layout paint;
-  transform: translate3d(12px, 0, 0);
-  opacity: 0;
-  will-change: transform, opacity;
-  transition:
-    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .app-shell.right-open .shell-sidebar-right > *,
 .app-shell.right-open .shell-sidebar-right .inspector-panel,
 .app-shell.right-open .shell-sidebar-right .error-boundary {
   transform: translate3d(0, 0, 0);
-  opacity: 1;
 }
 
 

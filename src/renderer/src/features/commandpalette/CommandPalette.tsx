@@ -15,7 +15,7 @@
  * =========================================================================
  */
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback, useDeferredValue } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Search,
@@ -37,7 +37,6 @@ import {
   MessageSquare,
   Book,
   Square,
-  GripVertical,
   Trash2,
   SlidersHorizontal,
   Check,
@@ -138,8 +137,8 @@ const STATIC_ALL_ACTIONABLES: PaletteItem[] = [...STATIC_COMMAND_ITEMS, ...STATI
 function LayoutGridIcon(props: { size?: number; className?: string }) {
   return (
     <svg
-      width={props.size || 18}
-      height={props.size || 18}
+      width={props.size || 15}
+      height={props.size || 15}
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -157,81 +156,82 @@ function LayoutGridIcon(props: { size?: number; className?: string }) {
 }
 
 function renderCommandIcon(iconName?: string) {
+  const iconSize = 15
   switch (iconName) {
     case 'PanelTop':
-      return <PanelTop size={18} className="item-icon action-icon" />
+      return <PanelTop size={iconSize} className="item-icon action-icon" />
     case 'PanelBottom':
-      return <PanelBottom size={18} className="item-icon action-icon" />
+      return <PanelBottom size={iconSize} className="item-icon action-icon" />
     case 'PanelLeft':
-      return <PanelLeft size={18} className="item-icon action-icon" />
+      return <PanelLeft size={iconSize} className="item-icon action-icon" />
     case 'PanelRight':
-      return <PanelRight size={18} className="item-icon action-icon" />
+      return <PanelRight size={iconSize} className="item-icon action-icon" />
     case 'Maximize':
-      return <Maximize size={18} className="item-icon action-icon" />
+      return <Maximize size={iconSize} className="item-icon action-icon" />
     case 'Maximize2':
-      return <Maximize2 size={18} className="item-icon action-icon" />
+      return <Maximize2 size={iconSize} className="item-icon action-icon" />
     case 'Minimize2':
-      return <Minimize2 size={18} className="item-icon action-icon" />
+      return <Minimize2 size={iconSize} className="item-icon action-icon" />
     case 'LayoutGrid':
-      return <LayoutGridIcon size={18} className="item-icon action-icon" />
+      return <LayoutGridIcon size={iconSize} className="item-icon action-icon" />
     case 'Terminal':
-      return <Terminal size={18} className="item-icon action-icon" />
+      return <Terminal size={iconSize} className="item-icon action-icon" />
     case 'FolderOpen':
-      return <FolderOpen size={18} className="item-icon action-icon" />
+      return <FolderOpen size={iconSize} className="item-icon action-icon" />
     case 'FolderSync':
-      return <FolderSync size={18} className="item-icon action-icon" />
+      return <FolderSync size={iconSize} className="item-icon action-icon" />
     case 'Save':
-      return <Save size={18} className="item-icon action-icon" />
+      return <Save size={iconSize} className="item-icon action-icon" />
     case 'Edit3':
-      return <Edit3 size={18} className="item-icon action-icon" />
+      return <Edit3 size={iconSize} className="item-icon action-icon" />
     case 'Trash2':
-      return <Trash2 size={18} className="item-icon action-icon" />
+      return <Trash2 size={iconSize} className="item-icon action-icon" />
     case 'Smile':
-      return <Smile size={18} className="item-icon action-icon" />
+      return <Smile size={iconSize} className="item-icon action-icon" />
     case 'ArrowRight':
-      return <ArrowRight size={18} className="item-icon action-icon" />
+      return <ArrowRight size={iconSize} className="item-icon action-icon" />
     case 'ArrowLeft':
-      return <ArrowLeft size={18} className="item-icon action-icon" />
+      return <ArrowLeft size={iconSize} className="item-icon action-icon" />
     case 'Power':
-      return <Power size={18} className="item-icon action-icon" />
+      return <Power size={iconSize} className="item-icon action-icon" />
     case 'X':
-      return <X size={18} className="item-icon action-icon" />
+      return <X size={iconSize} className="item-icon action-icon" />
     case 'Bot':
-      return <Bot size={18} className="item-icon action-icon" />
+      return <Bot size={iconSize} className="item-icon action-icon" />
     case 'Mic':
-      return <Mic size={18} className="item-icon action-icon" />
+      return <Mic size={iconSize} className="item-icon action-icon" />
     case 'Eye':
-      return <Eye size={18} className="item-icon action-icon" />
+      return <Eye size={iconSize} className="item-icon action-icon" />
     case 'Repeat':
-      return <Repeat size={18} className="item-icon action-icon" />
+      return <Repeat size={iconSize} className="item-icon action-icon" />
     case 'Sparkles':
-      return <Sparkles size={18} className="item-icon action-icon" />
+      return <Sparkles size={iconSize} className="item-icon action-icon" />
     case 'SunMoon':
-      return <SunMoon size={18} className="item-icon action-icon" />
+      return <SunMoon size={iconSize} className="item-icon action-icon" />
     case 'Palette':
-      return <Palette size={18} className="item-icon action-icon" />
+      return <Palette size={iconSize} className="item-icon action-icon" />
     case 'Keyboard':
-      return <Keyboard size={18} className="item-icon action-icon" />
+      return <Keyboard size={iconSize} className="item-icon action-icon" />
     case 'Settings':
-      return <Settings size={18} className="item-icon action-icon" />
+      return <Settings size={iconSize} className="item-icon action-icon" />
     case 'RotateCw':
     case 'RefreshCw':
-      return <RotateCw size={18} className="item-icon action-icon" />
+      return <RotateCw size={iconSize} className="item-icon action-icon" />
     case 'Code':
-      return <Code size={18} className="item-icon action-icon" />
+      return <Code size={iconSize} className="item-icon action-icon" />
     case 'ArrowUpCircle':
-      return <ArrowUpCircle size={18} className="item-icon action-icon" />
+      return <ArrowUpCircle size={iconSize} className="item-icon action-icon" />
     case 'Plus':
-      return <Plus size={18} className="item-icon action-icon" />
+      return <Plus size={iconSize} className="item-icon action-icon" />
     case 'Book':
-      return <Book size={18} className="item-icon action-icon" />
+      return <Book size={iconSize} className="item-icon action-icon" />
     case 'Network':
-      return <Network size={18} className="item-icon action-icon" />
+      return <Network size={iconSize} className="item-icon action-icon" />
     case 'Square':
     case 'Layout':
-      return <Square size={18} className="item-icon action-icon" />
+      return <Square size={iconSize} className="item-icon action-icon" />
     default:
-      return <Zap size={18} className="item-icon action-icon" />
+      return <Zap size={iconSize} className="item-icon action-icon" />
   }
 }
 
@@ -321,36 +321,36 @@ const CommandPaletteRow = React.memo(
           onMouseEnter={onMouseEnter}
         >
           {isSetting ? (
-            <SlidersHorizontal size={18} className="item-icon action-icon" style={{ color: 'var(--text-accent)' }} />
+            <SlidersHorizontal size={15} className="item-icon action-icon" />
           ) : isSettingOption ? (
             item.isSelectedOption ? (
-              <Check size={18} className="item-icon action-icon" style={{ color: 'var(--text-accent)' }} />
+              <Check size={15} className="item-icon action-icon" style={{ color: 'var(--accent-color)' }} />
             ) : (
-              <div style={{ width: 18, height: 18 }} />
+              <div style={{ width: 15, height: 15, flexShrink: 0 }} />
             )
           ) : isCommand ? (
             renderCommandIcon(item.command?.iconName)
           ) : item.matchType === 'folder' ? (
-            <Folder size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+            <Folder size={15} className="item-icon" />
           ) : item.matchType === 'tag' ? (
-            <Hash size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+            <Hash size={15} className="item-icon" />
           ) : item.matchType === 'mention' ? (
-            <AtSign size={18} className="item-icon" style={{ color: 'var(--text-accent)' }} />
+            <AtSign size={15} className="item-icon" />
           ) : (
             (() => {
               const lang = (item.language || 'markdown').toLowerCase()
               const title = (item.title || '').toLowerCase()
               if (['javascript', 'js', 'jsx', 'ts', 'tsx', 'html', 'css', 'python', 'py'].includes(lang)) {
-                return <FileCode size={18} className="item-icon" />
+                return <FileCode size={15} className="item-icon" />
               }
-              if (lang === 'json') return <FileJson size={18} className="item-icon" />
+              if (lang === 'json') return <FileJson size={15} className="item-icon" />
               if (lang === 'markdown' || lang === 'md' || title.endsWith('.md')) {
-                return <Hash size={18} className="item-icon" />
+                return <Hash size={15} className="item-icon" />
               }
               if (['png', 'jpg', 'jpeg', 'gif', 'svg'].some((ext) => title.endsWith('.' + ext))) {
-                return <ImageIcon size={18} className="item-icon" />
+                return <ImageIcon size={15} className="item-icon" />
               }
-              return <FileText size={18} className="item-icon" />
+              return <FileText size={15} className="item-icon" />
             })()
           )}
 
@@ -457,13 +457,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
   }) => {
     const [query, setQuery] = useState<string>('')
     const [selectedIndex, setSelectedIndex] = useState<number>(0)
-    const [splitRatio, setSplitRatio] = useState<number>(50)
+    const [splitRatio, setSplitRatio] = useState<number>(47)
     const [activePromptSetting, setActivePromptSetting] = useState<LuminaSettingDefinition | null>(null)
 
     const inputRef = useRef<HTMLInputElement>(null)
     const listRef = useRef<HTMLDivElement>(null)
     const itemRefs = useRef<(HTMLDivElement | null)[]>([])
     const isDraggingRef = useRef<boolean>(false)
+    const isKeyboardNavRef = useRef<boolean>(false)
     const previousFocusRef = useRef<Element | null>(null)
 
     const { dirtySnippetIds } = useWorkspaceStore(
@@ -472,8 +473,28 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
       }))
     )
 
+    const dirtySet = useMemo(() => new Set(dirtySnippetIds), [dirtySnippetIds])
+
     const { tags } = useTag()
     const { mentions } = useMention()
+
+    // Pre-index note titles, folders, and search strings once per items change for O(1) per-keystroke speed
+    const indexedNotes = useMemo(
+      () =>
+        items.map((item) => {
+          const titleRaw = item.title || item.fileName || ''
+          const titleLower = titleRaw.toLowerCase()
+          const folderLower = (item.folderId || item.relativePath || '').toLowerCase()
+          return {
+            item,
+            titleRaw,
+            titleLower,
+            folderLower,
+            combinedLower: folderLower ? `${folderLower}/${titleLower}` : titleLower
+          }
+        }),
+      [items]
+    )
 
     useKeyboardShortcuts({
       onEscape: isOpen
@@ -637,24 +658,23 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
 
       // 2. In Search Mode without ">" prefix:
       if (!cleanQ) {
-        return items.slice(0, 15)
+        return items.slice(0, 20)
       }
 
       const matches: PaletteItem[] = []
+      const queryTokens = cleanQ.includes(' ') ? cleanQ.split(/\s+/).filter(Boolean) : null
 
-      // Fast notes matching
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i]
-        const title = (item.title || item.fileName || '').toLowerCase()
-        if (title.startsWith(cleanQ)) {
-          matches.push({ ...item, score: 300 })
-        } else if (title.includes(cleanQ)) {
-          matches.push({ ...item, score: 200 })
-        } else {
-          const folder = (item.folderId || item.relativePath || '').toLowerCase()
-          if (folder && folder.includes(cleanQ)) {
-            matches.push({ ...item, score: 150 })
-          }
+      // Fast pre-indexed notes matching
+      for (let i = 0; i < indexedNotes.length; i++) {
+        const { item, titleLower, folderLower, combinedLower } = indexedNotes[i]
+        if (titleLower.startsWith(cleanQ)) {
+          matches.push({ ...item, score: 320 })
+        } else if (titleLower.includes(cleanQ)) {
+          matches.push({ ...item, score: 220 })
+        } else if (folderLower && folderLower.includes(cleanQ)) {
+          matches.push({ ...item, score: 160 })
+        } else if (queryTokens && queryTokens.every((tok) => combinedLower.includes(tok))) {
+          matches.push({ ...item, score: 140 })
         }
       }
 
@@ -668,11 +688,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
           matches.push({ ...item, score: 180 })
         } else if (item.searchStr && item.searchStr.includes(cleanQ)) {
           matches.push({ ...item, score: 90 })
-        } else if (
-          item.searchStr &&
-          cleanQ.includes(' ') &&
-          cleanQ.split(/\s+/).every((tok) => item.searchStr!.includes(tok))
-        ) {
+        } else if (item.searchStr && queryTokens && queryTokens.every((tok) => item.searchStr!.includes(tok))) {
           matches.push({ ...item, score: 85 })
         }
       }
@@ -696,14 +712,25 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
       }
 
       if (matches.length > 0) {
-        return matches.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 25)
+        return matches.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 30)
       }
 
-      // Fallback fuzzy
-      for (let i = 0; i < items.length; i++) {
-        const item = items[i]
-        const res = scoreFuzzy(item.title || item.fileName || '', cleanQ)
-        if (res) matches.push({ ...item, score: res.score, matchRanges: res.ranges })
+      // Fallback fuzzy + note body snippet search
+      for (let i = 0; i < indexedNotes.length; i++) {
+        const { item, titleRaw } = indexedNotes[i]
+        const res = scoreFuzzy(titleRaw, cleanQ)
+        if (res) {
+          matches.push({ ...item, score: res.score, matchRanges: res.ranges })
+        } else if (cleanQ.length >= 2) {
+          const body = item.code || item.content || ''
+          const idx = body ? body.toLowerCase().indexOf(cleanQ) : -1
+          if (idx !== -1) {
+            const start = Math.max(0, idx - 24)
+            const end = Math.min(body.length, idx + cleanQ.length + 42)
+            const snippet = `${start > 0 ? '…' : ''}${body.slice(start, end).replace(/\s+/g, ' ').trim()}${end < body.length ? '…' : ''}`
+            matches.push({ ...item, score: 60, matchSnippet: snippet })
+          }
+        }
       }
       for (let i = 0; i < STATIC_ALL_ACTIONABLES.length; i++) {
         const item = STATIC_ALL_ACTIONABLES[i]
@@ -711,8 +738,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
         if (res) matches.push({ ...item, score: res.score - 10, matchRanges: res.ranges })
       }
 
-      return matches.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 25)
-    }, [query, items, tags, mentions, activePromptSetting])
+      return matches.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 30)
+    }, [query, items, indexedNotes, tags, mentions, activePromptSetting])
 
     useEffect(() => {
       if (selectedIndex >= filtered.length && filtered.length > 0) {
@@ -818,14 +845,36 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
 
       if (e.key === 'ArrowDown') {
         e.preventDefault()
+        isKeyboardNavRef.current = true
         if (filtered.length > 0) {
           setSelectedIndex((prev) => (prev + 1) % filtered.length)
         }
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
+        isKeyboardNavRef.current = true
         if (filtered.length > 0) {
           setSelectedIndex((prev) => (prev - 1 + filtered.length) % filtered.length)
         }
+      } else if (e.key === 'PageDown') {
+        e.preventDefault()
+        isKeyboardNavRef.current = true
+        if (filtered.length > 0) {
+          setSelectedIndex((prev) => Math.min(filtered.length - 1, prev + 8))
+        }
+      } else if (e.key === 'PageUp') {
+        e.preventDefault()
+        isKeyboardNavRef.current = true
+        if (filtered.length > 0) {
+          setSelectedIndex((prev) => Math.max(0, prev - 8))
+        }
+      } else if (e.key === 'Home' && e.ctrlKey) {
+        e.preventDefault()
+        isKeyboardNavRef.current = true
+        setSelectedIndex(0)
+      } else if (e.key === 'End' && e.ctrlKey) {
+        e.preventDefault()
+        isKeyboardNavRef.current = true
+        if (filtered.length > 0) setSelectedIndex(filtered.length - 1)
       } else if (e.key === 'Enter') {
         e.preventDefault()
         const item = filtered[selectedIndex]
@@ -874,11 +923,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
     }
 
     const selectedItem = filtered[selectedIndex] || null
+    const deferredSelectedItem = useDeferredValue(selectedItem)
 
     const previewContent = useMemo(() => {
-      if (!selectedItem || selectedItem.matchType === 'action' || selectedItem.matchType === 'command' || selectedItem.matchType === 'setting' || selectedItem.matchType === 'setting-option') return null
-      return selectedItem.code || selectedItem.content || selectedItem.body || null
-    }, [selectedItem])
+      if (!deferredSelectedItem || deferredSelectedItem.matchType === 'action' || deferredSelectedItem.matchType === 'command' || deferredSelectedItem.matchType === 'setting' || deferredSelectedItem.matchType === 'setting-option') return null
+      return deferredSelectedItem.code || deferredSelectedItem.content || deferredSelectedItem.body || null
+    }, [deferredSelectedItem])
 
     if (!isOpen) return null
 
@@ -902,7 +952,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
         >
           {/* Header & Search Bar */}
           <div className="palette-input-wrap horizontal">
-            <Search size={18} className="palette-search-icon" />
+            <Search size={15} className="palette-search-icon" />
+            {isCommandMode && <span className="palette-mode-chip">Commands</span>}
+            {!isCommandMode && query.startsWith('#') && <span className="palette-mode-chip">Tag</span>}
+            {!isCommandMode && query.startsWith('@') && <span className="palette-mode-chip">Mention</span>}
             <input
               ref={inputRef}
               type="text"
@@ -911,29 +964,49 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
                   ? activePromptSetting.type === 'number'
                     ? `Type value (${activePromptSetting.min ?? 0} - ${activePromptSetting.max ?? 100}) or choose below...`
                     : `Select option for ${activePromptSetting.title}...`
-                  : query.startsWith('>')
-                    ? 'Type a command or setting name...'
-                    : 'Search notes, commands, and settings... (Type > for commands)'
+                  : isCommandMode
+                    ? 'Type a command or setting...'
+                    : 'Search notes, settings, or type > for commands...'
               }
               value={query}
               onChange={(e) => {
+                isKeyboardNavRef.current = false
                 setQuery(e.target.value)
                 setSelectedIndex(0)
               }}
               onKeyDown={handleKeyDown}
               autoFocus
             />
+            {filtered.length > 0 && (
+              <span className="palette-count-pill">
+                {filtered.length} {filtered.length === 1 ? 'item' : 'items'}
+              </span>
+            )}
+            {query && (
+              <button
+                type="button"
+                className="palette-clear-btn"
+                onClick={() => {
+                  setQuery('')
+                  setSelectedIndex(0)
+                  inputRef.current?.focus()
+                }}
+                aria-label="Clear search"
+              >
+                <X size={13} />
+              </button>
+            )}
           </div>
 
           {activePromptSetting && (
             <div className="setting-prompt-header">
               <span>Configuring: {activePromptSetting.title}</span>
               {activePromptSetting.type === 'number' && (
-                <span style={{ opacity: 0.7, fontSize: '11px', marginLeft: 8 }}>
+                <span style={{ opacity: 0.7, fontSize: '10.5px', marginLeft: 6 }}>
                   (Range: {activePromptSetting.min ?? 0} - {activePromptSetting.max ?? 100})
                 </span>
               )}
-              <span style={{ opacity: 0.6, fontSize: '11px', marginLeft: 'auto' }}>Press ESC to go back</span>
+              <span style={{ opacity: 0.6, fontSize: '10.5px', marginLeft: 'auto' }}>ESC to go back</span>
             </div>
           )}
 
@@ -944,6 +1017,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
               <div
                 className="palette-results-col"
                 style={{ width: `${splitRatio}%`, display: 'flex', flexDirection: 'column' }}
+                onMouseMove={() => {
+                  isKeyboardNavRef.current = false
+                }}
               >
                 <div
                   className="palette-results seamless-scrollbar"
@@ -960,116 +1036,98 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
                         item={item}
                         isSelected={index === selectedIndex}
                         query={activeHighlightQuery}
-                        isDirty={Boolean(item.id && dirtySnippetIds.includes(item.id))}
+                        isDirty={Boolean(item.id && dirtySet.has(item.id))}
                         onClick={() => {
                           setSelectedIndex(index)
                           executeItem(item)
                         }}
-                        onMouseEnter={() => setSelectedIndex(index)}
+                        onMouseEnter={() => {
+                          if (!isKeyboardNavRef.current) {
+                            setSelectedIndex(index)
+                          }
+                        }}
                       />
                     ))
                   ) : (
-                    <div className="palette-zero-results" style={{ padding: '36px 20px', textAlign: 'center' }}>
-                      <Search size={24} style={{ opacity: 0.3, marginBottom: '8px' }} />
+                    <div className="palette-zero-results" style={{ padding: '32px 16px', textAlign: 'center' }}>
+                      <Search size={20} style={{ opacity: 0.3, marginBottom: '6px' }} />
                       <span>
                         {query.startsWith('>')
-                          ? `No matching commands or settings found for "${query.slice(1).trim()}"`
-                          : `No matching notes or commands found for "${query}"`}
+                          ? `No matching commands or settings for "${query.slice(1).trim()}"`
+                          : `No matching notes or commands for "${query}"`}
                       </span>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="palette-resizer" onMouseDown={handleResizerMouseDown}>
-                <div className="resizer-grip">
-                  <GripVertical size={14} />
-                </div>
-              </div>
+              <div className="palette-resizer" onMouseDown={handleResizerMouseDown} />
 
               {/* Details / Preview Column */}
               <div className="palette-preview-col" style={{ width: `${100 - splitRatio}%`, height: '100%', maxHeight: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                {selectedItem?.matchType === 'command' && selectedItem.command ? (
+                {deferredSelectedItem?.matchType === 'command' && deferredSelectedItem.command ? (
                   <div className="command-details-preview">
                     <div className="command-details-header">
                       <div className="command-details-badge-row">
-                        <span className="command-details-cat">{selectedItem.command.category}</span>
-                        {false && (
-                          <span
-                            className="setting-value-badge"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              marginLeft: '8px',
-                              color: 'var(--text-accent, #a78bfa)',
-                              borderColor: 'rgba(167, 139, 250, 0.3)',
-                              fontSize: '11px',
-                              fontWeight: 600
-                            }}
-                          >
-                            <Check size={11} strokeWidth={2.5} />
-                            Active
-                          </span>
-                        )}
-                        {selectedItem.command.shortcut && (
+                        <span className="command-details-cat">{deferredSelectedItem.command.category}</span>
+                        {deferredSelectedItem.command.shortcut && (
                           <div className="palette-shortcut" style={{ marginLeft: 'auto' }}>
-                            {selectedItem.command.shortcut.split('+').map((key, i) => (
+                            {deferredSelectedItem.command.shortcut.split('+').map((key, i) => (
                               <kbd key={i}>{key.trim()}</kbd>
                             ))}
                           </div>
                         )}
                       </div>
-                      <div className="command-details-title">{selectedItem.command.title}</div>
+                      <div className="command-details-title">{deferredSelectedItem.command.title}</div>
                     </div>
                     <div className="command-details-desc">
-                      {selectedItem.description
-                        ? `Keywords: ${selectedItem.description}`
+                      {deferredSelectedItem.description
+                        ? `Keywords: ${deferredSelectedItem.description}`
                         : 'Execute this application command immediately.'}
                     </div>
-                    <div style={{ marginTop: 'auto', fontSize: '11px', opacity: 0.6 }}>
+                    <div style={{ marginTop: 'auto', fontSize: '10.5px', opacity: 0.6 }}>
                       Press <kbd>↵ Enter</kbd> to execute command
                     </div>
                   </div>
-                ) : selectedItem?.matchType === 'setting' && selectedItem.settingDef ? (
+                ) : deferredSelectedItem?.matchType === 'setting' && deferredSelectedItem.settingDef ? (
                   (() => {
-                    const curVal = selectedItem.settingDef.getValue(useSettingsStore.getState().settings)
-                    const displayVal = selectedItem.settingDef.formatValue ? selectedItem.settingDef.formatValue(curVal) : String(curVal)
+                    const curVal = deferredSelectedItem.settingDef.getValue(useSettingsStore.getState().settings)
+                    const displayVal = deferredSelectedItem.settingDef.formatValue ? deferredSelectedItem.settingDef.formatValue(curVal) : String(curVal)
                     return (
                       <div className="command-details-preview">
                         <div className="command-details-header">
                           <div className="command-details-badge-row">
-                            <span className="command-details-cat">{selectedItem.settingDef.category}</span>
+                            <span className="command-details-cat">{deferredSelectedItem.settingDef.category}</span>
                             <span className="setting-value-badge" style={{ marginLeft: 'auto' }}>
                               Current: {displayVal}
                             </span>
                           </div>
-                          <div className="command-details-title">{selectedItem.settingDef.title}</div>
+                          <div className="command-details-title">{deferredSelectedItem.settingDef.title}</div>
                         </div>
-                        <div className="command-details-desc">{selectedItem.settingDef.description}</div>
-                        {selectedItem.settingDef.options && (
+                        <div className="command-details-desc">{deferredSelectedItem.settingDef.description}</div>
+                        {deferredSelectedItem.settingDef.options && (
                           <div style={{ marginTop: '8px' }}>
-                            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
+                            <div style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
                               Available Options:
                             </div>
                             <div className="command-details-options-list">
-                              {selectedItem.settingDef.options.map((opt) => (
+                              {deferredSelectedItem.settingDef.options.map((opt) => (
                                 <div key={opt.value} className="command-details-option-item">
                                   <span>{opt.label}</span>
                                   {opt.value === curVal && (
-                                    <span style={{ color: 'var(--text-accent)', fontSize: '11px', fontWeight: 600 }}>Active</span>
+                                    <span style={{ color: 'var(--accent-color)', fontSize: '10.5px', fontWeight: 600 }}>Active</span>
                                   )}
                                 </div>
                               ))}
                             </div>
                           </div>
                         )}
-                        <div style={{ marginTop: 'auto', fontSize: '11px', opacity: 0.6 }}>
-                          {selectedItem.settingDef.type === 'boolean'
+                        <div style={{ marginTop: 'auto', fontSize: '10.5px', opacity: 0.6 }}>
+                          {deferredSelectedItem.settingDef.type === 'boolean'
                             ? 'Press ↵ Enter to toggle value'
-                            : selectedItem.settingDef.type === 'enum'
+                            : deferredSelectedItem.settingDef.type === 'enum'
                               ? 'Press ↵ Enter to select an option'
-                              : selectedItem.settingDef.type === 'number'
+                              : deferredSelectedItem.settingDef.type === 'number'
                                 ? 'Press ↵ Enter to enter a new value'
                                 : 'Press ↵ Enter to configure in Settings'}
                         </div>
@@ -1077,14 +1135,25 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
                     )
                   })()
                 ) : previewContent ? (
-                  <PreviewCommandPalette content={previewContent} onClose={onClose} />
+                  <div className="palette-note-preview-shell">
+                    <div className="palette-note-preview-header">
+                      <FileText size={13} className="palette-note-preview-icon" />
+                      <span className="palette-note-preview-title">
+                        {deferredSelectedItem?.title || deferredSelectedItem?.fileName || 'Untitled'}
+                      </span>
+                      {deferredSelectedItem?.folderId && (
+                        <span className="palette-note-preview-folder">{deferredSelectedItem.folderId}</span>
+                      )}
+                    </div>
+                    <PreviewCommandPalette content={previewContent} onClose={onClose} />
+                  </div>
                 ) : (
                   <div className="palette-empty-preview">
                     <div className="palette-empty-icon-wrap">
-                      <Search size={22} />
+                      <Search size={18} />
                     </div>
                     <div className="palette-empty-title">No preview available</div>
-                    <p className="palette-empty-subtitle">Select a command, setting, or note to preview details</p>
+                    <p className="palette-empty-subtitle">Select a note, command, or setting to preview</p>
                   </div>
                 )}
               </div>

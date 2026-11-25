@@ -1,17 +1,22 @@
 .cm-mermaid-widget {
-  margin: 0;
+  margin: 8px 0;
   width: 100%;
   cursor: text;
   box-sizing: border-box;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: color-mix(in srgb, var(--bg-panel) 32%, var(--bg-surface));
 }
 
 .mermaid-widget-header {
   position: relative;
   width: 100%;
-  height: 30px;
-  background: var(--bg-card, var(--bg-panel, rgba(255, 255, 255, 0.04)));
-  border: 1px solid var(--border-subtle, var(--border-dim));
-  border-radius: 2px 2px 0 0;
+  height: 26px;
+  background: color-mix(in srgb, var(--bg-panel) 55%, var(--bg-surface));
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  border-radius: 5px 5px 0 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -32,8 +37,8 @@
 }
 
 .mermaid-widget-lang-label {
-  font-size: 10px;
-  font-weight: 500;
+  font-size: 9.5px;
+  font-weight: 600;
   color: var(--text-muted);
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -43,31 +48,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 2px;
+  border-radius: 5px;
   color: var(--text-muted);
   cursor: pointer !important;
-  transition: all 0.15s ease;
+  transition: all 0.14s ease;
   user-select: none;
   box-sizing: border-box;
 }
 
 .mermaid-widget-header .mermaid-edit-btn:hover {
-  color: var(--text-accent, #40bafa);
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
-  border-color: var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.1)));
+  color: var(--accent-color);
+  background: var(--bg-hover);
+  border-color: var(--border-color);
 }
 
 .mermaid-widget-body {
-  background: var(--bg-app, var(--bg-card, rgba(0, 0, 0, 0.15)));
-  border-left: 1px solid var(--border-subtle, var(--border-dim));
-  border-right: 1px solid var(--border-subtle, var(--border-dim));
-  border-bottom: 1px solid var(--border-subtle, var(--border-dim));
-  border-radius: 0 0 2px 2px;
+  background: transparent;
+  border: none;
+  border-radius: 0 0 5px 5px;
   overflow: hidden;
   display: block;
   width: 100%;
@@ -85,11 +88,12 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 24px 20px;
-  min-height: 220px;
+  padding: 14px 16px;
+  min-height: 76px;
+  max-height: 332px;
   box-sizing: border-box;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+  scrollbar-color: var(--scroll-thumb, var(--border-strong)) transparent;
 }
 
 .cm-mermaid-widget .mermaid-scroll-wrap::-webkit-scrollbar {
@@ -101,16 +105,18 @@
 }
 
 .cm-mermaid-widget .mermaid-scroll-wrap::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 2px;
+  background: var(--scroll-thumb, var(--border-strong));
+  border-radius: 5px;
 }
 
 .cm-mermaid-widget .mermaid-scroll-wrap::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.24);
+  background: var(--text-muted);
 }
 
 .cm-mermaid-widget .mermaid-content {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   max-width: 100%;
   margin: 0 auto;
   text-align: initial;
@@ -120,8 +126,9 @@
   display: block;
   margin: 0 auto;
   max-width: 100%;
+  max-height: 300px;
   height: auto;
-  animation: mermaid-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: mermaid-fade-in 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes mermaid-fade-in {
@@ -227,7 +234,7 @@
 }
 
 .mermaid-lightbox-overlay {
-  padding: 16px;
+  padding: 24px;
   box-sizing: border-box;
 }
 
@@ -236,12 +243,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 96vw;
-  max-width: 96vw;
-  height: 94vh;
-  max-height: 94vh;
+  width: min(76vw, 860px);
+  max-width: 860px;
+  height: min(72vh, 560px);
+  max-height: 560px;
   transform: scale(0.96);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .mermaid-lightbox-overlay.show .mermaid-lightbox-wrapper {
@@ -250,13 +257,14 @@
 
 .mermaid-lightbox-card {
   position: relative;
-  background: var(--bg-card, var(--bg-panel, #18181b));
-  border: 1px solid var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.12)));
-  border-radius: 2px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  outline: 4px solid var(--bg-shell);
+  border-radius: 5px;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  box-shadow: var(--shadow-soft, 0 24px 64px rgba(0, 0, 0, 0.6));
+  box-shadow: var(--elev-dialog);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -274,6 +282,7 @@
   user-select: none;
   touch-action: none;
   box-sizing: border-box;
+  padding: 20px;
 }
 
 .mermaid-lightbox-viewport.is-panning {
@@ -288,8 +297,8 @@
   pointer-events: none;
   width: 100%;
   height: 100%;
-  max-width: 96%;
-  max-height: 94%;
+  max-width: 94%;
+  max-height: 92%;
 }
 
 .mermaid-lightbox-canvas svg {
@@ -302,18 +311,18 @@
 
 .mermaid-lightbox-toolbar {
   position: absolute;
-  bottom: 20px;
-  right: 24px;
+  bottom: 14px;
+  right: 14px;
   left: auto;
   transform: none;
-  background: var(--surface-3, var(--bg-panel, #18181b));
-  border: 1px solid var(--border-strong, var(--border-dim, rgba(255, 255, 255, 0.15)));
-  border-radius: var(--radius-xs, 4px);
-  padding: 4px 6px;
+  background: var(--bg-shell);
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  padding: 3px 5px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  box-shadow: var(--shadow-soft, 0 8px 24px rgba(0, 0, 0, 0.4));
+  gap: 3px;
+  box-shadow: var(--elev-popover);
   z-index: 100;
   user-select: none;
   color: var(--text-main);
@@ -323,47 +332,34 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 6px;
-  color: var(--text-muted, #a0a0a0);
+  border-radius: 5px;
+  color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.14s ease;
   box-sizing: border-box;
 }
 
 .mermaid-toolbar-btn:hover {
-  color: var(--text-accent, #40bafa);
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
-  border-color: var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.15)));
-}
-
-[data-theme='light'] .mermaid-toolbar-btn {
-  color: var(--text-muted, #64748b);
-}
-
-[data-theme='light'] .mermaid-toolbar-btn:hover {
-  background: var(--bg-active, rgba(0, 0, 0, 0.06));
-  color: var(--text-accent, #0284c7);
+  color: var(--accent-color);
+  background: var(--bg-hover);
+  border-color: var(--border-color);
 }
 
 .mermaid-toolbar-zoom-text {
   font-size: 11px;
   font-weight: 600;
   font-family: var(--font-editor, monospace);
-  color: var(--text-main, #a0a0a0);
-  min-width: 44px;
+  color: var(--text-main);
+  min-width: 42px;
   text-align: center;
   padding: 0 4px;
 }
 
-[data-theme='light'] .mermaid-toolbar-zoom-text {
-  color: var(--text-main, #0f172a);
-}
-
 .mermaid-lightbox-wrapper .image-lightbox-close {
-  border-radius: 6px;
+  border-radius: 5px;
 }

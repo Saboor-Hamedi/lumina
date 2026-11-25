@@ -1,6 +1,7 @@
 /**
  * ============================================================================
- * VS Code-style Docked Editor Breadcrumbs (`Breadcrumbs.css`)
+ * Lumina Docked Editor Breadcrumbs (`Breadcrumbs.css`)
+ * 100% Theme-Token Driven — Aligned with Lumina Islands UI
  * ============================================================================
  */
 
@@ -11,13 +12,12 @@
   height: 25px;
   min-height: 25px;
   max-height: 25px;
-  padding: 0 12px;
-  background: var(--bg-panel, #18181f);
+  padding: 0 14px;
+  background: var(--bg-surface, var(--bg-editor));
   border: none !important;
-  border-bottom: none !important;
-  border-top: none !important;
+  font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
   font-size: 11.5px;
-  color: var(--text-muted, #94a3b8);
+  color: var(--text-muted);
   user-select: none;
   overflow-x: auto;
   scrollbar-width: none;
@@ -35,20 +35,23 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 6px;
-  height: 18px;
+  padding: 0 6px;
+  height: 19px;
   border-radius: 4px;
-  color: var(--text-muted, #94a3b8);
+  color: var(--text-muted);
   font-size: 11.5px;
   font-weight: 500;
+  line-height: 1;
   cursor: pointer;
-  opacity: 0.7;
-  transition: all 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   text-decoration: none;
   flex-shrink: 0;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 .breadcrumb-item span {
@@ -61,14 +64,12 @@
 }
 
 .breadcrumb-item:hover {
-  opacity: 1;
-  color: var(--text-main, #f8fafc);
-  background: var(--bg-hover, rgba(125, 125, 125, 0.08));
+  color: var(--text-main);
+  background: var(--bg-hover);
 }
 
 .breadcrumb-item.active {
-  opacity: 1;
-  color: var(--text-main, #f8fafc);
+  color: var(--text-main);
   font-weight: 550;
   flex-shrink: 1;
   min-width: 0;
@@ -79,34 +80,51 @@
   max-width: clamp(140px, 32vw, 380px);
 }
 
-.breadcrumb-item.copied {
-  color: #10b981;
-}
-
 .breadcrumb-item.bc-open {
-  color: var(--text-main, #f8fafc);
-  background: var(--bg-active, rgba(125, 125, 125, 0.12));
+  color: var(--accent-color, var(--text-accent));
+  background: color-mix(in srgb, var(--accent-color, var(--text-accent)) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent-color, var(--text-accent)) 26%, transparent);
 }
 
 .breadcrumb-separator {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace);
-  font-variant-ligatures: normal;
-  font-feature-settings: "liga" 1, "calt" 1;
-  font-size: 11px;
-  line-height: 1;
-  color: var(--text-faint, #64748b);
-  opacity: 0.5;
+  width: 12px;
+  height: 19px;
+  color: var(--text-faint, var(--text-muted));
+  opacity: 0.55;
   flex-shrink: 0;
-  margin: 0 2px;
   user-select: none;
 }
 
 .breadcrumb-icon {
-  opacity: 0.75;
   flex-shrink: 0;
+  opacity: 0.82;
+}
+
+.breadcrumb-icon.is-root {
+  color: var(--accent-color, var(--text-accent));
+}
+
+.breadcrumb-icon.is-folder {
+  color: var(--folder-color, var(--accent-color));
+}
+
+.breadcrumb-icon.is-note {
+  color: var(--icon-primary, var(--accent-color));
+}
+
+.breadcrumb-icon.is-image {
+  color: var(--icon-secondary, var(--accent-color));
+}
+
+.breadcrumb-icon.is-canvas {
+  color: var(--icon-tertiary, var(--accent-color));
+}
+
+.breadcrumb-icon.is-heading {
+  color: var(--accent-color, var(--text-accent));
 }
 
 .breadcrumb-copy-btn {
@@ -114,38 +132,35 @@
   align-items: center;
   justify-content: center;
   width: 20px;
-  height: 18px;
+  height: 19px;
   border-radius: 4px;
-  color: var(--text-muted, #94a3b8);
-  opacity: 0.6;
+  color: var(--text-faint, var(--text-muted));
   background: transparent;
   border: none;
   cursor: pointer;
   margin-left: 2px;
   padding: 0;
-  transition: all 0.12s ease;
+  transition: background-color 120ms ease, color 120ms ease;
   flex-shrink: 0;
 }
 
 .breadcrumb-copy-btn:hover {
-  opacity: 1;
-  color: var(--text-main, #f8fafc);
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  color: var(--text-main);
+  background: var(--bg-hover);
 }
 
 .breadcrumb-copy-btn.copied {
-  opacity: 1;
-  color: #10b981;
+  color: var(--icon-secondary, #10b981);
 }
 
 .breadcrumb-heading-item {
-  color: var(--text-accent, #8b5cf6);
+  color: var(--accent-color, var(--text-accent));
   max-width: 220px;
 }
 
-.breadcrumb-heading-item:hover,
-.breadcrumb-heading-item.bc-open {
-  color: var(--text-accent, #a78bfa);
+.breadcrumb-heading-item:hover {
+  color: var(--accent-color, var(--text-accent));
+  background: color-mix(in srgb, var(--accent-color, var(--text-accent)) 10%, transparent);
 }
 
 .breadcrumb-heading-text {
@@ -156,10 +171,7 @@
 }
 
 .breadcrumb-item.drag-over {
-  background: rgba(139, 92, 246, 0.2) !important;
-  color: var(--text-accent, #a78bfa) !important;
-  outline: 1px dashed var(--text-accent, #8b5cf6);
-  outline-offset: -1px;
+  background: color-mix(in srgb, var(--accent-color, var(--text-accent)) 16%, transparent) !important;
+  color: var(--accent-color, var(--text-accent)) !important;
+  border-color: var(--accent-color, var(--text-accent)) !important;
 }
-
-

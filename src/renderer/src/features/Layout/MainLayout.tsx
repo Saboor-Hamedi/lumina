@@ -1298,17 +1298,15 @@ export const MainLayout: React.FC = () => {
         } as React.CSSProperties}
     >
       <div className="shell-body">
-        {isActivityBarVisible && (
-          <ActivityBar
-            onToggleGraph={handleToggleGraph}
-            onToggleTerminal={handleToggleTerminal}
-            isTerminalOpen={isTerminalOpen}
-            onOpenTheme={handleOpenTheme}
-            onOpenDocs={handleOpenDocs}
-            onOpenGuide={() => setShowGuideModal(true)}
-            isZenHidden={isZenModeEnabled && hideActivityBarInZen}
-          />
-        )}
+        <ActivityBar
+          onToggleGraph={handleToggleGraph}
+          onToggleTerminal={handleToggleTerminal}
+          isTerminalOpen={isTerminalOpen}
+          onOpenTheme={handleOpenTheme}
+          onOpenDocs={handleOpenDocs}
+          onOpenGuide={() => setShowGuideModal(true)}
+          isZenHidden={!isActivityBarVisible || (isZenModeEnabled && hideActivityBarInZen)}
+        />
 
         <div className="shell-workbench-column">
         <div
@@ -1471,26 +1469,32 @@ export const MainLayout: React.FC = () => {
           </>
         )}
 
-        {isStatusBarVisible && (
-          <StatusBar
-            onToggleInspector={handleToggleInspector}
-            onSettingsClick={handleOpenSettings}
-            onThemeClick={handleOpenTheme}
-            isZenHidden={isZenModeEnabled && hideStatusBarInZen}
-          />
-        )}
+        <StatusBar
+          onToggleInspector={handleToggleInspector}
+          onSettingsClick={handleOpenSettings}
+          onThemeClick={handleOpenTheme}
+          isZenHidden={!isStatusBarVisible || (isZenModeEnabled && hideStatusBarInZen)}
+        />
         </div>
 
-        {isRightActivityBarVisible && (
-          <RightActivityBar
-            isRightSidebarOpen={isRightSidebarOpen}
-            activeTab={rightSidebarTab}
-            onSelectTab={handleSelectRightSidebarTab}
-            onToggleGraph={handleToggleGraph}
-            isGraphActive={activeTabId === GRAPH_TAB_ID}
-            isZenHidden={isZenModeEnabled && hideRightActivityBarInZen}
-          />
-        )}
+        <RightActivityBar
+          isRightSidebarOpen={isRightSidebarOpen}
+          activeTab={rightSidebarTab}
+          onSelectTab={handleSelectRightSidebarTab}
+          onToggleGraph={handleToggleGraph}
+          isGraphActive={activeTabId === GRAPH_TAB_ID}
+          onToggleCanvas={handleOpenOrCreateCanvasTab}
+          isCanvasActive={
+            activeTabId !== GRAPH_TAB_ID &&
+            Boolean(
+              selectedSnippet &&
+                (selectedSnippet.type === 'canvas' ||
+                  selectedSnippet.language === 'canvas' ||
+                  selectedSnippet.fileName?.endsWith('.canvas'))
+            )
+          }
+          isZenHidden={!isRightActivityBarVisible || (isZenModeEnabled && hideRightActivityBarInZen)}
+        />
       </div>
 
       <AppModals

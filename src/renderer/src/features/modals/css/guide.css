@@ -1,8 +1,8 @@
-/* Guide Modal Styles */
+/* Guide Modal Styles — Lumina Islands UI */
 .guide-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.52) !important;
+  background: var(--bg-overlay, color-mix(in srgb, var(--bg-shell) 62%, transparent)) !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -21,21 +21,19 @@
 
 .guide-modal-container {
   width: 86vw;
-  max-width: 740px;
+  max-width: 780px;
   height: 76vh;
   min-height: 480px;
   max-height: 78vh;
-  background: var(--bg-panel, #16161e);
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
+  background: var(--bg-shell);
+  border: 1px solid var(--border-strong);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  box-shadow:
-    0 20px 40px -12px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow: var(--elev-dialog);
   overflow: hidden;
   position: relative;
-  animation: guideSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: guideSlideUp 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .guide-modal-container.maximized {
@@ -44,13 +42,15 @@
   max-width: none !important;
   max-height: none !important;
   border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
   transform: none !important;
 }
 
 @keyframes guideSlideUp {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.99);
+    transform: translateY(10px) scale(0.99);
   }
   to {
     opacity: 1;
@@ -58,16 +58,16 @@
   }
 }
 
-/* Header */
+/* Frameless 36px Header sitting directly on --bg-shell */
 .guide-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 36px;
   min-height: 36px;
-  padding: 0 12px;
-  background: var(--bg-panel, #16161e);
-  border-bottom: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
+  padding: 0 10px;
+  background: var(--bg-shell);
+  border-bottom: none;
   user-select: none;
   flex-shrink: 0;
   z-index: 10;
@@ -118,88 +118,102 @@
 }
 
 .guide-window-btn:hover {
-  background: var(--bg-card, rgba(255, 255, 255, 0.08));
-  color: var(--text-main, #ffffff);
+  background: var(--bg-hover);
+  color: var(--text-main);
 }
 
 .guide-close-btn:hover {
-  background: rgba(239, 68, 68, 0.15) !important;
-  color: #ef4444 !important;
+  background: var(--danger) !important;
+  color: var(--bg-surface) !important;
 }
 
 .guide-logo-badge {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 6px;
-  background: var(--bg-active, rgba(255, 255, 255, 0.06));
-  color: var(--text-accent, #40bafa);
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
+  background: var(--accent-soft);
+  color: var(--accent-color);
+  border: 1px solid var(--border-accent);
 }
 
 .guide-header-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-main, #ffffff);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-main);
   letter-spacing: -0.01em;
 }
 
 .guide-step-counter {
   font-size: 10.5px;
   font-weight: 500;
-  color: var(--text-muted, #888899);
-  background: var(--bg-card, rgba(255, 255, 255, 0.04));
+  color: var(--text-muted);
+  background: var(--bg-surface);
   padding: 1.5px 6px;
-  border-radius: 2px;
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.06));
+  border-radius: 5px;
+  border: 1px solid var(--border-color);
 }
 
 .guide-close-btn {
   background: transparent;
   border: none;
-  color: var(--text-muted, #888899);
+  color: var(--text-muted);
   cursor: pointer;
-  padding: 6px;
+  padding: 0;
+  width: 26px;
+  height: 26px;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s ease;
+  transition: all 0.14s ease;
 }
 
-.guide-close-btn:hover {
-  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
-  color: var(--text-main, #ffffff);
-}
-
-/* Body Content */
+/* Body Content (Islands Split) */
 .guide-modal-body {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  padding: 18px 22px;
+  gap: 0;
+  padding: 0 6px;
+  background: var(--bg-shell);
   overflow-y: auto;
   flex: 1;
   min-height: 0;
-  align-items: center;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .guide-modal-body {
+  gap: var(--island-gap, 6px);
 }
 
 @media (max-width: 720px) {
   .guide-modal-body {
     grid-template-columns: 1fr;
-    gap: 20px;
-    padding: 18px;
+    gap: 6px;
+    padding: 0 6px;
   }
 }
 
-/* Left Content Column */
+/* Left Content Island */
 .guide-content-col {
   display: flex;
   flex-direction: column;
   justify-content: center;
   height: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-right: none;
+  border-radius: var(--island-radius, 10px) 0 0 var(--island-radius, 10px);
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .guide-content-col {
+  border-right: 1px solid var(--border-color);
+  border-radius: var(--island-radius, 10px);
 }
 
 .guide-badge {
@@ -253,34 +267,38 @@
 }
 
 .guide-feature-item strong {
-  color: #ffffff;
+  color: var(--text-main);
   font-weight: 600;
 }
 
 .guide-feature-item kbd {
-  background: var(--bg-active, rgba(255, 255, 255, 0.1));
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.15));
-  border-radius: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
   padding: 1px 5px;
   font-size: 11px;
   font-family: inherit;
-  color: var(--text-accent, #40bafa);
+  color: var(--accent-color);
 }
 
-/* Right Visual Preview Column */
+/* Right Visual Preview Island */
 .guide-preview-col {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-app, #0f0f15);
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
-  border-radius: 10px;
-  padding: 20px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 0 var(--island-radius, 10px) var(--island-radius, 10px) 0;
+  padding: 24px;
   position: relative;
   overflow: hidden;
   min-height: 280px;
   height: 100%;
-  max-height: 380px;
+  box-sizing: border-box;
+}
+
+[data-modern-ui='true'] .guide-preview-col {
+  border-radius: var(--island-radius, 10px);
 }
 
 /* Preview Card Component Styles */
@@ -477,67 +495,71 @@
   color: #22c55e;
 }
 
-/* Footer Controls */
+/* Footer Controls sitting directly on --bg-shell */
 .guide-modal-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 11px 20px 14px 20px;
-  border-top: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
-  background: var(--bg-panel, #16161e);
+  height: 44px;
+  padding: 0 12px;
+  border-top: none;
+  background: var(--bg-shell);
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .guide-dots-nav {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
 }
 
 .guide-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 4px;
-  background: var(--bg-active, rgba(255, 255, 255, 0.15));
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--border-strong);
   border: none;
   cursor: pointer;
   padding: 0;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .guide-dot.active {
-  width: 24px;
-  background: var(--text-accent, #40bafa);
+  width: 22px;
+  background: var(--accent-color);
 }
 
 .guide-footer-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .guide-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
-  padding: 7px 14px;
-  border-radius: 6px;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 7px;
   cursor: pointer;
-  transition: all 0.15s ease;
-  border: none;
+  transition: all 0.14s ease;
+  border: 1px solid transparent;
 }
 
 .guide-btn-secondary {
-  background: var(--bg-active, rgba(255, 255, 255, 0.06));
-  color: var(--text-main, #d0d0e0);
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
+  background: var(--bg-surface);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
 }
 
 .guide-btn-secondary:hover:not(:disabled) {
-  background: var(--bg-hover, rgba(255, 255, 255, 0.12));
-  color: #ffffff;
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  color: var(--text-main);
 }
 
 .guide-btn-secondary:disabled {
@@ -546,13 +568,14 @@
 }
 
 .guide-btn-primary {
-  background: var(--text-accent, #40bafa);
-  color: #0b0b12;
+  background: var(--accent-color);
+  color: var(--bg-surface);
+  border-color: var(--accent-color);
   font-weight: 600;
 }
 
 .guide-btn-primary:hover {
-  filter: brightness(1.08);
+  background: color-mix(in srgb, var(--accent-color) 88%, var(--text-main));
 }
 
 .guide-btn-starter {
@@ -580,23 +603,21 @@
   animation: guideSpin 1.2s linear infinite;
 }
 
-/* Installer Wizard Dialog (Borderless, Compact, No Titlebar) */
+/* Installer Wizard Dialog (Islands UI) */
 .installer-modal-container {
   width: 90vw;
   max-width: 470px;
   height: 410px;
   max-height: 410px;
-  background: var(--bg-panel, #121217);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 9px;
+  background: var(--bg-shell);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  box-shadow:
-    0 24px 50px -10px rgba(0, 0, 0, 0.85),
-    0 0 0 1px rgba(255, 255, 255, 0.03);
+  box-shadow: var(--elev-dialog);
   overflow: hidden;
   position: relative;
-  animation: guideSlideUp 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: guideSlideUp 0.16s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .installer-stepper {
@@ -604,8 +625,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 14px;
-  background: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: var(--bg-shell);
+  border-bottom: none;
   flex-shrink: 0;
   user-select: none;
 }
@@ -663,7 +684,11 @@
 }
 
 .installer-body {
-  padding: 10px 14px;
+  margin: 0 6px;
+  padding: 12px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--island-radius, 10px);
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -682,9 +707,9 @@
 }
 
 .installer-carousel {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg-panel) 40%, var(--bg-surface));
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
   padding: 8px 10px;
   position: relative;
   display: flex;
@@ -706,7 +731,7 @@
 .installer-slide-title {
   font-size: 11.5px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-main);
 }
 
 .installer-slide-tag {
@@ -715,10 +740,10 @@
   text-transform: uppercase;
   letter-spacing: 0.03em;
   padding: 1px 4px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
 }
 
 .installer-slide-text {

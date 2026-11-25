@@ -210,24 +210,20 @@ export const WorkspacePane: React.FC<WorkspacePaneProps> = React.memo(
       >
         {showTabHeader && (
           <>
-            {isTabsVisible && (
-              <div className={`zen-collapsible-bar${isZenModeEnabled && hideTabsInZen ? ' zen-hidden' : ''}`}>
-                <TabBar
-                  paneId={paneId}
-                  isSidebarOpen={isRightSidebarOpen}
-                  onToggleSidebar={onToggleRightSidebar}
-                  isLeftSidebarOpen={isLeftSidebarOpen}
-                  onToggleLeftSidebar={onToggleLeftSidebar}
-                />
+            <div className={`zen-collapsible-bar zen-tabs-bar${!isTabsVisible || (isZenModeEnabled && hideTabsInZen) ? ' zen-hidden' : ''}`}>
+              <TabBar
+                paneId={paneId}
+                isSidebarOpen={isRightSidebarOpen}
+                onToggleSidebar={onToggleRightSidebar}
+                isLeftSidebarOpen={isLeftSidebarOpen}
+                onToggleLeftSidebar={onToggleLeftSidebar}
+              />
+            </div>
+            {!isTerminalMaximized && activeSnippet && (
+              <div className={`zen-collapsible-bar zen-breadcrumbs-bar${!isBreadcrumbsVisible || isZenModeEnabled ? ' zen-hidden' : ''}`}>
+                <Breadcrumbs snippet={activeSnippet} />
               </div>
             )}
-            {isBreadcrumbsVisible &&
-              !isTerminalMaximized &&
-              activeSnippet && (
-                <div className="zen-collapsible-bar">
-                  <Breadcrumbs snippet={activeSnippet} />
-                </div>
-              )}
           </>
         )}
 

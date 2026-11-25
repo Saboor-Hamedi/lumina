@@ -1,0 +1,77 @@
+/* ============================================================
+ * Lumina Islands Modal System — Universal Theme-Token Layer
+ * Unifies Documentation, Export/Import, Guide, AI, Email,
+ * IconPicker, Confirm, Prompt, Rename, and Dialog containers
+ * to the exact same --bg-shell + 10px --bg-surface Islands UI.
+ * ============================================================ */
+
+/* Universal Modal Overlays */
+.modal-overlay,
+.lumina-dialog-overlay,
+.guide-modal-overlay,
+.export-overlay,
+.email-modal-overlay,
+.icon-modal-overlay {
+  background: var(--bg-overlay, color-mix(in srgb, var(--bg-shell) 62%, transparent));
+}
+
+/* AI Chat Modal & Email Modal Islands Alignment */
+.ai-chat-modal-container,
+.email-modal-container {
+  background: var(--bg-shell) !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--elev-dialog) !important;
+}
+
+.ai-chat-modal-container .docs-modal-header,
+.email-modal-container .email-modal-header {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 10px !important;
+  background: var(--bg-shell) !important;
+  border-bottom: none !important;
+}
+
+.ai-chat-modal-container .ai-chat-modal-body,
+.email-modal-container .email-container-content {
+  background: var(--bg-shell) !important;
+  padding: 0 6px 6px 6px !important;
+  gap: var(--island-gap, 6px) !important;
+  box-sizing: border-box !important;
+}
+
+.email-dropdown-container {
+  background: var(--bg-shell) !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--elev-dialog) !important;
+}
+
+.email-dropdown-container .email-container-content {
+  background: var(--bg-surface) !important;
+  margin: 6px 6px 0 6px !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--island-radius, 10px) !important;
+}
+
+.email-dropdown-container .email-footer-bar {
+  background: var(--bg-shell) !important;
+  border-top: none !important;
+  height: 34px !important;
+}
+
+/* Inline Lumina Spotlight */
+.inline-lumina-modal {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-strong) !important;
+  outline: 4px solid var(--bg-shell) !important;
+  border-radius: var(--island-radius, 10px) !important;
+  box-shadow: var(--elev-dialog) !important;
+}
+
+.inline-lumina-form-compact,
+.inline-lumina-escape-hint,
+.inline-lumina-response-compact {
+  background: var(--bg-surface) !important;
+}

@@ -4,32 +4,36 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--bg-app, var(--bg-editor, #121214)) !important;
+  background: var(--bg-surface, var(--bg-editor)) !important;
   overflow: hidden;
   user-select: none;
 }
 
 .image-viewer-header-info {
   position: absolute;
-  top: 14px;
+  top: 12px;
   right: 16px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   z-index: 10;
   pointer-events: none;
 }
 
 .image-viewer-badge {
-  padding: 0;
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--text-faint, #64748b);
-  background: transparent;
-  border: none;
-  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  padding: 0 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  background: var(--bg-surface, var(--bg-panel));
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
   letter-spacing: 0.03em;
-  opacity: 0.85;
 }
 
 .image-viewer-canvas {
@@ -48,8 +52,8 @@
   max-height: 90%;
   object-fit: contain;
   transition: transform 0.05s linear;
-  box-shadow: var(--shadow-soft, 0 12px 36px rgba(0, 0, 0, 0.45));
-  border-radius: 2px;
+  box-shadow: var(--shadow-soft, 0 12px 36px rgba(0, 0, 0, 0.22));
+  border-radius: 5px;
 }
 
 .image-viewer-loading,
@@ -58,61 +62,63 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  color: var(--text-muted, #94a3b8);
+  color: var(--text-muted);
   font-size: 13px;
 }
 
 .image-viewer-spin-icon {
   animation: img-spin 2s linear infinite;
-  color: var(--text-accent, #6366f1);
+  color: var(--accent-color, var(--text-accent));
 }
 
 .image-viewer-toolbar {
   position: absolute !important;
-  bottom: 20px !important;
-  right: 20px !important;
+  bottom: 16px !important;
+  right: 16px !important;
   left: auto !important;
   transform: none !important;
-  display: flex !important;
+  display: inline-flex !important;
   align-items: center !important;
+  height: 34px !important;
   gap: 4px !important;
-  padding: 4px 8px !important;
-  background: var(--surface-3, var(--bg-panel, #18181b)) !important;
-  border: 1px solid var(--border-strong, var(--border-dim, rgba(255, 255, 255, 0.12))) !important;
-  border-radius: var(--radius-xs, 4px) !important;
-  box-shadow: var(--elev-popover) !important;
+  padding: 0 6px !important;
+  background: var(--bg-surface, var(--bg-panel)) !important;
+  border: 1px solid var(--border-strong, var(--border-color)) !important;
+  border-radius: 5px !important;
+  box-shadow: var(--elev-dialog, 0 8px 24px rgba(0, 0, 0, 0.18)) !important;
   z-index: 20 !important;
   color: var(--text-main) !important;
+  box-sizing: border-box !important;
 }
 
 .image-viewer-btn {
-  display: flex !important;
+  display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 28px !important;
-  height: 28px !important;
+  width: 24px !important;
+  height: 24px !important;
   background: transparent !important;
-  border: none !important;
-  border-radius: 2px !important;
-  color: var(--text-muted, #94a3b8) !important;
+  border: 1px solid transparent !important;
+  border-radius: 4px !important;
+  color: var(--text-muted) !important;
   cursor: pointer !important;
-  transition: all 0.15s ease !important;
+  transition: background-color 120ms ease, color 120ms ease !important;
 }
 
 .image-viewer-btn:hover {
-  background: var(--bg-active, rgba(255, 255, 255, 0.08)) !important;
-  color: var(--text-main, #ffffff) !important;
+  background: var(--bg-hover) !important;
+  color: var(--text-main) !important;
 }
 
 .image-viewer-btn.copied {
-  color: #10b981 !important;
+  color: var(--icon-secondary, #10b981) !important;
 }
 
 .image-viewer-zoom-text {
-  font-size: 12px !important;
+  font-size: 11.5px !important;
   font-weight: 600 !important;
-  font-family: var(--font-editor, monospace) !important;
-  color: var(--text-main, #ffffff) !important;
+  font-variant-numeric: tabular-nums !important;
+  color: var(--text-main) !important;
   padding: 0 6px !important;
   min-width: 44px !important;
   text-align: center !important;
@@ -122,7 +128,7 @@
 .image-viewer-divider {
   width: 1px !important;
   height: 14px !important;
-  background: var(--border-subtle, var(--border-dim, rgba(255, 255, 255, 0.1))) !important;
+  background: var(--border-color) !important;
   margin: 0 2px !important;
 }
 

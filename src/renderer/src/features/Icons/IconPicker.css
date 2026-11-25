@@ -5,12 +5,12 @@
 .icon-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.48);
+  background: var(--bg-overlay, color-mix(in srgb, var(--bg-shell) 62%, transparent));
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10008;
-  animation: iconFadeIn var(--dur-base, 160ms) ease-out;
+  animation: iconFadeIn var(--dur-base, 140ms) ease-out;
 }
 
 @keyframes iconFadeIn {
@@ -24,22 +24,19 @@
 
 .icon-modal-container {
   width: 82vw;
-  max-width: 600px;
-  height: 62vh;
+  max-width: 580px;
+  height: 60vh;
   min-height: 360px;
-  max-height: 66vh;
-  background: var(--bg-panel, #16161e);
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.1));
-  border-radius: 10px;
+  max-height: 64vh;
+  background: var(--bg-shell);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  box-shadow:
-    0 16px 36px -16px rgba(0, 0, 0, 0.65),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: var(--elev-dialog);
   overflow: hidden;
   position: relative;
-  animation: iconSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: iconSlideUp 0.18s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes iconSlideUp {
@@ -53,14 +50,16 @@
   }
 }
 
-/* Header identical to Guide.jsx */
+/* Frameless 36px Header sitting directly on --bg-shell */
 .icon-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 7px 12px;
-  border-bottom: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent);
+  height: 36px;
+  min-height: 36px;
+  padding: 0 10px;
+  border-bottom: none;
+  background: var(--bg-shell);
   flex-shrink: 0;
   user-select: none;
 }
@@ -124,15 +123,18 @@
   color: var(--text-main, #ffffff);
 }
 
-/* Search Toolbar */
+/* Search Toolbar & Inner Island */
 .icon-modal-toolbar {
-  padding: 7px 12px;
+  margin: 0 6px;
+  padding: 8px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  background: rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid var(--border-card, rgba(255, 255, 255, 0.06));
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  border-radius: var(--island-radius, 10px) var(--island-radius, 10px) 0 0;
 }
 
 .icon-search-wrapper {
@@ -146,26 +148,26 @@
 .icon-search-icon {
   position: absolute;
   left: 9px;
-  color: var(--text-muted, #888899);
+  color: var(--text-muted);
   pointer-events: none;
 }
 
 .icon-search-input {
   width: 100%;
-  background: var(--bg-card, rgba(255, 255, 255, 0.04));
-  border: 1px solid var(--border-card, rgba(255, 255, 255, 0.08));
-  border-radius: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
   color: var(--text-main);
   padding: 5px 28px 5px 30px;
   font-size: 11.5px;
   outline: none;
-  transition: all 0.15s;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
 }
 
 .icon-search-input:focus {
-  border-color: var(--text-accent, #40bafa);
-  background: var(--bg-panel, #16161e);
-  box-shadow: 0 0 0 1px var(--text-accent, #40bafa);
+  border-color: var(--accent-color);
+  background: var(--bg-surface);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
 .icon-search-clear-btn {
@@ -173,7 +175,7 @@
   right: 8px;
   background: transparent;
   border: none;
-  color: var(--text-muted, #94a3b8);
+  color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -183,16 +185,21 @@
 }
 
 .icon-search-clear-btn:hover {
-  color: var(--text-main, #ffffff);
+  color: var(--text-main);
 }
 
 .icon-modal-stats {
   font-size: 11px;
-  color: var(--text-muted, #888899);
+  color: var(--text-muted);
 }
 
-/* Icon Grid - Zero Enlargement, Stable Proportions */
+/* Icon Grid - Floating Island Bottom Half */
 .icon-modal-grid {
+  margin: 0 6px 6px 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 var(--island-radius, 10px) var(--island-radius, 10px);
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
   align-content: start;
@@ -204,15 +211,7 @@
 }
 
 .icon-modal-scroll-fade {
-  position: absolute;
-  left: 1px;
-  right: 1px;
-  bottom: 1px;
-  height: 26px;
-  pointer-events: none;
-  background: linear-gradient(to top, var(--bg-panel, #16161e), transparent);
-  border-bottom-left-radius: 9px;
-  border-bottom-right-radius: 9px;
+  display: none;
 }
 
 .icon-modal-grid::-webkit-scrollbar {
@@ -220,12 +219,12 @@
 }
 
 .icon-modal-grid::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--scroll-thumb, var(--border-strong));
   border-radius: 4px;
 }
 
 .icon-modal-grid::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--text-muted);
 }
 
 .icon-swatch-wrap {

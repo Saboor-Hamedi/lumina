@@ -1,14 +1,25 @@
 /**
  * ============================================================================
  * Lumina Editor Breadcrumbs Bar (`Breadcrumbs.tsx`)
- * Modern, high-performance, docked navigation bar with interactive breadcrumb
- * segments, table of contents outline support, drag-and-drop, and path copying.
+ * Docked workspace path bar with interactive folder/sibling pickers,
+ * heading outline navigation, drag-and-drop move, and instant path copy.
  * ============================================================================
  */
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { Folder, ChevronRight, FileText, Database, Copy, Check, Hash } from 'lucide-react'
+import {
+  Folder,
+  ChevronRight,
+  FileText,
+  Database,
+  Copy,
+  Check,
+  Hash,
+  Image as ImageIcon,
+  LayoutGrid
+} from 'lucide-react'
 import { useWorkspaceStore, WorkspaceNote } from '../../core/store/workspaceStore'
+import { ChromePdfIcon } from '../Icons/FileIcon'
 import ToolTip from '../../components/atoms/ToolTip'
 import BreadcrumbDropdown from './BreadcrumbDropdown'
 import BreadcrumbOutlineDropdown from './BreadcrumbOutlineDropdown'
@@ -24,9 +35,6 @@ import {
 } from './utils/breadcrumbUtils'
 import './css/Breadcrumbs.css'
 
-/**
- * Props for the {@link Breadcrumbs} navigation component.
- */
 export interface BreadcrumbsProps {
   /** Optional note/snippet to render breadcrumbs for; defaults to selectedNote */
   snippet?: WorkspaceNote | SnippetItem | null
@@ -34,9 +42,6 @@ export interface BreadcrumbsProps {
   className?: string
 }
 
-/**
- * State representing an active sibling/folder navigation dropdown portal.
- */
 interface DropdownState {
   parentFolderId: string | null
   currentId: string | null
@@ -51,9 +56,6 @@ interface DropdownState {
   }
 }
 
-/**
- * State representing an active heading outline dropdown portal.
- */
 interface OutlineDropdownState {
   anchorRect: {
     top: number
@@ -65,9 +67,6 @@ interface OutlineDropdownState {
   }
 }
 
-/**
- * Interactive segment definition used for keyboard-driven sequential navigation.
- */
 interface BreadcrumbSegment {
   key: string
   type: 'workspace' | 'folder' | 'note' | 'outline'
@@ -75,10 +74,23 @@ interface BreadcrumbSegment {
   currentId?: string | null
 }
 
-/**
- * Docked editor breadcrumbs bar enabling workspace hierarchy exploration,
- * in-context outline inspection, drag-and-drop movement, and fast path clipboard actions.
- */
+function renderActiveDocumentIcon(snippet: SnippetItem): React.ReactNode {
+  const rawName = (snippet.fileName || snippet.title || '').toLowerCase()
+  if (snippet.type === 'pdf' || rawName.endsWith('.pdf')) {
+    return <ChromePdfIcon size={11.5} />
+  }
+  if (
+    snippet.type === 'image' ||
+    /\.(png|jpe?g|gif|webp|svg|bmp|ico)$/i.test(rawName)
+  ) {
+    return <ImageIcon size={11.5} className="breadcrumb-icon is-image" />
+  }
+  if (snippet.type === 'canvas' || rawName.endsWith('.canvas')) {
+    return <LayoutGrid size={11.5} className="breadcrumb-icon is-canvas" />
+  }
+  return <FileText size={11.5} className="breadcrumb-icon is-note" />
+}
+
 export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '' }) => {
   const folders = (useWorkspaceStore((state) => state.folders) || []) as FolderInput[]
   const notes = (useWorkspaceStore((state) => state.notes) || []) as WorkspaceNote[]
@@ -92,7 +104,6 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '
   const [dragOverTarget, setDragOverTarget] = useState<string | null>(null)
   const [cursorLine, setCursorLine] = useState<number>(1)
 
-  // Listen to editor cursor position changes for dynamic outline heading detection
   useEffect(() => {
     const handleCursorPos = (e: any) => {
       if (e.detail && (!e.detail.snippetId || e.detail.snippetId === currentSnippet?.id)) {
@@ -103,9 +114,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '
     return () => window.removeEventListener('editor-cursor-pos', handleCursorPos)
   }, [currentSnippet?.id])
 
-  // Extract all Markdown headings from the current document
   const headings = useMemo<HeadingItem[]>(() => {
-    // Only parse headings for markdown text, never for binary media files (PDFs, images)
     const isBinaryMedia =
       currentSnippet?.type === 'pdf' ||
       currentSnippet?.type === 'image' ||
@@ -116,17 +125,14 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '
     return extractHeadings(currentSnippet?.code || '')
   }, [currentSnippet?.code, currentSnippet?.type, currentSnippet?.fileName, currentSnippet?.title])
 
-  // Compute the active heading corresponding to the cursor position
   const activeHeading = useMemo<HeadingItem | null>(() => {
     return findActiveHeading(headings, cursorLine)
   }, [headings, cursorLine])
 
-  // Resolve hierarchical folder chain from root down to note's immediate folder
   const folderPath = useMemo<FolderPathItem[]>(() => {
     return getFolderPath(currentSnippet?.folderId, folders)
   }, [currentSnippet?.folderId, folders])
 
-  // Ordered list of interactive breadcrumb segments for linear keyboard navigation
   const segments = useMemo<BreadcrumbSegment[]>(() => {
     if (!currentSnippet) return []
     const rootTargetId = folderPath[0]?.id ?? currentSnippet.id
@@ -230,7 +236,6 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '
     [segments, outlineDropdown, dropdown, currentSnippet?.id]
   )
 
-  // Keyboard navigation across breadcrumb segments (Ctrl + ArrowLeft / Ctrl + ArrowRight)
   useEffect(() => {
     if (!dropdown && !outlineDropdown) return
 
@@ -273,7 +278,6 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '
   const currentSnippetRef = useRef(currentSnippet)
   currentSnippetRef.current = currentSnippet
 
-  // Keyboard shortcut focus listener
   useEffect(() => {
     const handleFocusBreadcrumbs = () => {
       const activeEl = document.querySelector('.breadcrumb-item.active')
@@ -299,7 +303,6 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '
     }
   }, [])
 
-  // Drag and drop onto folder segments
   const handleDragOver = useCallback((e: React.DragEvent, targetKey: string) => {
     e.preventDefault()
     e.stopPropagation()
@@ -375,13 +378,13 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '
           onDragLeave={(e) => handleDragLeave(e, '__workspace__')}
           onDrop={(e) => handleDrop(e, null)}
         >
-          <Database size={11.5} className="breadcrumb-icon" />
+          <Database size={11.5} className="breadcrumb-icon is-root" />
           <span>Workspace</span>
         </button>
       </ToolTip>
 
       <span className="breadcrumb-separator" aria-hidden="true">
-        -&gt;
+        <ChevronRight size={11} strokeWidth={1.75} />
       </span>
 
       {/* Hierarchical folder segments */}
@@ -408,12 +411,12 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '
                 onDragLeave={(e) => handleDragLeave(e, folder.id)}
                 onDrop={(e) => handleDrop(e, folder.id)}
               >
-                <Folder size={11.5} className="breadcrumb-icon" />
+                <Folder size={11.5} className="breadcrumb-icon is-folder" />
                 <span className="breadcrumb-folder-text">{folder.name}</span>
               </button>
             </ToolTip>
             <span className="breadcrumb-separator" aria-hidden="true">
-              -&gt;
+              <ChevronRight size={11} strokeWidth={1.75} />
             </span>
           </React.Fragment>
         )
@@ -430,16 +433,16 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '
             openDropdown(e, lastFolderId, currentSnippet.id, currentSnippet.id)
           }}
         >
-          <FileText size={11.5} className="breadcrumb-icon" />
+          {renderActiveDocumentIcon(currentSnippet)}
           <span className="breadcrumb-title-text">{currentSnippet.title || 'Untitled'}</span>
         </button>
       </ToolTip>
 
-      {/* Outline / Heading segment (VS Code breadcrumb symbol) */}
+      {/* Outline / Heading segment */}
       {activeHeading && (
         <>
           <span className="breadcrumb-separator" aria-hidden="true">
-            -&gt;
+            <ChevronRight size={11} strokeWidth={1.75} />
           </span>
           <ToolTip text={`Section: ${activeHeading.text} (Click for outline)`} position="bottom">
             <button
@@ -448,14 +451,14 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '
               className={`breadcrumb-item breadcrumb-heading-item${outlineDropdown ? ' bc-open' : ''}`}
               onClick={openOutlineDropdown}
             >
-              <Hash size={11} className="breadcrumb-icon" />
+              <Hash size={11} className="breadcrumb-icon is-heading" />
               <span className="breadcrumb-heading-text">{activeHeading.text}</span>
             </button>
           </ToolTip>
         </>
       )}
 
-      {/* Dedicated copy path button */}
+      {/* Copy path button */}
       <ToolTip text={copied ? 'Copied to clipboard!' : 'Copy note path'} position="bottom">
         <button
           type="button"

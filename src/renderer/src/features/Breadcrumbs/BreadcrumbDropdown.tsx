@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * Lumina Breadcrumb Dropdown Navigation (`BreadcrumbDropdown.tsx`)
- * Modern, High-Performance, VS Code-Superior Folder & File Picker
+ * Theme-Token-Driven Folder & File Picker Aligned with Islands UI
  * ============================================================================
  */
 
@@ -22,6 +22,7 @@ import {
   LayoutGrid
 } from 'lucide-react'
 import { useWorkspaceStore, WorkspaceNote } from '../../core/store/workspaceStore'
+import { ChromePdfIcon } from '../Icons/FileIcon'
 import type { FolderInput } from './utils/breadcrumbUtils'
 import ToolTip from '../../components/atoms/ToolTip'
 import {
@@ -36,15 +37,9 @@ import {
 import { rankSnippets } from '../../core/utils/searchRanker'
 import './css/BreadcrumbDropdown.css'
 
-/**
- * Props for the {@link BreadcrumbDropdown} component.
- */
 export interface BreadcrumbDropdownProps {
-  /** Parent folder ID for sibling exploration; null indicates workspace root */
   parentFolderId?: string | null
-  /** Currently active note or folder ID */
   currentId?: string | null
-  /** Bounding box of the anchor breadcrumb button for floating layout calculation */
   anchorRect?: {
     top: number
     bottom: number
@@ -53,13 +48,9 @@ export interface BreadcrumbDropdownProps {
     width?: number
     height?: number
   } | null
-  /** Callback to close the dropdown */
   onClose: () => void
 }
 
-/**
- * Represents a folder entry in the dropdown list.
- */
 export interface DropdownFolderItem {
   id: string
   name: string
@@ -68,9 +59,6 @@ export interface DropdownFolderItem {
   folderPath?: string
 }
 
-/**
- * Represents a note entry in the dropdown list.
- */
 export interface DropdownNoteItem {
   id: string
   name: string
@@ -82,24 +70,21 @@ export interface DropdownNoteItem {
 
 export type DropdownItem = DropdownFolderItem | DropdownNoteItem
 
-/**
- * Helper to determine corresponding icon for files based on file extension.
- */
-const getFileIcon = (fileName = ''): React.ReactElement => {
-  const ext = fileName.slice(fileName.lastIndexOf('.')).toLowerCase()
-  if (ext === '.canvas') {
+const getFileIcon = (fileName = '', type = ''): React.ReactElement => {
+  const lower = fileName.toLowerCase()
+  const ext = lower.includes('.') ? lower.slice(lower.lastIndexOf('.')) : ''
+  if (type === 'pdf' || ext === '.pdf') {
+    return <ChromePdfIcon size={13} />
+  }
+  if (type === 'canvas' || ext === '.canvas') {
     return <LayoutGrid size={13} className="bc-icon-canvas" />
   }
-  if (['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'].includes(ext)) {
+  if (type === 'image' || ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.bmp'].includes(ext)) {
     return <ImageIcon size={13} className="bc-icon-image" />
   }
   return <FileText size={13} className="bc-icon-note" />
 }
 
-/**
- * Interactive floating dropdown facilitating sibling folder traversal, instant file searching,
- * and quick-action note creation docked directly beneath breadcrumb segments.
- */
 export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
   parentFolderId,
   currentId,
@@ -111,7 +96,6 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
   const setSelectedNote = useWorkspaceStore((state) => state.setSelectedNote)
   const saveNote = useWorkspaceStore((state) => state.saveNote)
 
-  // Navigation stack: array of folder IDs (null represents workspace root)
   const [stack, setStack] = useState<(string | null)[]>(() => [
     isRootPath(parentFolderId) ? null : normalizePath(parentFolderId)
   ])
@@ -122,7 +106,10 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
   const [pathCopied, setPathCopied] = useState(false)
   const [activeNoteId, setActiveNoteId] = useState<string | null | undefined>(currentId)
 
-  // Reset navigation stack and search query when parentFolderId changes
+  const listRef = useRef<HTMLUListElement | null>(null)
+  const dropdownRef = useRef<HTMLDivElement | null>(null)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
+
   useEffect(() => {
     const nextInitial = isRootPath(parentFolderId) ? null : normalizePath(parentFolderId)
     setStack([nextInitial])
@@ -130,17 +117,19 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
     setActiveNoteId(currentId)
   }, [parentFolderId, currentId])
 
-  const listRef = useRef<HTMLUListElement | null>(null)
-  const dropdownRef = useRef<HTMLDivElement | null>(null)
-  const searchInputRef = useRef<HTMLInputElement | null>(null)
+  // Auto-focus instant filter input on open so user can type or arrow-navigate immediately
+  useEffect(() => {
+    const id = window.requestAnimationFrame(() => {
+      searchInputRef.current?.focus({ preventScroll: true })
+    })
+    return () => window.cancelAnimationFrame(id)
+  }, [])
 
-  // Current folder trail for the header breadcrumb bar
   const headerTrail = useMemo(() => {
     if (isRootPath(currentFolderId)) return []
     return getFolderPath(currentFolderId, folders)
   }, [currentFolderId, folders])
 
-  // Direct child folders and notes of the currently inspected folder
   const { allFolders, allNotes } = useMemo(() => {
     const rawFolders = getChildFolders(currentFolderId, folders)
     const rawNotes = getChildNotes(currentFolderId, notes as SnippetItem[])
@@ -165,7 +154,6 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
     return { allFolders: enrichedFolders, allNotes: enrichedNotes }
   }, [currentFolderId, folders, notes])
 
-  // Filtered items based on search query — consolidated with CommandPalette search engine
   const items = useMemo<DropdownItem[]>(() => {
     const q = searchQuery.trim()
     if (!q) {
@@ -174,7 +162,6 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
 
     const lowerQ = q.toLowerCase()
 
-    // 1. Matched folders across the entire workspace
     const matchedFolders: DropdownFolderItem[] = folders
       .filter((f) => {
         const name = (typeof f === 'string' ? f : f.name || '').toLowerCase()
@@ -195,7 +182,6 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
         }
       })
 
-    // 2. High-power ranked snippets across the entire workspace via rankSnippets
     const { results } = rankSnippets(notes as any[], q)
     const matchedNotes: DropdownNoteItem[] = results.map((s: any) => {
       const folderName = s.folderId ? s.folderId.split('/').pop() : ''
@@ -225,10 +211,8 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
     return 0
   })
 
-  // Current highlighted item
   const highlightId = isInitialLevel && !searchQuery ? currentId : activeNoteId
 
-  // Keep active index in bounds
   useEffect(() => {
     if (isInitialLevel && currentId && !searchQuery) {
       const idx = items.findIndex((it) => it.id === currentId)
@@ -238,7 +222,6 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
     }
   }, [currentFolderId, searchQuery]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Scroll active item into view
   useLayoutEffect(() => {
     const el = listRef.current?.children[activeIndex] as HTMLElement | undefined
     if (el && typeof el.scrollIntoView === 'function') {
@@ -280,7 +263,7 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
       if (item.kind === 'folder') {
         drillIn(item.id)
       } else {
-        const keepOpen = Boolean(searchQuery.trim()) || (isEnterKey && Boolean(searchQuery))
+        const keepOpen = Boolean(searchQuery.trim()) && !isEnterKey ? true : false
         handleSelectNote(item.snippet, keepOpen)
       }
     },
@@ -317,7 +300,6 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
     [notes, saveNote, setSelectedNote, onClose]
   )
 
-  // Keyboard navigation
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -339,7 +321,7 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
           handleActivate(items[activeIndex], true)
         }
       } else if (e.key === 'ArrowRight') {
-        if (e.ctrlKey || e.metaKey) return
+        if (e.ctrlKey || e.metaKey || searchQuery) return
         if (items[activeIndex]?.kind === 'folder') {
           e.preventDefault()
           drillIn(items[activeIndex].id)
@@ -362,7 +344,6 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
     return () => document.removeEventListener('keydown', onKey, true)
   }, [items, activeIndex, stack.length, searchQuery, handleActivate, drillIn, drillOut, onClose])
 
-  // Close on outside pointer interaction
   useEffect(() => {
     const onPointerDown = (e: PointerEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -373,12 +354,11 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
     return () => document.removeEventListener('pointerdown', onPointerDown, { capture: true })
   }, [onClose])
 
-  // Floating portal layout calculation (docked 3px under breadcrumb segment)
   const style = useMemo<React.CSSProperties>(() => {
     if (!anchorRect) return {}
-    const width = 320
+    const width = 316
     const maxH = 340
-    const gap = 3
+    const gap = 4
 
     let top = anchorRect.bottom + gap
     let left = anchorRect.left
@@ -519,7 +499,7 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
         )}
       </div>
 
-      {/* Scrollable list with invisible scrollbar */}
+      {/* Scrollable list */}
       {items.length === 0 ? (
         <div className="bc-empty-notice">
           {searchQuery ? 'No matching items found' : 'Empty folder'}
@@ -552,7 +532,10 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
                   {isFolder ? (
                     <Folder size={13} className="bc-icon-folder" />
                   ) : (
-                    getFileIcon(item.name || noteItem?.snippet?.fileName)
+                    getFileIcon(
+                      String(noteItem?.snippet?.fileName || item.name || ''),
+                      String(noteItem?.snippet?.type || '')
+                    )
                   )}
                 </span>
 
@@ -570,7 +553,7 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
                 )}
 
                 {isCurrent && (
-                  <span className="bc-current-indicator" title="Active note">
+                  <span className="bc-current-indicator" title="Active item">
                     active
                   </span>
                 )}

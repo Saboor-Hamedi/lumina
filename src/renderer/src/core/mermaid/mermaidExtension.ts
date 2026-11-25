@@ -510,19 +510,19 @@ export function applyMermaidFit(container: HTMLElement): void {
 
   const style = getComputedStyle(wrap)
   const padX = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0)
-  const padY = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0)
-  const availWidth = wrap.clientWidth - padX
-  const availHeight = wrap.clientHeight - padY
+  const availWidth = Math.min(wrap.clientWidth - padX, 680)
+  const maxInlineHeight = 300
 
-  const fit = computeMermaidFit(natural.width, natural.height, availWidth, availHeight)
+  // Cap inline zoom at 1.0x so compact diagrams stay crisp and restrained rather than ballooning
+  const fit = computeMermaidFit(natural.width, natural.height, availWidth, maxInlineHeight, 1.0, 0.15)
   if (!fit) return
 
   const nextW = `${Math.round(fit.width)}px`
   const nextH = `${Math.round(fit.height)}px`
   if (svg.style.width === nextW && svg.style.height === nextH) return
 
-  svg.style.maxWidth = 'none'
-  svg.style.maxHeight = 'none'
+  svg.style.maxWidth = '100%'
+  svg.style.maxHeight = `${maxInlineHeight}px`
   svg.style.width = nextW
   svg.style.height = nextH
 }

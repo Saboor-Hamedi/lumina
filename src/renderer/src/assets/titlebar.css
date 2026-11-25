@@ -5,12 +5,12 @@
 .title-bar {
   position: relative;
   height: 36px;
+  min-height: 36px;
+  max-height: 36px;
   width: 100%;
   box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-left: 0;
+  display: block;
+  padding: 0;
   background: var(--bg-shell) !important;
   border-bottom: none !important;
   border-top-left-radius: 8px;
@@ -20,6 +20,41 @@
   cursor: default !important;
   flex-shrink: 0;
   z-index: 9999;
+  will-change: height;
+  transition:
+    height 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    min-height 200ms cubic-bezier(0.22, 1, 0.36, 1),
+    max-height 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Rigid 36px inner bar so every child (Download button, search pill, window controls)
+   pushes up and pulls down as one solid hardware unit with zero lag or squishing */
+.title-bar-inner {
+  position: relative;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 0;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.title-bar.zen-hidden {
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+}
+
+.title-bar.zen-hidden .title-bar-inner {
+  transform: translate3d(0, -36px, 0) !important;
 }
 
 [data-window-maximized='true'] .title-bar {
@@ -83,21 +118,22 @@
   pointer-events: auto;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
+  justify-content: space-between;
+  gap: 8px;
   background: color-mix(in srgb, var(--bg-surface) 55%, var(--bg-shell));
   border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
   border-radius: 7px;
   height: 24px;
   width: 100%;
   min-width: 0;
-  padding: 0 10px;
+  padding: 0 9px;
   cursor: pointer;
   transition:
     background var(--dur-fast, 100ms) var(--ease-snappy),
     border-color var(--dur-fast, 100ms) var(--ease-snappy);
   -webkit-app-region: no-drag;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .unified-search-bar:hover {
@@ -111,6 +147,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  margin-right: 2px;
   transition: color 0.15s ease, opacity 0.15s ease;
   opacity: 0.9;
 }
@@ -126,13 +163,12 @@
   letter-spacing: -0.01em;
   color: var(--text-muted);
   opacity: 0.85;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: inline-flex;
-  align-items: center;
+  display: block;
   transition: color 0.15s ease, opacity 0.15s ease;
 }
 
@@ -141,16 +177,17 @@
   opacity: 1;
 }
 
-/* KBD Keycaps */
+/* KBD Keycaps — Clean backgroundless shortcut text pushed cleanly to the right */
 .search-shortcuts-wrap {
   display: inline-flex;
   align-items: center;
   gap: 2px;
   flex-shrink: 0;
   margin-left: 2px;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: var(--bg-hover);
+  padding: 0;
+  border-radius: 0;
+  background: transparent !important;
+  border: none !important;
 }
 
 .titlebar-kbd {

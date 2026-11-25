@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useSettingsStore } from '../../../core/store/SettingStore'
 
-const MIN_WINDOW_OPACITY = 0.0
+const MIN_WINDOW_OPACITY = 0.2
 const MAX_WINDOW_OPACITY = 1.0
 
 /**
- * Clamp and round opacity score strictly between 0.0 and 1.0
+ * Clamp and round opacity score strictly between 0.2 and 1.0
  */
 export const clampOpacity = (val: unknown): number => {
   const num = typeof val === 'number' ? val : parseFloat(String(val))
@@ -15,14 +15,14 @@ export const clampOpacity = (val: unknown): number => {
 }
 
 /**
- * Convert score 0-1 to percentage (0 - 100)
+ * Convert score 0-1 to percentage (20 - 100)
  */
 export const opacityToPercentage = (opacity: number): number => {
   return Math.round(opacity * 100)
 }
 
 /**
- * Convert percentage (0 - 100) to score 0-1
+ * Convert percentage (20 - 100) to score 0-1
  */
 export const percentageToOpacity = (percentage: number): number => {
   return clampOpacity(percentage / 100)
@@ -42,15 +42,15 @@ export function useOpacity(): UseOpacityReturn {
 
   const [opacity, setOpacityState] = useState<number>(() => {
     if (typeof storeOpacity === 'number') {
-      return clampOpacity(storeOpacity)
+      return clampOpacity(storeOpacity > 1 ? storeOpacity / 100 : storeOpacity)
     }
     return 1.0
   })
 
-  const persistTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastIpcTimeRef = useRef<number>(0)
   const pendingIpcValRef = useRef<number | null>(null)
-  const ipcTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const ipcTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const flushNativeOpacity = useCallback((val: number) => {
     if (window.api?.setWindowOpacity) {
@@ -59,73 +59,68 @@ export function useOpacity(): UseOpacityReturn {
     }
   }, [])
 
-  const applyOpacityValue = useCallback((val: number | string, persist = true) => {
-    let score: number
-    const num = typeof val === 'number' ? val : parseFloat(String(val))
-    if (isNaN(num)) {
-      score = 1.0
-    } else if (num > 1.0) {
-      // Passed as percentage (e.g. 70 - 100), convert to 0 - 1
-      score = percentageToOpacity(num)
-    } else {
-      // Passed as 0 - 1 score
-      score = clampOpacity(num)
-    }
-
-    setOpacityState(score)
-
-    // Synchronously set CSS variable for 0ms render response
-    if (typeof document !== 'undefined') {
-      document.documentElement.style.setProperty('--app-opacity', String(score))
-    }
-
-    // Throttle native window opacity to ~35ms so Windows DWM never locks up
-    if (window.api?.setWindowOpacity) {
-      pendingIpcValRef.current = score
-      const now = performance.now()
-      const elapsed = now - lastIpcTimeRef.current
-
-      if (elapsed >= 35) {
-        if (ipcTimerRef.current) {
-          clearTimeout(ipcTimerRef.current)
-          ipcTimerRef.current = null
-        }
-        flushNativeOpacity(score)
-      } else if (!ipcTimerRef.current) {
-        ipcTimerRef.current = setTimeout(() => {
-          ipcTimerRef.current = null
-          if (pendingIpcValRef.current !== null) {
-            flushNativeOpacity(pendingIpcValRef.current)
-          }
-        }, 35 - elapsed)
-      }
-    }
-
-    if (persist) {
-      if (persistTimerRef.current) {
-        clearTimeout(persistTimerRef.current)
-      }
-      persistTimerRef.current = setTimeout(() => {
-        updateSetting('windowOpacity', score)
-      }, 200)
-    }
-  }, [flushNativeOpacity, updateSetting])
-
+  // Keep local state in sync if windowOpacity changes externally (e.g. Command Palette or settings load)
   useEffect(() => {
-    if (typeof document !== 'undefined') {
-      document.documentElement.style.setProperty('--app-opacity', String(opacity))
+    if (typeof storeOpacity === 'number') {
+      const normalized = clampOpacity(storeOpacity > 1 ? storeOpacity / 100 : storeOpacity)
+      setOpacityState(normalized)
+      if (typeof document !== 'undefined') {
+        document.documentElement.style.setProperty('--app-opacity', String(normalized))
+      }
     }
+  }, [storeOpacity])
 
-    if (window.api?.getWindowOpacity) {
-      window.api.getWindowOpacity().then((val: unknown) => {
-        if (typeof val === 'number') {
-          const clamped = clampOpacity(val)
-          setOpacityState(clamped)
-          document.documentElement.style.setProperty('--app-opacity', String(clamped))
+  const applyOpacityValue = useCallback(
+    (val: number | string, persist = true) => {
+      let score: number
+      const num = typeof val === 'number' ? val : parseFloat(String(val))
+      if (isNaN(num)) {
+        score = 1.0
+      } else if (num > 1.0) {
+        score = percentageToOpacity(num)
+      } else {
+        score = clampOpacity(num)
+      }
+
+      setOpacityState(score)
+
+      if (typeof document !== 'undefined') {
+        document.documentElement.style.setProperty('--app-opacity', String(score))
+      }
+
+      // Throttle native window opacity to ~24ms for smooth 60fps DWM updates
+      if (window.api?.setWindowOpacity) {
+        pendingIpcValRef.current = score
+        const now = performance.now()
+        const elapsed = now - lastIpcTimeRef.current
+
+        if (elapsed >= 24) {
+          if (ipcTimerRef.current) {
+            clearTimeout(ipcTimerRef.current)
+            ipcTimerRef.current = null
+          }
+          flushNativeOpacity(score)
+        } else if (!ipcTimerRef.current) {
+          ipcTimerRef.current = setTimeout(() => {
+            ipcTimerRef.current = null
+            if (pendingIpcValRef.current !== null) {
+              flushNativeOpacity(pendingIpcValRef.current)
+            }
+          }, 24 - elapsed)
         }
-      }).catch(() => {})
-    }
-  }, [])
+      }
+
+      if (persist) {
+        if (persistTimerRef.current) {
+          clearTimeout(persistTimerRef.current)
+        }
+        persistTimerRef.current = setTimeout(() => {
+          updateSetting('windowOpacity', score)
+        }, 180)
+      }
+    },
+    [flushNativeOpacity, updateSetting]
+  )
 
   const resetOpacity = useCallback(() => {
     applyOpacityValue(1.0, true)
@@ -133,13 +128,16 @@ export function useOpacity(): UseOpacityReturn {
 
   const percentage = useMemo(() => opacityToPercentage(opacity), [opacity])
 
-  return useMemo(() => ({
-    opacity,
-    percentage,
-    setOpacity: applyOpacityValue,
-    resetOpacity,
-    isTransparent: opacity < 1.0
-  }), [opacity, percentage, applyOpacityValue, resetOpacity])
+  return useMemo(
+    () => ({
+      opacity,
+      percentage,
+      setOpacity: applyOpacityValue,
+      resetOpacity,
+      isTransparent: opacity < 1.0
+    }),
+    [opacity, percentage, applyOpacityValue, resetOpacity]
+  )
 }
 
 export default useOpacity

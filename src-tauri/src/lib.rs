@@ -77,6 +77,7 @@ pub fn run() {
             get_setting,
             save_setting,
             save_settings,
+            set_window_opacity,
             load_memory,
             save_memory,
             search_notes,
