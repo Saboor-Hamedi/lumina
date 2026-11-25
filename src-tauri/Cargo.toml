@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "2.1.1"
+version = "2.1.2"
 description = "Lumina - A premium, AI-powered thinking environment."
 authors = ["Saboor Hamedi"]
 license = ""
