@@ -1,16 +1,81 @@
 // components/terminal/constants.ts
-// Static config, default shells, and xterm.js theme.
+// Static config, default shells, Nerd Font + Ligature + Emoji font stack, and xterm.js theme.
 
 import type { ITheme } from '@xterm/xterm'
 
-const TERMINAL_EMOJI_FALLBACK = '"Segoe UI Emoji", "Segoe UI Symbol", "Apple Color Emoji", "Noto Color Emoji"'
+const NERD_AND_LIGATURE_MONO_FONTS = [
+  '"JetBrainsMono Nerd Font"',
+  '"JetBrainsMono NF"',
+  '"JetBrainsMono Nerd Font Mono"',
+  '"CaskaydiaCove Nerd Font"',
+  '"CaskaydiaCove NF"',
+  '"Cascadia Code NF"',
+  '"CascadiaCode NF"',
+  '"Cascadia Code PL"',
+  '"FiraCode Nerd Font"',
+  '"FiraCode NF"',
+  '"MesloLGS NF"',
+  '"MesloLGM Nerd Font"',
+  '"Hack Nerd Font"',
+  '"Symbols Nerd Font Mono"',
+  '"Symbols Nerd Font"',
+  '"JetBrains Mono"',
+  '"Fira Code"',
+  '"Cascadia Code"',
+  '"Cascadia Mono"',
+  'Consolas'
+]
 
-export const TERMINAL_FONT = `"JetBrains Mono", "Fira Code", "Cascadia Code", "Cascadia Mono", ${TERMINAL_EMOJI_FALLBACK}, Consolas, monospace`
+const TERMINAL_EMOJI_FALLBACK = [
+  '"Lumina Terminal Emoji"'
+]
+
+export const TERMINAL_FONT = [
+  ...NERD_AND_LIGATURE_MONO_FONTS,
+  ...TERMINAL_EMOJI_FALLBACK,
+  'monospace'
+].join(', ')
+
+const MONO_FONT_HINT_RE =
+  /\b(mono|code|consolas|menlo|monaco|courier|nerd|nf|meslo|hack|iosevka|inconsolata|cascadia|caskaydia|fira|jetbrains|0xproto|zed|source code)\b/i
 
 /**
- * Resolves the active terminal font family from the unified Editor font CSS variables
- * (--editor-font-family / --font-editor), defaulting to JetBrains Mono with emoji/symbol
- * and monospace fallbacks so both ligatures and stickers/emojis render cleanly.
+ * Maps a standard coding font name to its companion Nerd Font family names
+ * so Powerline / Oh-My-Posh / Starship prompt icons ("bricks") resolve seamlessly
+ * alongside OpenType programming ligatures.
+ */
+function companionNerdFamilies(primaryName: string): string[] {
+  const lower = primaryName.toLowerCase()
+  if (lower.includes('jetbrains')) {
+    return ['"JetBrainsMono Nerd Font"', '"JetBrainsMono NF"', `"${primaryName}"`]
+  }
+  if (lower.includes('cascadia') || lower.includes('caskaydia')) {
+    return [
+      '"CaskaydiaCove Nerd Font"',
+      '"CaskaydiaCove NF"',
+      '"Cascadia Code NF"',
+      '"Cascadia Code PL"',
+      `"${primaryName}"`
+    ]
+  }
+  if (lower.includes('fira')) {
+    return ['"FiraCode Nerd Font"', '"FiraCode NF"', `"${primaryName}"`]
+  }
+  if (lower.includes('meslo')) {
+    return ['"MesloLGS NF"', '"MesloLGM Nerd Font"', `"${primaryName}"`]
+  }
+  if (lower.includes('hack')) {
+    return ['"Hack Nerd Font"', `"${primaryName}"`]
+  }
+  return [`"${primaryName}"`]
+}
+
+/**
+ * Resolves the active terminal font family:
+ * - Honors the user's selected monospace/coding font if one is configured, paired with its Nerd Font variants.
+ * - Ignores proportional prose fonts (e.g. Inter, Segoe UI, Roboto) so terminal cells,
+ *   Powerline prompt blocks, emojis, and ligatures never break.
+ * - Places emoji fonts AFTER all Nerd/monospace fonts so emoji fonts never hijack ASCII or ligature glyphs.
  */
 export function getActiveTerminalFontFamily(): string {
   if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -25,19 +90,31 @@ export function getActiveTerminalFontFamily(): string {
     )
     if (!raw) return TERMINAL_FONT
 
-    const lower = raw.toLowerCase()
-    const hasEmoji =
-      lower.includes('segoe ui emoji') ||
-      lower.includes('apple color emoji') ||
-      lower.includes('noto color emoji')
+    const firstSegment = raw
+      .split(',')[0]
+      ?.trim()
+      .replace(/^['"]+|['"]+$/g, '')
 
-    if (lower.includes('monospace')) {
-      if (hasEmoji) return raw
-      // Insert emoji/symbol fonts right before the generic monospace fallback
-      return raw.replace(/,\s*monospace\b/i, `, ${TERMINAL_EMOJI_FALLBACK}, monospace`)
+    if (!firstSegment || !MONO_FONT_HINT_RE.test(firstSegment)) {
+      return TERMINAL_FONT
     }
 
-    return hasEmoji ? `${raw}, monospace` : `${raw}, ${TERMINAL_FONT}`
+    const combined = [
+      ...companionNerdFamilies(firstSegment),
+      ...NERD_AND_LIGATURE_MONO_FONTS,
+      ...TERMINAL_EMOJI_FALLBACK,
+      'monospace'
+    ]
+
+    const seen = new Set<string>()
+    return combined
+      .filter((entry) => {
+        const key = entry.replace(/['"]/g, '').toLowerCase()
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+      .join(', ')
   } catch {
     return TERMINAL_FONT
   }
@@ -99,7 +176,6 @@ export function getActiveTerminalTheme(): ITheme {
   const rgb = cs.getPropertyValue('--text-accent-rgb').trim()
   const selectionBg = rgb ? `rgba(${rgb}, 0.25)` : 'rgba(139, 92, 246, 0.25)'
 
-  // Determine if active theme is light or dark based on background luminance
   const isLight = (() => {
     if (bg.startsWith('#') && (bg.length === 7 || bg.length === 4)) {
       const hex = bg.length === 4

@@ -365,6 +365,9 @@ export const useFontSettings = (): FontSettings => {
         setThemeAccentColor(stateThemeAccentColor)
         if (stateThemeAccentColor) {
           root.style.setProperty('--text-accent', stateThemeAccentColor)
+          root.style.setProperty('--accent-color', stateThemeAccentColor)
+          root.style.setProperty('--atomic-editor-accent', stateThemeAccentColor)
+          root.style.setProperty('--atomic-editor-link', stateThemeAccentColor)
           const rgbMatch = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(stateThemeAccentColor)
           if (rgbMatch) {
             root.style.setProperty(
@@ -511,12 +514,16 @@ export const useFontSettings = (): FontSettings => {
           }
           if (finalThemeAccentColor) {
             root.style.setProperty('--text-accent', finalThemeAccentColor)
+            root.style.setProperty('--accent-color', finalThemeAccentColor)
+            root.style.setProperty('--atomic-editor-accent', finalThemeAccentColor)
+            root.style.setProperty('--atomic-editor-link', finalThemeAccentColor)
           } else {
             const currentTheme = getTheme(settings?.theme || DEFAULTS.THEME)
-            root.style.setProperty(
-              '--text-accent',
-              currentTheme.colors['--text-accent'] || '#40bafa'
-            )
+            const fallbackAccent = currentTheme.colors['--text-accent'] || '#40bafa'
+            root.style.setProperty('--text-accent', fallbackAccent)
+            root.style.setProperty('--accent-color', fallbackAccent)
+            root.style.setProperty('--atomic-editor-accent', fallbackAccent)
+            root.style.setProperty('--atomic-editor-link', fallbackAccent)
           }
 
           const isMono = (f: string): boolean => Boolean(f && (f.toLowerCase().includes('mono') || f.toLowerCase().includes('code')))
@@ -666,6 +673,9 @@ export const useFontSettings = (): FontSettings => {
     }
     if (finalThemeAccentColor && finalThemeAccentColor.trim() !== '') {
       root.style.setProperty('--text-accent', finalThemeAccentColor)
+      root.style.setProperty('--accent-color', finalThemeAccentColor)
+      root.style.setProperty('--atomic-editor-accent', finalThemeAccentColor)
+      root.style.setProperty('--atomic-editor-link', finalThemeAccentColor)
       const rgbMatch = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(finalThemeAccentColor)
       if (rgbMatch) {
         root.style.setProperty(
@@ -676,7 +686,11 @@ export const useFontSettings = (): FontSettings => {
     } else {
       const themeName = root.getAttribute('data-theme') || DEFAULTS.THEME
       const currentTheme = getTheme(themeName)
-      root.style.setProperty('--text-accent', currentTheme.colors['--text-accent'] || '#40bafa')
+      const fallbackAccent = currentTheme.colors['--text-accent'] || '#40bafa'
+      root.style.setProperty('--text-accent', fallbackAccent)
+      root.style.setProperty('--accent-color', fallbackAccent)
+      root.style.setProperty('--atomic-editor-accent', fallbackAccent)
+      root.style.setProperty('--atomic-editor-link', fallbackAccent)
       root.style.setProperty(
         '--text-accent-rgb',
         currentTheme.colors['--text-accent-rgb'] || '64, 186, 250'
@@ -856,6 +870,9 @@ export const useFontSettings = (): FontSettings => {
       const root = document.documentElement
       if (rawColor) {
         root.style.setProperty('--text-accent', rawColor)
+        root.style.setProperty('--accent-color', rawColor)
+        root.style.setProperty('--atomic-editor-accent', rawColor)
+        root.style.setProperty('--atomic-editor-link', rawColor)
         const rgbMatch = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(rawColor)
         if (rgbMatch) {
           root.style.setProperty(
@@ -866,12 +883,17 @@ export const useFontSettings = (): FontSettings => {
       } else {
         const themeName = root.getAttribute('data-theme') || DEFAULTS.THEME
         const currentTheme = getTheme(themeName)
-        root.style.setProperty('--text-accent', currentTheme.colors['--text-accent'] || '#40bafa')
+        const fallbackAccent = currentTheme.colors['--text-accent'] || '#40bafa'
+        root.style.setProperty('--text-accent', fallbackAccent)
+        root.style.setProperty('--accent-color', fallbackAccent)
+        root.style.setProperty('--atomic-editor-accent', fallbackAccent)
+        root.style.setProperty('--atomic-editor-link', fallbackAccent)
         root.style.setProperty(
           '--text-accent-rgb',
           currentTheme.colors['--text-accent-rgb'] || '64, 186, 250'
         )
       }
+      window.dispatchEvent(new CustomEvent('theme-accent-changed', { detail: { color: rawColor } }))
 
       if (accentDebounceRef.current) clearTimeout(accentDebounceRef.current)
       accentDebounceRef.current = setTimeout(() => {

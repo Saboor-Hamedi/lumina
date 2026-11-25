@@ -3,6 +3,29 @@
  * Professional, clean Neovim/VS Code style terminal integration
  * ============================================================ */
 
+/* Strict unicode-range Emoji font wrapper: prevents Windows DirectWrite / Segoe UI Emoji
+ * from bleeding onto adjacent brackets ([ ]), ligatures (->, =>, ===), or Powerline glyphs */
+@font-face {
+  font-family: 'Lumina Terminal Emoji';
+  src:
+    local('Segoe UI Emoji'),
+    local('Apple Color Emoji'),
+    local('Noto Color Emoji');
+  unicode-range:
+    U+200D,
+    U+FE0E-FE0F,
+    U+231A-231B,
+    U+23E9-23FA,
+    U+25FD-25FE,
+    U+2600-27BF,
+    U+2934-2935,
+    U+2B05-2B07,
+    U+2B1B-2B1C,
+    U+2B50,
+    U+2B55,
+    U+1F000-1FAFF;
+}
+
 /* Horizontal resizer for bottom terminal dock (5px thickness) */
 .terminal-resizer.top {
   position: relative;
@@ -259,7 +282,9 @@
 
 .lumina-term-container .xterm,
 .lumina-term-container .xterm .xterm-screen,
-.lumina-term-container .xterm .xterm-rows {
+.lumina-term-container .xterm .xterm-rows,
+.lumina-term-container .xterm .xterm-rows > div > span {
+  font-variant-ligatures: contextual common-ligatures !important;
   font-feature-settings: 'liga' 1, 'calt' 1 !important;
   text-rendering: optimizeLegibility !important;
   -webkit-font-smoothing: antialiased !important;

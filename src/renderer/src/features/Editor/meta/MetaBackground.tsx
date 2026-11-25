@@ -378,6 +378,16 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
         ) : (
           <div className="note-cover-empty-strip">
             <div className="note-cover-empty-left">
+              {displayTimestamp && (
+                <ToolTip text={timestampTooltip} position="bottom">
+                  <div className="note-cover-inline-time">
+                    <Clock size={11} />
+                    <span>{displayTimestamp}</span>
+                  </div>
+                </ToolTip>
+              )}
+            </div>
+            <div className="note-cover-empty-right">
               {!emoji && (
                 <button
                   type="button"
@@ -397,13 +407,6 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
                 <ImageIcon size={12} />
                 <span>Add cover</span>
               </button>
-            </div>
-            <div className="note-cover-empty-right">
-              {displayTimestamp && (
-                <ToolTip text={timestampTooltip} position="bottom">
-                  <span className="note-cover-inline-time">{displayTimestamp}</span>
-                </ToolTip>
-              )}
               {menuSlot}
             </div>
           </div>

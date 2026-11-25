@@ -243,12 +243,44 @@ export const AccentColor: React.FC<AccentColorProps> = ({
   const isModal = variant === 'modal'
   const { style: dragStyle, handleDragStart } = useDraggableModal()
 
+  const syncRootAccentVariables = useCallback((colorHex: string) => {
+    const root = document.documentElement
+    root.style.setProperty('--text-accent', colorHex)
+    root.style.setProperty('--accent-color', colorHex)
+    root.style.setProperty('--atomic-editor-accent', colorHex)
+    root.style.setProperty('--atomic-editor-link', colorHex)
+    root.style.setProperty(
+      '--atomic-editor-accent-soft',
+      `color-mix(in srgb, ${colorHex} 55%, transparent)`
+    )
+    const clean = colorHex.replace('#', '')
+    if (clean.length === 6) {
+      const r = parseInt(clean.substring(0, 2), 16)
+      const g = parseInt(clean.substring(2, 4), 16)
+      const b = parseInt(clean.substring(4, 6), 16)
+      if (!Number.isNaN(r) && !Number.isNaN(g) && !Number.isNaN(b)) {
+        root.style.setProperty('--text-accent-rgb', `${r}, ${g}, ${b}`)
+      }
+    } else if (clean.length === 3) {
+      const r = parseInt(clean[0] + clean[0], 16)
+      const g = parseInt(clean[1] + clean[1], 16)
+      const b = parseInt(clean[2] + clean[2], 16)
+      if (!Number.isNaN(r) && !Number.isNaN(g) && !Number.isNaN(b)) {
+        root.style.setProperty('--text-accent-rgb', `${r}, ${g}, ${b}`)
+      }
+    }
+    window.dispatchEvent(new CustomEvent('theme-accent-changed', { detail: { color: colorHex } }))
+  }, [])
+
   const handleCancel = useCallback(() => {
     if (previewProperty && initialColorRef.current) {
       document.documentElement.style.setProperty(previewProperty, initialColorRef.current)
+      if (previewProperty === '--text-accent') {
+        syncRootAccentVariables(initialColorRef.current)
+      }
     }
     onClose?.()
-  }, [previewProperty, onClose])
+  }, [previewProperty, onClose, syncRootAccentVariables])
 
   const handleEscape = useCallback(() => {
     if (variant === 'dropdown') {
@@ -296,15 +328,7 @@ export const AccentColor: React.FC<AccentColorProps> = ({
           const fallback = activeThemeAccent
           document.documentElement.style.setProperty(previewProperty, fallback)
           if (previewProperty === '--text-accent') {
-            document.documentElement.style.setProperty('--atomic-editor-accent', fallback)
-            document.documentElement.style.setProperty('--atomic-editor-link', fallback)
-            const clean = fallback.replace('#', '')
-            if (clean.length === 6) {
-              const r = parseInt(clean.substring(0, 2), 16)
-              const g = parseInt(clean.substring(2, 4), 16)
-              const b = parseInt(clean.substring(4, 6), 16)
-              document.documentElement.style.setProperty('--text-accent-rgb', `${r}, ${g}, ${b}`)
-            }
+            syncRootAccentVariables(fallback)
           }
         }
         if (persist) {
@@ -318,27 +342,14 @@ export const AccentColor: React.FC<AccentColorProps> = ({
       if (previewProperty && hex) {
         document.documentElement.style.setProperty(previewProperty, hex)
         if (previewProperty === '--text-accent') {
-          document.documentElement.style.setProperty('--atomic-editor-accent', hex)
-          document.documentElement.style.setProperty('--atomic-editor-link', hex)
-          const clean = hex.replace('#', '')
-          if (clean.length === 6) {
-            const r = parseInt(clean.substring(0, 2), 16)
-            const g = parseInt(clean.substring(2, 4), 16)
-            const b = parseInt(clean.substring(4, 6), 16)
-            document.documentElement.style.setProperty('--text-accent-rgb', `${r}, ${g}, ${b}`)
-          } else if (clean.length === 3) {
-            const r = parseInt(clean[0] + clean[0], 16)
-            const g = parseInt(clean[1] + clean[1], 16)
-            const b = parseInt(clean[2] + clean[2], 16)
-            document.documentElement.style.setProperty('--text-accent-rgb', `${r}, ${g}, ${b}`)
-          }
+          syncRootAccentVariables(hex)
         }
       }
       if (persist) {
         onSelect?.(hex)
       }
     },
-    [previewProperty, onSelect, activeThemeAccent]
+    [previewProperty, onSelect, activeThemeAccent, syncRootAccentVariables]
   )
 
   useEffect(() => {

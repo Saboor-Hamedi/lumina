@@ -21,6 +21,31 @@ const MAX_FONT_SIZE = 24
 const FILE_PATH_LINK_REGEX =
   /(?:[A-Za-z]:\\|\.{1,2}[\\/]|[\\/])?(?:[\w.\- ]+[\\/])*[\w.\-]+\.(?:md|markdown|txt|ts|tsx|js|jsx|mjs|cjs|json|css|scss|html|rs|py|yml|yaml|toml|sh|pdf|png|jpg|jpeg|svg|webp)(?::\d+(?::\d+)?)?/g
 
+/**
+ * Matches multi-character programming ligatures AND isolated multi-codepoint emoji clusters
+ * in SEPARATE non-overlapping groups so:
+ * 1. OpenType programming ligatures (`=>`, `->`, `!==`, `===`, `::`, `|>`, `-->`, etc.) render
+ *    properly in xterm's WebGL glyph atlas.
+ * 2. An emoji in front of a shell prompt profile (including Variation Selector-16 / ZWJ sequences)
+ *    is joined as its own unit and NEVER merges with or breaks adjacent ligature/Powerline glyphs.
+ */
+const TERMINAL_LIGATURE_OR_EMOJI_JOIN_RE =
+  /(?:!==|===|<=>|-->|<--|==>|<==|\.\.\.|->|=>|<-|<=|>=|!=|==|&&|\|\||\?\?|\?\.|::|\|>|<\||>>|<<|\+\+|--|\*\*|\/\/|\/\*|\*\/|~=|~=)|(?:\p{Extended_Pictographic}(?:\uFE0F|\uFE0E|\p{Emoji_Modifier})?(?:\u200D\p{Extended_Pictographic}(?:\uFE0F|\uFE0E|\p{Emoji_Modifier})?)*)/gu
+
+function findTerminalJoinRanges(lineText: string): [number, number][] {
+  if (!lineText || lineText.length < 2) return []
+  const ranges: [number, number][] = []
+  TERMINAL_LIGATURE_OR_EMOJI_JOIN_RE.lastIndex = 0
+  let match: RegExpExecArray | null
+  while ((match = TERMINAL_LIGATURE_OR_EMOJI_JOIN_RE.exec(lineText)) !== null) {
+    const token = match[0]
+    if (token.length >= 2) {
+      ranges.push([match.index, match.index + token.length])
+    }
+  }
+  return ranges
+}
+
 /** Minimal transport contract — implement for Tauri PTY (portable-pty), WS, SSH, etc. */
 export interface PtyTransport {
   write(data: string): void
@@ -177,6 +202,8 @@ export function useTerminalInstance({
       cursorBlink: true,
       cursorStyle: 'block',
       cursorWidth: 2,
+      customGlyphs: true,
+      rescaleOverlappingGlyphs: false,
       lineHeight: 1.2,
       letterSpacing: 0,
       smoothScrollDuration: 0,
@@ -315,6 +342,17 @@ export function useTerminalInstance({
     }
 
     termInstance.open(container)
+
+    // Register isolated ligature & emoji character joiner so WebGL renders ligatures (`->`, `=>`, `===`)
+    // and multi-byte prompt emojis cleanly without breaking adjacent Powerline/prompt bricks
+    let charJoinerId: number | null = null
+    if (typeof termInstance.registerCharacterJoiner === 'function') {
+      try {
+        charJoinerId = termInstance.registerCharacterJoiner(findTerminalJoinRanges)
+      } catch {
+        charJoinerId = null
+      }
+    }
 
     // Enable GPU-accelerated WebGL renderer when WebGL2 is supported, with automatic fallback on context loss
     let disposed = false
@@ -507,6 +545,11 @@ export function useTerminalInstance({
           d.dispose()
         } catch {}
       })
+      try {
+        if (charJoinerId !== null && typeof termInstance.deregisterCharacterJoiner === 'function') {
+          termInstance.deregisterCharacterJoiner(charJoinerId)
+        }
+      } catch {}
       try {
         fileLinkDisposable?.dispose()
       } catch {}
