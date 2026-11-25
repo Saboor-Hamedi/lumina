@@ -125,18 +125,44 @@ describe('Command Palette & Settings Discovery System', () => {
       <CommandPalette
         isOpen={true}
         onClose={vi.fn()}
-        items={[]}
+        items={[{ id: 'n1', title: 'Auto-Save Note', code: 'note content' }]}
         onSelect={vi.fn()}
         initialQuery=">"
       />
     )
 
     const input = screen.getByRole('textbox') as HTMLInputElement
-    expect(input.value).toBe('>')
-    expect(input.placeholder).toBe('Type a command or setting name...')
+    expect(input.value).toBe('')
+    expect(input.placeholder).toBe('Search settings and commands...')
+    expect(screen.getByText('Settings & Commands')).toBeInTheDocument()
 
     const items = document.querySelectorAll('.palette-item')
-    expect(items.length).toBeGreaterThan(0)
+    expect(items.length).toBeGreaterThan(30)
+  })
+
+  it('strictly shows only notes (never settings or commands) in Ctrl+P note search mode', async () => {
+    render(
+      <CommandPalette
+        isOpen={true}
+        onClose={vi.fn()}
+        items={[
+          { id: 'note-1', title: 'Auto-Save Architecture', code: 'Details' },
+          { id: 'note-2', title: 'Daily Journal', code: 'Entry' }
+        ]}
+        onSelect={vi.fn()}
+        initialQuery=""
+      />
+    )
+
+    const input = screen.getByRole('textbox') as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'Auto-Save' } })
+
+    await waitFor(() => {
+      const rows = Array.from(document.querySelectorAll('.palette-item'))
+      expect(rows.length).toBe(1)
+      expect(rows[0].textContent).toContain('Auto-Save Architecture')
+      expect(rows.some((el) => el.classList.contains('is-action'))).toBe(false)
+    })
   })
 
   it('filters commands when typing query after ">"', async () => {

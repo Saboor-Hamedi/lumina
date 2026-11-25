@@ -43,7 +43,7 @@ describe('hoverWikilink.js', () => {
     vi.clearAllMocks()
   })
 
-  it('renders hover card with 2px border radius and parallel alignment on mouseover', () => {
+  it('renders hover card with 5px border radius and parallel alignment on mouseover', () => {
     const linkEl = document.createElement('span')
     linkEl.className = 'cm-atomic-wiki-link'
     linkEl.setAttribute('data-wiki-link-target', 'TargetNote')
@@ -82,7 +82,7 @@ describe('hoverWikilink.js', () => {
 
     const hoverCard = document.querySelector('.cm-wiki-hover')
     expect(hoverCard).not.toBeNull()
-    expect(hoverCard.style.borderRadius).toBe('2px')
+    expect(hoverCard.style.borderRadius).toBe('5px')
     expect(hoverCard.style.left).toBe('100px') // Parallel with link left
     expect(hoverCard.style.top).toBe('76px') // Positioned directly below link (70 + 6)
   })

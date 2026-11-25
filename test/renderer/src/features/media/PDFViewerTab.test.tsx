@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import React from 'react'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { PDFViewerTab } from '../../../../../src/renderer/src/features/media/PDFViewerTab'
+import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 import type { Snippet } from '../../../../../src/renderer/src/core/editor/types'
 
 describe('PDFViewerTab Component', () => {
@@ -21,6 +22,12 @@ describe('PDFViewerTab Component', () => {
       openVaultFolder: vi.fn(),
       readAsset: vi.fn()
     }
+    useSettingsStore.setState({
+      settings: {
+        ...useSettingsStore.getState().settings,
+        theme: 'light'
+      }
+    })
   })
 
   afterEach(() => {
@@ -52,7 +59,7 @@ describe('PDFViewerTab Component', () => {
     expect(screen.getByText('PDF')).toBeInTheDocument()
   })
 
-  it('allows switching PDF themes (original, dark, sepia, invert)', async () => {
+  it('syncs PDF appearance with app theme and allows switching (original, dark, sepia)', async () => {
     const snippet = {
       id: 'pdf-theme-test',
       title: 'document.pdf',
@@ -70,13 +77,18 @@ describe('PDFViewerTab Component', () => {
     })
 
     const wrapper = document.querySelector('.pdf-viewer-frame-wrapper')
+    // Starts in original (Light) when app theme is light
+    expect(wrapper).toHaveClass('theme-original')
+
+    const darkBtn = screen.getByLabelText('Dark PDF appearance')
+    fireEvent.click(darkBtn)
     expect(wrapper).toHaveClass('theme-dark')
 
-    const sepiaBtn = screen.getByLabelText('Set theme to Sepia Tone')
+    const sepiaBtn = screen.getByLabelText('Parchment PDF appearance')
     fireEvent.click(sepiaBtn)
     expect(wrapper).toHaveClass('theme-sepia')
 
-    const origBtn = screen.getByLabelText('Set theme to Original')
+    const origBtn = screen.getByLabelText('Light PDF appearance')
     fireEvent.click(origBtn)
     expect(wrapper).toHaveClass('theme-original')
   })
@@ -92,7 +104,7 @@ describe('PDFViewerTab Component', () => {
     expect(screen.getByText(/Invalid file path/i)).toBeInTheDocument()
   })
 
-  it('calls openWorkspaceFolder when toolbar folder button is clicked', () => {
+  it('calls openWorkspaceFolder when toolbar folder button is clicked', async () => {
     const openFolderMock = vi.fn()
     ;(window as any).api.openWorkspaceFolder = openFolderMock
 
@@ -108,13 +120,17 @@ describe('PDFViewerTab Component', () => {
 
     render(<PDFViewerTab snippet={snippet} />)
 
-    const folderBtn = screen.getByTitle('Open Containing Folder')
+    await waitFor(() => {
+      expect(document.querySelector('iframe.pdf-viewer-frame')).toBeInTheDocument()
+    })
+
+    const folderBtn = screen.getByLabelText('Open Containing Folder')
     fireEvent.click(folderBtn)
 
     expect(openFolderMock).toHaveBeenCalledWith('research')
   })
 
-  it('toggles toolbar open and close on toggle button click', () => {
+  it('toggles toolbar open and close on toggle button click', async () => {
     const snippet = {
       id: 'pdf-toggle',
       title: 'document.pdf',
@@ -126,18 +142,24 @@ describe('PDFViewerTab Component', () => {
 
     render(<PDFViewerTab snippet={snippet} />)
 
-    expect(screen.getByText('PDF')).toBeInTheDocument()
-    expect(screen.getByTitle('Open Containing Folder')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(document.querySelector('iframe.pdf-viewer-frame')).toBeInTheDocument()
+    })
 
-    const toggleBtn = screen.getByTitle('Collapse toolbar')
-    fireEvent.click(toggleBtn)
+    expect(screen.getByText('PDF')).toBeInTheDocument()
+    expect(screen.getByLabelText('Open Containing Folder')).toBeInTheDocument()
+
+    const collapseBtn = screen.getByLabelText('Collapse PDF toolbar')
+    fireEvent.click(collapseBtn)
 
     expect(screen.queryByText('PDF')).not.toBeInTheDocument()
-    expect(screen.queryByTitle('Open Containing Folder')).not.toBeInTheDocument()
-    expect(screen.getByTitle('Expand toolbar')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Open Containing Folder')).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByTitle('Expand toolbar'))
+    const expandBtn = screen.getByLabelText('Expand PDF toolbar')
+    expect(expandBtn).toBeInTheDocument()
+
+    fireEvent.click(expandBtn)
     expect(screen.getByText('PDF')).toBeInTheDocument()
-    expect(screen.getByTitle('Open Containing Folder')).toBeInTheDocument()
+    expect(screen.getByLabelText('Open Containing Folder')).toBeInTheDocument()
   })
 })

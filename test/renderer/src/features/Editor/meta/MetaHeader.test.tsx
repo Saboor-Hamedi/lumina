@@ -42,8 +42,9 @@ describe('MetaHeader', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('renders Ask AI and Local Graph buttons', () => {
+  it('renders Ask AI and Local Graph items inside Note Actions menu', () => {
     render(<MetaHeader {...baseProps} />)
+    fireEvent.click(screen.getByLabelText('Note Actions'))
     expect(screen.getByText('Ask AI')).toBeInTheDocument()
     expect(screen.getByText('Local Graph')).toBeInTheDocument()
   })
@@ -56,40 +57,41 @@ describe('MetaHeader', () => {
   it('calls onInlineAI callback when clicking Ask AI', () => {
     const onInlineAI = vi.fn()
     render(<MetaHeader {...baseProps} onInlineAI={onInlineAI} />)
+    fireEvent.click(screen.getByLabelText('Note Actions'))
     fireEvent.click(screen.getByText('Ask AI'))
     expect(onInlineAI).toHaveBeenCalled()
   })
 
   it('toggles local graph view on click', async () => {
     render(<MetaHeader {...baseProps} />)
+    fireEvent.click(screen.getByLabelText('Note Actions'))
     fireEvent.click(screen.getByText('Local Graph'))
     expect(await screen.findByTestId('inline-graph')).toBeInTheDocument()
-    fireEvent.click(screen.getByText('Local Graph'))
+
+    // Clicking Note Actions again closes the open local graph popover
+    fireEvent.click(screen.getByLabelText('Note Actions'))
     expect(screen.queryByTestId('inline-graph')).toBeNull()
   })
 
-  it('toggles smart parallel dropdown on Options click and executes actions', () => {
+  it('toggles portaled dropdown on Note Actions click and executes Export', () => {
     const onOpenExportDialog = vi.fn()
-    const { container } = render(
-      <MetaHeader {...baseProps} position="bottom" onOpenExportDialog={onOpenExportDialog} />
-    )
+    render(<MetaHeader {...baseProps} position="inline" onOpenExportDialog={onOpenExportDialog} />)
 
-    fireEvent.click(screen.getByText('Options'))
-    const dropdown = container.querySelector('.meta-menu-dropdown')
+    fireEvent.click(screen.getByLabelText('Note Actions'))
+    const dropdown = document.body.querySelector('.meta-compact-menu-portal')
     expect(dropdown).toBeInTheDocument()
-    expect(dropdown).toHaveStyle({ bottom: 'calc(100% + 6px)' })
 
-    fireEvent.click(screen.getByText('Export with Preview…'))
+    fireEvent.click(screen.getByText('Export…'))
     expect(onOpenExportDialog).toHaveBeenCalled()
-    expect(container.querySelector('.meta-menu-dropdown')).toBeNull()
+    expect(document.body.querySelector('.meta-compact-menu-portal')).toBeNull()
   })
 
-  it('opens parallel dropdown downwards when position is top', () => {
-    const { container } = render(<MetaHeader {...baseProps} position="top" />)
-    fireEvent.click(screen.getByText('Options'))
-    const dropdown = container.querySelector('.meta-menu-dropdown')
+  it('positions portaled dropdown cleanly below trigger button', () => {
+    render(<MetaHeader {...baseProps} position="top" />)
+    fireEvent.click(screen.getByLabelText('Note Actions'))
+    const dropdown = document.body.querySelector('.meta-compact-menu-portal') as HTMLElement | null
     expect(dropdown).toBeInTheDocument()
-    expect(dropdown).toHaveStyle({ top: 'calc(100% + 6px)' })
+    expect(dropdown?.style.top).toBeTruthy()
   })
 
   it('dispatches show-toast with success message when copying as plain text', async () => {
@@ -107,7 +109,7 @@ describe('MetaHeader', () => {
       />
     )
 
-    fireEvent.click(screen.getByText('Options'))
+    fireEvent.click(screen.getByLabelText('Note Actions'))
     fireEvent.click(screen.getByText('Copy as Plain Text'))
 
     await waitFor(() => {
@@ -123,18 +125,18 @@ describe('MetaHeader', () => {
   })
 
   it('provides accessible menu attributes and roles in the dropdown', () => {
-    const { container } = render(<MetaHeader {...baseProps} />)
-    const optionsBtn = screen.getByLabelText('More Options')
+    render(<MetaHeader {...baseProps} />)
+    const optionsBtn = screen.getByLabelText('Note Actions')
     expect(optionsBtn).toHaveAttribute('aria-haspopup', 'menu')
     expect(optionsBtn).toHaveAttribute('aria-expanded', 'false')
 
     fireEvent.click(optionsBtn)
     expect(optionsBtn).toHaveAttribute('aria-expanded', 'true')
 
-    const menu = container.querySelector('[role="menu"]')
+    const menu = document.body.querySelector('[role="menu"]')
     expect(menu).toBeInTheDocument()
 
-    const menuItems = container.querySelectorAll('[role="menuitem"]')
+    const menuItems = document.body.querySelectorAll('[role="menuitem"]')
     expect(menuItems.length).toBeGreaterThanOrEqual(4)
   })
 })

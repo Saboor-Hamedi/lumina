@@ -9,36 +9,43 @@ describe('SettingMeta', () => {
     useSettingsStore.setState({
       settings: {
         ...useSettingsStore.getState().settings,
-        inlineMetadata: true,
-        metaPosition: 'bottom'
+        inlineMetadata: true
       }
     })
   })
 
-  it('renders the Meta Bar title and description', () => {
+  it('renders the Meta Menu title and description', () => {
     render(<SettingMeta />)
-    expect(screen.getByText('Meta Bar')).toBeInTheDocument()
+    expect(screen.getByText('Meta Menu')).toBeInTheDocument()
     expect(
-      screen.getByText(/Configure the editor quick action bar/i)
+      screen.getByText(/Configure the compact note action menu/i)
     ).toBeInTheDocument()
   })
 
-  it('renders position selection buttons', () => {
+  it('renders Enable Note Menu toggle setting', () => {
     render(<SettingMeta />)
-    expect(screen.getByText('Float Bottom')).toBeInTheDocument()
-    expect(screen.getByText('Float Top')).toBeInTheDocument()
-    expect(screen.getByText('Inline')).toBeInTheDocument()
+    expect(screen.getByText('Enable Note Menu')).toBeInTheDocument()
+    const checkbox = screen.getByRole('checkbox') as HTMLInputElement
+    expect(checkbox.checked).toBe(true)
   })
 
-  it('updates metaPosition to top when Float Top is clicked', () => {
+  it('updates inlineMetadata to false when toggle is unchecked', () => {
     render(<SettingMeta />)
-    fireEvent.click(screen.getByText('Float Top'))
-    expect(useSettingsStore.getState().settings.metaPosition).toBe('top')
+    const checkbox = screen.getByRole('checkbox')
+    fireEvent.click(checkbox)
+    expect(useSettingsStore.getState().settings.inlineMetadata).toBe(false)
   })
 
-  it('updates metaPosition to inline when Inline is clicked', () => {
+  it('updates inlineMetadata back to true when toggle is checked', () => {
+    useSettingsStore.setState({
+      settings: {
+        ...useSettingsStore.getState().settings,
+        inlineMetadata: false
+      }
+    })
     render(<SettingMeta />)
-    fireEvent.click(screen.getByText('Inline'))
-    expect(useSettingsStore.getState().settings.metaPosition).toBe('inline')
+    const checkbox = screen.getByRole('checkbox')
+    fireEvent.click(checkbox)
+    expect(useSettingsStore.getState().settings.inlineMetadata).toBe(true)
   })
 })

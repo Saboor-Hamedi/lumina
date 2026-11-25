@@ -263,7 +263,7 @@ export const BreadcrumbDropdown: React.FC<BreadcrumbDropdownProps> = ({
       if (item.kind === 'folder') {
         drillIn(item.id)
       } else {
-        const keepOpen = Boolean(searchQuery.trim()) && !isEnterKey ? true : false
+        const keepOpen = Boolean(searchQuery.trim()) || (isEnterKey && Boolean(searchQuery))
         handleSelectNote(item.snippet, keepOpen)
       }
     },

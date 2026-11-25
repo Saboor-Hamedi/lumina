@@ -132,7 +132,7 @@ const STATIC_SETTING_ITEMS: PaletteItem[] = SETTINGS_REGISTRY.map((setDef) => ({
   searchStr: `${setDef.title} ${setDef.category} ${setDef.description} ${setDef.keywords?.join(' ') || ''}`.toLowerCase()
 }))
 
-const STATIC_ALL_ACTIONABLES: PaletteItem[] = [...STATIC_COMMAND_ITEMS, ...STATIC_SETTING_ITEMS]
+const STATIC_ALL_ACTIONABLES: PaletteItem[] = [...STATIC_SETTING_ITEMS, ...STATIC_COMMAND_ITEMS]
 
 function LayoutGridIcon(props: { size?: number; className?: string }) {
   return (
@@ -456,6 +456,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
     initialQuery = ''
   }) => {
     const [query, setQuery] = useState<string>('')
+    const [paletteMode, setPaletteMode] = useState<'notes' | 'commands'>(() =>
+      initialQuery.trim().startsWith('>') ? 'commands' : 'notes'
+    )
     const [selectedIndex, setSelectedIndex] = useState<number>(0)
     const [splitRatio, setSplitRatio] = useState<number>(47)
     const [activePromptSetting, setActivePromptSetting] = useState<LuminaSettingDefinition | null>(null)
@@ -512,7 +515,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
     useEffect(() => {
       if (isOpen) {
         previousFocusRef.current = document.activeElement
-        setQuery(initialQuery)
+        const trimmedInit = initialQuery.trim()
+        const startsInCommands = trimmedInit.startsWith('>')
+        setPaletteMode(startsInCommands ? 'commands' : 'notes')
+        setQuery(startsInCommands ? trimmedInit.slice(1).trim() : initialQuery)
         setSelectedIndex(0)
         setActivePromptSetting(null)
         setTimeout(() => inputRef.current?.focus(), 20)
@@ -607,58 +613,52 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
       }
 
       const rawLower = query.toLowerCase().trim()
-      const isCommandMode = rawLower.startsWith('>')
-      const cleanQ = isCommandMode ? rawLower.slice(1).trim() : rawLower
+      const hasInlineCommandPrefix = rawLower.startsWith('>')
+      const isCommandMode = paletteMode === 'commands' || hasInlineCommandPrefix
+      const cleanQ = hasInlineCommandPrefix ? rawLower.slice(1).trim() : rawLower
 
-      // 1. In Command Mode ("> ...")
+      // 1. Ctrl + Shift + P (Settings & Commands Mode ONLY — no notes mixed in)
       if (isCommandMode) {
         if (!cleanQ) {
-          return STATIC_ALL_ACTIONABLES.slice(0, 30)
+          return STATIC_ALL_ACTIONABLES
         }
 
         const matches: PaletteItem[] = []
         const fallbackFuzzy: PaletteItem[] = []
+        const cmdTokens = cleanQ.includes(' ') ? cleanQ.split(/\s+/).filter(Boolean) : null
 
-        // Ultra-fast substring & token pass
         for (let i = 0; i < STATIC_ALL_ACTIONABLES.length; i++) {
           const item = STATIC_ALL_ACTIONABLES[i]
           const tLower = item.title!.toLowerCase()
           if (tLower.startsWith(cleanQ)) {
-            matches.push({ ...item, score: 300 })
+            matches.push({ ...item, score: 320 })
           } else if (tLower.includes(cleanQ)) {
-            matches.push({ ...item, score: 200 })
+            matches.push({ ...item, score: 220 })
           } else if (item.searchStr && item.searchStr.includes(cleanQ)) {
-            matches.push({ ...item, score: 100 })
-          } else if (
-            item.searchStr &&
-            cleanQ.includes(' ') &&
-            cleanQ.split(/\s+/).every((tok) => item.searchStr!.includes(tok))
-          ) {
-            matches.push({ ...item, score: 95 })
+            matches.push({ ...item, score: 120 })
+          } else if (item.searchStr && cmdTokens && cmdTokens.every((tok) => item.searchStr!.includes(tok))) {
+            matches.push({ ...item, score: 105 })
           } else {
             fallbackFuzzy.push(item)
           }
         }
 
-        if (matches.length >= 8) {
-          return matches.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 30)
-        }
-
-        // Run fuzzy subsequence only if direct matches are few
-        for (let i = 0; i < fallbackFuzzy.length; i++) {
-          const item = fallbackFuzzy[i]
-          const res = scoreFuzzy(item.title || '', cleanQ)
-          if (res) {
-            matches.push({ ...item, score: res.score, matchRanges: res.ranges })
+        if (matches.length < 8) {
+          for (let i = 0; i < fallbackFuzzy.length; i++) {
+            const item = fallbackFuzzy[i]
+            const res = scoreFuzzy(item.title || '', cleanQ)
+            if (res) {
+              matches.push({ ...item, score: res.score, matchRanges: res.ranges })
+            }
           }
         }
 
-        return matches.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 30)
+        return matches.sort((a, b) => (b.score || 0) - (a.score || 0))
       }
 
-      // 2. In Search Mode without ">" prefix:
+      // 2. Ctrl + P (Notes Search Mode ONLY — strictly notes, #tags, and @mentions; zero settings/commands)
       if (!cleanQ) {
-        return items.slice(0, 20)
+        return items.slice(0, 50)
       }
 
       const matches: PaletteItem[] = []
@@ -678,22 +678,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
         }
       }
 
-      // Fast action items matching
-      for (let i = 0; i < STATIC_ALL_ACTIONABLES.length; i++) {
-        const item = STATIC_ALL_ACTIONABLES[i]
-        const title = item.title!.toLowerCase()
-        if (title.startsWith(cleanQ)) {
-          matches.push({ ...item, score: 280 })
-        } else if (title.includes(cleanQ)) {
-          matches.push({ ...item, score: 180 })
-        } else if (item.searchStr && item.searchStr.includes(cleanQ)) {
-          matches.push({ ...item, score: 90 })
-        } else if (item.searchStr && queryTokens && queryTokens.every((tok) => item.searchStr!.includes(tok))) {
-          matches.push({ ...item, score: 85 })
-        }
-      }
-
-      // Fast tags & mentions
+      // Fast tags & mentions for notes
       if (rawLower.startsWith('#')) {
         const tq = rawLower.slice(1)
         for (const t of tags || []) {
@@ -712,10 +697,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
       }
 
       if (matches.length > 0) {
-        return matches.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 30)
+        return matches.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 40)
       }
 
-      // Fallback fuzzy + note body snippet search
+      // Fallback fuzzy + note body snippet search (strictly notes only)
       for (let i = 0; i < indexedNotes.length; i++) {
         const { item, titleRaw } = indexedNotes[i]
         const res = scoreFuzzy(titleRaw, cleanQ)
@@ -732,14 +717,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
           }
         }
       }
-      for (let i = 0; i < STATIC_ALL_ACTIONABLES.length; i++) {
-        const item = STATIC_ALL_ACTIONABLES[i]
-        const res = scoreFuzzy(item.title || '', cleanQ)
-        if (res) matches.push({ ...item, score: res.score - 10, matchRanges: res.ranges })
-      }
 
-      return matches.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 30)
-    }, [query, items, indexedNotes, tags, mentions, activePromptSetting])
+      return matches.sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 40)
+    }, [query, paletteMode, items, indexedNotes, tags, mentions, activePromptSetting])
 
     useEffect(() => {
       if (selectedIndex >= filtered.length && filtered.length > 0) {
@@ -843,6 +823,31 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
       e.stopPropagation()
 
+      // Allow instant switching between Ctrl+P (Notes) and Ctrl+Shift+P (Settings & Commands) while open
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault()
+        if (e.shiftKey) {
+          if (paletteMode !== 'commands') {
+            setPaletteMode('commands')
+            setActivePromptSetting(null)
+            setQuery((prev) => (prev.trim().startsWith('>') ? prev.trim().slice(1).trim() : prev))
+            setSelectedIndex(0)
+          } else {
+            onClose()
+          }
+        } else {
+          if (paletteMode !== 'notes' || query.trim().startsWith('>')) {
+            setPaletteMode('notes')
+            setActivePromptSetting(null)
+            setQuery((prev) => (prev.trim().startsWith('>') ? prev.trim().slice(1).trim() : prev))
+            setSelectedIndex(0)
+          } else {
+            onClose()
+          }
+        }
+        return
+      }
+
       if (e.key === 'ArrowDown') {
         e.preventDefault()
         isKeyboardNavRef.current = true
@@ -932,8 +937,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
 
     if (!isOpen) return null
 
-    const isCommandMode = query.startsWith('>')
-    const activeHighlightQuery = isCommandMode ? query.slice(1).trim() : query
+    const isCommandMode = paletteMode === 'commands' || query.startsWith('>')
+    const activeHighlightQuery = query.startsWith('>') ? query.slice(1).trim() : query
 
     return createPortal(
       <div
@@ -953,7 +958,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
           {/* Header & Search Bar */}
           <div className="palette-input-wrap horizontal">
             <Search size={15} className="palette-search-icon" />
-            {isCommandMode && <span className="palette-mode-chip">Commands</span>}
+            {isCommandMode && <span className="palette-mode-chip">Settings &amp; Commands</span>}
             {!isCommandMode && query.startsWith('#') && <span className="palette-mode-chip">Tag</span>}
             {!isCommandMode && query.startsWith('@') && <span className="palette-mode-chip">Mention</span>}
             <input
@@ -965,13 +970,19 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
                     ? `Type value (${activePromptSetting.min ?? 0} - ${activePromptSetting.max ?? 100}) or choose below...`
                     : `Select option for ${activePromptSetting.title}...`
                   : isCommandMode
-                    ? 'Type a command or setting...'
-                    : 'Search notes, settings, or type > for commands...'
+                    ? 'Search settings and commands...'
+                    : 'Search notes by title, folder, #tag, or @mention...'
               }
               value={query}
               onChange={(e) => {
                 isKeyboardNavRef.current = false
-                setQuery(e.target.value)
+                const nextVal = e.target.value
+                if (paletteMode === 'notes' && nextVal === '>') {
+                  setPaletteMode('commands')
+                  setQuery('')
+                } else {
+                  setQuery(nextVal)
+                }
                 setSelectedIndex(0)
               }}
               onKeyDown={handleKeyDown}
@@ -1052,9 +1063,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
                     <div className="palette-zero-results" style={{ padding: '32px 16px', textAlign: 'center' }}>
                       <Search size={20} style={{ opacity: 0.3, marginBottom: '6px' }} />
                       <span>
-                        {query.startsWith('>')
-                          ? `No matching commands or settings for "${query.slice(1).trim()}"`
-                          : `No matching notes or commands for "${query}"`}
+                        {isCommandMode
+                          ? `No matching settings or commands for "${activeHighlightQuery}"`
+                          : `No matching notes for "${query}"`}
                       </span>
                     </div>
                   )}
@@ -1174,7 +1185,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
               </span>
             </div>
             <div className="footer-tip">
-              <span>Type <kbd>&gt;</kbd> for commands</span>
+              {isCommandMode ? (
+                <span>
+                  <kbd>Ctrl+P</kbd> notes
+                </span>
+              ) : (
+                <span>
+                  <kbd>Ctrl+Shift+P</kbd> settings &amp; commands
+                </span>
+              )}
             </div>
           </div>
         </div>

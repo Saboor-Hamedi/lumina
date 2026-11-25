@@ -22,15 +22,14 @@ describe('EditorMenu', () => {
     const button = screen.getByRole('button')
     fireEvent.click(button)
 
-    expect(screen.getByText('Rename Note')).toBeInTheDocument()
     expect(screen.getByText('Copy as Plain Text')).toBeInTheDocument()
-    expect(screen.getByText('Export with Preview…')).toBeInTheDocument()
+    expect(screen.getByText('Export…')).toBeInTheDocument()
   })
 
-  it('triggers onOpenExportDialog when clicking Export with Preview', () => {
+  it('triggers onOpenExportDialog when clicking Export', () => {
     render(<EditorMenu {...baseProps} />)
     fireEvent.click(screen.getByRole('button'))
-    fireEvent.click(screen.getByText('Export with Preview…'))
+    fireEvent.click(screen.getByText('Export…'))
 
     expect(baseProps.onOpenExportDialog).toHaveBeenCalledTimes(1)
   })
