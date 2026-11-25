@@ -158,17 +158,18 @@
   transform: scale(1.25);
 }
 
-/* Modern UI Overrides: Separated rounded panel matching left/right sidebars & editor */
+/* Modern UI Overrides: 10px Floating Island matching Left/Right Sidebars & Editor */
 [data-modern-ui='true'] .shell-terminal-dock {
-  border-radius: 8px !important;
-  border: 1px solid var(--border-dim) !important;
-  background: var(--bg-editor, var(--bg-app, #0c0c0e)) !important;
+  border-radius: var(--island-radius, 10px) !important;
+  border: 1px solid var(--border-color) !important;
+  background: var(--bg-surface) !important;
+  box-shadow: none !important;
   overflow: hidden;
   box-sizing: border-box;
 }
 
 [data-modern-ui='true'] .terminal-resizer.top {
-  height: 6px !important;
+  height: var(--island-gap, 6px) !important;
   background: transparent !important;
   z-index: 30;
 }
@@ -179,23 +180,23 @@
 
 [data-modern-ui='true'] .terminal-resizer.top::before {
   top: 50% !important;
-  left: 8px !important;
-  right: 8px !important;
+  left: 10px !important;
+  right: 10px !important;
   transform: translateY(-50%) !important;
   height: 2px !important;
   border-radius: 2px !important;
   background: transparent !important;
-  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: background var(--dur-fast, 100ms) var(--ease-snappy) !important;
   z-index: 1 !important;
 }
 
 [data-modern-ui='true'] .terminal-resizer.top:hover::before,
 [data-modern-ui='true'] .terminal-resizer.top:active::before {
-  background: var(--text-accent, #8b5cf6) !important;
+  background: var(--accent-color) !important;
 }
 
 [data-modern-ui='true'] .terminal-resizer.left {
-  width: 5px !important;
+  width: var(--island-gap, 6px) !important;
   border-left: none !important;
   background: transparent !important;
   z-index: 20;
@@ -204,13 +205,13 @@
 [data-modern-ui='true'] .terminal-resizer.left::before {
   left: 50% !important;
   transform: translateX(-50%) !important;
-  width: 1px !important;
+  width: 2px !important;
   z-index: 1 !important;
 }
 
 [data-modern-ui='true'] .terminal-resizer.left:hover::before,
 [data-modern-ui='true'] .terminal-resizer.left:active::before {
-  background: var(--text-accent, #8b5cf6) !important;
+  background: var(--accent-color) !important;
 }
 
 /* Sizing and layout for terminal container */

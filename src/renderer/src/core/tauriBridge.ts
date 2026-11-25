@@ -373,7 +373,7 @@ export function initTauriBridge(): void {
     saveImage: (buffer: Uint8Array | number[], name?: string) =>
       invoke('save_workspace_image', {
         bytes: Array.from(buffer || []),
-        targetFolder: '',
+        targetFolder: '.lumina/assets',
         name: name || null
       }),
     saveImageFromPath: (filePath: string, filename?: string) =>

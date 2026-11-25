@@ -1,13 +1,35 @@
 import { useCallback, useMemo } from 'react'
-import { EditorView } from '@codemirror/view'
-import { startCompletion } from '@codemirror/autocomplete'
+import { EditorView, ViewPlugin } from '@codemirror/view'
+import { startCompletion, closeCompletion, completionStatus } from '@codemirror/autocomplete'
 import { createLuminaWikiLinks } from './luminaWikiLinks'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { shouldTriggerWikilinkCompletion, matchesNormalized, normalizeWikilinkTarget } from '../../../core/i18n'
 
+const closeCompletionOnOutsideClick = ViewPlugin.fromClass(
+  class {
+    constructor(view) {
+      this.view = view
+      this.handlePointerDown = (e) => {
+        if (completionStatus(this.view.state) !== 'active') return
+        const target = e.target
+        if (target && typeof target.closest === 'function' && target.closest('.cm-tooltip-autocomplete')) {
+          return
+        }
+        closeCompletion(this.view)
+      }
+      document.addEventListener('pointerdown', this.handlePointerDown, true)
+    }
+
+    destroy() {
+      document.removeEventListener('pointerdown', this.handlePointerDown, true)
+    }
+  }
+)
+
 export function useWikilinkCompletion({ showToast }) {
   const autocompleteTriggerListener = useMemo(
-    () =>
+    () => [
+      closeCompletionOnOutsideClick,
       EditorView.updateListener.of((update) => {
         if (update.docChanged) {
           const view = update.view
@@ -30,7 +52,8 @@ export function useWikilinkCompletion({ showToast }) {
             }
           }
         }
-      }),
+      })
+    ],
     []
   )
 

@@ -115,22 +115,6 @@ export const EditorMenu: React.FC<EditorMenuProps> = ({
               >
                 <div
                   className="dropdown-item"
-                  onClick={() => {
-                    setShowMoreMenu(false)
-                    if (snippet) {
-                      window.dispatchEvent(
-                        new CustomEvent('open-rename-modal', { detail: { note: snippet } })
-                      )
-                    }
-                  }}
-                >
-                  <span className="menu-label">Rename Note</span>
-                  <span className="shortcut-label">F2</span>
-                  <Edit3 size={12} className="menu-icon-right" />
-                </div>
-                <div className="dropdown-divider" />
-                <div
-                  className="dropdown-item"
                   onClick={async () => {
                     try {
                       if (snippet?.code) {
@@ -154,7 +138,7 @@ export const EditorMenu: React.FC<EditorMenuProps> = ({
                     if (onOpenExportDialog) onOpenExportDialog()
                   }}
                 >
-                  <span className="menu-label">Export with Preview…</span>
+                  <span className="menu-label">Export…</span>
                   <Download size={12} className="menu-icon-right" />
                 </div>
               </div>,

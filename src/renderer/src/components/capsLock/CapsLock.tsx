@@ -63,7 +63,6 @@ export const CapsLock: React.FC<CapsLockProps> = React.memo(
 
       window.addEventListener('keydown', checkCapsLock, opts)
       window.addEventListener('keyup', checkCapsLock, opts)
-      window.addEventListener('pointerdown', checkCapsLock, opts)
       window.addEventListener('focus', handleFocus, opts)
       window.addEventListener('blur', handleBlur, opts)
 
@@ -71,7 +70,6 @@ export const CapsLock: React.FC<CapsLockProps> = React.memo(
         isMounted = false
         window.removeEventListener('keydown', checkCapsLock, opts)
         window.removeEventListener('keyup', checkCapsLock, opts)
-        window.removeEventListener('pointerdown', checkCapsLock, opts)
         window.removeEventListener('focus', handleFocus, opts)
         window.removeEventListener('blur', handleBlur, opts)
       }

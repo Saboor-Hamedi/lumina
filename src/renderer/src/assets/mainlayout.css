@@ -8,6 +8,7 @@
  * - [data-modern-ui="true"]: Modern floating card design with 5px radius & 5px spacing gaps
  */
 
+.lumina-app,
 .app-shell {
   display: flex;
   flex-direction: column;
@@ -15,7 +16,7 @@
   height: 100%;
   width: 100%;
   overflow: hidden;
-  background: var(--bg-app);
+  background: var(--bg-activitybar, var(--bg-app));
   position: relative;
   border-radius: 0; 
 }
@@ -28,6 +29,7 @@
   width: 100%;
   overflow: hidden;
   position: relative;
+  background: var(--bg-activitybar, var(--bg-app));
 }
 
 .app-shell.is-resizing {
@@ -38,7 +40,7 @@
 
 .sidebar-resizer {
   position: relative;
-  width: 6px;
+  width: 0;
   flex-shrink: 0;
   cursor: ew-resize;
   background: transparent;
@@ -48,9 +50,10 @@
   justify-content: center;
   touch-action: none;
   align-self: stretch;
+  overflow: visible;
   user-select: none !important;
   -webkit-user-select: none !important;
-  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1), width 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .sidebar-resizer::before {
@@ -89,7 +92,7 @@
   width: 2px;
   height: 2px;
   border-radius: 50%;
-  background: var(--text-faint, rgba(255, 255, 255, 0.45));
+  background: var(--text-faint);
   border: none;
   box-shadow: none;
   transition: background-color 0.15s ease, transform 0.15s ease;
@@ -105,7 +108,7 @@
 .sidebar-resizer:hover .resizer-knob .knob-dot,
 .app-shell.is-resizing-left .sidebar-resizer.left .resizer-knob .knob-dot,
 .app-shell.is-resizing-right .sidebar-resizer.right .resizer-knob .knob-dot {
-  background: var(--text-accent, #a78bfa);
+  background: var(--accent-color);
   transform: scale(1.25);
 }
 
@@ -247,6 +250,7 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  background: var(--bg-activitybar, var(--bg-app));
 }
 
 .shell-workbench-row {
@@ -257,6 +261,7 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   flex-direction: row;
   width: 100%;
   overflow: hidden;
+  background: var(--bg-activitybar, var(--bg-app));
 }
 
 .shell-body > .shell-main,
@@ -379,8 +384,8 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   flex-direction: column;
   overflow: hidden;
   position: relative;
-  border-radius: 8px;
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.05));
+  border-radius: 0;
+  border: none;
 }
 
 
@@ -546,7 +551,7 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
 .shell-sidebar-right .chat-messages-scroll-area:hover,
 .shell-sidebar-right .chat-messages-container:hover,
 .shell-sidebar-right .lumina-session-scrollable:hover {
-  scrollbar-color: var(--scroll-thumb, var(--border-subtle, rgba(255, 255, 255, 0.25))) transparent;
+  scrollbar-color: var(--scroll-thumb, var(--border-strong)) transparent;
 }
 
 .shell-sidebar-right:hover .chat-messages-scroll-area::-webkit-scrollbar-thumb,
@@ -558,13 +563,13 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
 .shell-sidebar-right .chat-messages-scroll-area:hover::-webkit-scrollbar-thumb,
 .shell-sidebar-right .chat-messages-container:hover::-webkit-scrollbar-thumb,
 .shell-sidebar-right .lumina-session-scrollable:hover::-webkit-scrollbar-thumb {
-  background: var(--scroll-thumb, var(--border-subtle, rgba(255, 255, 255, 0.25))) !important;
+  background: var(--scroll-thumb, var(--border-strong)) !important;
 }
 
 .shell-sidebar-right .chat-messages-scroll-area::-webkit-scrollbar-thumb:hover,
 .shell-sidebar-right .chat-messages-container::-webkit-scrollbar-thumb:hover,
 .shell-sidebar-right .lumina-session-scrollable::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted, rgba(255, 255, 255, 0.5)) !important;
+  background: var(--text-muted) !important;
 }
 
 
@@ -915,7 +920,7 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
   background: var(--bg-accent);
   color: var(--text-accent);
   border: 1px solid var(--border-subtle);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.1);
+  box-shadow: var(--elev-popover);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -926,7 +931,7 @@ body.is-global-resizing.is-global-resizing-right .sidebar-resizer.right {
 
 .ai-fab-btn:hover {
   transform: scale(1.05) translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+  box-shadow: var(--elev-dialog);
   background: var(--bg-accent-hover);
 }
 

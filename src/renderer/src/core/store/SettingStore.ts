@@ -76,7 +76,6 @@ export interface Settings {
   sortDirection: string
   noteOrder: string[] | null
   inlineMetadata: boolean
-  metaPosition?: 'bottom' | 'top' | 'inline'
   inlineTitle: boolean
   // Link & YouTube Preview Cards
   linkCardsEnabled?: boolean
@@ -87,6 +86,14 @@ export interface Settings {
   linkCardColumns?: LinkCardColumns
   linkCardShowDescription?: boolean
   youtubeOpenInModal?: boolean
+  // Per-note Notion-style cover banner & profile emoji (stored ONLY in app_config.json)
+  noteAppearance?: Record<
+    string,
+    {
+      cover?: { type: 'gradient' | 'solid' | 'image'; value: string; positionY?: number } | null
+      emoji?: string | null
+    }
+  >
   graphTheme: string
   graphNodeSize: number
   graphShowTexts: boolean
@@ -232,7 +239,6 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     sortDirection: 'asc',
     noteOrder: null, // Array of snippet IDs for custom drag sort order
     inlineMetadata: true,
-    metaPosition: 'bottom',
     inlineTitle: true,
     ...DEFAULT_LINK_CARD_SETTINGS,
     graphTheme: 'default',
@@ -809,7 +815,6 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       cursor: defaultCursor,
       smoothScrolling: true,
       inlineMetadata: true,
-      metaPosition: 'bottom',
       inlineTitle: true,
       ...DEFAULT_LINK_CARD_SETTINGS,
       graphTheme: 'default',

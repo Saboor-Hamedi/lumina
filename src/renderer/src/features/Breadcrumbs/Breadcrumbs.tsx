@@ -381,7 +381,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '
       </ToolTip>
 
       <span className="breadcrumb-separator" aria-hidden="true">
-        <ChevronRight size={11} />
+        -&gt;
       </span>
 
       {/* Hierarchical folder segments */}
@@ -413,7 +413,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '
               </button>
             </ToolTip>
             <span className="breadcrumb-separator" aria-hidden="true">
-              <ChevronRight size={11} />
+              -&gt;
             </span>
           </React.Fragment>
         )
@@ -439,7 +439,7 @@ export const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ snippet, className = '
       {activeHeading && (
         <>
           <span className="breadcrumb-separator" aria-hidden="true">
-            <ChevronRight size={11} />
+            -&gt;
           </span>
           <ToolTip text={`Section: ${activeHeading.text} (Click for outline)`} position="bottom">
             <button

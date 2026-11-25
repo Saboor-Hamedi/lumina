@@ -143,7 +143,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
                 <div
                   className="accent-titlebar-avatar-wrap"
                   style={{
-                    borderColor: themeAccentColor || 'var(--text-accent, #40bafa)',
+                    borderColor: themeAccentColor || 'var(--text-accent)',
                     borderWidth: '1.5px',
                     borderStyle: 'solid'
                   }}
@@ -161,7 +161,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
                       <User
                         size={16}
                         strokeWidth={2}
-                        style={{ color: 'var(--text-muted, #94a3b8)', flexShrink: 0 }}
+                        style={{ color: 'var(--text-muted)', flexShrink: 0 }}
                       />
                     </div>
                   )}
@@ -173,7 +173,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(() => {
                 isOpen={isAccentOpen}
                 onClose={() => setIsAccentOpen(false)}
                 initialColor={themeAccentColor}
-                defaultColor="#40bafa"
+                defaultColor={themeAccentColor || undefined}
                 onSelect={(color: string) => {
                   updateThemeAccentColor(color)
                 }}

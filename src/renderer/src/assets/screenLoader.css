@@ -19,24 +19,29 @@
 }
 
 [data-theme='light'] .screen-loader-overlay,
-[data-theme='porcelain'] .screen-loader-overlay {
+[data-theme='porcelain'] .screen-loader-overlay,
+[data-theme='rosePineDawn'] .screen-loader-overlay {
   background-color: var(--bg-app, #f8fafc);
 }
 
 [data-theme='light'] .screen-loader-title,
-[data-theme='porcelain'] .screen-loader-title {
+[data-theme='porcelain'] .screen-loader-title,
+[data-theme='rosePineDawn'] .screen-loader-title {
   color: var(--text-main, #0f172a);
 }
 
 [data-theme='light'] .screen-loader-emblem-wrap,
 [data-theme='light'] .screen-loader-status,
 [data-theme='porcelain'] .screen-loader-emblem-wrap,
-[data-theme='porcelain'] .screen-loader-status {
+[data-theme='porcelain'] .screen-loader-status,
+[data-theme='rosePineDawn'] .screen-loader-emblem-wrap,
+[data-theme='rosePineDawn'] .screen-loader-status {
   color: var(--text-muted, #475569);
 }
 
 [data-theme='light'] .screen-loader-bar-container,
-[data-theme='porcelain'] .screen-loader-bar-container {
+[data-theme='porcelain'] .screen-loader-bar-container,
+[data-theme='rosePineDawn'] .screen-loader-bar-container {
   background: var(--border-dim, rgba(15, 23, 42, 0.1));
 }
 

@@ -191,7 +191,18 @@ export const applyTheme = (
   const borderDim = computedColors['--border-dim'] || theme.colors['--border-dim'] || 'rgba(255, 255, 255, 0.06)'
   const bgPanel = computedColors['--bg-panel'] || theme.colors['--bg-panel'] || '#161622'
   const bgEditor = computedColors['--bg-editor'] || computedColors['--bg-app'] || '#ffffff'
+  const bgActivityBar = computedColors['--bg-activitybar'] || theme.colors['--bg-activitybar']
+  const bgShell =
+    bgActivityBar && bgActivityBar.toLowerCase() !== bgEditor.toLowerCase()
+      ? bgActivityBar
+      : `color-mix(in srgb, ${bgEditor} 92%, ${textMain} 8%)`
 
+  root.style.setProperty('--bg-shell', bgShell)
+  root.style.setProperty('--bg-primary', bgEditor)
+  root.style.setProperty('--bg-surface', bgEditor)
+  root.style.setProperty('--border-color', borderDim)
+  root.style.setProperty('--accent-color', textAccent)
+  root.style.setProperty('--text-secondary', textMuted)
   root.style.setProperty('--atomic-editor-bg', bgEditor)
   root.style.setProperty('--atomic-editor-fg', textMain)
   root.style.setProperty('--atomic-editor-fg-muted', textMuted)
@@ -242,9 +253,9 @@ export const applyTheme = (
 
   const runSideEffects = () => {
     localStorage.setItem('lumina_active_theme_colors', JSON.stringify(computedColors))
-    const bgApp = computedColors['--bg-app'] || theme.colors['--bg-app']
-    if (bgApp && /^#[0-9a-f]{6}$/i.test(bgApp)) {
-      ;(window as any).api?.setWindowBackgroundColor?.(bgApp)
+    const bgWindow = computedColors['--bg-activitybar'] || computedColors['--bg-app'] || theme.colors['--bg-app']
+    if (bgWindow && /^#[0-9a-f]{6}$/i.test(bgWindow)) {
+      ;(window as any).api?.setWindowBackgroundColor?.(bgWindow)
     }
     if (typeof window !== 'undefined') {
       window.dispatchEvent(

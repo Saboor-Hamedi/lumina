@@ -3,6 +3,7 @@
  *
  * Dedicated styles for multi-column / multi-row split panes, resizers,
  * tab bar split actions, and borderless drag-and-drop placeholders.
+ * 100% Theme-Token Driven — Zero Hardcoded Colors.
  */
 
 .workspace-split-container {
@@ -13,6 +14,10 @@
   min-height: 0;
   overflow: hidden;
   position: relative;
+}
+
+[data-modern-ui='true'] .workspace-split-container {
+  overflow: visible;
 }
 
 .workspace-split-container.split-horizontal {
@@ -27,22 +32,41 @@
   overflow: hidden;
 }
 
+[data-modern-ui='true'] .workspace-split-slot {
+  overflow: visible;
+}
+
 .workspace-pane {
   display: flex;
   flex-direction: column;
+  flex: 1;
   min-width: 0;
   min-height: 0;
   position: relative;
   overflow: hidden;
 }
 
+/* Islands Mode: Each split leaf pane is an elevated 10px floating card */
+[data-modern-ui='true'] .workspace-split-container .workspace-pane {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--island-radius, 10px);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
 .workspace-pane.is-split {
   box-shadow: inset 0 1px 0 transparent;
-  transition: box-shadow 150ms ease;
+  transition: box-shadow 150ms ease, border-color 150ms ease;
 }
 
 .workspace-pane.is-split.is-focused {
-  box-shadow: inset 0 2px 0 var(--text-accent, #40bafa);
+  box-shadow: inset 0 2px 0 var(--accent-color);
+}
+
+[data-modern-ui='true'] .workspace-split-container .workspace-pane.is-split.is-focused {
+  border-color: var(--border-accent);
+  box-shadow: none;
 }
 
 .workspace-pane-body {
@@ -55,11 +79,11 @@
   overflow: hidden;
 }
 
-/* Split Divider Resizer */
+/* Split Divider Resizer (Classic mode: 3px divider; Islands mode: 6px recessed --bg-shell gap) */
 .split-pane-resizer {
   position: relative;
   flex-shrink: 0;
-  background: var(--border-dim, rgba(255, 255, 255, 0.08));
+  background: var(--border-color);
   transition: background-color 140ms ease;
   z-index: 15;
 }
@@ -77,7 +101,51 @@
 .split-pane-resizer:hover,
 body.is-split-resizing-v .split-pane-resizer.vertical,
 body.is-split-resizing-h .split-pane-resizer.horizontal {
-  background: var(--text-accent, #40bafa);
+  background: var(--accent-color);
+}
+
+/* Islands Mode Split Resizers: 6px gap over --bg-shell with subtle 2px accent indicator */
+[data-modern-ui='true'] .split-pane-resizer {
+  background: transparent !important;
+}
+
+[data-modern-ui='true'] .split-pane-resizer.vertical {
+  width: var(--island-gap, 6px);
+}
+
+[data-modern-ui='true'] .split-pane-resizer.horizontal {
+  height: var(--island-gap, 6px);
+}
+
+[data-modern-ui='true'] .split-pane-resizer::after {
+  content: '';
+  position: absolute;
+  border-radius: 2px;
+  background: transparent;
+  transition: background var(--dur-fast, 100ms) var(--ease-snappy);
+  pointer-events: none;
+}
+
+[data-modern-ui='true'] .split-pane-resizer.vertical::after {
+  top: 10px;
+  bottom: 10px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+}
+
+[data-modern-ui='true'] .split-pane-resizer.horizontal::after {
+  left: 10px;
+  right: 10px;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+[data-modern-ui='true'] .split-pane-resizer:hover::after,
+[data-modern-ui='true'] body.is-split-resizing-v .split-pane-resizer.vertical::after,
+[data-modern-ui='true'] body.is-split-resizing-h .split-pane-resizer.horizontal::after {
+  background: var(--accent-color);
 }
 
 body.is-split-resizing-v,
@@ -99,7 +167,7 @@ body.is-split-resizing-h * {
   gap: 2px;
   padding: 0 6px;
   flex-shrink: 0;
-  border-left: 1px solid var(--border-dim, rgba(255, 255, 255, 0.06));
+  border-left: 1px solid var(--border-color);
 }
 
 .tabbar-split-btn {
@@ -112,7 +180,7 @@ body.is-split-resizing-h * {
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: var(--text-muted, #94a3b8);
+  color: var(--text-muted);
   cursor: pointer;
   transition:
     color 120ms ease,
@@ -127,12 +195,12 @@ body.is-split-resizing-h * {
 }
 
 .tabbar-split-btn:hover {
-  color: var(--text-main, #f8fafc);
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
+  color: var(--text-main);
+  background: var(--bg-hover);
 }
 
 .tabbar-split-btn.active {
-  color: var(--text-accent, #40bafa);
+  color: var(--accent-color);
 }
 
 .tab-close-btn {
@@ -150,7 +218,7 @@ body.is-split-resizing-h * {
 .workspace-tab .tab-close-btn.is-close-others {
   opacity: 0.9 !important;
   pointer-events: auto !important;
-  color: var(--text-accent, #40bafa) !important;
+  color: var(--accent-color) !important;
 }
 
 .workspace-tab .tab-close-btn.is-close-others svg {
@@ -168,31 +236,38 @@ body.is-split-resizing-h * {
   }
 }
 
-.workspace-tab.is-closing {
+.workspace-tab.is-closing,
+[data-modern-ui='true'] .workspace-tab.is-closing {
   opacity: 0 !important;
+  width: 0 !important;
   max-width: 0 !important;
   min-width: 0 !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
   margin-left: 0 !important;
-  margin-right: 0 !important;
+  margin-right: -2px !important;
+  border-left-width: 0 !important;
+  border-right-width: 0 !important;
   border-color: transparent !important;
+  box-shadow: none !important;
   overflow: hidden !important;
   pointer-events: none !important;
   transition:
-    opacity 140ms ease,
-    max-width 150ms cubic-bezier(0.16, 1, 0.3, 1),
-    min-width 150ms cubic-bezier(0.16, 1, 0.3, 1),
-    padding 150ms cubic-bezier(0.16, 1, 0.3, 1),
-    margin 150ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+    opacity 110ms ease-out,
+    width 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    max-width 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    min-width 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    padding 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin 160ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-width 160ms cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 
-/* VS Code-style Borderless Pane Drop Overlays */
+/* Borderless Pane Drop Overlays */
 .pane-drop-overlay {
   position: absolute;
   pointer-events: none;
   z-index: 40;
-  background: color-mix(in srgb, var(--text-accent, #40bafa) 14%, transparent);
+  background: var(--accent-soft);
   border: none;
   border-radius: 6px;
   transition: all 120ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -230,7 +305,7 @@ body.is-split-resizing-h * {
   bottom: 50%;
 }
 
-/* TabBar Insertion Placeholder (when dragging a tab beside existing tabs in another pane) */
+/* TabBar Insertion Placeholder */
 .tabbar-drop-placeholder {
   display: inline-flex;
   align-items: center;
@@ -240,7 +315,7 @@ body.is-split-resizing-h * {
   margin: auto 4px;
   border-radius: 5px;
   border: none;
-  background: color-mix(in srgb, var(--text-accent, #40bafa) 20%, transparent);
+  background: color-mix(in srgb, var(--accent-color) 20%, transparent);
   flex-shrink: 0;
   pointer-events: none;
   animation: tabPlaceholderFade 120ms ease-out;
@@ -259,8 +334,8 @@ body.is-split-resizing-h * {
 
 .workspace-tab.drag-overlay {
   pointer-events: none;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  border: 1px solid var(--border-dim);
+  box-shadow: var(--elev-popover);
+  border: 1px solid var(--border-color);
   border-radius: 7px 7px 0 0;
   opacity: 0.96;
   padding: 0 10px;
@@ -270,7 +345,7 @@ body.is-split-resizing-h * {
   height: 32px;
   display: inline-flex;
   align-items: center;
-  background: var(--bg-editor, var(--bg-panel, #1e1e24));
-  color: var(--text-main, #e2e8f0);
+  background: var(--bg-surface);
+  color: var(--text-main);
   font-size: 12px;
 }

@@ -92,10 +92,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace);
+  font-variant-ligatures: normal;
+  font-feature-settings: "liga" 1, "calt" 1;
+  font-size: 11px;
+  line-height: 1;
   color: var(--text-faint, #64748b);
-  opacity: 0.35;
+  opacity: 0.5;
   flex-shrink: 0;
-  margin: 0 -1px;
+  margin: 0 2px;
+  user-select: none;
 }
 
 .breadcrumb-icon {

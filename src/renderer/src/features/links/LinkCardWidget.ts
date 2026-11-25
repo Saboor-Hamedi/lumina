@@ -11,26 +11,31 @@ import {
   detectLinkPlatform,
   extractDomain,
   formatDisplayUrl,
-  getYouTubeThumbnailUrl
+  formatHostnameTitle,
+  getYouTubeFallbackThumbnailUrl,
+  getYouTubeThumbnailUrl,
+  normalizeLinkTitle,
+  normalizeSiteName,
+  resolveLinkDescription
 } from './urlParser'
 import { fetchLinkMetadata, getCachedLinkMetadata } from './linkMetadata'
 import { resolveLinkCardSettings } from './linkCardConfig'
 import { createIconButton, LINK_ICONS, renderSiteIcon } from './linkIcons'
 import {
   handleExternalLinkClick,
-  openExternalUrl,
   openMediaPeekModal,
   openYouTubeModal
 } from './mediaModal'
+import { createLinkWrapperElement } from './LinkWrapper'
 
 function resolveWidgetHeight(): number {
   const cfg = resolveLinkCardSettings(useSettingStore.getState().settings)
-  if (cfg.linkCardStyle === 'minimal') return 30
-  if (cfg.linkCardStyle === 'card') return 72
-  if (!cfg.linkCardShowDescription) return 34
-  if (cfg.linkCardSize === 'compact') return 36
-  if (cfg.linkCardSize === 'large') return 54
-  return 44
+  if (cfg.linkCardStyle === 'minimal') return 36
+  if (cfg.linkCardStyle === 'card') return 90
+  if (!cfg.linkCardShowDescription) return 54
+  if (cfg.linkCardSize === 'compact') return 60
+  if (cfg.linkCardSize === 'large') return 94
+  return 78
 }
 
 export interface CreateLinkCardOptions {
@@ -38,6 +43,7 @@ export interface CreateLinkCardOptions {
   label?: string
   youtubeId: string | null
   onEdit?: () => void
+  onDelete?: () => void
   inGrid?: boolean
 }
 
@@ -45,10 +51,9 @@ export interface CreateLinkCardOptions {
  * Shared DRY DOM factory for both standalone pasted links and ```links grid items.
  */
 export function createLinkCardElement(opts: CreateLinkCardOptions): HTMLElement {
-  const { url, label, youtubeId, onEdit, inGrid } = opts
+  const { url, label, youtubeId, onEdit, onDelete, inGrid } = opts
   const platform = detectLinkPlatform(url)
   const domain = extractDomain(url)
-  const displayPath = formatDisplayUrl(url, 68)
   const cached = getCachedLinkMetadata(url)
 
   const card = document.createElement('div')
@@ -62,16 +67,37 @@ export function createLinkCardElement(opts: CreateLinkCardOptions): HTMLElement 
   card.setAttribute('contenteditable', 'false')
   card.setAttribute('role', 'button')
   card.setAttribute('tabindex', '0')
-  card.title = formatDisplayUrl(url, 120)
+  card.setAttribute('aria-label', formatDisplayUrl(url, 120))
+  card.dataset.url = url
 
   let currentImageUrl: string | null = cached?.image || null
 
-  // ── Left Content Column ──
+  // ── Left Content Column (Clean 3-tier editorial layout matching hover popover) ──
   const body = document.createElement('div')
   body.className = 'lumina-link-card-body'
 
-  const topRow = document.createElement('div')
-  topRow.className = 'lumina-link-card-top'
+  const titleEl = document.createElement('div')
+  titleEl.className = 'lumina-link-card-title'
+  const resolveTitle = (rawTitle?: string | null) => {
+    if (label && label.trim()) return label.trim()
+    if (rawTitle && rawTitle.trim()) return normalizeLinkTitle(rawTitle, url)
+    return youtubeId ? 'YouTube Video' : formatHostnameTitle(url)
+  }
+  const initialTitle = resolveTitle(cached?.title)
+  titleEl.textContent = initialTitle
+  card.dataset.title = initialTitle
+  body.appendChild(titleEl)
+
+  const descEl = document.createElement('div')
+  descEl.className = 'lumina-link-card-desc'
+  body.appendChild(descEl)
+
+  // Bottom footer row: [Favicon + Source/Domain] on left, [Actions] on right
+  const footer = document.createElement('div')
+  footer.className = 'lumina-link-card-footer'
+
+  const metaWrap = document.createElement('div')
+  metaWrap.className = 'lumina-link-card-meta'
 
   const iconSlot = document.createElement('span')
   iconSlot.className = 'lumina-link-card-icon-slot'
@@ -79,29 +105,24 @@ export function createLinkCardElement(opts: CreateLinkCardOptions): HTMLElement 
     renderSiteIcon(iconSlot, url, youtubeId ? 'youtube' : platform.id, faviconUrl)
   }
   setIcon(cached?.favicon)
-  topRow.appendChild(iconSlot)
-
-  const titleEl = document.createElement('span')
-  titleEl.className = 'lumina-link-card-title'
-  titleEl.textContent =
-    label ||
-    cached?.title ||
-    (youtubeId ? 'YouTube Video' : platform.id !== 'web' ? platform.label : domain)
-  topRow.appendChild(titleEl)
+  metaWrap.appendChild(iconSlot)
 
   const sourceTag = document.createElement('span')
   sourceTag.className = 'lumina-link-card-source'
   const buildSourceText = (site?: string | null, author?: string | null) => {
-    const primary = youtubeId
-      ? author || 'YouTube'
-      : site || (platform.id !== 'web' ? platform.label : domain)
-    if (!youtubeId && author && author.toLowerCase() !== primary.toLowerCase()) {
-      return `${primary} · ${author}`
+    if (youtubeId) {
+      return (author && author.trim()) || 'YouTube'
     }
-    return primary
+    return normalizeSiteName(site, url)
   }
-  sourceTag.textContent = buildSourceText(cached?.site_name, cached?.author)
-  topRow.appendChild(sourceTag)
+  const updateSourceDisplay = (_titleText: string, site?: string | null, author?: string | null) => {
+    const nextSource = buildSourceText(site, author)
+    sourceTag.textContent = nextSource
+    return nextSource
+  }
+  const initialSource = updateSourceDisplay(initialTitle, cached?.site_name, cached?.author)
+  metaWrap.appendChild(sourceTag)
+  footer.appendChild(metaWrap)
 
   // Inline hover actions
   const actions = document.createElement('div')
@@ -136,16 +157,29 @@ export function createLinkCardElement(opts: CreateLinkCardOptions): HTMLElement 
     }
   })
 
-  const openExtBtn = createIconButton(
+  const retryBtn = createIconButton(
     'lumina-link-card-action',
-    LINK_ICONS.external,
-    'Open in browser',
-    () => openExternalUrl(url)
+    LINK_ICONS.refresh,
+    'Retry loading preview',
+    () => {
+      void runFetch(true)
+    }
   )
+  retryBtn.style.display = cached?.failed ? '' : 'none'
 
+  actions.appendChild(retryBtn)
   actions.appendChild(peekBtn)
   actions.appendChild(copyBtn)
-  actions.appendChild(openExtBtn)
+
+  if (onDelete) {
+    const deleteBtn = createIconButton(
+      'lumina-link-card-action is-delete',
+      LINK_ICONS.trash,
+      'Delete link',
+      onDelete
+    )
+    actions.appendChild(deleteBtn)
+  }
 
   if (onEdit) {
     const editBtn = createIconButton(
@@ -157,21 +191,35 @@ export function createLinkCardElement(opts: CreateLinkCardOptions): HTMLElement 
     actions.appendChild(editBtn)
   }
 
-  topRow.appendChild(actions)
-  body.appendChild(topRow)
+  footer.appendChild(actions)
+  body.appendChild(footer)
 
-  const descEl = document.createElement('div')
-  descEl.className = 'lumina-link-card-desc'
-  if (cached?.description) {
-    descEl.textContent = cached.description
-  } else if (youtubeId) {
-    descEl.textContent = cached?.author
-      ? `${cached.author} · Click to play borderless`
-      : 'Click to play in borderless cinema modal'
-  } else {
-    descEl.textContent = displayPath
+  const updateDescDisplay = (
+    rawDesc: string | null | undefined,
+    titleText: string,
+    sourceText: string,
+    author?: string | null
+  ) => {
+    if (youtubeId) {
+      descEl.textContent = author
+        ? `${author} · Watch in borderless cinema player`
+        : 'Click to watch in borderless cinema player'
+      descEl.style.display = ''
+      card.classList.remove('is-single-line')
+      return
+    }
+    const resolved = resolveLinkDescription(rawDesc, titleText, sourceText, url)
+    if (resolved) {
+      descEl.textContent = resolved
+      descEl.style.display = ''
+      card.classList.remove('is-single-line')
+    } else {
+      descEl.textContent = ''
+      descEl.style.display = 'none'
+      card.classList.add('is-single-line')
+    }
   }
-  body.appendChild(descEl)
+  updateDescDisplay(cached?.description, initialTitle, initialSource, cached?.author)
   card.appendChild(body)
 
   // ── Right Column: Compact Edge-to-Edge Thumbnail ──
@@ -202,7 +250,8 @@ export function createLinkCardElement(opts: CreateLinkCardOptions): HTMLElement 
     peekHint.innerHTML = LINK_ICONS.peek
     mediaSlot.appendChild(peekHint)
 
-    mediaSlot.title = 'Click to peek image'
+    mediaSlot.setAttribute('data-tooltip', 'Click to peek image')
+    mediaSlot.setAttribute('data-tooltip-pos', 'top')
     mediaSlot.addEventListener('click', (e) => {
       e.preventDefault()
       e.stopPropagation()
@@ -225,7 +274,22 @@ export function createLinkCardElement(opts: CreateLinkCardOptions): HTMLElement 
     img.src = getYouTubeThumbnailUrl(youtubeId)
     img.alt = label || 'YouTube thumbnail'
     img.loading = 'lazy'
-    img.onerror = () => img.remove()
+    let triedMqFallback = false
+    const fallbackToMq = () => {
+      if (!triedMqFallback) {
+        triedMqFallback = true
+        img.src = getYouTubeFallbackThumbnailUrl(youtubeId)
+      } else {
+        img.remove()
+      }
+    }
+    // YouTube returns a 120x90 gray placeholder when maxresdefault is unavailable
+    img.onload = () => {
+      if (!triedMqFallback && img.naturalWidth > 0 && img.naturalWidth <= 120) {
+        fallbackToMq()
+      }
+    }
+    img.onerror = fallbackToMq
     mediaSlot.appendChild(img)
 
     const playBadge = document.createElement('span')
@@ -253,6 +317,9 @@ export function createLinkCardElement(opts: CreateLinkCardOptions): HTMLElement 
   })
 
   const activate = (e: Event) => {
+    if (e instanceof MouseEvent && (e.button !== 0 || e.ctrlKey || e.metaKey)) {
+      return
+    }
     if (wasDrag) {
       wasDrag = false
       return
@@ -272,19 +339,41 @@ export function createLinkCardElement(opts: CreateLinkCardOptions): HTMLElement 
     if (e.key === 'Enter' || e.key === ' ') activate(e)
   })
 
-  if (!cached) {
-    void fetchLinkMetadata(url).then((meta) => {
-      if (!card.isConnected) return
-      if (!label && meta.title) titleEl.textContent = meta.title
-      sourceTag.textContent = buildSourceText(meta.site_name, meta.author)
-      if (meta.description && !youtubeId) {
-        descEl.textContent = meta.description
-      } else if (youtubeId && meta.author) {
-        descEl.textContent = `${meta.author} · Click to play borderless`
+  const applyMeta = (meta: {
+    title?: string | null
+    description?: string | null
+    image?: string | null
+    favicon?: string | null
+    site_name?: string | null
+    author?: string | null
+    failed?: boolean
+  }) => {
+    if (!card.isConnected) return
+    const nextTitle = resolveTitle(meta.title)
+    titleEl.textContent = nextTitle
+    card.dataset.title = nextTitle
+    const nextSource = updateSourceDisplay(nextTitle, meta.site_name, meta.author)
+    updateDescDisplay(meta.description, nextTitle, nextSource, meta.author)
+    if (meta.favicon && !youtubeId) setIcon(meta.favicon)
+    if (meta.image && !youtubeId) attachOgImage(meta.image)
+    retryBtn.style.display = meta.failed ? '' : 'none'
+  }
+
+  const runFetch = async (forceRefresh = false) => {
+    card.classList.add('is-loading')
+    retryBtn.style.display = 'none'
+    try {
+      const meta = await fetchLinkMetadata(url, { forceRefresh })
+      applyMeta(meta)
+    } finally {
+      if (card.isConnected) {
+        card.classList.remove('is-loading')
       }
-      if (meta.favicon && !youtubeId) setIcon(meta.favicon)
-      if (meta.image && !youtubeId) attachOgImage(meta.image)
-    })
+    }
+  }
+
+  if (!cached) {
+    void runFetch(false)
   }
 
   return card
@@ -325,14 +414,14 @@ export class LinkCardWidget extends WidgetType {
   }
 
   toDOM(view: EditorView): HTMLElement {
-    const card = createLinkCardElement({
-      url: this.url,
-      label: this.label,
-      youtubeId: this.youtubeId,
+    let wrapEl: HTMLElement
+    wrapEl = createLinkWrapperElement({
+      items: [{ url: this.url, label: this.label, youtubeId: this.youtubeId }],
+      columns: 1,
       onEdit: () => {
         let targetPos = this.lineFrom
         try {
-          const pos = view.posAtDOM(card)
+          const pos = view.posAtDOM(wrapEl)
           if (typeof pos === 'number' && pos >= 0) targetPos = pos
         } catch {
           // Fallback to constructor lineFrom
@@ -340,7 +429,7 @@ export class LinkCardWidget extends WidgetType {
         this.onEnterSource(view, Math.min(targetPos, view.state.doc.length))
       }
     })
-    return card
+    return wrapEl
   }
 
   ignoreEvent(event: Event): boolean {

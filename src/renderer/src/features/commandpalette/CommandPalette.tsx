@@ -310,15 +310,7 @@ const CommandPaletteRow = React.memo(
         settingDisplayVal = item.settingDef.formatValue ? item.settingDef.formatValue(cur) : String(cur)
       }
 
-      const isMetaPlacementCommand = Boolean(
-        item.id && ['view.metaPositionFloatTop', 'view.metaPositionFloatBottom', 'view.metaPositionInline'].includes(item.id)
-      )
-      const currentMetaPosition = isMetaPlacementCommand ? (useSettingsStore.getState().settings?.metaPosition || 'bottom') : null
-      const isCurrentMetaCommand = Boolean(
-        (item.id === 'view.metaPositionFloatTop' && currentMetaPosition === 'top') ||
-        (item.id === 'view.metaPositionFloatBottom' && currentMetaPosition === 'bottom') ||
-        (item.id === 'view.metaPositionInline' && currentMetaPosition === 'inline')
-      )
+      const isCurrentMetaCommand = false
 
       return (
         <div
@@ -1002,11 +994,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
                     <div className="command-details-header">
                       <div className="command-details-badge-row">
                         <span className="command-details-cat">{selectedItem.command.category}</span>
-                        {Boolean(
-                          (selectedItem.command.id === 'view.metaPositionFloatTop' && (useSettingsStore.getState().settings?.metaPosition || 'bottom') === 'top') ||
-                          (selectedItem.command.id === 'view.metaPositionFloatBottom' && (useSettingsStore.getState().settings?.metaPosition || 'bottom') === 'bottom') ||
-                          (selectedItem.command.id === 'view.metaPositionInline' && (useSettingsStore.getState().settings?.metaPosition || 'bottom') === 'inline')
-                        ) && (
+                        {false && (
                           <span
                             className="setting-value-badge"
                             style={{

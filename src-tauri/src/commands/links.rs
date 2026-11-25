@@ -292,10 +292,34 @@ fn curl_fetch(url: &str, user_agent: &str, max_time: &str) -> Result<String, Str
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
-    let output = cmd
-        .output()
-        .map_err(|e| format!("Failed to fetch metadata: {}", e))?;
-    Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+    match cmd.output() {
+        Ok(output) => Ok(String::from_utf8_lossy(&output.stdout).into_owned()),
+        Err(curl_err) => {
+            // Fallback to `wget` on minimal Linux environments where `curl` is not installed
+            #[cfg(target_os = "linux")]
+            {
+                let mut wget = Command::new("wget");
+                wget.args([
+                    "-q",
+                    "-O",
+                    "-",
+                    "--max-redirect=6",
+                    &format!("--timeout={}", max_time),
+                    "--user-agent",
+                    user_agent,
+                    "--header",
+                    "Accept: text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8",
+                    "--header",
+                    "Accept-Language: en-US,en;q=0.9",
+                    url,
+                ]);
+                if let Ok(output) = wget.output() {
+                    return Ok(String::from_utf8_lossy(&output.stdout).into_owned());
+                }
+            }
+            Err(format!("Failed to fetch metadata: {}", curl_err))
+        }
+    }
 }
 
 fn is_social_preview_host(host: &str) -> bool {

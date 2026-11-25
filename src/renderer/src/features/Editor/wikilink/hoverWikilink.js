@@ -515,15 +515,18 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
     }
   }
 
-  const handleDocumentClick = (e) => {
-    if (hoverCard && !hoverCard.contains(e.target)) {
-      let linkEl = null
-      if (e.target && typeof e.target.closest === 'function') {
-        linkEl = e.target.closest('.cm-atomic-wiki-link, .cm-atomic-wikilink-wrap, [data-wiki-link-target]')
-      }
-      if (!linkEl || !wrapper.contains(linkEl)) {
-        removeCard()
-      }
+  const handleDocumentPointerDown = (e) => {
+    if (hoverCard && hoverCard.contains(e.target)) {
+      return
+    }
+    if (hoverCard || hoverTimeout || closeTimeout) {
+      removeCard(true)
+    }
+  }
+
+  const handleWindowBlur = () => {
+    if (hoverCard || hoverTimeout || closeTimeout) {
+      removeCard(true)
     }
   }
 
@@ -565,15 +568,19 @@ export function setupWikilinkHover(wrapper, getVaultStore) {
 
   wrapper.addEventListener('mouseover', handleMouseOver)
   wrapper.addEventListener('mouseout', handleMouseOut)
-  document.addEventListener('mousedown', handleDocumentClick)
+  document.addEventListener('pointerdown', handleDocumentPointerDown, true)
+  document.addEventListener('mousedown', handleDocumentPointerDown, true)
   document.addEventListener('keydown', handleKeyDown, true)
+  window.addEventListener('blur', handleWindowBlur)
   window.addEventListener('close-hover-card', handleCloseHoverCard)
 
   return () => {
     wrapper.removeEventListener('mouseover', handleMouseOver)
     wrapper.removeEventListener('mouseout', handleMouseOut)
-    document.removeEventListener('mousedown', handleDocumentClick)
+    document.removeEventListener('pointerdown', handleDocumentPointerDown, true)
+    document.removeEventListener('mousedown', handleDocumentPointerDown, true)
     document.removeEventListener('keydown', handleKeyDown, true)
+    window.removeEventListener('blur', handleWindowBlur)
     window.removeEventListener('close-hover-card', handleCloseHoverCard)
     removeCard()
     clearTimeout(hoverTimeout)

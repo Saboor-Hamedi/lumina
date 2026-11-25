@@ -4,21 +4,34 @@
    ============================================================================ */
 
 :root {
+  /* Islands Architecture Semantic Tokens (100% Theme-Engine Driven, Zero Hardcoded Colors) */
+  --bg-shell: var(--bg-activitybar, color-mix(in srgb, var(--bg-app) 92%, var(--text-main) 8%));
+  --bg-primary: var(--bg-editor, var(--bg-app));
+  --bg-surface: var(--bg-editor, var(--bg-app));
+  --bg-secondary: var(--bg-sidebar);
+  --border-color: var(--border-dim);
+  --accent-color: var(--text-accent);
+  --text-secondary: var(--text-muted);
+
+  /* Islands Geometry */
+  --island-radius: 10px;
+  --island-gap: 6px;
+
   /* 4 Tonal Surface Levels */
-  --surface-0: var(--bg-activitybar, #101014);
-  --surface-1: var(--bg-sidebar, #14141d);
-  --surface-2: var(--bg-app, #121218);
-  --surface-3: var(--bg-panel, #161622);
+  --surface-0: var(--bg-shell);
+  --surface-1: var(--bg-sidebar);
+  --surface-2: var(--bg-app);
+  --surface-3: var(--bg-panel);
 
   /* 3 Ink Tiers */
-  --ink-1: var(--text-main, #e2e8f0);
-  --ink-2: var(--text-muted, #94a3b8);
-  --ink-3: var(--text-faint, #64748b);
+  --ink-1: var(--text-main);
+  --ink-2: var(--text-muted);
+  --ink-3: var(--text-faint);
 
   /* 1px Hairline Borders */
-  --border-hairline: var(--border-dim, rgba(255, 255, 255, 0.08));
-  --border-strong: var(--border-subtle, rgba(255, 255, 255, 0.14));
-  --border-accent: color-mix(in srgb, var(--text-accent, #8b5cf6) 45%, transparent);
+  --border-hairline: var(--border-dim);
+  --border-strong: var(--border-subtle);
+  --border-accent: color-mix(in srgb, var(--text-accent) 45%, transparent);
 
   /* 4px Spacing Grid */
   --space-1: 4px;
@@ -28,10 +41,10 @@
   --space-5: 20px;
   --space-6: 24px;
 
-  /* 3 Radius Stops */
+  /* Radius Stops */
   --radius-xs: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
+  --radius-md: 7px;
+  --radius-lg: 10px;
 
   /* 3 Unified Motion Timings & Easing */
   --ease-snappy: cubic-bezier(0.16, 1, 0.3, 1);
@@ -39,15 +52,15 @@
   --dur-base: 160ms;
   --dur-slow: 220ms;
 
-  /* Restrained Ink Elevation */
-  --elev-popover: 0 8px 24px rgba(0, 0, 0, 0.24), 0 1px 2px rgba(0, 0, 0, 0.14);
-  --elev-dialog: 0 16px 40px rgba(0, 0, 0, 0.32), 0 2px 6px rgba(0, 0, 0, 0.18);
+  /* Restrained Theme-Driven Elevation */
+  --elev-popover: 0 8px 24px var(--shadow-soft), 0 1px 2px var(--shadow-soft);
+  --elev-dialog: 0 16px 40px var(--shadow-soft), 0 2px 6px var(--shadow-soft);
 
   /* Semantic Status & Accent Tints */
-  --accent-soft: color-mix(in srgb, var(--text-accent, #8b5cf6) 14%, transparent);
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  --success: #22c55e;
+  --accent-soft: color-mix(in srgb, var(--text-accent) 14%, transparent);
+  --danger: var(--icon-danger);
+  --warning: var(--icon-tertiary);
+  --success: var(--icon-secondary);
 }
 
 @keyframes lumina-fade-in {

@@ -11,13 +11,27 @@
 let activeTooltipEl = null
 let hoverTimeout = null
 
-function formatTooltipContent(text) {
-  if (!text || typeof text !== 'string') return text
+function appendTooltipContent(container, text) {
+  if (!text || typeof text !== 'string') return
   const match = text.match(/^(.*?)(?:\s*\(([^)]+)\))?$/)
   if (match && match[2]) {
-    return `<span class="tooltip-content-wrap"><span class="tooltip-label">${match[1]}</span><kbd class="tooltip-kbd">${match[2]}</kbd></span>`
+    const wrap = document.createElement('span')
+    wrap.className = 'tooltip-content-wrap'
+    const label = document.createElement('span')
+    label.className = 'tooltip-label'
+    label.textContent = match[1]
+    const kbd = document.createElement('kbd')
+    kbd.className = 'tooltip-kbd'
+    kbd.textContent = match[2]
+    wrap.appendChild(label)
+    wrap.appendChild(kbd)
+    container.appendChild(wrap)
+    return
   }
-  return `<span class="tooltip-label">${text}</span>`
+  const label = document.createElement('span')
+  label.className = 'tooltip-label'
+  label.textContent = text
+  container.appendChild(label)
 }
 
 export function showDomTooltip(targetEl, text, position = 'top') {
@@ -103,7 +117,7 @@ export function showDomTooltip(targetEl, text, position = 'top') {
   arrow.className = 'tooltip-arrow'
   Object.assign(arrow.style, arrowPos)
 
-  tooltipEl.innerHTML = formatTooltipContent(text)
+  appendTooltipContent(tooltipEl, text)
   tooltipEl.appendChild(arrow)
 
   document.body.appendChild(tooltipEl)

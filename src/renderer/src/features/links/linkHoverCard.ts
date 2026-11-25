@@ -14,6 +14,7 @@ import {
   extractDomain,
   extractYouTubeId,
   formatDisplayUrl,
+  getYouTubeFallbackThumbnailUrl,
   getYouTubeThumbnailUrl,
   isHttpUrl
 } from './urlParser'
@@ -42,6 +43,9 @@ interface ResolvedInlineLink {
   url: string
   label?: string
   anchorEl: HTMLElement
+  anchorPos?: number
+  pointerX: number
+  pointerY: number
   cacheKey: string
 }
 
@@ -104,8 +108,36 @@ function resolveInlineLinkAtEvent(
   const target = event.target
   if (!(target instanceof HTMLElement)) return null
   if (!view.contentDOM.contains(target)) return null
-  // Ignore standalone link cards/grids themselves
-  if (target.closest('.lumina-link-card, .lumina-link-grid, .lumina-link-source-bar')) return null
+  // Ignore source edit bar and interactive card action buttons (their own Lumina tooltips handle those)
+  if (
+    target.closest(
+      '.lumina-link-source-bar, .lumina-link-card-actions, .lumina-link-wrapper-edit, .lumina-link-card-media, button'
+    )
+  ) {
+    return null
+  }
+
+  // 0. Hovering a rendered link preview card (`.lumina-link-card[data-url]`)
+  const cardEl = target.closest('.lumina-link-card[data-url]') as HTMLElement | null
+  if (cardEl && view.contentDOM.contains(cardEl)) {
+    const rawUrl = (cardEl.dataset.url || '').trim()
+    if (isHttpUrl(rawUrl)) {
+      const cardTitle = cardEl.dataset.title?.trim() || undefined
+      return {
+        url: rawUrl,
+        label: cardTitle,
+        anchorEl: cardEl,
+        pointerX: event.clientX,
+        pointerY: event.clientY,
+        cacheKey: `card:${rawUrl}`
+      }
+    }
+    return null
+  }
+
+  if (target.closest('.lumina-link-wrapper, .lumina-link-grid')) {
+    return null
+  }
 
   // 1. Links rendered inside Table cells (`.cm-atomic-table`)
   const tableEl = target.closest('.cm-atomic-table')
@@ -117,7 +149,14 @@ function resolveInlineLinkAtEvent(
       if (isHttpUrl(rawUrl)) {
         const innerLabel = tableWrap.querySelector('.cm-atomic-link')?.textContent?.trim()
         const anchorEl = (tableWrap.querySelector('.cm-atomic-link') as HTMLElement | null) || tableWrap
-        return { url: rawUrl, label: innerLabel || undefined, anchorEl, cacheKey: `table:${rawUrl}` }
+        return {
+          url: rawUrl,
+          label: innerLabel || undefined,
+          anchorEl,
+          pointerX: event.clientX,
+          pointerY: event.clientY,
+          cacheKey: `table:${rawUrl}`
+        }
       }
     }
 
@@ -130,7 +169,14 @@ function resolveInlineLinkAtEvent(
       ).trim()
       if (isHttpUrl(rawHref)) {
         const label = tableAnchor.textContent?.trim() || undefined
-        return { url: rawHref, label, anchorEl: tableAnchor, cacheKey: `table:${rawHref}` }
+        return {
+          url: rawHref,
+          label,
+          anchorEl: tableAnchor,
+          pointerX: event.clientX,
+          pointerY: event.clientY,
+          cacheKey: `table:${rawHref}`
+        }
       }
     }
 
@@ -138,7 +184,13 @@ function resolveInlineLinkAtEvent(
     if (cell) {
       const cellText = cell.textContent?.trim() || ''
       if (/^https?:\/\/\S+$/i.test(cellText) && isHttpUrl(cellText)) {
-        return { url: cellText, anchorEl: cell, cacheKey: `cell:${cellText}` }
+        return {
+          url: cellText,
+          anchorEl: cell,
+          pointerX: event.clientX,
+          pointerY: event.clientY,
+          cacheKey: `cell:${cellText}`
+        }
       }
     }
     return null
@@ -189,15 +241,25 @@ function resolveInlineLinkAtEvent(
 
   const anchorEl = directLinkEl || target
   const label = (directLinkEl?.textContent || target.textContent || '').trim() || undefined
-  return { url, label, anchorEl, cacheKey: `pos:${node.from}:${url}` }
+  return {
+    url,
+    label,
+    anchorEl,
+    anchorPos: node.from,
+    pointerX: event.clientX,
+    pointerY: event.clientY,
+    cacheKey: `pos:${node.from}:${url}`
+  }
 }
 
 class InlineLinkHoverController {
   private popoverEl: HTMLElement | null = null
   private activeAnchor: HTMLElement | null = null
+  private activeResolved: ResolvedInlineLink | null = null
   private activeKey: string | null = null
   private openTimer: ReturnType<typeof setTimeout> | null = null
   private closeTimer: ReturnType<typeof setTimeout> | null = null
+  private removeTimer: ReturnType<typeof setTimeout> | null = null
   private readonly view: EditorView
 
   constructor(view: EditorView) {
@@ -205,6 +267,10 @@ class InlineLinkHoverController {
     this.view.contentDOM.addEventListener('mouseover', this.onMouseOver)
     this.view.contentDOM.addEventListener('mouseout', this.onMouseOut)
     this.view.scrollDOM.addEventListener('scroll', this.dismissImmediate, { passive: true })
+    window.addEventListener('scroll', this.dismissImmediate, { passive: true, capture: true })
+    window.addEventListener('wheel', this.dismissImmediate, { passive: true, capture: true })
+    window.addEventListener('blur', this.dismissImmediate)
+    document.addEventListener('pointerdown', this.onPointerDownOutside, true)
     window.addEventListener('keydown', this.onKeyDown, true)
   }
 
@@ -217,6 +283,17 @@ class InlineLinkHoverController {
       clearTimeout(this.closeTimer)
       this.closeTimer = null
     }
+    if (this.removeTimer) {
+      clearTimeout(this.removeTimer)
+      this.removeTimer = null
+    }
+  }
+
+  private onPointerDownOutside = (e: PointerEvent) => {
+    if (!this.popoverEl && !this.openTimer) return
+    const target = e.target as Node | null
+    if (target && this.popoverEl?.contains(target)) return
+    this.dismissImmediate()
   }
 
   private onKeyDown = (e: KeyboardEvent) => {
@@ -258,13 +335,38 @@ class InlineLinkHoverController {
   private scheduleClose = () => {
     if (this.closeTimer) clearTimeout(this.closeTimer)
     this.closeTimer = setTimeout(() => {
-      this.dismissImmediate()
+      this.dismissSmooth()
     }, CLOSE_DELAY_MS)
+  }
+
+  private dismissSmooth = () => {
+    if (this.openTimer) {
+      clearTimeout(this.openTimer)
+      this.openTimer = null
+    }
+    if (this.closeTimer) {
+      clearTimeout(this.closeTimer)
+      this.closeTimer = null
+    }
+    const pop = this.popoverEl
+    this.activeAnchor = null
+    this.activeResolved = null
+    this.activeKey = null
+    this.popoverEl = null
+    if (pop) {
+      pop.style.pointerEvents = 'none'
+      pop.classList.remove('show')
+      this.removeTimer = setTimeout(() => {
+        pop.remove()
+        this.removeTimer = null
+      }, 170)
+    }
   }
 
   private dismissImmediate = () => {
     this.clearTimers()
     this.activeAnchor = null
+    this.activeResolved = null
     this.activeKey = null
     if (this.popoverEl) {
       this.popoverEl.remove()
@@ -272,13 +374,71 @@ class InlineLinkHoverController {
     }
   }
 
+  private resolveAnchorRect(): Pick<DOMRect, 'top' | 'bottom' | 'left' | 'right' | 'width'> | null {
+    const resolved = this.activeResolved
+    if (!resolved) return null
+
+    // 1. Prefer the exact inline link rect closest to the pointer (skip full .cm-line containers)
+    if (resolved.anchorEl.isConnected && !resolved.anchorEl.classList.contains('cm-line')) {
+      const rects = Array.from(resolved.anchorEl.getClientRects()).filter(
+        (r) => r.width > 0 && r.height > 0
+      )
+      if (rects.length > 0) {
+        let best = rects[0]
+        let bestDist = Infinity
+        for (const r of rects) {
+          const cx = Math.max(r.left, Math.min(resolved.pointerX, r.right))
+          const cy = Math.max(r.top, Math.min(resolved.pointerY, r.bottom))
+          const d = Math.hypot(resolved.pointerX - cx, resolved.pointerY - cy)
+          if (d < bestDist) {
+            bestDist = d
+            best = r
+          }
+        }
+        return best
+      }
+      const box = resolved.anchorEl.getBoundingClientRect()
+      if (box.width > 0 || box.height > 0) {
+        return box
+      }
+    }
+
+    // 2. Fallback to CodeMirror document coordinates if the span was recreated
+    if (typeof resolved.anchorPos === 'number' && resolved.anchorPos <= this.view.state.doc.length) {
+      const coords = this.view.coordsAtPos(resolved.anchorPos)
+      if (coords && (coords.bottom > coords.top || coords.left > 0)) {
+        return {
+          top: coords.top,
+          bottom: coords.bottom,
+          left: coords.left,
+          right: coords.right,
+          width: Math.max(1, coords.right - coords.left)
+        }
+      }
+    }
+
+    // 3. Final fallback to pointer coordinates (never jump to top: 0)
+    if (resolved.pointerX > 0 || resolved.pointerY > 0) {
+      return {
+        top: resolved.pointerY - 8,
+        bottom: resolved.pointerY + 8,
+        left: resolved.pointerX - 20,
+        right: resolved.pointerX + 20,
+        width: 40
+      }
+    }
+    return null
+  }
+
   private positionActivePopover() {
-    if (!this.popoverEl || !this.activeAnchor || !this.activeAnchor.isConnected) return
+    if (!this.popoverEl) return
+    const anchorRect = this.resolveAnchorRect()
+    if (!anchorRect) return
+
     const bounds = getEditorBounds(this.view)
     const availWidth = Math.max(200, bounds.right - bounds.left - BOUNDS_GAP * 2)
     this.popoverEl.style.maxWidth = `${Math.min(304, availWidth)}px`
 
-    const anchorRect = this.activeAnchor.getBoundingClientRect()
     const popRect = this.popoverEl.getBoundingClientRect()
     const pos = computeSmartPopoverPosition(
       anchorRect,
@@ -293,6 +453,7 @@ class InlineLinkHoverController {
   private showPopover(resolved: ResolvedInlineLink) {
     this.dismissImmediate()
     this.activeAnchor = resolved.anchorEl
+    this.activeResolved = resolved
     this.activeKey = resolved.cacheKey
 
     const { url, label } = resolved
@@ -397,8 +558,21 @@ class InlineLinkHoverController {
       const img = document.createElement('img')
       img.src = imgUrl
       img.alt = ''
-      img.onload = () => this.positionActivePopover()
+      let triedYtFallback = false
+      img.onload = () => {
+        if (ytId && !triedYtFallback && img.naturalWidth > 0 && img.naturalWidth <= 120) {
+          triedYtFallback = true
+          img.src = getYouTubeFallbackThumbnailUrl(ytId)
+          return
+        }
+        this.positionActivePopover()
+      }
       img.onerror = () => {
+        if (ytId && !triedYtFallback) {
+          triedYtFallback = true
+          img.src = getYouTubeFallbackThumbnailUrl(ytId)
+          return
+        }
         mediaWrap.remove()
         currentImageUrl = null
         this.positionActivePopover()
@@ -460,7 +634,13 @@ class InlineLinkHoverController {
     document.body.appendChild(pop)
     this.popoverEl = pop
     this.positionActivePopover()
-    requestAnimationFrame(() => pop.classList.add('show'))
+    // Force initial layout commit so the enter transition always plays smoothly
+    void pop.offsetHeight
+    requestAnimationFrame(() => {
+      if (pop.isConnected && this.popoverEl === pop) {
+        pop.classList.add('show')
+      }
+    })
 
     if (!cached) {
       void fetchLinkMetadata(url).then((metaRes) => {
@@ -484,6 +664,10 @@ class InlineLinkHoverController {
     this.view.contentDOM.removeEventListener('mouseover', this.onMouseOver)
     this.view.contentDOM.removeEventListener('mouseout', this.onMouseOut)
     this.view.scrollDOM.removeEventListener('scroll', this.dismissImmediate)
+    window.removeEventListener('scroll', this.dismissImmediate, true)
+    window.removeEventListener('wheel', this.dismissImmediate, true)
+    window.removeEventListener('blur', this.dismissImmediate)
+    document.removeEventListener('pointerdown', this.onPointerDownOutside, true)
     window.removeEventListener('keydown', this.onKeyDown, true)
   }
 }

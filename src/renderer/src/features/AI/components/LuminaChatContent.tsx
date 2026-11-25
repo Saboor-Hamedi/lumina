@@ -301,6 +301,7 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
                     className={`session-header-btn ${showSessions ? 'active' : ''}`}
                     onClick={(e) => {
                       e.stopPropagation()
+                      if (document.body.classList.contains('is-global-resizing')) return
                       setShowSessions((prev) => !prev)
                     }}
                     aria-label="Toggle Chat History"

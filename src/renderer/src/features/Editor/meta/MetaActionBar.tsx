@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useKeyboardShortcuts } from '../../../core/shortcuts'
 import { PulseLoader } from '../../../components/PulseLoader'
@@ -82,10 +83,17 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
       if (!showLocalGraph && !showMoreDropdown) return
 
       const handleOutsideClick = (e: MouseEvent) => {
-        if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-          setShowLocalGraph(false)
-          setShowMoreDropdown(false)
+        const target = e.target as HTMLElement | null
+        if (!target) return
+        if (
+          containerRef.current?.contains(target) ||
+          target.closest('.meta-compact-menu-portal') ||
+          target.closest('.meta-graph-popover-portal')
+        ) {
+          return
         }
+        setShowLocalGraph(false)
+        setShowMoreDropdown(false)
       }
 
       document.addEventListener('mousedown', handleOutsideClick, true)
@@ -130,51 +138,50 @@ export const MetaActionBar: React.FC<MetaActionBarProps> = React.memo(
           />
         )}
 
-        {/* Local Graph Popover: Opens in smart parallel direction with smooth entry animation */}
-        {showLocalGraph && (
-          <div
-            role="dialog"
-            aria-label="Linked Mentions Local Graph"
-            className={`meta-graph-popover ${position === 'top' ? 'pos-top' : ''}`}
-            style={{
-              position: 'absolute',
-              ...(position === 'bottom'
-                ? { bottom: 'calc(100% + 10px)', top: 'auto' }
-                : { top: 'calc(100% + 8px)', bottom: 'auto' }),
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: position === 'inline' ? 'min(480px, 92vw)' : '100%',
-              minWidth: position === 'inline' ? 'min(420px, 90vw)' : '100%',
-              maxWidth: '92vw',
-              background: 'var(--surface-3, var(--bg-panel, #18181c))',
-              zIndex: 1000,
-              borderRadius: 'var(--radius-lg, 8px)',
-              border: '1px solid var(--border-strong, var(--border-color, rgba(255,255,255,0.14)))',
-              boxShadow: 'var(--elev-dialog)',
-              overflow: 'hidden'
-            }}
-          >
-            <React.Suspense
-              fallback={
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    minHeight: 220
-                  }}
-                >
-                  <PulseLoader size="sm" />
-                </div>
-              }
+        {/* Local Graph Popover: Portaled to body so it always renders cleanly above cover banners */}
+        {showLocalGraph &&
+          createPortal(
+            <div
+              role="dialog"
+              aria-label="Linked Mentions Local Graph"
+              className="meta-graph-popover meta-graph-popover-portal"
+              style={{
+                position: 'fixed',
+                top: '86px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: 'min(520px, 92vw)',
+                maxWidth: '92vw',
+                background: 'var(--surface-3, var(--bg-panel, #18181c))',
+                zIndex: 16000,
+                borderRadius: 'var(--radius-lg, 10px)',
+                border: '1px solid var(--border-strong, var(--border-color, rgba(255,255,255,0.14)))',
+                boxShadow: 'var(--elev-dialog, 0 18px 48px rgba(0, 0, 0, 0.35))',
+                overflow: 'hidden'
+              }}
             >
-              <InlineGraph
-                focusNodeId={snippet.id}
-                onNavigate={handleGraphNavigate}
-              />
-            </React.Suspense>
-          </div>
-        )}
+              <React.Suspense
+                fallback={
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minHeight: 220
+                    }}
+                  >
+                    <PulseLoader size="sm" />
+                  </div>
+                }
+              >
+                <InlineGraph
+                  focusNodeId={snippet.id}
+                  onNavigate={handleGraphNavigate}
+                />
+              </React.Suspense>
+            </div>,
+            document.body
+          )}
       </div>
     )
   }

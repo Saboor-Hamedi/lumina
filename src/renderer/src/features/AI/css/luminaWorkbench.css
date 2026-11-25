@@ -345,16 +345,16 @@
    ========================================================================== */
 
 .lumina-session-header {
-  height: 26px;
-  min-height: 26px;
-  max-height: 26px;
-  padding: 0 12px;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  padding: 0 12px 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--bg-editor, var(--bg-app));
+  background: transparent;
   border: none !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-bottom: 1px solid var(--border-dim) !important;
   box-sizing: border-box;
   user-select: none;
   flex-shrink: 0;
@@ -364,7 +364,7 @@
 }
 
 .is-sidebar-docked .lumina-session-header {
-  padding: 0 8px;
+  padding: 0 10px 0 16px;
 }
 
 .session-header-left,
@@ -408,8 +408,8 @@
 }
 
 .session-header-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-main, #f8fafc);
+  background: var(--bg-hover, color-mix(in srgb, var(--text-main) 8%, transparent));
+  color: var(--text-main);
 }
 
 .session-header-btn:hover svg {
@@ -417,8 +417,8 @@
 }
 
 .session-header-btn.active {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-main, #f8fafc);
+  background: var(--bg-active, color-mix(in srgb, var(--text-accent) 14%, transparent));
+  color: var(--text-main);
 }
 
 .session-header-btn.active svg {

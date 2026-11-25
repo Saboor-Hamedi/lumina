@@ -9,6 +9,10 @@ export {
   extractDomain,
   formatDisplayUrl,
   detectLinkPlatform,
+  formatHostnameTitle,
+  normalizeLinkTitle,
+  normalizeSiteName,
+  resolveLinkDescription,
   parseStandaloneLinkLine,
   parseGridLinkLine,
   type LinkPlatform,
@@ -31,6 +35,7 @@ export {
 export {
   fetchLinkMetadata,
   getCachedLinkMetadata,
+  clearLinkMetadataCache,
   type LinkMetadata
 } from './linkMetadata'
 
@@ -44,6 +49,12 @@ export {
 } from './mediaModal'
 
 export { computeSmartPopoverPosition, inlineLinkHoverExtension } from './linkHoverCard'
-export { LinkCardWidget } from './LinkCardWidget'
+export { LinkCardWidget, createLinkCardElement } from './LinkCardWidget'
+export {
+  LinkWrapperWidget,
+  createLinkWrapperElement,
+  type LinkWrapperItem,
+  type CreateLinkWrapperOptions
+} from './LinkWrapper'
 export { LinkGridWidget, type LinkGridItem } from './LinkGridWidget'
 export { linkEmbedExtension, parseLinkGridHeader } from './linkEmbedExtension'

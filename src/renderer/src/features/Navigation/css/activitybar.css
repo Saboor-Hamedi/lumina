@@ -1,20 +1,23 @@
 /* ==========================================================================
-   ActivityBar Component Styling - AstroNvim Sleek Precision Ribbon
+   ActivityBar Component Styling — Slim Borderless Islands Rails (38px)
+   100% Theme-Token Driven — Zero Hardcoded Colors
    ========================================================================== */
 
 .lumina-activity-bar,
-[data-modern-ui='true'] .lumina-activity-bar {
-  width: 44px !important;
+.lumina-activity-bar-right,
+[data-modern-ui='true'] .lumina-activity-bar,
+[data-modern-ui='true'] .lumina-activity-bar-right {
+  width: 38px !important;
   min-width: 0 !important;
   max-width: none !important;
   height: 100% !important;
-  background: var(--bg-activitybar, var(--bg-sidebar)) !important;
+  background: var(--bg-shell) !important;
   border: none !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
-  align-items: flex-end !important;
-  padding: 0 !important;
+  align-items: center !important;
+  padding: 2px 0 4px 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
   flex-shrink: 0 !important;
@@ -29,13 +32,15 @@
 }
 
 .lumina-activity-bar.zen-hidden,
-[data-modern-ui='true'] .lumina-activity-bar.zen-hidden {
+.lumina-activity-bar-right.zen-hidden,
+[data-modern-ui='true'] .lumina-activity-bar.zen-hidden,
+[data-modern-ui='true'] .lumina-activity-bar-right.zen-hidden {
   width: 0 !important;
   min-width: 0 !important;
+  padding: 0 !important;
   opacity: 0 !important;
   overflow: hidden !important;
-  border-right-width: 0 !important;
-  border-right-color: transparent !important;
+  border: none !important;
   pointer-events: none !important;
   visibility: hidden !important;
   transition: none !important;
@@ -45,9 +50,9 @@
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  width: 44px !important;
+  width: 38px !important;
   flex-shrink: 0 !important;
-  gap: 2px !important;
+  gap: 4px !important;
   transform: translateZ(0);
   backface-visibility: hidden;
 }
@@ -56,71 +61,64 @@
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  width: 44px !important;
+  width: 38px !important;
   flex-shrink: 0 !important;
-  gap: 2px !important;
+  gap: 4px !important;
   margin-top: auto !important;
   transform: translateZ(0);
   backface-visibility: hidden;
 }
 
-/* Activity Bar Button: Ultra-sleek vertical tab */
+/* Activity Bar Button: Centered 30x30 pill with 7px radius */
 .activity-bar-btn,
 [data-modern-ui='true'] .activity-bar-btn {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  width: 44px !important;
-  height: 38px !important;
-  border-radius: 0 !important;
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 7px !important;
   border: none !important;
-  border-left: 2px solid transparent !important;
   background: transparent !important;
   color: var(--text-muted) !important;
-  opacity: 0.55 !important;
+  opacity: 0.72 !important;
   cursor: pointer !important;
   padding: 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
-  transition: opacity 0.12s ease, color 0.12s ease, background-color 0.12s ease, border-color 0.12s ease !important;
+  transition:
+    opacity var(--dur-fast, 100ms) ease,
+    color var(--dur-fast, 100ms) ease,
+    background-color var(--dur-fast, 100ms) ease !important;
   outline: none !important;
   position: relative !important;
 }
 
 .activity-bar-btn:hover,
 [data-modern-ui='true'] .activity-bar-btn:hover {
-  opacity: 0.9 !important;
+  opacity: 1 !important;
   color: var(--text-main) !important;
-  background: transparent !important;
+  background: var(--bg-hover) !important;
 }
 
-.activity-bar-btn:hover svg,
-[data-modern-ui='true'] .activity-bar-btn:hover svg {
-  background: color-mix(in srgb, var(--text-main) 7%, transparent) !important;
-}
-
-/* Active State: Razor-sharp solid accent edge indicator + compact padded icon pill */
+/* Active State: Clean rounded pill styled via --accent-soft & --accent-color */
 .activity-bar-btn.active,
 [data-modern-ui='true'] .activity-bar-btn.active {
   opacity: 1 !important;
-  color: var(--text-main) !important;
-  border-left: 2px solid var(--text-accent) !important;
-  background: transparent !important;
-}
-
-.activity-bar-btn.active svg,
-[data-modern-ui='true'] .activity-bar-btn.active svg {
-  color: var(--text-main) !important;
-  background: color-mix(in srgb, var(--text-accent) 14%, transparent) !important;
-  filter: drop-shadow(0 0 6px rgba(var(--text-accent-rgb, 139, 92, 246), 0.3)) !important;
+  color: var(--accent-color) !important;
+  border: none !important;
+  background: var(--accent-soft) !important;
 }
 
 .activity-bar-btn svg {
   flex-shrink: 0;
-  box-sizing: content-box;
-  padding: 6px;
-  border-radius: 7px;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent !important;
+  filter: none !important;
+  transition: color var(--dur-fast, 100ms) ease;
 }
 
 .activity-bar-btn.mail-btn {
@@ -129,40 +127,13 @@
 
 .activity-bar-btn .mail-unread-badge {
   position: absolute;
-  top: 6px;
-  right: 8px;
+  top: 4px;
+  right: 4px;
   width: 6px;
   height: 6px;
   border-radius: 9999px;
-  background: #ef4444;
-  box-shadow: 0 0 0 1.5px var(--bg-activitybar, var(--bg-sidebar));
-}
-
-/* Right Activity Bar: Mirrored edge alignment & active indicator */
-.lumina-activity-bar-right,
-[data-modern-ui='true'] .lumina-activity-bar-right {
-  align-items: flex-start !important;
-  border: none !important;
-  transition: none !important;
-}
-
-.lumina-activity-bar-right.zen-hidden,
-[data-modern-ui='true'] .lumina-activity-bar-right.zen-hidden {
-  border-left-width: 0 !important;
-  border-left-color: transparent !important;
-  transition: none !important;
-}
-
-.lumina-activity-bar-right .activity-bar-btn,
-[data-modern-ui='true'] .lumina-activity-bar-right .activity-bar-btn {
-  border-left: none !important;
-  border-right: 2px solid transparent !important;
-}
-
-.lumina-activity-bar-right .activity-bar-btn.active,
-[data-modern-ui='true'] .lumina-activity-bar-right .activity-bar-btn.active {
-  border-left: none !important;
-  border-right: 2px solid var(--text-accent) !important;
+  background: var(--danger);
+  box-shadow: 0 0 0 1.5px var(--bg-shell);
 }
 
 .activity-bar-help-wrap {
@@ -176,20 +147,15 @@
   position: fixed;
   min-width: 175px;
   padding: 4px;
-  background: var(--surface-3, var(--bg-sidebar));
-  border: 1px solid var(--border-strong, var(--border-dim));
-  border-radius: var(--radius-lg, 8px);
+  background: var(--surface-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg, 10px);
   box-shadow: var(--elev-popover);
   display: flex;
   flex-direction: column;
   gap: 2px;
   z-index: 100000 !important;
-  animation: lumina-pop-in var(--dur-fast, 100ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1));
-}
-
-@keyframes popover-fade-in {
-  from { opacity: 0; transform: translateX(-4px) scale(0.98); }
-  to { opacity: 1; transform: translateX(0) scale(1); }
+  animation: lumina-pop-in var(--dur-fast, 100ms) var(--ease-snappy);
 }
 
 .activity-bar-help-item {
@@ -199,7 +165,7 @@
   height: 28px;
   padding: 0 8px;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   background: transparent;
   color: var(--text-main);
   font-size: 11.5px;
@@ -210,7 +176,7 @@
 }
 
 .activity-bar-help-item:hover {
-  background: var(--bg-hover, rgba(255, 255, 255, 0.06));
+  background: var(--bg-hover);
 }
 
 .activity-bar-help-item span {
@@ -220,5 +186,4 @@
 .activity-bar-help-item kbd {
   font-size: 9.5px;
   color: var(--text-muted);
-  font-family: var(--font-mono, monospace);
 }

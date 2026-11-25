@@ -3,17 +3,18 @@
  * Fixed sticky mode badge, ultra-sleek micro badges, invisible scroll
  * ============================================================ */
 
-/* Status Bar Container: Clean parallel footer under main workspace with transparent background */
+/* Status Bar Container: Clean parallel footer matching TitleBar & ActivityBars chrome */
+/* Status Bar Container: Slim borderless 26px strip sitting directly on --bg-shell */
 .status-bar,
 [data-modern-ui='true'] .status-bar {
-  margin: 2px 0 0 0 !important;
+  margin: 0 !important;
   border-radius: 0 !important;
   border: none !important;
   border-top: none !important;
-  background: transparent !important;
-  height: 22px !important;
-  min-height: 22px !important;
-  max-height: 22px !important;
+  background: var(--bg-shell) !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
   width: 100% !important;
   box-sizing: border-box;
   box-shadow: none !important;
@@ -22,7 +23,7 @@
   align-items: center !important;
   padding: 0 !important;
   font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace) !important;
-  font-size: 11px !important;
+  font-size: 11.5px !important;
   user-select: none !important;
   z-index: 100 !important;
   overflow: hidden !important;
@@ -46,6 +47,7 @@
   flex: 1 1 0% !important;
   min-width: 0 !important;
   height: 100% !important;
+  background: var(--bg-shell) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
@@ -147,15 +149,25 @@
   flex-shrink: 0 !important;
 }
 
-/* Center Section */
+/* Center Section: Truly centered in the status bar regardless of left/right item widths */
 .status-bar-center,
 [data-modern-ui='true'] .status-bar-center {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   height: 100% !important;
   flex-shrink: 0 !important;
   min-width: 20px !important;
+  z-index: 2 !important;
+  pointer-events: none;
+}
+
+.status-bar-center > * {
+  pointer-events: auto;
 }
 
 /* Right Section: Lualine Metrics */

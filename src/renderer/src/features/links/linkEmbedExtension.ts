@@ -27,13 +27,12 @@ import {
   resolveLinkCardSettings,
   type LinkCardColumns
 } from './linkCardConfig'
-import { LinkCardWidget } from './LinkCardWidget'
-import { LinkGridWidget, type LinkGridItem } from './LinkGridWidget'
+import { LinkWrapperWidget, type LinkWrapperItem } from './LinkWrapper'
 import { inlineLinkHoverExtension } from './linkHoverCard'
 import './linkEmbed.css'
 
 const refreshLinkCardsEffect = StateEffect.define<null>()
-const openLinkSourceEffect = StateEffect.define<{ from: number; to: number }>()
+const openLinkSourceEffect = StateEffect.define<{ from: number; to: number; isFenced: boolean }>()
 const closeLinkSourceEffect = StateEffect.define<null>()
 
 const sourceLineDeco = Decoration.line({ class: 'lumina-link-source-line' })
@@ -72,7 +71,9 @@ class ExitSourcePillWidget extends WidgetType {
     btn.type = 'button'
     btn.className = 'lumina-link-source-done-btn'
     btn.textContent = 'Preview'
-    btn.title = 'Return to link preview (Esc)'
+    btn.setAttribute('data-tooltip', 'Return to link preview (Esc)')
+    btn.setAttribute('data-tooltip-pos', 'top')
+    btn.setAttribute('aria-label', 'Return to link preview (Esc)')
     btn.addEventListener('mousedown', (e) => {
       e.preventDefault()
       e.stopPropagation()
@@ -100,6 +101,7 @@ const exitSourcePillDeco = Decoration.widget({
 interface SourceEditRange {
   from: number
   to: number
+  isFenced: boolean
 }
 
 interface LinkEmbedState {
@@ -107,17 +109,75 @@ interface LinkEmbedState {
   decorations: DecorationSet
 }
 
-function enterSourceForPositions(from: number, to: number) {
+function enterSourceForPositions(from: number, to: number, isFenced: boolean) {
   return (view: EditorView, _pos: number) => {
     const docLen = view.state.doc.length
     const safeFrom = Math.min(Math.max(0, from), docLen)
     const safeTo = Math.min(Math.max(safeFrom, to), docLen)
     view.dispatch({
-      effects: openLinkSourceEffect.of({ from: safeFrom, to: safeTo }),
+      effects: openLinkSourceEffect.of({ from: safeFrom, to: safeTo, isFenced }),
       selection: { anchor: safeFrom },
       scrollIntoView: true
     })
     view.focus()
+  }
+}
+
+function deleteLinkBlockOrItem(
+  view: EditorView,
+  itemIndex: number,
+  from: number,
+  to: number,
+  totalItems: number
+): void {
+  const doc = view.state.doc
+  const safeFrom = Math.min(Math.max(0, from), doc.length)
+  const safeTo = Math.min(Math.max(safeFrom, to), doc.length)
+
+  // If this wrapper has only 1 link (standalone URL or single-link ```links block), delete the whole block cleanly
+  if (totalItems <= 1) {
+    let deleteFrom = safeFrom
+    let deleteTo = safeTo
+    if (deleteTo < doc.length && doc.sliceString(deleteTo, deleteTo + 1) === '\n') {
+      deleteTo += 1
+    } else if (deleteFrom > 0 && doc.sliceString(deleteFrom - 1, deleteFrom) === '\n') {
+      deleteFrom -= 1
+    }
+    view.dispatch({
+      changes: { from: deleteFrom, to: deleteTo, insert: '' },
+      selection: { anchor: deleteFrom }
+    })
+    view.focus()
+    return
+  }
+
+  // Multi-link wrapper (```links or grouped bare URLs): remove just the clicked link's line
+  const startLineNum = doc.lineAt(safeFrom).number
+  const endLineNum = doc.lineAt(safeTo).number
+  let seen = 0
+  for (let n = startLineNum; n <= endLineNum; n++) {
+    const ln = doc.line(n)
+    if (parseLinkGridHeader(ln.text).isGridOpen || FENCE_CLOSE_RE.test(ln.text.trim())) {
+      continue
+    }
+    if (parseGridLinkLine(ln.text)) {
+      if (seen === itemIndex) {
+        let delFrom = ln.from
+        let delTo = ln.to
+        if (delTo < doc.length && doc.sliceString(delTo, delTo + 1) === '\n') {
+          delTo += 1
+        } else if (delFrom > 0 && doc.sliceString(delFrom - 1, delFrom) === '\n') {
+          delFrom -= 1
+        }
+        view.dispatch({
+          changes: { from: delFrom, to: delTo, insert: '' },
+          selection: { anchor: delFrom }
+        })
+        view.focus()
+        return
+      }
+      seen++
+    }
   }
 }
 
@@ -150,7 +210,7 @@ function buildLinkEmbedDecorations(
     // 1. Explicit ```links [1|2|3|4] fenced grid block
     if (header.isGridOpen) {
       let endLineNum = -1
-      const items: LinkGridItem[] = []
+      const items: LinkWrapperItem[] = []
       for (let k = l + 1; k <= doc.lines; k++) {
         const inner = doc.line(k)
         if (FENCE_CLOSE_RE.test(inner.text.trim())) {
@@ -179,11 +239,13 @@ function buildLinkEmbedDecorations(
             line.from,
             endLine.to,
             Decoration.replace({
-              widget: new LinkGridWidget(
+              widget: new LinkWrapperWidget(
                 items,
                 cols,
                 line.from,
-                enterSourceForPositions(line.from, endLine.to)
+                endLine.to,
+                enterSourceForPositions(line.from, endLine.to, true),
+                (view, idx, f, t) => deleteLinkBlockOrItem(view, idx, f, t, items.length)
               ),
               block: true
             })
@@ -212,7 +274,7 @@ function buildLinkEmbedDecorations(
 
     // Group consecutive bare links into a side-by-side grid when Columns > 1 in Settings
     if (cfg.linkCardColumns > 1 && !isRangeInSource(sourceRange, line.from, line.to)) {
-      const groupItems: LinkGridItem[] = [
+      const groupItems: LinkWrapperItem[] = [
         { ...parsed, youtubeId: extractYouTubeId(parsed.url) }
       ]
       let endL = l
@@ -234,11 +296,13 @@ function buildLinkEmbedDecorations(
           line.from,
           endLine.to,
           Decoration.replace({
-            widget: new LinkGridWidget(
+            widget: new LinkWrapperWidget(
               groupItems,
               cols,
               line.from,
-              enterSourceForPositions(line.from, endLine.to)
+              endLine.to,
+              enterSourceForPositions(line.from, endLine.to, true),
+              (view, idx, f, t) => deleteLinkBlockOrItem(view, idx, f, t, groupItems.length)
             ),
             block: true
           })
@@ -256,18 +320,19 @@ function buildLinkEmbedDecorations(
       continue
     }
 
-    // Render standalone strip as a true `block: true` widget so no stray cursor appears on the right edge
+    // Render standalone bare URL through the exact same `LinkWrapperWidget` as ```links blocks
     const ytId = extractYouTubeId(parsed.url)
     builder.add(
       line.from,
       line.to,
       Decoration.replace({
-        widget: new LinkCardWidget(
-          parsed.url,
-          parsed.label,
-          ytId,
+        widget: new LinkWrapperWidget(
+          [{ ...parsed, youtubeId: ytId }],
+          1,
           line.from,
-          enterSourceForPositions(line.from, line.to)
+          line.to,
+          enterSourceForPositions(line.from, line.to, false),
+          (view, idx, f, t) => deleteLinkBlockOrItem(view, idx, f, t, 1)
         ),
         block: true
       })
@@ -289,12 +354,22 @@ const linkEmbedField = StateField.define<LinkEmbedState>({
   update(prev, tr) {
     let sourceRange = prev.sourceRange
     let rangeChanged = false
+    let openedInThisTr = false
 
-    // Keep sourceRange accurately mapped across insertions/deletions so typing never snaps to preview
+    // Map sourceRange across edits without swallowing newly pasted lines above/below
     if (sourceRange && tr.docChanged) {
-      sourceRange = {
-        from: tr.changes.mapPos(sourceRange.from, -1),
-        to: tr.changes.mapPos(sourceRange.to, 1)
+      const mappedFrom = tr.changes.mapPos(sourceRange.from, 1)
+      if (!sourceRange.isFenced) {
+        const clampedPos = Math.min(Math.max(0, mappedFrom), tr.state.doc.length)
+        const ln = tr.state.doc.lineAt(clampedPos)
+        sourceRange = { from: ln.from, to: ln.to, isFenced: false }
+      } else {
+        const mappedTo = tr.changes.mapPos(sourceRange.to, -1)
+        sourceRange = {
+          from: mappedFrom,
+          to: Math.max(mappedFrom, mappedTo),
+          isFenced: true
+        }
       }
     }
 
@@ -302,11 +377,21 @@ const linkEmbedField = StateField.define<LinkEmbedState>({
       if (effect.is(openLinkSourceEffect)) {
         sourceRange = effect.value
         rangeChanged = true
+        openedInThisTr = true
       } else if (effect.is(closeLinkSourceEffect)) {
         if (sourceRange !== null) {
           sourceRange = null
           rangeChanged = true
         }
+      }
+    }
+
+    // Auto-exit Source mode cleanly when the cursor moves outside the edited link/block
+    if (sourceRange && !openedInThisTr && (tr.selection || tr.docChanged)) {
+      const sel = tr.state.selection.main
+      if (sel.to < sourceRange.from || sel.from > sourceRange.to) {
+        sourceRange = null
+        rangeChanged = true
       }
     }
 
@@ -347,6 +432,36 @@ const linkEmbedConfigListener = ViewPlugin.fromClass(
         window.addEventListener(LINK_CARDS_CONFIG_EVENT, this.onConfigChange)
       }
       view.contentDOM.addEventListener('keydown', this.onKeyDown)
+    }
+
+    private syncSelectedWrappers(): void {
+      const sel = this.view.state.selection.main
+      const wrappers = this.view.contentDOM.querySelectorAll<HTMLElement>('.lumina-link-wrapper')
+      wrappers.forEach((el) => {
+        if (sel.empty) {
+          el.classList.remove('is-selected')
+          return
+        }
+        const rawFrom = Number(el.dataset.linkBlockFrom)
+        const rawTo = Number(el.dataset.linkBlockTo)
+        const span = Number.isFinite(rawFrom) && Number.isFinite(rawTo) ? Math.max(0, rawTo - rawFrom) : 0
+        let from = Number.isFinite(rawFrom) ? rawFrom : 0
+        try {
+          const domPos = this.view.posAtDOM(el)
+          if (typeof domPos === 'number' && domPos >= 0) from = domPos
+        } catch {
+          // keep dataset fallback
+        }
+        const to = from + span
+        const overlaps = sel.from <= to && sel.to >= from && (sel.to > from || span === 0)
+        el.classList.toggle('is-selected', overlaps)
+      })
+    }
+
+    update(update: { selectionSet: boolean; docChanged: boolean }) {
+      if (update.selectionSet || update.docChanged) {
+        this.syncSelectedWrappers()
+      }
     }
 
     destroy() {

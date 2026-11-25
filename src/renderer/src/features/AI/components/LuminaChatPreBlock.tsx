@@ -1,8 +1,36 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Folder, Code as CodeIcon, Copy, Check, ChevronDown } from 'lucide-react'
 import hljs from '../../../core/code/hljsCore'
 import { LuminaFolderTree, isAsciiTree } from './luminaFolderTree'
+import {
+  createLinkWrapperElement,
+  extractYouTubeId,
+  parseGridLinkLine,
+  type LinkCardColumns,
+  type LinkWrapperItem
+} from '../../links'
 import '../css/chatCode.css'
+
+const LINKS_CHAT_LANG_RE = /^(?:links?|links?-grid)(?:[-_\s]+(\d+))?$/i
+
+const ChatLinkGridBlock: React.FC<{ items: LinkWrapperItem[]; columns: LinkCardColumns }> = React.memo(
+  ({ items, columns }) => {
+    const hostRef = useRef<HTMLDivElement | null>(null)
+
+    useEffect(() => {
+      const host = hostRef.current
+      if (!host) return
+      host.innerHTML = ''
+      const el = createLinkWrapperElement({ items, columns })
+      host.appendChild(el)
+      return () => {
+        host.innerHTML = ''
+      }
+    }, [items, columns])
+
+    return <div ref={hostRef} className="chat-links-grid-host" />
+  }
+)
 
 function escapeCodeHtml(text: string): string {
   return text
@@ -26,10 +54,13 @@ export const ChatPreBlock: React.FC<ChatPreBlockProps> = React.memo(({ children,
 
   let codeString = ''
   let className = ''
+  let codeMeta = ''
 
   if (React.isValidElement(children)) {
-    className = (children.props as any)?.className || ''
-    codeString = String((children.props as any)?.children || '')
+    const childProps = children.props as any
+    className = childProps?.className || ''
+    codeString = String(childProps?.children || '')
+    codeMeta = String(childProps?.node?.data?.meta || '').trim()
   } else if (typeof children === 'string') {
     codeString = children
   } else if (Array.isArray(children)) {
@@ -45,10 +76,43 @@ export const ChatPreBlock: React.FC<ChatPreBlockProps> = React.memo(({ children,
   const lang = match ? match[1] : 'text'
   const isDelete = lang.startsWith('lumina-delete')
   const isTree = lang === 'lumina-tree' || lang === 'tree' || isAsciiTree(codeString)
+  const linksLangMatch = LINKS_CHAT_LANG_RE.exec(lang)
   const lineCount = codeString ? codeString.split('\n').length : 0
 
+  const parsedChatLinks = useMemo<{ items: LinkWrapperItem[]; columns: LinkCardColumns } | null>(() => {
+    if (!linksLangMatch) return null
+    const items: LinkWrapperItem[] = []
+    let explicitCols: LinkCardColumns | undefined
+    if (linksLangMatch[1]) {
+      const n = parseInt(linksLangMatch[1], 10)
+      explicitCols = Math.min(3, Math.max(1, Number.isFinite(n) ? n : 1)) as LinkCardColumns
+    } else if (/^\d+$/.test(codeMeta)) {
+      const n = parseInt(codeMeta, 10)
+      explicitCols = Math.min(3, Math.max(1, Number.isFinite(n) ? n : 1)) as LinkCardColumns
+    }
+    const rawLines = codeString.split(/\r?\n/)
+    for (let i = 0; i < rawLines.length; i++) {
+      const trimmed = rawLines[i].trim()
+      if (!trimmed) continue
+      // Support ` ```links 2 ` where react-markdown puts `2` into meta or first line
+      if (i === 0 && !explicitCols && /^\d+$/.test(trimmed)) {
+        const n = parseInt(trimmed, 10)
+        explicitCols = Math.min(3, Math.max(1, Number.isFinite(n) ? n : 1)) as LinkCardColumns
+        continue
+      }
+      const parsed = parseGridLinkLine(trimmed)
+      if (parsed) {
+        items.push({ ...parsed, youtubeId: extractYouTubeId(parsed.url) })
+      }
+    }
+    if (items.length === 0) return null
+    const columns: LinkCardColumns =
+      explicitCols ?? (Math.min(3, Math.max(1, items.length)) as LinkCardColumns)
+    return { items, columns }
+  }, [linksLangMatch, codeString])
+
   const highlightedHtml = useMemo(() => {
-    if (isTree || isDelete) return ''
+    if (isTree || isDelete || parsedChatLinks) return ''
     try {
       if (lang && lang !== 'text' && hljs.getLanguage(lang)) {
         return hljs.highlight(codeString, { language: lang }).value
@@ -60,7 +124,11 @@ export const ChatPreBlock: React.FC<ChatPreBlockProps> = React.memo(({ children,
     } catch {
       return escapeCodeHtml(codeString)
     }
-  }, [codeString, lang, isTree, isDelete])
+  }, [codeString, lang, isTree, isDelete, parsedChatLinks])
+
+  if (parsedChatLinks) {
+    return <ChatLinkGridBlock items={parsedChatLinks.items} columns={parsedChatLinks.columns} />
+  }
 
   if (isTree) {
     return <LuminaFolderTree rawCode={codeString} />

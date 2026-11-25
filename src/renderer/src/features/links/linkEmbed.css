@@ -8,54 +8,57 @@
   cursor: pointer !important;
 }
 
-/* Shared row height token keeps cards crisp and consistent */
+/* Shared row height token keeps cards airy, readable, and 16:9 thumbnail-proportioned */
 :root {
-  --link-row-h: 44px;
+  --link-row-h: 88px;
 }
 
 :root[data-link-card-size='compact'] {
-  --link-row-h: 36px;
+  --link-row-h: 68px;
 }
 
 :root[data-link-card-size='large'] {
-  --link-row-h: 54px;
+  --link-row-h: 102px;
 }
 
 :root[data-link-card-desc='hide'] {
-  --link-row-h: 34px;
+  --link-row-h: 56px;
 }
 
 :root[data-link-card-style='card'] {
-  --link-row-h: 72px;
+  --link-row-h: 96px;
 }
 
 :root[data-link-card-style='minimal'] {
-  --link-row-h: 30px;
+  --link-row-h: 36px;
 }
 
-/* --- Source Edit Mode Bar & Flat Line Styling --- */
+/* --- Source Edit Mode Bar & Unified Rounded Source Box (identical for standalone URLs & ```links) --- */
 .lumina-link-source-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 2px 8px;
-  margin-top: 4px;
+  padding: 5px 10px 4px 10px;
+  margin-top: 6px;
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
   border: 1px solid var(--border-dim);
   border-bottom: none;
-  background: var(--bg-panel, color-mix(in srgb, var(--text-main) 4%, transparent));
+  background: var(--bg-panel, rgba(0, 0, 0, 0.04));
+  box-sizing: border-box;
   user-select: none;
 }
 
 .lumina-link-source-hint {
-  font-size: 10.5px;
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace);
+  font-size: 11px;
   font-weight: 500;
   color: var(--text-faint);
   letter-spacing: 0.02em;
 }
 
 .lumina-link-source-done-btn {
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace);
   font-size: 11px;
   font-weight: 500;
   padding: 2px 8px;
@@ -71,17 +74,43 @@
   color: var(--text-accent);
 }
 
-.cm-line.lumina-link-source-line {
+.cm-line.lumina-link-source-line,
+.cm-line.lumina-link-source-line.cm-activeLine,
+html .cm-line.lumina-link-source-line.cm-activeLine {
   display: block !important;
   width: 100% !important;
-  box-sizing: border-box;
-  padding-left: 10px !important;
-  padding-right: 10px !important;
-  background: color-mix(in srgb, var(--text-accent) 5%, transparent);
-  box-shadow: inset 2px 0 0 var(--text-accent);
+  max-width: 100% !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  padding: 2px 10px !important;
+  line-height: 1.6 !important;
+  font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace) !important;
+  font-size: 13px !important;
+  background: var(--bg-panel, rgba(0, 0, 0, 0.04)) !important;
+  background-color: var(--bg-panel, rgba(0, 0, 0, 0.04)) !important;
+  border-left: 1px solid var(--border-dim) !important;
+  border-right: 1px solid var(--border-dim) !important;
+  box-shadow: none !important;
+  outline: none !important;
+  color: var(--text-main);
 }
 
-/* --- Default: Flat, Calm, Real Full-Width Link Strip --- */
+.cm-line.lumina-link-source-line:has(+ :not(.lumina-link-source-line)),
+.cm-line.lumina-link-source-line:last-child,
+.cm-line.lumina-link-source-line.cm-activeLine:has(+ :not(.lumina-link-source-line)),
+.cm-line.lumina-link-source-line.cm-activeLine:last-child {
+  border-bottom: 1px solid var(--border-dim) !important;
+  border-bottom-left-radius: 6px !important;
+  border-bottom-right-radius: 6px !important;
+  padding-bottom: 8px !important;
+  margin-bottom: 6px !important;
+}
+
+.cm-line.lumina-link-source-line .cm-atomic-link {
+  text-decoration: none !important;
+}
+
+/* --- Default: Crisp 3-Tier Editorial Bookmark Card (matching hover popover) --- */
 .lumina-link-card {
   position: relative;
   display: flex;
@@ -98,15 +127,28 @@
   box-sizing: border-box;
   background: var(--bg-card);
   border: 1px solid var(--border-dim);
-  border-radius: 7px;
+  border-radius: 9px;
   overflow: hidden;
   cursor: pointer;
   user-select: none;
-  line-height: 1.3;
+  line-height: 1.35;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
 .lumina-link-card:hover {
   border-color: var(--border-subtle, var(--border-main, var(--border-dim)));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.10), 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* Subtle flat loading pulse (zero height shift, no flashy shimmer) */
+@keyframes luminaLinkSoftPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.lumina-link-card.is-loading .lumina-link-card-title,
+.lumina-link-card.is-loading .lumina-link-card-desc {
+  animation: luminaLinkSoftPulse 1.3s ease-in-out infinite;
 }
 
 .lumina-link-card:focus-visible {
@@ -114,22 +156,43 @@
   outline-offset: 2px;
 }
 
-/* --- Left Column: Tight Editorial Content --- */
+/* --- Left Column: Clean 3-Tier Editorial Content --- */
 .lumina-link-card-body {
   flex: 1 1 auto;
   min-width: 0;
-  padding: 4px 10px;
+  padding: 9px 12px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 1px;
+  justify-content: space-between;
+  gap: 3px;
+  overflow: hidden;
 }
 
-.lumina-link-card-top {
+.lumina-link-card.is-single-line .lumina-link-card-body {
+  justify-content: center;
+  gap: 6px;
+}
+
+.lumina-link-card-footer {
   display: flex;
   align-items: center;
-  gap: 7px;
+  justify-content: space-between;
+  gap: 8px;
   min-width: 0;
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+.lumina-link-card.is-single-line .lumina-link-card-footer {
+  margin-top: 0;
+}
+
+.lumina-link-card-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .lumina-link-card-icon-slot {
@@ -159,43 +222,37 @@
 }
 
 .lumina-link-card-title {
-  font-size: 12.5px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-main);
-  line-height: 1.25;
-  letter-spacing: -0.01em;
+  line-height: 1.3;
+  letter-spacing: -0.012em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
-  flex: 0 1 auto;
+  flex-shrink: 0;
 }
 
 .lumina-link-card-source {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--text-faint);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 0 10 auto;
-  min-width: 0;
-  padding-left: 2px;
-}
-
-.lumina-link-card-source::before {
-  content: '·';
-  margin-right: 5px;
-  opacity: 0.55;
+  flex: 0 0 auto;
+  flex-shrink: 0;
 }
 
 .lumina-link-card-desc {
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--text-muted);
-  line-height: 1.3;
-  padding-left: 21px;
-  white-space: nowrap;
+  line-height: 1.35;
+  flex: 0 1 auto;
+  min-height: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 /* --- Inline Hover Action Micro-Buttons --- */
@@ -215,8 +272,8 @@
 }
 
 .lumina-link-card-action {
-  width: 21px;
-  height: 21px;
+  width: 20px;
+  height: 20px;
   border-radius: 5px;
   border: none;
   background: transparent;
@@ -233,15 +290,20 @@
   color: var(--text-main);
 }
 
+.lumina-link-card-action.is-delete:hover {
+  background: color-mix(in srgb, #ef4444 13%, transparent);
+  color: #ef4444;
+}
+
 .lumina-link-card-action.is-copied {
   color: #22c55e;
 }
 
-/* --- Right Column: Sleek Edge-to-Edge Thumbnail (Both Website & YouTube) --- */
+/* --- Right Column: Crisp 16:9 HD Edge-to-Edge Thumbnail --- */
 .lumina-link-card-media {
   position: relative;
-  width: 84px;
-  min-width: 84px;
+  width: 156px;
+  min-width: 156px;
   height: 100%;
   flex-shrink: 0;
   background: var(--bg-panel);
@@ -257,7 +319,13 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   display: block;
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lumina-link-card:hover .lumina-link-card-media img {
+  transform: scale(1.03);
 }
 
 .lumina-yt-play-badge {
@@ -265,8 +333,8 @@
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.72);
   color: #ffffff;
@@ -274,7 +342,7 @@
   align-items: center;
   justify-content: center;
   padding-left: 2px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
   transition: transform 0.15s ease, background 0.15s ease;
 }
 
@@ -338,12 +406,20 @@
 }
 
 :root[data-link-card-style='minimal'] .lumina-link-card {
-  border-radius: 6px;
+  border-radius: 7px;
 }
 
 :root[data-link-card-style='minimal'] .lumina-link-card-body {
-  padding: 0 8px;
-  gap: 0;
+  padding: 0 10px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+:root[data-link-card-style='minimal'] .lumina-link-card-footer {
+  margin-top: 0;
+  flex-shrink: 0;
 }
 
 :root[data-link-card-style='minimal'] .lumina-link-card-desc,
@@ -364,21 +440,26 @@
 }
 
 :root[data-link-card-size='compact'] .lumina-link-card-body {
-  padding: 2px 8px;
+  padding: 6px 10px;
+  gap: 2px;
+}
+
+:root[data-link-card-size='compact'] .lumina-link-card-desc {
+  -webkit-line-clamp: 1;
 }
 
 :root[data-link-card-size='compact'] .lumina-link-card-media {
-  width: 68px;
-  min-width: 68px;
+  width: 106px;
+  min-width: 106px;
 }
 
 :root[data-link-card-size='large'] .lumina-link-card-body {
-  padding: 6px 12px;
+  padding: 11px 14px;
 }
 
 :root[data-link-card-size='large'] .lumina-link-card-media {
-  width: 110px;
-  min-width: 110px;
+  width: 166px;
+  min-width: 166px;
 }
 
 :root[data-link-card-thumb='left'] .lumina-link-card {
@@ -398,237 +479,14 @@
   display: none;
 }
 
-/* ============================================================================
-   1, 2, and 3-Column Side-by-Side Link Grids (` ```links [1-3] `)
-   ============================================================================ */
-.lumina-link-grid {
-  position: relative;
-  display: grid;
-  gap: 8px;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  margin: 6px 0;
-  box-sizing: border-box;
-  overflow: hidden;
-  user-select: none;
-}
-
-.lumina-link-grid.cols-1 {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.lumina-link-grid.cols-2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.lumina-link-grid.cols-3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.lumina-link-card.is-in-grid {
-  margin: 0;
-  min-width: 0;
-}
-
-.lumina-link-card.is-grid-span-full {
-  grid-column: 1 / -1;
-}
-
-.lumina-link-grid.cols-2 .lumina-link-card-media {
-  width: 64px;
-  min-width: 64px;
-}
-
-.lumina-link-grid.cols-3 .lumina-link-card-media {
-  width: 52px;
-  min-width: 52px;
-}
-
-.lumina-link-grid.cols-3 .lumina-link-card-source {
-  display: none;
-}
-
-.lumina-link-grid-edit {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  z-index: 4;
-  width: 24px;
-  height: 24px;
-  border-radius: 6px;
-  border: 1px solid var(--border-dim);
-  background: var(--bg-app);
-  color: var(--text-muted);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  opacity: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
-  transition: opacity 0.14s ease, color 0.12s ease;
-}
-
-.lumina-link-grid:hover .lumina-link-grid-edit,
-.lumina-link-grid:focus-within .lumina-link-grid-edit {
-  opacity: 1;
-}
-
-.lumina-link-grid-edit:hover {
-  color: var(--text-main);
-}
-
-.lumina-link-grid-tile {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  background: var(--bg-card);
-  border: 1px solid var(--border-dim);
-  border-radius: 7px;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.lumina-link-grid-tile:hover {
-  border-color: var(--border-subtle, var(--border-main, var(--border-dim)));
-}
-
-.lumina-grid-tile-media {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border-dim);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.lumina-grid-tile-media.is-yt {
-  background: #09090b;
-}
-
-.lumina-grid-tile-media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.lumina-grid-tile-brand {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-}
-
-.lumina-grid-tile-brand-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-dim);
-  overflow: hidden;
-  color: var(--text-muted);
-}
-
-.lumina-grid-brand-favicon {
-  width: 20px !important;
-  height: 20px !important;
-  object-fit: contain !important;
-}
-
-.lumina-grid-tile-brand-host {
-  font-size: 11px;
-  font-weight: 500;
-  color: var(--text-muted);
-  max-width: 90%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lumina-grid-tile-body {
-  padding: 8px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.lumina-grid-tile-title {
-  font-size: 12.5px;
-  font-weight: 500;
-  color: var(--text-main);
-  line-height: 1.3;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lumina-grid-tile-desc {
-  font-size: 11px;
-  color: var(--text-muted);
-  line-height: 1.35;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lumina-grid-tile-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  margin-top: 2px;
-  min-width: 0;
-}
-
-.lumina-grid-tile-meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.lumina-grid-tile-source {
-  font-size: 10.5px;
-  color: var(--text-faint);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-}
-
-.lumina-grid-tile-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-  flex-shrink: 0;
-  opacity: 0;
-  transition: opacity 0.12s ease;
-}
-
-.lumina-link-grid-tile:hover .lumina-grid-tile-actions {
-  opacity: 1;
-}
+/* Wrapper & multi-column grid layout rules live in `./linkWrapper.css` */
 
 /* ============================================================================
    Smart Inline Link Hover Card Popover (High-Contrast on White/Light & Dark)
    ============================================================================ */
 .lumina-link-popover {
   position: fixed;
-  z-index: 210000;
+  z-index: 9000;
   display: flex;
   flex-direction: row;
   align-items: stretch;
@@ -637,21 +495,26 @@
   background: var(--bg-panel, var(--bg-card));
   border: 1px solid var(--border-subtle, var(--border-main, var(--border-dim)));
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   opacity: 0;
-  transform: translateY(3px);
-  transition: opacity 0.12s ease, transform 0.12s ease;
+  transform: translateY(6px) scale(0.97);
+  transform-origin: bottom center;
+  will-change: opacity, transform;
+  transition:
+    opacity 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: auto;
 }
 
 .lumina-link-popover[data-placement='bottom'] {
-  transform: translateY(-3px);
+  transform: translateY(-6px) scale(0.97);
+  transform-origin: top center;
 }
 
 .lumina-link-popover.show {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 
 .lumina-link-popover-body {

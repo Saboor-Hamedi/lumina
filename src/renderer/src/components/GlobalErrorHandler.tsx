@@ -63,6 +63,9 @@ const isProdEnvironment = (): boolean => {
   return false
 }
 
+const CHUNK_RELOAD_STORAGE_KEY = 'lumina_chunk_reload_at'
+const CHUNK_RELOAD_COOLDOWN_MS = 15_000
+
 /** Check if an error was caused by a stale or failed dynamic import chunk */
 const isChunkLoadError = (error: Error | null): boolean => {
   if (!error) return false
@@ -73,6 +76,23 @@ const isChunkLoadError = (error: Error | null): boolean => {
     msg.includes('chunkloaderror') ||
     msg.includes('dynamically imported module')
   )
+}
+
+/** Perform a single safe auto-reload on stale dynamic chunk errors (rate-limited to prevent loops). */
+const tryAutoRecoverChunkError = (): boolean => {
+  if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') return false
+  try {
+    const last = Number(sessionStorage.getItem(CHUNK_RELOAD_STORAGE_KEY) || '0')
+    const now = Date.now()
+    if (now - last > CHUNK_RELOAD_COOLDOWN_MS) {
+      sessionStorage.setItem(CHUNK_RELOAD_STORAGE_KEY, String(now))
+      window.location.reload()
+      return true
+    }
+  } catch {
+    // Fallback to standard error screen if sessionStorage is unavailable
+  }
+  return false
 }
 
 /** Sanitize sensitive user filesystem paths from stack traces for privacy */
@@ -121,6 +141,12 @@ export class GlobalErrorHandler extends Component<
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     const isProd = isProdEnvironment()
     const isChunk = isChunkLoadError(error)
+
+    // Auto-recover once from stale dynamic import chunk errors (e.g. HMR or app update)
+    if (isChunk && tryAutoRecoverChunkError()) {
+      return
+    }
+
     const sanitizedStack = sanitizePath(error?.stack || '')
     const sanitizedComponentStack = sanitizePath(errorInfo?.componentStack || '')
 

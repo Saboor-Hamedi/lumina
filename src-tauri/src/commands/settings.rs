@@ -27,6 +27,7 @@ pub(super) fn get_setting_sync(key: Option<String>) -> Result<Value, String> {
     let app_cfg = read_json_file(&get_app_config_path());
 
     if let Some(obj) = settings.as_object_mut() {
+        obj.remove("metaPosition");
         obj.insert(
             "workspacePath".to_string(),
             Value::String(ws_path.to_string_lossy().to_string()),
@@ -37,6 +38,9 @@ pub(super) fn get_setting_sync(key: Option<String>) -> Result<Value, String> {
         if let Some(shortcuts) = app_cfg.get("shortcuts") {
             obj.entry("shortcuts".to_string())
                 .or_insert_with(|| shortcuts.clone());
+        }
+        if let Some(note_appearance) = app_cfg.get("noteAppearance") {
+            obj.insert("noteAppearance".to_string(), note_appearance.clone());
         }
         if let Some(ws) = app_cfg.get("workspace").and_then(|v| v.as_object()) {
             for k in [
@@ -110,8 +114,13 @@ fn save_settings_sync(new_settings: Value) -> Result<bool, String> {
     ];
 
     if let (Some(curr_obj), Some(cfg_obj)) = (current.as_object_mut(), app_cfg.as_object_mut()) {
+        curr_obj.remove("metaPosition");
         for (k, v) in updates {
-            if k == "workspacePath" || k == "vaultPath" {
+            if k == "workspacePath" || k == "vaultPath" || k == "metaPosition" {
+                continue;
+            }
+            if k == "noteAppearance" {
+                cfg_obj.insert("noteAppearance".to_string(), v.clone());
                 continue;
             }
             if k == "theme" {

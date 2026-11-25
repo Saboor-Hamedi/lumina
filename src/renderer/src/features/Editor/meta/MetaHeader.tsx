@@ -44,8 +44,8 @@ export const MetaHeader: React.FC<MetaHeaderProps> = React.memo(
 
     return (
       <div
-        className="editor-metadata-bar meta-header-bar"
-        style={position === 'inline' ? { position: 'relative', paddingBottom: '8px', marginBottom: '4px' } : undefined}
+        className="editor-metadata-bar meta-header-bar meta-header-compact"
+        style={position === 'inline' ? { position: 'relative', padding: 0, margin: 0, width: 'auto' } : undefined}
       >
         <MetaActionBar
           position={position}

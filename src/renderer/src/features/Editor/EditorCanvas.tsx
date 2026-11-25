@@ -22,7 +22,7 @@ import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { setupWikilinkHover } from './wikilink/hoverWikilink'
 import ContextMenu from '../modals/ContextMenu'
 import { getEditorContextMenuOptions } from './menu'
-import MetaHeader from './meta/MetaHeader'
+import MetaHeader, { MetaBackground } from './meta'
 import type { Snippet, EditorHandle } from '../../core/editor/types'
 import type { ToastType } from '../../core/notification'
 import { markExplorerPerf } from '../Explorer/utils/explorerPerf'
@@ -151,7 +151,6 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
     const editorWrapperRef = useRef<HTMLDivElement | null>(null)
 
     const inlineMetadata = useSettingsStore((state: any) => state.settings?.inlineMetadata !== false)
-    const metaPosition = useSettingsStore((state: any) => state.settings?.metaPosition || 'bottom')
 
     useEffect(() => {
       const wrapper = editorWrapperRef.current
@@ -192,6 +191,33 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
       })
     }, [snippet?.id, editorKey])
 
+    const inlineMetaMenu = useMemo(() => {
+      if (!inlineMetadata) return null
+      return (
+        <MetaHeader
+          position="inline"
+          snippet={snippet}
+          title={title}
+          setIsDirty={setIsDirty}
+          isDirty={isDirty}
+          onInlineAI={onInlineAI}
+          onOpenExportDialog={onOpenExportDialog}
+          onToggleInspector={onToggleInspector}
+          showTools={false}
+          showMenu={false}
+        />
+      )
+    }, [
+      inlineMetadata,
+      snippet,
+      title,
+      setIsDirty,
+      isDirty,
+      onInlineAI,
+      onOpenExportDialog,
+      onToggleInspector
+    ])
+
     return (
       <div
         className="editor-canvas-wrap"
@@ -212,20 +238,13 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
             onClose={() => setContextMenu(null)}
           />
         )}
-        {inlineMetadata && metaPosition === 'inline' ? (
-          <MetaHeader
-            position="inline"
-            snippet={snippet}
-            title={title}
-            setIsDirty={setIsDirty}
-            isDirty={isDirty}
-            onInlineAI={onInlineAI}
-            onOpenExportDialog={onOpenExportDialog}
-            onToggleInspector={onToggleInspector}
-            showTools={false}
-            showMenu={false}
-          />
-        ) : null}
+        <MetaBackground
+          noteId={snippet?.id}
+          createdAt={snippet?.createdAt}
+          updatedAt={snippet?.updatedAt}
+          timestamp={snippet?.timestamp}
+          menuSlot={inlineMetaMenu}
+        />
         {snippet?.isPartial && (
           <div className="editor-large-note-warning" role="status">
             Showing the first part of this large note. Editing and saving are disabled to protect the workspace.

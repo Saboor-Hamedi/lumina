@@ -178,10 +178,16 @@ export function buildYouTubeEmbedUrl(videoId: string, startSeconds?: number | nu
 }
 
 /**
- * Returns the standard YouTube HQ thumbnail URL for a video ID.
+ * Returns a crisp 16:9 YouTube thumbnail URL (HD `maxresdefault.jpg`, no 4:3 black bars).
+ * Callers should fall back to `getYouTubeFallbackThumbnailUrl(videoId)` (`mqdefault.jpg`, also 16:9)
+ * on error or when `naturalWidth <= 120`.
  */
 export function getYouTubeThumbnailUrl(videoId: string): string {
-  return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
+  return `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`
+}
+
+export function getYouTubeFallbackThumbnailUrl(videoId: string): string {
+  return `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
 }
 
 /**
@@ -300,20 +306,159 @@ export function detectLinkPlatform(rawUrl: string): LinkPlatform {
   return { id: 'web', label: domain, accent: 'var(--text-accent)' }
 }
 
+/**
+ * Produces a clean, human-readable title fallback from a URL's hostname
+ * (e.g. `https://google.com` -> `Google`, `https://docs.tauri.app` -> `docs.tauri.app`).
+ * Never returns a raw `http://` or `https://` string.
+ */
+export function formatHostnameTitle(rawUrl: string): string {
+  const platform = detectLinkPlatform(rawUrl)
+  if (platform.id !== 'web') return platform.label
+
+  const domain = extractDomain(rawUrl)
+  const parts = domain.split('.').filter(Boolean)
+  if (parts.length === 2 && /^[a-z][a-z0-9-]*$/i.test(parts[0])) {
+    return parts[0].charAt(0).toUpperCase() + parts[0].slice(1)
+  }
+  return domain
+}
+
+/**
+ * Normalizes a fetched `<title>` / `og:title` so raw URLs or bare hostnames
+ * fall back to a clean capitalized title instead of duplicating `https://google.com`.
+ */
+export function normalizeLinkTitle(
+  rawTitle: string | null | undefined,
+  rawUrl: string
+): string {
+  const trimmed = (rawTitle || '').trim()
+  if (!trimmed) return formatHostnameTitle(rawUrl)
+
+  // Reject raw URL strings as titles (e.g. "https://google.com" or "http://example.com/")
+  if (/^https?:\/\//i.test(trimmed)) {
+    return formatHostnameTitle(rawUrl)
+  }
+
+  const domain = extractDomain(rawUrl).toLowerCase()
+  const lower = trimmed.toLowerCase().replace(/^www\./, '').replace(/\/+$/, '')
+  if (lower === domain) {
+    return formatHostnameTitle(rawUrl)
+  }
+
+  return trimmed
+}
+
+/**
+ * Normalizes noisy `og:site_name` values (e.g. `X (formerly Twitter)` -> `x.com`,
+ * raw URLs -> clean hostname, overly verbose site names -> clean hostname)
+ * so the compact source badge never overflows or truncates mid-word.
+ */
+export function normalizeSiteName(
+  rawSiteName: string | null | undefined,
+  rawUrl: string
+): string {
+  const domain = extractDomain(rawUrl)
+  const trimmed = (rawSiteName || '').trim()
+  if (!trimmed) return domain
+
+  // Strip raw URLs
+  if (/^https?:\/\//i.test(trimmed)) {
+    return extractDomain(trimmed)
+  }
+
+  // Known noisy site_name patterns (e.g. "X (formerly Twitter)", "Reddit - Dive into anything")
+  if (/\(formerly\b/i.test(trimmed) || trimmed.length > 22 || /\s[|—–-]\s/.test(trimmed)) {
+    return domain
+  }
+
+  return trimmed
+}
+
+/**
+ * Resolves the optional subtitle/description line for a link card:
+ * - Never repeats the hostname, title, or source badge.
+ * - Omits the second line (`null`) on root homepages with no meta description
+ *   so the card title vertically centers cleanly.
+ * - Falls back to the clean canonical URL path only when the URL has a real path.
+ */
+export function resolveLinkDescription(
+  rawDescription: string | null | undefined,
+  title: string,
+  source: string,
+  rawUrl: string
+): string | null {
+  const norm = (s: string) =>
+    s
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/\/+$/, '')
+
+  const domainNorm = norm(extractDomain(rawUrl))
+  const urlNorm = norm(rawUrl)
+  const titleNorm = norm(title)
+  const sourceNorm = norm(source)
+
+  const trimmed = (rawDescription || '').trim()
+  if (trimmed) {
+    const descNorm = norm(trimmed)
+    if (
+      descNorm &&
+      descNorm !== domainNorm &&
+      descNorm !== urlNorm &&
+      descNorm !== titleNorm &&
+      descNorm !== sourceNorm
+    ) {
+      return trimmed
+    }
+  }
+
+  // Only show canonical display URL when there is an actual path beyond the root domain
+  try {
+    const parsed = new URL(rawUrl.trim())
+    const hasMeaningfulPath = parsed.pathname.replace(/\/+$/, '').length > 0
+    if (hasMeaningfulPath) {
+      const display = formatDisplayUrl(rawUrl, 68)
+      const dispNorm = norm(display)
+      if (dispNorm !== titleNorm && dispNorm !== sourceNorm && dispNorm !== domainNorm) {
+        return display
+      }
+    }
+  } catch {
+    // ignore malformed URL
+  }
+
+  return null
+}
+
 export interface StandaloneLinkMatch {
   url: string
   label?: string
 }
 
+function normalizeComparableUrl(raw: string): string {
+  return raw
+    .trim()
+    .replace(/^https?:\/\//i, '')
+    .replace(/^www\./i, '')
+    .replace(/\/+$/, '')
+    .toLowerCase()
+}
+
 /**
- * Detects if a Markdown line consists solely of a bare URL (`https://...`) or autolink (`<https://...>`).
+ * Detects if a Markdown line consists solely of:
+ * - a bare URL (`https://...`),
+ * - an autolink (`<https://...>`), or
+ * - a self-linked URL pasted from rich HTML (`[https://...](https://...)` / `[www.foo.com](https://www.foo.com)`).
+ *
  * Named Markdown links (`[Google](https://...)`) are intentionally left as inline words so users
  * can hover them for the smart preview dropdown card.
  */
 export function parseStandaloneLinkLine(lineText: string): StandaloneLinkMatch | null {
   const trimmed = lineText.trim()
   if (!trimmed || trimmed.startsWith('![')) return null
-  if (trimmed.length > MAX_URL_LENGTH + 16) return null
+  if (trimmed.length > MAX_URL_LENGTH * 2 + 16) return null
 
   // Autolink: <https://...>
   if (trimmed.startsWith('<') && trimmed.endsWith('>')) {
@@ -327,6 +472,23 @@ export function parseStandaloneLinkLine(lineText: string): StandaloneLinkMatch |
   // Bare URL on its own line
   if (/^https?:\/\/\S+$/i.test(trimmed)) {
     return isHttpUrl(trimmed) ? { url: trimmed } : null
+  }
+
+  // Self-linked URL (e.g. `[https://youtu.be/xyz](https://youtu.be/xyz)` from browser/rich-text paste)
+  if (trimmed.startsWith('[') && trimmed.endsWith(')')) {
+    const sepIdx = trimmed.indexOf('](')
+    if (sepIdx > 1) {
+      const label = trimmed.slice(1, sepIdx).trim()
+      const url = trimmed.slice(sepIdx + 2, -1).trim()
+      if (
+        label &&
+        !label.includes(']') &&
+        isHttpUrl(url) &&
+        normalizeComparableUrl(label) === normalizeComparableUrl(url)
+      ) {
+        return { url }
+      }
+    }
   }
 
   return null

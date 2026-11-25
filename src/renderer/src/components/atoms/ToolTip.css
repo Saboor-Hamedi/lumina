@@ -6,7 +6,7 @@
 
 .tooltip-portal {
   position: fixed;
-  z-index: 99999;
+  z-index: 300000;
   pointer-events: none;
   background: var(--surface-3, var(--bg-card, #18181f));
   color: var(--ink-1, var(--text-main, #f1f5f9));

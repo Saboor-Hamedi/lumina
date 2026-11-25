@@ -3,26 +3,38 @@
  * Continuous vertical panel, crisp borders, high-density tree
  * ============================================================ */
 
-/* Left Sidebar Container */
-.shell-sidebar-left,
-[data-modern-ui='true'] .shell-sidebar-left {
-  border-radius: 8px !important;
+/* Left Sidebar Container: Floating 10px Island Card (100% Theme-Token Driven) */
+.shell-sidebar-left {
+  border-radius: 0 !important;
   border-style: solid !important;
+  border-width: 0 !important;
   border-color: transparent;
 }
 
-.app-shell.left-open .shell-sidebar-left,
-[data-modern-ui='true'] .app-shell.left-open .shell-sidebar-left {
-  background: var(--bg-editor, var(--bg-app)) !important;
-  border-width: 1px !important;
-  border-color: var(--border-dim) !important;
-  border-radius: 8px !important;
+.app-shell.left-open .shell-sidebar-left {
+  background: var(--bg-surface) !important;
+  border-width: 0 1px 0 0 !important;
+  border-color: var(--border-color) !important;
+  border-radius: 0 !important;
   box-shadow: none !important;
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
   z-index: 5;
+}
+
+/* Modern UI: Elevated 10px rounded card */
+[data-modern-ui='true'] .shell-sidebar-left {
+  border-radius: var(--island-radius, 10px) !important;
+}
+
+[data-modern-ui='true'] .app-shell.left-open .shell-sidebar-left {
+  background: var(--bg-surface) !important;
+  border-width: 1px !important;
+  border-color: var(--border-color) !important;
+  border-radius: var(--island-radius, 10px) !important;
+  box-shadow: none !important;
 }
 
 .shell-sidebar-left .unified-sidebar,
@@ -132,13 +144,13 @@
 .start-section .tree-item.active,
 [data-modern-ui='true'] .tree-item.active,
 [data-modern-ui='true'] .start-section .tree-item.active {
-  background-color: color-mix(in srgb, var(--text-accent, #8b5cf6) 9%, transparent) !important;
+  background-color: color-mix(in srgb, var(--accent-color) 10%, transparent) !important;
   color: var(--text-main) !important;
 }
 
 .folder-tree-main.active,
 [data-modern-ui='true'] .folder-tree-main.active {
-  border-left-color: var(--text-accent) !important;
+  border-left-color: var(--accent-color) !important;
 }
 
 /* Neo-Tree Indent lines */
@@ -157,7 +169,7 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  background-color: var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
+  background-color: var(--border-strong) !important;
   border-left: none !important;
   opacity: 0.45;
 }
@@ -166,9 +178,9 @@
 .start-menu-search input,
 [data-modern-ui='true'] .start-menu-search input {
   height: 24px !important;
-  border-radius: 3px !important;
-  border: 1px solid var(--border-dim) !important;
-  background: var(--bg-input, rgba(127, 127, 127, 0.04)) !important;
+  border-radius: 4px !important;
+  border: 1px solid var(--border-color) !important;
+  background: var(--bg-input) !important;
   font-size: 11px !important;
   box-shadow: none !important;
 }

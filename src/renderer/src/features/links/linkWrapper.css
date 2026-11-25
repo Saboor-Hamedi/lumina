@@ -1,0 +1,121 @@
+/* ============================================================================
+   Lumina Unified Link Preview Wrapper (`linkWrapper.css`)
+   Shared by BOTH standalone bare URLs and ```links [1-3] fenced blocks.
+   Completely separate from code block wrappers (`codeWrapper.css`).
+   ============================================================================ */
+
+.lumina-link-wrapper {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 6px 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  user-select: none;
+}
+
+.lumina-link-wrapper.cols-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.lumina-link-wrapper.cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lumina-link-wrapper.cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+/* Respect Card Width setting cleanly on 1-column wrappers so the edit button stays aligned */
+:root[data-link-card-width='full'] .lumina-link-wrapper.cols-1 {
+  max-width: 100%;
+}
+
+:root[data-link-card-width='medium'] .lumina-link-wrapper.cols-1 {
+  max-width: 680px;
+}
+
+:root[data-link-card-width='compact'] .lumina-link-wrapper.cols-1 {
+  max-width: 520px;
+}
+
+.lumina-link-wrapper .lumina-link-card.is-in-grid {
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.lumina-link-wrapper .lumina-link-card.is-grid-span-full {
+  grid-column: 1 / -1;
+}
+
+.lumina-link-wrapper.cols-2 .lumina-link-card-media {
+  width: 108px;
+  min-width: 108px;
+}
+
+/* 3-column grid: crisp vertical bookmark cards with full-width 16:9 cover thumbnails */
+.lumina-link-wrapper.cols-3 .lumina-link-card {
+  flex-direction: column-reverse;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+}
+
+.lumina-link-wrapper.cols-3 .lumina-link-card-media {
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-left: none;
+  border-right: none;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.lumina-link-wrapper.cols-3 .lumina-link-card-body {
+  padding: 9px 11px;
+  gap: 4px;
+}
+
+.lumina-link-wrapper.cols-3 .lumina-link-card-desc {
+  -webkit-line-clamp: 2;
+}
+
+.lumina-link-wrapper-edit {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 4;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--border-dim);
+  background: var(--bg-app);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+  transition: opacity 0.14s ease, color 0.12s ease;
+}
+
+.lumina-link-wrapper:hover .lumina-link-wrapper-edit,
+.lumina-link-wrapper:focus-within .lumina-link-wrapper-edit {
+  opacity: 1;
+}
+
+.lumina-link-wrapper-edit:hover {
+  color: var(--text-main);
+}
+
+/* Visual highlight when the link wrapper is selected via mouse drag, right-click, or keyboard */
+.lumina-link-wrapper.is-selected .lumina-link-card {
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 1px var(--text-accent);
+  background: color-mix(in srgb, var(--text-accent) 9%, var(--bg-card));
+}

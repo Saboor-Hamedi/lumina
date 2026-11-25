@@ -403,7 +403,7 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
         idsToAnimate.forEach((tid) => next.delete(tid))
         return next
       })
-    }, 150)
+    }, 165)
     closingTimersRef.current.push(timer)
   }, [])
 

@@ -1,19 +1,17 @@
 /* ============================================================
- * AstroNvim Modern UI: Shell & Global Chrome
- * Edge-to-edge, flush panels, razor-sharp 1px hairline dividers
+ * Lumina Floating-Card "Islands" Shell Architecture
+ * 100% Theme-Engine Driven — Zero Hardcoded Colors
  * ============================================================ */
 
-/* Window foreground: a 5px outer band around the whole workbench plus a 5px
- * gap between the title bar and the shell. The darker activity-bar tone is used
- * as the gutter backdrop so the gaps read as clear separations. Modern UI only —
- * the normal UI stays flush (see mainlayout.css). */
+.lumina-app,
 [data-modern-ui='true'] .lumina-app {
   gap: 0 !important;
   padding: 0 !important;
-  background: var(--bg-activitybar);
+  background: var(--bg-shell);
   box-sizing: border-box;
 }
 
+.app-shell,
 [data-modern-ui='true'] .app-shell {
   display: flex;
   flex-direction: column;
@@ -22,14 +20,14 @@
   min-width: 0;
   padding: 0 !important;
   gap: 0 !important;
-  background: var(--bg-activitybar);
+  background: var(--bg-shell);
   box-sizing: border-box;
   width: 100%;
   height: 100%;
   overflow: hidden;
 }
 
-
+.shell-body,
 [data-modern-ui='true'] .shell-body {
   display: flex;
   flex-direction: row;
@@ -37,17 +35,54 @@
   min-height: 0;
   width: 100%;
   overflow: hidden;
-  padding: 0 0 6px 0 !important;
+  padding: 0 !important;
   gap: 0 !important;
-  background: var(--bg-activitybar);
+  background: var(--bg-shell);
   box-sizing: border-box;
 }
 
-/* Activity Bars: Plain, borderless outer strips blending with TitleBar */
-[data-modern-ui='true'] .lumina-activity-bar {
+/* Maintain clean outer padding if an Activity Bar or Status Bar is hidden */
+[data-modern-ui='true'] .shell-body:not(:has(> .lumina-activity-bar:not(.lumina-activity-bar-right):not(.zen-hidden))) {
+  padding-left: var(--island-gap, 6px) !important;
+}
+
+[data-modern-ui='true'] .shell-body:not(:has(> .lumina-activity-bar.lumina-activity-bar-right:not(.zen-hidden))) {
+  padding-right: var(--island-gap, 6px) !important;
+}
+
+[data-modern-ui='true'] .shell-workbench-column {
+  background: var(--bg-shell);
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+[data-modern-ui='true'] .shell-workbench-column:not(:has(> .status-bar:not(.zen-hidden))) {
+  padding-bottom: var(--island-gap, 6px) !important;
+}
+
+/* Classic UI (when Modern UI toggle is OFF): unified 10px rounded frame with crisp 1px inner seams */
+.shell-workbench-row {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--island-radius, 10px) !important;
+  overflow: hidden !important;
+  box-sizing: border-box;
+}
+
+/* Modern UI ON (Islands Architecture): recessed --bg-shell canvas behind floating 10px cards */
+[data-modern-ui='true'] .shell-workbench-row {
+  background: var(--bg-shell) !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+/* Activity Bars: Slim borderless strips sitting directly on --bg-shell */
+[data-modern-ui='true'] .lumina-activity-bar,
+[data-modern-ui='true'] .lumina-activity-bar-right {
   border-radius: 0 !important;
   border: none !important;
-  background: var(--bg-activitybar, var(--bg-sidebar)) !important;
+  background: var(--bg-shell) !important;
   box-shadow: none !important;
   margin: 0 !important;
   height: 100%;
@@ -55,39 +90,34 @@
   z-index: 10;
 }
 
-[data-modern-ui='true'] .shell-body > .lumina-activity-bar:not(.lumina-activity-bar-right) {
-  margin-right: 0 !important;
-}
-
-[data-modern-ui='true'] .shell-body > .lumina-activity-bar.lumina-activity-bar-right {
-  margin-left: 4px !important;
-}
-
+[data-modern-ui='true'] .shell-body > .lumina-activity-bar:not(.lumina-activity-bar-right),
+[data-modern-ui='true'] .shell-body > .lumina-activity-bar.lumina-activity-bar-right,
 [data-modern-ui='true'] .lumina-activity-bar.zen-hidden {
   margin-left: 0 !important;
   margin-right: 0 !important;
 }
 
-/* Resizers: clean 6px gap between separated panels; glides smoothly with sidebar open/close */
+/* Sidebar Resizers: 6px --bg-shell island gap with subtle accent pill on hover/drag */
 [data-modern-ui='true'] .sidebar-resizer {
-  width: 6px;
+  width: var(--island-gap, 6px) !important;
   background: transparent !important;
-  transition: width 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: width var(--dur-slow, 220ms) var(--ease-snappy);
   z-index: 20;
   position: relative;
+  overflow: visible;
 }
 
 [data-modern-ui='true'] .sidebar-resizer::after {
   content: '';
   position: absolute;
-  top: 8px;
-  bottom: 8px;
+  top: 10px;
+  bottom: 10px;
   left: 50%;
   width: 2px;
   transform: translateX(-50%);
   border-radius: 2px;
   background: transparent;
-  transition: background 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background var(--dur-fast, 100ms) var(--ease-snappy);
   pointer-events: none;
 }
 
@@ -110,35 +140,44 @@
 [data-modern-ui='true'] .sidebar-resizer:active::after,
 [data-modern-ui='true'] .app-shell.is-resizing-left .sidebar-resizer.left::after,
 [data-modern-ui='true'] .app-shell.is-resizing-right .sidebar-resizer.right::after {
-  background: var(--text-accent, #8b5cf6) !important;
+  background: var(--accent-color) !important;
 }
 
-/* Center Shell: Transparent column housing the separated Editor card and Terminal card */
+/* Center Shell Column */
 [data-modern-ui='true'] .shell-main {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   background: transparent !important;
   border-radius: 0 !important;
   border: none !important;
   box-sizing: border-box;
 }
 
+/* Single-Pane Center Editor Floating Card (10px radius, 1px theme border) */
 [data-modern-ui='true'] .shell-center-workspace {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  border-radius: 8px !important;
-  border: 1px solid var(--border-dim) !important;
-  background: var(--bg-editor, var(--bg-app));
+  border-radius: var(--island-radius, 10px) !important;
+  border: 1px solid var(--border-color) !important;
+  background: var(--bg-surface) !important;
   overflow: hidden;
   box-sizing: border-box;
-  box-shadow: none;
+  box-shadow: none !important;
+}
+
+/* Multi-Pane Split Mode: Each split leaf becomes its own 10px floating island separated by 6px --bg-shell gaps */
+[data-modern-ui='true'] .shell-center-workspace:has(.workspace-split-container) {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
 }
 
 [data-modern-ui='true'] .workspace-container,
@@ -153,23 +192,27 @@
   box-sizing: border-box;
 }
 
+[data-modern-ui='true'] .workspace-container:has(> .workspace-split-container) {
+  overflow: visible;
+}
+
 [data-modern-ui='true'] .welcome-card {
-  border-radius: var(--radius-md, 6px);
+  border-radius: var(--radius-md, 7px);
   box-shadow: none;
-  border: 1px solid var(--border-hairline, var(--border-dim));
+  border: 1px solid var(--border-hairline);
   background: var(--bg-card);
 }
 
 /* ============================================================
- * Zen Mode: True Edge-to-Edge Full-Bleed Editor (Zero Gaps)
- * Removes outer gutter padding, card borders, and corner radii
- * so the editor fills 100% of left, right, top, and bottom.
+ * Zen Mode (Ctrl + .):
+ * Hides titlebar, activity bars, sidebars, and status bar,
+ * expanding the main editor card cleanly with comfortable outer padding.
  * ============================================================ */
 [data-zen-mode='true'] .lumina-app,
 [data-modern-ui='true'][data-zen-mode='true'] .lumina-app,
 [data-zen-mode='true'] .app-shell,
 [data-modern-ui='true'][data-zen-mode='true'] .app-shell {
-  background: var(--bg-editor, var(--bg-app)) !important;
+  background: var(--bg-shell) !important;
   padding: 0 !important;
   margin: 0 !important;
   gap: 0 !important;
@@ -177,27 +220,30 @@
 
 [data-zen-mode='true'] .shell-body,
 [data-modern-ui='true'][data-zen-mode='true'] .shell-body {
-  padding: 0 !important;
+  padding: 8px !important;
   margin: 0 !important;
   gap: 0 !important;
-  background: var(--bg-editor, var(--bg-app)) !important;
+  background: var(--bg-shell) !important;
 }
 
 [data-zen-mode='true'] .shell-workbench-column,
-[data-zen-mode='true'] .shell-workbench-row {
+[data-modern-ui='true'][data-zen-mode='true'] .shell-workbench-column {
   padding: 0 !important;
   margin: 0 !important;
   gap: 0 !important;
+  background: var(--bg-shell) !important;
 }
 
-[data-zen-mode='true'] .shell-main,
-[data-modern-ui='true'][data-zen-mode='true'] .shell-main,
-[data-zen-mode='true'] .shell-center-workspace,
-[data-modern-ui='true'][data-zen-mode='true'] .shell-center-workspace {
+[data-zen-mode='true'] .shell-workbench-row {
+  border-radius: var(--island-radius, 10px) !important;
+  border: 1px solid var(--border-color) !important;
+  background: var(--bg-surface) !important;
+}
+
+[data-modern-ui='true'][data-zen-mode='true'] .shell-workbench-row {
   border: none !important;
   border-radius: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
+  background: var(--bg-shell) !important;
 }
 
 [data-modern-ui='true'][data-zen-mode='true'] .shell-body > .lumina-activity-bar.zen-hidden {
@@ -215,5 +261,3 @@
   margin: 0 !important;
   padding: 0 !important;
 }
-
-

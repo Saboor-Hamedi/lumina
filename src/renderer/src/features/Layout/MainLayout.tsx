@@ -19,7 +19,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import Sidebar from '../Navigation/Sidebar'
 import ActivityBar from '../Navigation/ActivityBar'
 import RightActivityBar, { RightSidebarTabId } from '../Navigation/RightActivityBar'
-import { openSidebarView } from '../Navigation/sidebarViewStore'
+import { openSidebarView, toggleSidebarView } from '../Navigation/sidebarViewStore'
 import Welcome from '../../Welcome'
 import { SplitNodeRenderer } from './split'
 import './split/split.css'
@@ -857,10 +857,10 @@ export const MainLayout: React.FC = () => {
       return false
     },
     onToggleSettings: () => setShowSettings(true),
-    onToggleTheme: () => openSidebarView('theme'),
+    onToggleTheme: () => toggleSidebarView('theme'),
     onToggleGraph: () => useWorkspaceStore.getState().openGraphTab(),
     onToggleAIChat: () => handleToggleAIChat(),
-    onToggleSidebar: () => updateLeftSidebarOpen((prev) => !prev),
+    onToggleSidebar: () => toggleSidebarView('files'),
     onToggleTerminal: handleToggleTerminal,
     onToggleInspector: handleToggleInspector,
     onToggleOutline: () => {

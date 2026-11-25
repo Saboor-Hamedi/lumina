@@ -1,20 +1,34 @@
 import { describe, it, expect, afterEach } from 'vitest'
+import { EditorState, Prec } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
+import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
+import { inlinePreview } from '../src/renderer/src/features/Editor/atomic/inlinePreview'
+import { codeBlockDecorations } from '../src/renderer/src/core/code/codeBlockHeader'
 import {
   applyLinkCardDomAttributes,
   buildYouTubeEmbedUrl,
+  clearLinkMetadataCache,
   closeYouTubeModal,
   computeSmartPopoverPosition,
+  createLinkCardElement,
   detectLinkPlatform,
   extractYouTubeId,
   extractYouTubeStartSeconds,
+  fetchLinkMetadata,
   formatDisplayUrl,
+  formatHostnameTitle,
+  getCachedLinkMetadata,
   isHttpUrl,
+  linkEmbedExtension,
+  normalizeLinkTitle,
+  normalizeSiteName,
   openMediaPeekModal,
   openYouTubeModal,
   parseGridLinkLine,
   parseLinkGridHeader,
   parseStandaloneLinkLine,
-  resolveLinkCardSettings
+  resolveLinkCardSettings,
+  resolveLinkDescription
 } from '../src/renderer/src/features/links'
 
 describe('Link & YouTube URL Parser', () => {
@@ -219,5 +233,218 @@ describe('Link & YouTube URL Parser', () => {
     expect(parseLinkGridHeader('```links-grid 2')).toEqual({ isGridOpen: true, explicitCols: 2 })
     expect(parseLinkGridHeader('```link-grid 99')).toEqual({ isGridOpen: true, explicitCols: 3 })
     expect(parseLinkGridHeader('```typescript')).toEqual({ isGridOpen: false })
+  })
+
+  it('caches successful metadata and supports forceRefresh retry after failure', async () => {
+    clearLinkMetadataCache()
+    const testUrl = 'https://example.com/cached-article'
+
+    // Simulate offline failure first
+    ;(window as any).api = {
+      fetchLinkMetadata: async () => {
+        throw new Error('offline')
+      }
+    }
+    const failedMeta = await fetchLinkMetadata(testUrl)
+    expect(failedMeta.failed).toBe(true)
+
+    // Now simulate network recovery + explicit forceRefresh retry
+    ;(window as any).api = {
+      fetchLinkMetadata: async () => ({
+        url: testUrl,
+        title: 'Recovered Title',
+        description: 'Recovered description',
+        site_name: 'Example'
+      })
+    }
+    const recovered = await fetchLinkMetadata(testUrl, { forceRefresh: true })
+    expect(recovered.failed).toBe(false)
+    expect(recovered.title).toBe('Recovered Title')
+    expect(getCachedLinkMetadata(testUrl)?.title).toBe('Recovered Title')
+    clearLinkMetadataCache()
+  })
+
+  it('renders bare URLs, autolinks, self-linked pasted URLs, and ``` links blocks with the exact same LinkWrapper preview', () => {
+    const ytUrl = 'https://www.youtube.com/watch?v=dwd9i-z1HIY'
+    const docs = [
+      ytUrl,
+      `<${ytUrl}>`,
+      `[${ytUrl}](${ytUrl})`,
+      `\`\`\` links\n${ytUrl}\n\`\`\``
+    ]
+
+    const views: EditorView[] = []
+    const hosts: HTMLElement[] = []
+
+    try {
+      for (const doc of docs) {
+        const host = document.createElement('div')
+        document.body.append(host)
+        hosts.push(host)
+        views.push(
+          new EditorView({
+            state: EditorState.create({
+              doc,
+              extensions: [
+                markdown({ base: markdownLanguage }),
+                inlinePreview(),
+                codeBlockDecorations,
+                Prec.highest(linkEmbedExtension)
+              ]
+            }),
+            parent: host
+          })
+        )
+      }
+
+      const baseline = hosts[3].querySelector('.lumina-link-wrapper')
+      expect(baseline).not.toBeNull()
+
+      for (let i = 0; i < 3; i++) {
+        const wrap = hosts[i].querySelector('.lumina-link-wrapper')
+        expect(wrap).not.toBeNull()
+        expect(wrap?.className).toBe(baseline?.className)
+        expect(wrap?.innerHTML).toBe(baseline?.innerHTML)
+      }
+    } finally {
+      views.forEach((v) => v.destroy())
+    }
+  })
+
+  it('eliminates duplicate domain/URL text and normalizes noisy site names on bookmark cards', () => {
+    expect(formatHostnameTitle('https://google.com')).toBe('Google')
+    expect(normalizeLinkTitle('https://google.com', 'https://google.com')).toBe('Google')
+    expect(normalizeLinkTitle('google.com', 'https://google.com')).toBe('Google')
+    expect(normalizeSiteName('X (formerly Twitter)', 'https://x.com/user/status/1')).toBe('x.com')
+    expect(normalizeSiteName('https://google.com', 'https://google.com')).toBe('google.com')
+
+    // Root homepage with no meta description omits the subtitle cleanly
+    expect(resolveLinkDescription(null, 'Google', 'google.com', 'https://google.com')).toBeNull()
+    expect(
+      resolveLinkDescription('google.com', 'Google', 'google.com', 'https://google.com')
+    ).toBeNull()
+    // URL with a real path falls back to clean canonical display path
+    expect(
+      resolveLinkDescription(null, 'GitHub', 'github.com', 'https://github.com/tauri-apps/tauri')
+    ).toBe('github.com/tauri-apps/tauri')
+
+    // Card DOM for minimal metadata homepage has clean title + domain and hides empty subtitle
+    const card = createLinkCardElement({
+      url: 'https://google.com',
+      youtubeId: null,
+      inGrid: true
+    })
+    expect(card.querySelector('.lumina-link-card-title')?.textContent).toBe('Google')
+    expect(card.querySelector('.lumina-link-card-source')?.textContent).toBe('google.com')
+    expect((card.querySelector('.lumina-link-card-desc') as HTMLElement)?.style.display).toBe('none')
+    expect(card.classList.contains('is-single-line')).toBe(true)
+  })
+
+  it('selects the full link block on right-click and renders no extra preview header on standalone or fenced links', () => {
+    const ytUrl = 'https://www.youtube.com/watch?v=dwd9i-z1HIY'
+    const host = document.createElement('div')
+    document.body.append(host)
+
+    const view = new EditorView({
+      state: EditorState.create({
+        doc: ytUrl,
+        extensions: [
+          markdown({ base: markdownLanguage }),
+          inlinePreview(),
+          codeBlockDecorations,
+          Prec.highest(linkEmbedExtension)
+        ]
+      }),
+      parent: host
+    })
+
+    try {
+      expect(host.querySelector('.code-block-header')).toBeNull()
+      expect(host.querySelector('.lumina-link-source-bar')).toBeNull()
+
+      const wrap = host.querySelector('.lumina-link-wrapper') as HTMLElement | null
+      expect(wrap).not.toBeNull()
+
+      wrap!.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, button: 2 }))
+      const sel = view.state.selection.main
+      expect(view.state.sliceDoc(sel.from, sel.to)).toBe(ytUrl)
+      expect(wrap!.classList.contains('is-selected')).toBe(true)
+    } finally {
+      view.destroy()
+    }
+  })
+
+  it('deletes standalone links and individual ```links items via the card delete button', () => {
+    const yt1 = 'https://www.youtube.com/watch?v=dwd9i-z1HIY'
+    const yt2 = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
+
+    // 1. Standalone URL delete
+    const host1 = document.createElement('div')
+    document.body.append(host1)
+    const view1 = new EditorView({
+      state: EditorState.create({
+        doc: `Hello\n${yt1}\nWorld`,
+        extensions: [Prec.highest(linkEmbedExtension)]
+      }),
+      parent: host1
+    })
+
+    // 2. Multi-link ```links block item delete
+    const host2 = document.createElement('div')
+    document.body.append(host2)
+    const view2 = new EditorView({
+      state: EditorState.create({
+        doc: `\`\`\`links\n${yt1}\n${yt2}\n\`\`\``,
+        extensions: [Prec.highest(linkEmbedExtension)]
+      }),
+      parent: host2
+    })
+
+    try {
+      const delStandalone = host1.querySelector('.lumina-link-card-action.is-delete') as HTMLButtonElement | null
+      expect(delStandalone).not.toBeNull()
+      delStandalone!.click()
+      expect(view1.state.doc.toString()).toBe('Hello\nWorld')
+
+      const delButtons = host2.querySelectorAll<HTMLButtonElement>('.lumina-link-card-action.is-delete')
+      expect(delButtons.length).toBe(2)
+      delButtons[0].click()
+      expect(view2.state.doc.toString()).toBe(`\`\`\`links\n${yt2}\n\`\`\``)
+    } finally {
+      view1.destroy()
+      view2.destroy()
+    }
+  })
+
+  it('auto-exits source mode when moving away or pressing Enter so pasted URLs never stay stuck in lumina-link-source-line', () => {
+    const ytUrl = 'https://www.youtube.com/watch?v=dwd9i-z1HIY'
+    const host = document.createElement('div')
+    document.body.append(host)
+
+    const view = new EditorView({
+      state: EditorState.create({
+        doc: `${ytUrl}\nNext line`,
+        extensions: [Prec.highest(linkEmbedExtension)]
+      }),
+      parent: host
+    })
+
+    try {
+      // Enter source mode via the edit button
+      const editBtn = host.querySelector('.lumina-link-wrapper-edit') as HTMLButtonElement | null
+      expect(editBtn).not.toBeNull()
+      editBtn!.click()
+      expect(host.querySelector('.lumina-link-source-line')).not.toBeNull()
+      expect(host.querySelector('.lumina-link-source-bar')).not.toBeNull()
+
+      // Moving cursor to another line automatically returns to LinkWrapper preview
+      const nextLineFrom = view.state.doc.line(2).from
+      view.dispatch({ selection: { anchor: nextLineFrom } })
+      expect(host.querySelector('.lumina-link-source-line')).toBeNull()
+      expect(host.querySelector('.lumina-link-source-bar')).toBeNull()
+      expect(host.querySelector('.lumina-link-wrapper')).not.toBeNull()
+    } finally {
+      view.destroy()
+    }
   })
 })

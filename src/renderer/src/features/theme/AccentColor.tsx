@@ -179,17 +179,23 @@ const QuickControls: React.FC = React.memo(() => {
       <div className="quick-controls-grid">
         <div className="quick-control-col" onClick={() => handleToggleDevTools()}>
           <span className="quick-control-label">DevTools</span>
-          <Toggle checked={enableDevTools} onChange={(e: any) => handleToggleDevTools(e.target.checked)} />
+          <span onClick={(e) => e.stopPropagation()}>
+            <Toggle checked={enableDevTools} onChange={(e: any) => handleToggleDevTools(e.target.checked)} />
+          </span>
         </div>
 
         <div className="quick-control-col" onClick={() => handleToggleStartup()}>
           <span className="quick-control-label">Startup</span>
-          <Toggle checked={launchOnStartup} onChange={(e: any) => handleToggleStartup(e.target.checked)} />
+          <span onClick={(e) => e.stopPropagation()}>
+            <Toggle checked={launchOnStartup} onChange={(e: any) => handleToggleStartup(e.target.checked)} />
+          </span>
         </div>
 
         <div className="quick-control-col" onClick={() => handleToggleModernUi()}>
           <span className="quick-control-label">Modern UI</span>
-          <Toggle checked={modernUi} onChange={(e: any) => handleToggleModernUi(e.target.checked)} />
+          <span onClick={(e) => e.stopPropagation()}>
+            <Toggle checked={modernUi} onChange={(e: any) => handleToggleModernUi(e.target.checked)} />
+          </span>
         </div>
       </div>
     </div>

@@ -5,7 +5,7 @@ import { useSettingsStore } from '../../../core/store/SettingStore'
 import { buildGraphData } from '../../../core/utils/graphBuilder'
 import { forceManyBody, forceCollide, forceX, forceY } from 'd3-force'
 import '../css/Graph.css'
-import { getNodeColor, drawNode } from '../graphs'
+import { getNodeColor, drawNode, getCanvasThemePalette } from '../graphs'
 import PerformancePanel from '../PerformancePanel'
 import { usePerformanceStore } from '../usePerformanceStore'
 
@@ -295,10 +295,13 @@ const InlineGraph: React.FC<InlineGraphProps> = React.memo(({ focusNodeId, onNav
               ctx.fill()
             }}
             linkColor={(link: any) => {
-              if (!hoverNode) return 'rgba(150,150,150,0.2)'
+              const palette = getCanvasThemePalette()
+              if (!hoverNode) return palette.linkDefault
               return link.source === hoverNode || link.target === hoverNode
-                ? '#40bafa'
-                : 'rgba(150,150,150,0.05)'
+                ? palette.textAccent
+                : palette.isLight
+                  ? 'rgba(60, 50, 40, 0.08)'
+                  : 'rgba(150, 150, 150, 0.05)'
             }}
             linkWidth={(link: any) => {
               if (!hoverNode) return 0.2

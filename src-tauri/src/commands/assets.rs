@@ -12,6 +12,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 static BACKUP_CANCELLED: AtomicBool = AtomicBool::new(false);
 
+const WORKSPACE_ASSETS_DIR: &str = ".lumina/assets";
+
 #[tauri::command]
 pub async fn save_workspace_image(
     bytes: Vec<u8>,
@@ -20,7 +22,9 @@ pub async fn save_workspace_image(
 ) -> Result<String, String> {
     run_blocking(move || {
         let ws_path = resolve_workspace_path();
-        let folder = target_folder.unwrap_or_default().replace('\\', "/");
+        let folder = target_folder
+            .unwrap_or_else(|| WORKSPACE_ASSETS_DIR.to_string())
+            .replace('\\', "/");
         let raw_name = name.unwrap_or_else(|| {
             format!(
                 "image-{}.png",
@@ -31,15 +35,25 @@ pub async fn save_workspace_image(
             )
         });
         let safe_name = sanitize_filename(&raw_name);
-        let rel_path = if folder.trim().is_empty() {
-            safe_name
+        let trimmed_folder = folder.trim().trim_matches('/');
+        let target_dir = if trimmed_folder.is_empty() {
+            ws_path.clone()
         } else {
-            format!("{}/{}", folder.trim_matches('/'), safe_name)
+            safe_join_workspace(&ws_path, trimmed_folder)?
+        };
+        fs::create_dir_all(&target_dir).map_err(|e| e.to_string())?;
+        let dst = dedup_dest_path(&target_dir, &safe_name);
+        let final_name = dst
+            .file_name()
+            .and_then(|s| s.to_str())
+            .ok_or_else(|| "Invalid destination image name".to_string())?
+            .to_string();
+        let rel_path = if trimmed_folder.is_empty() {
+            final_name
+        } else {
+            format!("{trimmed_folder}/{final_name}")
         };
         let full_path = safe_join_workspace(&ws_path, &rel_path)?;
-        if let Some(parent) = full_path.parent() {
-            let _ = fs::create_dir_all(parent);
-        }
         fs::write(&full_path, bytes).map_err(|e| e.to_string())?;
         mark_internal_workspace_write();
         Ok(rel_path)
@@ -52,6 +66,25 @@ pub async fn read_asset_bytes(relative_path: String) -> Result<tauri::ipc::Respo
     let bytes = run_blocking(move || {
         let ws_path = resolve_workspace_path();
         let full_path = safe_join_workspace(&ws_path, &relative_path)?;
+        if full_path.exists() {
+            return fs::read(full_path).map_err(|e| e.to_string());
+        }
+        let norm = relative_path.replace('\\', "/");
+        let trimmed = norm.trim_start_matches("./").trim_start_matches('/');
+        let fallback_rel = if let Some(rest) = trimmed.strip_prefix("assets/") {
+            Some(format!("{WORKSPACE_ASSETS_DIR}/{rest}"))
+        } else if let Some(rest) = trimmed.strip_prefix(".lumina/assets/") {
+            Some(format!("assets/{rest}"))
+        } else {
+            None
+        };
+        if let Some(fb) = fallback_rel {
+            if let Ok(fb_path) = safe_join_workspace(&ws_path, &fb) {
+                if fb_path.exists() {
+                    return fs::read(fb_path).map_err(|e| e.to_string());
+                }
+            }
+        }
         fs::read(full_path).map_err(|e| e.to_string())
     })
     .await?;
@@ -283,7 +316,7 @@ pub async fn save_image_from_path(
         }
 
         let ws_path = resolve_workspace_path();
-        let assets_dir = safe_join_workspace(&ws_path, "assets")?;
+        let assets_dir = safe_join_workspace(&ws_path, WORKSPACE_ASSETS_DIR)?;
         fs::create_dir_all(&assets_dir).map_err(|e| e.to_string())?;
 
         let raw_name = filename
@@ -301,7 +334,7 @@ pub async fn save_image_from_path(
             .and_then(|s| s.to_str())
             .ok_or_else(|| "Invalid destination image name".to_string())?
             .to_string();
-        let rel_path = format!("assets/{final_name}");
+        let rel_path = format!("{WORKSPACE_ASSETS_DIR}/{final_name}");
         let checked_dst = safe_join_workspace(&ws_path, &rel_path)?;
         fs::copy(src, &checked_dst).map_err(|e| e.to_string())?;
         mark_internal_workspace_write();
@@ -314,8 +347,14 @@ pub async fn save_image_from_path(
 pub async fn clean_orphans() -> Result<Value, String> {
     run_blocking(move || {
         let ws_path = resolve_workspace_path();
-        let assets_dir = ws_path.join("assets");
-        if !assets_dir.exists() || !assets_dir.is_dir() {
+        let asset_dirs: Vec<PathBuf> = [
+            ws_path.join(".lumina").join("assets"),
+            ws_path.join("assets"),
+        ]
+        .into_iter()
+        .filter(|d| d.exists() && d.is_dir())
+        .collect();
+        if asset_dirs.is_empty() {
             return Ok(json!({ "deleted": 0 }));
         }
 
@@ -350,7 +389,7 @@ pub async fn clean_orphans() -> Result<Value, String> {
         }
 
         let mut deleted = 0usize;
-        let mut asset_stack = vec![assets_dir.clone()];
+        let mut asset_stack = asset_dirs;
         while let Some(dir) = asset_stack.pop() {
             let Ok(entries) = fs::read_dir(&dir) else {
                 continue;
@@ -431,6 +470,33 @@ fn collect_workspace_backup_files(root: &Path) -> Vec<(PathBuf, String)> {
                     let rel_str = rel.to_string_lossy().replace('\\', "/");
                     if !rel_str.is_empty() {
                         results.push((p, rel_str));
+                    }
+                }
+            }
+        }
+    }
+
+    let lumina_assets_dir = root_canon.join(".lumina").join("assets");
+    if lumina_assets_dir.exists() && lumina_assets_dir.is_dir() {
+        let mut assets_stack = vec![lumina_assets_dir];
+        while let Some(dir) = assets_stack.pop() {
+            let Ok(read) = fs::read_dir(&dir) else {
+                continue;
+            };
+            for entry in read.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.starts_with('.') || name == "Thumbs.db" {
+                    continue;
+                }
+                let p = entry.path();
+                if p.is_dir() {
+                    assets_stack.push(p);
+                } else if p.is_file() {
+                    if let Ok(rel) = p.strip_prefix(&root_canon) {
+                        let rel_str = rel.to_string_lossy().replace('\\', "/");
+                        if !rel_str.is_empty() {
+                            results.push((p, rel_str));
+                        }
                     }
                 }
             }

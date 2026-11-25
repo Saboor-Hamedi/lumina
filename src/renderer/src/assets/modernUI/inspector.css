@@ -3,13 +3,13 @@
  * Flush docked right panel, crisp 1px left border, unified chrome
  * ============================================================ */
 
-/* Right Sidebar Container */
-.shell-sidebar-right,
-[data-modern-ui='true'] .shell-sidebar-right {
-  background: var(--bg-editor, var(--bg-app)) !important;
+/* Right Sidebar Container: Floating 10px Island Card (100% Theme-Token Driven) */
+.shell-sidebar-right {
+  background: var(--bg-surface) !important;
   border-style: solid !important;
+  border-width: 0 !important;
   border-color: transparent;
-  border-radius: 8px !important;
+  border-radius: 0 !important;
   box-shadow: none !important;
   overflow: hidden !important;
   display: flex;
@@ -18,11 +18,23 @@
   z-index: 5;
 }
 
-.app-shell.right-open .shell-sidebar-right,
+.app-shell.right-open .shell-sidebar-right {
+  border-width: 0 0 0 1px !important;
+  border-color: var(--border-color) !important;
+  border-radius: 0 !important;
+}
+
+/* Modern UI: Elevated 10px rounded card */
+[data-modern-ui='true'] .shell-sidebar-right {
+  background: var(--bg-surface) !important;
+  border-radius: var(--island-radius, 10px) !important;
+}
+
 [data-modern-ui='true'] .app-shell.right-open .shell-sidebar-right {
   border-width: 1px !important;
-  border-color: var(--border-dim) !important;
-  border-radius: 8px !important;
+  border-color: var(--border-color) !important;
+  border-radius: var(--island-radius, 10px) !important;
+  box-shadow: none !important;
 }
 
 .shell-sidebar-right .inspector-panel,
@@ -46,7 +58,7 @@
   border-radius: 0 !important;
   border: none !important;
   border-bottom: 1px solid var(--border-dim) !important;
-  background: var(--bg-sidebar) !important;
+  background: var(--bg-editor, var(--bg-app)) !important;
   box-shadow: none !important;
   box-sizing: border-box;
   overflow: hidden;
