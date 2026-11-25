@@ -17,7 +17,7 @@ import React, { useState, useEffect, useCallback, memo } from 'react'
 import { Square, X, Minus, Search, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import ToolTip from '../../components/atoms/ToolTip'
-import UpdateDetails from '../../components/update/UpdateDetails'
+import UpdateButton from '../../components/update/UpdateButton'
 import AccentColor from '../theme/AccentColor'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 import { useSettingStore } from '../../core/store/SettingStore'
@@ -112,7 +112,7 @@ export const TitleBar: React.FC<TitleBarProps> = memo(({ isHidden = false }) => 
           </button>
         </ToolTip>
         <div className="app-logo-wrapper" style={{ display: 'flex', alignItems: 'center', position: 'relative', flexShrink: 0 }}>
-          <UpdateDetails />
+          <UpdateButton />
         </div>
       </div>
 

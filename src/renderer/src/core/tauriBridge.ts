@@ -119,10 +119,13 @@ export function initTauriBridge(): void {
     assetUrl?: string
     assetName?: string
     assetSize?: number
+    assetSha256?: string | null
   } | null = null
   let downloadedInstallerPath: string | null = null
 
-  const pickPlatformAsset = (assets: any[]): { url: string; name: string; size: number } | null => {
+  const pickPlatformAsset = (
+    assets: any[]
+  ): { url: string; name: string; size: number; sha256?: string | null } | null => {
     if (!Array.isArray(assets) || assets.length === 0) return null
     const ua =
       typeof navigator !== 'undefined'
@@ -146,11 +149,13 @@ export function initTauriBridge(): void {
         findBy((n) => n.endsWith('.deb'))
     }
 
-    if (!chosen?.browser_download_url) return null
+    const downloadUrl = chosen?.browserDownloadUrl || chosen?.browser_download_url
+    if (!downloadUrl) return null
     return {
-      url: String(chosen.browser_download_url),
+      url: String(downloadUrl),
       name: String(chosen.name),
-      size: Number(chosen.size) || 0
+      size: Number(chosen.size) || 0,
+      sha256: chosen?.sha256 || null
     }
   }
 
@@ -230,7 +235,7 @@ export function initTauriBridge(): void {
           const savedPath = await invoke<string>('download_app_update', {
             url: latestReleaseInfo.assetUrl,
             fileName: latestReleaseInfo.assetName,
-            totalBytes: latestReleaseInfo.assetSize || null
+            expectedSha256: latestReleaseInfo.assetSha256 || null
           })
           downloadedInstallerPath = savedPath
           downloadedInstallerVersion = latestReleaseInfo.version || null
@@ -238,6 +243,19 @@ export function initTauriBridge(): void {
         } catch (err: any) {
           const msg = String(err || '')
           if (msg.includes('cancelled')) {
+            notifyUpdateStatus('available', latestReleaseInfo)
+          } else if (openBrowserFallback) {
+            const fallbackUrl =
+              latestReleaseInfo?.assetUrl ||
+              latestReleaseInfo?.url ||
+              'https://github.com/Saboor-Hamedi/lumina/releases'
+            try {
+              await invoke('open_path_in_os', { path: fallbackUrl })
+            } catch {
+              if (typeof window !== 'undefined') {
+                window.open(fallbackUrl, '_blank', 'noopener,noreferrer')
+              }
+            }
             notifyUpdateStatus('available', latestReleaseInfo)
           } else {
             notifyUpdateStatus('error', msg || 'Download failed')
@@ -252,7 +270,10 @@ export function initTauriBridge(): void {
     }
 
     if (openBrowserFallback) {
-      const targetUrl = latestReleaseInfo?.url || 'https://github.com/Saboor-Hamedi/lumina/releases'
+      const targetUrl =
+        latestReleaseInfo?.assetUrl ||
+        latestReleaseInfo?.url ||
+        'https://github.com/Saboor-Hamedi/lumina/releases'
       try {
         await invoke('open_path_in_os', { path: targetUrl })
       } catch {
@@ -571,12 +592,51 @@ export function initTauriBridge(): void {
       if (!isTauriRuntime) return
       await getCurrentWindow().startDragging()
     },
-    moveWindow: async (deltaX: number, deltaY: number) => {
-      if (!isTauriRuntime) return
-      const win = getCurrentWindow()
-      const pos = await win.outerPosition()
-      await win.setPosition(new PhysicalPosition(pos.x + deltaX, pos.y + deltaY))
-    },
+    moveWindow: (() => {
+      let cachedPos: { x: number; y: number } | null = null
+      let lastSyncAt = 0
+      let pendingDeltaX = 0
+      let pendingDeltaY = 0
+      let inFlight = false
+
+      const flushMove = async () => {
+        if (inFlight || !isTauriRuntime) return
+        inFlight = true
+        try {
+          const win = getCurrentWindow()
+          const now = Date.now()
+          if (!cachedPos || now - lastSyncAt > 400) {
+            const p = await win.outerPosition()
+            cachedPos = { x: p.x, y: p.y }
+          }
+          while (pendingDeltaX !== 0 || pendingDeltaY !== 0) {
+            const dx = pendingDeltaX
+            const dy = pendingDeltaY
+            pendingDeltaX = 0
+            pendingDeltaY = 0
+            const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
+            cachedPos.x = Math.round(cachedPos.x + dx * dpr)
+            cachedPos.y = Math.round(cachedPos.y + dy * dpr)
+            lastSyncAt = Date.now()
+            await win.setPosition(new PhysicalPosition(cachedPos.x, cachedPos.y))
+          }
+        } catch {
+          cachedPos = null
+        } finally {
+          inFlight = false
+          if (pendingDeltaX !== 0 || pendingDeltaY !== 0) {
+            void flushMove()
+          }
+        }
+      }
+
+      return async (deltaX: number, deltaY: number) => {
+        if (!isTauriRuntime) return
+        pendingDeltaX += deltaX
+        pendingDeltaY += deltaY
+        await flushMove()
+      }
+    })(),
     getWindowPosition: async () => {
       if (!isTauriRuntime) return { x: 0, y: 0 }
       const pos = await getCurrentWindow().outerPosition()
@@ -591,45 +651,126 @@ export function initTauriBridge(): void {
     isPackaged: async () => !import.meta.env.DEV,
     onAppError: () => () => {},
 
-    // Lightweight GitHub Releases Update Check
+    getGithubReleases: async (force = false) => {
+      if (isTauriRuntime) {
+        try {
+          return await invoke<any>('get_github_releases', { force })
+        } catch {}
+      }
+      const currentVer = await getAppVersion()
+      const res = await fetch('https://api.github.com/repos/Saboor-Hamedi/lumina/releases?per_page=25', {
+        headers: { Accept: 'application/vnd.github+json' }
+      })
+      if (!res.ok) return null
+      const rawList = await res.json()
+      if (!Array.isArray(rawList)) return null
+      const releases = rawList
+        .filter((r: any) => !r?.draft && r?.tag_name)
+        .map((r: any, idx: number) => {
+          const ver = String(r.tag_name || '').replace(/^v/i, '')
+          return {
+            id: Number(r.id) || idx + 1,
+            tagName: String(r.tag_name),
+            version: ver,
+            name: String(r.name || `Lumina v${ver}`),
+            body: String(r.body || ''),
+            htmlUrl: String(r.html_url || 'https://github.com/Saboor-Hamedi/lumina/releases'),
+            publishedAt: r.published_at || null,
+            prerelease: Boolean(r.prerelease),
+            isLatest: idx === 0,
+            isInstalled: compareSemver(ver, currentVer) === 0,
+            isNewerThanCurrent: compareSemver(ver, currentVer) > 0,
+            assets: Array.isArray(r.assets)
+              ? r.assets.map((a: any) => ({
+                  name: String(a.name || ''),
+                  browserDownloadUrl: String(a.browser_download_url || ''),
+                  size: Number(a.size) || 0,
+                  downloadCount: Number(a.download_count) || 0,
+                  contentType: a.content_type || null,
+                  sha256: typeof a.digest === 'string' ? a.digest.replace(/^sha256:/i, '') : null
+                }))
+              : []
+          }
+        })
+      const latestVer = releases[0]?.version || currentVer
+      return {
+        currentVersion: currentVer,
+        latestVersion: latestVer,
+        updateAvailable: compareSemver(latestVer, currentVer) > 0,
+        releases,
+        fromCache: false,
+        cachedAt: Math.floor(Date.now() / 1000),
+        etag: null
+      }
+    },
+
+    // Native Rust + ETag-Cached GitHub Releases Update Check
     checkForUpdates: async () => {
       notifyUpdateStatus('checking')
       try {
         const currentVer = await getAppVersion()
-        const signal = typeof AbortSignal !== 'undefined' && typeof (AbortSignal as any).timeout === 'function'
-          ? (AbortSignal as any).timeout(3500)
-          : undefined
-        const res = await fetch('https://api.github.com/repos/Saboor-Hamedi/lumina/releases/latest', {
-          headers: { Accept: 'application/vnd.github+json' },
-          signal
-        })
-        if (!res.ok) {
+        let latestRelease: any = null
+
+        // 1. Prefer Rust reqwest + ETag cache command (get_github_releases)
+        if (isTauriRuntime) {
+          try {
+            const payload = await invoke<any>('get_github_releases', { force: false })
+            if (payload && Array.isArray(payload.releases) && payload.releases.length > 0) {
+              latestRelease =
+                payload.releases.find((r: any) => r.isLatest) ||
+                payload.releases.find((r: any) => !r.prerelease) ||
+                payload.releases[0]
+            }
+          } catch {}
+        }
+
+        // 2. Fallback to direct GitHub API fetch if Rust command wasn't available
+        if (!latestRelease) {
+          const signal =
+            typeof AbortSignal !== 'undefined' && typeof (AbortSignal as any).timeout === 'function'
+              ? (AbortSignal as any).timeout(8000)
+              : undefined
+          const res = await fetch('https://api.github.com/repos/Saboor-Hamedi/lumina/releases/latest', {
+            headers: { Accept: 'application/vnd.github+json' },
+            signal
+          })
+          if (res.ok) {
+            latestRelease = await res.json()
+          }
+        }
+
+        if (!latestRelease) {
           notifyUpdateStatus('not-available', { version: currentVer })
           return { updateAvailable: false }
         }
-        const release = await res.json()
-        const tag = String(release?.tag_name || '').trim()
+
+        const tag = String(latestRelease?.tagName || latestRelease?.tag_name || latestRelease?.version || '').trim()
         const remoteVer = tag.replace(/^v/i, '')
         if (remoteVer && compareSemver(remoteVer, currentVer) > 0) {
-          const asset = pickPlatformAsset(release?.assets)
+          const asset = pickPlatformAsset(latestRelease?.assets)
           latestReleaseInfo = {
             version: remoteVer,
-            releaseNotes: String(release?.body || ''),
-            releaseDate: String(release?.published_at || ''),
-            url: String(release?.html_url || 'https://github.com/Saboor-Hamedi/lumina/releases'),
+            releaseNotes: String(latestRelease?.body || ''),
+            releaseDate: String(latestRelease?.publishedAt || latestRelease?.published_at || ''),
+            url: String(
+              latestRelease?.htmlUrl ||
+                latestRelease?.html_url ||
+                'https://github.com/Saboor-Hamedi/lumina/releases'
+            ),
             assetUrl: asset?.url,
             assetName: asset?.name,
-            assetSize: asset?.size
+            assetSize: asset?.size,
+            assetSha256: asset?.sha256 || null
           }
           if (downloadedInstallerPath && downloadedInstallerVersion === remoteVer) {
             notifyUpdateStatus('ready', latestReleaseInfo)
           } else {
             notifyUpdateStatus('available', latestReleaseInfo)
-            if (latestReleaseInfo.assetUrl && latestReleaseInfo.assetName) {
-              // Automatically download the new version silently in the background
-              // so the user is presented with "Restart & Install" as soon as it's ready.
-              void downloadReleaseAsset(false)
-            }
+          }
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('lumina-update-detected', { detail: { version: remoteVer } })
+            )
           }
           return { updateAvailable: true, ...latestReleaseInfo }
         }
@@ -650,8 +791,7 @@ export function initTauriBridge(): void {
       if (downloadedInstallerPath) {
         notifyUpdateStatus('installing', latestReleaseInfo)
         try {
-          await invoke('install_app_update', { path: downloadedInstallerPath })
-          // Keep Lumina open and restore 'ready' state while the Setup Wizard modal is shown
+          await invoke('install_app_update', { filePath: downloadedInstallerPath })
           notifyUpdateStatus('ready', latestReleaseInfo)
           return
         } catch (err: any) {
@@ -659,7 +799,10 @@ export function initTauriBridge(): void {
           return
         }
       }
-      const targetUrl = latestReleaseInfo?.url || 'https://github.com/Saboor-Hamedi/lumina/releases'
+      const targetUrl =
+        latestReleaseInfo?.assetUrl ||
+        latestReleaseInfo?.url ||
+        'https://github.com/Saboor-Hamedi/lumina/releases'
       await invoke('open_path_in_os', { path: targetUrl })
     },
     onUpdateStatus: (cb: (payload: { status: string; data?: any }) => void) => {

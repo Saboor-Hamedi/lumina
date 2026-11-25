@@ -121,7 +121,7 @@ export function getActiveTerminalFontFamily(): string {
 }
 
 export const DEFAULT_FONT_SIZE = 13
-export const DEFAULT_SCROLLBACK = 10_000
+export const DEFAULT_SCROLLBACK = 1_500
 
 /** VSCode / Modern Windows Terminal-grade dark theme tuned for Lumina */
 export const XTERM_THEME: ITheme = {

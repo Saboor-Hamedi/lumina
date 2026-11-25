@@ -72,6 +72,7 @@ export function renderSiteIcon(
   img.className = sizeClass
   img.src = firstSrc
   img.alt = ''
+  img.decoding = 'async'
   img.loading = 'lazy'
   img.onerror = () => {
     if (!triedFallback) {

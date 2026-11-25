@@ -500,6 +500,7 @@ export class ImageWidget extends WidgetType {
 
     const img = document.createElement('img')
     img.alt = this.actualAlt
+    img.decoding = 'async'
     img.draggable = false
     attachLightbox(img)
 

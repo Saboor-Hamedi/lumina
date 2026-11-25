@@ -9,11 +9,11 @@ function Version() {
     }
   }, [])
 
-  if (!version) return null
+  const cleanVersion = String(version || '2.1.1').replace(/^v/i, '')
 
   return (
-    <span className="text-[8px] text-white/30 dark:text-white/30 light:text-black/30 font-normal tracking-[0.1px] select-none font-sans whitespace-nowrap">
-      v{version}
+    <span className="select-none font-sans whitespace-nowrap">
+      v{cleanVersion}
     </span>
   )
 }

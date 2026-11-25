@@ -46,15 +46,16 @@ export function useZenWindowDrag({ enabled }: UseZenWindowDragOptions): void {
       e.preventDefault()
       e.stopPropagation()
 
-      // Prefer native OS window dragging (Tauri startDragging) for zero-lag, multi-monitor smooth movement
-      const api = (window as any).api
-      if (api && typeof api.startWindowDrag === 'function') {
-        api.startWindowDrag().catch?.(() => {})
-        return
-      }
-
+      // Track pointer coordinates and drive window movement via api.moveWindow(deltaX, deltaY)
+      // because Win32 ReleaseCapture() + WM_NCLBUTTONDOWN(HTCAPTION) inside startDragging()
+      // is suppressed by WebView2/Windows when the Alt (VK_MENU) modifier is held or inside .cm-content.
       isDraggingRef.current = true
       lastPosRef.current = { x: e.screenX, y: e.screenY }
+
+      const api = (window as any).api
+      if (api && typeof api.moveWindow !== 'function' && typeof api.startWindowDrag === 'function') {
+        api.startWindowDrag().catch?.(() => {})
+      }
     }
 
     const handleMouseMove = (e: MouseEvent) => {

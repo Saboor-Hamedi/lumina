@@ -1,0 +1,493 @@
+/**
+ * =========================================================================
+ * ReleaseNotesTab.css — Lumina Islands UI Release Notes & Changelog View
+ * =========================================================================
+ * Matches Lumina's main workspace Islands UI aesthetic (zero hardcoded colors,
+ * locked header height, clean sidebar pills, and subtle surface hierarchy).
+ */
+
+.release-notes-tab {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-surface, var(--bg-editor, var(--bg-app)));
+  color: var(--text-main);
+  overflow: hidden;
+  user-select: text;
+}
+
+/* ── Top Toolbar Bar (Locked 44px height — never shrinks or jumps when checking) ── */
+.release-notes-banner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  height: 44px;
+  min-height: 44px;
+  max-height: 44px;
+  padding: 0 16px;
+  background: var(--bg-surface, var(--bg-panel));
+  border-bottom: 1px solid var(--border-color, var(--border-dim));
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.release-notes-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.release-notes-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  min-height: 28px;
+  max-height: 28px;
+  padding: 0 11px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border-color, var(--border-dim));
+  background: var(--bg-surface, var(--bg-card));
+  color: var(--text-main);
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.release-notes-btn:hover:not(:disabled) {
+  background: var(--bg-hover, var(--bg-active));
+  border-color: var(--border-strong, var(--text-muted));
+}
+
+.release-notes-btn:disabled {
+  opacity: 0.72;
+  cursor: default;
+}
+
+.release-notes-btn.is-primary {
+  min-width: 132px;
+  background: var(--bg-panel, var(--bg-active));
+  color: var(--text-main);
+  border-color: var(--border-color, var(--border-dim));
+}
+
+.release-notes-btn.is-primary:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--accent-color, var(--text-accent));
+  border-color: var(--accent-color, var(--text-accent));
+}
+
+/* ── Download Progress Strip ── */
+.release-notes-progress-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 28px;
+  padding: 0 16px;
+  background: var(--bg-panel, var(--bg-surface));
+  border-bottom: 1px solid var(--border-color, var(--border-dim));
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.release-notes-progress-track {
+  flex: 1;
+  max-width: 240px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-active, var(--bg-hover));
+  overflow: hidden;
+}
+
+.release-notes-progress-fill {
+  height: 100%;
+  background: var(--accent-color, var(--text-accent));
+  border-radius: 2px;
+  transition: width 0.18s ease;
+}
+
+/* ── Split View Body (Left Rail + Right Changelog) ── */
+.release-notes-split {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Left Rail (~196px — matches Settings & Explorer sidebar nav) ── */
+.release-notes-rail {
+  width: 196px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-color, var(--border-dim));
+  background: var(--bg-surface, var(--bg-sidebar));
+  min-height: 0;
+}
+
+.release-notes-rail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 32px;
+  padding: 0 14px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color, var(--border-dim));
+  flex-shrink: 0;
+}
+
+.release-notes-rail-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.release-notes-rail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.1s ease, color 0.1s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.release-notes-rail-item:hover {
+  background: var(--bg-hover, var(--bg-active));
+  color: var(--text-main);
+}
+
+.release-notes-rail-item.is-selected {
+  background: var(--accent-soft, var(--bg-active));
+  color: var(--accent-color, var(--text-accent));
+  font-weight: 600;
+}
+
+.release-notes-rail-version {
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+}
+
+.release-notes-rail-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.release-notes-rail-pill {
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 9.5px;
+  font-weight: 500;
+  background: var(--bg-panel, var(--bg-surface));
+  color: var(--text-muted);
+  border: 1px solid var(--border-color, var(--border-dim));
+}
+
+.release-notes-rail-pill.is-latest {
+  color: var(--accent-color, var(--text-accent));
+  border-color: var(--border-accent, var(--border-color));
+}
+
+/* ── Right Changelog Pane ── */
+.release-notes-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 22px 28px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.release-notes-article-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color, var(--border-dim));
+}
+
+.release-notes-article-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.release-notes-article-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+
+.release-notes-article-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+/* ── Markdown Body Styling ── */
+.release-notes-markdown {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-main);
+}
+
+.release-notes-markdown h1,
+.release-notes-markdown h2,
+.release-notes-markdown h3,
+.release-notes-markdown h4 {
+  color: var(--text-main);
+  font-weight: 600;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+
+.release-notes-markdown h2 {
+  font-size: 14px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-color, var(--border-dim));
+}
+
+.release-notes-markdown h3 {
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.release-notes-markdown ul,
+.release-notes-markdown ol {
+  margin: 6px 0 14px;
+  padding-left: 18px;
+}
+
+.release-notes-markdown li {
+  margin-bottom: 5px;
+  color: var(--text-muted);
+}
+
+.release-notes-markdown li strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.release-notes-markdown code {
+  font-family: var(--font-mono, monospace);
+  font-size: 11.5px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--bg-panel, var(--bg-active));
+  border: 1px solid var(--border-color, var(--border-dim));
+  color: var(--text-main);
+}
+
+.release-notes-markdown pre {
+  padding: 10px 12px;
+  border-radius: 7px;
+  background: var(--bg-panel, var(--bg-card));
+  border: 1px solid var(--border-color, var(--border-dim));
+  overflow-x: auto;
+}
+
+.release-notes-markdown pre code {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+.release-notes-markdown a {
+  color: var(--accent-color, var(--text-accent));
+  text-decoration: none;
+}
+
+.release-notes-markdown a:hover {
+  text-decoration: underline;
+}
+
+/* ── Collapsible Assets & SHA-256 Checksum Card ── */
+.release-notes-assets-card {
+  border: 1px solid var(--border-color, var(--border-dim));
+  border-radius: 8px;
+  background: var(--bg-panel, var(--bg-surface));
+  overflow: hidden;
+}
+
+.release-notes-assets-toggle {
+  width: 100%;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+}
+
+.release-notes-assets-toggle:hover {
+  background: var(--bg-hover, var(--bg-active));
+}
+
+.release-notes-assets-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.release-notes-assets-list {
+  border-top: 1px solid var(--border-color, var(--border-dim));
+  display: flex;
+  flex-direction: column;
+}
+
+.release-notes-asset-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color, var(--border-dim));
+  font-size: 11.5px;
+}
+
+.release-notes-asset-row:last-child {
+  border-bottom: none;
+}
+
+.release-notes-asset-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.release-notes-asset-name {
+  font-weight: 500;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-main);
+  word-break: break-all;
+}
+
+.release-notes-asset-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.release-notes-asset-sha {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ── Unified TitleBar Update Button (same shape & design across Check / Download / Restart) ── */
+.update-details-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: 6px;
+}
+
+.update-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 5px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-faint, var(--text-muted));
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1;
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  -webkit-app-region: no-drag;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.update-trigger-btn:hover:not(:disabled) {
+  color: var(--text-main);
+  background: var(--bg-hover);
+}
+
+.update-trigger-btn:active:not(:disabled) {
+  background: var(--bg-active);
+}
+
+.update-trigger-btn.has-update,
+.update-trigger-btn.is-ready,
+.update-trigger-btn.is-downloading {
+  color: var(--accent-color, var(--text-accent));
+  background: var(--accent-soft, var(--bg-active));
+  border-color: var(--border-accent, var(--border-color));
+}
+
+.update-trigger-btn.has-update:hover:not(:disabled),
+.update-trigger-btn.is-ready:hover:not(:disabled) {
+  background: var(--bg-hover);
+  color: var(--accent-color, var(--text-accent));
+  border-color: var(--accent-color, var(--text-accent));
+}
+
+@media (max-width: 720px) {
+  .release-notes-split {
+    flex-direction: column;
+  }
+  .release-notes-rail {
+    width: 100%;
+    max-height: 140px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color, var(--border-dim));
+  }
+  .release-notes-content {
+    padding: 16px 18px 28px;
+  }
+}

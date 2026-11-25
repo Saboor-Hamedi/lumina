@@ -47,8 +47,8 @@ jobs:
             gh release create "$TAG" \
               --repo "$GITHUB_REPOSITORY" \
               --draft \
-              --title "${{ steps.resolve_tag.outputs.version }}" \
-              --notes "Automated Tauri 2.0 release for $TAG"
+              --title "Lumina ${{ steps.resolve_tag.outputs.version }}" \
+              --generate-notes
           fi
 
   release:
@@ -129,11 +129,70 @@ jobs:
       contents: write
 
     steps:
-      - name: Undraft release and mark as latest
+      - name: Generate SHA256SUMS.txt, latest.json, and undraft release
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           TAG="${GITHUB_REF#refs/tags/}"
-          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --latest
+          VERSION="${TAG#v}"
+          REPO="$GITHUB_REPOSITORY"
+          PUB_DATE="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+          mkdir -p release_assets
+          gh release download "$TAG" --repo "$REPO" --dir release_assets --clobber || true
+
+          if [ -n "$(ls -A release_assets 2>/dev/null)" ]; then
+            (
+              cd release_assets
+              sha256sum * > SHA256SUMS.txt
+            )
+            gh release upload "$TAG" release_assets/SHA256SUMS.txt --repo "$REPO" --clobber
+          fi
+
+          python3 - "$TAG" "$VERSION" "$REPO" "$PUB_DATE" <<'PY'
+          import json, os, sys
+
+          tag, version, repo, pub_date = sys.argv[1:5]
+          base_url = f"https://github.com/{repo}/releases/download/{tag}"
+          files = os.listdir("release_assets") if os.path.isdir("release_assets") else []
+
+          def pick(pred):
+              for f in sorted(files):
+                  if pred(f.lower()):
+                      return f"{base_url}/{f}"
+              return None
+
+          win_url = pick(lambda n: n.endswith("-setup.exe") or n.endswith(".msi") or n.endswith(".exe"))
+          mac_univ = pick(lambda n: "universal" in n and n.endswith(".dmg"))
+          mac_arm = pick(lambda n: ("aarch64" in n or "arm64" in n) and n.endswith(".dmg")) or mac_univ
+          mac_x64 = pick(lambda n: ("x64" in n or "x86_64" in n) and n.endswith(".dmg")) or mac_univ
+          linux_appimage = pick(lambda n: n.endswith(".appimage") or n.endswith(".deb"))
+
+          platforms = {}
+          if win_url:
+              platforms["windows-x86_64"] = {"url": win_url, "signature": ""}
+          if mac_univ:
+              platforms["darwin-universal"] = {"url": mac_univ, "signature": ""}
+          if mac_arm:
+              platforms["darwin-aarch64"] = {"url": mac_arm, "signature": ""}
+          if mac_x64:
+              platforms["darwin-x64"] = {"url": mac_x64, "signature": ""}
+              platforms["darwin-x86_64"] = {"url": mac_x64, "signature": ""}
+          if linux_appimage:
+              platforms["linux-x86_64"] = {"url": linux_appimage, "signature": ""}
+
+          latest_payload = {
+              "version": version,
+              "notes": f"Lumina {tag}",
+              "pub_date": pub_date,
+              "platforms": platforms,
+          }
+          with open("latest.json", "w", encoding="utf-8") as fh:
+              json.dump(latest_payload, fh, indent=2)
+          PY
+
+          gh release upload "$TAG" latest.json --repo "$REPO" --clobber
+          gh release edit "$TAG" --repo "$REPO" --draft=false --latest

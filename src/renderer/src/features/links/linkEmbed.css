@@ -317,7 +317,9 @@ html .cm-line.lumina-link-source-line.cm-activeLine {
 
 .lumina-link-card-media img {
   width: 100%;
+  max-width: 400px;
   height: 100%;
+  max-height: 120px;
   object-fit: cover;
   object-position: center;
   display: block;

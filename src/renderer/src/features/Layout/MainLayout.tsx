@@ -32,7 +32,8 @@ import { createUntitledSnippet } from '../Breadcrumbs/utils/breadcrumbUtils'
 import {
   useWorkspaceStore,
   GRAPH_TAB_ID,
-  LUMINA_TAB_ID
+  LUMINA_TAB_ID,
+  RELEASE_NOTES_TAB_ID
 } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useUpdateStore } from '../../core/store/UpdateSetting'
@@ -1187,19 +1188,60 @@ export const MainLayout: React.FC = () => {
     }
   }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme, handleToggleTerminal])
 
-  // Idle-deferred Editor & Terminal preload so Welcome/boot paints first while opening is instant
+  // Auto-open "What's New" (release-notes) tab when a new update is detected or after upgrading
   useEffect(() => {
-    const preload = () => {
-      if (openTabs.length === 0) {
-        void import('../Editor/Editor')
+    const checkStartupReleaseNotes = async () => {
+      try {
+        const settings = (useSettingsStore.getState().settings as any) || {}
+        if (settings.autoOpenReleaseNotes === false) return
+        const api = (window as any).api
+        const currentVer = String((await api?.getVersion?.()) || '').replace(/^v/i, '').trim()
+        const lastSeen = String(settings.lastSeenVersion || '').replace(/^v/i, '').trim()
+        if (currentVer && lastSeen && currentVer !== lastSeen) {
+          await useSettingsStore.getState().updateSetting('lastSeenVersion', currentVer)
+          useWorkspaceStore.getState().openReleaseNotesTab()
+        } else if (currentVer && !lastSeen) {
+          await useSettingsStore.getState().updateSetting('lastSeenVersion', currentVer)
+        }
+      } catch {}
+    }
+
+    const handleUpdateDetected = (e: Event) => {
+      const remoteVer = String((e as CustomEvent)?.detail?.version || '').replace(/^v/i, '').trim()
+      if (!remoteVer) return
+      const settings = (useSettingsStore.getState().settings as any) || {}
+      if (settings.autoOpenReleaseNotes === false) return
+      const lastNotified = String(settings.lastNotifiedUpdateVersion || '').replace(/^v/i, '').trim()
+      if (remoteVer !== lastNotified) {
+        void useSettingsStore.getState().updateSetting('lastNotifiedUpdateVersion', remoteVer)
+        useWorkspaceStore.getState().openReleaseNotesTab()
       }
-      void import('../terminal/TerminalPanel')
+    }
+
+    const handleOpenReleaseNotesEvent = () => {
+      useWorkspaceStore.getState().openReleaseNotesTab()
+    }
+
+    void checkStartupReleaseNotes()
+    window.addEventListener('lumina-update-detected', handleUpdateDetected)
+    window.addEventListener('open-release-notes', handleOpenReleaseNotesEvent)
+    return () => {
+      window.removeEventListener('lumina-update-detected', handleUpdateDetected)
+      window.removeEventListener('open-release-notes', handleOpenReleaseNotesEvent)
+    }
+  }, [])
+
+  // Idle-deferred Editor preload only when no tabs are open yet; never eagerly preload Terminal when closed
+  useEffect(() => {
+    if (openTabs.length > 0) return
+    const preload = () => {
+      void import('../Editor/Editor')
     }
     if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      const id = (window as any).requestIdleCallback(preload, { timeout: 2000 })
+      const id = (window as any).requestIdleCallback(preload, { timeout: 2500 })
       return () => (window as any).cancelIdleCallback(id)
     }
-    const timer = setTimeout(preload, 900)
+    const timer = setTimeout(preload, 1200)
     return () => clearTimeout(timer)
   }, [openTabs.length])
 
@@ -1231,7 +1273,10 @@ export const MainLayout: React.FC = () => {
     () =>
       openTabs.some(
         (id: string) =>
-          id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || snippetMap.has(id)
+          id === GRAPH_TAB_ID ||
+          id === LUMINA_TAB_ID ||
+          id === RELEASE_NOTES_TAB_ID ||
+          snippetMap.has(id)
       ),
     [openTabs, snippetMap]
   )

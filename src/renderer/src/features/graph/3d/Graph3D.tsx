@@ -249,6 +249,15 @@ const Graph3D = React.forwardRef<any, Graph3DProps>(({ graphData, ...restProps }
       if (attachedEl) {
         attachedEl.removeEventListener('wheel', handleWheel, { capture: true })
       }
+      // Explicitly release Three.js WebGL context & GPU resources when the 3D graph tab is closed/unmounted
+      try {
+        const fg = internalRef.current
+        const renderer = fg?.renderer?.()
+        if (renderer) {
+          renderer.dispose?.()
+          renderer.forceContextLoss?.()
+        }
+      } catch {}
     }
   }, [graphData])
 

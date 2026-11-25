@@ -94,6 +94,7 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
     const [dragPosY, setDragPosY] = useState<number | null>(null)
 
     const rootRef = useRef<HTMLDivElement | null>(null)
+    const coverPopoverRef = useRef<HTMLDivElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement | null>(null)
     const dragStartRef = useRef<{ y: number; startPos: number } | null>(null)
 
@@ -120,7 +121,13 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
     useEffect(() => {
       if (!pickerOpen) return
       const onPointerDown = (e: MouseEvent) => {
-        if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        const target = e.target as HTMLElement | null
+        if (!target) return
+        if (
+          coverPopoverRef.current &&
+          !coverPopoverRef.current.contains(target) &&
+          !target.closest('[data-meta-cover-trigger="true"]')
+        ) {
           setPickerOpen(false)
         }
       }
@@ -213,11 +220,40 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
         }
         const reader = new FileReader()
         reader.onload = () => {
-          if (typeof reader.result === 'string') {
+          const dataUrl = reader.result
+          if (typeof dataUrl !== 'string') return
+          // Downscale uploaded cover banner in-memory to max width 1200px so WebView2's GPU
+          // process does not decode multi-megabyte raw RGBA textures in app_config.json
+          const probe = new Image()
+          probe.onload = () => {
+            try {
+              const MAX_COVER_WIDTH = 1200
+              if (probe.naturalWidth > MAX_COVER_WIDTH) {
+                const scale = MAX_COVER_WIDTH / probe.naturalWidth
+                const canvas = document.createElement('canvas')
+                canvas.width = MAX_COVER_WIDTH
+                canvas.height = Math.max(1, Math.round(probe.naturalHeight * scale))
+                const ctx = canvas.getContext('2d')
+                if (ctx) {
+                  ctx.drawImage(probe, 0, 0, canvas.width, canvas.height)
+                  const resized = canvas.toDataURL('image/jpeg', 0.88)
+                  setUrlError('')
+                  applyCover({ type: 'image', value: resized, positionY: 50 })
+                  setPickerOpen(false)
+                  return
+                }
+              }
+            } catch {}
             setUrlError('')
-            applyCover({ type: 'image', value: reader.result, positionY: 50 })
+            applyCover({ type: 'image', value: dataUrl, positionY: 50 })
             setPickerOpen(false)
           }
+          probe.onerror = () => {
+            setUrlError('')
+            applyCover({ type: 'image', value: dataUrl, positionY: 50 })
+            setPickerOpen(false)
+          }
+          probe.src = dataUrl
         }
         reader.readAsDataURL(file)
         e.target.value = ''
@@ -333,6 +369,7 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
                   )}
                   <button
                     type="button"
+                    data-meta-cover-trigger="true"
                     className="note-cover-ctrl-btn"
                     onClick={() => {
                       setEmojiPickerOpen(false)
@@ -422,7 +459,12 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
         />
 
         {pickerOpen && (
-          <div className="note-cover-popover" role="dialog" aria-label="Choose note cover">
+          <div
+            ref={coverPopoverRef}
+            className="note-cover-popover"
+            role="dialog"
+            aria-label="Choose note cover"
+          >
             <div className="note-cover-tabs">
               <button
                 type="button"

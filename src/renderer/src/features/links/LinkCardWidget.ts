@@ -236,6 +236,7 @@ export function createLinkCardElement(opts: CreateLinkCardOptions): HTMLElement 
     const ogImg = document.createElement('img')
     ogImg.src = imgUrl
     ogImg.alt = ''
+    ogImg.decoding = 'async'
     ogImg.loading = 'lazy'
     ogImg.onerror = () => {
       mediaSlot.remove()
@@ -273,6 +274,7 @@ export function createLinkCardElement(opts: CreateLinkCardOptions): HTMLElement 
     const img = document.createElement('img')
     img.src = getYouTubeThumbnailUrl(youtubeId)
     img.alt = label || 'YouTube thumbnail'
+    img.decoding = 'async'
     img.loading = 'lazy'
     let triedMqFallback = false
     const fallbackToMq = () => {

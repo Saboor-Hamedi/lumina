@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { Settings, Palette, Cloud, RefreshCw, Check, FileArchive, Folder, X, Mail } from 'lucide-react'
+import { Settings, Palette, Cloud, RefreshCw, Check, FileArchive, Folder, X, Mail, Sparkles } from 'lucide-react'
 import { Popover } from '../../../ui'
 import { PulseLoader } from '../../../components/PulseLoader'
 import { useSettingsStore } from '../../../core/store/SettingStore'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useCurrentUser } from '../../../core/hooks/useCurrentUser'
 import { useUpdateStore } from '../../../core/store/UpdateSetting'
 import Profile from '../../profile/Profile'
@@ -372,6 +373,15 @@ export const SettingDropdown: React.FC<SettingDropdownProps> = ({
         onClick={() => {
           onClose()
           window.dispatchEvent(new CustomEvent('open-email'))
+        }}
+      />
+      <DropdownItem
+        icon={<Sparkles size={14} style={{ color: 'var(--text-accent)' }} />}
+        label="What's New (Release Notes)"
+        isFocused={focusedIndex === 3}
+        onClick={() => {
+          onClose()
+          useWorkspaceStore.getState().openReleaseNotesTab()
         }}
       />
 

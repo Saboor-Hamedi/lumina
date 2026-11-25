@@ -558,6 +558,8 @@ class InlineLinkHoverController {
       const img = document.createElement('img')
       img.src = imgUrl
       img.alt = ''
+      img.decoding = 'async'
+      img.loading = 'lazy'
       let triedYtFallback = false
       img.onload = () => {
         if (ytId && !triedYtFallback && img.naturalWidth > 0 && img.naturalWidth <= 120) {

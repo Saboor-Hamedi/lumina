@@ -276,6 +276,7 @@ export const ImageViewerTab: React.FC<ImageViewerTabProps> = ({ snippet }) => {
             src={imageSrc || ''}
             alt={snippet?.title || 'Workspace Image'}
             className="image-viewer-img"
+            decoding="async"
             onLoad={handleImageLoad}
             onError={handleImageError}
             style={{

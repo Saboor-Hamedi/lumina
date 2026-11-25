@@ -1,7 +1,27 @@
 import { Decoration, type DecorationSet, EditorView, WidgetType } from '@codemirror/view'
-import { type EditorState, RangeSetBuilder, StateField } from '@codemirror/state'
-import katex from 'katex'
+import { type EditorState, RangeSetBuilder, StateField, StateEffect } from '@codemirror/state'
 import './katex.css'
+
+let katexInstance: any = null
+let katexLoadPromise: Promise<any> | null = null
+const katexMountedViews = new Set<EditorView>()
+const refreshKatexEffect = StateEffect.define<null>()
+
+function loadKatexAsync(): Promise<any> {
+  if (katexInstance) return Promise.resolve(katexInstance)
+  if (!katexLoadPromise) {
+    katexLoadPromise = import('katex').then((mod) => {
+      katexInstance = mod.default || mod
+      for (const v of katexMountedViews) {
+        try {
+          v.dispatch({ effects: refreshKatexEffect.of(null) })
+        } catch {}
+      }
+      return katexInstance
+    })
+  }
+  return katexLoadPromise
+}
 
 export interface MathRange {
   from: number
@@ -54,11 +74,25 @@ class KaTeXWidget extends WidgetType {
     }
 
     try {
-      content.innerHTML = katex.renderToString(this.latex, {
-        displayMode: this.isBlock,
-        throwOnError: false,
-        output: 'html'
-      })
+      katexMountedViews.add(view)
+      if (katexInstance) {
+        content.innerHTML = katexInstance.renderToString(this.latex, {
+          displayMode: this.isBlock,
+          throwOnError: false,
+          output: 'html'
+        })
+      } else {
+        content.textContent = this.latex
+        void loadKatexAsync().then((k) => {
+          try {
+            content.innerHTML = k.renderToString(this.latex, {
+              displayMode: this.isBlock,
+              throwOnError: false,
+              output: 'html'
+            })
+          } catch {}
+        })
+      }
     } catch {
       el.className += ' cm-katex-error'
       content.textContent = this.latex

@@ -3,7 +3,8 @@ import React, { useRef, useState } from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { Plus } from 'lucide-react'
 
-vi.mock('../../../../src/renderer/src/components/update/UpdateDetails', () => ({
+vi.mock('../../../../src/renderer/src/components/update/UpdateButton', () => ({
+  UpdateButton: () => <div data-testid="mock-update-details" />,
   default: () => <div data-testid="mock-update-details" />
 }))
 vi.mock('../../../../src/renderer/src/features/theme/AccentColor', () => ({

@@ -13,6 +13,7 @@ import {
   useWorkspaceStore,
   GRAPH_TAB_ID,
   LUMINA_TAB_ID,
+  RELEASE_NOTES_TAB_ID,
   type WorkspacePaneId
 } from '../../core/store/workspaceStore'
 import { useShallow } from 'zustand/react/shallow'
@@ -23,6 +24,7 @@ const Graph = React.lazy(() => import('../graph/Graph'))
 const LuminaChatContent = React.lazy(() =>
   import('../AI/components/LuminaChatContent').then((m) => ({ default: m.LuminaChatContent }))
 )
+const ReleaseNotesTab = React.lazy(() => import('../../components/update/ReleaseNotesTab'))
 
 interface PaneSpecialTabProps {
   paneId: WorkspacePaneId
@@ -87,6 +89,33 @@ const LuminaTabPane = React.memo<{ paneId: WorkspacePaneId }>(({ paneId }) => {
   )
 })
 LuminaTabPane.displayName = 'LuminaTabPane'
+
+const ReleaseNotesTabPane = React.memo<{ paneId: WorkspacePaneId }>(({ paneId }) => {
+  const isSelected = useWorkspaceStore((state) =>
+    paneId === 'primary'
+      ? state.activeTabId === RELEASE_NOTES_TAB_ID
+      : state.panes[paneId]?.activeTabId === RELEASE_NOTES_TAB_ID
+  )
+  if (!isSelected) return null
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flex: 1,
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+        overflow: 'hidden',
+        flexDirection: 'column'
+      }}
+    >
+      <React.Suspense fallback={null}>
+        <ReleaseNotesTab />
+      </React.Suspense>
+    </div>
+  )
+})
+ReleaseNotesTabPane.displayName = 'ReleaseNotesTabPane'
 
 export interface WorkspacePaneProps {
   paneId: WorkspacePaneId
@@ -156,7 +185,13 @@ export const WorkspacePane: React.FC<WorkspacePaneProps> = React.memo(
     )
 
     const activeSnippet = useMemo(() => {
-      if (!activeId || activeId === GRAPH_TAB_ID || activeId === LUMINA_TAB_ID) return null
+      if (
+        !activeId ||
+        activeId === GRAPH_TAB_ID ||
+        activeId === LUMINA_TAB_ID ||
+        activeId === RELEASE_NOTES_TAB_ID
+      )
+        return null
       return snippetMap.get(activeId) || null
     }, [activeId, snippetMap])
 
@@ -167,6 +202,9 @@ export const WorkspacePane: React.FC<WorkspacePaneProps> = React.memo(
         }
         if (tabId === LUMINA_TAB_ID) {
           return <LuminaTabPane key={`${paneId}:${tabId}`} paneId={paneId} />
+        }
+        if (tabId === RELEASE_NOTES_TAB_ID) {
+          return <ReleaseNotesTabPane key={`${paneId}:${tabId}`} paneId={paneId} />
         }
         const snippet = snippetMap.get(tabId)
         if (!snippet) return null

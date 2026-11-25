@@ -18,6 +18,10 @@ export type { WorkspacePaneId, SplitOrientation, SplitPosition, PaneState, Split
 
 export const GRAPH_TAB_ID = '__graph__'
 export const LUMINA_TAB_ID = '__lumina__'
+export const RELEASE_NOTES_TAB_ID = 'release-notes'
+
+export const isVirtualTabId = (id: string | null | undefined): boolean =>
+  id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || id === RELEASE_NOTES_TAB_ID
 
 export type SplitDirection = 'none' | 'vertical' | 'horizontal'
 
@@ -84,6 +88,7 @@ export interface WorkspaceStoreState {
   togglePinTab: (id: string) => void
   openGraphTab: () => void
   openLuminaTab: () => void
+  openReleaseNotesTab: () => void
   setPinnedTabs: (pinnedTabIds: string[]) => void
   setFocusedPane: (pane: WorkspacePaneId) => void
   setSplitRatio: (ratio: number, splitId?: string) => void
@@ -148,7 +153,7 @@ const getCachedSession = () => {
 }
 
 const resolveNoteById = (notes: WorkspaceNote[], id: string | null): WorkspaceNote | null => {
-  if (!id || id === GRAPH_TAB_ID || id === LUMINA_TAB_ID) return null
+  if (!id || isVirtualTabId(id)) return null
   return notes.find((n) => n.id === id) || null
 }
 
@@ -214,7 +219,7 @@ const sanitizeRestoredSplitLayout = (
   notes: WorkspaceNote[]
 ) => {
   const isValidTab = (id: string) =>
-    id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || noteIdSet.has(id)
+    isVirtualTabId(id) || noteIdSet.has(id)
 
   if (
     !rawLayout ||
@@ -318,7 +323,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       const allNotes = state.notes || []
       const noteIdSet = new Set(allNotes.map((n) => n.id))
       const validTabs = tabs.filter(
-        (id) => id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || noteIdSet.has(id)
+        (id) => isVirtualTabId(id) || noteIdSet.has(id)
       )
       const validPinned = pinnedIds.filter((id) => validTabs.includes(id)).slice(0, 1)
 
@@ -326,7 +331,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       const finalActiveId = validActiveId || (validTabs.length ? validTabs[0] : null)
 
       const activeNote =
-        finalActiveId === GRAPH_TAB_ID || finalActiveId === LUMINA_TAB_ID
+        isVirtualTabId(finalActiveId)
           ? null
           : finalActiveId
             ? allNotes.find((n) => n.id === finalActiveId) || null
@@ -425,25 +430,15 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     set((state) => {
       if (
         state.activeTabId === id &&
-        (!id || state.selectedNote?.id === id || id === GRAPH_TAB_ID || id === LUMINA_TAB_ID)
+        (!id || state.selectedNote?.id === id || isVirtualTabId(id))
       ) {
         return state
       }
-      if (id === GRAPH_TAB_ID) {
-        const isAlreadyOpen = state.openTabs.includes(GRAPH_TAB_ID)
-        const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, GRAPH_TAB_ID]
+      if (isVirtualTabId(id) && id) {
+        const isAlreadyOpen = state.openTabs.includes(id)
+        const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, id]
         return {
-          activeTabId: GRAPH_TAB_ID,
-          selectedNote: null,
-          selectedSnippet: null,
-          openTabs: nextTabs
-        }
-      }
-      if (id === LUMINA_TAB_ID) {
-        const isAlreadyOpen = state.openTabs.includes(LUMINA_TAB_ID)
-        const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, LUMINA_TAB_ID]
-        return {
-          activeTabId: LUMINA_TAB_ID,
+          activeTabId: id,
           selectedNote: null,
           selectedSnippet: null,
           openTabs: nextTabs
@@ -487,7 +482,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
       const allNotes = state.notes || []
       const nextSelected = isClosingActive
-        ? nextActiveId && nextActiveId !== GRAPH_TAB_ID && nextActiveId !== LUMINA_TAB_ID
+        ? nextActiveId && !isVirtualTabId(nextActiveId)
           ? allNotes.find((n) => n.id === nextActiveId) || null
           : null
         : state.selectedNote
@@ -597,6 +592,29 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       return {
         openTabs: nextTabs,
         activeTabId: LUMINA_TAB_ID,
+        selectedNote: null,
+        selectedSnippet: null
+      }
+    }),
+
+  openReleaseNotesTab: () =>
+    set((state) => {
+      const isAlreadyOpen = state.openTabs.includes(RELEASE_NOTES_TAB_ID)
+      const nextTabs = isAlreadyOpen
+        ? state.openTabs
+        : [...state.openTabs, RELEASE_NOTES_TAB_ID]
+      const nextPanes = {
+        ...state.panes,
+        primary: {
+          ...(state.panes.primary || { id: 'primary', tabs: [] }),
+          tabs: nextTabs,
+          activeTabId: RELEASE_NOTES_TAB_ID
+        }
+      }
+      return {
+        openTabs: nextTabs,
+        activeTabId: RELEASE_NOTES_TAB_ID,
+        panes: nextPanes,
         selectedNote: null,
         selectedSnippet: null
       }
@@ -1109,7 +1127,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
           const noteIdSet = new Set(merged.map((n) => n.id))
           const validTabs = persistedOpenTabs.filter(
-            (id) => id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || noteIdSet.has(id)
+            (id) => isVirtualTabId(id) || noteIdSet.has(id)
           )
           const validPinned = persistedPinnedTabs.filter((id) => validTabs.includes(id)).slice(0, 1)
           const validActiveId =
@@ -1117,7 +1135,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
               ? persistedActiveId
               : validTabs[0] || null
           const activeNote =
-            validActiveId && validActiveId !== GRAPH_TAB_ID && validActiveId !== LUMINA_TAB_ID
+            validActiveId && !isVirtualTabId(validActiveId)
               ? merged.find((n) => n.id === validActiveId) || null
               : null
 
@@ -1343,7 +1361,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       }
 
       const nextSelectedNote =
-        nextActiveId && nextActiveId !== GRAPH_TAB_ID && nextActiveId !== LUMINA_TAB_ID
+        nextActiveId && !isVirtualTabId(nextActiveId)
           ? next.find((n) => n.id === nextActiveId) || null
           : null
 

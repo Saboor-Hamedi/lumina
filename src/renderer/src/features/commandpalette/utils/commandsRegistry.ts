@@ -475,6 +475,24 @@ export const COMMANDS_REGISTRY: LuminaCommand[] = [
     }
   },
   {
+    id: 'application.releaseNotes',
+    title: "Release Notes: Show What's New",
+    category: 'Application',
+    keywords: [
+      'release notes',
+      "what's new",
+      'whats new',
+      'changelog',
+      'updates',
+      'version history',
+      'releases'
+    ],
+    iconName: 'Sparkles',
+    execute: () => {
+      useWorkspaceStore.getState().openReleaseNotesTab()
+    }
+  },
+  {
     id: 'application.documentation',
     title: 'Help: Open Lumina Documentation',
     category: 'Application',

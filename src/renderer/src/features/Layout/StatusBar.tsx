@@ -32,6 +32,7 @@ import {
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import { useSettingsStore } from '../../core/store/SettingStore'
+import Version from '../../components/Version.jsx'
 import SettingDropdown from '../Navigation/components/SettingDropdown'
 import ToolTip from '../../components/atoms/ToolTip'
 import CapsLock from '../../components/capsLock'
@@ -88,6 +89,14 @@ const STATUS_BAR_ITEM_META: StatusBarItemMeta[] = [
     defaultVisible: true
   },
   {
+    id: 'version',
+    label: "Version & What's New",
+    group: 'left',
+    menuGroup: 'Settings',
+    icon: null,
+    defaultVisible: true
+  },
+  {
     id: 'cursor',
     label: 'Cursor Position',
     group: 'right',
@@ -138,6 +147,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   isZenHidden = false
 }) => {
   const selectedSnippet = useWorkspaceStore((s) => s.selectedNote || (s as any).selectedSnippet)
+  const openReleaseNotesTab = useWorkspaceStore((s) => s.openReleaseNotesTab)
   const [cursorPos, setCursorPos] = useState<CursorPosition>({ line: 1, col: 1, selectedChars: 0 })
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false)
   const [imgError, setImgError] = useState<boolean>(false)
@@ -298,6 +308,19 @@ export const StatusBar: React.FC<StatusBarProps> = ({
               anchorRef={settingsBtnRef}
             />
           </>
+        )
+      case 'version':
+        return (
+          <ToolTip text="What's New — Open Release Notes" position="top">
+            <button
+              type="button"
+              className="status-bar-btn"
+              onClick={() => openReleaseNotesTab?.()}
+              data-testid="status-bar-version-btn"
+            >
+              <Version />
+            </button>
+          </ToolTip>
         )
       default:
         return null

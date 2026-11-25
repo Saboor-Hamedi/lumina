@@ -53,6 +53,7 @@ import {
   useWorkspaceStore,
   GRAPH_TAB_ID,
   LUMINA_TAB_ID,
+  RELEASE_NOTES_TAB_ID,
   type WorkspacePaneId
 } from '../../core/store/workspaceStore'
 import { useShallow } from 'zustand/react/shallow'
@@ -102,6 +103,8 @@ const SortableTabItem = memo<SortableTabItemProps>(
     })
 
     const getIcon = () => {
+      if (id === RELEASE_NOTES_TAB_ID || snippet?.type === 'release-notes')
+        return null
       if (id === LUMINA_TAB_ID || snippet?.type === 'ai')
         return <Sparkles size={12} className="tab-icon" />
       if (id === GRAPH_TAB_ID || snippet?.type === 'graph')
@@ -111,6 +114,7 @@ const SortableTabItem = memo<SortableTabItemProps>(
     }
 
     const getTitle = () => {
+      if (id === RELEASE_NOTES_TAB_ID) return "What's New"
       if (id === LUMINA_TAB_ID) return 'Lumina AI'
       if (id === GRAPH_TAB_ID) return 'Knowledge Graph'
       return snippet?.title || 'Untitled'
@@ -130,7 +134,12 @@ const SortableTabItem = memo<SortableTabItemProps>(
           {...listeners}
           onClick={() => onOpen(id)}
           onDoubleClick={() => {
-            if (snippet && id !== GRAPH_TAB_ID && id !== LUMINA_TAB_ID) {
+            if (
+              snippet &&
+              id !== GRAPH_TAB_ID &&
+              id !== LUMINA_TAB_ID &&
+              id !== RELEASE_NOTES_TAB_ID
+            ) {
               window.dispatchEvent(
                 new CustomEvent('open-rename-modal', { detail: { note: snippet } })
               )
@@ -462,14 +471,22 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
 
   const renderTab = (id: string) => {
     const snippet = snippetMap.get(id)
-    if (!snippet && id !== GRAPH_TAB_ID && id !== LUMINA_TAB_ID) return null
+    if (
+      !snippet &&
+      id !== GRAPH_TAB_ID &&
+      id !== LUMINA_TAB_ID &&
+      id !== RELEASE_NOTES_TAB_ID
+    )
+      return null
     const tabSnippet =
       snippet ||
       (id === GRAPH_TAB_ID
         ? { id: GRAPH_TAB_ID, title: 'Knowledge Graph', type: 'graph' }
         : id === LUMINA_TAB_ID
           ? { id: LUMINA_TAB_ID, title: 'Lumina AI', type: 'ai' }
-          : null)
+          : id === RELEASE_NOTES_TAB_ID
+            ? { id: RELEASE_NOTES_TAB_ID, title: "What's New", type: 'release-notes' }
+            : null)
     return (
       <SortableTabItem
         key={id}
@@ -715,7 +732,9 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
                   }
                 ]
               : []),
-            ...(contextMenu.id !== GRAPH_TAB_ID && contextMenu.id !== LUMINA_TAB_ID
+            ...(contextMenu.id !== GRAPH_TAB_ID &&
+            contextMenu.id !== LUMINA_TAB_ID &&
+            contextMenu.id !== RELEASE_NOTES_TAB_ID
               ? [
                   {
                     label: 'Rename Note',
@@ -741,7 +760,8 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
               : []),
             ...(snippetMap.get(contextMenu.id) &&
             contextMenu.id !== GRAPH_TAB_ID &&
-            contextMenu.id !== LUMINA_TAB_ID
+            contextMenu.id !== LUMINA_TAB_ID &&
+            contextMenu.id !== RELEASE_NOTES_TAB_ID
               ? [
                   {
                     label: 'Summarize with Lumina',
@@ -814,11 +834,13 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
             {activeDragId ? (
               <div className="workspace-tab drag-overlay active">
                 <span className="tab-title">
-                  {activeDragId === LUMINA_TAB_ID
-                    ? 'Lumina AI'
-                    : activeDragId === GRAPH_TAB_ID
-                      ? 'Knowledge Graph'
-                      : snippetMap.get(activeDragId)?.title || 'Untitled'}
+                  {activeDragId === RELEASE_NOTES_TAB_ID
+                    ? "What's New"
+                    : activeDragId === LUMINA_TAB_ID
+                      ? 'Lumina AI'
+                      : activeDragId === GRAPH_TAB_ID
+                        ? 'Knowledge Graph'
+                        : snippetMap.get(activeDragId)?.title || 'Untitled'}
                 </span>
               </div>
             ) : null}

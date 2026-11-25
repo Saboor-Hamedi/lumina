@@ -6,8 +6,60 @@ pub use export::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(target_os = "windows")]
+    static BLUR_TRIM_EPOCH: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
     tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::default().build())
+        .on_window_event(|window, event| {
+            #[cfg(target_os = "windows")]
+            if let tauri::WindowEvent::Focused(focused) = event {
+                use std::sync::atomic::Ordering;
+                use tauri::Manager;
+                use webview2_com::Microsoft::Web::WebView2::Win32::{
+                    ICoreWebView2_19, COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_LOW,
+                    COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_NORMAL,
+                };
+                use windows::core::Interface;
+
+                let epoch = BLUR_TRIM_EPOCH.fetch_add(1, Ordering::SeqCst) + 1;
+                let app_handle = window.app_handle().clone();
+                let label = window.label().to_string();
+
+                if *focused {
+                    if let Some(wv) = app_handle.get_webview_window(&label) {
+                        let _ = wv.with_webview(|webview| unsafe {
+                            if let Ok(core) = webview.controller().CoreWebView2() {
+                                if let Ok(core19) = core.cast::<ICoreWebView2_19>() {
+                                    let _ = core19.SetMemoryUsageTargetLevel(
+                                        COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_NORMAL,
+                                    );
+                                }
+                            }
+                        });
+                    }
+                } else {
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_secs(5));
+                        if BLUR_TRIM_EPOCH.load(Ordering::SeqCst) == epoch {
+                            if let Some(wv) = app_handle.get_webview_window(&label) {
+                                let _ = wv.with_webview(|webview| unsafe {
+                                    if let Ok(core) = webview.controller().CoreWebView2() {
+                                        if let Ok(core19) = core.cast::<ICoreWebView2_19>() {
+                                            let _ = core19.SetMemoryUsageTargetLevel(
+                                                COREWEBVIEW2_MEMORY_USAGE_TARGET_LEVEL_LOW,
+                                            );
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+            #[cfg(not(target_os = "windows"))]
+            let _ = (window, event);
+        })
         .setup(|app| {
             #[cfg(target_os = "windows")]
             {
@@ -96,6 +148,7 @@ pub fn run() {
             logout_from_google,
             get_google_access_token,
             pick_email_attachments,
+            get_github_releases,
             download_app_update,
             cancel_app_update,
             install_app_update,

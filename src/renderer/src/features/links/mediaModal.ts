@@ -157,6 +157,7 @@ export function openMediaPeekModal(opts: MediaPeekOptions): boolean {
   img.className = 'peek-modal-img'
   img.src = opts.imageUrl
   img.alt = opts.title || ''
+  img.decoding = 'async'
   stage.appendChild(img)
 
   if (opts.title || opts.subtitle) {
