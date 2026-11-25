@@ -430,7 +430,8 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     set((state) => {
       if (
         state.activeTabId === id &&
-        (!id || state.selectedNote?.id === id || isVirtualTabId(id))
+        (!id || state.selectedNote?.id === id || isVirtualTabId(id)) &&
+        state.panes.primary?.activeTabId === id
       ) {
         return state
       }
@@ -441,11 +442,23 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
           activeTabId: id,
           selectedNote: null,
           selectedSnippet: null,
-          openTabs: nextTabs
+          openTabs: nextTabs,
+          panes: {
+            ...state.panes,
+            primary: { id: 'primary', tabs: nextTabs, activeTabId: id }
+          }
         }
       }
       if (!id) {
-        return { activeTabId: null, selectedNote: null, selectedSnippet: null }
+        return {
+          activeTabId: null,
+          selectedNote: null,
+          selectedSnippet: null,
+          panes: {
+            ...state.panes,
+            primary: { id: 'primary', tabs: state.openTabs, activeTabId: null }
+          }
+        }
       }
       const allNotes = state.notes || []
       const note = allNotes.find((n) => n.id === id) || null
@@ -456,7 +469,11 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         activeTabId: id,
         selectedNote: selectedItem,
         selectedSnippet: selectedItem,
-        openTabs: nextTabs
+        openTabs: nextTabs,
+        panes: {
+          ...state.panes,
+          primary: { id: 'primary', tabs: nextTabs, activeTabId: id }
+        }
       }
     })
   },
@@ -487,12 +504,18 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
           : null
         : state.selectedNote
 
+      const nextPanes: Record<WorkspacePaneId, PaneState> = {
+        ...state.panes,
+        primary: { id: 'primary', tabs: nextTabs, activeTabId: nextActiveId }
+      }
+
       return {
         openTabs: nextTabs,
         pinnedTabIds: state.pinnedTabIds.filter((tabId) => nextTabs.includes(tabId)),
         activeTabId: nextActiveId,
         selectedNote: nextSelected,
-        selectedSnippet: nextSelected
+        selectedSnippet: nextSelected,
+        panes: nextPanes
       }
     }),
 
@@ -501,8 +524,15 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       const pinnedSet = new Set(state.pinnedTabIds)
       const pTabs = newTabs.filter((tid) => pinnedSet.has(tid))
       const rTabs = newTabs.filter((tid) => !pinnedSet.has(tid))
+      const nextTabs = [...pTabs, ...rTabs]
 
-      return { openTabs: [...pTabs, ...rTabs] }
+      return {
+        openTabs: nextTabs,
+        panes: {
+          ...state.panes,
+          primary: { id: 'primary', tabs: nextTabs, activeTabId: state.activeTabId }
+        }
+      }
     })
   },
 
@@ -516,7 +546,11 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         pinnedTabIds: state.pinnedTabIds.includes(keepId) ? [keepId] : [],
         activeTabId: nextActiveId,
         selectedNote: nextSelected,
-        selectedSnippet: nextSelected
+        selectedSnippet: nextSelected,
+        panes: {
+          ...state.panes,
+          primary: { id: 'primary', tabs: [keepId], activeTabId: nextActiveId }
+        }
       }
     })
   },
@@ -536,7 +570,11 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         pinnedTabIds: state.pinnedTabIds.filter((tabId) => nextTabs.includes(tabId)),
         activeTabId: nextActiveId,
         selectedNote: nextSelected,
-        selectedSnippet: nextSelected
+        selectedSnippet: nextSelected,
+        panes: {
+          ...state.panes,
+          primary: { id: 'primary', tabs: nextTabs, activeTabId: nextActiveId }
+        }
       }
     })
   },
@@ -546,11 +584,16 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       const allNotes = state.notes || []
       const activeId = state.pinnedTabIds.length > 0 ? state.pinnedTabIds[0] : null
       const activeNote = activeId ? allNotes.find((n) => n.id === activeId) || null : null
+      const nextTabs = state.openTabs.filter((id) => state.pinnedTabIds.includes(id))
       return {
-        openTabs: state.openTabs.filter((id) => state.pinnedTabIds.includes(id)),
+        openTabs: nextTabs,
         activeTabId: activeId,
         selectedNote: activeNote,
-        selectedSnippet: activeNote
+        selectedSnippet: activeNote,
+        panes: {
+          ...state.panes,
+          primary: { id: 'primary', tabs: nextTabs, activeTabId: activeId }
+        }
       }
     })
   },
@@ -565,10 +608,15 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       const pinnedSet = new Set(nextPinned)
       const pTabs = state.openTabs.filter((tid) => pinnedSet.has(tid))
       const rTabs = state.openTabs.filter((tid) => !pinnedSet.has(tid))
+      const nextTabs = [...pTabs, ...rTabs]
 
       return {
         pinnedTabIds: nextPinned,
-        openTabs: [...pTabs, ...rTabs]
+        openTabs: nextTabs,
+        panes: {
+          ...state.panes,
+          primary: { id: 'primary', tabs: nextTabs, activeTabId: state.activeTabId }
+        }
       }
     })
   },
@@ -580,7 +628,11 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       return {
         openTabs: nextTabs,
         activeTabId: GRAPH_TAB_ID,
-        selectedNote: null
+        selectedNote: null,
+        panes: {
+          ...state.panes,
+          primary: { id: 'primary', tabs: nextTabs, activeTabId: GRAPH_TAB_ID }
+        }
       }
     })
   },
@@ -593,7 +645,11 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         openTabs: nextTabs,
         activeTabId: LUMINA_TAB_ID,
         selectedNote: null,
-        selectedSnippet: null
+        selectedSnippet: null,
+        panes: {
+          ...state.panes,
+          primary: { id: 'primary', tabs: nextTabs, activeTabId: LUMINA_TAB_ID }
+        }
       }
     }),
 

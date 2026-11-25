@@ -14,7 +14,7 @@
   padding: 0;
   border-radius: 0;
   align-items: stretch;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   background-color: var(--bg-sidebar, var(--bg-panel, #121316));
@@ -22,6 +22,48 @@
   border-left: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
   box-shadow: -4px 0 18px rgba(0, 0, 0, 0.24);
   z-index: 120;
+}
+
+/* Center-Edge Open/Close Knob on the Canvas Sidebar (pinned outside overflow container) */
+.lumina-canvas-sidebar-edge-knob {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 46px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px 0 0 8px;
+  background: var(--bg-sidebar, var(--bg-panel, #18191d));
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.14));
+  border-right: none;
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  z-index: 135;
+  box-shadow: -3px 0 10px rgba(0, 0, 0, 0.22);
+  transition: right 0.22s cubic-bezier(0.16, 1, 0.3, 1), width 0.14s ease, color 0.14s ease, background-color 0.14s ease, border-color 0.14s ease;
+}
+
+.lumina-canvas-sidebar-edge-knob.is-open {
+  right: 268px;
+}
+
+.lumina-canvas-sidebar-edge-knob:hover {
+  width: 20px;
+  color: var(--text-accent, #38bdf8);
+  border-color: color-mix(in srgb, var(--text-accent, #38bdf8) 55%, transparent);
+  background: var(--bg-card, var(--bg-panel, #1e2028));
+}
+
+[data-theme='light'] .lumina-canvas-sidebar-edge-knob,
+[data-theme='porcelain'] .lumina-canvas-sidebar-edge-knob,
+.theme-light .lumina-canvas-sidebar-edge-knob {
+  background: var(--bg-card, #ffffff);
+  border-color: var(--border-subtle, rgba(0, 0, 0, 0.14));
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.08);
 }
 
 /* Single Clean Top Bar (Tabs + Collapse) */

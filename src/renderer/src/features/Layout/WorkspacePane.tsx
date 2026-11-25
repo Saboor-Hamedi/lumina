@@ -19,6 +19,9 @@ import {
 import { useShallow } from 'zustand/react/shallow'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useTabDragStore } from './tabDragDrop'
+import { ExternalDropOverlay } from '../Explorer/drop'
+import { FolderDown, FileText } from 'lucide-react'
+import type { WorkspaceDropState } from '../Explorer/drop/hooks/useWorkspaceDrop'
 
 const Graph = React.lazy(() => import('../graph/Graph'))
 const LuminaChatContent = React.lazy(() =>
@@ -136,6 +139,7 @@ export interface WorkspacePaneProps {
   onThemeClick: () => void
   onGraphClick: () => void
   onNavigate: (snippet: any) => void
+  workspaceDrop?: WorkspaceDropState
   flexRatio?: number
 }
 
@@ -161,6 +165,7 @@ export const WorkspacePane: React.FC<WorkspacePaneProps> = React.memo(
     onThemeClick,
     onGraphClick,
     onNavigate,
+    workspaceDrop,
     flexRatio
   }) => {
     const { tabs, activeId, isSplit, isFocused, setFocusedPane } = useWorkspaceStore(
@@ -269,6 +274,13 @@ export const WorkspacePane: React.FC<WorkspacePaneProps> = React.memo(
           {renderedEditors}
           {dropZone && dropZone !== 'tabbar' && (
             <div className={`pane-drop-overlay zone-${dropZone}`} aria-hidden="true" />
+          )}
+          {workspaceDrop?.isOver && (!isSplit || isFocused) && (
+            <ExternalDropOverlay
+              label={workspaceDrop.label}
+              count={workspaceDrop.count}
+              icon={workspaceDrop.isExternal ? FolderDown : FileText}
+            />
           )}
         </div>
       </div>

@@ -118,12 +118,21 @@ export function useExplorerDnd({
 
     let rafId: number | null = null
 
-    // Snapshot canvas & workspace pane rects ONCE at drag start so pointermove
+    // Snapshot composer, canvas & workspace pane rects ONCE at drag start so pointermove
     // runs pure O(1) coordinate math with zero DOM queries or forced layouts per frame.
+    const cachedComposerRects: Array<{ el: HTMLElement; rect: DOMRect }> = []
     const cachedCanvasRects: DOMRect[] = []
     const cachedPaneRects: Array<{ targetPane: string; rect: DOMRect }> = []
+    let lastHoveredComposerEl: HTMLElement | null = null
 
     if (activeListDragItem.type === 'file') {
+      const composerEls = document.querySelectorAll<HTMLElement>('.composer-card')
+      for (let i = 0; i < composerEls.length; i++) {
+        const r = composerEls[i].getBoundingClientRect()
+        if (r.width > 0 && r.height > 0) {
+          cachedComposerRects.push({ el: composerEls[i], rect: r })
+        }
+      }
       const canvasEls = document.querySelectorAll<HTMLElement>('.lumina-canvas-container')
       for (let i = 0; i < canvasEls.length; i++) {
         const r = canvasEls[i].getBoundingClientRect()
@@ -150,6 +159,28 @@ export function useExplorerDnd({
           rafId = null
           const x = pointerPosRef.current.x
           const y = pointerPosRef.current.y
+
+          // Priority 1: Lumina AI Composer (@mention drop target) — suppress pane drop overlay
+          let hoveredComposerEl: HTMLElement | null = null
+          for (let i = 0; i < cachedComposerRects.length; i++) {
+            const { el, rect: cr } = cachedComposerRects[i]
+            if (x >= cr.left && x <= cr.right && y >= cr.top && y <= cr.bottom) {
+              hoveredComposerEl = el
+              break
+            }
+          }
+          if (hoveredComposerEl !== lastHoveredComposerEl) {
+            lastHoveredComposerEl = hoveredComposerEl
+            window.dispatchEvent(
+              new CustomEvent('lumina:composer-drag-hover', {
+                detail: { isOver: Boolean(hoveredComposerEl), composerEl: hoveredComposerEl }
+              })
+            )
+          }
+          if (hoveredComposerEl) {
+            useTabDragStore.getState().setDropTarget(null)
+            return
+          }
 
           for (let i = 0; i < cachedCanvasRects.length; i++) {
             const cr = cachedCanvasRects[i]
@@ -179,6 +210,13 @@ export function useExplorerDnd({
       if (rafId !== null) cancelAnimationFrame(rafId)
       window.removeEventListener('pointermove', onPointerMove)
       useTabDragStore.getState().setDropTarget(null)
+      if (lastHoveredComposerEl) {
+        window.dispatchEvent(
+          new CustomEvent('lumina:composer-drag-hover', {
+            detail: { isOver: false, composerEl: null }
+          })
+        )
+      }
     }
   }, [activeListDragItem])
 
@@ -271,6 +309,51 @@ export function useExplorerDnd({
       const dropY =
         pointerPosRef.current.y ||
         (activatorEvent?.clientY ? activatorEvent.clientY + (delta?.y || 0) : 0)
+
+      // Priority 1: Check if dropped onto a Lumina AI Composer card to insert as @mention
+      if (dragItem?.type === 'file' && dropX > 0 && dropY > 0) {
+        let targetComposer: HTMLElement | null = null
+        const composerEls = document.querySelectorAll<HTMLElement>('.composer-card')
+        for (let i = 0; i < composerEls.length; i++) {
+          const r = composerEls[i].getBoundingClientRect()
+          if (r.width > 0 && r.height > 0 && dropX >= r.left && dropX <= r.right && dropY >= r.top && dropY <= r.bottom) {
+            targetComposer = composerEls[i]
+            break
+          }
+        }
+        if (!targetComposer) {
+          const el = document.elementFromPoint(dropX, dropY)
+          targetComposer = (el?.closest('.composer-card') as HTMLElement | null) ?? null
+        }
+
+        if (targetComposer) {
+          useTabDragStore.getState().setDropTarget(null)
+          window.dispatchEvent(
+            new CustomEvent('lumina:composer-drag-hover', {
+              detail: { isOver: false, composerEl: null }
+            })
+          )
+          const idsToMention = dragItem?.draggedSnippetIds?.length
+            ? dragItem.draggedSnippetIds
+            : [String(active.id)]
+          let snippetsToMention = (allSnippets || []).filter((s) => idsToMention.includes(s.id))
+          if (snippetsToMention.length === 0) {
+            const directSnippet = dragItem?.snippet || (active.data?.current as any)?.snippet
+            if (directSnippet) snippetsToMention = [directSnippet]
+          }
+          if (snippetsToMention.length > 0) {
+            window.dispatchEvent(
+              new CustomEvent('lumina:composer-drop-note', {
+                detail: {
+                  notes: snippetsToMention,
+                  composerEl: targetComposer
+                }
+              })
+            )
+            return
+          }
+        }
+      }
 
       let targetCanvas: Element | null = null
       const canvasContainers = document.querySelectorAll('.lumina-canvas-container')

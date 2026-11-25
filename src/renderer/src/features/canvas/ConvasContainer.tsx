@@ -406,6 +406,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   const handleDoubleClick = useCallback(
     (e: React.MouseEvent) => {
       if (!containerRef.current) return
+      if (toolMode === 'pencil' || toolMode === 'eraser') return
       const target = e.target as HTMLElement
       if (
         target.closest(
@@ -417,8 +418,8 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
 
       const rect = containerRef.current.getBoundingClientRect()
       let pt = screenToCanvas(e.clientX, e.clientY, rect)
-      let x = pt.x - 130
-      let y = pt.y - 70
+      let x = pt.x - 100
+      let y = pt.y - 24
       if (snapToGrid) {
         x = Math.round(x / 20) * 20
         y = Math.round(y / 20) * 20
@@ -426,19 +427,19 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
 
       const newNode = addNode({
         type: 'text',
-        title: 'Note',
+        title: 'Text',
         text: '',
         x: Math.round(x),
         y: Math.round(y),
-        width: 260,
-        height: 140,
-        color: 'yellow'
+        width: 200,
+        height: 48,
+        color: 'default'
       })
 
       setEditingNodeId(newNode.id)
       setEditingField('text')
     },
-    [screenToCanvas, snapToGrid, addNode]
+    [toolMode, screenToCanvas, snapToGrid, addNode]
   )
 
   /**
@@ -716,24 +717,38 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     }
   }, [nodes, edges, strokes, selectedNodeIds, showToast])
 
-  const handleExportPNG = useCallback(() => {
-    downloadCanvasPng({
-      nodes,
-      edges,
-      strokes,
-      selectedNodeIds: selectedNodeIds.length > 0 ? selectedNodeIds : undefined
-    })
-    showToast('Exported canvas as PNG image', 'success')
+  const handleExportPNG = useCallback(async () => {
+    try {
+      const result = await downloadCanvasPng({
+        nodes,
+        edges,
+        strokes,
+        selectedNodeIds: selectedNodeIds.length > 0 ? selectedNodeIds : undefined
+      })
+      if (result.saved) {
+        showToast('Exported canvas as PNG image', 'success')
+      }
+    } catch (err) {
+      console.error('[Canvas] Failed to export PNG:', err)
+      showToast('Failed to export PNG image', 'error')
+    }
   }, [nodes, edges, strokes, selectedNodeIds, showToast])
 
-  const handleExportSVG = useCallback(() => {
-    downloadCanvasSvg({
-      nodes,
-      edges,
-      strokes,
-      selectedNodeIds: selectedNodeIds.length > 0 ? selectedNodeIds : undefined
-    })
-    showToast('Exported canvas as SVG vector', 'success')
+  const handleExportSVG = useCallback(async () => {
+    try {
+      const result = await downloadCanvasSvg({
+        nodes,
+        edges,
+        strokes,
+        selectedNodeIds: selectedNodeIds.length > 0 ? selectedNodeIds : undefined
+      })
+      if (result.saved) {
+        showToast('Exported canvas as SVG vector', 'success')
+      }
+    } catch (err) {
+      console.error('[Canvas] Failed to export SVG:', err)
+      showToast('Failed to export SVG vector', 'error')
+    }
   }, [nodes, edges, strokes, selectedNodeIds, showToast])
 
   const handleClearStrokes = useCallback(() => {
@@ -954,6 +969,36 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     }
   }, [selectedNodeIds.length, selectedEdgeIds, selectedEdgeId, deleteSelected, pushHistory, setEdges, setSelectedEdgeId])
 
+  const handleStartEditing = useCallback((id: string, field: 'title' | 'text') => {
+    setEditingNodeId(id)
+    setEditingField(field)
+  }, [])
+
+  const handleStopEditing = useCallback(() => {
+    setEditingNodeId(null)
+    setEditingField(null)
+  }, [])
+
+  const handleDuplicateSingleNode = useCallback(
+    (id: string) => duplicateNodes([id]),
+    [duplicateNodes]
+  )
+
+  const handleDuplicateSelection = useCallback(() => duplicateNodes(), [duplicateNodes])
+
+  const handleDeleteSelectionNodes = useCallback(() => deleteSelected(), [deleteSelected])
+
+  const handleEraseSingleStroke = useCallback(
+    (strokeId: string) => deleteStrokes([strokeId], true),
+    [deleteStrokes]
+  )
+
+  const handleCanvasContextMenu = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement | null
+    if (target?.closest?.('input, textarea')) return
+    e.preventDefault()
+  }, [])
+
   const cursorStyle = isPanningState
     ? 'grabbing'
     : connecting || toolMode === 'pencil' || toolMode === 'eraser'
@@ -976,6 +1021,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
       onPointerDown={handleCanvasMouseDown}
       onMouseDown={handleCanvasMouseDown}
       onDoubleClick={handleDoubleClick}
+      onContextMenu={handleCanvasContextMenu}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
@@ -1022,25 +1068,19 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           onNodeMouseDown={handleNodeMouseDown}
           onPortMouseDown={handlePortMouseDown}
           onResizeMouseDown={handleResizeMouseDown}
-          onStartEditing={(id, field) => {
-            setEditingNodeId(id)
-            setEditingField(field)
-          }}
-          onStopEditing={() => {
-            setEditingNodeId(null)
-            setEditingField(null)
-          }}
+          onStartEditing={handleStartEditing}
+          onStopEditing={handleStopEditing}
           onUpdateTitle={updateNodeTitle}
           onUpdateText={updateNodeText}
           onCycleColor={handleCycleColor}
-          onDuplicateNode={(id) => duplicateNodes([id])}
+          onDuplicateNode={handleDuplicateSingleNode}
           onDeleteNode={deleteNode}
           onReplaceShape={handleReplaceShape}
           onAlignSelection={handleAlignSelection}
           onDistributeSelection={handleDistributeSelection}
-          onDuplicateSelection={() => duplicateNodes()}
+          onDuplicateSelection={handleDuplicateSelection}
           onCycleSelectionColor={handleCycleSelectionColor}
-          onDeleteSelection={() => deleteSelected()}
+          onDeleteSelection={handleDeleteSelectionNodes}
           onSnapSelectionToGrid={handleSnapAllToGrid}
         />
 
@@ -1049,7 +1089,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           strokes={strokes}
           activeStroke={activeStroke}
           toolMode={toolMode}
-          onEraseStroke={(strokeId) => deleteStrokes([strokeId], true)}
+          onEraseStroke={handleEraseSingleStroke}
         />
 
         {/* Layer 2.5: Real-time Alignment Guides & Snapping Visualizer */}

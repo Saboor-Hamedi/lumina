@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useCallback, KeyboardEvent, DragEvent } from 'react'
+import React, { Suspense, lazy, useState, useCallback, useEffect, useRef, KeyboardEvent, DragEvent } from 'react'
 import { Send, Square, ChevronDown, Plus } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
@@ -35,6 +35,7 @@ export const Composer: React.FC<ComposerProps> = ({
 }) => {
   const [input, setInput] = useState<string>('')
   const [isDragOver, setIsDragOver] = useState<boolean>(false)
+  const composerCardRef = useRef<HTMLDivElement | null>(null)
   const handleStop = onStop || onCancel
 
   const { settings, updateSetting } = useSettingsStore()
@@ -171,6 +172,61 @@ export const Composer: React.FC<ComposerProps> = ({
     [handleMentionSelect]
   )
 
+  const handleMentionSelectRef = useRef(handleMentionSelect)
+  handleMentionSelectRef.current = handleMentionSelect
+
+  useEffect(() => {
+    const onComposerDragHover = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {}
+      const targetEl = detail.composerEl as HTMLElement | null
+      if (!detail.isOver) {
+        setIsDragOver(false)
+        return
+      }
+      setIsDragOver(Boolean(composerCardRef.current && targetEl === composerCardRef.current))
+    }
+
+    const onComposerDropNote = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {}
+      const targetEl = detail.composerEl as HTMLElement | null
+      if (targetEl && composerCardRef.current && targetEl !== composerCardRef.current) return
+      setIsDragOver(false)
+      const notes = Array.isArray(detail.notes) ? detail.notes : []
+      if (notes.length === 0) return
+
+      if (notes.length === 1) {
+        handleMentionSelectRef.current(notes[0])
+        return
+      }
+
+      // Multi-note drag from Explorer: attach all mentions and append all @Title tokens cleanly
+      const tags = notes.map((n: any) => `@${n?.title || 'Untitled'}`).join(' ')
+      setInput((prev) => {
+        const needsSpace = Boolean(prev) && !/\s$/.test(prev)
+        return `${prev}${needsSpace ? ' ' : ''}${tags} `
+      })
+      setAttachedMentions((prev) => {
+        const existingIds = new Set(prev.map((m) => m.id))
+        const toAdd = notes.filter((n: any) => n && !existingIds.has(n.id))
+        return toAdd.length > 0 ? [...prev, ...toAdd] : prev
+      })
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus()
+          const len = textareaRef.current.value.length
+          textareaRef.current.setSelectionRange(len, len)
+        }
+      }, 0)
+    }
+
+    window.addEventListener('lumina:composer-drag-hover', onComposerDragHover)
+    window.addEventListener('lumina:composer-drop-note', onComposerDropNote)
+    return () => {
+      window.removeEventListener('lumina:composer-drag-hover', onComposerDragHover)
+      window.removeEventListener('lumina:composer-drop-note', onComposerDropNote)
+    }
+  }, [setInput, setAttachedMentions, textareaRef])
+
   return (
     <div className={`composer-container ${isSidebar ? 'is-sidebar-docked' : ''}`}>
       {showSlashMenu && (
@@ -197,6 +253,7 @@ export const Composer: React.FC<ComposerProps> = ({
       )}
 
       <div
+        ref={composerCardRef}
         className={`composer-card ${isDragOver ? 'is-drag-over' : ''}`}
         onClick={() => textareaRef.current?.focus()}
         onDragEnter={handleComposerDragOver}

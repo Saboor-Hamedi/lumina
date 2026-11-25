@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
 import {
-  PanelRight,
   Shapes,
   Grid,
   Map as MapIcon,
@@ -99,21 +98,8 @@ export const SlimCanvasDock: React.FC<SlimCanvasDockProps> = React.memo(
         aria-label="Canvas Dock"
         onWheel={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
       >
-        {/* Toggle Expand Studio Button */}
-        <ToolTip text="Expand Canvas Studio" position="left">
-          <button
-            type="button"
-            className="lumina-canvas-tool-btn active-hover"
-            onClick={onToggleExpand}
-            aria-label="Expand Canvas Studio"
-          >
-            <PanelRight size={14} />
-          </button>
-        </ToolTip>
-
-        <div className="lumina-canvas-divider horizontal" />
-
         {/* Shapes Menu Tool */}
         {onAddShape && (
           <>

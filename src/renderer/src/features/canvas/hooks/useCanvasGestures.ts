@@ -328,14 +328,14 @@ export function useCanvasGestures({
       )
       if (isInteractive) return
 
-      // Text tool: click anywhere on empty canvas to drop a text card & start typing immediately
+      // Text tool: click anywhere on empty canvas to drop a sleek frameless text box & start typing immediately
       if (toolMode === 'text' && !isSpacePressed && (e.button === 0 || isTouch)) {
         if (!containerRef.current) return
         e.preventDefault()
         const rect = containerRef.current.getBoundingClientRect()
         const pt = screenToCanvas(e.clientX, e.clientY, rect)
-        let x = pt.x - 110
-        let y = pt.y - 45
+        let x = pt.x - 100
+        let y = pt.y - 22
         if (snapToGrid) {
           x = Math.round(x / 20) * 20
           y = Math.round(y / 20) * 20
@@ -346,9 +346,9 @@ export function useCanvasGestures({
           text: '',
           x: Math.round(x),
           y: Math.round(y),
-          width: 220,
-          height: 96,
-          color: pencilColor
+          width: 200,
+          height: 44,
+          color: 'default'
         })
         setEditingNodeId(newNode.id)
         setEditingField('text')

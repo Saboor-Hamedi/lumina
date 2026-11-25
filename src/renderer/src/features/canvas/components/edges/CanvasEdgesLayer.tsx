@@ -35,6 +35,78 @@ export interface CanvasEdgesLayerProps {
   snapToGrid?: boolean
 }
 
+const EdgeArrowDefs: React.FC = React.memo(() => (
+  <defs>
+    {/* Default Crisp Directional Arrowhead (draw.io style) */}
+    <marker
+      id="arrow"
+      viewBox="0 0 12 12"
+      refX="9.5"
+      refY="6"
+      markerWidth="9"
+      markerHeight="9"
+      orient="auto-start-reverse"
+    >
+      <path
+        d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
+        fill="var(--text-accent, #38bdf8)"
+      />
+    </marker>
+
+    {/* Default Start Arrowhead for Bidirectional Links */}
+    <marker
+      id="arrow-start"
+      viewBox="0 0 12 12"
+      refX="9.5"
+      refY="6"
+      markerWidth="9"
+      markerHeight="9"
+      orient="auto-start-reverse"
+    >
+      <path
+        d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
+        fill="var(--text-accent, #38bdf8)"
+      />
+    </marker>
+
+    {/* Per-Color Crisp Directional Arrowhead Markers */}
+    {COLOR_CYCLE.map((cKey) => (
+      <React.Fragment key={cKey}>
+        <marker
+          id={`arrow-${cKey}`}
+          viewBox="0 0 12 12"
+          refX="9.5"
+          refY="6"
+          markerWidth="9"
+          markerHeight="9"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
+            fill={CANVAS_NODE_COLOR_HEX[cKey]}
+          />
+        </marker>
+
+        <marker
+          id={`arrow-start-${cKey}`}
+          viewBox="0 0 12 12"
+          refX="9.5"
+          refY="6"
+          markerWidth="9"
+          markerHeight="9"
+          orient="auto-start-reverse"
+        >
+          <path
+            d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
+            fill={CANVAS_NODE_COLOR_HEX[cKey]}
+          />
+        </marker>
+      </React.Fragment>
+    ))}
+  </defs>
+))
+EdgeArrowDefs.displayName = 'EdgeArrowDefs'
+
 export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
   ({
     edges,
@@ -117,74 +189,7 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
 
     return (
       <svg className="lumina-canvas-edges-layer">
-        <defs>
-          {/* Default Crisp Directional Arrowhead (draw.io style) */}
-          <marker
-            id="arrow"
-            viewBox="0 0 12 12"
-            refX="9.5"
-            refY="6"
-            markerWidth="9"
-            markerHeight="9"
-            orient="auto-start-reverse"
-          >
-            <path
-              d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
-              fill="var(--text-accent, #38bdf8)"
-            />
-          </marker>
-
-          {/* Default Start Arrowhead for Bidirectional Links */}
-          <marker
-            id="arrow-start"
-            viewBox="0 0 12 12"
-            refX="9.5"
-            refY="6"
-            markerWidth="9"
-            markerHeight="9"
-            orient="auto-start-reverse"
-          >
-            <path
-              d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
-              fill="var(--text-accent, #38bdf8)"
-            />
-          </marker>
-
-          {/* Per-Color Crisp Directional Arrowhead Markers */}
-          {COLOR_CYCLE.map((cKey) => (
-            <React.Fragment key={cKey}>
-              <marker
-                id={`arrow-${cKey}`}
-                viewBox="0 0 12 12"
-                refX="9.5"
-                refY="6"
-                markerWidth="9"
-                markerHeight="9"
-                orient="auto-start-reverse"
-              >
-                <path
-                  d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
-                  fill={CANVAS_NODE_COLOR_HEX[cKey]}
-                />
-              </marker>
-
-              <marker
-                id={`arrow-start-${cKey}`}
-                viewBox="0 0 12 12"
-                refX="9.5"
-                refY="6"
-                markerWidth="9"
-                markerHeight="9"
-                orient="auto-start-reverse"
-              >
-                <path
-                  d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
-                  fill={CANVAS_NODE_COLOR_HEX[cKey]}
-                />
-              </marker>
-            </React.Fragment>
-          ))}
-        </defs>
+        <EdgeArrowDefs />
 
         {/* Render Connection Edges */}
         {edges.map((edge) => (

@@ -20,8 +20,7 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react'
-import { PanelRightClose } from 'lucide-react'
-import ToolTip from '../../../components/atoms/ToolTip'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import {
   StudioTab,
   ConvasToolBarRightProps
@@ -127,89 +126,93 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     // ========================================================================
     if (isExpanded) {
       return (
-        <aside
-          className="lumina-canvas-toolbar lumina-canvas-toolbar-right is-expanded"
-          aria-label="Canvas Inspector"
-          onWheel={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          onPointerDown={(e) => e.stopPropagation()}
-          tabIndex={-1}
-        >
-          {/* Single Minimal Top Bar: Segmented Navigation + Collapse Button */}
-          <div className="lumina-canvas-studio-topbar">
-            <StudioTabsBar activeTab={activeTab} onSelectTab={setActiveTab} />
-            <ToolTip text="Collapse Panel" position="bottom">
-              <button
-                type="button"
-                className="lumina-canvas-studio-header-btn"
-                onClick={toggleExpanded}
-                aria-label="Collapse Panel"
-              >
-                <PanelRightClose size={14} />
-              </button>
-            </ToolTip>
-          </div>
+        <>
+          <button
+            type="button"
+            className="lumina-canvas-sidebar-edge-knob is-open"
+            onClick={toggleExpanded}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            title="Close Canvas Sidebar"
+            aria-label="Close Canvas Sidebar"
+          >
+            <ChevronRight size={14} />
+          </button>
 
-          {/* Studio Scrollable Body with Clean Dedicated Subcomponents */}
-          <div className="lumina-canvas-studio-body" onWheel={(e) => e.stopPropagation()}>
-            {activeTab === 'shapes' && (
-              <StudioShapesTab
-                onAddShape={onAddShape}
-                selectedColor={selectedColor}
-                onUpdateSelectedColor={onUpdateSelectedColor}
-                selectedCount={selectedCount}
+          <aside
+            className="lumina-canvas-toolbar lumina-canvas-toolbar-right is-expanded"
+            aria-label="Canvas Inspector"
+            onWheel={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            tabIndex={-1}
+          >
+            {/* Single Minimal Top Bar: Full-Width Segmented Navigation */}
+            <div className="lumina-canvas-studio-topbar">
+              <StudioTabsBar activeTab={activeTab} onSelectTab={setActiveTab} />
+            </div>
+
+            {/* Studio Scrollable Body with Clean Dedicated Subcomponents */}
+            <div className="lumina-canvas-studio-body" onWheel={(e) => e.stopPropagation()}>
+              {activeTab === 'shapes' && (
+                <StudioShapesTab
+                  onAddShape={onAddShape}
+                  selectedColor={selectedColor}
+                  onUpdateSelectedColor={onUpdateSelectedColor}
+                  selectedCount={selectedCount}
+                />
+              )}
+
+              {activeTab === 'connectors' && (
+                <StudioWiresTab
+                  defaultLineStyle={defaultLineStyle}
+                  onChangeDefaultLineStyle={onChangeDefaultLineStyle}
+                  defaultEndpoints={defaultEndpoints}
+                  onChangeDefaultEndpoints={onChangeDefaultEndpoints}
+                  selectedEdgeId={selectedEdgeId}
+                  selectedEdgeCount={selectedEdgeIds.length || (selectedEdgeId ? 1 : 0)}
+                  totalEdgesCount={edges.length}
+                  onApplyToAllEdges={onApplyToAllEdges}
+                />
+              )}
+
+              {activeTab === 'grid' && (
+                <StudioLayoutTab
+                  selectedCount={selectedCount}
+                  snapToGrid={snapToGrid}
+                  onToggleSnapToGrid={onToggleSnapToGrid}
+                  onSnapAllToGrid={onSnapAllToGrid}
+                  onAlignSelection={onAlignSelection}
+                  onDistributeSelection={onDistributeSelection}
+                  onInsertTemplate={onInsertTemplate}
+                />
+              )}
+
+              {activeTab === 'export' && (
+                <StudioExportTab
+                  onCopyImage={onCopyImage}
+                  onExportPNG={onExportPNG}
+                  onExportSVG={onExportSVG}
+                  hasSelectedNodes={hasSelectedNodes}
+                  selectedCount={selectedCount}
+                />
+              )}
+            </div>
+
+            {/* Studio Footer: Embedded Spatial Navigator Card Dropdown */}
+            <div className="lumina-canvas-studio-footer">
+              <CanvasMiniMap
+                nodes={nodes}
+                viewport={viewport || { x: 0, y: 0, zoom: 1 }}
+                containerRect={containerRect || null}
+                onPanTo={onPanTo || (() => {})}
+                isOpen={isMiniMapOpen}
+                onToggleOpen={onToggleMiniMap || (() => {})}
+                variant="footer-card"
               />
-            )}
-
-            {activeTab === 'connectors' && (
-              <StudioWiresTab
-                defaultLineStyle={defaultLineStyle}
-                onChangeDefaultLineStyle={onChangeDefaultLineStyle}
-                defaultEndpoints={defaultEndpoints}
-                onChangeDefaultEndpoints={onChangeDefaultEndpoints}
-                selectedEdgeId={selectedEdgeId}
-                selectedEdgeCount={selectedEdgeIds.length || (selectedEdgeId ? 1 : 0)}
-                totalEdgesCount={edges.length}
-                onApplyToAllEdges={onApplyToAllEdges}
-              />
-            )}
-
-            {activeTab === 'grid' && (
-              <StudioLayoutTab
-                selectedCount={selectedCount}
-                snapToGrid={snapToGrid}
-                onToggleSnapToGrid={onToggleSnapToGrid}
-                onSnapAllToGrid={onSnapAllToGrid}
-                onAlignSelection={onAlignSelection}
-                onDistributeSelection={onDistributeSelection}
-                onInsertTemplate={onInsertTemplate}
-              />
-            )}
-
-            {activeTab === 'export' && (
-              <StudioExportTab
-                onCopyImage={onCopyImage}
-                onExportPNG={onExportPNG}
-                onExportSVG={onExportSVG}
-                hasSelectedNodes={hasSelectedNodes}
-                selectedCount={selectedCount}
-              />
-            )}
-          </div>
-
-          {/* Studio Footer: Embedded Spatial Navigator Card Dropdown */}
-          <div className="lumina-canvas-studio-footer">
-            <CanvasMiniMap
-              nodes={nodes}
-              viewport={viewport || { x: 0, y: 0, zoom: 1 }}
-              containerRect={containerRect || null}
-              onPanTo={onPanTo || (() => {})}
-              isOpen={isMiniMapOpen}
-              onToggleOpen={onToggleMiniMap || (() => {})}
-              variant="footer-card"
-            />
-          </div>
-        </aside>
+            </div>
+          </aside>
+        </>
       )
     }
 
@@ -217,29 +220,43 @@ export const ConvasToolBarRight: React.FC<ConvasToolBarRightProps> = React.memo(
     // SLIM DOCK VIEW (COLLAPSED)
     // ========================================================================
     return (
-      <SlimCanvasDock
-        zoom={zoom}
-        onZoomIn={onZoomIn}
-        onZoomOut={onZoomOut}
-        onResetViewport={onResetViewport}
-        onZoomToFit={onZoomToFit}
-        onDeleteSelected={onDeleteSelected}
-        canDelete={canDelete}
-        onToggleExpand={toggleExpanded}
-        onUndo={onUndo}
-        canUndo={canUndo}
-        onRedo={onRedo}
-        canRedo={canRedo}
-        onAddShape={onAddShape}
-        onCopyImage={onCopyImage}
-        onExportPNG={onExportPNG}
-        onExportSVG={onExportSVG}
-        hasSelectedNodes={hasSelectedNodes}
-        snapToGrid={snapToGrid}
-        onToggleSnapToGrid={onToggleSnapToGrid}
-        isMiniMapOpen={isMiniMapOpen}
-        onToggleMiniMap={handleToggleMiniMap}
-      />
+      <>
+        <button
+          type="button"
+          className="lumina-canvas-sidebar-edge-knob"
+          onClick={toggleExpanded}
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          title="Open Canvas Sidebar"
+          aria-label="Open Canvas Sidebar"
+        >
+          <ChevronLeft size={14} />
+        </button>
+
+        <SlimCanvasDock
+          zoom={zoom}
+          onZoomIn={onZoomIn}
+          onZoomOut={onZoomOut}
+          onResetViewport={onResetViewport}
+          onZoomToFit={onZoomToFit}
+          onDeleteSelected={onDeleteSelected}
+          canDelete={canDelete}
+          onToggleExpand={toggleExpanded}
+          onUndo={onUndo}
+          canUndo={canUndo}
+          onRedo={onRedo}
+          canRedo={canRedo}
+          onAddShape={onAddShape}
+          onCopyImage={onCopyImage}
+          onExportPNG={onExportPNG}
+          onExportSVG={onExportSVG}
+          hasSelectedNodes={hasSelectedNodes}
+          snapToGrid={snapToGrid}
+          onToggleSnapToGrid={onToggleSnapToGrid}
+          isMiniMapOpen={isMiniMapOpen}
+          onToggleMiniMap={handleToggleMiniMap}
+        />
+      </>
     )
   }
 )

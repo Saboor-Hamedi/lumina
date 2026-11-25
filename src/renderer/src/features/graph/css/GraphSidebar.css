@@ -115,29 +115,48 @@
 .nexus-sidebar-content {
   flex: 1;
   min-height: 0;
-  padding: 16px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 10px;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-.nexus-search-wrap {
+.nexus-expanded-header {
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
+}
+
+.nexus-search-box {
+  flex: 1;
   position: relative;
-  width: 100%;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.nexus-search-icon {
+  position: absolute;
+  left: 8px;
+  color: var(--text-muted);
+  pointer-events: none;
+  opacity: 0.75;
 }
 
 .nexus-search-input {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 8px 12px;
+  background: var(--bg-panel, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.09));
+  border-radius: 7px;
+  padding: 6px 24px 6px 26px;
   color: var(--text-main);
-  font-size: 13px;
+  font-size: 12px;
   outline: none;
-  transition: all 0.2s;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
 }
 
 .nexus-search-input::placeholder {
@@ -145,9 +164,204 @@
 }
 
 .nexus-search-input:focus {
-  border-color: rgba(64, 186, 250, 0.5);
-  box-shadow: 0 0 0 2px rgba(64, 186, 250, 0.15);
-  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--text-accent, #40bafa);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-accent, #40bafa) 18%, transparent);
+}
+
+.nexus-search-clear {
+  position: absolute;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+}
+
+.nexus-search-clear:hover {
+  color: var(--text-main);
+  background: color-mix(in srgb, var(--text-main) 10%, transparent);
+}
+
+.nexus-close-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  flex-shrink: 0;
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.09));
+  background: var(--bg-panel, transparent);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.nexus-close-btn:hover {
+  color: var(--text-accent, #40bafa);
+  border-color: var(--text-accent, #40bafa);
+  background: color-mix(in srgb, var(--text-accent, #40bafa) 8%, transparent);
+}
+
+.nexus-actions-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.nexus-chip-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 7px;
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.09));
+  background: var(--bg-panel, transparent);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.nexus-chip-btn.icon-only {
+  flex: 0 0 28px;
+  padding: 0;
+}
+
+.nexus-chip-btn:hover {
+  color: var(--text-accent, #40bafa);
+  border-color: color-mix(in srgb, var(--text-accent, #40bafa) 55%, transparent);
+  background: color-mix(in srgb, var(--text-accent, #40bafa) 8%, transparent);
+}
+
+.nexus-card-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--bg-panel, #18181b) 72%, transparent);
+  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.07));
+}
+
+.nexus-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.nexus-reset-link {
+  background: none;
+  border: none;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
+
+.nexus-reset-link:hover {
+  color: var(--text-accent, #40bafa);
+}
+
+.nexus-toggle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nexus-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-main);
+}
+
+.nexus-slider-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nexus-slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.nexus-slider-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.nexus-slider-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  color: var(--text-main);
+  opacity: 0.85;
+}
+
+.nexus-sidebar-footer {
+  padding: 8px 10px;
+  border-top: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.nexus-rotate-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.nexus-rotate-btn:hover {
+  background: color-mix(in srgb, var(--text-main) 6%, transparent);
+  color: var(--text-main);
+}
+
+.nexus-rotate-btn.active {
+  color: var(--text-accent, #40bafa);
+  background: color-mix(in srgb, var(--text-accent, #40bafa) 10%, transparent);
+}
+
+.nexus-node-count-pill {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .nexus-sidebar-section {
@@ -157,13 +371,12 @@
 }
 
 .nexus-section-title {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 4px;
-  padding-left: 2px;
+  letter-spacing: 0.06em;
+  padding-left: 1px;
 }
 
 .nexus-action-btn {

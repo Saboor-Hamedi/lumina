@@ -1314,7 +1314,8 @@ export const MainLayout: React.FC = () => {
       onSettingsClick: handleOpenSettings,
       onThemeClick: handleOpenTheme,
       onGraphClick: handleToggleGraph,
-      onNavigate: setSelectedSnippet
+      onNavigate: setSelectedSnippet,
+      workspaceDrop
     }),
     [
       snippetMap,
@@ -1333,7 +1334,8 @@ export const MainLayout: React.FC = () => {
       handleOpenSettings,
       handleOpenTheme,
       handleToggleGraph,
-      setSelectedSnippet
+      setSelectedSnippet,
+      workspaceDrop
     ]
   )
 
@@ -1431,7 +1433,7 @@ export const MainLayout: React.FC = () => {
               )}
             </div>
 
-            {workspaceDrop.isOver && (
+            {workspaceDrop.isOver && !hasValidOpenTabs && (
               <ExternalDropOverlay
                 label={workspaceDrop.label}
                 count={workspaceDrop.count}

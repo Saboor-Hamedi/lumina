@@ -4,10 +4,11 @@ import {
   Layers,
   PanelRight,
   PanelRightClose,
-  ExternalLink,
   Download,
   FileCode,
-  RotateCcw
+  RotateCcw,
+  Search,
+  X
 } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -158,137 +159,56 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
       onWheel={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
       tabIndex={-1}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        background: 'var(--bg-panel)',
-        borderLeft: '1px solid var(--border-dim)'
-      }}
     >
-      {/* Top Header: Search and Close Sidebar Only */}
-      <div
-        className="lumina-canvas-studio-header"
-        style={{
-          padding: '8px 10px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px',
-          borderBottom: '1px solid var(--border-dim)'
-        }}
-      >
-        <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+      {/* Top Header: Search Input with Clear Button + Close Sidebar */}
+      <div className="lumina-canvas-studio-header nexus-expanded-header">
+        <div className="nexus-search-box">
+          <Search size={13} className="nexus-search-icon" />
           <input
             type="text"
             placeholder="Search nodes..."
             value={localSearchQuery}
             onChange={(e) => setLocalSearchQuery(e.target.value)}
             className="nexus-search-input"
-            style={{
-              width: '100%',
-              padding: '5px 8px',
-              fontSize: '12px',
-              borderRadius: '6px',
-              border: '1px solid var(--border-dim)',
-              background: 'var(--bg-editor)',
-              color: 'var(--text-main)',
-              outline: 'none',
-              transition: 'border-color 0.15s ease'
-            }}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = 'var(--text-accent)'
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border-dim)'
-            }}
           />
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-          <ToolTip text="Close Sidebar" position="bottom">
+          {localSearchQuery && (
             <button
               type="button"
-              className="lumina-canvas-studio-header-btn"
-              onClick={toggleHandler}
-              aria-label="Collapse Controls"
-              style={{
-                width: '28px',
-                height: '28px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '6px',
-                flexShrink: 0,
-                border: '1px solid var(--border-dim)',
-                background: 'var(--bg-editor)',
-                color: 'var(--text-main)',
-                cursor: 'pointer',
-                padding: 0
+              className="nexus-search-clear"
+              onClick={() => {
+                setLocalSearchQuery('')
+                setSearchQuery?.('')
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--text-accent)'
-                e.currentTarget.style.borderColor = 'var(--text-accent)'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--text-main)'
-                e.currentTarget.style.borderColor = 'var(--border-dim)'
-              }}
+              aria-label="Clear search"
             >
-              <PanelRightClose size={13} />
+              <X size={11} />
             </button>
-          </ToolTip>
+          )}
         </div>
+
+        <ToolTip text="Close Sidebar" position="bottom">
+          <button
+            type="button"
+            className="lumina-canvas-studio-header-btn nexus-close-btn"
+            onClick={toggleHandler}
+            aria-label="Collapse Controls"
+          >
+            <PanelRightClose size={14} />
+          </button>
+        </ToolTip>
       </div>
 
       {/* Controls Body */}
-      <div
-        className="lumina-canvas-studio-body nexus-sidebar-content"
-        style={{
-          flex: 1,
-          minHeight: 0,
-          overflowY: 'auto',
-          overflowX: 'hidden',
-          padding: '8px 12px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
-        }}
-      >
+      <div className="lumina-canvas-studio-body nexus-sidebar-content">
         {/* Unified Performance & Recenter Bar */}
         <PerformancePanel embedded={true} is3DMode={is3DMode} onRecenter={onRecenter} />
 
-        {/* Export & Reset Row in the Body */}
+        {/* Export & Reset Row */}
         {(onExportPNG || onExportSVG || onResetLayout) && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+          <div className="nexus-actions-row">
             {onExportPNG && (
               <ToolTip text="Export PNG Image" position="bottom">
-                <button
-                  type="button"
-                  onClick={onExportPNG}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '5px',
-                    padding: '5px 8px',
-                    fontSize: '11px',
-                    borderRadius: '5px',
-                    border: '1px solid var(--border-dim)',
-                    background: 'var(--bg-editor)',
-                    color: 'var(--text-main)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--text-accent)'
-                    e.currentTarget.style.borderColor = 'var(--text-accent)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'var(--text-main)'
-                    e.currentTarget.style.borderColor = 'var(--border-dim)'
-                  }}
-                >
+                <button type="button" className="nexus-chip-btn" onClick={onExportPNG}>
                   <Download size={12} />
                   <span>PNG</span>
                 </button>
@@ -297,33 +217,7 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
 
             {onExportSVG && (
               <ToolTip text="Export SVG Vector" position="bottom">
-                <button
-                  type="button"
-                  onClick={onExportSVG}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '5px',
-                    padding: '5px 8px',
-                    fontSize: '11px',
-                    borderRadius: '5px',
-                    border: '1px solid var(--border-dim)',
-                    background: 'var(--bg-editor)',
-                    color: 'var(--text-main)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--text-accent)'
-                    e.currentTarget.style.borderColor = 'var(--text-accent)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'var(--text-main)'
-                    e.currentTarget.style.borderColor = 'var(--border-dim)'
-                  }}
-                >
+                <button type="button" className="nexus-chip-btn" onClick={onExportSVG}>
                   <FileCode size={12} />
                   <span>SVG</span>
                 </button>
@@ -334,28 +228,9 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
               <ToolTip text="Reset Layout Positions" position="bottom">
                 <button
                   type="button"
+                  className="nexus-chip-btn icon-only"
                   onClick={onResetLayout}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '5px 8px',
-                    fontSize: '11px',
-                    borderRadius: '5px',
-                    border: '1px solid var(--border-dim)',
-                    background: 'var(--bg-editor)',
-                    color: 'var(--text-main)',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--text-accent)'
-                    e.currentTarget.style.borderColor = 'var(--text-accent)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'var(--text-main)'
-                    e.currentTarget.style.borderColor = 'var(--border-dim)'
-                  }}
+                  aria-label="Reset Layout Positions"
                 >
                   <RotateCcw size={12} />
                 </button>
@@ -363,70 +238,34 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
             )}
           </div>
         )}
-        {/* Filters */}
-        <div className="nexus-sidebar-section" style={{ margin: 0 }}>
-          <div
-            style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '2px 0' }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '8px',
-                fontSize: '11px',
-                color: 'var(--text-main)'
-              }}
-            >
-              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Tags</span>
+
+        {/* Filters Card */}
+        <div className="nexus-card-section">
+          <div className="nexus-section-title">Filters</div>
+          <div className="nexus-toggle-list">
+            <div className="nexus-toggle-row">
+              <span>Tags</span>
               <Toggle
                 checked={!settings.graphHideTags}
                 onChange={(e: any) => updateSetting('graphHideTags', !e.target.checked)}
               />
             </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '8px',
-                fontSize: '11px',
-                color: 'var(--text-main)'
-              }}
-            >
-              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Unresolved</span>
+            <div className="nexus-toggle-row">
+              <span>Unresolved</span>
               <Toggle
                 checked={!settings.graphHideGhosts}
                 onChange={(e: any) => updateSetting('graphHideGhosts', !e.target.checked)}
               />
             </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '8px',
-                fontSize: '11px',
-                color: 'var(--text-main)'
-              }}
-            >
-              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Orphans</span>
+            <div className="nexus-toggle-row">
+              <span>Orphans</span>
               <Toggle
                 checked={!settings.graphHideOrphans}
                 onChange={(e: any) => updateSetting('graphHideOrphans', !e.target.checked)}
               />
             </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '8px',
-                fontSize: '11px',
-                color: 'var(--text-main)'
-              }}
-            >
-              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>3D Mode</span>
+            <div className="nexus-toggle-row">
+              <span>3D Mode</span>
               <Toggle
                 checked={is3DMode ?? (settings.graph3DMode ?? false)}
                 onChange={(e: any) => {
@@ -441,24 +280,30 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
           </div>
         </div>
 
-        <div style={{ height: '1px', background: 'var(--border-dim)' }} />
-
-        {/* Display Sliders */}
-        <div className="nexus-sidebar-section" style={{ margin: 0 }}>
-          <div
-            style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '2px 0' }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: '10px',
-                  color: 'var(--text-muted)',
-                  fontWeight: 500
-                }}
-              >
+        {/* Display & Physics Forces Card */}
+        <div className="nexus-card-section">
+          <div className="nexus-section-header">
+            <span className="nexus-section-title">Forces &amp; Display</span>
+            <button
+              type="button"
+              className="nexus-reset-link"
+              title="Reset physics defaults"
+              onClick={() => {
+                updateSetting('graphNodeSize', 1.5)
+                updateSetting('graphCenterForce', 0.05)
+                updateSetting('graphRepelForce', 0.3)
+                updateSetting('graphLinkForce', 0.05)
+                updateSetting('graphLinkHighlightOpacity', 0.6)
+              }}
+            >
+              Reset
+            </button>
+          </div>
+          <div className="nexus-slider-list">
+            <div className="nexus-slider-row">
+              <div className="nexus-slider-meta">
                 <span>Node Size</span>
+                <span className="nexus-slider-value">{(settings.graphNodeSize || 1.5).toFixed(1)}×</span>
               </div>
               <input
                 type="range"
@@ -472,17 +317,10 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
                 onTouchEnd={(e: any) => updateSetting('graphNodeSize', parseFloat(e.target.value))}
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: '10px',
-                  color: 'var(--text-muted)',
-                  fontWeight: 500
-                }}
-              >
+            <div className="nexus-slider-row">
+              <div className="nexus-slider-meta">
                 <span>Center Force</span>
+                <span className="nexus-slider-value">{(settings.graphCenterForce ?? 0.05).toFixed(2)}</span>
               </div>
               <input
                 type="range"
@@ -496,17 +334,10 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
                 onTouchEnd={(e: any) => updateSetting('graphCenterForce', parseFloat(e.target.value))}
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: '10px',
-                  color: 'var(--text-muted)',
-                  fontWeight: 500
-                }}
-              >
+            <div className="nexus-slider-row">
+              <div className="nexus-slider-meta">
                 <span>Repel Force</span>
+                <span className="nexus-slider-value">{(settings.graphRepelForce ?? 0.3).toFixed(2)}</span>
               </div>
               <input
                 type="range"
@@ -520,17 +351,10 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
                 onTouchEnd={(e: any) => updateSetting('graphRepelForce', parseFloat(e.target.value))}
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: '10px',
-                  color: 'var(--text-muted)',
-                  fontWeight: 500
-                }}
-              >
+            <div className="nexus-slider-row">
+              <div className="nexus-slider-meta">
                 <span>Link Force</span>
+                <span className="nexus-slider-value">{(settings.graphLinkForce ?? 0.05).toFixed(2)}</span>
               </div>
               <input
                 type="range"
@@ -544,17 +368,12 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
                 onTouchEnd={(e: any) => updateSetting('graphLinkForce', parseFloat(e.target.value))}
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: '10px',
-                  color: 'var(--text-muted)',
-                  fontWeight: 500
-                }}
-              >
-                <span>Highlight Link Opacity</span>
+            <div className="nexus-slider-row">
+              <div className="nexus-slider-meta">
+                <span>Link Highlight</span>
+                <span className="nexus-slider-value">
+                  {Math.round((settings.graphLinkHighlightOpacity ?? 0.6) * 100)}%
+                </span>
               </div>
               <input
                 type="range"
@@ -577,41 +396,24 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
       </div>
 
       {/* Footer */}
-      <div
-        className="nexus-sidebar-footer"
-        style={{
-          padding: '6px 12px',
-          borderTop: '1px solid var(--border-dim)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'flex-start'
-        }}
-      >
+      <div className="nexus-sidebar-footer">
         <button
-          className={`theme-toggle ${settings.graphAnimate !== false ? 'active' : ''}`}
+          type="button"
+          className={`nexus-rotate-btn ${settings.graphAnimate !== false ? 'active' : ''}`}
           title={settings.graphAnimate !== false ? 'Stop Rotation' : 'Auto Rotate'}
           onClick={() =>
             updateSetting('graphAnimate', settings.graphAnimate === false ? true : false)
           }
-          style={{
-            width: '24px',
-            height: '24px',
-            borderRadius: '4px',
-            background: 'transparent',
-            border: 'none',
-            padding: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer'
-          }}
         >
           <RefreshCw
             size={12}
             className={settings.graphAnimate !== false ? 'spin-icon' : ''}
-            color={settings.graphAnimate !== false ? 'var(--text-accent)' : 'var(--text-muted)'}
           />
+          <span>{settings.graphAnimate !== false ? 'Animating' : 'Paused'}</span>
         </button>
+        {typeof _nodeCount === 'number' && (
+          <span className="nexus-node-count-pill">{_nodeCount} nodes</span>
+        )}
       </div>
     </aside>
   )

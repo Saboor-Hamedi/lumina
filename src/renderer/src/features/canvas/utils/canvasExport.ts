@@ -673,41 +673,108 @@ export async function copyCanvasAsImage(options: ExportCanvasOptions): Promise<b
   }
 }
 
+export interface CanvasExportResult {
+  saved: boolean
+  cancelled?: boolean
+  filePath?: string
+}
+
+function isTauriRuntime(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    Boolean((window as any).__TAURI_INTERNALS__ || (window as any).__TAURI__)
+  )
+}
+
+function dataUrlToByteArray(dataUrl: string): number[] {
+  const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl
+  const binary = atob(base64)
+  const bytes = new Array<number>(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return bytes
+}
+
 /**
- * Triggers download of the canvas diagram as a PNG file.
+ * Opens native OS save dialog (in Tauri) or triggers browser download of the canvas diagram as a PNG file.
  */
 export async function downloadCanvasPng(
   options: ExportCanvasOptions,
   fileName: string = 'canvas-diagram.png'
-): Promise<void> {
+): Promise<CanvasExportResult> {
+  const finalName = fileName.endsWith('.png') ? fileName : `${fileName}.png`
   const { svgString, width, height } = buildCanvasSvg(options)
   const scale = options.scale || 2
   const pngDataUrl = await svgToPngDataUrl(svgString, width, height, scale)
 
+  if (isTauriRuntime()) {
+    const { invoke } = await import('@tauri-apps/api/core')
+    const filePath = await invoke<string | null>('export_pick_save_path', {
+      title: 'Export Canvas as PNG Image',
+      defaultName: finalName,
+      filterName: 'PNG Image',
+      extensions: ['png']
+    })
+    if (!filePath) {
+      return { saved: false, cancelled: true }
+    }
+    const bytes = dataUrlToByteArray(pngDataUrl)
+    await invoke('export_write_file', {
+      filePath,
+      content: null,
+      bytes
+    })
+    return { saved: true, filePath }
+  }
+
   const a = document.createElement('a')
   a.href = pngDataUrl
-  a.download = fileName.endsWith('.png') ? fileName : `${fileName}.png`
+  a.download = finalName
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
+  return { saved: true }
 }
 
 /**
- * Triggers download of the canvas diagram as a vector SVG file.
+ * Opens native OS save dialog (in Tauri) or triggers browser download of the canvas diagram as a vector SVG file.
  */
-export function downloadCanvasSvg(
+export async function downloadCanvasSvg(
   options: ExportCanvasOptions,
   fileName: string = 'canvas-diagram.svg'
-): void {
+): Promise<CanvasExportResult> {
+  const finalName = fileName.endsWith('.svg') ? fileName : `${fileName}.svg`
   const { svgString } = buildCanvasSvg(options)
+
+  if (isTauriRuntime()) {
+    const { invoke } = await import('@tauri-apps/api/core')
+    const filePath = await invoke<string | null>('export_pick_save_path', {
+      title: 'Export Canvas as SVG Vector',
+      defaultName: finalName,
+      filterName: 'SVG Vector Image',
+      extensions: ['svg']
+    })
+    if (!filePath) {
+      return { saved: false, cancelled: true }
+    }
+    await invoke('export_write_file', {
+      filePath,
+      content: svgString,
+      bytes: null
+    })
+    return { saved: true, filePath }
+  }
+
   const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' })
   const url = URL.createObjectURL(blob)
 
   const a = document.createElement('a')
   a.href = url
-  a.download = fileName.endsWith('.svg') ? fileName : `${fileName}.svg`
+  a.download = finalName
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
+  return { saved: true }
 }

@@ -66,6 +66,28 @@ const CanvasStrokeItem: React.FC<CanvasStrokeItemProps> = React.memo(
 )
 CanvasStrokeItem.displayName = 'CanvasStrokeItem'
 
+interface SavedStrokesListProps {
+  strokes: CanvasStroke[]
+  isEraser: boolean
+  onEraseStroke?: (strokeId: string) => void
+}
+
+const SavedStrokesList: React.FC<SavedStrokesListProps> = React.memo(
+  ({ strokes, isEraser, onEraseStroke }) => (
+    <>
+      {strokes.map((stroke) => (
+        <CanvasStrokeItem
+          key={stroke.id}
+          stroke={stroke}
+          isEraser={isEraser}
+          onEraseStroke={onEraseStroke}
+        />
+      ))}
+    </>
+  )
+)
+SavedStrokesList.displayName = 'SavedStrokesList'
+
 export interface CanvasStrokesLayerProps {
   strokes: CanvasStroke[]
   activeStroke: CanvasStroke | null
@@ -91,14 +113,7 @@ export const CanvasStrokesLayer: React.FC<CanvasStrokesLayerProps> = React.memo(
 
     return (
       <svg className="lumina-canvas-strokes-layer" aria-label="Canvas drawings">
-        {strokes.map((stroke) => (
-          <CanvasStrokeItem
-            key={stroke.id}
-            stroke={stroke}
-            isEraser={isEraser}
-            onEraseStroke={onEraseStroke}
-          />
-        ))}
+        <SavedStrokesList strokes={strokes} isEraser={isEraser} onEraseStroke={onEraseStroke} />
         {activeStroke && activePathD && (
           <path
             d={activePathD}

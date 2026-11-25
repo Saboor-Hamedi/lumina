@@ -86,12 +86,13 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
     const nodeColorClass = node.color ? `color-${node.color}` : 'color-default'
     const resolvedShape = node.shape || (node as any).shapeType || (node.type === 'shape' ? 'rectangle' : undefined)
     const isShapeNode = node.type === 'shape' || !!resolvedShape
-    const isSticky = !isShapeNode && (node.type === 'text' || node.type === 'sticky') && !node.file
+    const isSticky = !isShapeNode && node.type === 'sticky' && !node.file
+    const isFramelessText = !isShapeNode && node.type === 'text' && !node.file
 
     return (
       <div
         data-node-id={node.id}
-        className={`lumina-canvas-node ${nodeColorClass} ${isShapeNode ? `is-shape shape-${resolvedShape || 'rectangle'}` : ''} ${isSticky ? 'is-sticky' : ''} ${isSelected ? (isMultiSelection ? 'selected is-multi-selected' : 'selected') : ''}`}
+        className={`lumina-canvas-node ${nodeColorClass} ${isShapeNode ? `is-shape shape-${resolvedShape || 'rectangle'}` : ''} ${isSticky ? 'is-sticky' : ''} ${isFramelessText ? 'is-frameless-text' : ''} ${isEditing ? 'is-editing' : ''} ${isSelected ? (isMultiSelection ? 'selected is-multi-selected' : 'selected') : ''}`}
         style={{
           left: `${node.x}px`,
           top: `${node.y}px`,
@@ -298,9 +299,9 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
               )}
             </div>
           </>
-        ) : isSticky ? (
+        ) : isSticky || isFramelessText ? (
           <>
-            {/* Sticky Actions Toolbar (Appears on hover in top-right corner, hidden via CSS when selected) */}
+            {/* Hover Actions Toolbar (Appears on hover in top-right corner, hidden via CSS when selected) */}
             {!isMultiSelection && !isEditing && (
               <div className="lumina-canvas-sticky-actions">
                 <ToolTip text="Change Color" position="top">
@@ -317,7 +318,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                 </ToolTip>
 
                 {onDuplicateNode && (
-                  <ToolTip text="Duplicate Note (Alt+D)" position="top">
+                  <ToolTip text="Duplicate (Alt+D)" position="top">
                     <button
                       className="lumina-canvas-action-btn"
                       aria-label="Duplicate Note"
@@ -331,7 +332,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                   </ToolTip>
                 )}
 
-                <ToolTip text="Delete Note" position="top">
+                <ToolTip text="Delete" position="top">
                   <button
                     className="lumina-canvas-action-btn delete"
                     aria-label="Delete Note"
@@ -346,9 +347,9 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
               </div>
             )}
 
-            {/* Sticky Note Body: no bulky header */}
+            {/* Sleek Frameless Text or Sticky Note Body */}
             <div
-              className="lumina-canvas-node-body lumina-canvas-sticky-body"
+              className={`lumina-canvas-node-body ${isFramelessText ? 'lumina-canvas-frameless-text-body' : 'lumina-canvas-sticky-body'}`}
               onWheel={(e) => e.stopPropagation()}
               onDoubleClick={(e) => {
                 e.stopPropagation()
@@ -356,12 +357,13 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
               }}
             >
               {/* Accessible title anchor for tests / assistive tools */}
-              <span className="sr-only">{node.title || 'Quick Idea'}</span>
+              <span className="sr-only">{node.title || (isFramelessText ? 'Text' : 'Quick Idea')}</span>
               {isEditing && editingField === 'text' ? (
                 <textarea
                   autoFocus
                   dir="auto"
-                  className="lumina-canvas-text-area lumina-canvas-sticky-textarea"
+                  placeholder={isFramelessText ? 'Type text...' : 'Write a note...'}
+                  className={`lumina-canvas-text-area ${isFramelessText ? 'lumina-canvas-frameless-textarea' : 'lumina-canvas-sticky-textarea'}`}
                   defaultValue={node.text || ''}
                   ref={(el) => {
                     if (el) {
@@ -392,6 +394,8 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                     }
                   }}
                 />
+              ) : isFramelessText && !node.text ? (
+                <span className="lumina-canvas-frameless-placeholder">Double-click to type</span>
               ) : (
                 <MemoizedMarkdownPreview text={node.text || ''} />
               )}
