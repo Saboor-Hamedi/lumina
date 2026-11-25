@@ -37,8 +37,8 @@
 }
 
 .nexus-sidebar.lumina-canvas-toolbar-right:not(.is-expanded) {
-  width: 44px !important;
-  padding-top: 44px !important;
+  width: 42px !important;
+  padding: 10px 4px !important;
   transform: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
@@ -49,9 +49,9 @@
 }
 
 .nexus-sidebar.lumina-canvas-toolbar-right.is-expanded {
-  width: var(--right-sidebar-width, 240px) !important;
-  min-width: 220px !important;
-  padding-top: 38px !important;
+  width: var(--right-sidebar-width, 250px) !important;
+  min-width: 230px !important;
+  padding: 0 !important;
   height: 100% !important;
   max-height: 100% !important;
   overflow: hidden !important;
@@ -64,6 +64,18 @@
   border: none !important;
   border-left: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08)) !important;
   box-shadow: none !important;
+}
+
+.nexus-sidebar.lumina-canvas-toolbar-right .lumina-canvas-studio-header {
+  flex-shrink: 0 !important;
+  min-height: 42px !important;
+  display: flex !important;
+  align-items: center !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 30 !important;
+  box-sizing: border-box !important;
 }
 
 [data-theme='light'] .nexus-sidebar.lumina-canvas-toolbar-right:not(.is-expanded),

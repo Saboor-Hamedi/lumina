@@ -1,6 +1,7 @@
-import React, { Suspense, lazy, useState, useCallback, KeyboardEvent } from 'react'
+import React, { Suspense, lazy, useState, useCallback, KeyboardEvent, DragEvent } from 'react'
 import { Send, Square, ChevronDown, Plus } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/SettingStore'
+import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import ToolTip from '../../components/atoms/ToolTip'
 import VoiceButton from '../voice'
 import { useComposerTextarea } from './hooks/useComposerTextarea'
@@ -33,6 +34,7 @@ export const Composer: React.FC<ComposerProps> = ({
   isSidebar = false
 }) => {
   const [input, setInput] = useState<string>('')
+  const [isDragOver, setIsDragOver] = useState<boolean>(false)
   const handleStop = onStop || onCancel
 
   const { settings, updateSetting } = useSettingsStore()
@@ -99,6 +101,76 @@ export const Composer: React.FC<ComposerProps> = ({
   const toggleProvider = () =>
     window.dispatchEvent(new CustomEvent('open-ai-settings'))
 
+  const isNoteDrag = (e: DragEvent): boolean => {
+    const types = Array.from(e.dataTransfer?.types || [])
+    return (
+      types.includes('application/lumina-snippet') ||
+      types.includes('application/x-lumina-node') ||
+      types.includes('application/lumina-note')
+    )
+  }
+
+  const handleComposerDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
+    if (!isNoteDrag(e)) return
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'copy'
+    setIsDragOver(true)
+    window.dispatchEvent(
+      new CustomEvent('lumina:workspace-drag-hover', {
+        detail: { isOver: false, isExternal: false, title: '', count: 1 }
+      })
+    )
+  }, [])
+
+  const handleComposerDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+      setIsDragOver(false)
+    }
+  }, [])
+
+  const handleComposerDrop = useCallback(
+    (e: DragEvent<HTMLDivElement>) => {
+      if (!isNoteDrag(e)) return
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragOver(false)
+
+      const raw =
+        e.dataTransfer.getData('application/lumina-snippet') ||
+        e.dataTransfer.getData('application/x-lumina-node') ||
+        e.dataTransfer.getData('application/lumina-note')
+      if (!raw) return
+
+      try {
+        const parsed = JSON.parse(raw)
+        const items = Array.isArray(parsed) ? parsed : [parsed]
+        const storeNotes = useWorkspaceStore.getState().notes || []
+
+        for (const item of items) {
+          if (!item) continue
+          const matched =
+            storeNotes.find((n: any) => n.id === item.id) ||
+            (item.title ? storeNotes.find((n: any) => n.title === item.title) : null)
+
+          if (matched) {
+            handleMentionSelect(matched)
+          } else if (item.title || item.name || item.path) {
+            handleMentionSelect({
+              id: item.id || item.path || item.title || item.name,
+              title: item.title || item.name || String(item.path).split('/').pop(),
+              path: item.path,
+              isFolder: item.type === 'folder' || Boolean(item.isFolder)
+            })
+          }
+        }
+      } catch (err) {
+        console.error('[Composer] Failed to attach dropped note as mention:', err)
+      }
+    },
+    [handleMentionSelect]
+  )
+
   return (
     <div className={`composer-container ${isSidebar ? 'is-sidebar-docked' : ''}`}>
       {showSlashMenu && (
@@ -124,7 +196,14 @@ export const Composer: React.FC<ComposerProps> = ({
         </Suspense>
       )}
 
-      <div className="composer-card" onClick={() => textareaRef.current?.focus()}>
+      <div
+        className={`composer-card ${isDragOver ? 'is-drag-over' : ''}`}
+        onClick={() => textareaRef.current?.focus()}
+        onDragEnter={handleComposerDragOver}
+        onDragOver={handleComposerDragOver}
+        onDragLeave={handleComposerDragLeave}
+        onDrop={handleComposerDrop}
+      >
         <div className="composer-input-area-wrapper">
           <textarea
             ref={textareaRef}

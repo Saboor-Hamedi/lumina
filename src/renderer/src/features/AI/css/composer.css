@@ -35,6 +35,12 @@
   outline: none !important;
 }
 
+.composer-card.is-drag-over {
+  background: var(--accent-soft, color-mix(in srgb, var(--text-accent, #38bdf8) 12%, var(--bg-card, var(--bg-panel))));
+  border-color: var(--text-accent, #38bdf8) !important;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.2), 0 0 0 2px color-mix(in srgb, var(--text-accent, #38bdf8) 24%, transparent) !important;
+}
+
 /* ─── Input Area ─── */
 .composer-input-area-wrapper {
   position: relative;

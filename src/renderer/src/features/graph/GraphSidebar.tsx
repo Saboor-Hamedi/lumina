@@ -204,7 +204,7 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
           <ToolTip text="Close Sidebar" position="bottom">
             <button
               type="button"
@@ -212,12 +212,13 @@ const GraphSidebar: React.FC<GraphSidebarProps> = ({
               onClick={toggleHandler}
               aria-label="Collapse Controls"
               style={{
-                width: '26px',
-                height: '26px',
+                width: '28px',
+                height: '28px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                borderRadius: '5px',
+                borderRadius: '6px',
+                flexShrink: 0,
                 border: '1px solid var(--border-dim)',
                 background: 'var(--bg-editor)',
                 color: 'var(--text-main)',

@@ -57,7 +57,7 @@ export const RightActivityBar: React.FC<RightActivityBarProps> = memo(({
       <div className="activity-bar-inner">
         <div className="activity-bar-top">
           {RIGHT_TABS.map(({ id, label, icon: Icon }) => {
-            const isActive = isRightSidebarOpen && activeTab === id
+            const isActive = isRightSidebarOpen && activeTab === id && !isGraphActive && !isCanvasActive
             return (
               <ToolTip key={id} text={label} position="left">
                 <button

@@ -70,10 +70,10 @@
 /* Canvas Node Card */
 .lumina-canvas-node {
   position: absolute;
-  border-radius: 8px;
+  border-radius: 10px;
   background-color: var(--bg-panel, #18181b);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.26);
   display: flex;
   flex-direction: column;
   overflow: visible;

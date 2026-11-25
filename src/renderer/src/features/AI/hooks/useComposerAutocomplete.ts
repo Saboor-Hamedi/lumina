@@ -195,7 +195,8 @@ export const useComposerAutocomplete = ({
         newVal = input.slice(0, matchIndex) + mentionText + textAfterCursor
         newCursorPos = matchIndex + mentionText.length
       } else {
-        newVal = input + mentionText
+        const needsLeadingSpace = Boolean(input) && !/\s$/.test(input)
+        newVal = input + (needsLeadingSpace ? ' ' : '') + mentionText
         newCursorPos = newVal.length
       }
 
