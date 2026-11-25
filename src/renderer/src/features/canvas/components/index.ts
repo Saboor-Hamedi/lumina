@@ -28,6 +28,7 @@ export * from './nodes/CanvasAlignmentGuidesLayer'
 
 export * from './edges/CanvasEdgeItem'
 export * from './edges/CanvasEdgesLayer'
+export * from './edges/CanvasStrokesLayer'
 
 export * from './controls/CanvasMiniMap'
 export * from './controls/CanvasSelectionToolbar'

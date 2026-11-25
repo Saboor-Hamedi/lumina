@@ -27,7 +27,7 @@ export const SplitNodeRenderer: React.FC<SplitNodeRendererProps> = React.memo(
       return <WorkspacePane paneId={node.paneId} {...paneProps} flexRatio={1} />
     }
 
-    const handleStartResize = (e: React.MouseEvent) => {
+    const handleStartResize = (e: React.MouseEvent | React.PointerEvent) => {
       e.preventDefault()
       e.stopPropagation()
       const container = branchRef.current
@@ -36,7 +36,7 @@ export const SplitNodeRenderer: React.FC<SplitNodeRendererProps> = React.memo(
       const isVertical = node.direction === 'vertical'
       document.body.classList.add(isVertical ? 'is-split-resizing-v' : 'is-split-resizing-h')
 
-      const onMouseMove = (moveEvent: MouseEvent) => {
+      const onPointerMove = (moveEvent: MouseEvent | PointerEvent) => {
         const rect = container.getBoundingClientRect()
         if (isVertical && rect.width > 0) {
           onResizeSplit(node.id, (moveEvent.clientX - rect.left) / rect.width)
@@ -45,14 +45,20 @@ export const SplitNodeRenderer: React.FC<SplitNodeRendererProps> = React.memo(
         }
       }
 
-      const onMouseUp = () => {
+      const onPointerUp = () => {
         document.body.classList.remove('is-split-resizing-v', 'is-split-resizing-h')
-        window.removeEventListener('mousemove', onMouseMove)
-        window.removeEventListener('mouseup', onMouseUp)
+        window.removeEventListener('pointermove', onPointerMove)
+        window.removeEventListener('pointerup', onPointerUp)
+        window.removeEventListener('pointercancel', onPointerUp)
+        window.removeEventListener('mousemove', onPointerMove)
+        window.removeEventListener('mouseup', onPointerUp)
       }
 
-      window.addEventListener('mousemove', onMouseMove)
-      window.addEventListener('mouseup', onMouseUp)
+      window.addEventListener('pointermove', onPointerMove, { passive: true })
+      window.addEventListener('pointerup', onPointerUp)
+      window.addEventListener('pointercancel', onPointerUp)
+      window.addEventListener('mousemove', onPointerMove, { passive: true })
+      window.addEventListener('mouseup', onPointerUp)
     }
 
     return (
@@ -70,7 +76,7 @@ export const SplitNodeRenderer: React.FC<SplitNodeRendererProps> = React.memo(
         <div
           className={`split-pane-resizer ${node.direction}`}
           title="Drag to resize panes (double-click to reset 50/50)"
-          onMouseDown={handleStartResize}
+          onPointerDown={handleStartResize}
           onDoubleClick={() => onResizeSplit(node.id, 0.5)}
         />
         <div className="workspace-split-slot" style={{ flex: 1 - node.ratio }}>

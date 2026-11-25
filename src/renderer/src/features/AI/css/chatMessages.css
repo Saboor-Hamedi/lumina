@@ -794,6 +794,99 @@
   color: var(--text-accent);
 }
 
+.chat-welcome-top-spacer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  padding-bottom: 18px;
+  box-sizing: border-box;
+}
+
+.chat-welcome-h1-hero {
+  width: 100%;
+  max-width: 760px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  animation: chatWelcomeHeroIn 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chat-welcome-h1 {
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin: 0;
+  text-align: center;
+}
+
+@keyframes chatWelcomeHeroIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.chat-messages.is-centered-welcome {
+  flex: 0.92 1 0%;
+  overflow-y: hidden;
+  padding-bottom: 0;
+}
+
+.modal-composer-dock-wrapper {
+  transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+    padding 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chat-welcome-bottom-slot {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: flex-grow 0.44s cubic-bezier(0.22, 1, 0.36, 1),
+    max-height 0.44s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.44s cubic-bezier(0.22, 1, 0.36, 1),
+    padding 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chat-welcome-bottom-slot.is-open {
+  flex: 1.08 1 0%;
+  max-height: 60vh;
+  opacity: 1;
+  transform: translateY(0);
+  padding: 6px 16px 24px;
+}
+
+.chat-welcome-bottom-slot.is-collapsed {
+  flex: 0 0 0px;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(14px);
+  padding: 0 16px;
+  pointer-events: none;
+}
+
+.chat-welcome-suggestions-inner {
+  width: 100%;
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
 .chat-empty {
   display: flex;
   flex-direction: column;

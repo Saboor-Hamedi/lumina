@@ -17,6 +17,81 @@
 @tailwind utilities;
 
 /* ============================================================================
+   Cross-Platform Touch & Pointer Ergonomics (Windows, macOS, Linux)
+   ============================================================================ */
+html,
+body {
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+[role='button'],
+[role='tab'],
+a,
+input,
+select,
+summary {
+  touch-action: manipulation;
+}
+
+.sidebar-resizer,
+.terminal-resizer,
+.split-pane-resizer,
+.docs-modal-header {
+  touch-action: none;
+}
+
+.cm-scroller,
+.chat-messages,
+.explorer-tree,
+.sidebar-content,
+.lumina-canvas-studio-body {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.tab-bar-scroll,
+.tabs-list {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+}
+
+@media (pointer: coarse) {
+  .sidebar-resizer,
+  .split-pane-resizer.vertical {
+    position: relative;
+  }
+
+  .sidebar-resizer::after,
+  .split-pane-resizer.vertical::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -8px;
+    right: -8px;
+    z-index: 5;
+  }
+
+  .terminal-resizer,
+  .split-pane-resizer.horizontal {
+    position: relative;
+  }
+
+  .terminal-resizer::after,
+  .split-pane-resizer.horizontal::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -8px;
+    bottom: -8px;
+    z-index: 5;
+  }
+}
+
+/* ============================================================================
    View Transitions API: Radial Spread Theme Switch
    New theme spreads smoothly outward from the clicked button via WAAPI.
    ============================================================================ */

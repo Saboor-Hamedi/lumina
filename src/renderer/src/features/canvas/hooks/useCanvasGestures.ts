@@ -15,14 +15,22 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import {
   CanvasNode,
+  CanvasNodeColor,
   CanvasEdgeSide,
-  CanvasViewport
+  CanvasViewport,
+  CanvasStroke,
+  CanvasStrokePoint,
+  CanvasToolMode
 } from '../types'
 import {
   findClosestPort,
   SnappedPortTarget,
   getNodePortCoord
 } from '../utils/canvasUtils'
+import {
+  simplifyStrokePoints,
+  isPointNearStroke
+} from '../utils/canvasStroke'
 import {
   computeAlignmentGuides,
   AlignmentGuide
@@ -56,12 +64,18 @@ export interface UseCanvasGesturesOptions {
   containerRef: React.RefObject<HTMLDivElement | null>
   nodes: CanvasNode[]
   nodeMap: Map<string, CanvasNode>
+  strokes?: CanvasStroke[]
   viewport: CanvasViewport
   selectedNodeIds: string[]
-  toolMode: 'select' | 'hand'
+  toolMode: CanvasToolMode
+  setToolMode?: (mode: CanvasToolMode) => void
+  pencilColor?: CanvasNodeColor
+  pencilWidth?: number
+  pencilHighlighter?: boolean
   isSpacePressed: boolean
   snapToGrid: boolean
   screenToCanvas: (screenX: number, screenY: number, containerRect?: DOMRect | null) => { x: number; y: number }
+  zoomAt?: (deltaZoom: number, anchorX: number, anchorY: number, containerRect: DOMRect) => void
   panBy: (dx: number, dy: number) => void
   setSelectedNodeIds: React.Dispatch<React.SetStateAction<string[]>>
   selectedEdgeId?: string | null
@@ -72,6 +86,8 @@ export interface UseCanvasGesturesOptions {
   updateNodeSize: (id: string, width: number, height: number) => void
   completeConnection: (fromNodeId: string, fromSide: CanvasEdgeSide, toNodeId: string, toSide?: CanvasEdgeSide) => void
   addNode: (node: Partial<CanvasNode> & { id?: string }) => CanvasNode
+  addStroke?: (stroke: CanvasStroke) => void
+  deleteStrokes?: (ids: string[], recordHistory?: boolean) => void
   setEditingNodeId: (id: string | null) => void
   setEditingField: (field: 'title' | 'text' | null) => void
   pushHistory?: () => void
@@ -81,12 +97,18 @@ export function useCanvasGestures({
   containerRef,
   nodes,
   nodeMap,
+  strokes = [],
   viewport,
   selectedNodeIds,
   toolMode,
+  setToolMode,
+  pencilColor = 'default',
+  pencilWidth = 3,
+  pencilHighlighter = false,
   isSpacePressed,
   snapToGrid,
   screenToCanvas,
+  zoomAt,
   panBy,
   setSelectedNodeIds,
   selectedEdgeId,
@@ -97,6 +119,8 @@ export function useCanvasGestures({
   updateNodeSize,
   completeConnection,
   addNode,
+  addStroke,
+  deleteStrokes,
   setEditingNodeId,
   setEditingField,
   pushHistory
@@ -108,6 +132,30 @@ export function useCanvasGestures({
   const [snappedTarget, setSnappedTarget] = useState<SnappedPortTarget | null>(null)
   const snappedTargetRef = useRef<SnappedPortTarget | null>(null)
   const connectingScreenStartRef = useRef<{ x: number; y: number } | null>(null)
+
+  // Freehand pencil & eraser states
+  const [activeStroke, setActiveStroke] = useState<CanvasStroke | null>(null)
+  const activeStrokeRef = useRef<CanvasStroke | null>(null)
+  const isDrawingRef = useRef(false)
+  const isErasingRef = useRef(false)
+  const hasPushedEraseHistoryRef = useRef(false)
+
+  // Multi-touch pinch-to-zoom & 2-finger pan tracking
+  const activeTouchPointersRef = useRef<Map<number, { x: number; y: number }>>(new Map())
+  const pinchStateRef = useRef<{ lastDist: number; lastMidX: number; lastMidY: number } | null>(null)
+  // Deduplicate mouseDown immediately following pointerDown in browsers (while keeping JSDOM fireEvent.mouseDown working)
+  const lastPointerDownTsRef = useRef<number>(0)
+  const shouldIgnoreDuplicateMouseDown = (e: React.MouseEvent | React.PointerEvent): boolean => {
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now()
+    if (e.type === 'pointerdown') {
+      lastPointerDownTsRef.current = now
+      return false
+    }
+    if (e.type === 'mousedown' && now - lastPointerDownTsRef.current < 80) {
+      return true
+    }
+    return false
+  }
 
   // Drag & pan tracking
   const [isPanningState, setIsPanningState] = useState(false)
@@ -124,24 +172,46 @@ export function useCanvasGestures({
   const stateRef = useRef({
     viewport,
     nodes,
+    strokes,
     selectedNodeIds,
     toolMode,
+    pencilColor,
+    pencilWidth,
+    pencilHighlighter,
     isSpacePressed,
     snapToGrid
   })
   stateRef.current = {
     viewport,
     nodes,
+    strokes,
     selectedNodeIds,
     toolMode,
+    pencilColor,
+    pencilWidth,
+    pencilHighlighter,
     isSpacePressed,
     snapToGrid
   }
 
+  const cancelSinglePointerInteractions = useCallback(() => {
+    isPanningRef.current = false
+    setIsPanningState(false)
+    draggingNodeRef.current = null
+    resizingNodeRef.current = null
+    isDrawingRef.current = false
+    activeStrokeRef.current = null
+    setActiveStroke(null)
+    isErasingRef.current = false
+    hasPushedEraseHistoryRef.current = false
+    setAlignmentGuides([])
+  }, [])
+
   /**
-   * Resizing initiator
+   * Resizing initiator (mouse, touch, stylus)
    */
-  const handleResizeMouseDown = useCallback((e: React.MouseEvent, node: CanvasNode) => {
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent | React.PointerEvent, node: CanvasNode) => {
+    if (shouldIgnoreDuplicateMouseDown(e)) return
     e.stopPropagation()
     e.preventDefault()
     resizingNodeRef.current = {
@@ -155,10 +225,33 @@ export function useCanvasGestures({
   }, [])
 
   /**
-   * Background canvas panning initiator
+   * Background canvas pointer initiator (pan, pinch-zoom, pencil, eraser, text)
    */
   const handleCanvasMouseDown = useCallback(
-    (e: React.MouseEvent) => {
+    (e: React.MouseEvent | React.PointerEvent) => {
+      if (shouldIgnoreDuplicateMouseDown(e)) return
+      const pointerEvt = e as React.PointerEvent
+      const isTouch = pointerEvt.pointerType === 'touch'
+
+      // Track active touch pointers for 2-finger pinch-to-zoom & pan
+      if (isTouch && typeof pointerEvt.pointerId === 'number') {
+        activeTouchPointersRef.current.set(pointerEvt.pointerId, {
+          x: pointerEvt.clientX,
+          y: pointerEvt.clientY
+        })
+
+        if (activeTouchPointersRef.current.size === 2) {
+          cancelSinglePointerInteractions()
+          const pts = Array.from(activeTouchPointersRef.current.values())
+          pinchStateRef.current = {
+            lastDist: Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y) || 1,
+            lastMidX: (pts[0].x + pts[1].x) / 2,
+            lastMidY: (pts[0].y + pts[1].y) / 2
+          }
+          return
+        }
+      }
+
       // If in connecting mode, clicking the background cancels the wire cleanly
       if (connectingRef.current) {
         setConnecting(null)
@@ -170,18 +263,102 @@ export function useCanvasGestures({
       }
 
       const target = e.target as HTMLElement | null
+      const isToolbarOrControl = target?.closest?.(
+        '.lumina-canvas-toolbar, .lumina-canvas-minimap, .lumina-canvas-pencil-bar'
+      )
+      if (isToolbarOrControl) return
+
+      // Pencil freehand drawing works anywhere on the canvas (even over shapes!)
+      if (toolMode === 'pencil' && !isSpacePressed && (e.button === 0 || isTouch)) {
+        if (!containerRef.current) return
+        e.preventDefault()
+        const rect = containerRef.current.getBoundingClientRect()
+        const pt = screenToCanvas(e.clientX, e.clientY, rect)
+        const strokePt: CanvasStrokePoint = {
+          x: Math.round(pt.x * 10) / 10,
+          y: Math.round(pt.y * 10) / 10,
+          ...(typeof pointerEvt.pressure === 'number' && pointerEvt.pressure > 0
+            ? { pressure: Math.round(pointerEvt.pressure * 100) / 100 }
+            : {})
+        }
+        const newStroke: CanvasStroke = {
+          id: `stroke-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          points: [strokePt],
+          color: pencilColor,
+          strokeWidth: pencilHighlighter ? Math.max(12, pencilWidth) : pencilWidth,
+          opacity: pencilHighlighter ? 0.34 : 0.95,
+          tool: pencilHighlighter ? 'highlighter' : 'pencil'
+        }
+        isDrawingRef.current = true
+        activeStrokeRef.current = newStroke
+        setActiveStroke(newStroke)
+        setSelectedNodeIds([])
+        setSelectedEdgeId?.(null)
+        setSelectedEdgeIds?.([])
+        setEditingNodeId(null)
+        setEditingField(null)
+        return
+      }
+
+      // Eraser drag works anywhere on the canvas
+      if (toolMode === 'eraser' && !isSpacePressed && (e.button === 0 || isTouch)) {
+        if (!containerRef.current) return
+        e.preventDefault()
+        isErasingRef.current = true
+        hasPushedEraseHistoryRef.current = false
+        const rect = containerRef.current.getBoundingClientRect()
+        const pt = screenToCanvas(e.clientX, e.clientY, rect)
+        const hitIds = stateRef.current.strokes
+          .filter((s) => isPointNearStroke(s, pt.x, pt.y, 16 / (stateRef.current.viewport.zoom || 1)))
+          .map((s) => s.id)
+        if (hitIds.length > 0 && deleteStrokes) {
+          pushHistory?.()
+          hasPushedEraseHistoryRef.current = true
+          deleteStrokes(hitIds, false)
+        }
+        return
+      }
+
       const isInteractive = target?.closest?.(
-        '.lumina-canvas-node, .lumina-canvas-toolbar, .lumina-canvas-port, .lumina-canvas-resize-handle, .lumina-canvas-minimap, .lumina-canvas-edge-group'
+        '.lumina-canvas-node, .lumina-canvas-port, .lumina-canvas-resize-handle, .lumina-canvas-edge-group'
       )
       if (isInteractive) return
 
-      if (e.button === 0 || e.button === 1 || toolMode === 'hand' || isSpacePressed) {
+      // Text tool: click anywhere on empty canvas to drop a text card & start typing immediately
+      if (toolMode === 'text' && !isSpacePressed && (e.button === 0 || isTouch)) {
+        if (!containerRef.current) return
+        e.preventDefault()
+        const rect = containerRef.current.getBoundingClientRect()
+        const pt = screenToCanvas(e.clientX, e.clientY, rect)
+        let x = pt.x - 110
+        let y = pt.y - 45
+        if (snapToGrid) {
+          x = Math.round(x / 20) * 20
+          y = Math.round(y / 20) * 20
+        }
+        const newNode = addNode({
+          type: 'text',
+          title: 'Text',
+          text: '',
+          x: Math.round(x),
+          y: Math.round(y),
+          width: 220,
+          height: 96,
+          color: pencilColor
+        })
+        setEditingNodeId(newNode.id)
+        setEditingField('text')
+        setToolMode?.('select')
+        return
+      }
+
+      if (e.button === 0 || e.button === 1 || isTouch || toolMode === 'hand' || isSpacePressed) {
         e.preventDefault()
         isPanningRef.current = true
         setIsPanningState(true)
         panPrevRef.current = { x: e.clientX, y: e.clientY }
 
-        if (e.button === 0 && toolMode !== 'hand' && !isSpacePressed) {
+        if ((e.button === 0 || isTouch) && toolMode !== 'hand' && !isSpacePressed) {
           if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur()
           }
@@ -193,14 +370,37 @@ export function useCanvasGestures({
         }
       }
     },
-    [toolMode, isSpacePressed, setSelectedNodeIds, setSelectedEdgeId, setSelectedEdgeIds, setEditingNodeId, setEditingField]
+    [
+      toolMode,
+      setToolMode,
+      pencilColor,
+      pencilWidth,
+      pencilHighlighter,
+      isSpacePressed,
+      snapToGrid,
+      containerRef,
+      screenToCanvas,
+      addNode,
+      deleteStrokes,
+      pushHistory,
+      cancelSinglePointerInteractions,
+      setSelectedNodeIds,
+      setSelectedEdgeId,
+      setSelectedEdgeIds,
+      setEditingNodeId,
+      setEditingField
+    ]
   )
 
   /**
-   * Node card dragging initiator
+   * Node card dragging initiator (mouse, touch, stylus)
    */
   const handleNodeMouseDown = useCallback(
-    (e: React.MouseEvent, node: CanvasNode) => {
+    (e: React.MouseEvent | React.PointerEvent, node: CanvasNode) => {
+      if (shouldIgnoreDuplicateMouseDown(e)) return
+      // Allow pencil / eraser to draw or erase right over nodes without grabbing them
+      if (toolMode === 'pencil' || toolMode === 'eraser') return
+
       // If in connecting mode, clicking node body cancels wire cleanly
       if (connectingRef.current) {
         setConnecting(null)
@@ -211,7 +411,9 @@ export function useCanvasGestures({
         return
       }
 
-      if (e.button !== 0) return
+      const pointerEvt = e as React.PointerEvent
+      const isTouch = pointerEvt.pointerType === 'touch'
+      if (!isTouch && e.button !== 0) return
       if (toolMode === 'hand' || isSpacePressed) return
 
       // Don't drag if clicking buttons, inputs, ports, or handles
@@ -263,14 +465,16 @@ export function useCanvasGestures({
         initialPositions
       }
     },
-    [toolMode, isSpacePressed, selectedNodeIds, nodeMap, setSelectedNodeIds, setSelectedEdgeId]
+    [toolMode, isSpacePressed, selectedNodeIds, nodeMap, setSelectedNodeIds, setSelectedEdgeId, setSelectedEdgeIds]
   )
 
   /**
-   * Initiates wire connecting from a specific port knob
+   * Initiates wire connecting from a specific port knob (mouse, touch, stylus)
    */
   const handlePortMouseDown = useCallback(
-    (e: React.MouseEvent, nodeId: string, side: CanvasEdgeSide) => {
+    (e: React.MouseEvent | React.PointerEvent, nodeId: string, side: CanvasEdgeSide) => {
+      if (shouldIgnoreDuplicateMouseDown(e)) return
+      if (toolMode === 'pencil' || toolMode === 'eraser') return
       e.stopPropagation()
       e.preventDefault()
       if (toolMode === 'hand' || isSpacePressed) return
@@ -315,10 +519,80 @@ export function useCanvasGestures({
   )
 
   /**
-   * Window-level RAF pointer tracking
+   * Window-level RAF pointer tracking (mouse, touch, stylus, pinch-to-zoom, pencil, eraser)
    */
   useEffect(() => {
     const handleGlobalPointerMove = (e: PointerEvent) => {
+      // Multi-touch 2-finger pinch-to-zoom & pan
+      if (e.pointerType === 'touch' && activeTouchPointersRef.current.has(e.pointerId)) {
+        activeTouchPointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+        if (activeTouchPointersRef.current.size === 2 && pinchStateRef.current && containerRef.current) {
+          const pts = Array.from(activeTouchPointersRef.current.values())
+          const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y) || 1
+          const midX = (pts[0].x + pts[1].x) / 2
+          const midY = (pts[0].y + pts[1].y) / 2
+
+          const dx = midX - pinchStateRef.current.lastMidX
+          const dy = midY - pinchStateRef.current.lastMidY
+          const ratio = dist / (pinchStateRef.current.lastDist || 1)
+          const currentZoom = stateRef.current.viewport.zoom || 1
+          const deltaZoom = currentZoom * (ratio - 1)
+
+          pinchStateRef.current = { lastDist: dist, lastMidX: midX, lastMidY: midY }
+
+          if (Math.abs(dx) > 0.2 || Math.abs(dy) > 0.2) {
+            panBy(dx, dy)
+          }
+          if (zoomAt && Math.abs(deltaZoom) > 0.004) {
+            const rect = containerRef.current.getBoundingClientRect()
+            zoomAt(deltaZoom, midX, midY, rect)
+          }
+          return
+        }
+      }
+
+      // Immediate high-frequency sampling for Pencil drawing (no dropped points on fast strokes)
+      if (isDrawingRef.current && activeStrokeRef.current && containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        const canvasPos = screenToCanvas(e.clientX, e.clientY, rect)
+        const pts = activeStrokeRef.current.points
+        const prev = pts[pts.length - 1]
+        const minStep = 1.6 / (stateRef.current.viewport.zoom || 1)
+        if (!prev || Math.hypot(canvasPos.x - prev.x, canvasPos.y - prev.y) >= minStep) {
+          const nextPt: CanvasStrokePoint = {
+            x: Math.round(canvasPos.x * 10) / 10,
+            y: Math.round(canvasPos.y * 10) / 10,
+            ...(typeof e.pressure === 'number' && e.pressure > 0
+              ? { pressure: Math.round(e.pressure * 100) / 100 }
+              : {})
+          }
+          const updated: CanvasStroke = {
+            ...activeStrokeRef.current,
+            points: [...pts, nextPt]
+          }
+          activeStrokeRef.current = updated
+          setActiveStroke(updated)
+        }
+        return
+      }
+
+      // Smooth drag-to-erase across freehand strokes
+      if (isErasingRef.current && containerRef.current && deleteStrokes) {
+        const rect = containerRef.current.getBoundingClientRect()
+        const canvasPos = screenToCanvas(e.clientX, e.clientY, rect)
+        const hitIds = stateRef.current.strokes
+          .filter((s) => isPointNearStroke(s, canvasPos.x, canvasPos.y, 16 / (stateRef.current.viewport.zoom || 1)))
+          .map((s) => s.id)
+        if (hitIds.length > 0) {
+          if (!hasPushedEraseHistoryRef.current) {
+            pushHistory?.()
+            hasPushedEraseHistoryRef.current = true
+          }
+          deleteStrokes(hitIds, false)
+        }
+        return
+      }
+
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current)
       }
@@ -448,6 +722,35 @@ export function useCanvasGestures({
     }
 
     const handleGlobalPointerUp = (e: PointerEvent) => {
+      if (e.pointerType === 'touch' && typeof e.pointerId === 'number') {
+        activeTouchPointersRef.current.delete(e.pointerId)
+        if (activeTouchPointersRef.current.size < 2) {
+          pinchStateRef.current = null
+        }
+      }
+
+      // Commit freehand pencil stroke cleanly
+      if (isDrawingRef.current) {
+        isDrawingRef.current = false
+        const finished = activeStrokeRef.current
+        activeStrokeRef.current = null
+        setActiveStroke(null)
+        if (finished && finished.points.length > 0 && addStroke) {
+          const simplified: CanvasStroke = {
+            ...finished,
+            points: simplifyStrokePoints(finished.points, 1.6)
+          }
+          addStroke(simplified)
+        }
+        return
+      }
+
+      if (isErasingRef.current) {
+        isErasingRef.current = false
+        hasPushedEraseHistoryRef.current = false
+        return
+      }
+
       if (connectingRef.current) {
         let dragDist = 0
         if (connectingScreenStartRef.current) {
@@ -579,6 +882,7 @@ export function useCanvasGestures({
 
     window.addEventListener('pointermove', handleGlobalPointerMove, { passive: true })
     window.addEventListener('pointerup', handleGlobalPointerUp)
+    window.addEventListener('pointercancel', handleGlobalPointerUp)
     window.addEventListener('mousemove', handleGlobalPointerMove as any, { passive: true })
     window.addEventListener('mouseup', handleGlobalPointerUp as any)
     window.addEventListener('keydown', handleKeyDown)
@@ -588,6 +892,7 @@ export function useCanvasGestures({
       }
       window.removeEventListener('pointermove', handleGlobalPointerMove)
       window.removeEventListener('pointerup', handleGlobalPointerUp)
+      window.removeEventListener('pointercancel', handleGlobalPointerUp)
       window.removeEventListener('mousemove', handleGlobalPointerMove as any)
       window.removeEventListener('mouseup', handleGlobalPointerUp as any)
       window.removeEventListener('keydown', handleKeyDown)
@@ -595,12 +900,16 @@ export function useCanvasGestures({
   }, [
     containerRef,
     screenToCanvas,
+    zoomAt,
     updateNodeSize,
     panBy,
     updateNodesPositions,
     updateNodePosition,
     completeConnection,
     addNode,
+    addStroke,
+    deleteStrokes,
+    pushHistory,
     setEditingNodeId,
     setEditingField,
     nodeMap
@@ -614,6 +923,7 @@ export function useCanvasGestures({
     setSnappedTarget,
     snappedTargetRef,
     mouseCanvasPos,
+    activeStroke,
     isPanningState,
     isPanningRef,
     panPrevRef,

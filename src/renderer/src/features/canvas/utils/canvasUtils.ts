@@ -263,6 +263,98 @@ export function getShapePortRatio(
       }
       break
 
+    case 'predefined-process':
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.08 }
+        case 'bottom': return { rx: 0.5, ry: 0.92 }
+        case 'left': return { rx: 0.04, ry: 0.5 }
+        case 'right': return { rx: 0.96, ry: 0.5 }
+      }
+      break
+
+    case 'delay':
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.1 }
+        case 'bottom': return { rx: 0.5, ry: 0.9 }
+        case 'left': return { rx: 0.06, ry: 0.5 }
+        case 'right': return { rx: 0.95, ry: 0.5 }
+      }
+      break
+
+    case 'manual-input':
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.15 }
+        case 'bottom': return { rx: 0.5, ry: 0.94 }
+        case 'left': return { rx: 0.04, ry: 0.55 }
+        case 'right': return { rx: 0.96, ry: 0.5 }
+      }
+      break
+
+    case 'queue':
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.14 }
+        case 'bottom': return { rx: 0.5, ry: 0.86 }
+        case 'left': return { rx: 0.04, ry: 0.5 }
+        case 'right': return { rx: 0.96, ry: 0.5 }
+      }
+      break
+
+    case 'cube':
+      switch (side) {
+        case 'top': return { rx: 0.55, ry: 0.1 }
+        case 'bottom': return { rx: 0.41, ry: 0.92 }
+        case 'left': return { rx: 0.04, ry: 0.58 }
+        case 'right': return { rx: 0.92, ry: 0.45 }
+      }
+      break
+
+    case 'server':
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.06 }
+        case 'bottom': return { rx: 0.5, ry: 0.94 }
+        case 'left': return { rx: 0.1, ry: 0.5 }
+        case 'right': return { rx: 0.9, ry: 0.5 }
+      }
+      break
+
+    case 'browser':
+    case 'terminal':
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.06 }
+        case 'bottom': return { rx: 0.5, ry: 0.94 }
+        case 'left': return { rx: 0.04, ry: 0.5 }
+        case 'right': return { rx: 0.96, ry: 0.5 }
+      }
+      break
+
+    case 'note-fold':
+      switch (side) {
+        case 'top': return { rx: 0.44, ry: 0.06 }
+        case 'bottom': return { rx: 0.5, ry: 0.94 }
+        case 'left': return { rx: 0.06, ry: 0.5 }
+        case 'right': return { rx: 0.94, ry: 0.55 }
+      }
+      break
+
+    case 'arrow-right':
+    case 'arrow-left':
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.25 }
+        case 'bottom': return { rx: 0.5, ry: 0.75 }
+        case 'left': return { rx: 0.04, ry: 0.5 }
+        case 'right': return { rx: 0.96, ry: 0.5 }
+      }
+      break
+
+    case 'frame':
+      switch (side) {
+        case 'top': return { rx: 0.5, ry: 0.03 }
+        case 'bottom': return { rx: 0.5, ry: 0.97 }
+        case 'left': return { rx: 0.03, ry: 0.5 }
+        case 'right': return { rx: 0.97, ry: 0.5 }
+      }
+      break
+
     default:
       break
   }

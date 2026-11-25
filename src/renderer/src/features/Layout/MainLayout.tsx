@@ -332,7 +332,7 @@ export const MainLayout: React.FC = () => {
     })
   }, [terminalHeight])
 
-  const handleStartTerminalResize = useCallback((e: React.MouseEvent) => {
+  const handleStartTerminalResize = useCallback((e: React.MouseEvent | React.PointerEvent) => {
     e.preventDefault()
     e.stopPropagation()
     const startY = e.clientY
@@ -351,20 +351,26 @@ export const MainLayout: React.FC = () => {
     const appShell = document.querySelector('.app-shell')
     if (appShell) appShell.classList.add('is-resizing')
 
-    const onMouseMove = (ev: MouseEvent) => {
+    const onPointerMove = (ev: MouseEvent | PointerEvent) => {
       const delta = startY - ev.clientY
       const nextH = Math.max(minH, Math.min(maxH, Math.round(startH + delta)))
       setTerminalHeight(nextH)
       previousTerminalHeightRef.current = nextH
     }
-    const onMouseUp = () => {
+    const onPointerUp = () => {
       document.body.classList.remove('is-terminal-resizing')
       if (appShell) appShell.classList.remove('is-resizing')
-      window.removeEventListener('mousemove', onMouseMove)
-      window.removeEventListener('mouseup', onMouseUp)
+      window.removeEventListener('pointermove', onPointerMove)
+      window.removeEventListener('pointerup', onPointerUp)
+      window.removeEventListener('pointercancel', onPointerUp)
+      window.removeEventListener('mousemove', onPointerMove)
+      window.removeEventListener('mouseup', onPointerUp)
     }
-    window.addEventListener('mousemove', onMouseMove)
-    window.addEventListener('mouseup', onMouseUp)
+    window.addEventListener('pointermove', onPointerMove, { passive: true })
+    window.addEventListener('pointerup', onPointerUp)
+    window.addEventListener('pointercancel', onPointerUp)
+    window.addEventListener('mousemove', onPointerMove, { passive: true })
+    window.addEventListener('mouseup', onPointerUp)
   }, [terminalHeight, isTerminalMaximized])
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -1366,7 +1372,7 @@ export const MainLayout: React.FC = () => {
         <div
           className={`sidebar-resizer left ${isLeftSidebarOpen ? 'open' : 'closed'}`}
           title="Double-click to reset default width (220px)"
-          onMouseDown={(e) => handleStartResize('left', e)}
+          onPointerDown={(e) => handleStartResize('left', e)}
           onDoubleClick={(e) => {
             if (!isLeftSidebarOpen) return
             e.preventDefault()
@@ -1438,7 +1444,7 @@ export const MainLayout: React.FC = () => {
         <div
           className={`sidebar-resizer right ${isRightSidebarOpen ? 'open' : 'closed'}`}
           title="Double-click to reset default width (220px)"
-          onMouseDown={(e) => handleStartResize('right', e)}
+          onPointerDown={(e) => handleStartResize('right', e)}
           onDoubleClick={(e) => {
             if (!isRightSidebarOpen) return
             e.preventDefault()
@@ -1477,7 +1483,7 @@ export const MainLayout: React.FC = () => {
               <div
                 className="terminal-resizer top"
                 title="Drag to resize terminal (double-click to reset 260px)"
-                onMouseDown={handleStartTerminalResize}
+                onPointerDown={handleStartTerminalResize}
                 onDoubleClick={() => setTerminalHeight(260)}
               >
                 <div className="resizer-knob-horizontal">

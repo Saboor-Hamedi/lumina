@@ -44,7 +44,7 @@ export interface UseSidebarResizeReturn {
   rightWidth: number
   setLeftWidth: React.Dispatch<React.SetStateAction<number>>
   setRightWidth: React.Dispatch<React.SetStateAction<number>>
-  handleStartResize: (side: SidebarSide, e: React.MouseEvent) => void
+  handleStartResize: (side: SidebarSide, e: React.MouseEvent | React.PointerEvent) => void
   handleResetSidebar: (side: SidebarSide) => void
 }
 
@@ -136,7 +136,7 @@ export function useSidebarResize({
    * Begins curtain drag resizing on mouse down.
    */
   const handleStartResize = useCallback(
-    (side: SidebarSide, e: React.MouseEvent) => {
+    (side: SidebarSide, e: React.MouseEvent | React.PointerEvent) => {
       if (side === 'left' && !isLeftSidebarOpen) return
       if (side === 'right' && !isRightSidebarOpen) return
 
@@ -200,7 +200,7 @@ export function useSidebarResize({
         }
       }
 
-      const onMouseMove = (moveEvent: MouseEvent) => {
+      const onPointerMove = (moveEvent: MouseEvent | PointerEvent) => {
         if (!resizingSideRef.current) return
         latestClientX = moveEvent.clientX
         if (!rafId) {
@@ -208,14 +208,17 @@ export function useSidebarResize({
         }
       }
 
-      const onMouseUp = () => {
+      const onPointerUp = () => {
         if (rafId) {
           window.cancelAnimationFrame(rafId)
           rafId = 0
         }
-        window.removeEventListener('mousemove', onMouseMove)
-        window.removeEventListener('mouseup', onMouseUp)
-        window.removeEventListener('blur', onMouseUp)
+        window.removeEventListener('pointermove', onPointerMove)
+        window.removeEventListener('pointerup', onPointerUp)
+        window.removeEventListener('pointercancel', onPointerUp)
+        window.removeEventListener('mousemove', onPointerMove)
+        window.removeEventListener('mouseup', onPointerUp)
+        window.removeEventListener('blur', onPointerUp)
 
         const activeSide = resizingSideRef.current
         resizingSideRef.current = null
@@ -290,9 +293,12 @@ export function useSidebarResize({
         }
       }
 
-      window.addEventListener('mousemove', onMouseMove, { passive: true })
-      window.addEventListener('mouseup', onMouseUp)
-      window.addEventListener('blur', onMouseUp)
+      window.addEventListener('pointermove', onPointerMove, { passive: true })
+      window.addEventListener('pointerup', onPointerUp)
+      window.addEventListener('pointercancel', onPointerUp)
+      window.addEventListener('mousemove', onPointerMove, { passive: true })
+      window.addEventListener('mouseup', onPointerUp)
+      window.addEventListener('blur', onPointerUp)
     },
     [
       isLeftSidebarOpen,

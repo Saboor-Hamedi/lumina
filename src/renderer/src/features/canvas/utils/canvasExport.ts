@@ -12,16 +12,18 @@
  * ============================================================================
  */
 
-import { CanvasNode, CanvasEdge, CanvasNodeColor } from '../types'
+import { CanvasNode, CanvasEdge, CanvasStroke, CanvasNodeColor } from '../types'
 import {
   CANVAS_NODE_COLOR_HEX,
   safeNumber
 } from './canvasUtils'
 import { calculateEdgePath } from './canvasRouting'
+import { buildSmoothStrokePath } from './canvasStroke'
 
 export interface ExportCanvasOptions {
   nodes: CanvasNode[]
   edges: CanvasEdge[]
+  strokes?: CanvasStroke[]
   selectedNodeIds?: string[]
   padding?: number
   scale?: number // 1 = 1x, 2 = high-dpi retina
@@ -123,6 +125,42 @@ function getShapeSvgMarkup(
     }
     case 'envelope':
       shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="14" width="92" height="72" rx="6" ry="6" fill="${fill}" fill-opacity="${fillOpacity}" /><path d="M 6 18 L 50 56 L 94 18" fill="none" /><path d="M 6 82 L 38 48" fill="none" opacity="0.35" /><path d="M 94 82 L 62 48" fill="none" opacity="0.35" /></g>`
+      break
+    case 'predefined-process':
+      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round"><rect x="4" y="8" width="92" height="84" rx="4" ry="4" fill="${fill}" fill-opacity="${fillOpacity}" /><line x1="16" y1="8" x2="16" y2="92" /><line x1="84" y1="8" x2="84" y2="92" /></g>`
+      break
+    case 'delay':
+      shapeContent = `<path d="M 6 10 L 62 10 C 84 10, 95 28, 95 50 C 95 72, 84 90, 62 90 L 6 90 Z" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+      break
+    case 'manual-input':
+      shapeContent = `<polygon points="4,24 96,6 96,94 4,94" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+      break
+    case 'queue':
+      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round"><path d="M 18 14 L 82 14 C 92 14, 96 30, 96 50 C 96 70, 92 86, 82 86 L 18 86 C 8 86, 4 70, 4 50 C 4 30, 8 14, 18 14 Z" fill="${fill}" fill-opacity="${fillOpacity}" /><path d="M 82 14 C 72 14, 68 30, 68 50 C 68 70, 72 86, 82 86" fill="none" /></g>`
+      break
+    case 'cube':
+      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round"><polygon points="18,10 92,10 78,24 4,24" fill="${fill}" fill-opacity="0.11" /><polygon points="78,24 92,10 92,76 78,92" fill="${fill}" fill-opacity="0.09" /><rect x="4" y="24" width="74" height="68" fill="${fill}" fill-opacity="${fillOpacity}" /></g>`
+      break
+    case 'server':
+      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round"><rect x="10" y="6" width="80" height="26" rx="4" fill="${fill}" fill-opacity="${fillOpacity}" /><rect x="10" y="37" width="80" height="26" rx="4" fill="${fill}" fill-opacity="${fillOpacity}" /><rect x="10" y="68" width="80" height="26" rx="4" fill="${fill}" fill-opacity="${fillOpacity}" /><circle cx="22" cy="19" r="2.2" fill="${stroke}" /><circle cx="22" cy="50" r="2.2" fill="${stroke}" /><circle cx="22" cy="81" r="2.2" fill="${stroke}" /></g>`
+      break
+    case 'browser':
+      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round"><rect x="4" y="6" width="92" height="88" rx="6" fill="${fill}" fill-opacity="${fillOpacity}" /><line x1="4" y1="22" x2="96" y2="22" /><circle cx="13" cy="14" r="2" fill="${stroke}" opacity="0.7" /><circle cx="21" cy="14" r="2" fill="${stroke}" opacity="0.5" /><circle cx="29" cy="14" r="2" fill="${stroke}" opacity="0.35" /></g>`
+      break
+    case 'terminal':
+      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="92" height="88" rx="6" fill="${fill}" fill-opacity="${fillOpacity}" /><line x1="4" y1="20" x2="96" y2="20" opacity="0.5" /><path d="M 14 34 L 24 42 L 14 50" fill="none" opacity="0.65" /><line x1="29" y1="50" x2="42" y2="50" opacity="0.55" /></g>`
+      break
+    case 'note-fold':
+      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round"><path d="M 6 6 L 74 6 L 94 26 L 94 94 L 6 94 Z" fill="${fill}" fill-opacity="${fillOpacity}" /><path d="M 74 6 L 74 26 L 94 26 Z" fill="${fill}" fill-opacity="0.14" /></g>`
+      break
+    case 'arrow-right':
+      shapeContent = `<polygon points="4,30 62,30 62,10 96,50 62,90 62,70 4,70" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+      break
+    case 'arrow-left':
+      shapeContent = `<polygon points="96,30 38,30 38,10 4,50 38,90 38,70 96,70" fill="${fill}" fill-opacity="${fillOpacity}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+      break
+    case 'frame':
+      shapeContent = `<g stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linejoin="round"><rect x="3" y="3" width="94" height="94" rx="6" fill="${fill}" fill-opacity="0.03" stroke-dasharray="4 3" /><path d="M 3 20 L 42 20 L 50 12 L 50 3" fill="none" /></g>`
       break
     case 'rectangle':
     default:
@@ -279,6 +317,7 @@ export function buildCanvasSvg(options: ExportCanvasOptions): { svgString: strin
   const {
     nodes,
     edges,
+    strokes = [],
     selectedNodeIds,
     padding = 40,
     backgroundColor = themeColors.bgApp
@@ -289,6 +328,7 @@ export function buildCanvasSvg(options: ExportCanvasOptions): { svgString: strin
   const targetNodes = isSelection
     ? nodes.filter((n) => selectedNodeIds.includes(n.id))
     : nodes
+  const targetStrokes = isSelection ? [] : strokes
 
   const targetNodeIdSet = new Set(targetNodes.map((n) => n.id))
 
@@ -297,7 +337,32 @@ export function buildCanvasSvg(options: ExportCanvasOptions): { svgString: strin
     (e) => targetNodeIdSet.has(e.fromNode) && targetNodeIdSet.has(e.toNode)
   )
 
-  const bbox = getCanvasBoundingBox(targetNodes, padding)
+  const rawBbox = getCanvasBoundingBox(targetNodes, padding)
+  let minX = targetNodes.length > 0 ? rawBbox.minX : Infinity
+  let minY = targetNodes.length > 0 ? rawBbox.minY : Infinity
+  let maxX = targetNodes.length > 0 ? rawBbox.maxX : -Infinity
+  let maxY = targetNodes.length > 0 ? rawBbox.maxY : -Infinity
+
+  for (const s of targetStrokes) {
+    for (const pt of s.points) {
+      if (pt.x - padding < minX) minX = pt.x - padding
+      if (pt.y - padding < minY) minY = pt.y - padding
+      if (pt.x + padding > maxX) maxX = pt.x + padding
+      if (pt.y + padding > maxY) maxY = pt.y + padding
+    }
+  }
+
+  const bbox =
+    Number.isFinite(minX) && Number.isFinite(minY)
+      ? {
+          minX,
+          minY,
+          maxX,
+          maxY,
+          width: Math.max(maxX - minX, 100),
+          height: Math.max(maxY - minY, 100)
+        }
+      : rawBbox
   const nodeMap = new Map<string, CanvasNode>()
   targetNodes.forEach((n) => nodeMap.set(n.id, n))
 
@@ -364,6 +429,13 @@ export function buildCanvasSvg(options: ExportCanvasOptions): { svgString: strin
       `
         : ''
 
+      const dashAttr =
+        edge.strokeDash === 'dashed'
+          ? 'stroke-dasharray="7 5"'
+          : edge.strokeDash === 'dotted'
+            ? 'stroke-dasharray="2 4"'
+            : ''
+
       return `
       <g>
         <path
@@ -372,6 +444,7 @@ export function buildCanvasSvg(options: ExportCanvasOptions): { svgString: strin
           stroke="${strokeColor}"
           stroke-width="1.8"
           stroke-linecap="round"
+          ${dashAttr}
           ${markerStartAttr}
           ${markerEndAttr}
         />
@@ -474,6 +547,17 @@ export function buildCanvasSvg(options: ExportCanvasOptions): { svgString: strin
       ? `<rect x="${bbox.minX}" y="${bbox.minY}" width="${bbox.width}" height="${bbox.height}" fill="${backgroundColor}" />`
       : ''
 
+  const strokesSvg = targetStrokes
+    .map((stroke) => {
+      const d = buildSmoothStrokePath(stroke.points)
+      if (!d) return ''
+      const colorHex =
+        CANVAS_NODE_COLOR_HEX[stroke.color as CanvasNodeColor] || CANVAS_NODE_COLOR_HEX.default
+      const opacity = stroke.opacity ?? (stroke.tool === 'highlighter' ? 0.34 : 0.95)
+      return `<path d="${d}" fill="none" stroke="${colorHex}" stroke-width="${stroke.strokeWidth || 3}" stroke-opacity="${opacity}" stroke-linecap="round" stroke-linejoin="round" />`
+    })
+    .join('\n')
+
   const svgString = `
 <svg
   xmlns="http://www.w3.org/2000/svg"
@@ -495,6 +579,10 @@ export function buildCanvasSvg(options: ExportCanvasOptions): { svgString: strin
   <!-- Nodes Layer -->
   <g class="nodes">
     ${nodesSvg}
+  </g>
+  <!-- Freehand Strokes Layer -->
+  <g class="strokes">
+    ${strokesSvg}
   </g>
 </svg>
 `.trim()

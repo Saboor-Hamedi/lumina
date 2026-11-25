@@ -54,9 +54,9 @@ export const LuminaChat: React.FC<LuminaChatProps> = ({
   const dragStart = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
   const rafId = useRef<number | null>(null)
 
-  // Drag logic
+  // Drag logic (mouse, touch, stylus)
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (e: MouseEvent | PointerEvent) => {
       if (!isDraggingModal || isMaximized) return
 
       const newX = e.clientX - dragStart.current.x
@@ -71,7 +71,7 @@ export const LuminaChat: React.FC<LuminaChatProps> = ({
       })
     }
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       setIsDraggingModal(false)
       if (rafId.current) cancelAnimationFrame(rafId.current)
       if (containerRef.current && !isMaximized) {
@@ -79,17 +79,23 @@ export const LuminaChat: React.FC<LuminaChatProps> = ({
       }
     }
 
-    window.addEventListener('mousemove', handleMouseMove, { passive: true })
-    window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener('pointermove', handlePointerMove, { passive: true })
+    window.addEventListener('pointerup', handlePointerUp)
+    window.addEventListener('pointercancel', handlePointerUp)
+    window.addEventListener('mousemove', handlePointerMove, { passive: true })
+    window.addEventListener('mouseup', handlePointerUp)
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+      window.removeEventListener('pointercancel', handlePointerUp)
+      window.removeEventListener('mousemove', handlePointerMove)
+      window.removeEventListener('mouseup', handlePointerUp)
       if (rafId.current) cancelAnimationFrame(rafId.current)
     }
   }, [isMaximized, isDraggingModal])
 
   const handleModalHeaderMouseDown = useCallback(
-    (e: React.MouseEvent) => {
+    (e: React.MouseEvent | React.PointerEvent) => {
       if (isMaximized) return
       if ((e.target as HTMLElement).closest('button')) return
       setIsDraggingModal(true)
@@ -234,8 +240,8 @@ export const LuminaChat: React.FC<LuminaChatProps> = ({
         {/* Modal Header */}
         <div
           className={`docs-modal-header${isDraggingModal ? ' is-dragging' : ''}`}
-          onMouseDown={handleModalHeaderMouseDown}
-          style={{ cursor: isMaximized ? 'default' : isDraggingModal ? 'grabbing' : 'grab' }}
+          onPointerDown={handleModalHeaderMouseDown}
+          style={{ cursor: isMaximized ? 'default' : isDraggingModal ? 'grabbing' : 'grab', touchAction: 'none' }}
         >
           <div
             className="docs-header-left"

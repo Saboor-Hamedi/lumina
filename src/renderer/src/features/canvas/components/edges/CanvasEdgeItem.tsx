@@ -22,13 +22,13 @@
  */
 
 import React, { useMemo, useState, useEffect, useRef } from 'react'
-import { CanvasEdge, CanvasEdgeEnd, CanvasEdgeLineStyle, CanvasNode, CanvasNodeColor } from '../../types'
+import { CanvasEdge, CanvasEdgeEnd, CanvasEdgeLineStyle, CanvasEdgeStrokeDash, CanvasNode } from '../../types'
 import { calculateEdgePath } from '../../utils/canvasRouting'
-import { COLOR_CYCLE } from '../../utils/canvasUtils'
 import {
   Spline,
   CornerDownRight,
   Minus,
+  MoreHorizontal,
   Palette,
   X,
   ArrowRight,
@@ -42,9 +42,10 @@ export interface CanvasEdgeItemProps {
   toNode: CanvasNode | undefined
   isSelected?: boolean
   isMultiSelectionActive?: boolean
-  onSelectEdge?: (e: React.MouseEvent, edgeId: string) => void
+  onSelectEdge?: (e: React.MouseEvent | React.PointerEvent, edgeId: string) => void
   onDeleteEdge: (e: React.MouseEvent, edgeId: string) => void
   onUpdateLineStyle?: (edgeId: string, lineStyle: CanvasEdgeLineStyle) => void
+  onUpdateStrokeDash?: (edgeId: string, strokeDash: CanvasEdgeStrokeDash) => void
   onCycleColor?: (edgeId: string) => void
   onUpdateLabel?: (edgeId: string, label: string) => void
   onUpdateEndpoints?: (edgeId: string, fromEnd?: CanvasEdgeEnd, toEnd?: CanvasEdgeEnd) => void
@@ -63,6 +64,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
     onSelectEdge,
     onDeleteEdge,
     onUpdateLineStyle,
+    onUpdateStrokeDash,
     onCycleColor,
     onUpdateLabel,
     onUpdateEndpoints,
@@ -210,6 +212,23 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
       }
     }
 
+    const strokeDash: CanvasEdgeStrokeDash = edge.strokeDash || 'solid'
+    const strokeDashArray =
+      strokeDash === 'dashed' ? '7 5' : strokeDash === 'dotted' ? '2 4' : undefined
+
+    const handleCycleStrokeDash = (e: React.MouseEvent) => {
+      e.stopPropagation()
+      setIsHovered(true)
+      onSelectEdge?.(e, edge.id)
+      if (!onUpdateStrokeDash) return
+      const nextDash: Record<CanvasEdgeStrokeDash, CanvasEdgeStrokeDash> = {
+        solid: 'dashed',
+        dashed: 'dotted',
+        dotted: 'solid'
+      }
+      onUpdateStrokeDash(edge.id, nextDash[strokeDash] || 'solid')
+    }
+
     const handleCycleColor = (e: React.MouseEvent) => {
       e.stopPropagation()
       setIsHovered(true)
@@ -225,17 +244,17 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Invisible wider hit area (14px stroke) for easy hover / click / selection */}
+        {/* Invisible wider hit area (18px stroke) for easy mouse & touch selection */}
         <path
           d={pathD}
           className="lumina-canvas-edge-hitbox"
           fill="none"
           stroke="transparent"
-          strokeWidth={14}
+          strokeWidth={18}
           strokeLinecap="round"
           strokeLinejoin="round"
           style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
-          onMouseDown={(e) => {
+          onPointerDown={(e) => {
             e.stopPropagation()
             onSelectEdge?.(e, edge.id)
           }}
@@ -251,27 +270,28 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
 
         {/* Generous hover retention zone encompassing wire midpoint, label, and controls badge */}
         <rect
-          x={midX - 60}
-          y={edge.label ? midY - 36 : midY - 22}
-          width={120}
-          height={edge.label ? 58 : 44}
+          x={midX - 68}
+          y={edge.label ? midY - 38 : midY - 22}
+          width={136}
+          height={edge.label ? 62 : 44}
           rx={12}
           fill="transparent"
           style={{ pointerEvents: (isHovered || isSelected) && !isMultiSelectionActive ? 'all' : 'none' }}
         />
 
-        {/* Rendered SVG connector path with consistent 1.6px stroke and round caps/joins */}
+        {/* Rendered SVG connector path with crisp 1.8px stroke, optional dash pattern, and round caps/joins */}
         <path
           d={pathD}
           className={`lumina-canvas-edge-line edge-${targetColor}`}
           fill="none"
-          strokeWidth={1.6}
+          strokeWidth={1.8}
+          strokeDasharray={strokeDashArray}
           strokeLinecap="round"
           strokeLinejoin="round"
           markerStart={edge.fromEnd === 'arrow' ? `url(#arrow-start-${targetColor})` : undefined}
           markerEnd={edge.toEnd === 'none' ? undefined : `url(#arrow-${targetColor})`}
           style={{ cursor: 'pointer' }}
-          onMouseDown={(e) => {
+          onPointerDown={(e) => {
             e.stopPropagation()
             onSelectEdge?.(e, edge.id)
           }}
@@ -281,7 +301,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
           }}
         />
 
-        {/* Edge Text Label (No background across all themes) */}
+        {/* Edge Text Label with clean pill backdrop so text is legible over lines/grid */}
         {edge.label && !isEditingLabel && (
           <g
             className="lumina-canvas-edge-label-badge"
@@ -291,6 +311,17 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
               setIsEditingLabel(true)
             }}
           >
+            <rect
+              x={-Math.max(24, edge.label.length * 3.8 + 10)}
+              y={-10}
+              width={Math.max(48, edge.label.length * 7.6 + 20)}
+              height={20}
+              rx={10}
+              fill="var(--bg-app, #0c0d10)"
+              fillOpacity={0.92}
+              stroke="var(--border-subtle, rgba(255, 255, 255, 0.14))"
+              strokeWidth={1}
+            />
             <text
               x={0}
               y={0}
@@ -347,9 +378,9 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
         {/* Interactive hover / selection controls badge at wire midpoint (hidden during multi-selection) */}
         {!isEditingLabel && !isMultiSelectionActive && (
           <foreignObject
-            x={midX - 48}
-            y={edge.label ? midY - 28 : midY - 11}
-            width={96}
+            x={midX - 58}
+            y={edge.label ? midY - 30 : midY - 11}
+            width={116}
             height={22}
             className="lumina-canvas-edge-controls-container"
           >
@@ -359,7 +390,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
                 e.stopPropagation()
                 onSelectEdge?.(e, edge.id)
               }}
-              onMouseDown={(e) => {
+              onPointerDown={(e) => {
                 e.stopPropagation()
                 onSelectEdge?.(e, edge.id)
               }}
@@ -380,6 +411,19 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
                   ) : (
                     <Minus size={10} />
                   )}
+                </button>
+              )}
+
+              {/* Dash Pattern Toggle Button (Solid / Dashed / Dotted) */}
+              {onUpdateStrokeDash && (
+                <button
+                  type="button"
+                  className="lumina-canvas-edge-btn"
+                  title={`Pattern: ${strokeDash.toUpperCase()} (Click to toggle)`}
+                  aria-label="Toggle dash pattern"
+                  onClick={handleCycleStrokeDash}
+                >
+                  <MoreHorizontal size={10} />
                 </button>
               )}
 

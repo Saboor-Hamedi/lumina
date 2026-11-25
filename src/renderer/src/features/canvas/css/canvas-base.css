@@ -8,6 +8,9 @@
   height: 100%;
   overflow: hidden;
   user-select: none;
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
   background-color: var(--bg-app, #0c0d10);
   background-image: radial-gradient(
     color-mix(in srgb, var(--border-subtle, rgba(255, 255, 255, 0.15)) 50%, transparent) 1.2px,
@@ -94,4 +97,45 @@
 .lumina-canvas-edge-group.is-selected .lumina-canvas-edge-line {
   stroke-width: 2.6px;
   filter: drop-shadow(0 0 6px var(--text-accent, #38bdf8));
+}
+
+/* Freehand Vector Strokes Layer */
+.lumina-canvas-strokes-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 28;
+}
+
+.lumina-canvas-container.tool-pencil .lumina-canvas-node,
+.lumina-canvas-container.tool-eraser .lumina-canvas-node {
+  pointer-events: none;
+}
+
+.lumina-canvas-stroke-group.is-erasable:hover .lumina-canvas-stroke-path {
+  opacity: 0.35;
+}
+
+/* Coarse pointer / touchscreen ergonomic hit targets on canvas */
+@media (pointer: coarse) {
+  .lumina-canvas-port {
+    width: 16px !important;
+    height: 16px !important;
+    opacity: 0.72;
+  }
+
+  .lumina-canvas-resize-handle {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .lumina-canvas-toolbar-center .lumina-canvas-tool-btn,
+  .lumina-canvas-toolbar-right .lumina-canvas-tool-btn {
+    width: 34px;
+    height: 34px;
+  }
 }

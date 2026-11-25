@@ -6,7 +6,7 @@ import { Composer } from '../Composer'
 import { ChatMessageRow } from './LuminaChatMessageRow'
 import { LuminaSession } from './LuminaSession'
 import { ChatFooterStatus } from './LuminaChatFooterStatus'
-import { ChatEmptyState } from './LuminaChatEmptyState'
+import { ChatEmptyState, ChatEmptyHero, ChatEmptySuggestions } from './LuminaChatEmptyState'
 import { LuminaAnalyticsDropdown } from './LuminaAnalyticsDropdown'
 import { LuminaApprovalCard } from '../safety'
 import { useChatScroll } from '../hooks/useChatScroll'
@@ -224,6 +224,8 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
       handleRating
     ])
 
+    const isCenteredWelcome = !isSidebar && visibleMessages.length === 0
+
     return (
       <div
         ref={rootRef}
@@ -278,7 +280,7 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
 
           {/* Chat Main Area */}
           <div
-            className="chat-main"
+            className={`chat-main ${isCenteredWelcome ? 'is-centered-welcome' : 'has-messages'}`}
             style={{
               flex: 1,
               height: '100%',
@@ -400,18 +402,24 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
             </div>
 
             <div
-              className="chat-messages"
+              className={`chat-messages ${isCenteredWelcome ? 'is-centered-welcome' : ''}`}
               ref={listRef}
               onScroll={handleMessageScroll}
             >
               {visibleMessages.length === 0 ? (
-                <ChatEmptyState
-                  selectedNote={selectedNote}
-                  onSendSuggestion={(snip) =>
-                    sendChatMessage(`Explain the code in "${snip.title}"`, [snip])
-                  }
-                  onSendPrompt={(p) => sendChatMessage(p)}
-                />
+                isSidebar ? (
+                  <ChatEmptyState
+                    selectedNote={selectedNote}
+                    onSendSuggestion={(snip) =>
+                      sendChatMessage(`Explain the code in "${snip.title}"`, [snip])
+                    }
+                    onSendPrompt={(p) => sendChatMessage(p)}
+                  />
+                ) : (
+                  <div className="chat-welcome-top-spacer">
+                    <ChatEmptyHero />
+                  </div>
+                )
               ) : (
                 <div className="chat-msg-list">
                   {renderedMessages}
@@ -427,7 +435,7 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
             </div>
 
             <div
-              className={`modal-composer-dock-wrapper ${isSidebar ? 'is-sidebar-docked' : ''}`}
+              className={`modal-composer-dock-wrapper ${isSidebar ? 'is-sidebar-docked' : ''} ${isCenteredWelcome ? 'is-centered-welcome' : ''}`}
               style={{
                 width: '100%',
                 background: 'transparent',
@@ -459,6 +467,21 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
                 />
               </div>
             </div>
+
+            {!isSidebar && (
+              <div
+                className={`chat-welcome-bottom-slot ${isCenteredWelcome ? 'is-open' : 'is-collapsed'}`}
+                aria-hidden={!isCenteredWelcome}
+              >
+                <ChatEmptySuggestions
+                  selectedNote={selectedNote}
+                  onSendSuggestion={(snip) =>
+                    sendChatMessage(`Explain the code in "${snip.title}"`, [snip])
+                  }
+                  onSendPrompt={(p) => sendChatMessage(p)}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

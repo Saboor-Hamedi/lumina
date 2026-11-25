@@ -1,5 +1,5 @@
 import React from 'react'
-import { Sparkles, Database, Network, FileEdit, Lightbulb, FileText } from 'lucide-react'
+import { Database, Network, FileEdit, Lightbulb, FileText } from 'lucide-react'
 
 export interface ChatEmptyStateProps {
   selectedNote?: any
@@ -36,23 +36,24 @@ const STARTER_PROMPTS = [
 ]
 
 /**
- * Empty state screen when a chat session has no messages yet.
+ * Centered H1 greeting displayed directly above the composer on empty welcome state.
  */
-export const ChatEmptyState: React.FC<ChatEmptyStateProps> = React.memo(
+export const ChatEmptyHero: React.FC = React.memo(() => (
+  <div className="chat-empty-hero chat-welcome-h1-hero">
+    <h1 className="chat-welcome-h1">Welcome, how can I help you?</h1>
+  </div>
+))
+ChatEmptyHero.displayName = 'ChatEmptyHero'
+
+/**
+ * Contextual active-note action and starter prompt cards displayed below the centered composer.
+ */
+export const ChatEmptySuggestions: React.FC<ChatEmptyStateProps> = React.memo(
   ({ selectedNote, selectedSnippet, onSendSuggestion, onSendPrompt }) => {
     const note = selectedNote || selectedSnippet
 
     return (
-      <div className="chat-empty lumina-chat-empty-modern">
-        <div className="chat-empty-hero">
-          <h2 className="chat-empty-title">
-            How can I assist your thinking today?
-          </h2>
-          <p className="chat-empty-subtitle">
-            Ask questions about your workspace notes, query the index, audit links, or draft new ideas.
-          </p>
-        </div>
-
+      <div className="chat-welcome-suggestions-inner">
         {note && onSendSuggestion && (
           <div className="chat-empty-active-note">
             <button
@@ -82,6 +83,34 @@ export const ChatEmptyState: React.FC<ChatEmptyStateProps> = React.memo(
             </button>
           ))}
         </div>
+      </div>
+    )
+  }
+)
+ChatEmptySuggestions.displayName = 'ChatEmptySuggestions'
+
+/**
+ * Compact empty state screen used when Lumina Chat is docked in the narrow sidebar.
+ */
+export const ChatEmptyState: React.FC<ChatEmptyStateProps> = React.memo(
+  ({ selectedNote, selectedSnippet, onSendSuggestion, onSendPrompt }) => {
+    return (
+      <div className="chat-empty lumina-chat-empty-modern">
+        <div className="chat-empty-hero">
+          <h1 className="chat-empty-title">
+            Welcome, how can I help you?
+          </h1>
+          <p className="chat-empty-subtitle">
+            Ask questions about your workspace notes, query the index, audit links, or draft new ideas.
+          </p>
+        </div>
+
+        <ChatEmptySuggestions
+          selectedNote={selectedNote}
+          selectedSnippet={selectedSnippet}
+          onSendSuggestion={onSendSuggestion}
+          onSendPrompt={onSendPrompt}
+        />
       </div>
     )
   }

@@ -57,6 +57,44 @@ export type CanvasShapeType =
   | 'pentagon'
   | 'actor'
   | 'envelope'
+  | 'predefined-process'
+  | 'delay'
+  | 'manual-input'
+  | 'queue'
+  | 'cube'
+  | 'server'
+  | 'browser'
+  | 'terminal'
+  | 'note-fold'
+  | 'arrow-right'
+  | 'arrow-left'
+  | 'frame'
+
+/**
+ * Interactive canvas tool mode.
+ */
+export type CanvasToolMode = 'select' | 'hand' | 'pencil' | 'eraser' | 'text'
+
+/**
+ * Single sampled point in a freehand pencil/highlighter stroke.
+ */
+export interface CanvasStrokePoint {
+  x: number
+  y: number
+  pressure?: number
+}
+
+/**
+ * Freehand vector ink stroke drawn on the infinite canvas.
+ */
+export interface CanvasStroke {
+  id: string
+  points: CanvasStrokePoint[]
+  color: CanvasNodeColor
+  strokeWidth: number
+  opacity?: number
+  tool?: 'pencil' | 'highlighter'
+}
 
 /**
  * Unified 9-color theme palette for cards, shapes, and connector wires.
@@ -125,6 +163,11 @@ export type CanvasEdgeSide = 'top' | 'right' | 'bottom' | 'left'
 export type CanvasEdgeLineStyle = 'straight' | 'curved' | 'step'
 
 /**
+ * Connector wire dash pattern.
+ */
+export type CanvasEdgeStrokeDash = 'solid' | 'dashed' | 'dotted'
+
+/**
  * Connection wire linking two nodes.
  */
 export interface CanvasEdge {
@@ -148,6 +191,8 @@ export interface CanvasEdge {
   color?: CanvasNodeColor
   /** Interpolation spline style */
   lineStyle?: CanvasEdgeLineStyle
+  /** Dash pattern ('solid' | 'dashed' | 'dotted') */
+  strokeDash?: CanvasEdgeStrokeDash
   /** Routing behavior ('smart' dynamic facing ports vs 'manual' fixed ports) */
   routing?: 'smart' | 'manual'
 }
@@ -170,5 +215,6 @@ export interface CanvasViewport {
 export interface CanvasData {
   nodes: CanvasNode[]
   edges: CanvasEdge[]
+  strokes?: CanvasStroke[]
   viewport?: CanvasViewport
 }

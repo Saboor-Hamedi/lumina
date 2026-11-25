@@ -19,7 +19,7 @@ import {
   CanvasEdgeLineStyle,
   CanvasNodeColor,
   CanvasEdgeEnd,
-  CanvasEdgeSide
+  CanvasToolMode
 } from '../types'
 import { COLOR_CYCLE } from '../utils'
 
@@ -45,7 +45,7 @@ export interface UseCanvasShortcutsOptions {
   handleToggleSnapToGrid: () => void
   zoomToFit: (rect?: DOMRect | null) => void
   resetViewport: () => void
-  setToolMode: (mode: 'select' | 'hand') => void
+  setToolMode: (mode: CanvasToolMode) => void
   setIsSpacePressed: (pressed: boolean) => void
   setConnecting: (connecting: any) => void
   connectingRef: React.MutableRefObject<any>
@@ -139,6 +139,7 @@ export function useCanvasShortcuts({
         setEditingField(null)
         setSelectedNodeIds([])
         setSelectedEdgeId(null)
+        setToolMode('select')
       } else if (e.altKey && (e.key === 'd' || e.key === 'D') && !isInputActive) {
         // Alt+D duplicates selected nodes (Ctrl+D reserved for Documentation!)
         if (selectedNodeIds.length > 0) {
@@ -225,10 +226,16 @@ export function useCanvasShortcuts({
       } else if ((e.ctrlKey || e.metaKey) && e.key === '0' && !isInputActive) {
         e.preventDefault()
         resetViewport()
-      } else if (e.key === 'v' && !isInputActive && !e.ctrlKey && !e.metaKey) {
+      } else if ((e.key === 'v' || e.key === 'V') && !isInputActive && !e.ctrlKey && !e.metaKey) {
         setToolMode('select')
-      } else if (e.key === 'h' && !isInputActive && !e.ctrlKey && !e.metaKey) {
+      } else if ((e.key === 'h' || e.key === 'H') && !isInputActive && !e.ctrlKey && !e.metaKey) {
         setToolMode('hand')
+      } else if ((e.key === 'p' || e.key === 'P') && !isInputActive && !e.ctrlKey && !e.metaKey) {
+        setToolMode('pencil')
+      } else if ((e.key === 'e' || e.key === 'E') && !isInputActive && !e.ctrlKey && !e.metaKey) {
+        setToolMode('eraser')
+      } else if ((e.key === 't' || e.key === 'T') && !isInputActive && !e.ctrlKey && !e.metaKey) {
+        setToolMode('text')
       } else if ((e.key === 'l' || e.key === 'L') && !isInputActive && !e.ctrlKey && !e.metaKey && !e.altKey && selectedEdgeId) {
         // Cycle line style on selected wire
         e.preventDefault()

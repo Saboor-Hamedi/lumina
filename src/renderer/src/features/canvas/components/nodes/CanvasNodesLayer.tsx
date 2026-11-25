@@ -25,9 +25,9 @@ export interface CanvasNodesLayerProps {
   selectedShapeType?: CanvasShapeType | null
   canReplaceShape?: boolean
   selectedColorHex?: string
-  onNodeMouseDown: (e: React.MouseEvent, node: CanvasNode) => void
-  onPortMouseDown: (e: React.MouseEvent, nodeId: string, side: any) => void
-  onResizeMouseDown: (e: React.MouseEvent, node: CanvasNode) => void
+  onNodeMouseDown: (e: React.MouseEvent | React.PointerEvent, node: CanvasNode) => void
+  onPortMouseDown: (e: React.MouseEvent | React.PointerEvent, nodeId: string, side: any) => void
+  onResizeMouseDown: (e: React.MouseEvent | React.PointerEvent, node: CanvasNode) => void
   onStartEditing: (id: string, field: 'title' | 'text') => void
   onStopEditing: () => void
   onUpdateTitle: (id: string, title: string) => void

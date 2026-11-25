@@ -40,7 +40,7 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = React.memo(({
   // Parse snippet JSON data model with fallback safe structures
   const parsedInitialData = useMemo<CanvasData>(() => {
     if (!snippet.code || typeof snippet.code !== 'string') {
-      return { nodes: [], edges: [], viewport: { x: 0, y: 0, zoom: 1 } }
+      return { nodes: [], edges: [], strokes: [], viewport: { x: 0, y: 0, zoom: 1 } }
     }
 
     try {
@@ -49,6 +49,7 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = React.memo(({
         return {
           nodes: Array.isArray(parsed.nodes) ? parsed.nodes : [],
           edges: Array.isArray(parsed.edges) ? parsed.edges : [],
+          strokes: Array.isArray(parsed.strokes) ? parsed.strokes : [],
           viewport: parsed.viewport || { x: 0, y: 0, zoom: 1 }
         }
       }
@@ -56,7 +57,7 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = React.memo(({
       console.warn('[CanvasTabPane] Failed to parse canvas JSON from snippet:', e)
     }
 
-    return { nodes: [], edges: [], viewport: { x: 0, y: 0, zoom: 1 } }
+    return { nodes: [], edges: [], strokes: [], viewport: { x: 0, y: 0, zoom: 1 } }
   }, [snippet.id, snippet.code])
 
   // Debounced auto-save handler to minimize disk I/O during interactions

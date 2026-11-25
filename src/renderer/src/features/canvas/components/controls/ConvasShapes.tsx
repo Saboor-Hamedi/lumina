@@ -49,7 +49,19 @@ export const CANVAS_SHAPES: ShapeDefinition[] = [
   { id: 'cross', label: 'Cross', defaultWidth: 130, defaultHeight: 130, description: 'Plus / Health / Critical' },
   { id: 'pentagon', label: 'Pentagon', defaultWidth: 140, defaultHeight: 130, description: 'Milestone / Stage' },
   { id: 'actor', label: 'Actor', defaultWidth: 120, defaultHeight: 150, description: 'User / Person / Client' },
-  { id: 'envelope', label: 'Envelope', defaultWidth: 150, defaultHeight: 100, description: 'Message / Event / Mail' }
+  { id: 'envelope', label: 'Envelope', defaultWidth: 150, defaultHeight: 100, description: 'Message / Event / Mail' },
+  { id: 'predefined-process', label: 'Subroutine', defaultWidth: 160, defaultHeight: 100, description: 'Predefined Process / Function' },
+  { id: 'delay', label: 'Delay', defaultWidth: 150, defaultHeight: 90, description: 'Wait / Timer / Gate' },
+  { id: 'manual-input', label: 'Input', defaultWidth: 160, defaultHeight: 100, description: 'Manual Input / Form' },
+  { id: 'queue', label: 'Queue', defaultWidth: 160, defaultHeight: 90, description: 'Message Queue / Stream' },
+  { id: 'cube', label: '3D Cube', defaultWidth: 130, defaultHeight: 130, description: 'Container / Service / Box' },
+  { id: 'server', label: 'Server', defaultWidth: 120, defaultHeight: 140, description: 'Server Rack / Host' },
+  { id: 'browser', label: 'Browser', defaultWidth: 180, defaultHeight: 130, description: 'Web App / UI Window' },
+  { id: 'terminal', label: 'Terminal', defaultWidth: 170, defaultHeight: 120, description: 'CLI / Shell / Script' },
+  { id: 'note-fold', label: 'Fold Note', defaultWidth: 150, defaultHeight: 120, description: 'Annotation / Callout Note' },
+  { id: 'arrow-right', label: 'Arrow Right', defaultWidth: 150, defaultHeight: 80, description: 'Flow Direction Right' },
+  { id: 'arrow-left', label: 'Arrow Left', defaultWidth: 150, defaultHeight: 80, description: 'Flow Direction Left' },
+  { id: 'frame', label: 'Frame', defaultWidth: 260, defaultHeight: 180, description: 'Swimlane / Section Group' }
 ]
 
 export const SHAPE_COLOR_OPTIONS: { id: CanvasNodeColor; label: string; hex: string }[] = [
@@ -429,6 +441,136 @@ export function renderShapeSVG(
           <path d="M 6 18 L 50 56 L 94 18" fill="none" />
           <path d="M 6 82 L 38 48" fill="none" opacity={0.35} />
           <path d="M 94 82 L 62 48" fill="none" opacity={0.35} />
+        </g>
+      )
+
+    case 'predefined-process':
+      return (
+        <g stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin="round" vectorEffect="non-scaling-stroke">
+          <rect x="4" y="8" width="92" height="84" rx="4" ry="4" fill={fill} fillOpacity={fillOpacity} />
+          <line x1="16" y1="8" x2="16" y2="92" />
+          <line x1="84" y1="8" x2="84" y2="92" />
+        </g>
+      )
+
+    case 'delay':
+      return (
+        <path
+          d="M 6 10 L 62 10 C 84 10, 95 28, 95 50 C 95 72, 84 90, 62 90 L 6 90 Z"
+          fill={fill}
+          fillOpacity={fillOpacity}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )
+
+    case 'manual-input':
+      return (
+        <polygon
+          points="4,24 96,6 96,94 4,94"
+          fill={fill}
+          fillOpacity={fillOpacity}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )
+
+    case 'queue':
+      return (
+        <g stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin="round" vectorEffect="non-scaling-stroke">
+          <path d="M 18 14 L 82 14 C 92 14, 96 30, 96 50 C 96 70, 92 86, 82 86 L 18 86 C 8 86, 4 70, 4 50 C 4 30, 8 14, 18 14 Z" fill={fill} fillOpacity={fillOpacity} />
+          <path d="M 82 14 C 72 14, 68 30, 68 50 C 68 70, 72 86, 82 86" fill="none" />
+        </g>
+      )
+
+    case 'cube':
+      return (
+        <g stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin="round" vectorEffect="non-scaling-stroke">
+          <polygon points="18,10 92,10 78,24 4,24" fill={fill} fillOpacity={Math.min(0.16, fillOpacity + 0.05)} />
+          <polygon points="78,24 92,10 92,76 78,92" fill={fill} fillOpacity={Math.min(0.12, fillOpacity + 0.03)} />
+          <rect x="4" y="24" width="74" height="68" fill={fill} fillOpacity={fillOpacity} />
+        </g>
+      )
+
+    case 'server':
+      return (
+        <g stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin="round" vectorEffect="non-scaling-stroke">
+          <rect x="10" y="6" width="80" height="26" rx="4" fill={fill} fillOpacity={fillOpacity} />
+          <rect x="10" y="37" width="80" height="26" rx="4" fill={fill} fillOpacity={fillOpacity} />
+          <rect x="10" y="68" width="80" height="26" rx="4" fill={fill} fillOpacity={fillOpacity} />
+          <circle cx="22" cy="19" r="2.2" fill={stroke} />
+          <circle cx="22" cy="50" r="2.2" fill={stroke} />
+          <circle cx="22" cy="81" r="2.2" fill={stroke} />
+          <line x1="60" y1="19" x2="78" y2="19" opacity={0.5} />
+          <line x1="60" y1="50" x2="78" y2="50" opacity={0.5} />
+          <line x1="60" y1="81" x2="78" y2="81" opacity={0.5} />
+        </g>
+      )
+
+    case 'browser':
+      return (
+        <g stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin="round" vectorEffect="non-scaling-stroke">
+          <rect x="4" y="6" width="92" height="88" rx="6" fill={fill} fillOpacity={fillOpacity} />
+          <line x1="4" y1="22" x2="96" y2="22" />
+          <circle cx="13" cy="14" r="2" fill={stroke} opacity={0.7} />
+          <circle cx="21" cy="14" r="2" fill={stroke} opacity={0.5} />
+          <circle cx="29" cy="14" r="2" fill={stroke} opacity={0.35} />
+        </g>
+      )
+
+    case 'terminal':
+      return (
+        <g stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke">
+          <rect x="4" y="6" width="92" height="88" rx="6" fill={fill} fillOpacity={fillOpacity} />
+          <line x1="4" y1="20" x2="96" y2="20" opacity={0.5} />
+          <path d="M 14 34 L 24 42 L 14 50" fill="none" opacity={0.65} />
+          <line x1="29" y1="50" x2="42" y2="50" opacity={0.55} />
+        </g>
+      )
+
+    case 'note-fold':
+      return (
+        <g stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin="round" vectorEffect="non-scaling-stroke">
+          <path d="M 6 6 L 74 6 L 94 26 L 94 94 L 6 94 Z" fill={fill} fillOpacity={fillOpacity} />
+          <path d="M 74 6 L 74 26 L 94 26 Z" fill={fill} fillOpacity={Math.min(0.18, fillOpacity + 0.08)} />
+        </g>
+      )
+
+    case 'arrow-right':
+      return (
+        <polygon
+          points="4,30 62,30 62,10 96,50 62,90 62,70 4,70"
+          fill={fill}
+          fillOpacity={fillOpacity}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )
+
+    case 'arrow-left':
+      return (
+        <polygon
+          points="96,30 38,30 38,10 4,50 38,90 38,70 96,70"
+          fill={fill}
+          fillOpacity={fillOpacity}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      )
+
+    case 'frame':
+      return (
+        <g stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin="round" vectorEffect="non-scaling-stroke">
+          <rect x="3" y="3" width="94" height="94" rx="6" fill={fill} fillOpacity={Math.max(0.02, fillOpacity * 0.6)} strokeDasharray="4 3" />
+          <path d="M 3 20 L 42 20 L 50 12 L 50 3" fill="none" />
         </g>
       )
 

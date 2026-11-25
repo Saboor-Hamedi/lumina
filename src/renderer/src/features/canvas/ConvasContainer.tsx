@@ -18,7 +18,7 @@
 
 import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react'
 import { useCanvas, useCanvasGestures, useCanvasDrop, useCanvasShortcuts, useCanvasPaste } from './hooks'
-import { CanvasData, CanvasNode, CanvasEdgeSide, CanvasEdgeEnd, CanvasShapeType, CanvasNodeColor, CanvasEdgeLineStyle } from './types'
+import { CanvasData, CanvasNode, CanvasEdgeSide, CanvasEdgeEnd, CanvasShapeType, CanvasNodeColor, CanvasEdgeLineStyle, CanvasToolMode } from './types'
 import {
   COLOR_CYCLE,
   getNodePortCoord,
@@ -33,6 +33,7 @@ import {
 } from './utils'
 import {
   CanvasEdgesLayer,
+  CanvasStrokesLayer,
   CanvasNodesLayer,
   CanvasAlignmentGuidesLayer,
   ConvasToolBarCenter,
@@ -67,7 +68,10 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   // Local editing & tool states
   const [editingNodeId, setEditingNodeId] = useState<string | null>(null)
   const [editingField, setEditingField] = useState<'title' | 'text' | null>(null)
-  const [toolMode, setToolMode] = useState<'select' | 'hand'>('select')
+  const [toolMode, setToolMode] = useState<CanvasToolMode>('select')
+  const [pencilColor, setPencilColor] = useState<CanvasNodeColor>('default')
+  const [pencilWidth, setPencilWidth] = useState<number>(4)
+  const [pencilHighlighter, setPencilHighlighter] = useState<boolean>(false)
   const [isSpacePressed, setIsSpacePressed] = useState(false)
   const [snapToGrid, setSnapToGrid] = useState(false)
   const [isMiniMapOpen, setIsMiniMapOpen] = useState(false)
@@ -79,6 +83,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   const {
     nodes,
     edges,
+    strokes,
     viewport,
     selectedNodeIds,
     selectedEdgeId,
@@ -109,10 +114,15 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     hasCopiedNodes,
     snapNodesToGrid,
     updateEdgeLineStyle,
+    updateEdgeStrokeDash,
     updateEdgeColor,
     deleteEdge,
     updateEdgeLabel,
     updateEdgeEndpoints,
+    addStroke,
+    deleteStrokes,
+    clearStrokes,
+    clearCanvas,
     undo,
     redo,
     canUndo,
@@ -209,7 +219,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   )
 
   const handleSelectEdge = useCallback(
-    (e: React.MouseEvent, edgeId: string) => {
+    (e: React.MouseEvent | React.PointerEvent, edgeId: string) => {
       e.stopPropagation()
       const isMulti = e.shiftKey || e.ctrlKey || e.metaKey
       if (isMulti) {
@@ -242,7 +252,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   )
 
   /**
-   * Gesture & Pointer Interactions Engine
+   * Gesture & Pointer Interactions Engine (Mouse, Touch, Stylus, Pinch-Zoom, Pencil, Eraser)
    */
   const {
     connecting,
@@ -252,6 +262,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     setSnappedTarget,
     snappedTargetRef,
     mouseCanvasPos,
+    activeStroke,
     isPanningState,
     handleCanvasMouseDown,
     handleResizeMouseDown,
@@ -262,15 +273,21 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     containerRef,
     nodes,
     nodeMap,
+    strokes,
     viewport,
     selectedNodeIds,
     selectedEdgeId,
     setSelectedEdgeId,
     setSelectedEdgeIds,
     toolMode,
+    setToolMode,
+    pencilColor,
+    pencilWidth,
+    pencilHighlighter,
     isSpacePressed,
     snapToGrid,
     screenToCanvas,
+    zoomAt,
     panBy,
     setSelectedNodeIds,
     updateNodePosition,
@@ -278,6 +295,8 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     updateNodeSize,
     completeConnection,
     addNode,
+    addStroke,
+    deleteStrokes,
     setEditingNodeId,
     setEditingField,
     pushHistory
@@ -686,6 +705,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     const success = await copyCanvasAsImage({
       nodes,
       edges,
+      strokes,
       selectedNodeIds: selectedNodeIds.length > 0 ? selectedNodeIds : undefined
     })
     if (success) {
@@ -693,25 +713,42 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     } else {
       showToast('Failed to copy canvas snapshot', 'error')
     }
-  }, [nodes, edges, selectedNodeIds, showToast])
+  }, [nodes, edges, strokes, selectedNodeIds, showToast])
 
   const handleExportPNG = useCallback(() => {
     downloadCanvasPng({
       nodes,
       edges,
+      strokes,
       selectedNodeIds: selectedNodeIds.length > 0 ? selectedNodeIds : undefined
     })
     showToast('Exported canvas as PNG image', 'success')
-  }, [nodes, edges, selectedNodeIds, showToast])
+  }, [nodes, edges, strokes, selectedNodeIds, showToast])
 
   const handleExportSVG = useCallback(() => {
     downloadCanvasSvg({
       nodes,
       edges,
+      strokes,
       selectedNodeIds: selectedNodeIds.length > 0 ? selectedNodeIds : undefined
     })
     showToast('Exported canvas as SVG vector', 'success')
-  }, [nodes, edges, selectedNodeIds, showToast])
+  }, [nodes, edges, strokes, selectedNodeIds, showToast])
+
+  const handleClearStrokes = useCallback(() => {
+    if (clearStrokes()) {
+      showToast('Drawings cleared — press Ctrl+Z to undo', 'info')
+    }
+  }, [clearStrokes, showToast])
+
+  const handleClearCanvas = useCallback(() => {
+    if (clearCanvas()) {
+      setSelectedEdgeIds([])
+      setEditingNodeId(null)
+      setEditingField(null)
+      showToast('Canvas cleared — press Ctrl+Z to undo', 'info')
+    }
+  }, [clearCanvas, showToast])
 
   const handleSetZoom = useCallback(
     (targetZoom: number) => {
@@ -852,21 +889,24 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
 
   const cursorStyle = isPanningState
     ? 'grabbing'
-    : connecting
+    : connecting || toolMode === 'pencil' || toolMode === 'eraser'
       ? 'crosshair'
-      : toolMode === 'hand' || isSpacePressed
-        ? 'grab'
-        : 'default'
+      : toolMode === 'text'
+        ? 'text'
+        : toolMode === 'hand' || isSpacePressed
+          ? 'grab'
+          : 'default'
 
   return (
     <div
       ref={containerRef}
-      className={`lumina-canvas-container ${connecting ? 'is-connecting' : ''} ${snapToGrid ? 'is-grid-snapping' : ''} ${selectedNodeIds.length > 1 ? 'is-multi-selecting' : ''}`}
+      className={`lumina-canvas-container tool-${toolMode} ${connecting ? 'is-connecting' : ''} ${snapToGrid ? 'is-grid-snapping' : ''} ${selectedNodeIds.length > 1 ? 'is-multi-selecting' : ''}`}
       style={{
         backgroundPosition: `${viewport.x}px ${viewport.y}px`,
         backgroundSize: `${(snapToGrid ? 20 : 24) * viewport.zoom}px ${(snapToGrid ? 20 : 24) * viewport.zoom}px`,
         cursor: cursorStyle
       }}
+      onPointerDown={handleCanvasMouseDown}
       onMouseDown={handleCanvasMouseDown}
       onDoubleClick={handleDoubleClick}
       onDragOver={handleDragOver}
@@ -892,6 +932,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           onSelectEdge={handleSelectEdge}
           onDeleteEdge={handleDeleteEdge}
           onUpdateEdgeLineStyle={updateEdgeLineStyle}
+          onUpdateEdgeStrokeDash={updateEdgeStrokeDash}
           onUpdateEdgeLabel={updateEdgeLabel}
           onUpdateEdgeEndpoints={updateEdgeEndpoints}
           onUpdateEdgeColor={updateEdgeColor}
@@ -936,16 +977,38 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           onSnapSelectionToGrid={handleSnapAllToGrid}
         />
 
+        {/* Layer 2.2: Freehand Pencil & Highlighter Ink Strokes */}
+        <CanvasStrokesLayer
+          strokes={strokes}
+          activeStroke={activeStroke}
+          toolMode={toolMode}
+          onEraseStroke={(strokeId) => deleteStrokes([strokeId], true)}
+        />
+
         {/* Layer 2.5: Real-time Alignment Guides & Snapping Visualizer */}
         <CanvasAlignmentGuidesLayer guides={alignmentGuides} />
       </div>
 
-      {/* Layer 3: Center Toolbar (Select, Hand, Sticky Note, Shapes) */}
+      {/* Layer 3: Center Toolbar (Select, Hand, Pencil, Eraser, Text, Sticky, Shapes, Undo/Redo, Clear) */}
       <ConvasToolBarCenter
         toolMode={toolMode}
         setToolMode={setToolMode}
         onAddSticky={handleAddSticky}
         onAddShape={handleAddShape}
+        pencilColor={pencilColor}
+        onChangePencilColor={setPencilColor}
+        pencilWidth={pencilWidth}
+        onChangePencilWidth={setPencilWidth}
+        pencilHighlighter={pencilHighlighter}
+        onTogglePencilHighlighter={() => setPencilHighlighter((prev) => !prev)}
+        onUndo={undo}
+        canUndo={canUndo}
+        onRedo={redo}
+        canRedo={canRedo}
+        onClearStrokes={handleClearStrokes}
+        hasStrokes={strokes.length > 0}
+        onClearCanvas={handleClearCanvas}
+        hasContent={nodes.length > 0 || edges.length > 0 || strokes.length > 0}
       />
 
       {/* Layer 4: Right Toolbar / Expandable Canvas Studio */}

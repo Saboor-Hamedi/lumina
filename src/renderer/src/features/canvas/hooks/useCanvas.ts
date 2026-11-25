@@ -12,12 +12,29 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { CanvasViewport, CanvasNode, CanvasEdge, CanvasData, CanvasNodeColor, CanvasEdgeLineStyle, CanvasEdgeEnd, CanvasShapeType } from '../types'
+import {
+  CanvasViewport,
+  CanvasNode,
+  CanvasEdge,
+  CanvasStroke,
+  CanvasData,
+  CanvasNodeColor,
+  CanvasEdgeLineStyle,
+  CanvasEdgeStrokeDash,
+  CanvasEdgeEnd,
+  CanvasShapeType
+} from '../types'
 import { normalizeNode, safeNumber } from '../utils/canvasUtils'
 
 export interface UseCanvasOptions {
   initialData?: CanvasData
   onChange?: (data: CanvasData) => void
+}
+
+interface CanvasHistorySnapshot {
+  nodes: CanvasNode[]
+  edges: CanvasEdge[]
+  strokes: CanvasStroke[]
 }
 
 export function useCanvas(options: UseCanvasOptions = {}) {
@@ -31,6 +48,12 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   const [edges, setEdges] = useState<CanvasEdge[]>(() => {
     const rawEdges = options.initialData?.edges || []
     return rawEdges.filter((e) => e && e.id && e.fromNode && e.toNode)
+  })
+
+  // Sanitize initial freehand strokes
+  const [strokes, setStrokes] = useState<CanvasStroke[]>(() => {
+    const rawStrokes = options.initialData?.strokes || []
+    return rawStrokes.filter((s) => s && s.id && Array.isArray(s.points) && s.points.length > 0)
   })
 
   // Initialize viewport with zoom clamped between 0.1 and 2.5
@@ -55,20 +78,27 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   nodesRef.current = nodes
   const edgesRef = useRef<CanvasEdge[]>(edges)
   edgesRef.current = edges
+  const strokesRef = useRef<CanvasStroke[]>(strokes)
+  strokesRef.current = strokes
 
-  // Undo / Redo History Stacks
-  const undoStackRef = useRef<{ nodes: CanvasNode[]; edges: CanvasEdge[] }[]>([])
-  const redoStackRef = useRef<{ nodes: CanvasNode[]; edges: CanvasEdge[] }[]>([])
+  // Undo / Redo History Stacks (100-step deep snapshots including freehand strokes)
+  const undoStackRef = useRef<CanvasHistorySnapshot[]>([])
+  const redoStackRef = useRef<CanvasHistorySnapshot[]>([])
   const clipboardRef = useRef<{ nodes: CanvasNode[]; edges: CanvasEdge[]; pasteCount: number } | null>(null)
   const [, setHistoryCount] = useState(0)
 
+  const captureSnapshot = (): CanvasHistorySnapshot => ({
+    nodes: nodesRef.current.map((n) => ({ ...n })),
+    edges: edgesRef.current.map((e) => ({ ...e })),
+    strokes: strokesRef.current.map((s) => ({
+      ...s,
+      points: s.points.map((pt) => ({ ...pt }))
+    }))
+  })
+
   const pushHistory = useCallback(() => {
-    const snapshot = {
-      nodes: nodesRef.current.map((n) => ({ ...n })),
-      edges: edgesRef.current.map((e) => ({ ...e }))
-    }
-    undoStackRef.current.push(snapshot)
-    if (undoStackRef.current.length > 50) {
+    undoStackRef.current.push(captureSnapshot())
+    if (undoStackRef.current.length > 100) {
       undoStackRef.current.shift()
     }
     redoStackRef.current = []
@@ -78,34 +108,30 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   const undo = useCallback(() => {
     if (undoStackRef.current.length === 0) return
     const prevSnapshot = undoStackRef.current.pop()!
-    const currentSnapshot = {
-      nodes: nodesRef.current.map((n) => ({ ...n })),
-      edges: edgesRef.current.map((e) => ({ ...e }))
-    }
-    redoStackRef.current.push(currentSnapshot)
-    if (redoStackRef.current.length > 50) {
+    redoStackRef.current.push(captureSnapshot())
+    if (redoStackRef.current.length > 100) {
       redoStackRef.current.shift()
     }
     setNodes(prevSnapshot.nodes)
     setEdges(prevSnapshot.edges)
+    setStrokes(prevSnapshot.strokes)
     setSelectedNodeIds([])
+    setSelectedEdgeId(null)
     setHistoryCount((c) => c + 1)
   }, [])
 
   const redo = useCallback(() => {
     if (redoStackRef.current.length === 0) return
     const nextSnapshot = redoStackRef.current.pop()!
-    const currentSnapshot = {
-      nodes: nodesRef.current.map((n) => ({ ...n })),
-      edges: edgesRef.current.map((e) => ({ ...e }))
-    }
-    undoStackRef.current.push(currentSnapshot)
-    if (undoStackRef.current.length > 50) {
+    undoStackRef.current.push(captureSnapshot())
+    if (undoStackRef.current.length > 100) {
       undoStackRef.current.shift()
     }
     setNodes(nextSnapshot.nodes)
     setEdges(nextSnapshot.edges)
+    setStrokes(nextSnapshot.strokes)
     setSelectedNodeIds([])
+    setSelectedEdgeId(null)
     setHistoryCount((c) => c + 1)
   }, [])
 
@@ -124,8 +150,8 @@ export function useCanvas(options: UseCanvasOptions = {}) {
       isFirstRenderRef.current = false
       return
     }
-    onChangeRef.current?.({ nodes, edges, viewport })
-  }, [nodes, edges, viewport])
+    onChangeRef.current?.({ nodes, edges, strokes, viewport })
+  }, [nodes, edges, strokes, viewport])
 
   /**
    * Projects screen client coordinates (e.g. mouse event) into canvas coordinate space.
@@ -536,19 +562,31 @@ export function useCanvas(options: UseCanvasOptions = {}) {
    * Updates connector line style (curved, step, straight).
    */
   const updateEdgeLineStyle = useCallback((edgeId: string, lineStyle: CanvasEdgeLineStyle) => {
+    pushHistory()
     setEdges((prev) =>
       prev.map((e) => (e.id === edgeId ? { ...e, lineStyle } : e))
     )
-  }, [])
+  }, [pushHistory])
+
+  /**
+   * Updates connector dash pattern (solid, dashed, dotted).
+   */
+  const updateEdgeStrokeDash = useCallback((edgeId: string, strokeDash: CanvasEdgeStrokeDash) => {
+    pushHistory()
+    setEdges((prev) =>
+      prev.map((e) => (e.id === edgeId ? { ...e, strokeDash } : e))
+    )
+  }, [pushHistory])
 
   /**
    * Updates edge color theme.
    */
   const updateEdgeColor = useCallback((edgeId: string, color: CanvasNodeColor) => {
+    pushHistory()
     setEdges((prev) =>
       prev.map((e) => (e.id === edgeId ? { ...e, color } : e))
     )
-  }, [])
+  }, [pushHistory])
 
   /**
    * Deletes a single edge by ID.
@@ -565,22 +603,76 @@ export function useCanvas(options: UseCanvasOptions = {}) {
    * Updates connector edge text label (for research annotations).
    */
   const updateEdgeLabel = useCallback((edgeId: string, label: string) => {
+    pushHistory()
     setEdges((prev) =>
       prev.map((e) => (e.id === edgeId ? { ...e, label } : e))
     )
-  }, [])
+  }, [pushHistory])
 
   /**
    * Updates connector endpoints (directed, bidirectional, or plain line).
    */
   const updateEdgeEndpoints = useCallback(
     (edgeId: string, fromEnd?: CanvasEdgeEnd, toEnd?: CanvasEdgeEnd) => {
+      pushHistory()
       setEdges((prev) =>
         prev.map((e) => (e.id === edgeId ? { ...e, fromEnd, toEnd } : e))
       )
     },
-    []
+    [pushHistory]
   )
+
+  /**
+   * Adds a completed freehand pencil/highlighter stroke to the canvas.
+   */
+  const addStroke = useCallback((stroke: CanvasStroke) => {
+    if (!stroke.points || stroke.points.length === 0) return
+    pushHistory()
+    setStrokes((prev) => [...prev, stroke])
+  }, [pushHistory])
+
+  /**
+   * Deletes one or more strokes by ID. Optionally skips pushing history
+   * when part of a continuous eraser drag that already pushed history.
+   */
+  const deleteStrokes = useCallback((strokeIds: string[], recordHistory: boolean = true) => {
+    if (!strokeIds || strokeIds.length === 0) return
+    const idSet = new Set(strokeIds)
+    const hasMatch = strokesRef.current.some((s) => idSet.has(s.id))
+    if (!hasMatch) return
+    if (recordHistory) pushHistory()
+    setStrokes((prev) => prev.filter((s) => !idSet.has(s.id)))
+  }, [pushHistory])
+
+  /**
+   * Clears all freehand ink strokes while preserving nodes & edges (undoable).
+   */
+  const clearStrokes = useCallback(() => {
+    if (strokesRef.current.length === 0) return false
+    pushHistory()
+    setStrokes([])
+    return true
+  }, [pushHistory])
+
+  /**
+   * Clears the entire canvas (nodes, edges, and freehand strokes) in a single undoable step.
+   */
+  const clearCanvas = useCallback(() => {
+    if (
+      nodesRef.current.length === 0 &&
+      edgesRef.current.length === 0 &&
+      strokesRef.current.length === 0
+    ) {
+      return false
+    }
+    pushHistory()
+    setNodes([])
+    setEdges([])
+    setStrokes([])
+    setSelectedNodeIds([])
+    setSelectedEdgeId(null)
+    return true
+  }, [pushHistory])
 
   /**
    * Automatically calculates bounding box of all nodes and centers/zooms canvas to fit container.
@@ -629,12 +721,14 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   return {
     nodes,
     edges,
+    strokes,
     viewport,
     selectedNodeIds,
     selectedEdgeId,
     isPanning,
     setNodes,
     setEdges,
+    setStrokes,
     setViewport,
     setSelectedNodeIds,
     setSelectedEdgeId,
@@ -664,10 +758,15 @@ export function useCanvas(options: UseCanvasOptions = {}) {
     hasCopiedNodes,
     snapNodesToGrid,
     updateEdgeLineStyle,
+    updateEdgeStrokeDash,
     updateEdgeColor,
     deleteEdge,
     updateEdgeLabel,
     updateEdgeEndpoints,
+    addStroke,
+    deleteStrokes,
+    clearStrokes,
+    clearCanvas,
     undo,
     redo,
     canUndo,

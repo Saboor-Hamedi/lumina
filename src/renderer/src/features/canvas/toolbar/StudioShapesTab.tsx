@@ -30,26 +30,32 @@ const SHAPE_CATEGORIES: ShapeCategoryGroup[] = [
   {
     id: 'basic',
     label: 'Basic Geometries',
-    badge: 4,
-    shapes: ['rectangle', 'rounded-rectangle', 'circle', 'pill']
+    badge: 5,
+    shapes: ['rectangle', 'rounded-rectangle', 'circle', 'pill', 'frame']
+  },
+  {
+    id: 'flowchart',
+    label: 'Flowchart & Process',
+    badge: 10,
+    shapes: ['diamond', 'parallelogram', 'predefined-process', 'delay', 'manual-input', 'document', 'step', 'arrow-right', 'arrow-left', 'note-fold']
+  },
+  {
+    id: 'architecture',
+    label: 'System & Architecture',
+    badge: 6,
+    shapes: ['cylinder', 'queue', 'cube', 'server', 'browser', 'terminal']
   },
   {
     id: 'polygons',
     label: 'Polygons & Angles',
-    badge: 7,
-    shapes: ['diamond', 'triangle', 'hexagon', 'octagon', 'pentagon', 'trapezoid', 'parallelogram']
-  },
-  {
-    id: 'flowchart',
-    label: 'Flowchart & Data',
-    badge: 5,
-    shapes: ['cylinder', 'document', 'step', 'cross', 'cloud']
+    badge: 6,
+    shapes: ['triangle', 'hexagon', 'octagon', 'pentagon', 'trapezoid', 'cross']
   },
   {
     id: 'symbols',
     label: 'Symbols & Badges',
-    badge: 6,
-    shapes: ['speech-bubble', 'star', 'shield', 'heart', 'actor', 'envelope']
+    badge: 7,
+    shapes: ['cloud', 'speech-bubble', 'star', 'shield', 'heart', 'actor', 'envelope']
   }
 ]
 
@@ -62,8 +68,9 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
     // Accordion state for draw.io-style category dropdowns
     const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
       basic: true,
-      polygons: true,
       flowchart: true,
+      architecture: true,
+      polygons: true,
       symbols: true
     })
 

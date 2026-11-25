@@ -11,7 +11,7 @@
  */
 
 import React, { useMemo } from 'react'
-import { CanvasEdge, CanvasEdgeEnd, CanvasEdgeLineStyle, CanvasNode, CanvasNodeColor } from '../../types'
+import { CanvasEdge, CanvasEdgeEnd, CanvasEdgeLineStyle, CanvasEdgeStrokeDash, CanvasNode, CanvasNodeColor } from '../../types'
 import { CANVAS_NODE_COLOR_HEX, COLOR_CYCLE, getDragBezierCurve, SnappedPortTarget } from '../../utils/canvasUtils'
 import { CanvasEdgeItem } from './CanvasEdgeItem'
 import { ConnectingState } from '../../hooks/useCanvasGestures'
@@ -25,9 +25,10 @@ export interface CanvasEdgesLayerProps {
   selectedEdgeId?: string | null
   selectedEdgeIds?: string[]
   isMultiSelectionActive?: boolean
-  onSelectEdge?: (e: React.MouseEvent, edgeId: string) => void
+  onSelectEdge?: (e: React.MouseEvent | React.PointerEvent, edgeId: string) => void
   onDeleteEdge: (e: React.MouseEvent, edgeId: string) => void
   onUpdateEdgeLineStyle: (edgeId: string, lineStyle: CanvasEdgeLineStyle) => void
+  onUpdateEdgeStrokeDash?: (edgeId: string, strokeDash: CanvasEdgeStrokeDash) => void
   onUpdateEdgeLabel: (edgeId: string, label: string) => void
   onUpdateEdgeEndpoints: (edgeId: string, fromEnd?: CanvasEdgeEnd, toEnd?: CanvasEdgeEnd) => void
   onUpdateEdgeColor: (edgeId: string, color: CanvasNodeColor) => void
@@ -47,6 +48,7 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
     onSelectEdge,
     onDeleteEdge,
     onUpdateEdgeLineStyle,
+    onUpdateEdgeStrokeDash,
     onUpdateEdgeLabel,
     onUpdateEdgeEndpoints,
     onUpdateEdgeColor,
@@ -116,84 +118,68 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
     return (
       <svg className="lumina-canvas-edges-layer">
         <defs>
-          {/* Default Forward Filled Round Knob Head */}
+          {/* Default Crisp Directional Arrowhead (draw.io style) */}
           <marker
             id="arrow"
             viewBox="0 0 12 12"
-            refX="6"
+            refX="9.5"
             refY="6"
-            markerWidth="8"
-            markerHeight="8"
-            orient="auto"
+            markerWidth="9"
+            markerHeight="9"
+            orient="auto-start-reverse"
           >
-            <circle
-              cx="6"
-              cy="6"
-              r="4.2"
+            <path
+              d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
               fill="var(--text-accent, #38bdf8)"
-              stroke="#ffffff"
-              strokeWidth="1.2"
             />
           </marker>
 
-          {/* Default Backward Filled Round Knob Head for Bidirectional Links */}
+          {/* Default Start Arrowhead for Bidirectional Links */}
           <marker
             id="arrow-start"
             viewBox="0 0 12 12"
-            refX="6"
+            refX="9.5"
             refY="6"
-            markerWidth="8"
-            markerHeight="8"
-            orient="auto"
+            markerWidth="9"
+            markerHeight="9"
+            orient="auto-start-reverse"
           >
-            <circle
-              cx="6"
-              cy="6"
-              r="4.2"
+            <path
+              d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
               fill="var(--text-accent, #38bdf8)"
-              stroke="#ffffff"
-              strokeWidth="1.2"
             />
           </marker>
 
-          {/* Per-Color Styled Filled Round Knob Markers */}
+          {/* Per-Color Crisp Directional Arrowhead Markers */}
           {COLOR_CYCLE.map((cKey) => (
             <React.Fragment key={cKey}>
               <marker
                 id={`arrow-${cKey}`}
                 viewBox="0 0 12 12"
-                refX="6"
+                refX="9.5"
                 refY="6"
-                markerWidth="8"
-                markerHeight="8"
-                orient="auto"
+                markerWidth="9"
+                markerHeight="9"
+                orient="auto-start-reverse"
               >
-                <circle
-                  cx="6"
-                  cy="6"
-                  r="4.2"
+                <path
+                  d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
                   fill={CANVAS_NODE_COLOR_HEX[cKey]}
-                  stroke="#ffffff"
-                  strokeWidth="1.2"
                 />
               </marker>
 
               <marker
                 id={`arrow-start-${cKey}`}
                 viewBox="0 0 12 12"
-                refX="6"
+                refX="9.5"
                 refY="6"
-                markerWidth="8"
-                markerHeight="8"
-                orient="auto"
+                markerWidth="9"
+                markerHeight="9"
+                orient="auto-start-reverse"
               >
-                <circle
-                  cx="6"
-                  cy="6"
-                  r="4.2"
+                <path
+                  d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
                   fill={CANVAS_NODE_COLOR_HEX[cKey]}
-                  stroke="#ffffff"
-                  strokeWidth="1.2"
                 />
               </marker>
             </React.Fragment>
@@ -215,6 +201,7 @@ export const CanvasEdgesLayer: React.FC<CanvasEdgesLayerProps> = React.memo(
             totalParallel={parallelEdgeMap.get(edge.id)?.total ?? 1}
             onDeleteEdge={onDeleteEdge}
             onUpdateLineStyle={onUpdateEdgeLineStyle}
+            onUpdateStrokeDash={onUpdateEdgeStrokeDash}
             onUpdateLabel={onUpdateEdgeLabel}
             onUpdateEndpoints={onUpdateEdgeEndpoints}
             onCycleColor={(edgeId) => {

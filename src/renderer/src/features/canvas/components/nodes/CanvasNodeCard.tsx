@@ -51,9 +51,9 @@ export interface CanvasNodeCardProps {
   editingField: 'title' | 'text' | null
   snappedPortSide?: CanvasEdgeSide | null
   connectedPorts?: Partial<Record<CanvasEdgeSide, { hasArrow: boolean; color?: CanvasNodeColor }>>
-  onNodeMouseDown: (e: React.MouseEvent, node: CanvasNode) => void
-  onPortMouseDown: (e: React.MouseEvent, nodeId: string, side: CanvasEdgeSide) => void
-  onResizeMouseDown: (e: React.MouseEvent, node: CanvasNode) => void
+  onNodeMouseDown: (e: React.MouseEvent | React.PointerEvent, node: CanvasNode) => void
+  onPortMouseDown: (e: React.MouseEvent | React.PointerEvent, nodeId: string, side: CanvasEdgeSide) => void
+  onResizeMouseDown: (e: React.MouseEvent | React.PointerEvent, node: CanvasNode) => void
   onStartEditing: (nodeId: string, field: 'title' | 'text') => void
   onStopEditing: () => void
   onUpdateTitle: (nodeId: string, title: string) => void
@@ -98,6 +98,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
           width: `${node.width}px`,
           height: `${node.height}px`
         }}
+        onPointerDown={(e) => onNodeMouseDown(e, node)}
         onMouseDown={(e) => onNodeMouseDown(e, node)}
       >
         {/* Connection Ports (Knobs appearing on hover for drag/click linking & magnetic socket docking) */}
@@ -149,6 +150,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                     data-port-side={side}
                     title={isConnected ? `Connected ${side}${hasArrow ? ' (arrow docked)' : ''}` : `Connect ${side}`}
                     style={portStyle}
+                    onPointerDown={(e) => onPortMouseDown(e, node.id, side)}
                     onMouseDown={(e) => onPortMouseDown(e, node.id, side)}
                     onClick={(e) => onPortMouseDown(e, node.id, side)}
                   />
@@ -602,6 +604,7 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
         <div
           className="lumina-canvas-resize-handle handle-br"
           title="Drag to resize card"
+          onPointerDown={(e) => onResizeMouseDown(e, node)}
           onMouseDown={(e) => onResizeMouseDown(e, node)}
         />
       </div>
