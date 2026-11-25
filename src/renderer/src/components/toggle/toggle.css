@@ -35,8 +35,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background-color: color-mix(in srgb, var(--text-main) 14%, var(--bg-surface, var(--bg-app)));
+  border: 1px solid var(--border-strong, var(--border-subtle));
   border-radius: 999px;
   transition: background-color 0.22s cubic-bezier(0.4, 0, 0.2, 1),
               border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1);
@@ -55,15 +55,15 @@
   transform: translateY(-50%);
   background: #ffffff;
   border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
   transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .lumina-switch:hover .lumina-slider,
 .toggle-switch:hover .toggle-slider,
 .switch:hover .slider {
-  border-color: rgba(255, 255, 255, 0.28);
-  background-color: rgba(255, 255, 255, 0.16);
+  border-color: var(--text-faint, var(--border-strong));
+  background-color: color-mix(in srgb, var(--text-main) 20%, var(--bg-surface, var(--bg-app)));
 }
 
 .lumina-switch input:checked + .lumina-slider,

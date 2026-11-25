@@ -17,11 +17,11 @@
   max-width: 94vw !important;
   min-height: 480px !important;
   max-height: 78vh !important;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--border-dim) !important;
+  box-shadow: var(--elev-dialog) !important;
   overflow: hidden !important;
   border-radius: 12px !important;
-  background: var(--bg-panel, var(--bg-app)) !important;
-  border: 1px solid var(--border-dim) !important;
+  background: var(--bg-shell) !important;
+  border: 1px solid var(--border-strong) !important;
   position: relative;
   -webkit-app-region: no-drag !important;
 }
@@ -52,15 +52,8 @@
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  background: rgba(0, 0, 0, 0.55) !important;
+  background: var(--bg-overlay, color-mix(in srgb, var(--bg-shell) 60%, transparent)) !important;
   z-index: 10005 !important;
-}
-
-[data-theme='parchment'] .settings-overlay,
-[data-theme='light'] .settings-overlay,
-[data-theme='porcelain'] .settings-overlay,
-[data-theme='rosePineDawn'] .settings-overlay {
-  background: rgba(43, 33, 22, 0.28) !important;
 }
 
 /* === CUSTOM HEADER === */

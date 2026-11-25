@@ -1,16 +1,302 @@
 /* ============================================================
- * AstroNvim Modern UI: Settings Modal (VS Code Aesthetic)
- * Bridges modernUI with Settings styling layer
+ * Lumina Settings Modal — Islands UI Alignment
+ * 100% Theme-Engine Driven (Matches Main Window Islands Shell)
  * ============================================================ */
 
 @import '../../features/Settings/css/settings.css';
 
-/* Sleek modal enhancements under Modern UI */
-[data-modern-ui='true'] .settings-modal {
-  border: 1px solid var(--border-dim, rgba(255, 255, 255, 0.08)) !important;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6) !important;
+/* Backdrop overlay driven by theme tokens */
+.settings-overlay,
+.nexus-overlay.settings-overlay {
+  background: var(--bg-overlay, color-mix(in srgb, var(--bg-shell) 60%, transparent)) !important;
 }
 
-[data-modern-ui='true'] .settings-sidebar {
-  border-right: 1px solid var(--border-dim, rgba(255, 255, 255, 0.06)) !important;
+/* Outer Settings Window Shell (matches --bg-shell frame) */
+.settings-modal,
+.settings-container,
+[data-modern-ui='true'] .settings-modal,
+[data-modern-ui='true'] .settings-container {
+  background: var(--bg-shell) !important;
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--elev-dialog) !important;
+}
+
+.settings-modal.maximized,
+.settings-container.maximized,
+[data-modern-ui='true'] .settings-modal.maximized,
+[data-modern-ui='true'] .settings-container.maximized {
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Frameless 36px Header sitting directly on --bg-shell (matches Main Window TitleBar) */
+.settings-container .settings-modal-header,
+[data-modern-ui='true'] .settings-container .settings-modal-header {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  padding: 0 10px !important;
+  background: var(--bg-shell) !important;
+  border-bottom: none !important;
+}
+
+.settings-container .settings-modal-header .settings-sidebar-toggle-btn,
+.settings-container .settings-modal-header .settings-window-btn,
+.settings-container .settings-modal-header .settings-close-btn {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 7px !important;
+  color: var(--text-muted) !important;
+  background: transparent !important;
+}
+
+.settings-container .settings-modal-header .settings-sidebar-toggle-btn:hover,
+.settings-container .settings-modal-header .settings-window-btn:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-main) !important;
+}
+
+.settings-container .settings-modal-header .settings-close-btn:hover {
+  background: var(--danger) !important;
+  color: var(--bg-surface) !important;
+}
+
+/* Classic Mode (Modern UI OFF): Unified rounded inner frame inside --bg-shell */
+.settings-container .settings-layout {
+  height: calc(100% - 36px) !important;
+  background: var(--bg-shell) !important;
+  padding: 0 6px 6px 6px !important;
+  gap: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.settings-container .settings-sidebar {
+  width: 212px;
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-color) !important;
+  border-right: none !important;
+  border-radius: var(--island-radius, 10px) 0 0 var(--island-radius, 10px) !important;
+  padding: 10px 0 !important;
+}
+
+.settings-container .settings-body {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 0 var(--island-radius, 10px) var(--island-radius, 10px) 0 !important;
+  padding: 22px 28px 40px 28px !important;
+}
+
+.settings-container .settings-layout.sidebar-closed .settings-body {
+  border-radius: var(--island-radius, 10px) !important;
+}
+
+/* Islands Mode (Modern UI ON): Separate 10px Left Nav Island & Right Content Island with 6px gap */
+[data-modern-ui='true'] .settings-container .settings-layout {
+  background: var(--bg-shell) !important;
+  padding: 0 var(--island-gap, 6px) var(--island-gap, 6px) var(--island-gap, 6px) !important;
+  gap: var(--island-gap, 6px) !important;
+}
+
+[data-modern-ui='true'] .settings-container .settings-layout.sidebar-closed {
+  gap: 0 !important;
+}
+
+[data-modern-ui='true'] .settings-container .settings-sidebar {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--island-radius, 10px) !important;
+  box-shadow: none !important;
+}
+
+[data-modern-ui='true'] .settings-container .settings-sidebar.closed {
+  width: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-width: 0 !important;
+  opacity: 0 !important;
+}
+
+[data-modern-ui='true'] .settings-container .settings-body {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--island-radius, 10px) !important;
+  box-shadow: none !important;
+}
+
+/* Sidebar Navigation Pills (7px radius, matches ActivityBar & Sidebar pills) */
+.settings-container .settings-sidebar-header {
+  border-bottom: 1px solid var(--border-color) !important;
+  padding: 2px 14px 10px 14px !important;
+}
+
+.settings-container .settings-sidebar-divider {
+  background: var(--border-color) !important;
+}
+
+.settings-container .nav-item {
+  height: 32px !important;
+  margin: 1px 8px !important;
+  padding: 0 10px !important;
+  border-radius: 7px !important;
+  border: none !important;
+  color: var(--text-muted) !important;
+  background: transparent !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  transition:
+    background var(--dur-fast, 100ms) ease,
+    color var(--dur-fast, 100ms) ease !important;
+}
+
+.settings-container .nav-item:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-main) !important;
+}
+
+.settings-container .nav-item.active {
+  background: var(--accent-soft) !important;
+  color: var(--accent-color) !important;
+  font-weight: 600 !important;
+}
+
+/* Pane Header & Subtabs */
+.settings-container .settings-pane-header {
+  border-bottom: 1px solid var(--border-color) !important;
+  margin-bottom: 18px !important;
+  padding-bottom: 12px !important;
+}
+
+.settings-container .settings-subtab {
+  height: 28px !important;
+  padding: 0 12px !important;
+  border-radius: 7px !important;
+  border: 1px solid transparent !important;
+  color: var(--text-muted) !important;
+  background: transparent !important;
+}
+
+.settings-container .settings-subtab:hover {
+  color: var(--text-main) !important;
+  background: var(--bg-hover) !important;
+}
+
+.settings-container .settings-subtab.active {
+  color: var(--accent-color) !important;
+  background: var(--accent-soft) !important;
+  border-color: var(--border-accent) !important;
+}
+
+/* Setting Cards & Grouped Rows (100% Theme-Token Driven, crisp on Light & Dark themes) */
+.settings-container .setting-block,
+.settings-container .settings-row {
+  border-radius: 8px !important;
+  border: 1px solid var(--border-color) !important;
+  background: color-mix(in srgb, var(--bg-panel) 50%, var(--bg-surface)) !important;
+}
+
+.settings-container .settings-row:has(+ .settings-row) {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.settings-container .settings-row + .settings-row {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-top: none !important;
+}
+
+.settings-container .settings-row:hover {
+  background: color-mix(in srgb, var(--bg-panel) 85%, var(--bg-surface)) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Inputs, Selects, Buttons, Badges & Sticky Update Bar */
+.settings-container .dropdown,
+.settings-container .settings-select,
+.settings-container input[type='text'],
+.settings-container input[type='password'],
+.settings-container input[type='search'],
+.settings-container input[type='number'],
+.settings-container textarea {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 7px !important;
+  color: var(--text-main) !important;
+  box-shadow: none !important;
+}
+
+.settings-container .dropdown:hover,
+.settings-container .settings-select:hover,
+.settings-container input:hover,
+.settings-container textarea:hover {
+  border-color: var(--border-strong) !important;
+}
+
+.settings-container .dropdown:focus,
+.settings-container .settings-select:focus,
+.settings-container input:focus,
+.settings-container textarea:focus {
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 2px var(--accent-soft) !important;
+}
+
+.settings-container .btn,
+.settings-container .btn-secondary {
+  background: var(--bg-surface) !important;
+  color: var(--text-main) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 7px !important;
+  box-shadow: none !important;
+}
+
+.settings-container .btn:hover,
+.settings-container .btn-secondary:hover {
+  background: var(--bg-hover) !important;
+  border-color: var(--border-strong) !important;
+  box-shadow: none !important;
+}
+
+.settings-container .btn-danger {
+  color: var(--danger) !important;
+  border-color: color-mix(in srgb, var(--danger) 30%, transparent) !important;
+  background: color-mix(in srgb, var(--danger) 8%, transparent) !important;
+}
+
+.settings-container .btn-danger:hover {
+  background: color-mix(in srgb, var(--danger) 16%, transparent) !important;
+  border-color: color-mix(in srgb, var(--danger) 50%, transparent) !important;
+}
+
+.settings-container .range-wrap input[type='range']::-webkit-slider-thumb {
+  background: var(--bg-surface) !important;
+  border: 2px solid var(--accent-color) !important;
+  box-shadow: 0 1px 2px var(--shadow-soft) !important;
+}
+
+.settings-container .shortcut-badge,
+.settings-container .value-badge {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+.settings-container .settings-sticky-update-bar {
+  background: var(--bg-surface) !important;
+  border-top: 1px solid var(--border-color) !important;
+  box-shadow: none !important;
+}
+
+/* Scrollbars driven by theme tokens */
+.settings-container .settings-body::-webkit-scrollbar-thumb,
+.settings-container .settings-sidebar-scrollable::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb, var(--border-strong)) !important;
+}
+
+.settings-container .settings-body::-webkit-scrollbar-thumb:hover,
+.settings-container .settings-sidebar-scrollable::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted) !important;
 }

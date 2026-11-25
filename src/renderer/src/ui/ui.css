@@ -27,7 +27,7 @@
 }
 
 .lumina-btn:hover:not(:disabled) {
-  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  background: var(--bg-hover);
   color: var(--ink-1, var(--text-main));
   border-color: var(--border-strong, var(--border-subtle));
 }
@@ -131,9 +131,9 @@
   z-index: 100000;
   min-width: 175px;
   padding: var(--space-1, 4px);
-  background: var(--surface-3, var(--bg-panel));
+  background: var(--bg-surface, var(--bg-panel));
   border: 1px solid var(--border-strong, var(--border-subtle));
-  border-radius: var(--radius-lg, 8px);
+  border-radius: 8px;
   box-shadow: var(--elev-popover);
   display: flex;
   flex-direction: column;

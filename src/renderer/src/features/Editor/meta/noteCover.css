@@ -511,11 +511,11 @@
   position: fixed !important;
   min-width: 216px;
   max-width: 270px;
-  background: var(--surface-3, var(--bg-panel, #18181c)) !important;
+  background: var(--bg-surface, var(--bg-panel)) !important;
   border: 1px solid var(--border-strong, var(--border-dim)) !important;
-  border-radius: var(--radius-md, 7px) !important;
+  border-radius: 8px !important;
   padding: 4px !important;
-  box-shadow: var(--elev-popover, 0 12px 32px rgba(0, 0, 0, 0.28)) !important;
+  box-shadow: var(--elev-popover) !important;
   z-index: 20000 !important;
   pointer-events: auto !important;
   opacity: 1 !important;

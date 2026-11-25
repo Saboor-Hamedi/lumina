@@ -10,6 +10,7 @@ import { useModalDrag } from './hook/useModalDrag'
 import type { SettingsProps, SettingsTabId } from './types'
 import '../Docs/Documentation.css'
 import './css/settings.css'
+import '../../assets/modernUI/settings.css'
 
 const TAB_LABELS: Record<SettingsTabId, string> = {
   workspace: 'Workspace',
@@ -160,7 +161,7 @@ export const Settings: React.FC<SettingsProps> = ({
             ? 'none'
             : `translate3d(${modalPos.current.x}px, ${modalPos.current.y}px, 0)`,
           transition: '0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
+          boxShadow: isMaximized ? 'none' : 'var(--elev-dialog)',
           overflow: 'hidden',
           borderRadius: isMaximized ? '0' : '12px'
         }}

@@ -9,9 +9,9 @@
   position: fixed;
   min-width: 196px;
   max-width: 224px;
-  background: var(--bg-card, var(--bg-panel, #1e1e2e)) !important;
-  border: 1px solid var(--border-strong, var(--border-subtle, rgba(255, 255, 255, 0.12)));
-  border-radius: var(--radius-md, 6px);
+  background: var(--bg-surface, var(--bg-panel)) !important;
+  border: 1px solid var(--border-strong, var(--border-subtle));
+  border-radius: 8px;
   padding: 4px;
   z-index: 10000;
   animation: menuAppear var(--dur-fast, 100ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
@@ -46,7 +46,9 @@
   top: -4px;
   left: calc(100% + 7px) !important;
   margin: 0 !important;
-  background: var(--bg-card, var(--bg-panel, #1e1e2e)) !important;
+  background: var(--bg-surface, var(--bg-panel)) !important;
+  border: 1px solid var(--border-strong, var(--border-subtle));
+  border-radius: 8px;
   animation: submenuAppear var(--dur-fast, 100ms) var(--ease-snappy, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
   transform-origin: top left;
   box-shadow: var(--elev-popover);

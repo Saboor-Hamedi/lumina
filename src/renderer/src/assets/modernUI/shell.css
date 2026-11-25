@@ -205,8 +205,8 @@
 
 /* ============================================================
  * Zen Mode (Ctrl + .):
- * Hides titlebar, activity bars, sidebars, and status bar,
- * expanding the main editor card cleanly with comfortable outer padding.
+ * Zero outer gaps on top, bottom, left, and right; preserves internal
+ * 6px gaps between any open sidebars/splits/terminal; 5px corner radius.
  * ============================================================ */
 [data-zen-mode='true'] .lumina-app,
 [data-modern-ui='true'][data-zen-mode='true'] .lumina-app,
@@ -219,15 +219,18 @@
 }
 
 [data-zen-mode='true'] .shell-body,
-[data-modern-ui='true'][data-zen-mode='true'] .shell-body {
-  padding: 8px !important;
+[data-modern-ui='true'][data-zen-mode='true'] .shell-body,
+[data-modern-ui='true'][data-zen-mode='true'] .shell-body:not(:has(> .lumina-activity-bar:not(.lumina-activity-bar-right):not(.zen-hidden))),
+[data-modern-ui='true'][data-zen-mode='true'] .shell-body:not(:has(> .lumina-activity-bar.lumina-activity-bar-right:not(.zen-hidden))) {
+  padding: 0 !important;
   margin: 0 !important;
   gap: 0 !important;
   background: var(--bg-shell) !important;
 }
 
 [data-zen-mode='true'] .shell-workbench-column,
-[data-modern-ui='true'][data-zen-mode='true'] .shell-workbench-column {
+[data-modern-ui='true'][data-zen-mode='true'] .shell-workbench-column,
+[data-modern-ui='true'][data-zen-mode='true'] .shell-workbench-column:not(:has(> .status-bar:not(.zen-hidden))) {
   padding: 0 !important;
   margin: 0 !important;
   gap: 0 !important;
@@ -235,8 +238,8 @@
 }
 
 [data-zen-mode='true'] .shell-workbench-row {
-  border-radius: var(--island-radius, 10px) !important;
-  border: 1px solid var(--border-color) !important;
+  border-radius: 5px !important;
+  border: none !important;
   background: var(--bg-surface) !important;
 }
 
@@ -244,6 +247,25 @@
   border: none !important;
   border-radius: 0 !important;
   background: var(--bg-shell) !important;
+}
+
+[data-modern-ui='true'][data-zen-mode='true'] .shell-center-workspace,
+[data-modern-ui='true'][data-zen-mode='true'] .shell-sidebar-left,
+[data-modern-ui='true'][data-zen-mode='true'] .shell-sidebar-right,
+[data-modern-ui='true'][data-zen-mode='true'] .shell-terminal-dock,
+[data-modern-ui='true'][data-zen-mode='true'] .workspace-split-container .workspace-pane {
+  border-radius: 5px !important;
+}
+
+/* Pure distraction-free single editor in Zen Mode: flush to all 4 edges with 5px window radius */
+[data-modern-ui='true'][data-zen-mode='true'] .app-shell.left-closed.right-closed .shell-center-workspace:not(:has(.workspace-split-container)) {
+  border: none !important;
+  border-radius: 5px !important;
+}
+
+[data-window-maximized='true'][data-zen-mode='true'] .shell-workbench-row,
+[data-window-maximized='true'][data-modern-ui='true'][data-zen-mode='true'] .app-shell.left-closed.right-closed .shell-center-workspace:not(:has(.workspace-split-container)) {
+  border-radius: 0 !important;
 }
 
 [data-modern-ui='true'][data-zen-mode='true'] .shell-body > .lumina-activity-bar.zen-hidden {

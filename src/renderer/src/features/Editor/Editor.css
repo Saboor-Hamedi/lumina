@@ -548,7 +548,7 @@
 .tab-close-btn:hover {
   opacity: 1 !important;
   color: var(--text-main);
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--bg-hover);
 }
 
 .tab-pin-indicator {
@@ -1454,12 +1454,12 @@
 }
 
 .cm-scroller::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--scroll-thumb, var(--border-strong));
   border-radius: 10px;
 }
 
-[data-theme='dark'] .cm-scroller::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+.cm-scroller::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 .cm-editor {
@@ -1617,14 +1617,14 @@
 }
 
 .wiki-hover-content tr:nth-child(even) td {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-input);
 }
 
 .wiki-hover-content blockquote {
   margin: 12px 0;
   padding: 8px 14px;
   border-left: 3px solid var(--text-accent);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-input);
   border-radius: 0 6px 6px 0;
   color: var(--text-muted);
 }
@@ -2129,8 +2129,8 @@
 .meta-header-actions .meta-action-btn:hover,
 .meta-header-actions .voice-trigger-btn:hover,
 .meta-header-actions button:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  background: var(--bg-hover) !important;
+  border-color: var(--border-color, var(--border-dim)) !important;
 }
 
 .meta-header-actions .meta-action-btn svg,

@@ -7,9 +7,9 @@
 .lumina-activity-bar-right,
 [data-modern-ui='true'] .lumina-activity-bar,
 [data-modern-ui='true'] .lumina-activity-bar-right {
-  width: 38px !important;
-  min-width: 0 !important;
-  max-width: none !important;
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
   height: 100% !important;
   background: var(--bg-shell) !important;
   border: none !important;
@@ -17,7 +17,7 @@
   flex-direction: column !important;
   justify-content: space-between !important;
   align-items: center !important;
-  padding: 2px 0 4px 0 !important;
+  padding: 6px 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
   flex-shrink: 0 !important;
@@ -37,6 +37,7 @@
 [data-modern-ui='true'] .lumina-activity-bar-right.zen-hidden {
   width: 0 !important;
   min-width: 0 !important;
+  max-width: 0 !important;
   padding: 0 !important;
   opacity: 0 !important;
   overflow: hidden !important;
@@ -50,7 +51,10 @@
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  width: 38px !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 auto !important;
   flex-shrink: 0 !important;
   gap: 4px !important;
   transform: translateZ(0);
@@ -61,30 +65,37 @@
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  width: 38px !important;
+  justify-content: flex-end !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: auto auto 0 auto !important;
   flex-shrink: 0 !important;
   gap: 4px !important;
-  margin-top: auto !important;
   transform: translateZ(0);
   backface-visibility: hidden;
 }
 
-/* Activity Bar Button: Centered 30x30 pill with 7px radius */
+/* Activity Bar Button: Dead-center 30x30 pill with 7px radius */
 .activity-bar-btn,
-[data-modern-ui='true'] .activity-bar-btn {
+.lumina-activity-bar-right .activity-bar-btn,
+[data-modern-ui='true'] .activity-bar-btn,
+[data-modern-ui='true'] .lumina-activity-bar-right .activity-bar-btn {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   width: 30px !important;
   height: 30px !important;
+  min-width: 30px !important;
+  min-height: 30px !important;
   border-radius: 7px !important;
   border: none !important;
   background: transparent !important;
   color: var(--text-muted) !important;
-  opacity: 0.72 !important;
+  opacity: 0.75 !important;
   cursor: pointer !important;
   padding: 0 !important;
-  margin: 0 !important;
+  margin: 0 auto !important;
+  line-height: 0 !important;
   box-sizing: border-box !important;
   transition:
     opacity var(--dur-fast, 100ms) ease,
@@ -111,11 +122,13 @@
 }
 
 .activity-bar-btn svg {
-  flex-shrink: 0;
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  border-radius: 0;
+  display: block !important;
+  flex-shrink: 0 !important;
+  width: 16px !important;
+  height: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
   background: transparent !important;
   filter: none !important;
   transition: color var(--dur-fast, 100ms) ease;
