@@ -143,11 +143,54 @@ export function useCanvasDrop({
       }
     }
 
+    const handleDroppedShape = (e: Event) => {
+      const detail = (e as CustomEvent).detail || {}
+      const { shapeType, width = 140, height = 100, color = 'default', clientX = 0, clientY = 0 } = detail
+      if (!containerRef.current || !shapeType) return
+
+      const rect = containerRef.current.getBoundingClientRect()
+      const isInside =
+        clientX >= rect.left &&
+        clientX <= rect.right &&
+        clientY >= rect.top &&
+        clientY <= rect.bottom
+      if (!isInside) return
+
+      // Ignore drops that land back inside the sidebar toolbar
+      const el = document.elementFromPoint(clientX, clientY)
+      if (el?.closest('.lumina-canvas-toolbar-right')) return
+
+      const pt = screenToCanvas(clientX, clientY, rect)
+      let newX = pt.x - width / 2
+      let newY = pt.y - height / 2
+      if (snapToGrid) {
+        newX = Math.round(newX / 20) * 20
+        newY = Math.round(newY / 20) * 20
+      } else {
+        newX = Math.round(newX)
+        newY = Math.round(newY)
+      }
+
+      addNode({
+        type: 'shape',
+        shape: shapeType as CanvasShapeType,
+        title: '',
+        text: '',
+        x: newX,
+        y: newY,
+        width,
+        height,
+        color
+      })
+    }
+
     window.addEventListener('lumina:canvas-drop-item', handleDroppedExplorerItem as EventListener)
+    window.addEventListener('lumina:canvas-drop-shape', handleDroppedShape as EventListener)
     return () => {
       window.removeEventListener('lumina:canvas-drop-item', handleDroppedExplorerItem as EventListener)
+      window.removeEventListener('lumina:canvas-drop-shape', handleDroppedShape as EventListener)
     }
-  }, [screenToCanvas, buildNodeFromSnippet, addNodes, snapToGrid, containerRef])
+  }, [screenToCanvas, buildNodeFromSnippet, addNode, addNodes, snapToGrid, containerRef])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()

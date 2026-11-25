@@ -568,10 +568,22 @@ export function renderShapeSVG(
 
     case 'frame':
       return (
-        <g stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin="round" vectorEffect="non-scaling-stroke">
-          <rect x="3" y="3" width="94" height="94" rx="6" fill={fill} fillOpacity={Math.max(0.02, fillOpacity * 0.6)} strokeDasharray="4 3" />
-          <path d="M 3 20 L 42 20 L 50 12 L 50 3" fill="none" />
-        </g>
+        <rect
+          x="2"
+          y="2"
+          width="96"
+          height="96"
+          rx="8"
+          ry="8"
+          fill={fill}
+          fillOpacity={Math.max(0.02, fillOpacity * 0.3)}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          strokeDasharray="6 4"
+          strokeOpacity="0.72"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
       )
 
     default:

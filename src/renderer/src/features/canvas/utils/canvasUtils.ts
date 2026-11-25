@@ -487,20 +487,34 @@ export function getDragBezierCurve(
   fromSide: CanvasEdgeSide,
   toPt: { x: number; y: number }
 ): { pathD: string } {
-  const rawDist = Math.hypot(toPt.x - fromPt.x, toPt.y - fromPt.y)
-  const dist = Math.max(Math.min(rawDist * 0.35, 120), 20)
-  let cp1x = fromPt.x
-  let cp1y = fromPt.y
+  const dx = toPt.x - fromPt.x
+  const dy = toPt.y - fromPt.y
+  const rawDist = Math.hypot(dx, dy)
+  if (rawDist < 2) {
+    return { pathD: `M ${fromPt.x} ${fromPt.y} L ${toPt.x} ${toPt.y}` }
+  }
 
-  if (fromSide === 'right') cp1x += dist
-  else if (fromSide === 'left') cp1x -= dist
-  else if (fromSide === 'top') cp1y -= dist
-  else if (fromSide === 'bottom') cp1y += dist
+  let nx = 0
+  let ny = 0
+  if (fromSide === 'right') nx = 1
+  else if (fromSide === 'left') nx = -1
+  else if (fromSide === 'top') ny = -1
+  else if (fromSide === 'bottom') ny = 1
 
-  // cp2 lies along the line between cp1 and toPt, ensuring the curve arrives
-  // completely straight at toPt so the arrowhead points cleanly in the direction of motion.
-  const cp2x = toPt.x - (toPt.x - cp1x) * 0.25
-  const cp2y = toPt.y - (toPt.y - cp1y) * 0.25
+  // Measure how aligned the drag vector is with the starting port's outward direction.
+  // When dragging away/behind the port, blend smoothly into a crisp straight line so it never loops awkwardly.
+  const alignment = (dx * nx + dy * ny) / rawDist
+  const curveFactor = Math.max(0, Math.min(1, (alignment + 0.15) / 1.15))
+  const dist = Math.min(rawDist * 0.28, 68) * curveFactor
+
+  if (dist < 4) {
+    return { pathD: `M ${fromPt.x} ${fromPt.y} L ${toPt.x} ${toPt.y}` }
+  }
+
+  const cp1x = fromPt.x + nx * dist
+  const cp1y = fromPt.y + ny * dist
+  const cp2x = toPt.x - (toPt.x - cp1x) * 0.22
+  const cp2y = toPt.y - (toPt.y - cp1y) * 0.22
 
   const pathD = `M ${fromPt.x} ${fromPt.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${toPt.x} ${toPt.y}`
   return { pathD }

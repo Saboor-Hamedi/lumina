@@ -15,7 +15,6 @@ import {
   Copy,
   Palette,
   Trash2,
-  Grid,
   Shapes
 } from 'lucide-react'
 import ToolTip from '../../../../components/atoms/ToolTip'
@@ -222,20 +221,6 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
             <Copy size={13} />
           </button>
         </ToolTip>
-
-        {/* Snap to Grid */}
-        {onSnapToGrid && (
-          <ToolTip text="Snap to Grid" position="top">
-            <button
-              type="button"
-              className="lumina-canvas-tool-btn"
-              onClick={onSnapToGrid}
-              aria-label="Snap to Grid"
-            >
-              <Grid size={13} />
-            </button>
-          </ToolTip>
-        )}
 
         <div className="lumina-canvas-divider vertical" />
 

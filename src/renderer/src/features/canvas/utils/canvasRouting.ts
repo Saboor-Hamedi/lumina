@@ -442,9 +442,9 @@ export function calculateEdgePath(
   parallelIndex: number = 0,
   totalParallel: number = 1
 ): EdgePathResult {
-  // If sides are provided, use them! Only be dynamic if sides are omitted
-  const effectiveFromSide = (!dynamicPortDirection || fromSide) ? fromSide : undefined
-  const effectiveToSide = (!dynamicPortDirection || toSide) ? toSide : undefined
+  // When dynamicPortDirection is enabled, always resolve the closest facing ports as nodes move
+  const effectiveFromSide = dynamicPortDirection ? undefined : fromSide
+  const effectiveToSide = dynamicPortDirection ? undefined : toSide
 
   // Resolve optimal 8-port anchors with outward normal vectors
   const { fromPort, toPort } = getOptimalPortPair(

@@ -321,6 +321,7 @@
   padding: 0;
   background: transparent;
   resize: none;
+  overflow: hidden;
 }
 
 .lumina-canvas-frameless-placeholder {

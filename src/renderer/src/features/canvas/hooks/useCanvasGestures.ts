@@ -143,6 +143,11 @@ export function useCanvasGestures({
   // Multi-touch pinch-to-zoom & 2-finger pan tracking
   const activeTouchPointersRef = useRef<Map<number, { x: number; y: number }>>(new Map())
   const pinchStateRef = useRef<{ lastDist: number; lastMidX: number; lastMidY: number } | null>(null)
+  const latestPointerRef = useRef<{ clientX: number; clientY: number; shiftKey: boolean }>({
+    clientX: 0,
+    clientY: 0,
+    shiftKey: false
+  })
   // Deduplicate mouseDown immediately following pointerDown in browsers (while keeping JSDOM fireEvent.mouseDown working)
   const lastPointerDownTsRef = useRef<number>(0)
   const shouldIgnoreDuplicateMouseDown = (e: React.MouseEvent | React.PointerEvent): boolean => {
@@ -356,13 +361,20 @@ export function useCanvasGestures({
         return
       }
 
-      // Shift + Drag on empty canvas starts a sleek Marquee Box Selection
-      if (e.shiftKey && toolMode === 'select' && !isSpacePressed && (e.button === 0 || isTouch) && containerRef.current) {
+      // Select tool (V) on empty canvas: click clears selection, drag draws Marquee Box Selection
+      // (Hand tool H, Space+Drag, middle-mouse drag, or touch drag pans the canvas)
+      if (toolMode === 'select' && !isSpacePressed && e.button === 0 && !isTouch && containerRef.current) {
         e.preventDefault()
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur()
+        }
         const rect = containerRef.current.getBoundingClientRect()
         const pt = screenToCanvas(e.clientX, e.clientY, rect)
         marqueeStartRef.current = pt
         setMarqueeBox({ x: pt.x, y: pt.y, width: 0, height: 0 })
+        if (!e.shiftKey) {
+          setSelectedNodeIds([])
+        }
         setSelectedEdgeId?.(null)
         setSelectedEdgeIds?.([])
         setEditingNodeId(null)
@@ -370,13 +382,13 @@ export function useCanvasGestures({
         return
       }
 
-      if (e.button === 0 || e.button === 1 || isTouch || toolMode === 'hand' || isSpacePressed) {
+      if (e.button === 1 || isTouch || toolMode === 'hand' || isSpacePressed) {
         e.preventDefault()
         isPanningRef.current = true
         setIsPanningState(true)
         panPrevRef.current = { x: e.clientX, y: e.clientY }
 
-        if ((e.button === 0 || isTouch) && toolMode !== 'hand' && !isSpacePressed) {
+        if (isTouch && toolMode !== 'hand' && !isSpacePressed) {
           if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur()
           }
@@ -632,41 +644,48 @@ export function useCanvasGestures({
         return
       }
 
-      // Marquee selection box live update
-      if (marqueeStartRef.current && containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
-        const pt = screenToCanvas(e.clientX, e.clientY, rect)
-        const start = marqueeStartRef.current
-        const x = Math.min(start.x, pt.x)
-        const y = Math.min(start.y, pt.y)
-        const width = Math.abs(pt.x - start.x)
-        const height = Math.abs(pt.y - start.y)
-        setMarqueeBox({ x, y, width, height })
-        const matched = stateRef.current.nodes
-          .filter(
-            (n) =>
-              n.x < x + width &&
-              n.x + (n.width || 140) > x &&
-              n.y < y + height &&
-              n.y + (n.height || 100) > y
-          )
-          .map((n) => n.id)
-        setSelectedNodeIds(matched)
-        return
-      }
+      // Always record latest pointer coordinates and let a single vsync-aligned rAF consume them
+      // (never cancelling an in-flight rAF avoids frame starvation on high-polling mice & trackpads)
+      latestPointerRef.current.clientX = e.clientX
+      latestPointerRef.current.clientY = e.clientY
+      latestPointerRef.current.shiftKey = e.shiftKey
 
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current)
-      }
+      if (rafIdRef.current !== null) return
 
       rafIdRef.current = requestAnimationFrame(() => {
         rafIdRef.current = null
+        const { clientX, clientY, shiftKey } = latestPointerRef.current
         const currentZoom = stateRef.current.viewport.zoom || 1
+
+        // 0. Marquee selection box live update (rAF-throttled for 120Hz smoothness)
+        if (marqueeStartRef.current && containerRef.current) {
+          const rect = containerRef.current.getBoundingClientRect()
+          const pt = screenToCanvas(clientX, clientY, rect)
+          const start = marqueeStartRef.current
+          const x = Math.min(start.x, pt.x)
+          const y = Math.min(start.y, pt.y)
+          const width = Math.abs(pt.x - start.x)
+          const height = Math.abs(pt.y - start.y)
+          setMarqueeBox({ x, y, width, height })
+          if (width > 3 || height > 3) {
+            const matched = stateRef.current.nodes
+              .filter(
+                (n) =>
+                  n.x < x + width &&
+                  n.x + (n.width || 140) > x &&
+                  n.y < y + height &&
+                  n.y + (n.height || 100) > y
+              )
+              .map((n) => n.id)
+            setSelectedNodeIds(matched)
+          }
+          return
+        }
 
         // 1. Live wire connecting & magnetic docking
         if (containerRef.current && connectingRef.current) {
           const rect = containerRef.current.getBoundingClientRect()
-          const canvasPos = screenToCanvas(e.clientX, e.clientY, rect)
+          const canvasPos = screenToCanvas(clientX, clientY, rect)
           const magneticThreshold = Math.max(28, Math.min(65, 40 / (currentZoom || 1)))
           const snap = findClosestPort(
             canvasPos,
@@ -692,17 +711,24 @@ export function useCanvasGestures({
             pushHistory?.()
             hasPushedResizeHistoryRef.current = true
           }
-          const dx = (e.clientX - resizingNodeRef.current.startX) / currentZoom
-          const dy = (e.clientY - resizingNodeRef.current.startY) / currentZoom
+          const dx = (clientX - resizingNodeRef.current.startX) / currentZoom
+          const dy = (clientY - resizingNodeRef.current.startY) / currentZoom
           const initialW = resizingNodeRef.current.initialW
           const initialH = resizingNodeRef.current.initialH
-          const isShape = resizingNodeRef.current.type === 'shape'
+          const activeShape = nodeMap.get(resizingNodeRef.current.id)?.shape
+          const isFreeResizeShape =
+            activeShape === 'frame' ||
+            activeShape === 'rectangle' ||
+            activeShape === 'rounded-rectangle' ||
+            activeShape === 'pill'
+          const isProportionalShape =
+            resizingNodeRef.current.type === 'shape' && !isFreeResizeShape
 
           let newW: number
           let newH: number
 
-          if (isShape || e.shiftKey) {
-            // Uniform proportional scaling: preserves aspect ratio so all sides shrink and expand uniformly
+          if (isProportionalShape || shiftKey) {
+            // Uniform proportional scaling for geometric icons (or when holding Shift)
             const diag = Math.hypot(initialW, initialH) || 1
             const projDelta = (dx * initialW + dy * initialH) / diag
             const scale = Math.max(0.2, (diag + projDelta) / diag)
@@ -719,19 +745,21 @@ export function useCanvasGestures({
           }
           updateNodeSize(resizingNodeRef.current.id, newW, newH)
         } else if (isPanningRef.current) {
-          // 3. Canvas background panning
-          const dx = e.clientX - panPrevRef.current.x
-          const dy = e.clientY - panPrevRef.current.y
-          panPrevRef.current = { x: e.clientX, y: e.clientY }
-          panBy(dx, dy)
+          // 3. Canvas background panning (1:1 instant tracking, zero frame starvation)
+          const dx = clientX - panPrevRef.current.x
+          const dy = clientY - panPrevRef.current.y
+          panPrevRef.current = { x: clientX, y: clientY }
+          if (dx !== 0 || dy !== 0) {
+            panBy(dx, dy)
+          }
         } else if (draggingNodeRef.current) {
           // 4. Node dragging
           if (!hasPushedDragHistoryRef.current) {
             pushHistory?.()
             hasPushedDragHistoryRef.current = true
           }
-          const dx = (e.clientX - draggingNodeRef.current.startX) / currentZoom
-          const dy = (e.clientY - draggingNodeRef.current.startY) / currentZoom
+          const dx = (clientX - draggingNodeRef.current.startX) / currentZoom
+          const dy = (clientY - draggingNodeRef.current.startY) / currentZoom
           const shouldSnap = stateRef.current.snapToGrid
 
           if (draggingNodeRef.current.initialPositions.size > 1) {

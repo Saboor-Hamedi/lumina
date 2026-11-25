@@ -141,7 +141,7 @@ export const CanvasEdgeItem: React.FC<CanvasEdgeItemProps> = React.memo(
         toNode,
         edge.toSide,
         lineStyle,
-        !edge.fromSide || !edge.toSide,
+        edge.routing !== 'manual',
         snapToGrid,
         parallelIndex,
         totalParallel

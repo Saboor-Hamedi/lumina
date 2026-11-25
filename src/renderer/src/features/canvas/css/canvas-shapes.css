@@ -243,6 +243,14 @@
   filter: drop-shadow(0 0 5px color-mix(in srgb, var(--node-accent, #38bdf8) 45%, transparent));
 }
 
+/* Frame container stays clean, flat, and shadow-free */
+.lumina-canvas-node.is-shape.shape-frame .lumina-canvas-shape-svg,
+.lumina-canvas-node.is-shape.shape-frame:hover .lumina-canvas-shape-svg,
+.lumina-canvas-node.is-shape.shape-frame.selected .lumina-canvas-shape-svg {
+  filter: none !important;
+  transform: none !important;
+}
+
 /* Shape Inner Actions: Sits neatly inside the shape at the top-right corner */
 .lumina-canvas-shape-actions {
   position: absolute;

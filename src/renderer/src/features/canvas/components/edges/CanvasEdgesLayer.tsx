@@ -37,18 +37,18 @@ export interface CanvasEdgesLayerProps {
 
 const EdgeArrowDefs: React.FC = React.memo(() => (
   <defs>
-    {/* Default Crisp Directional Arrowhead (draw.io style) */}
+    {/* Default Crisp Directional Arrowhead (draw.io / Figma style) */}
     <marker
       id="arrow"
       viewBox="0 0 12 12"
-      refX="9.5"
+      refX="9.2"
       refY="6"
-      markerWidth="9"
-      markerHeight="9"
+      markerWidth="10"
+      markerHeight="10"
       orient="auto-start-reverse"
     >
       <path
-        d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
+        d="M 1.2 2.2 L 10 6 L 1.2 9.8 L 3.4 6 Z"
         fill="var(--text-accent, #38bdf8)"
       />
     </marker>
@@ -57,14 +57,14 @@ const EdgeArrowDefs: React.FC = React.memo(() => (
     <marker
       id="arrow-start"
       viewBox="0 0 12 12"
-      refX="9.5"
+      refX="9.2"
       refY="6"
-      markerWidth="9"
-      markerHeight="9"
+      markerWidth="10"
+      markerHeight="10"
       orient="auto-start-reverse"
     >
       <path
-        d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
+        d="M 1.2 2.2 L 10 6 L 1.2 9.8 L 3.4 6 Z"
         fill="var(--text-accent, #38bdf8)"
       />
     </marker>
@@ -75,14 +75,14 @@ const EdgeArrowDefs: React.FC = React.memo(() => (
         <marker
           id={`arrow-${cKey}`}
           viewBox="0 0 12 12"
-          refX="9.5"
+          refX="9.2"
           refY="6"
-          markerWidth="9"
-          markerHeight="9"
+          markerWidth="10"
+          markerHeight="10"
           orient="auto-start-reverse"
         >
           <path
-            d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
+            d="M 1.2 2.2 L 10 6 L 1.2 9.8 L 3.4 6 Z"
             fill={CANVAS_NODE_COLOR_HEX[cKey]}
           />
         </marker>
@@ -90,14 +90,14 @@ const EdgeArrowDefs: React.FC = React.memo(() => (
         <marker
           id={`arrow-start-${cKey}`}
           viewBox="0 0 12 12"
-          refX="9.5"
+          refX="9.2"
           refY="6"
-          markerWidth="9"
-          markerHeight="9"
+          markerWidth="10"
+          markerHeight="10"
           orient="auto-start-reverse"
         >
           <path
-            d="M 1.5 1.8 L 10.5 6 L 1.5 10.2 L 3.8 6 Z"
+            d="M 1.2 2.2 L 10 6 L 1.2 9.8 L 3.4 6 Z"
             fill={CANVAS_NODE_COLOR_HEX[cKey]}
           />
         </marker>

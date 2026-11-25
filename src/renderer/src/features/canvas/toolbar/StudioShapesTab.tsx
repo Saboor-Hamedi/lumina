@@ -1,10 +1,12 @@
-import React, { useState, useCallback, useMemo } from 'react'
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronDown, Check, Search, X } from 'lucide-react'
 import { CanvasShapeType, CanvasNodeColor } from '../types'
 import {
   CANVAS_SHAPES,
   SHAPE_COLOR_OPTIONS,
-  renderShapeSVG
+  renderShapeSVG,
+  type ShapeDefinition
 } from '../components/controls/ConvasShapes'
 
 export interface StudioShapesTabProps {
@@ -111,6 +113,89 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
     const activeColorHex =
       SHAPE_COLOR_OPTIONS.find((c) => c.id === activeColor)?.hex || '#38bdf8'
 
+    // Pointer-based drag-from-sidebar onto Canvas (portaled to document.body + GPU translate3d at 120Hz)
+    const [draggingShape, setDraggingShape] = useState<{
+      shape: ShapeDefinition
+      x: number
+      y: number
+    } | null>(null)
+    const ghostRef = useRef<HTMLDivElement | null>(null)
+    const suppressNextClickRef = useRef(false)
+    const dragSessionRef = useRef<{
+      shape: ShapeDefinition
+      startX: number
+      startY: number
+      isDragging: boolean
+    } | null>(null)
+
+    useEffect(() => {
+      const onPointerMove = (e: PointerEvent) => {
+        const session = dragSessionRef.current
+        if (!session) return
+        const dist = Math.hypot(e.clientX - session.startX, e.clientY - session.startY)
+        if (!session.isDragging && dist > 5) {
+          session.isDragging = true
+          setDraggingShape({ shape: session.shape, x: e.clientX, y: e.clientY })
+        }
+        if (session.isDragging && ghostRef.current) {
+          ghostRef.current.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0) translate(-50%, -50%)`
+        }
+      }
+
+      const onPointerUp = (e: PointerEvent) => {
+        const session = dragSessionRef.current
+        if (!session) return
+        dragSessionRef.current = null
+        if (session.isDragging) {
+          suppressNextClickRef.current = true
+          setTimeout(() => {
+            suppressNextClickRef.current = false
+          }, 120)
+          setDraggingShape(null)
+          window.dispatchEvent(
+            new CustomEvent('lumina:canvas-drop-shape', {
+              detail: {
+                shapeType: session.shape.id,
+                width: session.shape.defaultWidth,
+                height: session.shape.defaultHeight,
+                color: activeColor,
+                clientX: e.clientX,
+                clientY: e.clientY
+              }
+            })
+          )
+        }
+      }
+
+      window.addEventListener('pointermove', onPointerMove, { passive: true })
+      window.addEventListener('pointerup', onPointerUp)
+      window.addEventListener('pointercancel', onPointerUp)
+      return () => {
+        window.removeEventListener('pointermove', onPointerMove)
+        window.removeEventListener('pointerup', onPointerUp)
+        window.removeEventListener('pointercancel', onPointerUp)
+      }
+    }, [activeColor])
+
+    const handleShapePointerDown = useCallback((e: React.PointerEvent, shape: ShapeDefinition) => {
+      if (e.button !== 0 && e.pointerType === 'mouse') return
+      e.preventDefault()
+      dragSessionRef.current = {
+        shape,
+        startX: e.clientX,
+        startY: e.clientY,
+        isDragging: false
+      }
+    }, [])
+
+    const handleShapeClick = useCallback(
+      (shape: ShapeDefinition) => {
+        if (suppressNextClickRef.current) return
+        onAddShape?.(shape.id, shape.defaultWidth, shape.defaultHeight, activeColor)
+      },
+      [onAddShape, activeColor]
+    )
+
     return (
       <div className="lumina-canvas-studio-tab-pane">
         {/* Live Shape Search */}
@@ -183,20 +268,10 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
                   key={shape.id}
                   type="button"
                   className="lumina-canvas-studio-shape-card"
-                  onClick={() => onAddShape?.(shape.id, shape.defaultWidth, shape.defaultHeight, activeColor)}
-                  draggable
-                  onDragStart={(e) => {
-                    const shapePayload = JSON.stringify({
-                      shapeType: shape.id,
-                      width: shape.defaultWidth,
-                      height: shape.defaultHeight,
-                      color: activeColor
-                    })
-                    e.dataTransfer.setData('application/lumina-shape', shapePayload)
-                    e.dataTransfer.setData('application/lumina-shape-meta', shapePayload)
-                    e.dataTransfer.effectAllowed = 'copy'
-                  }}
-                  title={`${shape.label} — ${shape.description}`}
+                  onPointerDown={(e) => handleShapePointerDown(e, shape)}
+                  onClick={() => handleShapeClick(shape)}
+                  draggable={false}
+                  title={`Drag onto canvas or click to add ${shape.label}`}
                 >
                   <div className="shape-preview-svg" style={{ color: activeColorHex }}>
                     <svg viewBox="0 0 100 100" width="100%" height="100%">
@@ -239,24 +314,10 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
                         key={shape.id}
                         type="button"
                         className="lumina-canvas-studio-shape-card"
-                        onClick={() => {
-                          if (onAddShape) {
-                            onAddShape(shape.id, shape.defaultWidth, shape.defaultHeight, activeColor)
-                          }
-                        }}
-                        draggable
-                        onDragStart={(e) => {
-                          const shapePayload = JSON.stringify({
-                            shapeType: shape.id,
-                            width: shape.defaultWidth,
-                            height: shape.defaultHeight,
-                            color: activeColor
-                          })
-                          e.dataTransfer.setData('application/lumina-shape', shapePayload)
-                          e.dataTransfer.setData('application/lumina-shape-meta', shapePayload)
-                          e.dataTransfer.effectAllowed = 'copy'
-                        }}
-                        title={`Click to add ${shape.label} or drag directly to canvas`}
+                        onPointerDown={(e) => handleShapePointerDown(e, shape)}
+                        onClick={() => handleShapeClick(shape)}
+                        draggable={false}
+                        title={`Drag onto canvas or click to add ${shape.label}`}
                       >
                         <div className="shape-preview-svg" style={{ color: activeColorHex }}>
                           <svg viewBox="0 0 100 100" width="100%" height="100%">
@@ -273,6 +334,34 @@ export const StudioShapesTab: React.FC<StudioShapesTabProps> = React.memo(
           })}
         </div>
         )}
+
+        {/* Smooth Floating Ghost Preview portaled directly to document.body at 120Hz */}
+        {draggingShape &&
+          typeof document !== 'undefined' &&
+          createPortal(
+            <div
+              ref={ghostRef}
+              className="lumina-canvas-shape-drag-ghost"
+              style={{
+                position: 'fixed',
+                left: 0,
+                top: 0,
+                transform: `translate3d(${draggingShape.x}px, ${draggingShape.y}px, 0) translate(-50%, -50%)`,
+                width: Math.min(130, Math.max(72, draggingShape.shape.defaultWidth * 0.75)),
+                height: Math.min(100, Math.max(56, draggingShape.shape.defaultHeight * 0.75)),
+                pointerEvents: 'none',
+                zIndex: 999999,
+                opacity: 0.92,
+                willChange: 'transform',
+                filter: 'drop-shadow(0 10px 22px rgba(0, 0, 0, 0.36))'
+              }}
+            >
+              <svg viewBox="0 0 100 100" width="100%" height="100%" preserveAspectRatio="none">
+                {renderShapeSVG(draggingShape.shape.id, activeColorHex, activeColorHex, 0.18, 2.2)}
+              </svg>
+            </div>,
+            document.body
+          )}
       </div>
     )
   }

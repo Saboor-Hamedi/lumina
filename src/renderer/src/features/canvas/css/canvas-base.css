@@ -58,7 +58,6 @@
   stroke-width: 1.6px;
   stroke-linecap: round;
   transition: stroke 0.2s ease, stroke-width 0.15s ease;
-  marker-end: url(#arrow);
 }
 
 .lumina-canvas-edge-line.edge-yellow {
