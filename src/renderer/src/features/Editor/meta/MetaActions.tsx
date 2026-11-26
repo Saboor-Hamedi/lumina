@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useCallback, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Sparkles, Network, MoreHorizontal, Copy, Download } from 'lucide-react'
 import ToolTip from '../../../components/atoms/ToolTip'
-import ProgressTracker, { LearnedButton } from '../../roadmap/ProgressTracker'
+import ProgressBadge, { LearnedButton } from './metadata/progress'
 import VoiceButton from '../../voice'
 import MetaDrivePush from './MetaDrivePush'
 import { useSettingsStore } from '../../../core/store/SettingStore'
@@ -174,7 +174,7 @@ export const MetaActions: React.FC<MetaActionsProps> = React.memo(
                 <VoiceButton id="editor-voice" />
                 <MetaDrivePush snippet={snippet} title={title} isDirty={isDirty} />
                 <LearnedButton snippet={snippet} note={snippet} />
-                <ProgressTracker snippetId={snippet?.id} noteId={snippet?.id} />
+                <ProgressBadge snippetId={snippet?.id} noteId={snippet?.id} />
               </div>
 
               <div className="dropdown-divider" role="separator" />

@@ -203,21 +203,21 @@
 }
 
 .mention-title {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11.5px;
+  font-weight: 500;
   color: inherit;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   flex: 1;
   min-width: 0;
-  max-width: 155px;
+  max-width: 148px;
 }
 
 .mention-badge {
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 600;
-  padding: 1px 5px;
+  padding: 1px 4px;
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.07);
   color: var(--text-muted);

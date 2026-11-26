@@ -153,7 +153,23 @@ pub fn run() {
             cancel_app_update,
             install_app_update,
             fetch_link_metadata,
-            web_search
+            web_search,
+            pdf_index_file,
+            pdf_get_pending_chunks,
+            pdf_save_embeddings,
+            pdf_search,
+            pdf_get_status,
+            pdf_list_documents,
+            pdf_get_stats,
+            pdf_remove_document,
+            pdf_prune_missing,
+            metadata_get,
+            metadata_upsert,
+            metadata_delete,
+            metadata_clear_note,
+            metadata_reorder,
+            metadata_get_layout,
+            metadata_set_layout
         ])
         .run(tauri::generate_context!())
         .expect("error while building tauri application");

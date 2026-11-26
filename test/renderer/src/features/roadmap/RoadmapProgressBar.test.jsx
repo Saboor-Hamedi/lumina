@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import ProgressTracker, {
   LearnedButton,
   LearningTrackBadge
-} from '../../../../../src/renderer/src/features/roadmap/ProgressTracker'
+} from '../../../../../src/renderer/src/features/Editor/meta/metadata/progress'
 import { useWorkspaceStore } from '../../../../../src/renderer/src/core/store/workspaceStore'
 
 describe('ProgressTracker', () => {

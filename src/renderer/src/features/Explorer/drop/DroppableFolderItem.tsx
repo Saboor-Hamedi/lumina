@@ -191,15 +191,15 @@ const DroppableFolderItemComponent: React.FC<DroppableFolderItemProps> = ({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 18,
-            height: 18,
+            width: 16,
+            height: 16,
             flexShrink: 0,
             cursor: 'pointer',
-            borderRadius: '3px'
+            borderRadius: '4px'
           }}
         >
           <ChevronRight
-            size={13}
+            size={12}
             className={`folder-chevron ${isExpanded ? 'expanded' : ''}`}
           />
         </span>

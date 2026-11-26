@@ -420,6 +420,24 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
   }
 
   const hasSearchPreview = Boolean(matchSnippet && searchQuery?.trim())
+  const fileExtHint = (() => {
+    if (snippet?.itemType === 'folder') return ''
+    if (snippet?.type === 'pdf') return '.pdf'
+    if (snippet?.type === 'canvas' || snippet?.language === 'canvas') return '.canvas'
+    if (snippet?.type === 'image') {
+      const ext = snippet?.ext || (snippet?.fileName ? snippet.fileName.split('.').pop() : '')
+      return ext ? `.${String(ext).replace(/^\./, '').toLowerCase()}` : ''
+    }
+    return ''
+  })()
+  const iconBadgeTone =
+    snippet?.type === 'pdf'
+      ? 'is-pdf'
+      : snippet?.type === 'canvas' || snippet?.language === 'canvas'
+        ? 'is-canvas'
+        : snippet?.type === 'image'
+          ? 'is-image'
+          : ''
 
   return (
     <div
@@ -450,7 +468,7 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
         } catch (err) {}
       }}
     >
-      <span className="item-icon-wrap" style={{ flexShrink: 0 }}>
+      <span className={`item-icon-wrap ${iconBadgeTone}`} style={{ flexShrink: 0 }}>
         {getIcon()}
       </span>
 
@@ -487,22 +505,29 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
           style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, overflow: 'hidden' }}
         >
           <ToolTip text={() => getNoteTooltipContent(snippet)} position="right" delay={150}>
-            <span
-              className="item-title"
-              style={{
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-                display: 'block',
-                width: '100%',
-                ...(displayColor
-                  ? { color: displayColor }
-                  : (!searchQuery?.trim() && isActive)
-                    ? { color: 'var(--text-accent)' }
-                    : {})
-              }}
-            >
-              {highlightText(snippet.title || 'Untitled', searchQuery)}
+            <span className="item-title-row">
+              <span
+                className="item-title"
+                style={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  display: 'block',
+                  minWidth: 0,
+                  ...(displayColor
+                    ? { color: displayColor }
+                    : (!searchQuery?.trim() && isActive)
+                      ? { color: 'var(--text-accent)' }
+                      : {})
+                }}
+              >
+                {highlightText(snippet.title || 'Untitled', searchQuery)}
+              </span>
+              {fileExtHint && (
+                <span className="item-ext-hint" aria-hidden="true">
+                  {fileExtHint}
+                </span>
+              )}
             </span>
           </ToolTip>
           {hasSearchPreview && (

@@ -1,5 +1,39 @@
 import { useState, useEffect, useRef, useCallback, useMemo, type DragEvent as ReactDragEvent } from 'react'
 import { useWorkspaceStore } from '../../../../core/store/workspaceStore'
+import { enqueueManyPdfs, isPdfSnippetOrPath, resolvePdfRelativePath } from '../../../media/pdf'
+import { encodeMarkdownImageUrl } from '../../../media/utils/assetUrl'
+
+const IMAGE_PATH_REGEX = /\.(png|jpe?g|gif|webp|bmp|avif|svg)$/i
+
+function isImagePath(p: string): boolean {
+  return IMAGE_PATH_REGEX.test(String(p || '').trim())
+}
+
+function resolveElementAtTauriPos(pos?: { x?: number; y?: number } | null): {
+  el: Element | null
+  clientX: number
+  clientY: number
+} {
+  if (!pos || typeof pos.x !== 'number' || typeof pos.y !== 'number') {
+    return { el: null, clientX: 0, clientY: 0 }
+  }
+  const dpr = window.devicePixelRatio || 1
+  const scaledX = pos.x / dpr
+  const scaledY = pos.y / dpr
+  const scaledEl = document.elementFromPoint(scaledX, scaledY)
+  if (scaledEl) {
+    return { el: scaledEl, clientX: scaledX, clientY: scaledY }
+  }
+  return { el: document.elementFromPoint(pos.x, pos.y), clientX: pos.x, clientY: pos.y }
+}
+
+function isElementInsideMarkdownEditor(el: Element | null): boolean {
+  if (!el) return false
+  if (el.closest?.('.shell-sidebar-left, .lumina-sidebar, .lumina-canvas-container')) {
+    return false
+  }
+  return Boolean(el.closest?.('.editor-canvas-wrap, .cm-editor, .editor-scroller'))
+}
 
 export interface WorkspaceDropState {
   isOver: boolean
@@ -50,12 +84,26 @@ export function useWorkspaceDrop(): {
             const type = payload?.type
 
             if (type === 'enter' || type === 'over') {
-              const count = Array.isArray(payload?.paths) && payload.paths.length > 0 ? payload.paths.length : 1
-              setDropState((prev) =>
-                prev.isOver && prev.isExternal && prev.count === count
-                  ? prev
-                  : { isOver: true, isExternal: true, title: 'Files', count }
-              )
+              const paths: string[] = Array.isArray(payload?.paths)
+                ? payload.paths.filter((p: unknown): p is string => typeof p === 'string' && p.length > 0)
+                : []
+              const { el } = resolveElementAtTauriPos(payload?.position)
+              const allImagesOverEditor =
+                paths.length > 0 && paths.every(isImagePath) && isElementInsideMarkdownEditor(el)
+
+              if (allImagesOverEditor) {
+                // Dragging images directly onto a note editor should NOT cover the editor with a full-pane placeholder
+                setDropState((prev) =>
+                  prev.isOver ? { isOver: false, isExternal: false, title: '', count: 1 } : prev
+                )
+              } else {
+                const count = paths.length > 0 ? paths.length : 1
+                setDropState((prev) =>
+                  prev.isOver && prev.isExternal && prev.count === count
+                    ? prev
+                    : { isOver: true, isExternal: true, title: 'Files', count }
+                )
+              }
             } else if (type === 'leave') {
               dragCounterRef.current = 0
               setDropState((prev) =>
@@ -68,23 +116,51 @@ export function useWorkspaceDrop(): {
               const paths: string[] = Array.isArray(payload?.paths)
                 ? payload.paths.filter((p: unknown): p is string => typeof p === 'string' && p.length > 0)
                 : []
-              if (paths.length === 0 || !(window as any).api?.importExternalPaths) return
+              if (paths.length === 0) return
+
+              const { el, clientX, clientY } = resolveElementAtTauriPos(payload?.position)
+
+              // Dropping image(s) directly onto the Markdown Editor inserts them inline into the note
+              if (
+                paths.every(isImagePath) &&
+                isElementInsideMarkdownEditor(el) &&
+                (window as any).api?.saveImageFromPath
+              ) {
+                try {
+                  const savedImages: Array<{ alt: string; url: string }> = []
+                  for (const imgPath of paths) {
+                    const fileName = imgPath.split(/[\\/]/).pop() || 'image.png'
+                    const relPath = await (window as any).api.saveImageFromPath(imgPath, fileName)
+                    if (relPath) {
+                      savedImages.push({
+                        alt: fileName,
+                        url: encodeMarkdownImageUrl(relPath)
+                      })
+                    }
+                  }
+                  if (savedImages.length > 0) {
+                    window.dispatchEvent(
+                      new CustomEvent('lumina:insert-dropped-images', {
+                        detail: { images: savedImages, clientX, clientY }
+                      })
+                    )
+                  }
+                } catch (err) {
+                  console.error('[useWorkspaceDrop] Failed to insert dropped image into editor:', err)
+                }
+                return
+              }
+
+              if (!(window as any).api?.importExternalPaths) return
 
               // Optional: detect if dropped directly onto a folder in the left Explorer sidebar
               let targetFolder = ''
-              const pos = payload?.position
-              if (pos && typeof pos.x === 'number' && typeof pos.y === 'number') {
-                const dpr = window.devicePixelRatio || 1
-                const el =
-                  document.elementFromPoint(pos.x / dpr, pos.y / dpr) ||
-                  document.elementFromPoint(pos.x, pos.y)
-                const folderEl = el?.closest?.('[data-folder-path], [data-folder-id]') as HTMLElement | null
-                if (folderEl) {
-                  targetFolder =
-                    folderEl.getAttribute('data-folder-path') ||
-                    folderEl.getAttribute('data-folder-id') ||
-                    ''
-                }
+              const folderEl = el?.closest?.('[data-folder-path], [data-folder-id]') as HTMLElement | null
+              if (folderEl) {
+                targetFolder =
+                  folderEl.getAttribute('data-folder-path') ||
+                  folderEl.getAttribute('data-folder-id') ||
+                  ''
               }
 
               try {
@@ -93,6 +169,14 @@ export function useWorkspaceDrop(): {
                 const importedIds = res?.importedNoteIds || res?.importedSnippetIds || []
                 if (importedIds.length > 0) {
                   const allNotes = useWorkspaceStore.getState().notes || []
+                  const importedPdfPaths = importedIds
+                    .map((id: string) => allNotes.find((n: any) => n.id === id))
+                    .filter((n: any) => isPdfSnippetOrPath(n))
+                    .map((n: any) => resolvePdfRelativePath(n))
+                    .filter(Boolean)
+                  if (importedPdfPaths.length > 0) {
+                    void enqueueManyPdfs(importedPdfPaths)
+                  }
                   const found = allNotes.find((n: any) => n.id === importedIds[0])
                   if (found) {
                     useWorkspaceStore.getState().setSelectedNote(found)
@@ -184,10 +268,22 @@ export function useWorkspaceDrop(): {
     }
   }, [])
 
+  const isHtml5ImageDragOverEditor = (e: ReactDragEvent): boolean => {
+    const target = e.target as Element | null
+    if (!isElementInsideMarkdownEditor(target)) return false
+    const items = Array.from(e.dataTransfer?.items || [])
+    return items.length > 0 && items.every((it) => it.kind === 'file' && it.type.startsWith('image/'))
+  }
+
   const onDragEnter = useCallback((e: ReactDragEvent) => {
     const types = Array.from(e.dataTransfer?.types || [])
     const isSnippet = types.includes('application/lumina-snippet')
     const isFile = types.includes('Files') && !types.includes('application/x-lumina-node')
+
+    if (isFile && isHtml5ImageDragOverEditor(e)) {
+      setDropState((prev) => (prev.isOver ? { isOver: false, isExternal: false, title: '', count: 1 } : prev))
+      return
+    }
 
     if (isSnippet || isFile) {
       e.preventDefault()
@@ -203,6 +299,11 @@ export function useWorkspaceDrop(): {
     const types = Array.from(e.dataTransfer?.types || [])
     const isSnippet = types.includes('application/lumina-snippet')
     const isFile = types.includes('Files') && !types.includes('application/x-lumina-node')
+
+    if (isFile && isHtml5ImageDragOverEditor(e)) {
+      setDropState((prev) => (prev.isOver ? { isOver: false, isExternal: false, title: '', count: 1 } : prev))
+      return
+    }
 
     if (isSnippet || isFile) {
       e.preventDefault()

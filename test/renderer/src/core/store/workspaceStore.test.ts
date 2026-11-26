@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   useWorkspaceStore,
-  GRAPH_TAB_ID
+  GRAPH_TAB_ID,
+  LUMINA_TAB_ID
 } from '../../../../../src/renderer/src/core/store/workspaceStore'
 
 // Mock the cache module
@@ -70,7 +71,7 @@ describe('workspaceStore', () => {
       useWorkspaceStore.getState().setSelectedNote(note)
       useWorkspaceStore.getState().setSelectedNote(note)
 
-      expect(useWorkspaceStore.getState().openTabs).toEqual(['1'])
+      expect(useWorkspaceStore.getState().openTabs).toEqual([LUMINA_TAB_ID, '1'])
     })
   })
 
@@ -118,7 +119,7 @@ describe('workspaceStore', () => {
 
       useWorkspaceStore.getState().restoreSession(['1', '2'], '1', [])
 
-      expect(useWorkspaceStore.getState().openTabs).toEqual(['1', '2'])
+      expect(useWorkspaceStore.getState().openTabs).toEqual([LUMINA_TAB_ID, '1', '2'])
       expect(useWorkspaceStore.getState().activeTabId).toBe('1')
       expect(useWorkspaceStore.getState().selectedNote).toEqual(notes[0])
     })
@@ -129,7 +130,7 @@ describe('workspaceStore', () => {
 
       useWorkspaceStore.getState().restoreSession(['1', 'invalid', '2'], '1', [])
 
-      expect(useWorkspaceStore.getState().openTabs).toEqual(['1'])
+      expect(useWorkspaceStore.getState().openTabs).toEqual([LUMINA_TAB_ID, '1'])
     })
 
     it('handles GRAPH_TAB_ID', () => {
@@ -270,13 +271,13 @@ describe('workspaceStore', () => {
       useWorkspaceStore.getState().moveTabToPane('n2', 'secondary')
       let state = useWorkspaceStore.getState()
       expect(state.splitDirection).toBe('vertical')
-      expect(state.openTabs).toEqual(['n1'])
+      expect(state.openTabs).toEqual([LUMINA_TAB_ID, 'n1'])
       expect(state.secondaryTabs).toEqual(['n2'])
 
       useWorkspaceStore.getState().moveTabToPane('n2', 'primary')
       state = useWorkspaceStore.getState()
       expect(state.splitDirection).toBe('none')
-      expect(state.openTabs).toEqual(['n1', 'n2'])
+      expect(state.openTabs).toEqual([LUMINA_TAB_ID, 'n1', 'n2'])
       expect(state.activeTabId).toBe('n2')
     })
 

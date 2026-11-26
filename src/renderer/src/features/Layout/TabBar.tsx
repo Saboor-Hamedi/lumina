@@ -437,6 +437,8 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
       if (dirtySnippetIds.includes(id)) {
         const snippet = snippetMap.get(id)
         setPrompt({ id, title: snippet?.title || 'Untitled' })
+      } else if (id === LUMINA_TAB_ID && paneId === 'primary' && splitDirection === 'none') {
+        closeTab(id)
       } else {
         animateCloseTabs([id], () => closeTab(id))
       }

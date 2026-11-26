@@ -219,4 +219,5 @@ export interface CanvasData {
   edges: CanvasEdge[]
   strokes?: CanvasStroke[]
   viewport?: CanvasViewport
+  snapToGrid?: boolean
 }

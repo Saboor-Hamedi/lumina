@@ -1,0 +1,44 @@
+import * as aiSdk from 'ai'
+import { luminaMemory, type UserMemoryKey } from './luminaMemory'
+
+interface ForgetMemoryToolInput {
+  target: string
+  key?: UserMemoryKey | null
+}
+
+type ForgetMemoryToolResult =
+  | { success: false; error: string }
+  | { success: true; summary: string | undefined; instruction_to_ai: string }
+
+export const forgetMemoryTool = aiSdk.tool({
+  description:
+    'Remove or forget a specific fact, preference, or profile detail from memory.json when the user asks to forget, remove, or clear something from memory.',
+  inputSchema: aiSdk.jsonSchema<ForgetMemoryToolInput>({
+    type: 'object',
+    properties: {
+      target: {
+        type: 'string',
+        description: 'The specific fact, phrase, or detail to remove from memory.'
+      },
+      key: {
+        type: 'string',
+        description: 'Optional profile key to clear (e.g. "name", "role", "bio").'
+      }
+    },
+    required: ['target']
+  }),
+  execute: async ({ target, key = null }): Promise<ForgetMemoryToolResult> => {
+    const res = await luminaMemory.forgetFact({ target, key })
+    if (!res.success) {
+      return { success: false, error: res.error || 'Failed to forget memory' }
+    }
+    return {
+      success: true,
+      summary: res.summary,
+      instruction_to_ai: 'Memory removed. Confirm warmly to the user.'
+    }
+  }
+})
+
+export const forgeMemoryTool = forgetMemoryTool
+export default forgeMemoryTool

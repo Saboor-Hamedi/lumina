@@ -29,6 +29,7 @@ import { normalizeNode, safeNumber } from '../utils/canvasUtils'
 export interface UseCanvasOptions {
   initialData?: CanvasData
   onChange?: (data: CanvasData) => void
+  snapToGrid?: boolean
 }
 
 interface CanvasHistorySnapshot {
@@ -36,6 +37,16 @@ interface CanvasHistorySnapshot {
   edges: CanvasEdge[]
   strokes: CanvasStroke[]
 }
+
+/**
+ * Module-level shared clipboard so copying nodes/edges in one Canvas tab
+ * (Ctrl+C) pastes cleanly into any other open Canvas tab (Ctrl+V).
+ */
+let sharedCanvasClipboard: {
+  nodes: CanvasNode[]
+  edges: CanvasEdge[]
+  pasteCount: number
+} | null = null
 
 export function useCanvas(options: UseCanvasOptions = {}) {
   // Normalize initial nodes safely
@@ -84,7 +95,6 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   // Undo / Redo History Stacks (100-step deep snapshots including freehand strokes)
   const undoStackRef = useRef<CanvasHistorySnapshot[]>([])
   const redoStackRef = useRef<CanvasHistorySnapshot[]>([])
-  const clipboardRef = useRef<{ nodes: CanvasNode[]; edges: CanvasEdge[]; pasteCount: number } | null>(null)
   const [, setHistoryCount] = useState(0)
 
   const captureSnapshot = (): CanvasHistorySnapshot => ({
@@ -141,8 +151,48 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
   const initialViewportRef = useRef<CanvasViewport>({ x: 0, y: 0, zoom: 1 })
   const isFirstRenderRef = useRef(true)
+  const skipNextEmitRef = useRef(false)
   const onChangeRef = useRef(options.onChange)
   onChangeRef.current = options.onChange
+
+  // Hydrate canvas if initialData arrives asynchronously after mount (e.g. workspace load on refresh)
+  const hasHydratedContentRef = useRef(
+    (options.initialData?.nodes?.length || 0) > 0 ||
+      (options.initialData?.edges?.length || 0) > 0 ||
+      (options.initialData?.strokes?.length || 0) > 0
+  )
+
+  useEffect(() => {
+    const incoming = options.initialData
+    if (!incoming) return
+    const incomingHasContent =
+      (incoming.nodes?.length || 0) > 0 ||
+      (incoming.edges?.length || 0) > 0 ||
+      (incoming.strokes?.length || 0) > 0
+    const localIsEmpty =
+      nodesRef.current.length === 0 &&
+      edgesRef.current.length === 0 &&
+      strokesRef.current.length === 0
+
+    if (incomingHasContent && localIsEmpty && !hasHydratedContentRef.current) {
+      hasHydratedContentRef.current = true
+      skipNextEmitRef.current = true
+      setNodes((incoming.nodes || []).map(normalizeNode))
+      setEdges((incoming.edges || []).filter((e) => e && e.id && e.fromNode && e.toNode))
+      setStrokes(
+        (incoming.strokes || []).filter(
+          (s) => s && s.id && Array.isArray(s.points) && s.points.length > 0
+        )
+      )
+      if (incoming.viewport) {
+        setViewport({
+          x: safeNumber(incoming.viewport.x, 0),
+          y: safeNumber(incoming.viewport.y, 0),
+          zoom: Math.min(Math.max(safeNumber(incoming.viewport.zoom, 1), 0.1), 2.5)
+        })
+      }
+    }
+  }, [options.initialData])
 
   // Notify parent component on state mutations (for auto-saving)
   useEffect(() => {
@@ -150,8 +200,19 @@ export function useCanvas(options: UseCanvasOptions = {}) {
       isFirstRenderRef.current = false
       return
     }
-    onChangeRef.current?.({ nodes, edges, strokes, viewport })
-  }, [nodes, edges, strokes, viewport])
+    if (skipNextEmitRef.current) {
+      skipNextEmitRef.current = false
+      return
+    }
+    hasHydratedContentRef.current = true
+    onChangeRef.current?.({
+      nodes,
+      edges,
+      strokes,
+      viewport,
+      ...(typeof options.snapToGrid === 'boolean' ? { snapToGrid: options.snapToGrid } : {})
+    })
+  }, [nodes, edges, strokes, viewport, options.snapToGrid])
 
   /**
    * Projects screen client coordinates (e.g. mouse event) into canvas coordinate space.
@@ -337,8 +398,14 @@ export function useCanvas(options: UseCanvasOptions = {}) {
       prev.map((n) => {
         if (n.id !== id) return n
         const isShape = n.type === 'shape'
-        const minW = isShape ? 36 : 120
-        const minH = isShape ? 36 : 60
+        const isFramelessText = n.type === 'text' && !n.file && !n.shape
+        const textFontSize = n.fontSize || 15
+        const minW = isShape ? 36 : isFramelessText ? 60 : 120
+        const minH = isShape
+          ? 36
+          : isFramelessText
+            ? Math.max(32, Math.ceil(textFontSize * (textFontSize >= 24 ? 1.25 : 1.45) + 12))
+            : 60
         const clampedW = Math.max(Math.round(width), minW)
         const clampedH = Math.max(Math.round(height), minH)
         if (n.width === clampedW && n.height === clampedH) return n
@@ -482,7 +549,7 @@ export function useCanvas(options: UseCanvasOptions = {}) {
       .filter((e) => copySet.has(e.fromNode) && copySet.has(e.toNode))
       .map((e) => ({ ...e }))
 
-    clipboardRef.current = { nodes: nodesToCopy, edges: edgesToCopy, pasteCount: 0 }
+    sharedCanvasClipboard = { nodes: nodesToCopy, edges: edgesToCopy, pasteCount: 0 }
     return nodesToCopy.length
   }, [])
 
@@ -490,15 +557,15 @@ export function useCanvas(options: UseCanvasOptions = {}) {
    * Pastes previously copied nodes and edges with incremental offset (+32px, +32px).
    */
   const pasteNodes = useCallback(() => {
-    if (!clipboardRef.current || clipboardRef.current.nodes.length === 0) return []
+    if (!sharedCanvasClipboard || sharedCanvasClipboard.nodes.length === 0) return []
 
     pushHistory()
 
-    clipboardRef.current.pasteCount += 1
-    const offset = 32 * clipboardRef.current.pasteCount
+    sharedCanvasClipboard.pasteCount += 1
+    const offset = 32 * sharedCanvasClipboard.pasteCount
     const idMap = new Map<string, string>()
 
-    const pastedNodes: CanvasNode[] = clipboardRef.current.nodes.map((n) => {
+    const pastedNodes: CanvasNode[] = sharedCanvasClipboard.nodes.map((n) => {
       const newId = `node-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
       idMap.set(n.id, newId)
       return {
@@ -509,7 +576,7 @@ export function useCanvas(options: UseCanvasOptions = {}) {
       }
     })
 
-    const pastedEdges: CanvasEdge[] = clipboardRef.current.edges.map((e) => ({
+    const pastedEdges: CanvasEdge[] = sharedCanvasClipboard.edges.map((e) => ({
       ...e,
       id: `edge-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       fromNode: idMap.get(e.fromNode) || e.fromNode,
@@ -527,10 +594,10 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   }, [pushHistory])
 
   /**
-   * Checks whether the canvas clipboard currently contains copied nodes.
+   * Checks whether the shared canvas clipboard currently contains copied nodes.
    */
   const hasCopiedNodes = useCallback(() => {
-    return Boolean(clipboardRef.current && clipboardRef.current.nodes.length > 0)
+    return Boolean(sharedCanvasClipboard && sharedCanvasClipboard.nodes.length > 0)
   }, [])
 
   /**

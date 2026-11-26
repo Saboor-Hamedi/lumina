@@ -28,7 +28,7 @@ import { isSnippetActive } from './utils/explorerSelectionHelper'
 import { beginExplorerPerf, countExplorerPerfRender } from './utils/explorerPerf'
 
 const INDENT_STEP = 16
-const GUIDE_LINE_OFFSET = 9
+const GUIDE_LINE_OFFSET = 18
 
 interface IndentGuidesProps {
   depth: number
@@ -288,7 +288,7 @@ const ExplorerVirtuosoListComponent: React.FC<ExplorerVirtuosoListProps> = ({
             style={{
               position: 'relative',
               paddingLeft: `${depth * INDENT_STEP}px`,
-              minHeight: '26px',
+              minHeight: '28px',
               boxSizing: 'border-box',
               contain: 'layout style',
               transform: 'translateZ(0)'
@@ -359,7 +359,7 @@ const ExplorerVirtuosoListComponent: React.FC<ExplorerVirtuosoListProps> = ({
             style={{
               position: 'relative',
               paddingLeft: `${depth * INDENT_STEP}px`,
-              minHeight: '26px',
+              minHeight: '28px',
               boxSizing: 'border-box',
               contain: 'layout style',
               transform: 'translateZ(0)'
@@ -428,7 +428,7 @@ const ExplorerVirtuosoListComponent: React.FC<ExplorerVirtuosoListProps> = ({
             style={{
               position: 'relative',
               paddingLeft: `${depth * INDENT_STEP}px`,
-              minHeight: '26px',
+              minHeight: '28px',
               boxSizing: 'border-box',
               contain: 'layout style',
               transform: 'translateZ(0)'
@@ -553,7 +553,7 @@ const ExplorerVirtuosoListComponent: React.FC<ExplorerVirtuosoListProps> = ({
                 willChange: 'scroll-position'
               }}
               data={flatTree}
-              defaultItemHeight={26}
+              defaultItemHeight={28}
               increaseViewportBy={VIRTUOSO_INCREASE_VIEWPORT}
               overscan={VIRTUOSO_OVERSCAN}
               computeItemKey={computeVirtuosoItemKey}

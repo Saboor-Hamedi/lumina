@@ -537,6 +537,8 @@ export function normalizeNode(raw: Partial<CanvasNode> & { id?: string }): Canva
     shape: raw.shape,
     title: raw.title || '',
     text: raw.text || '',
+    fontSize: typeof raw.fontSize === 'number' && Number.isFinite(raw.fontSize) ? raw.fontSize : undefined,
+    zIndex: typeof raw.zIndex === 'number' && Number.isFinite(raw.zIndex) ? raw.zIndex : undefined,
     x: Math.round(safeNumber(raw.x, 0)),
     y: Math.round(safeNumber(raw.y, 0)),
     width: Math.max(Math.round(safeNumber(raw.width, defW)), minW),

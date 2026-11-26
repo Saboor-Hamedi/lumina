@@ -14,6 +14,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Image as ImageIcon } from 'lucide-react'
 import { useWorkspaceStore } from '../../../../core/store/workspaceStore'
+import { assetResponseToUrl, decodeAssetPath } from '../../../media/utils/assetUrl'
 
 export interface CanvasImagePreviewProps {
   url?: string
@@ -101,25 +102,18 @@ export const CanvasImagePreview: React.FC<CanvasImagePreviewProps> = ({
     }
 
     setFallbackAttempted(true)
-    const decodedRel = decodeURIComponent(cleanRel)
+    const decodedRel = decodeAssetPath(cleanRel)
     ;(window as any).api
       .readAsset(decodedRel)
-      .then((res: any) => {
+      .then((res: unknown) => {
         if (createdBlobUrlRef.current) {
           URL.revokeObjectURL(createdBlobUrlRef.current)
           createdBlobUrlRef.current = null
         }
-        if (res?.dataUrl) {
-          setImgSrc(res.dataUrl)
-          setLoadFailed(false)
-        } else if (res?.buffer) {
-          const blob = new Blob([res.buffer], { type: res.mimeType || 'image/png' })
-          const blobUrl = URL.createObjectURL(blob)
-          createdBlobUrlRef.current = blobUrl
-          setImgSrc(blobUrl)
-          setLoadFailed(false)
-        } else if (typeof res === 'string') {
-          setImgSrc(res.startsWith('data:') ? res : `data:image/png;base64,${res}`)
+        const resolved = assetResponseToUrl(res, decodedRel)
+        if (resolved) {
+          if (resolved.isObjectUrl) createdBlobUrlRef.current = resolved.url
+          setImgSrc(resolved.url)
           setLoadFailed(false)
         } else {
           setLoadFailed(true)

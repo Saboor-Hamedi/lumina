@@ -21,7 +21,7 @@ import UpdateButton from '../../components/update/UpdateButton'
 import AccentColor from '../theme/AccentColor'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 import { useSettingStore } from '../../core/store/SettingStore'
-import { CalendarToggle } from '../calender'
+import { CalendarToggle } from '../calendar'
 import { minimizeWindow, toggleMaximizeWindow, closeWindow } from '../../core/tauriBridge'
 import '../../assets/titlebar.css'
 

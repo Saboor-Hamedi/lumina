@@ -16,8 +16,8 @@
  * 3. CONTROLS (`components/controls/`):
  *    - `CanvasMiniMap.tsx`: Spatial navigator radar
  *    - `CanvasSelectionToolbar.tsx`: Multi-selection contextual floating bar
- *    - `ConvasShapes.tsx`: Shape library and SVG path renderers
- *    - `ConvasToolBarCenter.tsx`: Center quick-action tool dock
+ *    - `CanvasShapes.tsx`: Shape library and SVG path renderers
+ *    - `CanvasToolBarCenter.tsx`: Center quick-action tool dock
  * ============================================================================
  */
 
@@ -32,5 +32,5 @@ export * from './edges/CanvasStrokesLayer'
 
 export * from './controls/CanvasMiniMap'
 export * from './controls/CanvasSelectionToolbar'
-export * from './controls/ConvasShapes'
-export * from './controls/ConvasToolBarCenter'
+export * from './controls/CanvasShapes'
+export * from './controls/CanvasToolBarCenter'

@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useState, useCallback, useEffect, useRef, useMemo, KeyboardEvent, DragEvent } from 'react'
-import { Send, Square, ChevronDown, Plus } from 'lucide-react'
+import { Send, Square, ChevronDown, Plus, X } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import ToolTip from '../../components/atoms/ToolTip'
@@ -7,6 +7,7 @@ import VoiceButton from '../voice'
 import { useComposerTextarea } from './hooks/useComposerTextarea'
 import { useComposerVoice } from './hooks/useComposerVoice'
 import { useComposerAutocomplete } from './hooks/useComposerAutocomplete'
+import { getEntityIconForTarget } from './components/LuminaEntityMention'
 import { getAIMode } from './modes'
 import './css/composer.css'
 
@@ -59,7 +60,8 @@ export const Composer: React.FC<ComposerProps> = ({
     setAttachedMentions,
     handleInputChange,
     handleCommandSelect,
-    handleMentionSelect
+    handleMentionSelect,
+    removeMention
   } = useComposerAutocomplete({
     input,
     setInput,
@@ -152,8 +154,17 @@ export const Composer: React.FC<ComposerProps> = ({
   }, [])
 
   const handleSend = useCallback(() => {
-    if (!input.trim() || isLoading) return
-    onSend(input, mode, attachedMentions)
+    const trimmedInput = input.trim()
+    if ((!trimmedInput && attachedMentions.length === 0) || isLoading) return
+
+    // Prepend any attached mentions not already written inline so Lumina renders clean truncated pills
+    const missingMentions = attachedMentions
+      .map((m) => String(m?.title || m?.name || '').trim())
+      .filter((title) => title && !trimmedInput.toLowerCase().includes(`@${title.toLowerCase()}`))
+      .map((title) => `@[${title}]`)
+
+    const finalPrompt = [missingMentions.join(' '), trimmedInput].filter(Boolean).join(' ')
+    onSend(finalPrompt, mode, attachedMentions)
     setInput('')
     setAttachedMentions([])
   }, [input, isLoading, onSend, mode, attachedMentions, setAttachedMentions])
@@ -279,17 +290,7 @@ export const Composer: React.FC<ComposerProps> = ({
       const notes = Array.isArray(detail.notes) ? detail.notes : []
       if (notes.length === 0) return
 
-      if (notes.length === 1) {
-        handleMentionSelectRef.current(notes[0])
-        return
-      }
-
-      // Multi-note drag from Explorer: attach all mentions and append all @Title tokens cleanly
-      const tags = notes.map((n: any) => `@${n?.title || 'Untitled'}`).join(' ')
-      setInput((prev) => {
-        const needsSpace = Boolean(prev) && !/\s$/.test(prev)
-        return `${prev}${needsSpace ? ' ' : ''}${tags} `
-      })
+      // Attach all dropped files/PDFs/folders as compact chips without flooding the textarea
       setAttachedMentions((prev) => {
         const existingIds = new Set(prev.map((m) => m.id))
         const toAdd = notes.filter((n: any) => n && !existingIds.has(n.id))
@@ -346,6 +347,47 @@ export const Composer: React.FC<ComposerProps> = ({
         onDragLeave={handleComposerDragLeave}
         onDrop={handleComposerDrop}
       >
+        {attachedMentions.length > 0 && (
+          <div
+            className="composer-attachments-row"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {attachedMentions.map((item: any) => {
+              const fullTitle = String(item?.title || item?.name || 'Untitled')
+              return (
+                <span
+                  key={item.id}
+                  className="mention-pill"
+                  title={fullTitle}
+                  onClick={() => {
+                    if (!item?.isFolder && item?.id) {
+                      const store = useWorkspaceStore.getState()
+                      const match =
+                        (store.notes || []).find((n: any) => n.id === item.id) || item
+                      if (match?.id) store.setSelectedNote(match)
+                    }
+                  }}
+                >
+                  <span className="mention-pill-icon" aria-hidden="true">
+                    {getEntityIconForTarget(item, 11)}
+                  </span>
+                  <span className="mention-pill-title">{fullTitle}</span>
+                  <button
+                    type="button"
+                    className="mention-pill-close"
+                    aria-label={`Remove ${fullTitle}`}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      removeMention(item.id)
+                    }}
+                  >
+                    <X size={10} />
+                  </button>
+                </span>
+              )
+            })}
+          </div>
+        )}
         <div className={`composer-input-area-wrapper ${hasInlineMentions ? 'has-inline-mentions' : ''}`}>
           {hasInlineMentions && (
             <div
@@ -461,7 +503,7 @@ export const Composer: React.FC<ComposerProps> = ({
                 <button
                   className="composer-send-btn"
                   onClick={handleSend}
-                  disabled={!input.trim()}
+                  disabled={!input.trim() && attachedMentions.length === 0}
                 >
                   <Send size={13} />
                 </button>

@@ -25,32 +25,82 @@
   text-shadow: 0 0 10px rgba(var(--text-accent-rgb, 64, 186, 250), 0.3);
 }
 
-/* Wikilinks & Rich Workspace Entity Mentions in AI Response (Antigravity Zero-Shift Inline Chip) */
+/* Compact User Prompt Attachment Strip (Dropped PDFs / Notes / Folders) */
+.user-message-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.user-message-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+  max-width: 100%;
+}
+
+.chat-entity-mention.user-attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px 0 5px;
+  border-radius: 5px;
+  font-size: 11px !important;
+  font-weight: 500;
+  line-height: 1;
+  max-width: min(160px, 100%);
+  color: var(--text-muted) !important;
+  background: var(--bg-hover, rgba(255, 255, 255, 0.04)) !important;
+  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08)) !important;
+  vertical-align: middle;
+}
+
+.chat-entity-mention.user-attachment-chip:hover {
+  color: var(--text-main) !important;
+  background: var(--bg-active, rgba(255, 255, 255, 0.08)) !important;
+  border-color: color-mix(in srgb, var(--text-accent, #38bdf8) 35%, transparent) !important;
+  text-decoration: none !important;
+}
+
+.chat-entity-mention.user-attachment-chip .chat-mention-icon-wrapper {
+  width: 11px;
+  height: 11px;
+}
+
+/* Wikilinks & Rich Workspace Entity Mentions in AI Response (Seamless Inline Paragraph Wording) */
 .chat-wikilink-chip,
 .chat-entity-mention,
 .mention-chip,
 .chat-user-mention-pill {
-  display: inline;
-  vertical-align: baseline;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  vertical-align: -0.18em;
   line-height: inherit;
   font-size: inherit;
   font-family: inherit;
   font-weight: 500;
   color: var(--text-accent, #38bdf8);
   cursor: pointer;
-  background: color-mix(in srgb, var(--text-accent, #38bdf8) 14%, transparent) !important;
+  background: transparent !important;
   border: none !important;
   border-radius: 4px;
-  padding: 1px 4px;
+  padding: 0 2px;
   margin: 0;
+  max-width: min(165px, 100%);
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
   text-decoration: none !important;
   white-space: nowrap;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
   user-select: text;
   transition:
     background-color 0.14s ease-out,
-    box-shadow 0.14s ease-out,
     color 0.14s ease-out;
 }
 
@@ -58,7 +108,7 @@
 .chat-entity-mention:hover,
 .mention-chip:hover,
 .chat-user-mention-pill:hover {
-  background: color-mix(in srgb, var(--text-accent, #38bdf8) 24%, transparent) !important;
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 12%, transparent) !important;
   text-decoration: underline !important;
   text-underline-offset: 2px;
 }
@@ -113,12 +163,17 @@
 }
 
 .chat-entity-mention-text {
+  display: inline-block;
   font-family: inherit !important;
   font-size: inherit;
   font-weight: inherit;
   line-height: inherit;
-  vertical-align: baseline;
   color: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
   transition: color 0.14s ease-out;
 }
 
@@ -161,11 +216,13 @@
 }
 
 .chat-mention-icon-wrapper {
-  display: inline-block;
-  vertical-align: -0.11em;
-  width: 0.8em;
-  height: 0.8em;
-  margin-right: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  margin-right: 0;
   line-height: 1;
   cursor: pointer;
   transition:
@@ -179,9 +236,8 @@
 
 /* Keep folder icon slightly more compact so it never looks bulky next to text */
 .chat-entity-mention.entity-type-folder .chat-mention-icon-wrapper {
-  width: 0.76em;
-  height: 0.76em;
-  vertical-align: -0.09em;
+  width: 11px;
+  height: 11px;
 }
 
 .chat-mention-icon-wrapper svg {
@@ -236,12 +292,12 @@
   transition: color 0.14s ease-out;
 }
 
-/* Hover: Isolated inner pill highlight + flashy icon pop (zero surrounding text shift) */
+/* Hover: Subtle inline tint without heavy box/border */
 .mention-chip:hover,
 .chat-user-mention-pill:hover,
 .chat-entity-mention:hover {
-  background: rgba(var(--text-accent-rgb, 168, 85, 247), 0.12) !important;
-  box-shadow: 0 0 0 1px rgba(var(--text-accent-rgb, 168, 85, 247), 0.24) inset;
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 10%, transparent) !important;
+  box-shadow: none;
   color: var(--text-accent) !important;
 }
 

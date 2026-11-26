@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { ConvasShapes, CANVAS_SHAPES, renderShapeSVG } from '../../../../../src/renderer/src/features/canvas/components/controls/ConvasShapes'
+import { ConvasShapes, CANVAS_SHAPES, renderShapeSVG } from '../../../../../src/renderer/src/features/canvas/components/controls/CanvasShapes'
 import { CanvasView } from '../../../../../src/renderer/src/features/canvas/CanvasView'
 import { CanvasData } from '../../../../../src/renderer/src/features/canvas/types'
 
@@ -358,5 +358,55 @@ describe('ConvasShapes Palette & Renderer', () => {
     expect(screen.getByText('My Triangle Process')).toBeInTheDocument()
     const edgeLine = container.querySelector('[data-edge-id="test-edge-1"]')
     expect(edgeLine).toBeInTheDocument()
+  })
+
+  it('increases text box font size past 18 without duplicating the text box on rapid clicks / double-click', async () => {
+    const textData: CanvasData = {
+      nodes: [
+        {
+          id: 'text-1',
+          type: 'text',
+          title: 'Text',
+          text: 'Hello Canvas',
+          x: 120,
+          y: 120,
+          width: 200,
+          height: 48,
+          color: 'default',
+          fontSize: 15
+        }
+      ],
+      edges: [],
+      viewport: { x: 0, y: 0, zoom: 1 }
+    }
+
+    const { container } = render(<CanvasView initialData={textData} />)
+    const textNode = container.querySelector('.lumina-canvas-node')!
+    fireEvent.mouseDown(textNode, { button: 0 })
+
+    const increaseBtn = await waitFor(() => {
+      const btn = container.querySelector('button[aria-label="Increase Font Size"]')
+      expect(btn).toBeInTheDocument()
+      return btn!
+    })
+
+    // Rapidly click twice (15 -> 18 -> 22) and fire dblclick as browsers do
+    fireEvent.click(increaseBtn)
+    fireEvent.click(increaseBtn)
+    fireEvent.doubleClick(increaseBtn)
+
+    await waitFor(() => {
+      expect(container.querySelector('.lumina-canvas-selection-toolbar')?.textContent).toContain('22')
+    })
+
+    // Label font size must apply immediately in view mode with auto height and zero position/width jump
+    const textBody = textNode.querySelector('.lumina-canvas-frameless-text-body') as HTMLElement
+    expect(textBody.style.fontSize).toBe('22px')
+    expect((textNode as HTMLElement).style.height).toBe('auto')
+    expect((textNode as HTMLElement).style.left).toBe('120px')
+    expect((textNode as HTMLElement).style.top).toBe('120px')
+
+    // Must still have exactly 1 label node (no spurious duplicate created)
+    expect(container.querySelectorAll('.lumina-canvas-node')).toHaveLength(1)
   })
 })

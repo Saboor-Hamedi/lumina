@@ -37,7 +37,8 @@ export function formatNoteCreatedAt(
   if (typeof createdAt === 'number') {
     created = createdAt
   } else if (typeof createdAt === 'string') {
-    created = Date.parse(createdAt)
+    const trimmed = createdAt.trim()
+    created = /^\d+$/.test(trimmed) ? Number(trimmed) : Date.parse(trimmed)
   } else {
     created = createdAt.getTime()
   }

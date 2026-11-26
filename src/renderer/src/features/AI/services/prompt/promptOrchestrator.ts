@@ -35,6 +35,12 @@ import { truncateForContext } from './contextRetriever'
 import { collectWorkspaceFolders } from './mentionResolver'
 import { classifySnippetEntityType } from '../entityResolver'
 import {
+  formatPdfHitsForPrompt,
+  isPdfSnippetOrPath,
+  resolvePdfRelativePath,
+  searchPdfIndex
+} from '../../../media/pdf'
+import {
   buildSettingsAwarenessBlock,
   buildLuminaIntelligenceBlock,
   buildChatModeInstructions,
@@ -76,6 +82,7 @@ export const buildSystemPrompt = async ({
   drafts = {},
   contextSnippets = [],
   detectedIntent = null,
+  message = '',
   activeTheme = 'Porcelain',
   userSettings
 }: BuildSystemPromptParams): Promise<string> => {
@@ -134,16 +141,30 @@ export const buildSystemPrompt = async ({
       systemPrompt += '\n'
     }
 
-    mentionedSnippets.forEach((snip: any) => {
+    for (const snip of mentionedSnippets as any[]) {
+      const displayPath = snip.folderId ? `${snip.folderId}/${snip.title}` : snip.title
+      if (isPdfSnippetOrPath(snip)) {
+        const relPath = resolvePdfRelativePath(snip)
+        const pdfQuery = (message || '').trim() || snip.title || 'summary overview introduction'
+        const pdfHits = relPath
+          ? await searchPdfIndex(pdfQuery, { relativePath: relPath, limit: 8 }).catch(() => [])
+          : []
+        const formattedPdf = formatPdfHitsForPrompt(pdfHits, 1400)
+        systemPrompt += `[Target PDF: ${displayPath}]\n${
+          formattedPdf ||
+          '(No extractable text found in this PDF — it may be a scanned image PDF.)'
+        }\n\n`
+        continue
+      }
+
       const currentContent =
         snip.isBrain
           ? snip.code
           : drafts?.[snip.id] !== undefined
             ? drafts[snip.id]
             : snip.code || ''
-      const displayPath = snip.folderId ? `${snip.folderId}/${snip.title}` : snip.title
       systemPrompt += `[Target Note: ${displayPath}]\n${truncateForContext(currentContent, perNoteBudget)}\n\n`
-    })
+    }
     systemPrompt +=
       'CRITICAL DIRECTIVE:\n' +
       '1. All note contents (including every file inside any @-mentioned folder) are ALREADY PROVIDED ABOVE in this prompt. Do NOT call readFile for these notes.\n' +
@@ -172,19 +193,37 @@ export const buildSystemPrompt = async ({
       'CRITICAL: The content of these files is ALREADY provided above. Answer questions about them directly right now without saying "let me read it".\n'
   }
 
-  // ── Tier 3: Currently Open Active Editor Note ──────────────────────────────
+  // ── Tier 3: Currently Open Active Editor Note / PDF ────────────────────────
   if (mentionedSnippets.length === 0 && selectedSnippet) {
-    const activeCode =
-      drafts?.[selectedSnippet.id] !== undefined
-        ? drafts[selectedSnippet.id]
-        : selectedSnippet.code || ''
-    systemPrompt +=
-      `\n\n**🎯 CURRENTLY OPEN ACTIVE NOTE IN EDITOR: [Note: ${selectedSnippet.title}]**\n` +
-      `${truncateForContext(activeCode, 25000)}\n\n` +
-      `CRITICAL DIRECTIVE:\n` +
-      `1. The user is currently viewing this open note in their workspace editor (even if newly opened, empty, or an unsaved draft buffer).\n` +
-      `2. When they ask "what do you see", "what do you read", "what is this", or ask questions about their note or what tab they are on, acknowledge this active note directly. Never claim it does not exist or hasn't synced to disk.\n` +
-      `3. Answer and explain immediately based on this content without calling readFile or saying "let me read it"!\n`
+    if (isPdfSnippetOrPath(selectedSnippet)) {
+      const relPath = resolvePdfRelativePath(selectedSnippet)
+      const pdfQuery =
+        (message || '').trim() || selectedSnippet.title || 'summary overview introduction'
+      const pdfHits = relPath
+        ? await searchPdfIndex(pdfQuery, { relativePath: relPath, limit: 6 }).catch(() => [])
+        : []
+      const formattedPdf = formatPdfHitsForPrompt(pdfHits, 1200)
+      if (formattedPdf) {
+        systemPrompt +=
+          `\n\n**🎯 CURRENTLY OPEN ACTIVE PDF DOCUMENT: [${selectedSnippet.title}]**\n` +
+          `${formattedPdf}\n\n` +
+          `CRITICAL DIRECTIVE:\n` +
+          `1. The user is currently viewing this PDF document. Cite exact page numbers (e.g. \`[p. 4]\`) when referencing passages above.\n` +
+          `2. If you need to look up a different topic or page inside this PDF, use the \`searchPdf\` tool.\n`
+      }
+    } else {
+      const activeCode =
+        drafts?.[selectedSnippet.id] !== undefined
+          ? drafts[selectedSnippet.id]
+          : selectedSnippet.code || ''
+      systemPrompt +=
+        `\n\n**🎯 CURRENTLY OPEN ACTIVE NOTE IN EDITOR: [Note: ${selectedSnippet.title}]**\n` +
+        `${truncateForContext(activeCode, 25000)}\n\n` +
+        `CRITICAL DIRECTIVE:\n` +
+        `1. The user is currently viewing this open note in their workspace editor (even if newly opened, empty, or an unsaved draft buffer).\n` +
+        `2. When they ask "what do you see", "what do you read", "what is this", or ask questions about their note or what tab they are on, acknowledge this active note directly. Never claim it does not exist or hasn't synced to disk.\n` +
+        `3. Answer and explain immediately based on this content without calling readFile or saying "let me read it"!\n`
+    }
   }
 
   // ── Tier 4: Background Active Tabs Context ─────────────────────────────────

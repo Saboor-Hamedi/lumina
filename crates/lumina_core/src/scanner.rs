@@ -1,8 +1,43 @@
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
-use std::time::UNIX_EPOCH;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+/// Converts Unix epoch milliseconds to an ISO-8601 UTC string (e.g. `2026-09-25T05:02:06.906Z`).
+pub fn epoch_ms_to_iso8601(ms: u64) -> String {
+    let secs = (ms / 1000) as i64;
+    let millis = ms % 1000;
+    let days = secs.div_euclid(86_400);
+    let secs_of_day = secs.rem_euclid(86_400);
+    let hour = secs_of_day / 3600;
+    let minute = (secs_of_day % 3600) / 60;
+    let second = secs_of_day % 60;
+
+    // Howard Hinnant's civil_from_days algorithm (days since 1970-01-01)
+    let z = days + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = (z - era * 146_097) as u64;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = (yoe as i64) + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = y + if m <= 2 { 1 } else { 0 };
+
+    format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}.{:03}Z",
+        year, m, d, hour, minute, second, millis
+    )
+}
+
+pub fn system_time_to_iso8601(t: SystemTime) -> Option<String> {
+    t.duration_since(UNIX_EPOCH)
+        .ok()
+        .map(|d| epoch_ms_to_iso8601(d.as_millis() as u64))
+}
 use walkdir::WalkDir;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -27,6 +62,8 @@ pub struct ScannedNote {
     pub is_oversized: bool,
     pub ext: String,
     pub wikilinks: Vec<String>,
+    #[serde(default)]
+    pub properties: BTreeMap<String, String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -49,6 +86,7 @@ pub struct ParsedFrontmatter {
     pub is_learned: bool,
     pub custom_icon: Option<String>,
     pub color: Option<String>,
+    pub properties: BTreeMap<String, String>,
 }
 
 fn is_known_metadata_key(key: &str) -> bool {
@@ -121,7 +159,17 @@ fn parse_yaml_line(line: &str, fm: &mut ParsedFrontmatter) -> bool {
                     }
                 }
             }
-            _ => {}
+            _ => {
+                let orig_key = k.trim();
+                if !orig_key.is_empty()
+                    && !is_known_metadata_key(&key)
+                    && orig_key
+                        .chars()
+                        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == '.')
+                {
+                    fm.properties.insert(orig_key.to_string(), raw_val);
+                }
+            }
         }
         return is_known_metadata_key(&key);
     }
@@ -340,6 +388,8 @@ pub fn scan_vault_impl(vault_path_str: &str, max_bytes: usize) -> ScanResult {
                 .map(|d| d.as_millis() as f64)
                 .unwrap_or(0.0);
 
+            let os_created_at = metadata.created().ok().and_then(system_time_to_iso8601);
+
             // Calculate relative path and folder_id
             let rel_path = path
                 .strip_prefix(root)
@@ -377,7 +427,7 @@ pub fn scan_vault_impl(vault_path_str: &str, max_bytes: usize) -> ScanResult {
                     language: ext.clone(),
                     tags: String::new(),
                     timestamp: mtime_ms,
-                    created_at: None,
+                    created_at: os_created_at,
                     is_pinned: false,
                     is_learned: false,
                     custom_icon: None,
@@ -391,6 +441,7 @@ pub fn scan_vault_impl(vault_path_str: &str, max_bytes: usize) -> ScanResult {
                     is_oversized,
                     ext: ext_with_dot,
                     wikilinks: Vec::new(),
+                    properties: BTreeMap::new(),
                 });
             }
 
@@ -434,7 +485,7 @@ pub fn scan_vault_impl(vault_path_str: &str, max_bytes: usize) -> ScanResult {
                 language: final_language,
                 tags: tags_str,
                 timestamp: final_timestamp,
-                created_at: fm.created_at,
+                created_at: fm.created_at.or(os_created_at),
                 is_pinned: fm.is_pinned,
                 is_learned: fm.is_learned,
                 custom_icon: fm.custom_icon,
@@ -448,6 +499,7 @@ pub fn scan_vault_impl(vault_path_str: &str, max_bytes: usize) -> ScanResult {
                 is_oversized,
                 ext: ext_with_dot,
                 wikilinks,
+                properties: fm.properties,
             })
         })
         .collect();
@@ -463,7 +515,7 @@ pub fn scan_vault_impl(vault_path_str: &str, max_bytes: usize) -> ScanResult {
     }
 }
 
-fn md5_hash(data: &str) -> u128 {
+pub fn md5_hash(data: &str) -> u128 {
     let mut hash: u128 = 0xcbf29ce484222325;
     for byte in data.bytes() {
         hash ^= byte as u128;

@@ -20,7 +20,7 @@ import { ExternalLink, Palette, X, FileText, Copy } from 'lucide-react'
 import { CanvasNode, CanvasEdgeSide, CanvasNodeColor } from '../../types'
 import { stripFrontmatter, getShapePortRatio, CANVAS_NODE_COLOR_HEX } from '../../utils/canvasUtils'
 import { CanvasImagePreview } from './CanvasImagePreview'
-import { renderShapeSVG } from '../controls/ConvasShapes'
+import { renderShapeSVG } from '../controls/CanvasShapes'
 import { useWorkspaceStore } from '../../../../core/store/workspaceStore'
 import ToolTip from '../../../../components/atoms/ToolTip'
 
@@ -97,7 +97,8 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
           left: `${node.x}px`,
           top: `${node.y}px`,
           width: `${node.width}px`,
-          height: `${node.height}px`
+          height: isFramelessText ? 'auto' : `${node.height}px`,
+          minHeight: isFramelessText ? `${node.height}px` : undefined
         }}
         onPointerDown={(e) => onNodeMouseDown(e, node)}
         onMouseDown={(e) => onNodeMouseDown(e, node)}
@@ -153,7 +154,6 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                     style={portStyle}
                     onPointerDown={(e) => onPortMouseDown(e, node.id, side)}
                     onMouseDown={(e) => onPortMouseDown(e, node.id, side)}
-                    onClick={(e) => onPortMouseDown(e, node.id, side)}
                   />
                 )
               })}
@@ -347,16 +347,16 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
               </div>
             )}
 
-            {/* Sleek Frameless Text or Sticky Note Body */}
+            {/* Sleek Floating Label or Sticky Note Body */}
             <div
               className={`lumina-canvas-node-body ${isFramelessText ? 'lumina-canvas-frameless-text-body' : 'lumina-canvas-sticky-body'}`}
               style={
-                isFramelessText && node.fontSize
+                isFramelessText
                   ? {
-                      fontSize: `${node.fontSize}px`,
-                      fontWeight: node.fontSize >= 22 ? 700 : 500,
-                      letterSpacing: node.fontSize >= 24 ? '-0.02em' : undefined,
-                      lineHeight: node.fontSize >= 24 ? 1.25 : 1.45
+                      fontSize: `${node.fontSize || 15}px`,
+                      fontWeight: (node.fontSize || 15) >= 22 ? 700 : 500,
+                      letterSpacing: (node.fontSize || 15) >= 24 ? '-0.02em' : undefined,
+                      lineHeight: (node.fontSize || 15) >= 24 ? 1.25 : 1.4
                     }
                   : undefined
               }
@@ -367,31 +367,40 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
               }}
             >
               {/* Accessible title anchor for tests / assistive tools */}
-              <span className="sr-only">{node.title || (isFramelessText ? 'Text' : 'Quick Idea')}</span>
+              <span className="sr-only">{node.title || (isFramelessText ? 'Label' : 'Quick Idea')}</span>
               {isEditing && editingField === 'text' ? (
                 <textarea
                   autoFocus
+                  rows={1}
                   dir="auto"
-                  placeholder={isFramelessText ? 'Type text...' : 'Write a note...'}
+                  placeholder={isFramelessText ? 'Type label...' : 'Write a note...'}
                   className={`lumina-canvas-text-area ${isFramelessText ? 'lumina-canvas-frameless-textarea' : 'lumina-canvas-sticky-textarea'}`}
                   style={
-                    isFramelessText && node.fontSize
+                    isFramelessText
                       ? {
-                          fontSize: `${node.fontSize}px`,
-                          fontWeight: node.fontSize >= 22 ? 700 : 500,
-                          letterSpacing: node.fontSize >= 24 ? '-0.02em' : undefined,
-                          lineHeight: node.fontSize >= 24 ? 1.25 : 1.45
+                          fontSize: `${node.fontSize || 15}px`,
+                          fontWeight: (node.fontSize || 15) >= 22 ? 700 : 500,
+                          letterSpacing: (node.fontSize || 15) >= 24 ? '-0.02em' : undefined,
+                          lineHeight: (node.fontSize || 15) >= 24 ? 1.25 : 1.4
                         }
                       : undefined
                   }
                   defaultValue={node.text || ''}
                   ref={(el) => {
                     if (el) {
+                      if (isFramelessText) {
+                        el.style.height = 'auto'
+                        el.style.height = `${el.scrollHeight}px`
+                      }
                       const len = el.value.length
                       el.setSelectionRange(len, len)
                     }
                   }}
                   onInput={(e) => {
+                    if (isFramelessText) {
+                      e.currentTarget.style.height = 'auto'
+                      e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`
+                    }
                     onUpdateText(node.id, e.currentTarget.value)
                   }}
                   onBlur={(e) => {
@@ -414,8 +423,14 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                     }
                   }}
                 />
-              ) : isFramelessText && !node.text ? (
-                <span className="lumina-canvas-frameless-placeholder">Double-click to type</span>
+              ) : isFramelessText ? (
+                node.text ? (
+                  <div className="lumina-canvas-label-text" dir="auto">
+                    {node.text}
+                  </div>
+                ) : (
+                  <span className="lumina-canvas-frameless-placeholder">Label</span>
+                )
               ) : (
                 <MemoizedMarkdownPreview text={node.text || ''} />
               )}

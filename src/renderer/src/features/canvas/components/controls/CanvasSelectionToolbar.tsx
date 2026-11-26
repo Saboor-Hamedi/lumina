@@ -22,7 +22,7 @@ import {
 import ToolTip from '../../../../components/atoms/ToolTip'
 import { CanvasAlignmentType, CanvasDistributionType } from '../../utils/canvasAlignment'
 import { CanvasShapeType } from '../../types'
-import { CANVAS_SHAPES, renderShapeSVG } from './ConvasShapes'
+import { CANVAS_SHAPES, renderShapeSVG } from './CanvasShapes'
 
 export interface CanvasSelectionToolbarProps {
   selectionBox: { minX: number; minY: number; maxX: number; maxY: number; width: number; height: number }
@@ -63,8 +63,8 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
     const anchorRef = useRef<HTMLDivElement>(null)
     const popoverRef = useRef<HTMLDivElement>(null)
 
-    // Dock 44px above the top-center of the selection bounding box
-    const toolbarX = selectionBox.minX + selectionBox.width / 2
+    // Dock 44px above the top-left of the selection bounding box so resizing never shifts the toolbar
+    const toolbarX = selectionBox.minX
     const toolbarY = selectionBox.minY - 44
 
     // Prevent popover clipping near viewport edges (flip upward if close to bottom)
@@ -123,12 +123,15 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
         className="lumina-canvas-selection-toolbar"
         style={{
           left: `${toolbarX}px`,
-          top: `${toolbarY}px`,
-          transform: 'translateX(-50%)'
+          top: `${toolbarY}px`
         }}
-        onMouseDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        }}
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
         onWheel={(e) => e.stopPropagation()}
       >
         {selectedCount > 1 && (
@@ -216,6 +219,7 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
                 ref={popoverRef}
                 className={`lumina-canvas-replace-shape-popover ${openUpward ? 'open-upward' : ''}`}
                 onClick={(e) => e.stopPropagation()}
+                onDoubleClick={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
                 onWheel={(e) => e.stopPropagation()}

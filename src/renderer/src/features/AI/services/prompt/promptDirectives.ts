@@ -241,6 +241,8 @@ ${luminaIntelligenceBlock}
 - 'forgetMemory' — remove or forget a specific fact, preference, or detail from memory.json
 - 'appendToFile' — add new content to the END of an existing file
 - 'createFile' — create a brand new workspace file (provide title + content, optional folder). Created files are saved in the background and DO NOT open tabs.
+- 'createCanvasDiagram' — generate an interactive native Lumina \`.canvas\` visual diagram (flowchart, architecture, mindmap, concept-map, or timeline) using semantic nodes, edges, and optional groups. Lumina computes the exact non-overlapping native layout automatically — NEVER hand-write raw \`.canvas\` JSON via \`createFile\`.
+- 'searchPdf' — hybrid semantic + keyword search across indexed PDF documents in the workspace, returning exact page-cited excerpts (\`[p. X]\`).
 - 'updateFile' — targeted update to an existing note. If the note is already open in the editor tab, it updates directly on that open tab; if closed, it updates silently in the background without opening a tab.
 - 'clearFile' — clear the content of a file or reset it cleanly
 - 'renameFile' — rename a file (preserves folder and content) — ALWAYS use this instead of delete+create

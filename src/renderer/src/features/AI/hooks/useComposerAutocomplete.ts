@@ -176,7 +176,8 @@ export const useComposerAutocomplete = ({
   )
 
   /**
-   * Inserts the @mention tag at the cursor and registers the file in attachedMentions.
+   * Attaches the selected file/folder/PDF as a compact chip in `attachedMentions`
+   * and removes the typed `@filter` trigger cleanly so long titles never clutter the composer.
    */
   const handleMentionSelect = useCallback(
     (snippet: MentionSnippetItem) => {
@@ -186,23 +187,14 @@ export const useComposerAutocomplete = ({
       const textAfterCursor = input.slice(cursor)
 
       const match = textBeforeCursor.match(/(?:^|\s)@([^\s]*)$/)
-      const mentionTitle = snippet.title || 'Untitled'
-      const mentionText = `@${mentionTitle} `
-
-      let newVal = ''
-      let newCursorPos = 0
+      let newCursorPos = cursor
 
       if (match && match.index !== undefined) {
         const matchIndex = match.index + (match[0].startsWith(' ') ? 1 : 0)
-        newVal = input.slice(0, matchIndex) + mentionText + textAfterCursor
-        newCursorPos = matchIndex + mentionText.length
-      } else {
-        const needsLeadingSpace = Boolean(input) && !/\s$/.test(input)
-        newVal = input + (needsLeadingSpace ? ' ' : '') + mentionText
-        newCursorPos = newVal.length
+        const newVal = input.slice(0, matchIndex) + textAfterCursor
+        newCursorPos = matchIndex
+        setInput(newVal)
       }
-
-      setInput(newVal)
 
       setAttachedMentions((prev) => {
         if (!prev.find((s) => s.id === snippet.id)) {
@@ -212,6 +204,7 @@ export const useComposerAutocomplete = ({
       })
 
       setShowMentionMenu(false)
+      setMentionFilter('')
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.focus()

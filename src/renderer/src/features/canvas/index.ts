@@ -15,6 +15,6 @@ export * from './components'
 export * from './toolbar'
 
 // Root-level containers & views
-export * from './ConvasContainer'
+export * from './CanvasContainer'
 export * from './CanvasView'
 export * from './CanvasTabPane'

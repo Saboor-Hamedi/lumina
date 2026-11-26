@@ -23,6 +23,23 @@ export const RELEASE_NOTES_TAB_ID = 'release-notes'
 export const isVirtualTabId = (id: string | null | undefined): boolean =>
   id === GRAPH_TAB_ID || id === LUMINA_TAB_ID || id === RELEASE_NOTES_TAB_ID
 
+/**
+ * Guarantees the Lumina AI tab is always present in the primary pane's tab strip.
+ */
+const ensureLuminaTab = (tabs: string[]): string[] => {
+  const deduped = Array.from(new Set(tabs))
+  return deduped.includes(LUMINA_TAB_ID) ? deduped : [LUMINA_TAB_ID, ...deduped]
+}
+
+const normalizeNotePathKey = (n: Partial<WorkspaceNote> | null | undefined): string => {
+  if (!n) return ''
+  const raw =
+    n.relativePath ||
+    (n.folderId && n.fileName ? `${n.folderId}/${n.fileName}` : n.fileName) ||
+    ''
+  return String(raw).replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').toLowerCase()
+}
+
 export type SplitDirection = 'none' | 'vertical' | 'horizontal'
 
 export interface WorkspaceNote {
@@ -134,6 +151,7 @@ export interface WorkspaceStoreState {
 }
 
 let hasLoadedWorkspaceOnce = false
+let loadWorkspaceSeq = 0
 const recentlyDeletedIds = new Set<string>()
 
 const persistNotesSnapshot = (_notes: WorkspaceNote[], _openTabs: string[] = []): void => {}
@@ -322,8 +340,8 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     set((state) => {
       const allNotes = state.notes || []
       const noteIdSet = new Set(allNotes.map((n) => n.id))
-      const validTabs = tabs.filter(
-        (id) => isVirtualTabId(id) || noteIdSet.has(id)
+      const validTabs = ensureLuminaTab(
+        tabs.filter((id) => isVirtualTabId(id) || noteIdSet.has(id))
       )
       const validPinned = pinnedIds.filter((id) => validTabs.includes(id)).slice(0, 1)
 
@@ -408,7 +426,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         return state
       }
       const isAlreadyOpen = state.openTabs.includes(note.id)
-      const nextTabs = isAlreadyOpen ? state.openTabs : [...state.openTabs, note.id]
+      const nextTabs = ensureLuminaTab(isAlreadyOpen ? state.openTabs : [...state.openTabs, note.id])
       const nextPanes = {
         ...state.panes,
         primary: { id: 'primary', tabs: nextTabs, activeTabId: note.id }
@@ -478,7 +496,28 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     })
   },
 
-  closeTab: (id: string) =>
+  closeTab: (id: string) => {
+    const curr = get()
+    if (id === LUMINA_TAB_ID && curr.splitTree.kind !== 'split') {
+      // Closing Lumina tab in single-pane mode resets to a fresh AI session (Obsidian-style)
+      import('../../features/AI/tools/lumina')
+        .then((m) => m.useAIStore.getState().createNewSession?.())
+        .catch(() => {})
+      set((state) => {
+        const nextTabs = ensureLuminaTab(state.openTabs)
+        return {
+          openTabs: nextTabs,
+          activeTabId: LUMINA_TAB_ID,
+          selectedNote: null,
+          selectedSnippet: null,
+          panes: {
+            ...state.panes,
+            primary: { id: 'primary', tabs: nextTabs, activeTabId: LUMINA_TAB_ID }
+          }
+        }
+      })
+      return
+    }
     set((state) => {
       const nextTabs = state.openTabs.filter((tid) => tid !== id)
       const isClosingActive = state.activeTabId === id || state.selectedNote?.id === id
@@ -517,7 +556,8 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
         selectedSnippet: nextSelected,
         panes: nextPanes
       }
-    }),
+    })
+  },
 
   reorderTabs: (newTabs: string[]) => {
     set((state) => {
@@ -540,16 +580,17 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
     set((state) => {
       const nextActiveId = keepId
       const allNotes = state.notes || []
-      const nextSelected = allNotes.find((n) => n.id === keepId) || null
+      const nextSelected = isVirtualTabId(keepId) ? null : allNotes.find((n) => n.id === keepId) || null
+      const nextTabs = ensureLuminaTab([keepId])
       return {
-        openTabs: [keepId],
-        pinnedTabIds: state.pinnedTabIds.includes(keepId) ? [keepId] : [],
+        openTabs: nextTabs,
+        pinnedTabIds: state.pinnedTabIds.filter((tid) => nextTabs.includes(tid)),
         activeTabId: nextActiveId,
         selectedNote: nextSelected,
         selectedSnippet: nextSelected,
         panes: {
           ...state.panes,
-          primary: { id: 'primary', tabs: [keepId], activeTabId: nextActiveId }
+          primary: { id: 'primary', tabs: nextTabs, activeTabId: nextActiveId }
         }
       }
     })
@@ -558,13 +599,15 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   closeTabsToRight: (id: string) => {
     set((state) => {
       const idx = state.openTabs.indexOf(id)
-      const nextTabs = state.openTabs.slice(0, idx + 1)
+      const nextTabs = ensureLuminaTab(state.openTabs.slice(0, idx + 1))
       let nextActiveId = state.activeTabId
       if (!nextTabs.includes(state.activeTabId || '')) {
         nextActiveId = id
       }
       const allNotes = state.notes || []
-      const nextSelected = allNotes.find((n) => n.id === nextActiveId) || null
+      const nextSelected = isVirtualTabId(nextActiveId)
+        ? null
+        : allNotes.find((n) => n.id === nextActiveId) || null
       return {
         openTabs: nextTabs,
         pinnedTabIds: state.pinnedTabIds.filter((tabId) => nextTabs.includes(tabId)),
@@ -582,9 +625,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   closeAllTabs: () => {
     set((state) => {
       const allNotes = state.notes || []
-      const activeId = state.pinnedTabIds.length > 0 ? state.pinnedTabIds[0] : null
-      const activeNote = activeId ? allNotes.find((n) => n.id === activeId) || null : null
-      const nextTabs = state.openTabs.filter((id) => state.pinnedTabIds.includes(id))
+      const nextTabs = ensureLuminaTab(state.openTabs.filter((id) => state.pinnedTabIds.includes(id)))
+      const activeId = nextTabs[0] || LUMINA_TAB_ID
+      const activeNote = isVirtualTabId(activeId) ? null : allNotes.find((n) => n.id === activeId) || null
       return {
         openTabs: nextTabs,
         activeTabId: activeId,
@@ -817,6 +860,13 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
   },
 
   closePaneTab: (pane: WorkspacePaneId, id: string) => {
+    const curr = get()
+    // In single-pane mode, closing Lumina starts a fresh AI session instead of leaving a blank workspace;
+    // in split mode, closing Lumina closes the tab/pane normally so split screens can always be closed.
+    if (pane === 'primary' && id === LUMINA_TAB_ID && curr.splitTree.kind !== 'split') {
+      get().closeTab(id)
+      return
+    }
     set((state) => {
       const currentPane = state.panes[pane] || {
         id: pane,
@@ -1124,6 +1174,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
    * Synchronizes workspace data (notes, folders, tab state) from the main process.
    */
   loadWorkspace: async () => {
+    const mySeq = ++loadWorkspaceSeq
     const isInitialLoad = !hasLoadedWorkspaceOnce
     if (isInitialLoad && get().notes.length === 0) {
       set({ isLoading: true })
@@ -1133,19 +1184,17 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
       const getItems = (window as any).api?.getNotes || (window as any).api?.getSnippets
       if (getItems) {
         const freshData = await getItems()
+        // Discard stale overlapping loadWorkspace responses so rapid saves/deletes never revert open tabs
+        if (mySeq !== loadWorkspaceSeq) return
         const rawNotes = freshData?.notes || freshData?.snippets
 
         if (freshData && rawNotes) {
           hasLoadedWorkspaceOnce = true
-          let merged: WorkspaceNote[] = rawNotes
+          // Filter out notes deleted in the last 5s so a trailing file-watcher event never resurrects them
+          const filteredRawNotes = rawNotes.filter((n: WorkspaceNote) => !recentlyDeletedIds.has(n.id))
+          let merged: WorkspaceNote[] = filteredRawNotes
           let folderColors: Record<string, string> = {}
-          let persistedOpenTabs = get().openTabs
-          let persistedPinnedTabs = get().pinnedTabIds
-          let persistedActiveId = get().activeTabId
-          let persistedSplitLayout: any =
-            get().splitTree.kind === 'split'
-              ? { splitTree: get().splitTree, panes: get().panes, focusedPane: get().focusedPane }
-              : null
+          let initialSettings: any = null
 
           try {
             let allSettings = useSettingsStore.getState().settings as any
@@ -1153,43 +1202,104 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
               allSettings = (await (window as any).api.getSetting()) || {}
             }
             const freshFolderColors = (await (window as any).api?.getSetting?.('folderColors')) || null
+            if (mySeq !== loadWorkspaceSeq) return
             const noteColors = allSettings.noteColors || {}
             folderColors = freshFolderColors || allSettings.folderColors || get().folderColors || {}
             if (allSettings) {
               allSettings.folderColors = folderColors
             }
-            merged = rawNotes.map((n: WorkspaceNote) => ({
+            merged = filteredRawNotes.map((n: WorkspaceNote) => ({
               ...n,
               color: n.color || noteColors[n.id] || null
             }))
-
             if (isInitialLoad) {
-              if (Array.isArray(allSettings.openTabs) && allSettings.openTabs.length > 0) {
-                persistedOpenTabs = allSettings.openTabs
-              }
-              if (Array.isArray(allSettings.pinnedTabIds)) {
-                persistedPinnedTabs = allSettings.pinnedTabIds
-              }
-              if (allSettings.lastNoteId) {
-                persistedActiveId = allSettings.lastNoteId
-              }
-              if (allSettings.splitLayout) {
-                persistedSplitLayout = allSettings.splitLayout
-              }
+              initialSettings = allSettings
             }
           } catch {
             folderColors = {}
           }
 
+          if (mySeq !== loadWorkspaceSeq) return
+
+          // Read LIVE tab/pane state AFTER all awaits so user tab closes/deletes during async I/O are never overwritten
+          const liveState = get()
+          let persistedOpenTabs = liveState.openTabs
+          let persistedPinnedTabs = liveState.pinnedTabIds
+          let persistedActiveId = liveState.activeTabId
+          let persistedSplitLayout: any =
+            liveState.splitTree.kind === 'split'
+              ? { splitTree: liveState.splitTree, panes: liveState.panes, focusedPane: liveState.focusedPane }
+              : null
+
+          if (isInitialLoad && initialSettings) {
+            if (Array.isArray(initialSettings.openTabs) && initialSettings.openTabs.length > 0) {
+              persistedOpenTabs = initialSettings.openTabs
+            }
+            if (Array.isArray(initialSettings.pinnedTabIds)) {
+              persistedPinnedTabs = initialSettings.pinnedTabIds
+            }
+            if (initialSettings.lastNoteId) {
+              persistedActiveId = initialSettings.lastNoteId
+            }
+            if (initialSettings.splitLayout) {
+              persistedSplitLayout = initialSettings.splitLayout
+            }
+          }
+
           const noteIdSet = new Set(merged.map((n) => n.id))
-          const validTabs = persistedOpenTabs.filter(
-            (id) => isVirtualTabId(id) || noteIdSet.has(id)
-          )
-          const validPinned = persistedPinnedTabs.filter((id) => validTabs.includes(id)).slice(0, 1)
+          // Build a fallback path->id map so tabs whose optimistic ID changed after disk scan
+          // (e.g. newly created `.canvas` files) remap cleanly instead of closing automatically.
+          const prevNotes = liveState.notes || []
+          const prevNoteById = new Map(prevNotes.map((n) => [n.id, n]))
+          const freshIdByPath = new Map<string, string>()
+          merged.forEach((n) => {
+            const key = normalizeNotePathKey(n)
+            if (key) freshIdByPath.set(key, n.id)
+          })
+          const remapTabId = (id: string | null): string | null => {
+            if (!id) return null
+            if (isVirtualTabId(id) || noteIdSet.has(id)) return id
+            const prevNote = prevNoteById.get(id)
+            const pathKey = normalizeNotePathKey(prevNote) || String(id).replace(/\\/g, '/').replace(/^\/+|\/+$/g, '').toLowerCase()
+            const matchedId = freshIdByPath.get(pathKey)
+            return matchedId || null
+          }
+
+          const remappedOpenTabs = persistedOpenTabs
+            .map((id) => remapTabId(id))
+            .filter((id): id is string => Boolean(id))
+          const validTabs = ensureLuminaTab(remappedOpenTabs)
+          const remappedPinned = persistedPinnedTabs
+            .map((id) => remapTabId(id))
+            .filter((id): id is string => typeof id === 'string' && validTabs.includes(id))
+          const validPinned = remappedPinned.slice(0, 1)
+          const remappedActiveId = remapTabId(persistedActiveId)
           const validActiveId =
-            persistedActiveId && validTabs.includes(persistedActiveId)
-              ? persistedActiveId
+            remappedActiveId && validTabs.includes(remappedActiveId)
+              ? remappedActiveId
               : validTabs[0] || null
+          if (persistedSplitLayout && persistedSplitLayout.panes) {
+            const remappedPanes: Record<string, any> = {}
+            Object.entries(persistedSplitLayout.panes).forEach(([pid, pane]: [string, any]) => {
+              const pTabs: string[] = Array.isArray(pane?.tabs)
+                ? Array.from(
+                    new Set<string>(
+                      pane.tabs
+                        .map((tid: string) => remapTabId(tid))
+                        .filter((tid: string | null): tid is string => typeof tid === 'string')
+                    )
+                  )
+                : []
+              const finalPTabs = pid === 'primary' ? ensureLuminaTab(pTabs) : pTabs
+              const pActive = remapTabId(pane?.activeTabId ?? null)
+              remappedPanes[pid] = {
+                ...pane,
+                tabs: finalPTabs,
+                activeTabId: pActive && finalPTabs.includes(pActive) ? pActive : finalPTabs[0] || null
+              }
+            })
+            persistedSplitLayout = { ...persistedSplitLayout, panes: remappedPanes }
+          }
           const activeNote =
             validActiveId && !isVirtualTabId(validActiveId)
               ? merged.find((n) => n.id === validActiveId) || null
@@ -1277,12 +1387,14 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
       const current = get().notes || []
       const existing = current.find((n) => n.id === note.id)
+      const preservedCreatedAt = existing?.createdAt || note.createdAt || new Date().toISOString()
+      const noteToSave = { ...note, createdAt: preservedCreatedAt }
 
-      const returnedNote = await saveApi(note)
+      const returnedNote = await saveApi(noteToSave)
       const updatedNote: WorkspaceNote =
         returnedNote && typeof returnedNote === 'object'
-          ? returnedNote
-          : ({ ...(existing || {}), ...note } as WorkspaceNote)
+          ? { ...returnedNote, createdAt: existing?.createdAt || returnedNote.createdAt || preservedCreatedAt }
+          : ({ ...(existing || {}), ...noteToSave } as WorkspaceNote)
 
       if (note.color && (!existing || existing.color !== note.color)) {
         const currentColors = (await (window as any).api.getSetting('noteColors')) || {}
@@ -1349,18 +1461,44 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
           }
         }
 
-        const dirtyNotes = (state.dirtyNoteIds || []).filter((dId) => dId !== note.id)
+        const dirtyNotes = (state.dirtyNoteIds || []).filter((dId) => dId !== note.id && dId !== updatedNote.id)
+
+        // If the backend returned a canonical ID (e.g. `.canvas` hash ID), migrate open tabs & panes in-place
+        const idChanged = Boolean(updatedNote.id && updatedNote.id !== note.id)
+        const migrateId = (tid: string | null): string | null =>
+          idChanged && tid === note.id ? updatedNote.id : tid
+        const migrateList = (list: string[]): string[] =>
+          idChanged
+            ? Array.from(new Set(list.map((tid) => (tid === note.id ? updatedNote.id : tid))))
+            : list
+
+        let migratedFields: Partial<WorkspaceStoreState> = {}
+        if (idChanged) {
+          const nextPanes: Record<WorkspacePaneId, PaneState> = {}
+          Object.entries(state.panes).forEach(([pid, pane]) => {
+            nextPanes[pid] = {
+              ...pane,
+              tabs: migrateList(pane.tabs),
+              activeTabId: migrateId(pane.activeTabId)
+            }
+          })
+          migratedFields = {
+            ...buildSyncedPaneFields(nextPanes, state.splitTree, state.focusedPane, nextNotes),
+            pinnedTabIds: migrateList(state.pinnedTabIds)
+          }
+        }
 
         return {
           notes: nextNotes,
           snippets: nextNotes,
           folders: nextFolders,
           drafts: nextDrafts,
-          dirtyNoteIds: dirtyNotes
+          dirtyNoteIds: dirtyNotes,
+          ...migratedFields
         }
       })
 
-      if (get().selectedNote?.id === note.id) {
+      if (get().selectedNote?.id === note.id || get().selectedNote?.id === updatedNote.id) {
         set({ selectedNote: updatedNote, selectedSnippet: updatedNote })
       }
 

@@ -71,14 +71,16 @@ pub async fn read_asset_bytes(relative_path: String) -> Result<tauri::ipc::Respo
         }
         let norm = relative_path.replace('\\', "/");
         let trimmed = norm.trim_start_matches("./").trim_start_matches('/');
-        let fallback_rel = if let Some(rest) = trimmed.strip_prefix("assets/") {
-            Some(format!("{WORKSPACE_ASSETS_DIR}/{rest}"))
+        let mut fallback_candidates: Vec<String> = Vec::new();
+        if let Some(rest) = trimmed.strip_prefix("assets/") {
+            fallback_candidates.push(format!("{WORKSPACE_ASSETS_DIR}/{rest}"));
         } else if let Some(rest) = trimmed.strip_prefix(".lumina/assets/") {
-            Some(format!("assets/{rest}"))
-        } else {
-            None
-        };
-        if let Some(fb) = fallback_rel {
+            fallback_candidates.push(format!("assets/{rest}"));
+        } else if !trimmed.is_empty() && !trimmed.contains('/') {
+            fallback_candidates.push(format!("{WORKSPACE_ASSETS_DIR}/{trimmed}"));
+            fallback_candidates.push(format!("assets/{trimmed}"));
+        }
+        for fb in fallback_candidates {
             if let Ok(fb_path) = safe_join_workspace(&ws_path, &fb) {
                 if fb_path.exists() {
                     return fs::read(fb_path).map_err(|e| e.to_string());

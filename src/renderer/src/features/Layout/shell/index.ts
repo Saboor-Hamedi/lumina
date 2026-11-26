@@ -1,0 +1,6 @@
+export { useSidebarPanels } from './useSidebarPanels'
+export { useTerminalDock, LazyTerminalPanel } from './useTerminalDock'
+export { useWorkspaceActions, isCanvasNote } from './useWorkspaceActions'
+export { useLayoutEvents } from './useLayoutEvents'
+export { useLayoutShortcuts, isRecordingShortcutInput } from './useLayoutShortcuts'
+export { TerminalDockSection } from './TerminalDockSection'

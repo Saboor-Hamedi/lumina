@@ -87,12 +87,12 @@ export const RightActivityBar: React.FC<RightActivityBarProps> = memo(({
             </ToolTip>
           )}
 
-          <ToolTip text="Infinite Canvas" position="left">
+          <ToolTip text="Canvas" position="left">
             <button
               type="button"
               className={`activity-bar-btn${isCanvasActive ? ' active' : ''}`}
               onClick={handleCanvasClick}
-              aria-label="Infinite Canvas"
+              aria-label="Canvas"
               aria-pressed={isCanvasActive}
             >
               <LayoutDashboard size={16} />

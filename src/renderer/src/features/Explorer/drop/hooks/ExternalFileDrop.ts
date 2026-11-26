@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useWorkspaceStore } from '../../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../../core/store/SettingStore'
+import { enqueueManyPdfs, isPdfSnippetOrPath, resolvePdfRelativePath } from '../../../media/pdf'
 
 interface ExternalFileDropResult {
   isDraggingExternal: boolean
@@ -127,6 +128,14 @@ export function useExternalFileDrop(): ExternalFileDropResult {
         if (importedIds.length > 0) {
           const targetId = importedIds[0]
           const notes = useWorkspaceStore.getState().notes || []
+          const importedPdfPaths = importedIds
+            .map((id: string) => notes.find((s: any) => s.id === id))
+            .filter((s: any) => isPdfSnippetOrPath(s))
+            .map((s: any) => resolvePdfRelativePath(s))
+            .filter(Boolean)
+          if (importedPdfPaths.length > 0) {
+            void enqueueManyPdfs(importedPdfPaths)
+          }
           const found = notes.find((s: any) => s.id === targetId)
           if (found) {
             setSelectedSnippet(found)

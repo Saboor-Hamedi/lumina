@@ -597,7 +597,7 @@
   height: 100%;
   position: relative;
   overflow: auto;
-  background: var(--bg-editor);
+  background: var(--bg-editor, var(--bg-surface));
 }
 
 .export-preview-scaler {
@@ -611,7 +611,7 @@
   width: 100%;
   height: 100%;
   border: none;
-  background: var(--bg-editor);
+  background: var(--bg-editor, var(--bg-surface));
   display: block;
 }
 
@@ -623,7 +623,8 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: rgba(0, 0, 0, 0.5);
+  background: color-mix(in srgb, var(--bg-editor, var(--bg-shell)) 74%, transparent);
+  backdrop-filter: blur(2px);
   color: var(--text-main);
   font-size: 13px;
   z-index: 2;

@@ -58,9 +58,8 @@ function buildInteractiveSrcDoc(rawHtml: string, initialZoom: number): string {
     if (!document.body) return;
     ensureStage();
 
-    var hasWebsiteShell = !!document.querySelector('#lumina-zoom-stage > .site-shell');
-    var effectivePad = hasWebsiteShell ? 16 : pad;
-    var maxStageWidth = hasWebsiteShell ? 1040 : 760;
+    var effectivePad = pad;
+    var maxStageWidth = 760;
     var innerWidth = (document.documentElement && document.documentElement.clientWidth) || window.innerWidth || 720;
     var baseWidth = Math.min(maxStageWidth, Math.max(320, innerWidth - effectivePad * 2));
     var visualWidth = Math.ceil(baseWidth * currentZoom);
@@ -78,7 +77,7 @@ function buildInteractiveSrcDoc(rawHtml: string, initialZoom: number): string {
       'body{display:block!important;width:max(100%,' + minBodyWidth + 'px)!important;min-height:100vh!important;margin:0!important;padding:' + effectivePad + 'px!important;box-sizing:border-box!important;}' +
       '#lumina-zoom-stage{width:' + visualWidth + 'px!important;margin:0 auto!important;padding:0!important;box-sizing:border-box!important;}' +
       '#lumina-zoom-stage>.page,#lumina-zoom-stage>.doc,#lumina-zoom-stage>.container,#lumina-zoom-stage>.site-shell,#lumina-zoom-stage>pre.md,#lumina-zoom-stage>pre.txt,#lumina-zoom-stage>article{width:' + baseWidth + 'px!important;max-width:none!important;zoom:' + currentZoom + '!important;margin:0!important;box-sizing:border-box!important;}' +
-      '#lumina-zoom-stage>.site-shell{border-radius:12px!important;overflow:clip!important;border:1px solid rgba(148,163,184,0.22)!important;box-shadow:0 14px 36px rgba(0,0,0,0.28)!important;}';
+      '#lumina-zoom-stage>.site-shell{border-radius:4px!important;overflow:clip!important;}';
 
     var centerScroll = function () {
       var root = document.documentElement;

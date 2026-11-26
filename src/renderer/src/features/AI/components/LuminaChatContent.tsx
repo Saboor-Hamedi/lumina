@@ -226,7 +226,7 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
       handleRating
     ])
 
-    const isCenteredWelcome = !isSidebar && sessionsLoaded && visibleMessages.length === 0
+    const isCenteredWelcome = !isSidebar && visibleMessages.length === 0
 
     return (
       <div

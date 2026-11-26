@@ -1,3 +1,28 @@
+## Lumina v2.3.0 — Smart PDF Hybrid Index, AI-to-Canvas Visual Thinking & Explorer Polish
+
+Lumina **v2.3.0** introduces an invisible native **SQLite FTS5 + Int8 Hybrid PDF Knowledge Index**, **AI-to-Canvas Visual Thinking** for generating native editable `.canvas` diagrams, built-in **How to Ask Lumina** prompt engineering docs, an **IDE-grade File Explorer** refinement, and cleaner AI mentions and Canvas workflows.
+
+---
+
+### 📄 Smart PDF Knowledge Index
+- **Invisible Local Hybrid Engine**: Dropping or opening any PDF automatically extracts text per page in Rust (`lopdf`) into an embedded SQLite FTS5 store (`.lumina/pdf-index/index.db`) and lazily computes compact Int8-quantized `all-MiniLM-L6-v2` embeddings in the background (4× smaller on disk, SHA-256 deduplicated).
+- **Lumina AI PDF Retrieval**: `@mentioning` a PDF, viewing an active PDF tab, or invoking `searchPdf` automatically retrieves top relevant passages via Reciprocal Rank Fusion (BM25 + semantic vectors) with exact `[p. X]` citations.
+- **Plain-English Toolbar Status**: The PDF viewer toolbar shows a subtle `Indexing…` / `N pages` status pill with zero technical jargon.
+
+### 🎨 AI-to-Canvas Visual Thinking & Canvas Fixes
+- **Native `.canvas` Diagram Generation (`createCanvasDiagram`)**: Lumina AI compiles semantic flowcharts, system architectures, mindmaps, concept maps, and timelines into 100% native `.canvas` files with balanced studio shape proportions, auto-sized flat `frame` groups, smart-routed arrows, and zero-overlap layouts.
+- **Cross-Canvas Copy/Paste & Active-Tab Shortcuts**: Shared the Canvas clipboard across open tabs and scoped keyboard shortcuts strictly to the active Canvas tab so `Ctrl+C` → `Ctrl+V` pastes cleanly into the currently open diagram.
+- **Always-New Canvas & `Ctrl+N` Context**: Clicking the Right Activity Bar Canvas button or pressing `Ctrl+N` while on a Canvas always creates and opens a fresh `.canvas` tab.
+- **Reliable Hand (`H`) Panning**: Fixed Hand tool and `Space+Drag` panning so dragging anywhere over zoomed-in shapes, frames, or edges pans smoothly.
+
+### ✨ Explorer, Lumina AI & Documentation Polish
+- **IDE-Style File Explorer**: Aligned loose root files with folder icon columns, centered vertical hierarchy guide lines, added subtle `.pdf`/`.canvas`/image extension hints and muted icon surfaces, and smoothed hover/active/chevron transitions.
+- **Cleaner AI Composer & Chat Mentions**: Attached PDFs/files render as small, truncated chips in the composer and a compact strip above sent prompts, inline mentions flow seamlessly like paragraph wording without overflowing, and Activity Card file titles truncate cleanly beside green `+Nw` badges.
+- **Instant Lumina AI Tab**: Pre-warms the Lumina AI bundle on idle and shows a clean loader fallback instead of a blank screen.
+- **Built-in Guides**: Added **Smart PDFs & AI Canvas** and **How to Ask Lumina** (prompt engineering guide) to `brain/` and the in-app Documentation modal.
+
+---
+
 ## Lumina v2.2.2 — Next-Gen Spatial Canvas, Live Web Search AI, Chat Mermaid Previews & Unified Link Cards
 
 Lumina **v2.2.2** delivers a ground-up overhaul of the **Spatial Canvas** (freehand drawing, 34 drag-and-drop shapes, smart auto-routing connectors, frameless typography with font-size/title scaling, native OS PNG/SVG export, and 120Hz rAF performance), upgrades **Lumina AI** with a centered-to-bottom welcome composer, live multi-source web search (`luminWebSearch.ts`), live Mermaid diagram previews matching the Editor, and clickable inline `@mention` links, unifies link card grids across the Editor and Chat, polishes the **Knowledge Graph** with instant initial rendering and high-contrast sliders, and brings full cross-platform touchscreen support (Windows, macOS, Linux).
