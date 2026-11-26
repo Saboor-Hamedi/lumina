@@ -9,14 +9,14 @@
   <meta name="keywords" content="Lumina, Lumina app, Lumina notes, local-first markdown notes, AI knowledge workspace, spatial canvas, knowledge graph, Obsidian alternative, Tauri note app" />
   <meta name="author" content="Saboor Hamedi" />
   <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://www.dev-dialect.com/" />
+  <link rel="canonical" href="https://dev-dialect.com/" />
 
   <!-- Open Graph / Social -->
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Lumina" />
   <meta property="og:title" content="Lumina — Local-First AI Knowledge Workspace &amp; Spatial Canvas" />
   <meta property="og:description" content="Local-first Markdown notes, infinite Spatial Canvas, 2D/3D Knowledge Graph, and built-in AI companion with live web search. Available for Windows, macOS, and Linux." />
-  <meta property="og:url" content="https://www.dev-dialect.com/" />
+  <meta property="og:url" content="https://dev-dialect.com/" />
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
@@ -33,7 +33,7 @@
     "applicationCategory": "ProductivityApplication",
     "operatingSystem": "Windows, macOS, Linux",
     "softwareVersion": "2.2.2",
-    "url": "https://www.dev-dialect.com/",
+    "url": "https://dev-dialect.com/",
     "downloadUrl": "https://github.com/Saboor-Hamedi/lumina/releases",
     "codeRepository": "https://github.com/Saboor-Hamedi/lumina",
     "description": "Lumina is a fast, local-first AI thinking environment and Markdown note-taking app with an infinite Spatial Canvas, 2D/3D Knowledge Graph, PDF reader, and live web search AI.",
@@ -52,55 +52,167 @@
 
   <style>
     :root {
-      --bg: #0b0e14;
-      --surface: #121722;
-      --surface-hover: #171e2d;
+      --bg: #090c12;
+      --bg-elev: #0f141e;
+      --surface: #131926;
+      --surface-hover: #182032;
       --text: #f8fafc;
       --text-muted: #94a3b8;
       --accent: #38bdf8;
-      --accent-soft: rgba(56, 189, 248, 0.14);
-      --border: rgba(148, 163, 184, 0.16);
+      --accent-2: #818cf8;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --border: rgba(148, 163, 184, 0.14);
+      --border-strong: rgba(148, 163, 184, 0.24);
+      --shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f8fafc;
+        --bg-elev: #ffffff;
+        --surface: #ffffff;
+        --surface-hover: #f1f5f9;
+        --text: #0f172a;
+        --text-muted: #475569;
+        --accent: #0284c7;
+        --accent-2: #4f46e5;
+        --accent-soft: rgba(2, 132, 199, 0.10);
+        --border: rgba(15, 23, 42, 0.10);
+        --border-strong: rgba(15, 23, 42, 0.18);
+        --shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+      }
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: radial-gradient(circle at top center, rgba(56, 189, 248, 0.08), transparent 45%), var(--bg);
+      background:
+        radial-gradient(ellipse 75% 45% at 50% -10%, rgba(56, 189, 248, 0.15), transparent 65%),
+        radial-gradient(ellipse 50% 35% at 80% 10%, rgba(129, 140, 248, 0.10), transparent 60%),
+        var(--bg);
       color: var(--text);
       line-height: 1.6;
       min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
-    .wrap {
-      max-width: 960px;
+
+    /* Sticky Glass Navigation */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: color-mix(in srgb, var(--bg) 78%, transparent);
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar-inner {
+      max-width: 1040px;
       margin: 0 auto;
-      padding: 48px 24px 64px;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
     }
-    header {
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+    }
+    .brand-mark {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 13px;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+    .nav-links a {
+      font-size: 13.5px;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta {
+      padding: 7px 14px;
+      border-radius: 8px;
+      background: var(--accent-soft);
+      color: var(--accent) !important;
+      border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+      font-weight: 600 !important;
+    }
+    .nav-cta:hover {
+      background: var(--accent);
+      color: #081018 !important;
+    }
+
+    .wrap {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 0 24px 72px;
+    }
+
+    /* Hero */
+    .hero {
       text-align: center;
-      padding: 32px 0 48px;
+      padding: 72px 0 48px;
     }
-    .badge {
-      display: inline-block;
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       font-size: 12px;
       font-weight: 600;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.03em;
       color: var(--accent);
       background: var(--accent-soft);
-      border: 1px solid rgba(56, 189, 248, 0.28);
-      padding: 5px 12px;
+      border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+      padding: 6px 14px;
       border-radius: 999px;
-      margin-bottom: 18px;
+      margin-bottom: 22px;
+    }
+    .pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
     }
     h1 {
-      font-size: clamp(36px, 6vw, 54px);
+      font-size: clamp(38px, 6.2vw, 60px);
       font-weight: 800;
-      letter-spacing: -0.03em;
-      margin-bottom: 14px;
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+      max-width: 780px;
+      margin: 0 auto 18px;
     }
-    h1 span { color: var(--accent); }
+    h1 .grad {
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
     .subtitle {
       max-width: 640px;
-      margin: 0 auto 28px;
-      font-size: 17px;
+      margin: 0 auto 32px;
+      font-size: 17.5px;
       color: var(--text-muted);
     }
     .cta-row {
@@ -108,47 +220,110 @@
       justify-content: center;
       flex-wrap: wrap;
       gap: 12px;
+      margin-bottom: 44px;
     }
     .btn {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 11px 20px;
+      padding: 12px 22px;
       border-radius: 10px;
-      font-size: 14px;
+      font-size: 14.5px;
       font-weight: 600;
       text-decoration: none;
-      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+      transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
     }
     .btn-primary {
       background: var(--accent);
       color: #081018;
+      box-shadow: 0 8px 24px rgba(56, 189, 248, 0.25);
     }
-    .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.06); }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.06);
+      box-shadow: 0 12px 28px rgba(56, 189, 248, 0.34);
+    }
     .btn-secondary {
       background: var(--surface);
       color: var(--text);
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-strong);
     }
     .btn-secondary:hover {
       border-color: var(--accent);
       background: var(--surface-hover);
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+    }
+
+    /* Quick Metrics Bar */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 16px 20px;
+      border-radius: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .stat-val {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Features Grid */
+    .section-head {
+      text-align: center;
+      margin: 72px 0 28px;
+    }
+    .section-head h2 {
+      font-size: 28px;
+      font-weight: 750;
+      letter-spacing: -0.025em;
+      margin-bottom: 8px;
+    }
+    .section-head p {
+      font-size: 15px;
+      color: var(--text-muted);
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
       gap: 16px;
-      margin-top: 24px;
     }
     .feature {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 22px;
+      border-radius: 16px;
+      padding: 24px;
+      transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
     }
-    .feature h2 {
-      font-size: 16px;
+    .feature:hover {
+      transform: translateY(-3px);
+      border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+      box-shadow: var(--shadow);
+    }
+    .feature-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+    .feature h3 {
+      font-size: 16.5px;
       font-weight: 700;
       margin-bottom: 8px;
       color: var(--text);
@@ -156,83 +331,193 @@
     .feature p {
       font-size: 14px;
       color: var(--text-muted);
+      line-height: 1.6;
     }
-    footer {
+
+    /* Privacy Callout Banner */
+    .banner {
       margin-top: 56px;
+      padding: 32px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--surface)), var(--surface));
+      border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .banner h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .banner p {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      max-width: 580px;
+    }
+
+    footer {
+      margin-top: 64px;
       padding-top: 24px;
       border-top: 1px solid var(--border);
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       font-size: 13px;
       color: var(--text-muted);
     }
     footer nav {
       display: flex;
-      gap: 18px;
+      gap: 20px;
     }
     footer a {
       color: var(--text-muted);
       text-decoration: none;
+      transition: color 0.15s ease;
     }
     footer a:hover { color: var(--accent); }
+
+    @media (max-width: 680px) {
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .nav-links a:not(.nav-cta) { display: none; }
+      .hero { padding: 48px 0 36px; }
+    }
   </style>
 </head>
 <body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="./">
+        <span class="brand-mark">L</span>
+        <span>Lumina</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary Navigation">
+        <a href="#features">Features</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="https://github.com/Saboor-Hamedi/lumina" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a class="nav-cta" href="https://github.com/Saboor-Hamedi/lumina/releases" target="_blank" rel="noopener noreferrer">Download</a>
+      </nav>
+    </div>
+  </header>
+
   <div class="wrap">
-    <header>
-      <div class="badge">Lumina v2.2.2 · Windows, macOS &amp; Linux</div>
-      <h1><span>Lumina</span> — Local-First AI Workspace</h1>
+    <section class="hero">
+      <div class="pill">
+        <span class="pill-dot"></span>
+        <span>Lumina v2.2.2 · Windows, macOS &amp; Linux</span>
+      </div>
+      <h1>Think clearly in a <span class="grad">local-first</span> AI workspace</h1>
       <p class="subtitle">
-        A fast, plaintext Markdown thinking environment combining an infinite Spatial Canvas,
-        interactive 2D/3D Knowledge Graph, smart PDF &amp; link cards, and a built-in AI companion with live web search.
+        Lumina unites plaintext Markdown notes, an infinite Spatial Canvas, real-time 2D &amp; 3D Knowledge Graphs,
+        and a built-in AI companion with live web search—all stored privately on your own device.
       </p>
       <div class="cta-row">
         <a class="btn btn-primary" href="https://github.com/Saboor-Hamedi/lumina/releases" target="_blank" rel="noopener noreferrer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download Lumina
         </a>
         <a class="btn btn-secondary" href="https://github.com/Saboor-Hamedi/lumina" target="_blank" rel="noopener noreferrer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
           View on GitHub
         </a>
       </div>
-    </header>
 
-    <main>
+      <div class="stats" aria-label="Highlights">
+        <div>
+          <div class="stat-val">&lt; 200 MB</div>
+          <div class="stat-label">Native Rust + Tauri v2</div>
+        </div>
+        <div>
+          <div class="stat-val">34 Shapes</div>
+          <div class="stat-label">Infinite Spatial Canvas</div>
+        </div>
+        <div>
+          <div class="stat-val">2D &amp; 3D</div>
+          <div class="stat-label">Knowledge Graph</div>
+        </div>
+        <div>
+          <div class="stat-val">100% Local</div>
+          <div class="stat-label">Plaintext Markdown</div>
+        </div>
+      </div>
+    </section>
+
+    <main id="features">
+      <div class="section-head">
+        <h2>Everything you need to capture, connect, and build</h2>
+        <p>Designed for researchers, engineers, students, and builders who own their knowledge.</p>
+      </div>
+
       <section class="grid" aria-label="Lumina Key Features">
         <article class="feature">
-          <h2>Local-First Markdown Notes</h2>
-          <p>Your vault stays on your own disk in plain Markdown. Instant wikilinks, Mermaid diagrams, rich bookmark link cards, and zero vendor lock-in.</p>
+          <div class="feature-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </div>
+          <h3>Local-First Markdown Editor</h3>
+          <p>Plain Markdown files stored directly on your disk. Includes instant wikilinks, live Mermaid diagrams, auto-grouped bookmark link cards, and multi-pane split tabs.</p>
         </article>
+
         <article class="feature">
-          <h2>Infinite Spatial Canvas</h2>
-          <p>Freehand pencil &amp; highlighter drawing, 34 drag-and-drop diagram shapes, smart auto-routing connectors, frameless titles, and native PNG/SVG export.</p>
+          <div class="feature-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          </div>
+          <h3>Infinite Spatial Canvas</h3>
+          <p>Freehand pencil &amp; highlighter drawing, 34 drag-and-drop diagram shapes, smart auto-routing connectors, frameless titles with font scaling, and native PNG/SVG export.</p>
         </article>
+
         <article class="feature">
-          <h2>Lumina AI Companion</h2>
-          <p>Context-aware assistant supporting DeepSeek, OpenAI, Claude, and local Ollama models with workspace `@mentions`, auto-memory, and live web, arXiv &amp; GitHub search.</p>
+          <div class="feature-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M16 14a4 4 0 0 1 4 4v2H4v-2a4 4 0 0 1 4-4"/><circle cx="19" cy="5" r="2"/></svg>
+          </div>
+          <h3>Lumina AI Companion</h3>
+          <p>Works with DeepSeek, OpenAI, Claude, and local Ollama models. Drag notes into the composer as clickable <code>@mentions</code>, render Mermaid in chat, and search live web, arXiv &amp; GitHub.</p>
         </article>
+
         <article class="feature">
-          <h2>2D &amp; 3D Knowledge Graph</h2>
-          <p>Explore connections across notes, tags, and semantic links in real-time 2D and WebGL 3D force-directed graphs.</p>
+          <div class="feature-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><line x1="8.5" y1="7.5" x2="10.5" y2="15.5"/><line x1="15.5" y1="7.5" x2="13.5" y2="15.5"/><line x1="9" y1="6" x2="15" y2="6"/></svg>
+          </div>
+          <h3>2D &amp; 3D Knowledge Graph</h3>
+          <p>Visualize relationships across notes, tags, and semantic links in real-time 2D physics or WebGL 3D with instant search, filtering, and PNG/SVG export.</p>
         </article>
+
         <article class="feature">
-          <h2>Native Speed &amp; Privacy</h2>
-          <p>Built with Rust and Tauri v2 for sub-200 MB memory footprint, full touch support, and optional local-only Google Drive backup &amp; Gmail integration.</p>
+          <div class="feature-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3>Private by Architecture</h3>
+          <p>Zero telemetry and zero proprietary cloud lock-in. Optional Google Drive vault backup and Gmail integration run strictly locally from your desktop.</p>
         </article>
+
         <article class="feature">
-          <h2>Cross-Platform Desktop</h2>
-          <p>Consistent experience across Windows, macOS, and Linux with multi-pane split tabs, native PDF viewer, and customizable themes.</p>
+          <div class="feature-icon">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <h3>Cross-Platform &amp; Touch Ready</h3>
+          <p>Native performance on Windows, macOS, and Linux with multi-touch pinch-to-zoom, native PDF drag-and-drop, built-in terminal, and custom themes.</p>
         </article>
+      </section>
+
+      <section class="banner">
+        <div>
+          <h3>Your notes stay yours—forever.</h3>
+          <p>Open-format Markdown files on your local drive with full Google API Limited Use compliance when you opt into cloud backup or mail.</p>
+        </div>
+        <a class="btn btn-secondary" href="privacy.html">Read Privacy Policy →</a>
       </section>
     </main>
 
     <footer>
-      <span>© 2026 Lumina by Saboor Hamedi</span>
-      <nav aria-label="Legal and Repository Links">
+      <span>© 2026 Lumina · Built by Saboor Hamedi</span>
+      <nav aria-label="Footer Links">
         <a href="privacy.html">Privacy Policy</a>
         <a href="terms.html">Terms of Service</a>
+        <a href="https://github.com/Saboor-Hamedi/lumina/releases" target="_blank" rel="noopener noreferrer">Releases</a>
         <a href="https://github.com/Saboor-Hamedi/lumina" target="_blank" rel="noopener noreferrer">GitHub</a>
       </nav>
     </footer>

@@ -3,99 +3,222 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Privacy Policy - Lumina</title>
+  <title>Privacy Policy — Lumina</title>
+  <meta name="description" content="Privacy Policy for Lumina, a local-first AI knowledge workspace and Markdown notes desktop application." />
+  <link rel="canonical" href="https://dev-dialect.com/privacy.html" />
   <style>
     :root {
-      --bg: #ffffff;
-      --text: #1e293b;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-      --card-bg: #f8fafc;
-      --accent: #0284c7;
+      --bg: #090c12;
+      --surface: #131926;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #818cf8;
+      --accent-soft: rgba(56, 189, 248, 0.12);
+      --border: rgba(148, 163, 184, 0.14);
     }
-    @media (prefers-color-scheme: dark) {
+    @media (prefers-color-scheme: light) {
       :root {
-        --bg: #0f172a;
-        --text: #f8fafc;
-        --text-muted: #94a3b8;
-        --border: #334155;
-        --card-bg: #1e293b;
-        --accent: #38bdf8;
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --text: #0f172a;
+        --text-muted: #475569;
+        --accent: #0284c7;
+        --accent-2: #4f46e5;
+        --accent-soft: rgba(2, 132, 199, 0.10);
+        --border: rgba(15, 23, 42, 0.10);
       }
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.65;
-      padding: 40px 20px;
+      line-height: 1.7;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
-    .container {
-      max-width: 800px;
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: color-mix(in srgb, var(--bg) 82%, transparent);
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar-inner {
+      max-width: 860px;
       margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; color: var(--accent); }
-    .updated { font-size: 13px; color: var(--text-muted); margin-bottom: 32px; }
-    h2 { font-size: 18px; font-weight: 600; margin-top: 28px; margin-bottom: 12px; }
-    p, li { font-size: 14.5px; color: var(--text); margin-bottom: 14px; }
-    ul { padding-left: 20px; margin-bottom: 16px; }
-    .highlight-box {
-      background: var(--card-bg);
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15.5px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .brand-mark {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 18px;
+      font-size: 13.5px;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--accent); }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 24px 72px;
+    }
+    .doc-card {
+      background: var(--surface);
       border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 36px;
+    }
+    h1 {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 6px;
+    }
+    .updated {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    h2 {
+      font-size: 17.5px;
+      font-weight: 700;
+      margin-top: 28px;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+    p, li {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    strong { color: var(--text); }
+    ul { padding-left: 20px; margin-bottom: 14px; }
+    .highlight-box {
+      background: var(--accent-soft);
+      border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
       border-left: 4px solid var(--accent);
-      border-radius: 8px;
+      border-radius: 10px;
       padding: 16px 20px;
       margin: 20px 0;
+      color: var(--text);
+      font-size: 14px;
     }
-    a { color: var(--accent); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    footer {
+      margin-top: 32px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    @media (max-width: 600px) {
+      .doc-card { padding: 26px 20px; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Privacy Policy for Lumina</h1>
-    <div class="updated">Last updated: September 12, 2026</div>
-
-    <h2>1. Overview</h2>
-    <p>Lumina is a local-first desktop application developed by Saboor Hamedi. We respect your privacy. This policy outlines how information is handled within the application.</p>
-
-    <h2>2. Local Storage First</h2>
-    <p>All your notes, vaults, tags, and snippets are stored directly on your personal computer. Lumina does not operate proprietary tracking servers or centralized databases that store your personal notes.</p>
-
-    <h2>3. Google User Data & Limited Use Disclosure</h2>
-    <p>Lumina offers optional features allowing users to connect their Google Account for:</p>
-    <ul>
-      <li><strong>Google Drive:</strong> Storing backups of your personal vault and files directly in your Google Drive (within application-specific folders).</li>
-      <li><strong>Gmail:</strong> Reading, organizing, and sending emails directly from the Lumina desktop interface at your explicit direction.</li>
-    </ul>
-
-    <div class="highlight-box">
-      <strong>Google API Services User Data Policy Compliance:</strong><br/>
-      Lumina's use and transfer of information received from Google APIs to any other app will adhere to the 
-      <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">
-        Google API Services User Data Policy
-      </a>, including the Limited Use requirements.
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="./">
+        <span class="brand-mark">L</span>
+        <span>Lumina</span>
+      </a>
+      <nav class="nav-links">
+        <a href="./">Home</a>
+        <a href="privacy.html" class="active">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <a href="https://github.com/Saboor-Hamedi/lumina" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </nav>
     </div>
+  </header>
 
-    <h2>4. How We Handle Your Google Data</h2>
-    <ul>
-      <li><strong>No Third-Party Sharing:</strong> We do not sell, rent, or transfer your Google user data to third parties, advertising platforms, or data brokers.</li>
-      <li><strong>No Human Access:</strong> No person or developer has access to your private emails or Google Drive files. Access occurs strictly locally on your machine via direct HTTPS calls to Google's official API endpoints.</li>
-      <li><strong>Secure Storage:</strong> Authentication tokens are stored securely on your local device and are only refreshed when communicating directly with Google's OAuth 2.0 servers.</li>
-    </ul>
+  <main class="container">
+    <article class="doc-card">
+      <h1>Privacy Policy</h1>
+      <div class="updated">Last updated: November 26, 2026</div>
 
-    <h2>5. Data Deletion & Revoking Access</h2>
-    <p>You can revoke Lumina's access to your Google Account at any time by:</p>
-    <ul>
-      <li>Logging out from the Settings menu inside Lumina.</li>
-      <li>Visiting your <a href="https://myaccount.google.com/permissions" target="_blank">Google Account Third-Party Access Settings</a> and removing Lumina.</li>
-    </ul>
+      <h2>1. Overview</h2>
+      <p>Lumina is a local-first desktop application developed by Saboor Hamedi. We respect your privacy. This policy outlines how information is handled within the application.</p>
 
-    <h2>6. Contact Us</h2>
-    <p>If you have any questions or concerns regarding this privacy policy, please contact us at:</p>
-    <p><strong>Email:</strong> <a href="mailto:saboorhamedi49@gmail.com">saboorhamedi49@gmail.com</a><br/>
-       <strong>GitHub:</strong> <a href="https://github.com/Saboor-Hamedi/lumina" target="_blank">https://github.com/Saboor-Hamedi/lumina</a>
-    </p>
-  </div>
+      <h2>2. Local Storage First</h2>
+      <p>All your notes, vaults, canvases, tags, and snippets are stored directly on your personal computer. Lumina does not operate proprietary tracking servers or centralized databases that store your personal notes.</p>
+
+      <h2>3. Google User Data &amp; Limited Use Disclosure</h2>
+      <p>Lumina offers optional features allowing users to connect their Google Account for:</p>
+      <ul>
+        <li><strong>Google Drive:</strong> Storing backups of your personal vault and files directly in your Google Drive (within application-specific folders).</li>
+        <li><strong>Gmail:</strong> Reading, organizing, and sending emails directly from the Lumina desktop interface at your explicit direction.</li>
+      </ul>
+
+      <div class="highlight-box">
+        <strong>Google API Services User Data Policy Compliance:</strong><br/>
+        Lumina's use and transfer of information received from Google APIs to any other app will adhere to the
+        <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer">
+          Google API Services User Data Policy
+        </a>, including the Limited Use requirements.
+      </div>
+
+      <h2>4. How We Handle Your Google Data</h2>
+      <ul>
+        <li><strong>No Third-Party Sharing:</strong> We do not sell, rent, or transfer your Google user data to third parties, advertising platforms, or data brokers.</li>
+        <li><strong>No Human Access:</strong> No person or developer has access to your private emails or Google Drive files. Access occurs strictly locally on your machine via direct HTTPS calls to Google's official API endpoints.</li>
+        <li><strong>Secure Storage:</strong> Authentication tokens are encrypted and stored securely on your local device and are only refreshed when communicating directly with Google's OAuth 2.0 servers.</li>
+      </ul>
+
+      <h2>5. Data Deletion &amp; Revoking Access</h2>
+      <p>You can revoke Lumina's access to your Google Account at any time by:</p>
+      <ul>
+        <li>Logging out from the Settings menu inside Lumina.</li>
+        <li>Visiting your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">Google Account Third-Party Access Settings</a> and removing Lumina.</li>
+      </ul>
+
+      <h2>6. Contact Us</h2>
+      <p>If you have any questions or concerns regarding this privacy policy, please contact us at:</p>
+      <p>
+        <strong>Email:</strong> <a href="mailto:saboorhamedi49@gmail.com">saboorhamedi49@gmail.com</a><br/>
+        <strong>GitHub:</strong> <a href="https://github.com/Saboor-Hamedi/lumina" target="_blank" rel="noopener noreferrer">https://github.com/Saboor-Hamedi/lumina</a>
+      </p>
+    </article>
+
+    <footer>
+      <span>© 2026 Lumina by Saboor Hamedi</span>
+      <span><a href="./">← Back to Lumina</a></span>
+    </footer>
+  </main>
 </body>
 </html>

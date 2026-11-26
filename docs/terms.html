@@ -3,69 +3,187 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Terms of Service - Lumina</title>
+  <title>Terms of Service — Lumina</title>
+  <meta name="description" content="Terms of Service for Lumina, a local-first AI knowledge workspace and Markdown notes desktop application." />
+  <link rel="canonical" href="https://dev-dialect.com/terms.html" />
   <style>
     :root {
-      --bg: #ffffff;
-      --text: #1e293b;
-      --text-muted: #64748b;
-      --border: #e2e8f0;
-      --accent: #0284c7;
+      --bg: #090c12;
+      --surface: #131926;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-2: #818cf8;
+      --border: rgba(148, 163, 184, 0.14);
     }
-    @media (prefers-color-scheme: dark) {
+    @media (prefers-color-scheme: light) {
       :root {
-        --bg: #0f172a;
-        --text: #f8fafc;
-        --text-muted: #94a3b8;
-        --border: #334155;
-        --accent: #38bdf8;
+        --bg: #f8fafc;
+        --surface: #ffffff;
+        --text: #0f172a;
+        --text-muted: #475569;
+        --accent: #0284c7;
+        --accent-2: #4f46e5;
+        --border: rgba(15, 23, 42, 0.10);
       }
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
-      line-height: 1.65;
-      padding: 40px 20px;
+      line-height: 1.7;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
     }
-    .container {
-      max-width: 800px;
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: color-mix(in srgb, var(--bg) 82%, transparent);
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar-inner {
+      max-width: 860px;
       margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; color: var(--accent); }
-    .updated { font-size: 13px; color: var(--text-muted); margin-bottom: 32px; }
-    h2 { font-size: 18px; font-weight: 600; margin-top: 28px; margin-bottom: 12px; }
-    p, li { font-size: 14.5px; color: var(--text); margin-bottom: 14px; }
-    ul { padding-left: 20px; margin-bottom: 16px; }
-    a { color: var(--accent); }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 15.5px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .brand-mark {
+      width: 24px;
+      height: 24px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 18px;
+      font-size: 13.5px;
+    }
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--accent); }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 24px 72px;
+    }
+    .doc-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 36px;
+    }
+    h1 {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin-bottom: 6px;
+    }
+    .updated {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    h2 {
+      font-size: 17.5px;
+      font-weight: 700;
+      margin-top: 28px;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+    p, li {
+      font-size: 14.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    footer {
+      margin-top: 32px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    @media (max-width: 600px) {
+      .doc-card { padding: 26px 20px; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Terms of Service for Lumina</h1>
-    <div class="updated">Last updated: September 12, 2026</div>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="./">
+        <span class="brand-mark">L</span>
+        <span>Lumina</span>
+      </a>
+      <nav class="nav-links">
+        <a href="./">Home</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html" class="active">Terms</a>
+        <a href="https://github.com/Saboor-Hamedi/lumina" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </nav>
+    </div>
+  </header>
 
-    <h2>1. Acceptance of Terms</h2>
-    <p>By downloading, installing, or using the Lumina application, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the application.</p>
+  <main class="container">
+    <article class="doc-card">
+      <h1>Terms of Service</h1>
+      <div class="updated">Last updated: November 26, 2026</div>
 
-    <h2>2. Description of Service</h2>
-    <p>Lumina is a local-first software application providing note-taking, knowledge management, and optional integrations with cloud backup and email services.</p>
+      <h2>1. Acceptance of Terms</h2>
+      <p>By downloading, installing, or using the Lumina application, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the application.</p>
 
-    <h2>3. User Responsibilities</h2>
-    <p>You are solely responsible for maintaining the confidentiality of your notes, encryption keys, and third-party credentials (such as Google OAuth access tokens). You agree not to use the application for any unlawful purposes.</p>
+      <h2>2. Description of Service</h2>
+      <p>Lumina is a local-first desktop software application providing Markdown note-taking, spatial canvas diagramming, knowledge graph visualization, AI assistance, and optional integrations with cloud backup and email services.</p>
 
-    <h2>4. Third-Party Integrations</h2>
-    <p>Lumina interacts with third-party APIs (including Google Drive and Gmail). Your use of these services through Lumina is subject to the respective third party's terms and privacy policies.</p>
+      <h2>3. User Responsibilities</h2>
+      <p>You are solely responsible for maintaining the confidentiality of your notes, API keys, encryption keys, and third-party credentials (such as Google OAuth access tokens). You agree not to use the application for any unlawful purposes.</p>
 
-    <h2>5. Disclaimer of Warranties</h2>
-    <p>Lumina is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind, whether express or implied, including but not limited to the implied warranties of merchantability, fitness for a particular purpose, or non-infringement.</p>
+      <h2>4. Third-Party Integrations</h2>
+      <p>Lumina interacts with optional third-party APIs (including Google Drive, Gmail, and user-configured AI providers). Your use of these services through Lumina is subject to the respective third party's terms and privacy policies.</p>
 
-    <h2>6. Limitation of Liability</h2>
-    <p>In no event shall the authors or copyright holders of Lumina be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.</p>
+      <h2>5. Disclaimer of Warranties</h2>
+      <p>Lumina is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind, whether express or implied, including but not limited to the implied warranties of merchantability, fitness for a particular purpose, or non-infringement.</p>
 
-    <h2>7. Contact Information</h2>
-    <p>If you have questions about these Terms, please contact us at: <a href="mailto:saboorhamedi49@gmail.com">saboorhamedi49@gmail.com</a></p>
-  </div>
+      <h2>6. Limitation of Liability</h2>
+      <p>In no event shall the authors or copyright holders of Lumina be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.</p>
+
+      <h2>7. Contact Information</h2>
+      <p>If you have questions about these Terms, please contact us at <a href="mailto:saboorhamedi49@gmail.com">saboorhamedi49@gmail.com</a> or via <a href="https://github.com/Saboor-Hamedi/lumina" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+    </article>
+
+    <footer>
+      <span>© 2026 Lumina by Saboor Hamedi</span>
+      <span><a href="./">← Back to Lumina</a></span>
+    </footer>
+  </main>
 </body>
 </html>

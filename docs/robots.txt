@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.dev-dialect.com/sitemap.xml
+Sitemap: https://dev-dialect.com/sitemap.xml
