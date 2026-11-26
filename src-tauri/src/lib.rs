@@ -166,7 +166,10 @@ pub fn run() {
             metadata_get,
             metadata_upsert,
             metadata_delete,
-            metadata_clear_note
+            metadata_clear_note,
+            metadata_reorder,
+            metadata_get_layout,
+            metadata_set_layout
         ])
         .run(tauri::generate_context!())
         .expect("error while building tauri application");

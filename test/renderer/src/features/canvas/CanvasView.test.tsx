@@ -199,7 +199,7 @@ describe('CanvasView (TypeScript)', () => {
     // Click the left port of the second node
     const n2 = screen.getByText('End Node').closest('.lumina-canvas-node')!
     const leftPort = n2.querySelector('.port-left')!
-    fireEvent.click(leftPort)
+    fireEvent.mouseDown(leftPort)
 
     // Verify an edge connector SVG line now exists with color matching target note
     const edge = container.querySelector('.lumina-canvas-edge-line')

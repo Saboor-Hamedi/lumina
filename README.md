@@ -1,4 +1,4 @@
-https://github.com/user-attachments/assets/f641f391-95f5-4b3f-9209-ffa6124f30cd
+https://github.com/user-attachments/assets/401b0c3b-976c-4578-bc70-2fd9216b0747
 
 # Lumina — Local-First Markdown, AI Copilot & Terminal
 

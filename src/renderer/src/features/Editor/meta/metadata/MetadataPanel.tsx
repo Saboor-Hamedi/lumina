@@ -4,10 +4,14 @@ import {
   Calendar,
   Check,
   CheckSquare,
+  Columns2,
+  Columns3,
   ExternalLink,
+  GripVertical,
   Hash,
   Link2,
   Plus,
+  Rows3,
   Tag,
   X
 } from 'lucide-react'
@@ -30,6 +34,9 @@ import {
 import {
   deleteNoteMetadata,
   fetchNoteMetadata,
+  fetchNoteMetadataColumns,
+  reorderNoteMetadata,
+  saveNoteMetadataColumns,
   upsertNoteMetadata
 } from './metadataClient'
 import { CalendarDatePicker } from './CalendarDatePicker'
@@ -245,16 +252,29 @@ SelectPillControl.displayName = 'SelectPillControl'
 export const MetadataPanel: React.FC<MetadataPanelProps> = React.memo(({ snippet }) => {
   const noteId = snippet?.id || null
   const [properties, setProperties] = useState<MetadataProperty[]>([])
+  const [columns, setColumns] = useState<1 | 2 | 3>(1)
+  const [draggedKey, setDraggedKey] = useState<string | null>(null)
+  const [dropTargetKey, setDropTargetKey] = useState<string | null>(null)
   const [addOpen, setAddOpen] = useState(false)
   const [newKeyInput, setNewKeyInput] = useState('')
   const [newPropType, setNewPropType] = useState<MetadataPropertyType>('text')
   const popoverRef = useRef<HTMLDivElement | null>(null)
+  const listRef = useRef<HTMLDivElement | null>(null)
+  const ghostRef = useRef<HTMLDivElement | null>(null)
   const loadedNoteRef = useRef<string | null>(null)
+  const dragCleanupRef = useRef<(() => void) | null>(null)
 
-  // Load metadata from Rust SQLite (and seed any existing YAML frontmatter properties once)
+  useEffect(() => {
+    return () => {
+      dragCleanupRef.current?.()
+    }
+  }, [])
+
+  // Load metadata & column layout from Rust SQLite (and seed any existing YAML frontmatter properties once)
   useEffect(() => {
     if (!noteId) {
       setProperties([])
+      setColumns(1)
       loadedNoteRef.current = null
       return
     }
@@ -263,8 +283,13 @@ export const MetadataPanel: React.FC<MetadataPanelProps> = React.memo(({ snippet
     loadedNoteRef.current = noteId
 
     const load = async () => {
-      const dbEntries = await fetchNoteMetadata(noteId)
+      const [dbEntries, savedCols] = await Promise.all([
+        fetchNoteMetadata(noteId),
+        fetchNoteMetadataColumns(noteId)
+      ])
       if (cancelled) return
+
+      setColumns(savedCols)
 
       if (dbEntries.length > 0) {
         setProperties(
@@ -352,23 +377,172 @@ export const MetadataPanel: React.FC<MetadataPanelProps> = React.memo(({ snippet
     [noteId]
   )
 
+  const handleChangeColumns = useCallback(
+    (nextCols: 1 | 2 | 3) => {
+      setColumns(nextCols)
+      if (noteId) {
+        void saveNoteMetadataColumns(noteId, nextCols)
+      }
+    },
+    [noteId]
+  )
+
+  const handleRowPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>, sourceKey: string) => {
+      if (e.button !== 0 || !noteId) return
+      const target = e.target as HTMLElement | null
+      if (target?.closest('input, textarea, button, a, [role="listbox"], [role="dialog"]')) {
+        return
+      }
+
+      const rowEl = e.currentTarget
+      const startRect = rowEl.getBoundingClientRect()
+      const offsetX = e.clientX - startRect.left
+      const offsetY = e.clientY - startRect.top
+      const startX = e.clientX
+      const startY = e.clientY
+      let active = false
+      let currentTargetKey: string | null = null
+      let prevCursor = ''
+      let prevUserSelect = ''
+      let rafId: number | null = null
+
+      const positionGhost = (clientX: number, clientY: number) => {
+        if (!ghostRef.current) return
+        const x = clientX - offsetX
+        const y = clientY - offsetY
+        ghostRef.current.style.transform = `translate3d(${x}px, ${y}px, 0)`
+      }
+
+      const cleanup = () => {
+        window.removeEventListener('pointermove', onPointerMove)
+        window.removeEventListener('pointerup', onPointerUp)
+        window.removeEventListener('pointercancel', onPointerUp)
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId)
+          rafId = null
+        }
+        if (active) {
+          document.body.style.cursor = prevCursor
+          document.body.style.userSelect = prevUserSelect
+        }
+        dragCleanupRef.current = null
+      }
+
+      const onPointerMove = (ev: PointerEvent) => {
+        if (!active) {
+          if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 4) return
+          active = true
+          prevCursor = document.body.style.cursor
+          prevUserSelect = document.body.style.userSelect
+          document.body.style.cursor = 'grabbing'
+          document.body.style.userSelect = 'none'
+          setDraggedKey(sourceKey)
+          requestAnimationFrame(() => {
+            if (ghostRef.current) {
+              ghostRef.current.style.width = `${startRect.width}px`
+              positionGhost(ev.clientX, ev.clientY)
+            }
+          })
+        } else {
+          if (rafId !== null) cancelAnimationFrame(rafId)
+          rafId = requestAnimationFrame(() => {
+            positionGhost(ev.clientX, ev.clientY)
+            rafId = null
+          })
+        }
+
+        const container = listRef.current
+        if (!container) return
+        const rowEls = container.querySelectorAll<HTMLElement>('[data-prop-key]')
+        let hitKey: string | null = null
+        for (const el of rowEls) {
+          const rect = el.getBoundingClientRect()
+          if (
+            ev.clientX >= rect.left &&
+            ev.clientX <= rect.right &&
+            ev.clientY >= rect.top &&
+            ev.clientY <= rect.bottom
+          ) {
+            hitKey = el.getAttribute('data-prop-key')
+            break
+          }
+        }
+
+        const nextTarget = hitKey && hitKey !== sourceKey ? hitKey : null
+        if (nextTarget !== currentTargetKey) {
+          currentTargetKey = nextTarget
+          setDropTargetKey(nextTarget)
+        }
+      }
+
+      const onPointerUp = () => {
+        cleanup()
+        if (active) {
+          const finalTarget = currentTargetKey
+          setDraggedKey(null)
+          setDropTargetKey(null)
+          if (finalTarget && finalTarget !== sourceKey) {
+            setProperties((prev) => {
+              const fromIdx = prev.findIndex((p) => p.key === sourceKey)
+              const toIdx = prev.findIndex((p) => p.key === finalTarget)
+              if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return prev
+              const next = [...prev]
+              const [item] = next.splice(fromIdx, 1)
+              next.splice(toIdx, 0, item)
+              void reorderNoteMetadata(
+                noteId,
+                next.map((p) => p.key)
+              )
+              return next
+            })
+          }
+        }
+      }
+
+      dragCleanupRef.current?.()
+      dragCleanupRef.current = cleanup
+      window.addEventListener('pointermove', onPointerMove)
+      window.addEventListener('pointerup', onPointerUp)
+      window.addEventListener('pointercancel', onPointerUp)
+    },
+    [noteId]
+  )
+
   if (!noteId || snippet?.isPartial) return null
 
   const existingKeys = new Set(properties.map((p) => p.key.toLowerCase()))
   const availablePresets = QUICK_PROPERTY_PRESETS.filter((p) => !existingKeys.has(p.key))
+  const draggedProp = draggedKey ? properties.find((p) => p.key === draggedKey) || null : null
 
   return (
     <div className={`meta-props-root ${properties.length === 0 ? 'is-empty' : ''}`}>
       {properties.length > 0 && (
-        <div className="meta-props-list" role="region" aria-label="Note properties">
+        <div
+          ref={listRef}
+          className={`meta-props-list meta-props-cols-${columns}`}
+          data-cols={columns}
+          role="region"
+          aria-label="Note properties"
+        >
           {properties.map((prop) => {
             const selectOptions =
               SELECT_PRESET_OPTIONS[prop.key.toLowerCase()] ||
               (prop.type === 'select' ? SELECT_PRESET_OPTIONS.status : undefined)
+            const isDragging = draggedKey === prop.key
+            const isDropTarget = dropTargetKey === prop.key && draggedKey !== prop.key
 
             return (
-              <div key={prop.key} className="meta-prop-row">
-                <div className="meta-prop-key-cell" title={prop.key}>
+              <div
+                key={prop.key}
+                data-prop-key={prop.key}
+                className={`meta-prop-row ${isDragging ? 'is-dragging' : ''} ${isDropTarget ? 'is-drop-target' : ''}`}
+                onPointerDown={(e) => handleRowPointerDown(e, prop.key)}
+              >
+                <div className="meta-prop-key-cell" title={`${prop.key} (drag to reorder)`}>
+                  <span className="meta-prop-drag-handle" aria-hidden="true">
+                    <GripVertical size={11} />
+                  </span>
                   <PropertyTypeIcon type={prop.type} />
                   <span className="meta-prop-key-label">{formatPropertyLabel(prop.key)}</span>
                 </div>
@@ -426,6 +600,23 @@ export const MetadataPanel: React.FC<MetadataPanelProps> = React.memo(({ snippet
         </div>
       )}
 
+      {draggedProp && (
+        <div ref={ghostRef} className="meta-prop-drag-ghost" aria-hidden="true">
+          <GripVertical size={11} className="meta-prop-type-icon" />
+          <PropertyTypeIcon type={draggedProp.type} />
+          <span className="meta-prop-key-label">{formatPropertyLabel(draggedProp.key)}</span>
+          {draggedProp.value && (
+            <span className="meta-prop-ghost-val">
+              {draggedProp.type === 'checkbox'
+                ? draggedProp.value === 'true'
+                  ? 'Done'
+                  : 'Not done'
+                : draggedProp.value}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="meta-props-footer" ref={popoverRef}>
         <button
           type="button"
@@ -435,6 +626,41 @@ export const MetadataPanel: React.FC<MetadataPanelProps> = React.memo(({ snippet
           <Plus size={12} />
           <span>Add property</span>
         </button>
+
+        {properties.length > 1 && (
+          <div className="meta-props-layout-switch" role="group" aria-label="Property columns">
+            <button
+              type="button"
+              className={`meta-props-col-btn ${columns === 1 ? 'is-active' : ''}`}
+              title="1 Column"
+              aria-label="1 Column"
+              aria-pressed={columns === 1}
+              onClick={() => handleChangeColumns(1)}
+            >
+              <Rows3 size={11} />
+            </button>
+            <button
+              type="button"
+              className={`meta-props-col-btn ${columns === 2 ? 'is-active' : ''}`}
+              title="2 Columns"
+              aria-label="2 Columns"
+              aria-pressed={columns === 2}
+              onClick={() => handleChangeColumns(2)}
+            >
+              <Columns2 size={11} />
+            </button>
+            <button
+              type="button"
+              className={`meta-props-col-btn ${columns === 3 ? 'is-active' : ''}`}
+              title="3 Columns"
+              aria-label="3 Columns"
+              aria-pressed={columns === 3}
+              onClick={() => handleChangeColumns(3)}
+            >
+              <Columns3 size={11} />
+            </button>
+          </div>
+        )}
 
         {addOpen && (
           <div className="meta-props-add-popover" role="dialog" aria-label="Add note property">

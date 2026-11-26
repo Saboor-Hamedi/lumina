@@ -73,6 +73,11 @@ impl NoteMetadataStore {
 
                 CREATE INDEX IF NOT EXISTS idx_note_metadata_note_pos
                     ON note_metadata (note_id, position, prop_key);
+
+                CREATE TABLE IF NOT EXISTS note_metadata_layout (
+                    note_id TEXT PRIMARY KEY,
+                    columns INTEGER NOT NULL DEFAULT 1
+                );
                 "#,
             )
             .map_err(|e| format!("Failed to initialize note_metadata schema: {e}"))
@@ -179,9 +184,56 @@ impl NoteMetadataStore {
     }
 
     pub fn clear_note_metadata(&self, note_id: &str) -> Result<usize, String> {
+        let _ = self.conn.execute(
+            "DELETE FROM note_metadata_layout WHERE note_id = ?1",
+            params![note_id],
+        );
         self.conn
             .execute("DELETE FROM note_metadata WHERE note_id = ?1", params![note_id])
             .map_err(|e| e.to_string())
+    }
+
+    pub fn reorder_note_metadata(
+        &mut self,
+        note_id: &str,
+        ordered_keys: &[String],
+    ) -> Result<Vec<NoteMetadataEntry>, String> {
+        let tx = self.conn.transaction().map_err(|e| e.to_string())?;
+        let now = now_epoch_ms();
+        for (idx, key) in ordered_keys.iter().enumerate() {
+            tx.execute(
+                "UPDATE note_metadata SET position = ?1, updated_at = ?2 WHERE note_id = ?3 AND prop_key = ?4",
+                params![idx as i64, now, note_id, key.trim()],
+            )
+            .map_err(|e| e.to_string())?;
+        }
+        tx.commit().map_err(|e| e.to_string())?;
+        self.get_note_metadata(note_id)
+    }
+
+    pub fn get_note_layout_columns(&self, note_id: &str) -> Result<i64, String> {
+        let cols: i64 = self
+            .conn
+            .query_row(
+                "SELECT columns FROM note_metadata_layout WHERE note_id = ?1",
+                params![note_id],
+                |r| r.get(0),
+            )
+            .unwrap_or(1);
+        Ok(cols.clamp(1, 3))
+    }
+
+    pub fn set_note_layout_columns(&self, note_id: &str, columns: i64) -> Result<i64, String> {
+        let clamped = columns.clamp(1, 3);
+        self.conn
+            .execute(
+                "INSERT INTO note_metadata_layout (note_id, columns)
+                 VALUES (?1, ?2)
+                 ON CONFLICT(note_id) DO UPDATE SET columns = excluded.columns",
+                params![note_id, clamped],
+            )
+            .map_err(|e| e.to_string())?;
+        Ok(clamped)
     }
 }
 
