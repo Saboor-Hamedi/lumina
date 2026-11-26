@@ -6,7 +6,7 @@ https://github.com/user-attachments/assets/401b0c3b-976c-4578-bc70-2fd9216b0747
 
 <p align="center">
   <a href="https://github.com/Saboor-Hamedi/lumina/releases/latest">
-    <img src="https://img.shields.io/badge/version-1.4.0-blue?style=flat-square" alt="version 1.4.0">
+    <img src="https://img.shields.io/github/v/release/Saboor-Hamedi/lumina?style=flat-square&label=release&color=blue" alt="Latest release">
   </a>
   <img src="https://img.shields.io/badge/runtime-Tauri%202.0-24C8DB?style=flat-square" alt="Tauri 2.0">
   <img src="https://img.shields.io/badge/tests-1242%20Vitest%20%2B%2016%20Rust-brightgreen?style=flat-square" alt="1242 Vitest and 16 Rust tests passing">
@@ -36,16 +36,16 @@ Your notes stay on your disk as **100% plain-text `.md` and `.canvas` files**. P
 
 ---
 
-## Download & Install (v1.4.0)
+## Download & Install
 
 Download the installer for your platform from the [Latest GitHub Release](https://github.com/Saboor-Hamedi/lumina/releases/latest):
 
 | Platform | Installer | Notes |
 | --- | --- | --- |
-| **Windows** | `Lumina_1.4.0_x64-setup.exe` or `Lumina_1.4.0_x64_en-US.msi` | If Windows SmartScreen appears, click **More info → Run anyway**. |
-| **macOS (Apple Silicon & Intel)** | `Lumina_1.4.0_universal.dmg` | Drag **Lumina.app** to **Applications**. Because builds are not yet Apple-notarized, run `xattr -cr /Applications/Lumina.app` once in Terminal if Gatekeeper blocks opening. |
-| **Linux (Debian / Ubuntu)** | `Lumina_1.4.0_amd64.deb` | Install via `sudo apt install ./Lumina_1.4.0_amd64.deb` |
-| **Linux (Portable)** | `Lumina_1.4.0_amd64.AppImage` | Make executable via `chmod +x Lumina_1.4.0_amd64.AppImage` |
+| **Windows** | `Lumina_*_x64-setup.exe` or `Lumina_*_x64_en-US.msi` | If Windows SmartScreen appears, click **More info → Run anyway**. |
+| **macOS (Apple Silicon & Intel)** | `Lumina_*_universal.dmg` | Drag **Lumina.app** to **Applications**. Because builds are not yet Apple-notarized, run `xattr -cr /Applications/Lumina.app` once in Terminal if Gatekeeper blocks opening. |
+| **Linux (Debian / Ubuntu)** | `Lumina_*_amd64.deb` | Install via `sudo apt install ./Lumina_*_amd64.deb` |
+| **Linux (Portable)** | `Lumina_*_amd64.AppImage` | Make executable via `chmod +x Lumina_*_amd64.AppImage` |
 
 ---
 

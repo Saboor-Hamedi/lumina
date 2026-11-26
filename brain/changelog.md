@@ -1,8 +1,13 @@
-## Lumina v2.3.0 — Smart PDF Hybrid Index, AI-to-Canvas Visual Thinking & Explorer Polish
+## Lumina v2.3.0 — Smart PDF Hybrid Index, AI-to-Canvas Visual Thinking, Note Properties & Visual Polish
 
-Lumina **v2.3.0** introduces an invisible native **SQLite FTS5 + Int8 Hybrid PDF Knowledge Index**, **AI-to-Canvas Visual Thinking** for generating native editable `.canvas` diagrams, built-in **How to Ask Lumina** prompt engineering docs, an **IDE-grade File Explorer** refinement, and cleaner AI mentions and Canvas workflows.
+Lumina **v2.3.0** introduces a built-in **Smart PDF Knowledge Index**, **AI-to-Canvas Visual Thinking** for generating editable diagrams, **Notion-style Note Properties** with drag-and-drop layouts, refreshed **Note Covers & Export Previews**, built-in **How to Ask Lumina** guides, and a cleaner File Explorer and AI chat experience.
 
 ---
+
+### 🏷️ Note Properties, Covers & Export Polish
+- **Notion-Style Note Properties**: Organize every note with custom fields—Status, Priority, Due Date, Author, links, numbers, and checkboxes—right below the title. Pick dates with Lumina's built-in calendar, drag and drop properties smoothly into any order, and switch between 1, 2, or 3 columns with instant, effortless typing.
+- **Refreshed Note Covers & Profile Icon**: Updated the cover menu with 11 curated abstract wallpapers, live link previews, and drag-and-drop uploads, alongside a centered circular note icon and a frosted timestamp badge that stays clear over any banner.
+- **Unified Export & Batch Export Previews**: Refined the Export and Batch Export dialogs to match Lumina's interface, giving every format (PDF, Word, HTML, Markdown, ZIP, and Plain Text) the same crisp page preview that follows your active theme.
 
 ### 📄 Smart PDF Knowledge Index
 - **Invisible Local Hybrid Engine**: Dropping or opening any PDF automatically extracts text per page in Rust (`lopdf`) into an embedded SQLite FTS5 store (`.lumina/pdf-index/index.db`) and lazily computes compact Int8-quantized `all-MiniLM-L6-v2` embeddings in the background (4× smaller on disk, SHA-256 deduplicated).
