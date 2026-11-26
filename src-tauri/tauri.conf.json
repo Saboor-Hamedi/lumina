@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Lumina",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "identifier": "com.lumina.app",
   "build": {
     "beforeDevCommand": "npm run dev:renderer",
