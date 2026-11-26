@@ -1,6 +1,6 @@
-## Lumina v2.2.1 — Next-Gen Spatial Canvas, Live Web Search AI, Explorer-to-Composer Mentions & Cross-Platform Touch
+## Lumina v2.2.2 — Next-Gen Spatial Canvas, Live Web Search AI, Chat Mermaid Previews & Unified Link Cards
 
-Lumina **v2.2.1** delivers a ground-up overhaul of the **Spatial Canvas** (freehand drawing, 34 drag-and-drop shapes, smart auto-routing connectors, frameless typography, native OS PNG/SVG export, and 120Hz rAF performance), upgrades **Lumina AI** with a centered-to-bottom welcome composer, native Rust CORS-free live web search across all modes, and drag-to-`@mention` notes from Explorer, polishes the **Knowledge Graph** sidebar, and brings full cross-platform touchscreen support (Windows, macOS, Linux).
+Lumina **v2.2.2** delivers a ground-up overhaul of the **Spatial Canvas** (freehand drawing, 34 drag-and-drop shapes, smart auto-routing connectors, frameless typography with font-size/title scaling, native OS PNG/SVG export, and 120Hz rAF performance), upgrades **Lumina AI** with a centered-to-bottom welcome composer, live multi-source web search (`luminWebSearch.ts`), live Mermaid diagram previews matching the Editor, and clickable inline `@mention` links, unifies link card grids across the Editor and Chat, polishes the **Knowledge Graph** with instant initial rendering and high-contrast sliders, and brings full cross-platform touchscreen support (Windows, macOS, Linux).
 
 ---
 
@@ -10,11 +10,11 @@ Lumina **v2.2.1** delivers a ground-up overhaul of the **Spatial Canvas** (freeh
   - Added smooth quadratic Bézier **Pencil (`P`)**, **Highlighter**, and **Eraser (`E`)** tools (`canvasStroke.ts`, `CanvasStrokesLayer.tsx`) with `Shift` 15° straight-line snapping, color & width controls, and silent Clear Ink / Clear Canvas actions.
   - Drawing or erasing directly over shapes, text boxes, notes, or wires suppresses node/edge pointer interference and double-click triggers; switching back to **Select (`V`)** immediately lets you move elements underneath strokes.
   - Expanded Undo/Redo history to 100 deep snapshots covering nodes, connectors, and freehand strokes, with silent delete/undo/clear actions (no distracting toast spam).
-- **34 Shapes, Drag-from-Sidebar & Quick Diagram Templates**
+- **34 Shapes, Cursor-Attached Drag-from-Sidebar & Quick Diagram Templates**
   - Expanded the shape library from 22 to **34** flowchart, system architecture, polygon, and symbol shapes (`ConvasShapes.tsx`, `StudioShapesTab.tsx`) with live shape search and 1-click **Flowchart**, **System Architecture**, and **Mind Map** templates.
-  - Added smooth GPU-accelerated (`translate3d`, portaled to `document.body`) pointer drag-and-drop so you can drag any shape from the sidebar directly on the tip of your cursor and drop it anywhere on the board (works natively in Tauri WebView2 on Windows, macOS, Linux, and touchscreens).
+  - Added smooth GPU-accelerated (`translate3d`, portaled to `document.body`) pointer drag-and-drop so you can drag any shape from the sidebar right on the tip of your cursor and drop it anywhere on the board (works natively in Tauri WebView2 on Windows, macOS, Linux, and touchscreens).
   - Redesigned the **Frame** container into a clean, flat, shadow-free dashed section box with free independent width/height resizing (also enabled for rectangles and pills; hold `Shift` for proportional scaling).
-  - Upgraded **Sticky Notes** with tinted paper gradients and folded corners, and separated **Frameless Text Boxes (`T`)** into sleek borderless canvas typography with zero scrollbars and a subtle dashed outline only on hover/selection/editing.
+  - Upgraded **Sticky Notes** with tinted paper gradients and folded corners, and made **Frameless Text Boxes (`T`)** pure borderless canvas typography with zero scrollbars, hidden rest ports, and a **`− / 15 / +` font-size stepper (`12–48px`)** on the selection toolbar (`22px+` auto-styles as a crisp bold Canvas Title).
 - **Smarter Connectors, Crisp Arrowheads & Borderless Labels**
   - Enabled dynamic smart auto-routing ports (`canvasRouting.ts`, `CanvasEdgeItem.tsx`) so moving a shape automatically flips connected wires to the closest facing sides (`top`/`right`/`bottom`/`left`).
   - Upgraded live wire dragging (`getDragBezierCurve`) to eliminate awkward backwards loops and refined SVG directional arrowheads (`CanvasEdgesLayer.tsx`) across Solid, Dashed, and Dotted line styles.
@@ -33,32 +33,38 @@ Lumina **v2.2.1** delivers a ground-up overhaul of the **Spatial Canvas** (freeh
 
 ### 🤖 Lumina AI Upgrades
 
-- **Centered-to-Bottom Welcome Composer**
-  - Empty chats now display a clean `Welcome, how can I help you?` header with the Composer centered on screen, transitioning smoothly to the bottom dock as soon as you send a message.
-  - Added `sessionsLoaded` hydration tracking to eliminate the startup center-bounce flash and removed the inner footer border on the Composer card.
-- **Native Rust Live Web Search Across All Modes**
-  - Built a CORS-free native Rust web search backend (`crates/lumina_core/src/web_search.rs`, `src-tauri/src/commands/web_search.rs`) and dedicated AI `web_search` tool (`src/renderer/src/features/AI/tools/webSearch.ts`).
-  - Enabled across **Planning**, **Execution**, and **Research** modes (including default DeepSeek) with automatic workspace fallback and clickable website links.
-- **Drag Notes from Explorer Directly into Composer as `@mention`**
-  - Wired `@dnd-kit` pointer dragging in `ExplorerDnd.ts` with Priority-1 `.composer-card` hit-testing and `Composer.tsx` drop handling so dragging single or multi-selected notes from Explorer onto the Lumina Composer highlights the card, suppresses the pane split overlay, and attaches them cleanly as `@mention` context.
+- **Native Rust Multi-Source Live Web Search (`luminWebSearch.ts` & `web_search.rs`)**
+  - Built a CORS-free native Rust live search engine (`crates/lumina_core/src/web_search.rs`, `src-tauri/src/commands/web_search.rs`) powered by **Yahoo Web Search**, **arXiv Academic Papers**, **YouTube Videos**, **GitHub Repositories** (with direct repo lookup & `.gi`/`.git` typo tolerance), and **Wikipedia Full-Text** fallback.
+  - Enabled across **Planning**, **Execution**, and **Research** modes (including default DeepSeek) with seamless workspace-to-web fallback and categorized clickable citations (`🌐 Web`, `🎬 Video`, `🎓 Scholar`, `💻 Repo`).
+- **Live Mermaid Diagram Previews in Chat (`LuminaChatPreBlock.tsx`)**
+  - Wired ```` ```mermaid ```` code blocks in Lumina AI chat directly to Lumina's `core/mermaid` engine (`renderMermaidToElement`, `applyMermaidFit`, `copyMermaidAsImage`, `openMermaidLightbox`) with the exact same Editor header controls (View Code / Preview toggle, Copy Code, Copy as Image), left-aligned source view, theme sync, and click-to-open fullscreen Lightbox.
+- **Centered-to-Bottom Welcome Composer & Fixed Mode Dropdown**
+  - Empty chats now display a clean `Welcome, how can I help you?` header with the Composer centered on screen, transitioning smoothly to the bottom dock as soon as you send a message (with `sessionsLoaded` hydration tracking to eliminate startup bounce and a borderless inner footer).
+  - Fixed the Composer mode/plan dropdown pill so clicking it always resets stale slash filters and shows all available modes, with click-outside dismissal.
+- **Clickable Inline `@mention` Links & Explorer-to-Composer Drag**
+  - Wired `@dnd-kit` pointer dragging in `ExplorerDnd.ts` with Priority-1 `.composer-card` hit-testing and `Composer.tsx` drop handling so dragging single or multi-selected notes from Explorer onto the Composer highlights the card, suppresses the pane split overlay, and attaches them as `@mention` context.
+  - Styled `@mention` tokens in both the Composer (via a synchronized highlight backdrop) and chat messages as inline links matching surrounding text size with an accent link background—clicking opens the referenced note directly.
 - **Auto-Memory, Text Selection & Cleaner Responses**
-  - Enhanced automatic context memory persistence (`luminaMemory.ts`), enabled standard cursor text selection across AI responses, and removed the `"Workspace context: unknown"` noise from message rows.
+  - Enhanced automatic context memory persistence (`luminaMemory.ts`), enabled standard cursor text selection across AI responses, and removed `"Workspace context: unknown"` from message rows.
 
 ---
 
-### 🗂️ Workspace, PDF Drag-and-Drop, Graph Sidebar & Touch
+### 🗂️ Editor Link Cards, Workspace, Knowledge Graph & Touch
 
+- **Unified Link Card Grids in Editor & Lumina AI**
+  - Aligned `.cols-2` and `.cols-3` bookmark grids (`linkWrapper.css`, `linkEmbed.css`) to share the exact same vertical 16:9 cover card layout, `10px` radius, and hover lift across both Lumina AI and the Editor.
+  - Auto-grouped consecutive pasted URLs in the Editor (`linkEmbedExtension.ts`) into sleek 2–3 column card grids matching ```` ```links ```` blocks.
 - **Native Tauri v2 Drag-and-Drop & Editor-Bounded Drop Overlay**
   - Wired Tauri v2 `getCurrentWebview().onDragDropEvent(...)` in `useWorkspaceDrop.ts` so dragging external PDFs, Markdown files, images, or folders works reliably across Windows, macOS, and Linux.
   - Scoped `<ExternalDropOverlay>` inside `.workspace-pane-body` (`WorkspacePane.tsx`) with a clean borderless accent tint so drop placeholders fill only the active editor, Canvas, or Lumina view—never covering the TabBar.
 - **Fixed Closed PDF Tabs Reopening**
   - Synced `panes.primary` across all tab-mutation actions in `workspaceStore.ts` (`closeTab`, `setActiveTabId`, `reorderTabs`, `closeOtherTabs`, `closeTabsToRight`, `closeAllTabs`, `togglePinTab`, `openGraphTab`, `openLuminaTab`) so closing tabs can never resurrect previously closed PDF tabs.
-- **Polished Knowledge Graph Sidebar & Right Activity Bar**
-  - Redesigned `GraphSidebar.tsx` and `GraphSidebar.css` with a search icon + clear button, grouped **Filters** and **Forces & Display** surface cards, live numeric slider readouts with a 1-click **Reset** link, theme-tokenized export/action chips, and an Animate/Paused footer with node count.
+- **Instant Knowledge Graph Rendering & Polished Sidebar**
+  - Removed the opaque `.graph-initializer` overlay in `Graph.tsx` in favor of a transparent global `<PulseLoader>` while building, keyed `<Graph2D>`/`<Graph3D>` on populated node state, re-attached `ResizeObserver` on open/sidebar toggle, and added first-tick `zoomToFit` in `Graph2D.tsx` so the Graph renders immediately on open without toggling 2D/3D.
+  - Redesigned `GraphSidebar.tsx` and `GraphSidebar.css` with a search icon + clear button, grouped **Filters** and **Forces & Display** cards, high-contrast theme-aware slider tracks visible on both Dark and Light/Porcelain themes, live numeric readouts with a 1-click **Reset** link, and an Animate/Paused footer with node count.
   - Fixed the Right Activity Bar dual-active bug where Outline and Graph could appear selected simultaneously.
-- **Cross-Platform Multi-Touch Support**
+- **Cross-Platform Multi-Touch Support & Stability**
   - Added unified Pointer Events and 2-finger pinch-to-zoom / pan gestures across Canvas, sidebar/split resizers, and workspace chrome for smooth touchscreen use on Windows, macOS, and Linux.
-- **Modal Dismissal, Metadata Font & Test Suite Stability**
   - Fixed outside-click dismissal for camera/cover background and note action modals, kept note timestamps in the standard UI font while distinguished from theme covers, and fixed `Version.jsx` null-guarding so the full test suite passes cleanly.
 
 ---

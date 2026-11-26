@@ -4,72 +4,238 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="google-site-verification" content="googleae54f49217d71b6d" />
-  <title>Lumina - Official Application Site</title>
+  <title>Lumina — Local-First AI Knowledge Workspace, Markdown Notes &amp; Spatial Canvas</title>
+  <meta name="description" content="Lumina is a fast, local-first AI thinking environment and Markdown notes app featuring an infinite Spatial Canvas, 2D/3D Knowledge Graph, live web search AI, and PDF workspace for Windows, macOS, and Linux." />
+  <meta name="keywords" content="Lumina, Lumina app, Lumina notes, local-first markdown notes, AI knowledge workspace, spatial canvas, knowledge graph, Obsidian alternative, Tauri note app" />
+  <meta name="author" content="Saboor Hamedi" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://www.dev-dialect.com/" />
+
+  <!-- Open Graph / Social -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Lumina" />
+  <meta property="og:title" content="Lumina — Local-First AI Knowledge Workspace &amp; Spatial Canvas" />
+  <meta property="og:description" content="Local-first Markdown notes, infinite Spatial Canvas, 2D/3D Knowledge Graph, and built-in AI companion with live web search. Available for Windows, macOS, and Linux." />
+  <meta property="og:url" content="https://www.dev-dialect.com/" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Lumina — Local-First AI Knowledge Workspace" />
+  <meta name="twitter:description" content="Plaintext Markdown notes, infinite Spatial Canvas, 2D/3D Knowledge Graph, and AI companion for Windows, macOS, and Linux." />
+
+  <!-- Structured Data (SoftwareApplication Schema for Google Knowledge Graph) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Lumina",
+    "alternateName": ["Lumina App", "Lumina Notes", "Lumina Workspace"],
+    "applicationCategory": "ProductivityApplication",
+    "operatingSystem": "Windows, macOS, Linux",
+    "softwareVersion": "2.2.2",
+    "url": "https://www.dev-dialect.com/",
+    "downloadUrl": "https://github.com/Saboor-Hamedi/lumina/releases",
+    "codeRepository": "https://github.com/Saboor-Hamedi/lumina",
+    "description": "Lumina is a fast, local-first AI thinking environment and Markdown note-taking app with an infinite Spatial Canvas, 2D/3D Knowledge Graph, PDF reader, and live web search AI.",
+    "author": {
+      "@type": "Person",
+      "name": "Saboor Hamedi",
+      "url": "https://github.com/Saboor-Hamedi"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+
   <style>
     :root {
-      --bg: #0f172a;
-      --card-bg: #1e293b;
+      --bg: #0b0e14;
+      --surface: #121722;
+      --surface-hover: #171e2d;
       --text: #f8fafc;
       --text-muted: #94a3b8;
       --accent: #38bdf8;
-      --border: #334155;
+      --accent-soft: rgba(56, 189, 248, 0.14);
+      --border: rgba(148, 163, 184, 0.16);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: var(--bg);
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(circle at top center, rgba(56, 189, 248, 0.08), transparent 45%), var(--bg);
       color: var(--text);
+      line-height: 1.6;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
+    }
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+    }
+    header {
       text-align: center;
+      padding: 32px 0 48px;
     }
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 40px 32px;
-      max-width: 580px;
-      width: 100%;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      padding: 5px 12px;
+      border-radius: 999px;
+      margin-bottom: 18px;
     }
-    h1 { font-size: 28px; font-weight: 700; margin-bottom: 12px; color: var(--accent); }
-    p { font-size: 15px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; }
-    .links {
+    h1 {
+      font-size: clamp(36px, 6vw, 54px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 14px;
+    }
+    h1 span { color: var(--accent); }
+    .subtitle {
+      max-width: 640px;
+      margin: 0 auto 28px;
+      font-size: 17px;
+      color: var(--text-muted);
+    }
+    .cta-row {
       display: flex;
       justify-content: center;
-      gap: 16px;
-      margin-top: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
     }
-    a {
-      color: var(--accent);
-      text-decoration: none;
-      font-weight: 500;
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 20px;
+      border-radius: 10px;
       font-size: 14px;
-      padding: 8px 16px;
-      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #081018;
+    }
+    .btn-primary:hover { transform: translateY(-1px); filter: brightness(1.06); }
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
       border: 1px solid var(--border);
-      background: rgba(255, 255, 255, 0.03);
-      transition: all 0.2s ease;
     }
-    a:hover {
-      background: rgba(56, 189, 248, 0.15);
+    .btn-secondary:hover {
       border-color: var(--accent);
+      background: var(--surface-hover);
+      transform: translateY(-1px);
     }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .feature {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+    }
+    .feature h2 {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .feature p {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    footer {
+      margin-top: 56px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    footer nav {
+      display: flex;
+      gap: 18px;
+    }
+    footer a {
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+    footer a:hover { color: var(--accent); }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>Lumina</h1>
-    <p>A fast, local-first note-taking and thinking environment with intelligent cloud backup and mail capabilities.</p>
-    <div class="links">
-      <a href="privacy.html">Privacy Policy</a>
-      <a href="terms.html">Terms of Service</a>
-      <a href="https://github.com/Saboor-Hamedi/lumina" target="_blank">GitHub Repository</a>
-    </div>
+  <div class="wrap">
+    <header>
+      <div class="badge">Lumina v2.2.2 · Windows, macOS &amp; Linux</div>
+      <h1><span>Lumina</span> — Local-First AI Workspace</h1>
+      <p class="subtitle">
+        A fast, plaintext Markdown thinking environment combining an infinite Spatial Canvas,
+        interactive 2D/3D Knowledge Graph, smart PDF &amp; link cards, and a built-in AI companion with live web search.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://github.com/Saboor-Hamedi/lumina/releases" target="_blank" rel="noopener noreferrer">
+          Download Lumina
+        </a>
+        <a class="btn btn-secondary" href="https://github.com/Saboor-Hamedi/lumina" target="_blank" rel="noopener noreferrer">
+          View on GitHub
+        </a>
+      </div>
+    </header>
+
+    <main>
+      <section class="grid" aria-label="Lumina Key Features">
+        <article class="feature">
+          <h2>Local-First Markdown Notes</h2>
+          <p>Your vault stays on your own disk in plain Markdown. Instant wikilinks, Mermaid diagrams, rich bookmark link cards, and zero vendor lock-in.</p>
+        </article>
+        <article class="feature">
+          <h2>Infinite Spatial Canvas</h2>
+          <p>Freehand pencil &amp; highlighter drawing, 34 drag-and-drop diagram shapes, smart auto-routing connectors, frameless titles, and native PNG/SVG export.</p>
+        </article>
+        <article class="feature">
+          <h2>Lumina AI Companion</h2>
+          <p>Context-aware assistant supporting DeepSeek, OpenAI, Claude, and local Ollama models with workspace `@mentions`, auto-memory, and live web, arXiv &amp; GitHub search.</p>
+        </article>
+        <article class="feature">
+          <h2>2D &amp; 3D Knowledge Graph</h2>
+          <p>Explore connections across notes, tags, and semantic links in real-time 2D and WebGL 3D force-directed graphs.</p>
+        </article>
+        <article class="feature">
+          <h2>Native Speed &amp; Privacy</h2>
+          <p>Built with Rust and Tauri v2 for sub-200 MB memory footprint, full touch support, and optional local-only Google Drive backup &amp; Gmail integration.</p>
+        </article>
+        <article class="feature">
+          <h2>Cross-Platform Desktop</h2>
+          <p>Consistent experience across Windows, macOS, and Linux with multi-pane split tabs, native PDF viewer, and customizable themes.</p>
+        </article>
+      </section>
+    </main>
+
+    <footer>
+      <span>© 2026 Lumina by Saboor Hamedi</span>
+      <nav aria-label="Legal and Repository Links">
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="https://github.com/Saboor-Hamedi/lumina" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </nav>
+    </footer>
   </div>
 </body>
 </html>
