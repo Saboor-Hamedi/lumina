@@ -7,7 +7,7 @@ import {
   SHAPE_COLOR_OPTIONS,
   renderShapeSVG,
   type ShapeDefinition
-} from '../components/controls/ConvasShapes'
+} from '../components/controls/CanvasShapes'
 
 export interface StudioShapesTabProps {
   onAddShape?: (

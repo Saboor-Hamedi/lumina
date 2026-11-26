@@ -1387,12 +1387,14 @@ export const useWorkspaceStore = create<WorkspaceStoreState>((set, get) => ({
 
       const current = get().notes || []
       const existing = current.find((n) => n.id === note.id)
+      const preservedCreatedAt = existing?.createdAt || note.createdAt || new Date().toISOString()
+      const noteToSave = { ...note, createdAt: preservedCreatedAt }
 
-      const returnedNote = await saveApi(note)
+      const returnedNote = await saveApi(noteToSave)
       const updatedNote: WorkspaceNote =
         returnedNote && typeof returnedNote === 'object'
-          ? returnedNote
-          : ({ ...(existing || {}), ...note } as WorkspaceNote)
+          ? { ...returnedNote, createdAt: existing?.createdAt || returnedNote.createdAt || preservedCreatedAt }
+          : ({ ...(existing || {}), ...noteToSave } as WorkspaceNote)
 
       if (note.color && (!existing || existing.color !== note.color)) {
         const currentColors = (await (window as any).api.getSetting('noteColors')) || {}

@@ -1,10 +1,10 @@
 [package]
 name = "app"
-version = "2.2.2"
+version = "2.3.0"
 description = "Lumina - A premium, AI-powered thinking environment."
 authors = ["Saboor Hamedi"]
-license = ""
-repository = ""
+license = "MIT"
+repository = "https://github.com/Saboor-Hamedi/lumina"
 edition = "2024"
 rust-version = "1.90"
 

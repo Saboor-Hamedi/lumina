@@ -12,75 +12,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/src/assets/screenLoader.css" />
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self' ipc: http://ipc.localhost https://ipc.localhost tauri: http://tauri.localhost; connect-src 'self' ipc: http://ipc.localhost https://ipc.localhost tauri: http://tauri.localhost http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:* asset: http://asset.localhost https://asset.localhost blob: data: https://api.groq.com https://api.deepseek.com https://api.openai.com https://api.anthropic.com https://router.huggingface.co https://api-inference.huggingface.co https://cdn.jsdelivr.net https://gmail.googleapis.com https://www.googleapis.com https://api.github.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' blob: data: asset: http://asset.localhost https://asset.localhost https:; media-src 'self' blob: data: asset: http://asset.localhost https://asset.localhost; font-src 'self' data: https://fonts.gstatic.com; frame-src 'self' blob: data: asset: http://asset.localhost https://asset.localhost https://www.youtube-nocookie.com https://www.youtube.com; child-src 'self' blob: data: asset: https://www.youtube-nocookie.com https://www.youtube.com; object-src 'self' blob: data: asset:;"
-    />
-    <script>
-      // Prevent Flash of Unstyled Content (FOUC) on First Launch & Refresh
-      try {
-        const themeId = localStorage.getItem('theme-id') || 'light'
-        document.documentElement.setAttribute('data-theme', themeId)
-
-        const activeColorsRaw = localStorage.getItem('lumina_active_theme_colors')
-        if (activeColorsRaw) {
-          const activeColors = JSON.parse(activeColorsRaw)
-          const bootVars = [
-            '--bg-app',
-            '--bg-sidebar',
-            '--text-main',
-            '--text-muted',
-            '--text-faint',
-            '--text-accent',
-            '--border-dim'
-          ]
-          for (let i = 0; i < bootVars.length; i++) {
-            const key = bootVars[i]
-            if (activeColors[key]) {
-              document.documentElement.style.setProperty(key, activeColors[key])
-            }
-          }
-        }
-
-        const stored = localStorage.getItem('theme-colors')
-        if (stored) {
-          const colors = JSON.parse(stored)
-          if (colors.themeAccentColor) {
-            let accent = colors.themeAccentColor
-            if (!accent.startsWith('#')) accent = '#' + accent
-            document.documentElement.style.setProperty('--text-accent', accent)
-          }
-        }
-      } catch (e) {}
-
-      // Instant early progress animation while main.jsx bundles download & parse
-      (function () {
-        let p = 18
-        const timer = setInterval(function () {
-          const bar = document.getElementById('screen-loader-bar-fill')
-          const pct = document.getElementById('screen-loader-percent')
-          if (!bar || !pct) return
-          // Respect any higher progress set by controller or scripts
-          const currentText = parseInt(pct.textContent || '0', 10) || 0
-          if (currentText > p) {
-            p = currentText
-          }
-          if (p < 96) {
-            p += Math.max(0.4, (96 - p) * 0.045)
-            const rounded = Math.min(96, Math.round(p))
-            bar.style.width = rounded + '%'
-            pct.textContent = rounded + '%'
-          } else {
-            clearInterval(timer)
-          }
-        }, 80)
-        window.__LUMINA_SCREEN_LOADER__ = {
-          stopSimulation: function () {
-            clearInterval(timer)
-          }
-        }
-      })()
-    </script>
+    <script src="/boot.js"></script>
   </head>
 
   <body>
@@ -104,6 +36,6 @@
       <div class="screen-loader-substatus" id="screen-loader-substatus"></div>
     </div>
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

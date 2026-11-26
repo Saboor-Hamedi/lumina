@@ -4,19 +4,20 @@ import {
   MoveVertical,
   Trash2,
   Upload,
-  Link2,
   Check,
   X,
   SmilePlus,
-  Clock
+  Clock,
+  Plus
 } from 'lucide-react'
 import { ToolTip } from '../../../ui/Tooltip'
 import { useSettingStore } from '../../../core/store/SettingStore'
 import MetaProfile from './MetaProfile'
+import { COVER_WALLPAPERS } from './coverWallpapers'
 import './noteCover.css'
 
 export interface NoteCoverConfig {
-  type: 'gradient' | 'solid' | 'image'
+  type: 'gradient' | 'image'
   value: string
   positionY?: number
 }
@@ -26,25 +27,7 @@ export interface NoteAppearanceEntry {
   emoji?: string | null
 }
 
-const GRADIENT_PRESETS: Array<{ id: string; label: string; value: string }> = [
-  { id: 'aurora', label: 'Aurora Dusk', value: 'linear-gradient(120deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)' },
-  { id: 'ocean', label: 'Ocean Mist', value: 'linear-gradient(120deg, #0ea5e9 0%, #2563eb 55%, #4f46e5 100%)' },
-  { id: 'sunset', label: 'Sunset Silk', value: 'linear-gradient(120deg, #f97316 0%, #ef4444 55%, #ec4899 100%)' },
-  { id: 'forest', label: 'Forest Moss', value: 'linear-gradient(120deg, #059669 0%, #10b981 50%, #14b8a6 100%)' },
-  { id: 'slate', label: 'Midnight Slate', value: 'linear-gradient(120deg, #1e293b 0%, #334155 55%, #475569 100%)' },
-  { id: 'amber', label: 'Warm Amber', value: 'linear-gradient(120deg, #d97706 0%, #f59e0b 50%, #fbbf24 100%)' },
-  { id: 'rose', label: 'Rose Velvet', value: 'linear-gradient(120deg, #be185d 0%, #db2777 50%, #f472b6 100%)' },
-  { id: 'nord', label: 'Arctic Calm', value: 'linear-gradient(120deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%)' }
-]
-
-const SOLID_PRESETS: Array<{ id: string; label: string; value: string }> = [
-  { id: 'charcoal', label: 'Charcoal', value: '#27272a' },
-  { id: 'indigo', label: 'Deep Indigo', value: '#312e81' },
-  { id: 'emerald', label: 'Pine', value: '#064e3b' },
-  { id: 'terracotta', label: 'Terracotta', value: '#9a3412' },
-  { id: 'plum', label: 'Plum', value: '#581c87' },
-  { id: 'sand', label: 'Warm Sand', value: '#d6cfc2' }
-]
+type CoverPickerTab = 'image' | 'link' | 'upload'
 
 function formatNoteTimestamp(ts?: number | null): string | null {
   if (!ts || !Number.isFinite(ts)) return null
@@ -87,9 +70,11 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
 
     const [pickerOpen, setPickerOpen] = useState(false)
     const [emojiPickerOpen, setEmojiPickerOpen] = useState(false)
-    const [activeTab, setActiveTab] = useState<'gallery' | 'link' | 'upload'>('gallery')
+    const [activeTab, setActiveTab] = useState<CoverPickerTab>('image')
     const [urlInput, setUrlInput] = useState('')
     const [urlError, setUrlError] = useState('')
+    const [urlPreviewStatus, setUrlPreviewStatus] = useState<'idle' | 'valid' | 'error'>('idle')
+    const [isDraggingFile, setIsDraggingFile] = useState(false)
     const [isRepositioning, setIsRepositioning] = useState(false)
     const [dragPosY, setDragPosY] = useState<number | null>(null)
 
@@ -186,8 +171,8 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
     }, [])
 
     const handleAddRandomCover = useCallback(() => {
-      const preset = GRADIENT_PRESETS[Math.floor(Math.random() * GRADIENT_PRESETS.length)]
-      applyCover({ type: 'gradient', value: preset.value })
+      const preset = COVER_WALLPAPERS[Math.floor(Math.random() * COVER_WALLPAPERS.length)]
+      applyCover({ type: 'image', value: preset.value, positionY: 50 })
     }, [applyCover])
 
     const handleApplyUrl = useCallback(
@@ -206,12 +191,11 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
       [urlInput, applyCover]
     )
 
-    const handleFileChange = useCallback(
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
+    const processUploadFile = useCallback(
+      (file: File | null | undefined) => {
         if (!file) return
-        if (!file.type.startsWith('image/')) {
-          setUrlError('Please select an image file')
+        if (!/^image\/(png|jpeg|jpg|webp|gif|avif)$/i.test(file.type) && !file.type.startsWith('image/')) {
+          setUrlError('Please select a PNG, JPG, or WebP image')
           return
         }
         if (file.size > 4 * 1024 * 1024) {
@@ -256,9 +240,26 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
           probe.src = dataUrl
         }
         reader.readAsDataURL(file)
-        e.target.value = ''
       },
       [applyCover]
+    )
+
+    const handleFileChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        processUploadFile(e.target.files?.[0])
+        e.target.value = ''
+      },
+      [processUploadFile]
+    )
+
+    const handleUploadDrop = useCallback(
+      (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsDraggingFile(false)
+        processUploadFile(e.dataTransfer?.files?.[0])
+      },
+      [processUploadFile]
     )
 
     const handleBannerMouseDown = useCallback(
@@ -463,66 +464,72 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
             ref={coverPopoverRef}
             className="note-cover-popover"
             role="dialog"
-            aria-label="Choose note cover"
+            aria-label="Choose note background"
           >
-            <div className="note-cover-tabs">
-              <button
-                type="button"
-                className={`note-cover-tab ${activeTab === 'gallery' ? 'is-active' : ''}`}
-                onClick={() => setActiveTab('gallery')}
-              >
-                Gallery
-              </button>
-              <button
-                type="button"
-                className={`note-cover-tab ${activeTab === 'link' ? 'is-active' : ''}`}
-                onClick={() => setActiveTab('link')}
-              >
-                <Link2 size={11} />
-                <span>Link</span>
-              </button>
-              <button
-                type="button"
-                className={`note-cover-tab ${activeTab === 'upload' ? 'is-active' : ''}`}
-                onClick={() => setActiveTab('upload')}
-              >
-                <Upload size={11} />
-                <span>Upload</span>
-              </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/*"
+              style={{ display: 'none' }}
+              onChange={handleFileChange}
+            />
+
+            <div className="note-cover-popover-header">Background</div>
+
+            <div className="note-cover-segmented" role="tablist" aria-label="Background source">
+              {(
+                [
+                  { id: 'image', label: 'Image' },
+                  { id: 'link', label: 'Link' },
+                  { id: 'upload', label: 'Upload' }
+                ] as Array<{ id: CoverPickerTab; label: string }>
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  className={`note-cover-seg-tab ${activeTab === tab.id ? 'is-active' : ''}`}
+                  onClick={() => {
+                    setActiveTab(tab.id)
+                    if (urlError) setUrlError('')
+                  }}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
-            {activeTab === 'gallery' && (
-              <div className="note-cover-gallery">
-                <div className="note-cover-section-label">Gradients</div>
-                <div className="note-cover-swatch-grid">
-                  {GRADIENT_PRESETS.map((g) => (
-                    <button
-                      key={g.id}
-                      type="button"
-                      className={`note-cover-swatch ${cover?.value === g.value ? 'is-selected' : ''}`}
-                      style={{ background: g.value }}
-                      aria-label={g.label}
-                      data-tooltip={g.label}
-                      data-tooltip-pos="top"
-                      onClick={() => applyCover({ type: 'gradient', value: g.value })}
+            {activeTab === 'image' && (
+              <div className="note-cover-image-grid" role="listbox" aria-label="Cover backgrounds">
+                {COVER_WALLPAPERS.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    className={`note-cover-swatch is-square ${cover?.value === preset.value ? 'is-selected' : ''}`}
+                    aria-label={preset.label}
+                    data-tooltip={preset.label}
+                    data-tooltip-pos="top"
+                    onClick={() => applyCover({ type: 'image', value: preset.value, positionY: 50 })}
+                  >
+                    <img
+                      className="note-cover-swatch-img"
+                      src={preset.value}
+                      alt={preset.label}
+                      draggable={false}
                     />
-                  ))}
-                </div>
-                <div className="note-cover-section-label">Colors</div>
-                <div className="note-cover-swatch-grid">
-                  {SOLID_PRESETS.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      className={`note-cover-swatch ${cover?.value === s.value ? 'is-selected' : ''}`}
-                      style={{ background: s.value }}
-                      aria-label={s.label}
-                      data-tooltip={s.label}
-                      data-tooltip-pos="top"
-                      onClick={() => applyCover({ type: 'solid', value: s.value })}
-                    />
-                  ))}
-                </div>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="note-cover-swatch is-square is-upload-slot"
+                  aria-label="Upload custom cover image"
+                  data-tooltip="Upload image"
+                  data-tooltip-pos="top"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Plus size={15} strokeWidth={2} />
+                </button>
               </div>
             )}
 
@@ -534,11 +541,27 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
                   placeholder="Paste an image URL (https://...)"
                   value={urlInput}
                   onChange={(e) => {
-                    setUrlInput(e.target.value)
+                    const nextVal = e.target.value
+                    setUrlInput(nextVal)
+                    setUrlPreviewStatus('idle')
                     if (urlError) setUrlError('')
                   }}
                   autoFocus
                 />
+                {/^https?:\/\/\S+$/i.test(urlInput.trim()) && (
+                  <div className={`note-cover-link-preview ${urlPreviewStatus === 'error' ? 'is-invalid' : ''}`}>
+                    {urlPreviewStatus !== 'error' ? (
+                      <img
+                        src={urlInput.trim()}
+                        alt="Cover URL preview"
+                        onLoad={() => setUrlPreviewStatus('valid')}
+                        onError={() => setUrlPreviewStatus('error')}
+                      />
+                    ) : (
+                      <span>Unable to load preview for this URL</span>
+                    )}
+                  </div>
+                )}
                 {urlError && <div className="note-cover-error">{urlError}</div>}
                 <button type="submit" className="note-cover-submit-btn">
                   Apply Cover
@@ -548,21 +571,33 @@ export const MetaBackground: React.FC<MetaBackgroundProps> = React.memo(
 
             {activeTab === 'upload' && (
               <div className="note-cover-upload-pane">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  onChange={handleFileChange}
-                />
-                <button
-                  type="button"
-                  className="note-cover-upload-btn"
+                <div
+                  className={`note-cover-dropzone ${isDraggingFile ? 'is-dragging' : ''}`}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => fileInputRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      fileInputRef.current?.click()
+                    }
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    if (!isDraggingFile) setIsDraggingFile(true)
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setIsDraggingFile(false)
+                  }}
+                  onDrop={handleUploadDrop}
                 >
-                  <Upload size={14} />
-                  <span>Choose an image (max 4 MB)</span>
-                </button>
+                  <Upload size={16} />
+                  <span className="note-cover-dropzone-title">Drop an image or click to browse</span>
+                  <span className="note-cover-dropzone-hint">PNG, JPG, or WebP · max 4 MB</span>
+                </div>
                 {urlError && <div className="note-cover-error">{urlError}</div>}
               </div>
             )}

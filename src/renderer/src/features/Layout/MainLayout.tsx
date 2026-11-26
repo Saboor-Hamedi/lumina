@@ -3,32 +3,26 @@
  *
  * Core 3-Pane Application Shell & Workspace Orchestrator for Lumina.
  *
- * Architecture & Responsibilities:
- * - Left Pane: Collapsible Navigation Sidebar (Vault file tree, tags, quick actions, settings).
- * - Center Pane:
- *     - TabBar: Multi-tab management (reorder, close, pin, preview, new tab).
- *     - Breadcrumbs: File path hierarchy navigation and quick rename.
- *     - TabContentPane: Mounted pane routing (Markdown Editor, Canvas, PDF, Image, or Welcome).
- *     - StatusBar: Document metadata, word counts, sync state, and zoom controls.
- * - Right Pane: Collapsible Inspector Sidebar (Document outline, backlinks, AI assistant).
- * - Modals Layer: Offloaded to AppModals to maintain rendering isolation.
- * - Resizing: Curtain drag resizers with double-click reset and snap-to-close behavior.
+ * Supporting hooks and sections live in `./shell/`:
+ * - `useSidebarPanels`: Left/right sidebar & Zen visibility state
+ * - `useTerminalDock`: Bottom terminal dock state, Zen persistence, & resizing
+ * - `useWorkspaceActions`: Note/canvas creation, deletion, starter workspace, & view toggles
+ * - `useLayoutEvents`: App bootstrap, session restore, vault watcher, & window events
+ * - `useLayoutShortcuts`: Capture-phase & global keyboard shortcuts
+ * - `TerminalDockSection`: Collapsible/resizable bottom terminal panel view
  */
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useState, useCallback, useMemo, useRef } from 'react'
 import Sidebar from '../Navigation/Sidebar'
 import ActivityBar from '../Navigation/ActivityBar'
-import RightActivityBar, { RightSidebarTabId } from '../Navigation/RightActivityBar'
-import { openSidebarView, toggleSidebarView } from '../Navigation/sidebarViewStore'
+import RightActivityBar from '../Navigation/RightActivityBar'
 import Welcome from '../../Welcome'
 import { SplitNodeRenderer } from './split'
 import './split/split.css'
 import AppModals, { RenameModalState } from './AppModals'
 import { ExternalDropOverlay, useWorkspaceDrop } from '../Explorer/drop'
-import { countExplorerPerfRender, markExplorerPerf } from '../Explorer/utils/explorerPerf'
+import { countExplorerPerfRender } from '../Explorer/utils/explorerPerf'
 import { FileText, FolderDown } from 'lucide-react'
-import { useKeyboardShortcuts, matchesShortcut } from '../../core/shortcuts'
-import { createUntitledSnippet } from '../Breadcrumbs/utils/breadcrumbUtils'
 import {
   useWorkspaceStore,
   GRAPH_TAB_ID,
@@ -36,9 +30,7 @@ import {
   RELEASE_NOTES_TAB_ID
 } from '../../core/store/workspaceStore'
 import { useSettingsStore } from '../../core/store/SettingStore'
-import { useUpdateStore } from '../../core/store/UpdateSetting'
 import { useToast } from '../../core/notification'
-import { populateStarterWorkspace } from '../../core/utils/starterWorkspace'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import '../../assets/mainlayout.css'
 import '../modals/css/confirm.css'
@@ -50,20 +42,15 @@ import { useShallow } from 'zustand/react/shallow'
 import RightSidebar from '../Inspector/RightSidebar'
 import StatusBar from './StatusBar'
 import { useSidebarResize } from './resizeSidebar'
-
-const TerminalPanel = React.lazy(async () => {
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      const m = await import('../terminal/TerminalPanel')
-      return { default: m.TerminalPanel }
-    } catch (err) {
-      if (attempt >= 3) throw err
-      await new Promise((r) => setTimeout(r, 350 * attempt))
-    }
-  }
-  const m = await import('../terminal/TerminalPanel')
-  return { default: m.TerminalPanel }
-})
+import {
+  useSidebarPanels,
+  useTerminalDock,
+  useWorkspaceActions,
+  useLayoutEvents,
+  useLayoutShortcuts,
+  TerminalDockSection,
+  isCanvasNote
+} from './shell'
 
 export const MainLayout: React.FC = () => {
   countExplorerPerfRender('MainLayout')
@@ -98,32 +85,14 @@ export const MainLayout: React.FC = () => {
       closeSplit: state.closeSplit
     }))
   )
+
   const { toast, showToast, clearToast } = useToast()
-
-  useEffect(() => {
-    const handleGlobalToast = (e: any) => {
-      const { message, type = 'info' } = e.detail || {}
-      if (message) {
-        showToast(message, type)
-      }
-    }
-    const handleClearToast = () => clearToast()
-    window.addEventListener('show-toast', handleGlobalToast as EventListener)
-    window.addEventListener('clear-toast', handleClearToast)
-    return () => {
-      window.removeEventListener('show-toast', handleGlobalToast as EventListener)
-      window.removeEventListener('clear-toast', handleClearToast)
-    }
-  }, [showToast, clearToast])
-
   const { workspaceDrop, workspaceDropProps } = useWorkspaceDrop()
-
   useTypingSound()
-  const [settingsInitialTab, setSettingsInitialTab] = useState('workspace')
 
+  const [settingsInitialTab, setSettingsInitialTab] = useState('workspace')
   const [activeTab, setActiveTab] = useState('files')
   const [showSettings, setShowSettings] = useState(false)
-
   const [showPalette, setShowPalette] = useState(false)
   const [paletteInitialQuery, setPaletteInitialQuery] = useState('')
   const [showDocsModal, setShowDocsModal] = useState(false)
@@ -133,248 +102,54 @@ export const MainLayout: React.FC = () => {
   })
   const [, setShowExplorerModal] = useState(false)
   const [showActiveIconPicker, setShowActiveIconPicker] = useState(false)
-  const isLeftSidebarOpen = useSettingsStore(
-    (state) => state.settings?.sidebar?.isLeftOpen ?? true
-  )
-  const isRightSidebarOpen = useSettingsStore(
-    (state) => state.settings?.rightSidebar?.isRightOpen ?? false
-  )
-  const [rightSidebarTab, setRightSidebarTab] = useState<string>('details')
-  const rightSidebarTabRef = useRef(rightSidebarTab)
-  useEffect(() => {
-    rightSidebarTabRef.current = rightSidebarTab
-  }, [rightSidebarTab])
-
-  const handleOpenOrCreateCanvasTabRef = useRef<() => void>(() => {})
-
-  const [renameModal, setRenameModal] = useState<RenameModalState>({ isOpen: false, item: null, newName: '' })
+  const [renameModal, setRenameModal] = useState<RenameModalState>({
+    isOpen: false,
+    item: null,
+    newName: ''
+  })
   const [, setSavedRightSidebarState] = useState<any>(null)
-  const appShellRef = useRef<HTMLDivElement | null>(null)
-
-  const isZenModeEnabled = useSettingsStore((state) => state.settings?.zenMode?.enabled === true)
-  const hideActivityBarInZen = useSettingsStore(
-    (state) => state.settings?.zenMode?.hideActivityBar !== false
-  )
-  const hideRightActivityBarInZen = useSettingsStore(
-    (state) => state.settings?.zenMode?.hideRightActivityBar !== false
-  )
-  const hideStatusBarInZen = useSettingsStore(
-    (state) => state.settings?.zenMode?.hideStatusBar !== false
-  )
-  const isActivityBarVisible = useSettingsStore(
-    (state) => state.settings?.activityBarVisible !== false
-  )
-  const isRightActivityBarVisible = useSettingsStore(
-    (state) => state.settings?.rightActivityBarVisible !== false
-  )
-  const isStatusBarVisible = useSettingsStore((state) => state.settings?.statusBarVisible === true)
-  const isTabsVisible = useSettingsStore((state) => state.settings?.tabsVisible !== false)
-  const isBreadcrumbsVisible = useSettingsStore(
-    (state) => state.settings?.breadcrumbsVisible !== false
-  )
-
-  const isLeftSidebarOpenRef = useRef(isLeftSidebarOpen)
-  const isRightSidebarOpenRef = useRef(isRightSidebarOpen)
-
-  useEffect(() => {
-    isLeftSidebarOpenRef.current = isLeftSidebarOpen
-  }, [isLeftSidebarOpen])
-
-  useEffect(() => {
-    isRightSidebarOpenRef.current = isRightSidebarOpen
-  }, [isRightSidebarOpen])
-
-  const updateLeftSidebarOpen = useCallback((valOrFn: boolean | ((prev: boolean) => boolean)) => {
-    const current = useSettingsStore.getState().settings?.sidebar?.isLeftOpen ?? true
-    const next = typeof valOrFn === 'function' ? valOrFn(current) : valOrFn
-    isLeftSidebarOpenRef.current = next
-    window.dispatchEvent(new CustomEvent('left-sidebar-toggle', { detail: { open: next } }))
-    const currentSidebar = (useSettingsStore.getState().settings as any)?.sidebar || {}
-    if (currentSidebar.isLeftOpen !== next) {
-      useSettingsStore.getState().updateSettings({
-        sidebar: {
-          ...currentSidebar,
-          isLeftOpen: next
-        }
-      } as any)
-    }
-  }, [])
-
-  const updateRightSidebarOpen = useCallback((valOrFn: boolean | ((prev: boolean) => boolean)) => {
-    const current = useSettingsStore.getState().settings?.rightSidebar?.isRightOpen ?? false
-    const next = typeof valOrFn === 'function' ? valOrFn(current) : valOrFn
-    isRightSidebarOpenRef.current = next
-    const currentRSidebar = (useSettingsStore.getState().settings as any)?.rightSidebar || {}
-    if (currentRSidebar.isRightOpen !== next) {
-      useSettingsStore.getState().updateSettings({
-        rightSidebar: {
-          ...currentRSidebar,
-          isRightOpen: next
-        }
-      } as any)
-    }
-  }, [])
-
-  const handleToggleLeftSidebar = useCallback(() => {
-    updateLeftSidebarOpen((prev) => !prev)
-  }, [updateLeftSidebarOpen])
-
-  const handleToggleRightSidebar = useCallback(() => {
-    updateRightSidebarOpen((prev) => !prev)
-  }, [updateRightSidebarOpen])
-
-  const handleCloseRightSidebar = useCallback(() => {
-    updateRightSidebarOpen(false)
-  }, [updateRightSidebarOpen])
-
-  const handleSelectRightSidebarTab = useCallback((tab: RightSidebarTabId) => {
-    if (!isRightSidebarOpenRef.current) {
-      setRightSidebarTab(tab)
-      updateRightSidebarOpen(true)
-    } else if (rightSidebarTabRef.current !== tab) {
-      setRightSidebarTab(tab)
-    } else {
-      updateRightSidebarOpen(false)
-    }
-  }, [updateRightSidebarOpen])
-
-  const handleToggleInspector = useCallback(() => {
-    updateRightSidebarOpen((prev) => !prev)
-  }, [updateRightSidebarOpen])
-
-  const [isTerminalOpen, setIsTerminalOpen] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('lumina_terminal_open') === 'true'
-      return isZenModeEnabled ? false : saved
-    } catch {
-      return false
-    }
-  })
-  const [hasMountedTerminal, setHasMountedTerminal] = useState<boolean>(() => {
-    try {
-      return !isZenModeEnabled && localStorage.getItem('lumina_terminal_open') === 'true'
-    } catch {
-      return false
-    }
-  })
-  const [terminalHeight, setTerminalHeight] = useState<number>(() => {
-    try {
-      const raw = Number(localStorage.getItem('lumina_terminal_height'))
-      if (Number.isFinite(raw) && raw >= 120 && raw <= 600) return raw
-    } catch {}
-    return 260
-  })
-  const [isTerminalMaximized, setIsTerminalMaximized] = useState(false)
-  const previousTerminalHeightRef = useRef(terminalHeight)
-  const wasTerminalOpenBeforeZenRef = useRef<boolean>((() => {
-    try {
-      return isZenModeEnabled && localStorage.getItem('lumina_terminal_open') === 'true'
-    } catch {
-      return false
-    }
-  })())
-  const prevZenModeRef = useRef(isZenModeEnabled)
-
-  useEffect(() => {
-    if (isTerminalOpen) {
-      setHasMountedTerminal(true)
-    }
-    if (!isZenModeEnabled) {
-      try {
-        localStorage.setItem('lumina_terminal_open', String(isTerminalOpen))
-      } catch {}
-    }
-  }, [isTerminalOpen, isZenModeEnabled])
-
-  useEffect(() => {
-    if (!isTerminalMaximized) {
-      try {
-        localStorage.setItem('lumina_terminal_height', String(terminalHeight))
-      } catch {}
-    }
-  }, [terminalHeight, isTerminalMaximized])
-
-  // Hide open terminal when entering Zen Mode (without unmounting/killing sessions),
-  // restore when exiting Zen Mode, and allow user to re-open it anytime during Zen Mode.
-  useEffect(() => {
-    const prevZen = prevZenModeRef.current
-    prevZenModeRef.current = isZenModeEnabled
-    if (!prevZen && isZenModeEnabled) {
-      wasTerminalOpenBeforeZenRef.current = isTerminalOpen
-      if (isTerminalOpen) {
-        setIsTerminalOpen(false)
-      }
-    } else if (prevZen && !isZenModeEnabled) {
-      if (wasTerminalOpenBeforeZenRef.current) {
-        wasTerminalOpenBeforeZenRef.current = false
-        setIsTerminalOpen(true)
-      }
-    }
-  }, [isZenModeEnabled, isTerminalOpen])
-
-  const isTerminalVisible = isTerminalOpen
-
-  const handleToggleTerminal = useCallback(() => {
-    setIsTerminalOpen((prev) => !prev)
-  }, [])
-
-  const handleToggleTerminalMaximize = useCallback(() => {
-    setIsTerminalMaximized((prev) => {
-      if (!prev) {
-        // Remember current normal height
-        previousTerminalHeightRef.current = terminalHeight
-        return true
-      } else {
-        // Restore saved height without jumping
-        setTerminalHeight(previousTerminalHeightRef.current || 260)
-        return false
-      }
-    })
-  }, [terminalHeight])
-
-  const handleStartTerminalResize = useCallback((e: React.MouseEvent | React.PointerEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    const startY = e.clientY
-    const startH = terminalHeight
-
-    if (isTerminalMaximized) {
-      setIsTerminalMaximized(false)
-    }
-
-    const centerWorkspace = document.querySelector('.shell-center-workspace')
-    const totalH = centerWorkspace ? centerWorkspace.clientHeight : window.innerHeight
-    const minH = 120
-    const maxH = Math.max(minH, totalH - 60)
-
-    document.body.classList.add('is-terminal-resizing')
-    const appShell = document.querySelector('.app-shell')
-    if (appShell) appShell.classList.add('is-resizing')
-
-    const onPointerMove = (ev: MouseEvent | PointerEvent) => {
-      const delta = startY - ev.clientY
-      const nextH = Math.max(minH, Math.min(maxH, Math.round(startH + delta)))
-      setTerminalHeight(nextH)
-      previousTerminalHeightRef.current = nextH
-    }
-    const onPointerUp = () => {
-      document.body.classList.remove('is-terminal-resizing')
-      if (appShell) appShell.classList.remove('is-resizing')
-      window.removeEventListener('pointermove', onPointerMove)
-      window.removeEventListener('pointerup', onPointerUp)
-      window.removeEventListener('pointercancel', onPointerUp)
-      window.removeEventListener('mousemove', onPointerMove)
-      window.removeEventListener('mouseup', onPointerUp)
-    }
-    window.addEventListener('pointermove', onPointerMove, { passive: true })
-    window.addEventListener('pointerup', onPointerUp)
-    window.addEventListener('pointercancel', onPointerUp)
-    window.addEventListener('mousemove', onPointerMove, { passive: true })
-    window.addEventListener('mouseup', onPointerUp)
-  }, [terminalHeight, isTerminalMaximized])
-
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [snippetToDelete, setSnippetToDelete] = useState<any>(null)
+  const appShellRef = useRef<HTMLDivElement | null>(null)
+
+  const {
+    isLeftSidebarOpen,
+    isRightSidebarOpen,
+    isLeftSidebarOpenRef,
+    isRightSidebarOpenRef,
+    rightSidebarTab,
+    setRightSidebarTab,
+    rightSidebarTabRef,
+    isZenModeEnabled,
+    hideActivityBarInZen,
+    hideRightActivityBarInZen,
+    hideStatusBarInZen,
+    isActivityBarVisible,
+    isRightActivityBarVisible,
+    isStatusBarVisible,
+    isTabsVisible,
+    isBreadcrumbsVisible,
+    updateLeftSidebarOpen,
+    updateRightSidebarOpen,
+    handleToggleLeftSidebar,
+    handleToggleRightSidebar,
+    handleCloseRightSidebar,
+    handleSelectRightSidebarTab,
+    handleToggleInspector
+  } = useSidebarPanels()
+
+  const {
+    isTerminalOpen,
+    setIsTerminalOpen,
+    hasMountedTerminal,
+    terminalHeight,
+    setTerminalHeight,
+    isTerminalMaximized,
+    isTerminalVisible,
+    handleToggleTerminal,
+    handleToggleTerminalMaximize,
+    handleStartTerminalResize
+  } = useTerminalDock(isZenModeEnabled)
 
   const {
     leftWidth,
@@ -391,892 +166,102 @@ export const MainLayout: React.FC = () => {
     handleCloseRightSidebar
   })
 
-  useEffect(() => {
-    const initApp = async () => {
-      try {
-        await Promise.all([useSettingsStore.getState().init(), loadWorkspace()])
-
-        const actualSettings = (useSettingsStore.getState().settings as any) || {}
-
-        if (actualSettings.openTabs && Array.isArray(actualSettings.openTabs)) {
-          useWorkspaceStore
-            .getState()
-            .restoreSession(
-              actualSettings.openTabs,
-              actualSettings.lastNoteId,
-              actualSettings.pinnedTabIds || [],
-              actualSettings.splitLayout ?? null
-            )
-        } else if (actualSettings.lastNoteId) {
-          const allSnippets = useWorkspaceStore.getState().notes || []
-          const last = allSnippets.find((s: any) => s.id === actualSettings.lastNoteId)
-          if (last) setSelectedSnippet(last)
-        }
-
-        const legacySidebar = actualSettings.sidebar || {}
-        let finalLeftOpen = true
-        if (typeof legacySidebar.isLeftOpen === 'boolean') {
-          finalLeftOpen = legacySidebar.isLeftOpen
-        } else if (typeof actualSettings.isLeftSidebarOpen === 'boolean') {
-          finalLeftOpen = actualSettings.isLeftSidebarOpen
-        }
-
-        isLeftSidebarOpenRef.current = finalLeftOpen
-        window.dispatchEvent(
-          new CustomEvent('left-sidebar-toggle', { detail: { open: finalLeftOpen } })
-        )
-
-        const rawLeftWidth =
-          legacySidebar.width || legacySidebar.leftWidth || actualSettings.leftWidth
-        if (rawLeftWidth) {
-          const clampedLeft = Math.min(600, Math.max(130, Number(rawLeftWidth)))
-          setLeftWidth(clampedLeft)
-        }
-
-        const legacyRSidebar = actualSettings.rightSidebar || {}
-        let finalRightOpen = false
-        if (typeof legacyRSidebar.isRightOpen === 'boolean') {
-          finalRightOpen = legacyRSidebar.isRightOpen
-        } else if (typeof actualSettings.isRightSidebarOpen === 'boolean') {
-          finalRightOpen = actualSettings.isRightSidebarOpen
-        }
-
-        isRightSidebarOpenRef.current = finalRightOpen
-
-        const rawRightWidth =
-          legacyRSidebar.width || legacyRSidebar.rightWidth || actualSettings.rightWidth
-        if (rawRightWidth) {
-          const clampedRight = Math.min(750, Math.max(130, Number(rawRightWidth)))
-          setRightWidth(clampedRight)
-        }
-      } catch (err) {
-        console.error('MainLayout initApp error:', err)
-      }
-    }
-
-    initApp()
-
-    const unsub = useUpdateStore.getState().init()
-
-    const handleOpenDetailsModal = () => {
-      setRightSidebarTab('details')
-      updateRightSidebarOpen(true)
-    }
-    window.addEventListener('open-details-modal', handleOpenDetailsModal)
-
-    const handleOpenAISettings = () => {
-      setSettingsInitialTab('ai')
-      setShowSettings(true)
-    }
-    window.addEventListener('open-ai-settings', handleOpenAISettings)
-
-    const handleOpenGuide = () => {
-      setShowGuideModal(true)
-    }
-    window.addEventListener('open-guide', handleOpenGuide)
-
-    window.addEventListener('toggle-inspector', handleToggleInspector)
-
-    let cleanupGlobalShortcut: (() => void) | null = null
-    const winApi = (window as any).api
-    if (winApi?.onToggleCommandPalette) {
-      cleanupGlobalShortcut = winApi.onToggleCommandPalette(() => {
-        if (
-          (window as any).__isRecordingShortcut ||
-          document.querySelector(
-            '.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay'
-          ) ||
-          (document.activeElement &&
-            document.activeElement.closest &&
-            document.activeElement.closest('.shortcut-inline-container, .shortcut-modal'))
-        ) {
-          return
-        }
-        setShowPalette((prev) => !prev)
-      })
-    }
-
-    return () => {
-      unsub && unsub()
-      window.removeEventListener('open-details-modal', handleOpenDetailsModal)
-      window.removeEventListener('open-ai-settings', handleOpenAISettings)
-      window.removeEventListener('open-guide', handleOpenGuide)
-      window.removeEventListener('toggle-inspector', handleToggleInspector)
-      if (cleanupGlobalShortcut) cleanupGlobalShortcut()
-    }
-  }, [updateRightSidebarOpen, handleToggleInspector, loadWorkspace, setSelectedSnippet, setLeftWidth, setRightWidth])
-
-  useEffect(() => {
-    const winApi = (window as any).api
-    if (winApi?.onVaultUpdated) {
-      let debounceTimer: ReturnType<typeof setTimeout> | null = null
-      const cleanup = winApi.onVaultUpdated(() => {
-        if (debounceTimer) clearTimeout(debounceTimer)
-        debounceTimer = setTimeout(() => {
-          debounceTimer = null
-          loadWorkspace()
-        }, 250)
-      })
-      return () => {
-        if (debounceTimer) clearTimeout(debounceTimer)
-        cleanup?.()
-      }
-    }
-  }, [loadWorkspace])
-
-  useEffect(() => {
-    const handleRenameShortcut = (e: KeyboardEvent) => {
-      if (
-        (window as any).__isRecordingShortcut ||
-        document.querySelector(
-          '.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay'
-        ) ||
-        (document.activeElement &&
-          document.activeElement.closest &&
-          document.activeElement.closest('.shortcut-inline-container, .shortcut-modal'))
-      ) {
-        return
-      }
-      const key = e.key && e.key.toLowerCase()
-      const isRenameShortcut =
-        ((e.ctrlKey || e.metaKey) && key === 'r' && !e.shiftKey && !e.altKey) ||
-        (e.key === 'F2' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey)
-
-      if (isRenameShortcut) {
-        e.preventDefault()
-        const currentSelectedFolder = useWorkspaceStore.getState().selectedFolder
-        if (currentSelectedFolder) {
-          const folderName = currentSelectedFolder.split('/').pop() || ''
-          setRenameModal({
-            isOpen: true,
-            item: { type: 'folder', id: currentSelectedFolder, name: folderName },
-            newName: folderName
-          })
-        } else if (selectedSnippet) {
-          setRenameModal({
-            isOpen: true,
-            item: selectedSnippet,
-            newName: selectedSnippet.title || ''
-          })
-        } else {
-          showToast('No note or folder selected to rename', 'info')
-        }
-      }
-    }
-
-    const handleOpenRenameModal = (e: Event) => {
-      const customEvent = e as CustomEvent
-      const target = customEvent.detail?.note || customEvent.detail?.item || selectedSnippet
-      if (target) {
-        setRenameModal({
-          isOpen: true,
-          item: target,
-          newName: target.title || target.name || ''
-        })
-      }
-    }
-
-    window.addEventListener('keydown', handleRenameShortcut)
-    window.addEventListener('open-rename-modal', handleOpenRenameModal)
-    return () => {
-      window.removeEventListener('keydown', handleRenameShortcut)
-      window.removeEventListener('open-rename-modal', handleOpenRenameModal)
-    }
-  }, [selectedSnippet, showToast])
-
-  // Dedicated direct capturing listener for Canvas Tab (default: Ctrl + Shift + ;)
-  useEffect(() => {
-    const handleCanvasShortcut = (e: KeyboardEvent) => {
-      if (
-        (window as any).__isRecordingShortcut ||
-        document.querySelector(
-          '.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay'
-        ) ||
-        (document.activeElement &&
-          (document.activeElement as HTMLElement).closest &&
-          (document.activeElement as HTMLElement).closest(
-            '.shortcut-inline-container, .shortcut-modal'
-          ))
-      ) {
-        return
-      }
-      const isCtrl = e.ctrlKey || e.metaKey
-      const isShift = e.shiftKey
-      const isSemicolon =
-        e.code === 'Semicolon' ||
-        e.key === ';' ||
-        e.key === ':' ||
-        e.keyCode === 186 ||
-        e.keyCode === 59
-
-      // Direct match for default Ctrl + Shift + ;
-      const isDefaultCanvas = isCtrl && isShift && !e.altKey && isSemicolon
-
-      // Match configured custom shortcut if user customized it in settings
-      const userShortcuts = useSettingsStore.getState().settings.shortcuts || {}
-      const configuredCanvasKey = userShortcuts.canvasDrawer || userShortcuts.canvas
-      const matchesConfigured =
-        configuredCanvasKey &&
-        configuredCanvasKey !== 'Ctrl + Shift + /' &&
-        configuredCanvasKey !== 'Ctrl + Shift + ;'
-          ? matchesShortcut(e, configuredCanvasKey)
-          : false
-
-      if (isDefaultCanvas || matchesConfigured) {
-        e.preventDefault()
-        e.stopPropagation()
-        e.stopImmediatePropagation()
-        const now = Date.now()
-        const lastDispatch = (window as any).__lastCanvasDispatch || 0
-        if (now - lastDispatch < 300) {
-          return
-        }
-        ;(window as any).__lastCanvasDispatch = now
-        handleOpenOrCreateCanvasTabRef.current?.()
-      }
-    }
-
-    const handleCanvasTabEvent = () => {
-      handleOpenOrCreateCanvasTabRef.current?.()
-    }
-
-    window.addEventListener('keydown', handleCanvasShortcut, true)
-    window.addEventListener('open-canvas-tab', handleCanvasTabEvent)
-    window.addEventListener('toggle-canvas-drawer', handleCanvasTabEvent)
-    window.addEventListener('open-canvas-drawer', handleCanvasTabEvent)
-
-    return () => {
-      window.removeEventListener('keydown', handleCanvasShortcut, true)
-      window.removeEventListener('open-canvas-tab', handleCanvasTabEvent)
-      window.removeEventListener('toggle-canvas-drawer', handleCanvasTabEvent)
-      window.removeEventListener('open-canvas-drawer', handleCanvasTabEvent)
-    }
-  }, [])
-
-  // Dedicated capture-phase shortcut listener for Tab Navigation (Ctrl+Tab, Ctrl+Shift+Tab, Ctrl+1..9)
-  useEffect(() => {
-    const handleTabNavCapture = (e: KeyboardEvent) => {
-      if (
-        (window as any).__isRecordingShortcut ||
-        document.querySelector(
-          '.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay'
-        ) ||
-        (document.activeElement &&
-          document.activeElement.closest &&
-          document.activeElement.closest('.shortcut-inline-container, .shortcut-modal'))
-      ) {
-        return
-      }
-
-      const isPrimary = e.ctrlKey || e.metaKey
-
-      // Ctrl + 1..9 (Direct Tab Switching)
-      if (isPrimary && !e.altKey && !e.shiftKey && e.key >= '1' && e.key <= '9') {
-        const targetIdx = parseInt(e.key, 10) - 1
-        const tabs = useWorkspaceStore.getState().openTabs || []
-        if (targetIdx >= 0 && targetIdx < tabs.length) {
-          e.preventDefault()
-          e.stopPropagation()
-          e.stopImmediatePropagation()
-          useWorkspaceStore.getState().setActiveTabId(tabs[targetIdx])
-          return
-        }
-      }
-
-      // Ctrl + Tab / Ctrl + Shift + Tab (Tab Cycling)
-      if (isPrimary && !e.altKey && (e.key === 'Tab' || e.code === 'Tab')) {
-        const tabs = useWorkspaceStore.getState().openTabs || []
-        if (tabs.length > 0) {
-          e.preventDefault()
-          e.stopPropagation()
-          e.stopImmediatePropagation()
-          const currentId = useWorkspaceStore.getState().activeTabId
-          const currentIdx = currentId ? tabs.indexOf(currentId) : -1
-          if (e.shiftKey) {
-            // Previous tab (Ctrl + Shift + Tab)
-            const prevIdx = currentIdx <= 0 ? tabs.length - 1 : currentIdx - 1
-            useWorkspaceStore.getState().setActiveTabId(tabs[prevIdx])
-          } else {
-            // Next tab (Ctrl + Tab)
-            const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % tabs.length
-            useWorkspaceStore.getState().setActiveTabId(tabs[nextIdx])
-          }
-          return
-        }
-      }
-    }
-
-    window.addEventListener('keydown', handleTabNavCapture, true)
-    return () => window.removeEventListener('keydown', handleTabNavCapture, true)
-  }, [])
-
-  // Dedicated capture-phase shortcut listener for Zen Mode (Ctrl + .)
-  useEffect(() => {
-    const handleZenCapture = (e: KeyboardEvent) => {
-      if (
-        (window as any).__isRecordingShortcut ||
-        document.querySelector(
-          '.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay'
-        ) ||
-        (document.activeElement &&
-          (document.activeElement as HTMLElement).closest &&
-          (document.activeElement as HTMLElement).closest(
-            '.shortcut-inline-container, .shortcut-modal'
-          ))
-      ) {
-        return
-      }
-
-      const userShortcuts = useSettingsStore.getState().settings.shortcuts || {}
-      const zenKey = userShortcuts.zenMode || 'Ctrl + .'
-
-      if (matchesShortcut(e, zenKey)) {
-        e.preventDefault()
-        e.stopPropagation()
-        e.stopImmediatePropagation()
-        const now = Date.now()
-        const last = (window as any).__lastZenDispatch || 0
-        if (now - last < 400) return
-        ;(window as any).__lastZenDispatch = now
-
-        useSettingsStore.getState().toggleZenMode()
-      }
-    }
-
-    window.addEventListener('keydown', handleZenCapture, true)
-    return () => window.removeEventListener('keydown', handleZenCapture, true)
-  }, [])
-
-  // Event listener for toggle-terminal CustomEvent (from ActivityBar or other buttons)
-    useEffect(() => {
-    const handleToggleTerminalEvent = () => {
-      handleToggleTerminal()
-    }
-    const handleToggleZenModeEvent = () => {
-      useSettingsStore.getState().toggleZenMode()
-    }
-    const handleOpenCommandPaletteMode = () => {
-      setPaletteInitialQuery('>')
-      setShowPalette(true)
-    }
-
-    window.addEventListener('toggle-terminal', handleToggleTerminalEvent)
-    return () => {
-      window.removeEventListener('toggle-terminal', handleToggleTerminalEvent)
-    }
-  }, [handleToggleTerminal])
-
-  useEffect(() => {
-    if (activeTab === 'graph') {
-      updateRightSidebarOpen(false)
-    }
-  }, [activeTab, updateRightSidebarOpen])
-
-  useKeyboardShortcuts({
-    onGlobalSearch: () => {
-      setActiveTab('search')
-      updateLeftSidebarOpen(true)
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('global-search-focus'))
-      }, 50)
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('global-search-focus'))
-      }, 150)
-    },
-    onFind: () => window.dispatchEvent(new CustomEvent('find-in-editor')),
-    onTogglePalette: () => {
-      setPaletteInitialQuery('')
-      setShowPalette(true)
-    },
-    onToggleZenMode: () => {
-      useSettingsStore.getState().toggleZenMode()
-    },
-    onTogglePaletteCommandMode: () => {
-      setPaletteInitialQuery('> ')
-      setShowPalette(true)
-    },
-    onToggleCommandPalette: () => {
-      setPaletteInitialQuery('>')
-      setShowPalette(true)
-    },
-    onOpenFile: async () => {
-      try {
-        const winApi = (window as any).api
-        if (!winApi?.openFile) return
-        const file = await winApi.openFile()
-        if (file && typeof file.content === 'string') {
-          const newSnippet = {
-            id: Date.now().toString(),
-            title: file.name.replace(/\.[^/.]+$/, ''),
-            code: file.content,
-            language: 'markdown',
-            timestamp: Date.now()
-          }
-          await saveSnippet(newSnippet)
-          setSelectedSnippet(newSnippet)
-          showToast(`Opened ${file.name}`, 'success')
-        }
-      } catch (err) {
-        console.error('Failed to import file:', err)
-        showToast('Failed to open file', 'error')
-      }
-    },
-    onOpenDocs: () => {
-      setShowDocsModal(true)
-    },
-    onOpenShortcuts: () => {
-      setSettingsInitialTab('shortcuts')
-      setShowSettings(true)
-    },
-    onChangeIcon: () => {
-      const active = selectedSnippet || snippets.find((s: any) => s.id === activeTabId)
-      if (active) {
-        setShowActiveIconPicker(true)
-      } else {
-        showToast('Open a note to change its icon', 'info')
-      }
-    },
-    onEscape: () => {
-      if (showActiveIconPicker) {
-        setShowActiveIconPicker(false)
-        return true
-      }
-      if (renameModal.isOpen) {
-        setRenameModal({ isOpen: false, item: null, newName: '' })
-        return true
-      }
-      if (showAIChatModal) {
-        setShowAIChatModal(false)
-        return true
-      }
-      if (showPalette) {
-        setShowPalette(false)
-        return true
-      }
-      if (showSettings) {
-        setShowSettings(false)
-        return true
-      }
-      if (showDeleteConfirm) {
-        setShowDeleteConfirm(false)
-        return true
-      }
-      if (showDocsModal) {
-        setShowDocsModal(false)
-        return true
-      }
-      if (showGuideModal) {
-        setShowGuideModal(false)
-        return true
-      }
-      return false
-    },
-    onToggleSettings: () => setShowSettings(true),
-    onToggleTheme: () => toggleSidebarView('theme'),
-    onToggleGraph: () => useWorkspaceStore.getState().openGraphTab(),
-    onToggleAIChat: () => handleToggleAIChat(),
-    onToggleSidebar: () => toggleSidebarView('files'),
-    onToggleTerminal: handleToggleTerminal,
-    onToggleInspector: handleToggleInspector,
-    onToggleOutline: () => {
-      if (isRightSidebarOpenRef.current && rightSidebarTabRef.current === 'outline') {
-        updateRightSidebarOpen(false)
-      } else {
-        setRightSidebarTab('outline')
-        updateRightSidebarOpen(true)
-      }
-    },
-    onToggleCanvasDrawer: () => {
-      handleOpenOrCreateCanvasTabRef.current?.()
-    },
-    onNew: () => {
-      void handleNew()
-    },
-    onNewFolder: () => {
-      window.dispatchEvent(new CustomEvent('trigger-new-folder'))
-    },
-    onDelete: () => {
-      const ws = useWorkspaceStore.getState() as any
-      if (ws?.selectedFolder) {
-        window.dispatchEvent(new CustomEvent('trigger-delete-folder'))
-        return
-      }
-      const activeItem =
-        selectedSnippet ||
-        (activeTabId && activeTabId !== GRAPH_TAB_ID
-          ? snippets.find((s: any) => s.id === activeTabId)
-          : null)
-      if (activeItem) {
-        setSnippetToDelete(activeItem)
-        setShowDeleteConfirm(true)
-      }
-    },
-    onCloseTab: () => {
-      if (activeTabId) {
-        useWorkspaceStore.getState().closeTab(activeTabId)
-      }
-    },
-    onCloseWindow: () => {
-      const winApi = (window as any).api
-      if (winApi?.closeWindow) {
-        winApi.closeWindow()
-      } else {
-        console.error('[MainLayout] Close window API not available')
-      }
-    },
-    onQuitApp: () => {
-      const winApi = (window as any).api
-      if (winApi?.quitApp) {
-        winApi.quitApp()
-      } else if (winApi?.closeWindow) {
-        winApi.closeWindow()
-      } else {
-        window.close()
-      }
-    },
-    onNextTab: () => {
-      const tabs = useWorkspaceStore.getState().openTabs || []
-      if (tabs.length === 0) return
-      const currentId = useWorkspaceStore.getState().activeTabId
-      const currentIdx = currentId ? tabs.indexOf(currentId) : -1
-      const nextIdx = currentIdx === -1 ? 0 : (currentIdx + 1) % tabs.length
-      useWorkspaceStore.getState().setActiveTabId(tabs[nextIdx])
-    },
-    onPreviousTab: () => {
-      const tabs = useWorkspaceStore.getState().openTabs || []
-      if (tabs.length === 0) return
-      const currentId = useWorkspaceStore.getState().activeTabId
-      const currentIdx = currentId ? tabs.indexOf(currentId) : -1
-      const prevIdx = currentIdx <= 0 ? tabs.length - 1 : currentIdx - 1
-      useWorkspaceStore.getState().setActiveTabId(tabs[prevIdx])
-    },
-    onSelectTabByIndex: (index) => {
-      const tabs = useWorkspaceStore.getState().openTabs || []
-      if (index >= 0 && index < tabs.length) {
-        useWorkspaceStore.getState().setActiveTabId(tabs[index])
-      }
-    }
+  const {
+    handleNew,
+    handleNewCanvas,
+    handleOpenOrCreateCanvasTab,
+    handleOpenOrCreateCanvasTabRef,
+    handleConfirmDelete,
+    handleLoadStarterWorkspace,
+    handleOpenSettings,
+    handleOpenTheme,
+    handleToggleGraph,
+    handleOpenDocs,
+    handleToggleExplorerModal,
+    handleToggleAIChat
+  } = useWorkspaceActions({
+    selectedSnippet,
+    saveSnippet,
+    setSelectedSnippet,
+    setActiveTab,
+    setShowPalette,
+    setShowSettings,
+    setShowDocsModal,
+    setShowExplorerModal,
+    setShowAIChatModal,
+    snippetToDelete,
+    setSnippetToDelete,
+    showToast
   })
 
-  const handleNew = async () => {
-    try {
-      const ws = useWorkspaceStore.getState() as any
-      const targetFolder: string =
-        ws?.selectedFolder || selectedSnippet?.folderId || ''
+  useLayoutEvents({
+    openTabsLength: openTabs.length,
+    activeTab,
+    splitDirection,
+    splitPane,
+    closeSplit,
+    loadWorkspace,
+    setSelectedSnippet,
+    setLeftWidth,
+    setRightWidth,
+    isLeftSidebarOpenRef,
+    isRightSidebarOpenRef,
+    setRightSidebarTab,
+    setSettingsInitialTab,
+    setShowSettings,
+    setShowGuideModal,
+    setShowPalette,
+    setPaletteInitialQuery,
+    updateLeftSidebarOpen,
+    updateRightSidebarOpen,
+    handleToggleLeftSidebar,
+    handleToggleInspector,
+    handleToggleAIChat,
+    handleNewCanvas,
+    handleOpenTheme,
+    handleToggleTerminal,
+    showToast,
+    clearToast
+  })
 
-      const notes: any[] = ws?.notes || []
-      const newSnippet: any = createUntitledSnippet(targetFolder, notes)
-      await saveSnippet(newSnippet)
-
-      // Activate the new note exactly like an explorer click: expand target
-      // folder without marking it selected, then select the note in the tree
-      if (targetFolder) {
-        window.dispatchEvent(
-          new CustomEvent('reveal-folder-in-explorer', {
-            detail: { folderId: targetFolder, select: false }
-          })
-        )
-      }
-      useWorkspaceStore.getState().setSelectedFolder(null)
-      setSelectedSnippet(newSnippet)
-      window.dispatchEvent(
-        new CustomEvent('select-note-in-explorer', {
-          detail: { noteId: newSnippet.id }
-        })
-      )
-      setActiveTab('files')
-      setShowPalette(false)
-      setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('focus-editor-start'))
-      }, 50)
-    } catch (error) {
-      console.error('[MainLayout] Failed to create new note:', error)
-      showToast('Failed to create note. Please try again.', 'error')
-    }
-  }
-
-  const handleNewCanvas = useCallback(async () => {
-    try {
-      const existingNotes: any[] = useWorkspaceStore.getState().notes || []
-      const takenPaths = new Set(
-        existingNotes.map((n: any) => String(n?.relativePath || n?.fileName || n?.id || '').toLowerCase())
-      )
-      let baseTitle = 'Untitled Canvas'
-      let fileName = `${baseTitle}.canvas`
-      let suffix = 2
-      while (takenPaths.has(fileName.toLowerCase())) {
-        baseTitle = `Untitled Canvas ${suffix}`
-        fileName = `${baseTitle}.canvas`
-        suffix += 1
-      }
-
-      const defaultCanvasData = {
-        nodes: [
-          {
-            id: `node-${Date.now()}`,
-            type: 'text',
-            title: 'Idea Board',
-            text: 'Welcome to Lumina Canvas! Double-click to add ideas or connect cards.',
-            x: 120,
-            y: 120,
-            width: 260,
-            height: 160,
-            color: 'default'
-          }
-        ],
-        edges: [],
-        strokes: [],
-        viewport: { x: 0, y: 0, zoom: 1 }
-      }
-      const newSnippet = {
-        // Canonical relativePath ID matches the disk scanner 1:1 so workspace reloads never close the tab
-        id: fileName,
-        title: baseTitle,
-        fileName,
-        relativePath: fileName,
-        code: JSON.stringify(defaultCanvasData, null, 2),
-        language: 'canvas',
-        type: 'canvas',
-        tags: '',
-        folderId: '',
-        timestamp: Date.now(),
-        isPinned: false,
-        isLearned: false
-      }
-      // Optimistically insert into workspace store & open immediately (0ms perceived latency)
-      useWorkspaceStore.setState((state: any) => {
-        const currentNotes = state.notes || []
-        if (currentNotes.some((n: any) => n.id === newSnippet.id)) return state
-        return { notes: [...currentNotes, newSnippet] }
-      })
-      setSelectedSnippet(newSnippet)
-      setActiveTab('files')
-      setShowPalette(false)
-
-      // Persist to disk in the background
-      void saveSnippet(newSnippet).catch((error) => {
-        console.error('[MainLayout] Failed to persist new canvas:', error)
-        showToast('Failed to save canvas. Please try again.', 'error')
-      })
-    } catch (error) {
-      console.error('[MainLayout] Failed to create new canvas:', error)
-      showToast('Failed to create canvas. Please try again.', 'error')
-    }
-  }, [saveSnippet, setSelectedSnippet, setActiveTab, setShowPalette, showToast])
-
-  const handleOpenOrCreateCanvasTab = useCallback(async () => {
-    try {
-      const state = useWorkspaceStore.getState()
-      const allNotes = state.notes || (state as any).snippets || []
-
-      // 1. Is the currently active tab already a canvas?
-      const currentActive = allNotes.find((n: any) => n.id === state.activeTabId)
-      const isCurrentCanvas =
-        currentActive &&
-        (currentActive.type === 'canvas' ||
-          currentActive.language === 'canvas' ||
-          currentActive.fileName?.endsWith('.canvas'))
-      if (isCurrentCanvas) {
-        return
-      }
-
-      // 2. Is there an open canvas in openTabs?
-      const openCanvasId = state.openTabs.find((tabId: string) => {
-        const note = allNotes.find((n: any) => n.id === tabId)
-        return (
-          note &&
-          (note.type === 'canvas' ||
-            note.language === 'canvas' ||
-            note.fileName?.endsWith('.canvas'))
-        )
-      })
-
-      if (openCanvasId) {
-        const targetNote = allNotes.find((n: any) => n.id === openCanvasId)
-        if (targetNote) {
-          state.setSelectedNote(targetNote)
-          setActiveTab('files')
-          return
-        }
-      }
-
-      // 3. No canvas tab is currently open — create a fresh new canvas
-      await handleNewCanvas()
-    } catch (err) {
-      console.error('[MainLayout] Failed to open or create canvas tab:', err)
-    }
-  }, [handleNewCanvas])
-
-  useEffect(() => {
-    handleOpenOrCreateCanvasTabRef.current = handleOpenOrCreateCanvasTab
-  }, [handleOpenOrCreateCanvasTab])
-
-  const handleConfirmDelete = async () => {
-    if (snippetToDelete) {
-      try {
-        await useWorkspaceStore.getState().deleteNote(snippetToDelete.id, true)
-        setSnippetToDelete(null)
-      } catch (error) {
-        console.error('[MainLayout] Failed to delete snippet:', error)
-        showToast('Failed to delete note. Please try again.', 'error')
-      }
-    }
-  }
-
-  const handleLoadStarterWorkspace = useCallback(async () => {
-    try {
-      const created = await populateStarterWorkspace((snippet: any) => saveSnippet(snippet))
-      if (created && created.length > 0) {
-        const welcomeSnippet = created.find((s: any) => s.id === 'starter-welcome') || created[0]
-        setSelectedSnippet(welcomeSnippet)
-        setActiveTab('files')
-      }
-    } catch (error) {
-      console.error('[MainLayout] Failed to populate starter workspace:', error)
-      showToast('Failed to load starter notes', 'error')
-    }
-  }, [saveSnippet, setSelectedSnippet, setActiveTab, showToast])
-
-  const handleOpenSettings = useCallback(() => setShowSettings(true), [])
-  const handleOpenTheme = useCallback(() => openSidebarView('theme'), [])
-  const handleToggleGraph = useCallback(() => {
-    useWorkspaceStore.getState().openGraphTab()
-  }, [])
-  const handleOpenDocs = useCallback(() => setShowDocsModal(true), [])
-  const handleToggleExplorerModal = useCallback(() => setShowExplorerModal((prev) => !prev), [])
-  const handleToggleAIChat = useCallback(() => {
-    const currentMode = (useSettingsStore.getState().settings as any)?.aiChatDisplayMode || 'sidebar'
-    if (currentMode === 'modal') {
-      setShowAIChatModal((prev) => !prev)
-    } else {
-      useWorkspaceStore.getState().openLuminaTab()
-    }
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('focus-ai-composer'))
-    }, 50)
-  }, [])
-
-  useEffect(() => {
-    const handleAskAnything = (e: any) => {
-      const query = e.detail?.query || ''
-      setPaletteInitialQuery(query)
-      setShowPalette(true)
-    }
-    const handleAIChatEvent = () => {
-      handleToggleAIChat()
-    }
-    const handleToggleLeftSidebarEvent = (e?: Event) => {
-      const detailOpen = (e as CustomEvent<{ open?: boolean }>)?.detail?.open
-      if (typeof detailOpen === 'boolean') {
-        updateLeftSidebarOpen(detailOpen)
-        return
-      }
-      handleToggleLeftSidebar()
-    }
-    const handleNewCanvasEvent = () => {
-      handleNewCanvas()
-    }
-    const handleOpenThemeEvent = () => {
-      handleOpenTheme()
-    }
-    const handleOpenGraphEvent = () => {
-      useWorkspaceStore.getState().openGraphTab()
-    }
-    const handleToggleTerminalEvent = () => {
-      handleToggleTerminal()
-    }
-    window.addEventListener('open-ask-anything', handleAskAnything as EventListener)
-    window.addEventListener('open-ai-chat', handleAIChatEvent)
-    window.addEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
-    window.addEventListener('trigger-new-canvas', handleNewCanvasEvent)
-    window.addEventListener('open-theme-modal', handleOpenThemeEvent)
-    window.addEventListener('open-graph-modal', handleOpenGraphEvent)
-    window.addEventListener('open-graph-tab', handleOpenGraphEvent)
-    window.addEventListener('toggle-terminal', handleToggleTerminalEvent)
-
-    return () => {
-      window.removeEventListener('open-ask-anything', handleAskAnything as EventListener)
-      window.removeEventListener('open-ai-chat', handleAIChatEvent)
-      window.removeEventListener('toggle-left-sidebar', handleToggleLeftSidebarEvent)
-      window.removeEventListener('trigger-new-canvas', handleNewCanvasEvent)
-      window.removeEventListener('open-theme-modal', handleOpenThemeEvent)
-      window.removeEventListener('open-graph-modal', handleOpenGraphEvent)
-      window.removeEventListener('open-graph-tab', handleOpenGraphEvent)
-      window.removeEventListener('toggle-terminal', handleToggleTerminalEvent)
-    }
-  }, [handleToggleAIChat, handleToggleLeftSidebar, handleNewCanvas, handleOpenTheme, handleToggleTerminal])
-
-  // Auto-open "What's New" (release-notes) tab when a new update is detected or after upgrading
-  useEffect(() => {
-    const checkStartupReleaseNotes = async () => {
-      try {
-        const settings = (useSettingsStore.getState().settings as any) || {}
-        if (settings.autoOpenReleaseNotes === false) return
-        const api = (window as any).api
-        const currentVer = String((await api?.getVersion?.()) || '').replace(/^v/i, '').trim()
-        const lastSeen = String(settings.lastSeenVersion || '').replace(/^v/i, '').trim()
-        if (currentVer && lastSeen && currentVer !== lastSeen) {
-          await useSettingsStore.getState().updateSetting('lastSeenVersion', currentVer)
-          useWorkspaceStore.getState().openReleaseNotesTab()
-        } else if (currentVer && !lastSeen) {
-          await useSettingsStore.getState().updateSetting('lastSeenVersion', currentVer)
-        }
-      } catch {}
-    }
-
-    const handleUpdateDetected = (e: Event) => {
-      const remoteVer = String((e as CustomEvent)?.detail?.version || '').replace(/^v/i, '').trim()
-      if (!remoteVer) return
-      const settings = (useSettingsStore.getState().settings as any) || {}
-      if (settings.autoOpenReleaseNotes === false) return
-      const lastNotified = String(settings.lastNotifiedUpdateVersion || '').replace(/^v/i, '').trim()
-      if (remoteVer !== lastNotified) {
-        void useSettingsStore.getState().updateSetting('lastNotifiedUpdateVersion', remoteVer)
-        useWorkspaceStore.getState().openReleaseNotesTab()
-      }
-    }
-
-    const handleOpenReleaseNotesEvent = () => {
-      useWorkspaceStore.getState().openReleaseNotesTab()
-    }
-
-    void checkStartupReleaseNotes()
-    window.addEventListener('lumina-update-detected', handleUpdateDetected)
-    window.addEventListener('open-release-notes', handleOpenReleaseNotesEvent)
-    return () => {
-      window.removeEventListener('lumina-update-detected', handleUpdateDetected)
-      window.removeEventListener('open-release-notes', handleOpenReleaseNotesEvent)
-    }
-  }, [])
-
-  // Idle-deferred Editor preload only when no tabs are open yet; never eagerly preload Terminal when closed
-  useEffect(() => {
-    if (openTabs.length > 0) return
-    const preload = () => {
-      void import('../Editor/Editor')
-    }
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      const id = (window as any).requestIdleCallback(preload, { timeout: 2500 })
-      return () => (window as any).cancelIdleCallback(id)
-    }
-    const timer = setTimeout(preload, 1200)
-    return () => clearTimeout(timer)
-  }, [openTabs.length])
-
-  useEffect(() => {
-    const onSplitEditor = (e: Event) => {
-      const direction = (e as CustomEvent<{ direction?: 'vertical' | 'horizontal' }>)?.detail
-        ?.direction
-      if (!direction) return
-      if (splitDirection === direction) {
-        closeSplit()
-      } else {
-        splitPane(direction)
-      }
-    }
-    window.addEventListener('split-editor', onSplitEditor as EventListener)
-    return () => window.removeEventListener('split-editor', onSplitEditor as EventListener)
-  }, [splitDirection, splitPane, closeSplit])
+  useLayoutShortcuts({
+    snippets,
+    selectedSnippet,
+    activeTabId,
+    saveSnippet,
+    setSelectedSnippet,
+    setActiveTab,
+    setPaletteInitialQuery,
+    setShowPalette,
+    setSettingsInitialTab,
+    setShowSettings,
+    setShowDocsModal,
+    setShowGuideModal,
+    setShowAIChatModal,
+    setShowActiveIconPicker,
+    setRenameModal,
+    setSnippetToDelete,
+    setShowDeleteConfirm,
+    showActiveIconPicker,
+    renameModal,
+    showAIChatModal,
+    showPalette,
+    showSettings,
+    showDeleteConfirm,
+    showDocsModal,
+    showGuideModal,
+    updateLeftSidebarOpen,
+    updateRightSidebarOpen,
+    isRightSidebarOpenRef,
+    rightSidebarTabRef,
+    setRightSidebarTab,
+    handleOpenOrCreateCanvasTabRef,
+    handleToggleAIChat,
+    handleToggleTerminal,
+    handleToggleInspector,
+    handleNew,
+    showToast
+  })
 
   // Stable snippet map — only re-computes when notes change (saves, renames), NOT on tab switch
   const snippetMap = useMemo(() => {
@@ -1355,12 +340,14 @@ export const MainLayout: React.FC = () => {
     <div
       ref={appShellRef}
       className={`app-shell ${isLeftSidebarOpen ? 'left-open' : 'left-closed'} ${isRightSidebarOpen ? 'right-open' : 'right-closed'}`}
-        style={{
+      style={
+        {
           '--left-sidebar-width': `${leftWidth}px`,
           '--left-sidebar-content-width': `${Math.max(130, leftWidth)}px`,
           '--right-sidebar-width': `${rightWidth}px`,
           '--right-sidebar-content-width': `${Math.max(130, rightWidth)}px`
-        } as React.CSSProperties}
+        } as React.CSSProperties
+      }
     >
       <div className="shell-body">
         <ActivityBar
@@ -1374,172 +361,140 @@ export const MainLayout: React.FC = () => {
         />
 
         <div className="shell-workbench-column">
-        <div
-          className="shell-workbench-row"
-          style={isTerminalVisible && isTerminalMaximized ? { display: 'none' } : undefined}
-        >
-        <aside className="shell-sidebar-left">
-          <GlobalErrorHandler>
-            <Sidebar />
-          </GlobalErrorHandler>
-        </aside>
-        <div
-          className={`sidebar-resizer left ${isLeftSidebarOpen ? 'open' : 'closed'}`}
-          title="Double-click to reset default width (220px)"
-          onPointerDown={(e) => handleStartResize('left', e)}
-          onDoubleClick={(e) => {
-            if (!isLeftSidebarOpen) return
-            e.preventDefault()
-            e.stopPropagation()
-           handleResetSidebar('left')
-          }}
+          <div
+            className="shell-workbench-row"
+            style={isTerminalVisible && isTerminalMaximized ? { display: 'none' } : undefined}
           >
-          <div className="resizer-knob">
-            <span className="knob-dot" />
-            <span className="knob-dot" />
-            <span className="knob-dot" />
-          </div>
-        </div>
-        <main className="shell-main">
-          <div className="shell-center-workspace" {...workspaceDropProps}>
-            <div
-              className="workspace-editor-dock-area"
-              style={{
-                flex: isTerminalMaximized && isTerminalVisible ? 0 : 1,
-                display: isTerminalMaximized && isTerminalVisible ? 'none' : 'flex',
-                flexDirection: 'column',
-                minHeight: 0,
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-            >
-              {isLoading ? (
-                <div
-                  className="workspace-container"
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    flex: 1,
-                    overflow: 'hidden',
-                    position: 'relative'
-                  }}
-                />
-              ) : hasValidOpenTabs ? (
-                <div className="workspace-container">
-                  <SplitNodeRenderer
-                    node={splitTree}
-                    onResizeSplit={handleResizeSplit}
-                    paneProps={sharedPaneProps}
-                  />
-                </div>
-              ) : (
-                <GlobalErrorHandler>
-                  <Welcome
-                    onNew={handleNew}
-                    onOpenGuide={() => setShowGuideModal(true)}
-                    onOpenDocs={handleOpenDocs}
-                    onLoadStarterWorkspace={handleLoadStarterWorkspace}
-                    onToggleAIChat={handleToggleAIChat}
-                  />
-                </GlobalErrorHandler>
-              )}
-            </div>
-
-            {workspaceDrop.isOver && !hasValidOpenTabs && (
-              <ExternalDropOverlay
-                label={workspaceDrop.label}
-                count={workspaceDrop.count}
-                icon={workspaceDrop.isExternal ? FolderDown : FileText}
-              />
-            )}
-          </div>
-        </main>
-
-        <div
-          className={`sidebar-resizer right ${isRightSidebarOpen ? 'open' : 'closed'}`}
-          title="Double-click to reset default width (220px)"
-          onPointerDown={(e) => handleStartResize('right', e)}
-          onDoubleClick={(e) => {
-            if (!isRightSidebarOpen) return
-            e.preventDefault()
-            e.stopPropagation()
-            handleResetSidebar('right')
-          }}
-        >
-          <div className="resizer-knob">
-            <span className="knob-dot" />
-            <span className="knob-dot" />
-            <span className="knob-dot" />
-          </div>
-        </div>
-        <aside className="shell-sidebar-right">
-          <GlobalErrorHandler>
-            <RightSidebar
-              rightSidebarTab={rightSidebarTab}
-              setRightSidebarTab={setRightSidebarTab}
-              setSettingsInitialTab={setSettingsInitialTab}
-              setShowSettings={setShowSettings}
-              setSavedRightSidebarState={setSavedRightSidebarState}
-              isRightSidebarOpen={isRightSidebarOpen}
-              rightWidth={rightWidth}
-              setIsRightSidebarOpen={handleCloseRightSidebar}
-              setShowAIChatModal={setShowAIChatModal}
-              selectedNote={selectedSnippet}
-              isLoading={isLoading}
-            />
-          </GlobalErrorHandler>
-        </aside>
-        </div>
-
-        {hasMountedTerminal && (
-          <>
-            {isTerminalVisible && !isTerminalMaximized && (
-              <div
-                className="terminal-resizer top"
-                title="Drag to resize terminal (double-click to reset 260px)"
-                onPointerDown={handleStartTerminalResize}
-                onDoubleClick={() => setTerminalHeight(260)}
-              >
-                <div className="resizer-knob-horizontal">
-                  <span className="knob-dot" />
-                  <span className="knob-dot" />
-                  <span className="knob-dot" />
-                </div>
-              </div>
-            )}
-            <div
-              className="shell-terminal-dock"
-              style={{
-                height: isTerminalMaximized ? 'auto' : `${terminalHeight}px`,
-                flex: isTerminalMaximized ? 1 : 'none',
-                minHeight: isTerminalMaximized ? 0 : 120,
-                width: '100%',
-                display: isTerminalVisible ? 'flex' : 'none',
-                flexDirection: 'column',
-                position: 'relative',
-                flexShrink: isTerminalMaximized ? 1 : 0,
-                zIndex: 20
-              }}
-            >
+            <aside className="shell-sidebar-left">
               <GlobalErrorHandler>
-                <React.Suspense fallback={null}>
-                  <TerminalPanel
-                    onClose={() => setIsTerminalOpen(false)}
-                    isMaximized={isTerminalMaximized}
-                    onToggleMaximize={handleToggleTerminalMaximize}
-                  />
-                </React.Suspense>
+                <Sidebar />
               </GlobalErrorHandler>
+            </aside>
+            <div
+              className={`sidebar-resizer left ${isLeftSidebarOpen ? 'open' : 'closed'}`}
+              title="Double-click to reset default width (220px)"
+              onPointerDown={(e) => handleStartResize('left', e)}
+              onDoubleClick={(e) => {
+                if (!isLeftSidebarOpen) return
+                e.preventDefault()
+                e.stopPropagation()
+                handleResetSidebar('left')
+              }}
+            >
+              <div className="resizer-knob">
+                <span className="knob-dot" />
+                <span className="knob-dot" />
+                <span className="knob-dot" />
+              </div>
             </div>
-          </>
-        )}
+            <main className="shell-main">
+              <div className="shell-center-workspace" {...workspaceDropProps}>
+                <div
+                  className="workspace-editor-dock-area"
+                  style={{
+                    flex: isTerminalMaximized && isTerminalVisible ? 0 : 1,
+                    display: isTerminalMaximized && isTerminalVisible ? 'none' : 'flex',
+                    flexDirection: 'column',
+                    minHeight: 0,
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                >
+                  {isLoading ? (
+                    <div
+                      className="workspace-container"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        flex: 1,
+                        overflow: 'hidden',
+                        position: 'relative'
+                      }}
+                    />
+                  ) : hasValidOpenTabs ? (
+                    <div className="workspace-container">
+                      <SplitNodeRenderer
+                        node={splitTree}
+                        onResizeSplit={handleResizeSplit}
+                        paneProps={sharedPaneProps}
+                      />
+                    </div>
+                  ) : (
+                    <GlobalErrorHandler>
+                      <Welcome
+                        onNew={handleNew}
+                        onOpenGuide={() => setShowGuideModal(true)}
+                        onOpenDocs={handleOpenDocs}
+                        onLoadStarterWorkspace={handleLoadStarterWorkspace}
+                        onToggleAIChat={handleToggleAIChat}
+                      />
+                    </GlobalErrorHandler>
+                  )}
+                </div>
 
-        <StatusBar
-          onToggleInspector={handleToggleInspector}
-          onSettingsClick={handleOpenSettings}
-          onThemeClick={handleOpenTheme}
-          isZenHidden={!isStatusBarVisible || (isZenModeEnabled && hideStatusBarInZen)}
-        />
+                {workspaceDrop.isOver && !hasValidOpenTabs && (
+                  <ExternalDropOverlay
+                    label={workspaceDrop.label}
+                    count={workspaceDrop.count}
+                    icon={workspaceDrop.isExternal ? FolderDown : FileText}
+                  />
+                )}
+              </div>
+            </main>
+
+            <div
+              className={`sidebar-resizer right ${isRightSidebarOpen ? 'open' : 'closed'}`}
+              title="Double-click to reset default width (220px)"
+              onPointerDown={(e) => handleStartResize('right', e)}
+              onDoubleClick={(e) => {
+                if (!isRightSidebarOpen) return
+                e.preventDefault()
+                e.stopPropagation()
+                handleResetSidebar('right')
+              }}
+            >
+              <div className="resizer-knob">
+                <span className="knob-dot" />
+                <span className="knob-dot" />
+                <span className="knob-dot" />
+              </div>
+            </div>
+            <aside className="shell-sidebar-right">
+              <GlobalErrorHandler>
+                <RightSidebar
+                  rightSidebarTab={rightSidebarTab}
+                  setRightSidebarTab={setRightSidebarTab}
+                  setSettingsInitialTab={setSettingsInitialTab}
+                  setShowSettings={setShowSettings}
+                  setSavedRightSidebarState={setSavedRightSidebarState}
+                  isRightSidebarOpen={isRightSidebarOpen}
+                  rightWidth={rightWidth}
+                  setIsRightSidebarOpen={handleCloseRightSidebar}
+                  setShowAIChatModal={setShowAIChatModal}
+                  selectedNote={selectedSnippet}
+                  isLoading={isLoading}
+                />
+              </GlobalErrorHandler>
+            </aside>
+          </div>
+
+          <TerminalDockSection
+            hasMountedTerminal={hasMountedTerminal}
+            isTerminalVisible={isTerminalVisible}
+            isTerminalMaximized={isTerminalMaximized}
+            terminalHeight={terminalHeight}
+            onStartResize={handleStartTerminalResize}
+            onResetHeight={() => setTerminalHeight(260)}
+            onClose={() => setIsTerminalOpen(false)}
+            onToggleMaximize={handleToggleTerminalMaximize}
+          />
+
+          <StatusBar
+            onToggleInspector={handleToggleInspector}
+            onSettingsClick={handleOpenSettings}
+            onThemeClick={handleOpenTheme}
+            isZenHidden={!isStatusBarVisible || (isZenModeEnabled && hideStatusBarInZen)}
+          />
         </div>
 
         <RightActivityBar
@@ -1549,16 +504,10 @@ export const MainLayout: React.FC = () => {
           onToggleGraph={handleToggleGraph}
           isGraphActive={activeTabId === GRAPH_TAB_ID}
           onToggleCanvas={handleOpenOrCreateCanvasTab}
-          isCanvasActive={
-            activeTabId !== GRAPH_TAB_ID &&
-            Boolean(
-              selectedSnippet &&
-                (selectedSnippet.type === 'canvas' ||
-                  selectedSnippet.language === 'canvas' ||
-                  selectedSnippet.fileName?.endsWith('.canvas'))
-            )
+          isCanvasActive={activeTabId !== GRAPH_TAB_ID && isCanvasNote(selectedSnippet)}
+          isZenHidden={
+            !isRightActivityBarVisible || (isZenModeEnabled && hideRightActivityBarInZen)
           }
-          isZenHidden={!isRightActivityBarVisible || (isZenModeEnabled && hideRightActivityBarInZen)}
         />
       </div>
 
@@ -1567,8 +516,6 @@ export const MainLayout: React.FC = () => {
         setShowSettings={setShowSettings}
         settingsInitialTab={settingsInitialTab}
         setSettingsInitialTab={setSettingsInitialTab}
-
-
         showAIChatModal={showAIChatModal}
         setShowAIChatModal={setShowAIChatModal}
         setSavedRightSidebarState={setSavedRightSidebarState}

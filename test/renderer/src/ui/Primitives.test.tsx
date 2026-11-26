@@ -10,7 +10,7 @@ vi.mock('../../../../src/renderer/src/components/update/UpdateButton', () => ({
 vi.mock('../../../../src/renderer/src/features/theme/AccentColor', () => ({
   default: () => null
 }))
-vi.mock('../../../../src/renderer/src/features/calender', () => ({
+vi.mock('../../../../src/renderer/src/features/calendar', () => ({
   CalendarToggle: () => <div data-testid="mock-calendar-toggle" />
 }))
 

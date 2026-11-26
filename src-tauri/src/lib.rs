@@ -162,7 +162,11 @@ pub fn run() {
             pdf_list_documents,
             pdf_get_stats,
             pdf_remove_document,
-            pdf_prune_missing
+            pdf_prune_missing,
+            metadata_get,
+            metadata_upsert,
+            metadata_delete,
+            metadata_clear_note
         ])
         .run(tauri::generate_context!())
         .expect("error while building tauri application");

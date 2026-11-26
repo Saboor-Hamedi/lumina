@@ -1,0 +1,93 @@
+/* Note Metadata — Learning Progress & Learned Toggle */
+
+.meta-learned-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-weight: 400;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: color 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.meta-learned-btn.is-learned {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.meta-learned-btn:hover {
+  color: var(--text-main);
+  background: var(--bg-hover, rgba(255, 255, 255, 0.05));
+  border-color: var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.meta-learned-icon {
+  flex-shrink: 0;
+  opacity: 0.4;
+}
+
+.meta-learned-btn.is-learned .meta-learned-icon {
+  opacity: 1;
+  color: var(--accent-color, var(--text-accent));
+}
+
+.learning-track-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 6px;
+  height: 22px;
+  width: 64px;
+  min-width: 64px;
+  max-width: 64px;
+  border-radius: 4px;
+  user-select: none;
+  cursor: default;
+  background: transparent;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.learning-track-bar {
+  width: 26px;
+  min-width: 26px;
+  max-width: 26px;
+  height: 4px;
+  background: color-mix(in srgb, var(--text-main) 12%, transparent);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.learning-track-fill {
+  max-width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    var(--accent-color, var(--text-accent, #8b5cf6)),
+    color-mix(in srgb, var(--accent-color, var(--text-accent, #8b5cf6)) 75%, #ffffff)
+  );
+  border-radius: 2px;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.learning-track-percent {
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--text-muted);
+  line-height: 1;
+  width: 25px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.learning-track-percent.has-progress {
+  color: var(--accent-color, var(--text-accent));
+}

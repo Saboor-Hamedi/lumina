@@ -283,7 +283,8 @@ pub(super) fn scanned_note_to_json(n: ScannedNote) -> Value {
         "size": n.size,
         "isOversized": n.is_oversized,
         "ext": n.ext,
-        "wikilinks": n.wikilinks
+        "wikilinks": n.wikilinks,
+        "properties": n.properties
     })
 }
 

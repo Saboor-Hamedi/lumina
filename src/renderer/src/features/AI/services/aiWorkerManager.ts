@@ -19,7 +19,7 @@ export interface InitAIWorkerCallbacks {
 
 export const initAIWorker = ({ onProgress, onReady, onError }: InitAIWorkerCallbacks = {}): Worker => {
   if (!worker) {
-    worker = new Worker(new URL('../../../core/ai/ai.worker.js', import.meta.url), {
+    worker = new Worker(new URL('../../../core/ai/ai.worker.ts', import.meta.url), {
       type: 'module'
     })
 

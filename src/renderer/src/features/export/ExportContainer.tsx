@@ -28,6 +28,8 @@ import { makePreviewKey } from './previewKey'
 
 /** CSS custom properties read from the app to theme the preview iframe. */
 const PREVIEW_THEME_KEYS = [
+  'bg-shell',
+  'bg-surface',
   'bg-app',
   'bg-panel',
   'bg-sidebar',
@@ -38,6 +40,8 @@ const PREVIEW_THEME_KEYS = [
   'text-muted',
   'text-faint',
   'text-accent',
+  'accent-color',
+  'border-color',
   'border-dim',
   'border-card',
   'border-subtle'
@@ -124,7 +128,18 @@ export const ExportContainer: React.FC<ExportContainerProps> = ({
       setThemeTick((t) => t + 1)
     }
     window.addEventListener('theme-changed', onThemeChange)
-    return () => window.removeEventListener('theme-changed', onThemeChange)
+    let observer: MutationObserver | null = null
+    if (typeof MutationObserver !== 'undefined' && typeof document !== 'undefined') {
+      observer = new MutationObserver(onThemeChange)
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme', 'style', 'class']
+      })
+    }
+    return () => {
+      window.removeEventListener('theme-changed', onThemeChange)
+      observer?.disconnect()
+    }
   }, [])
 
   const activeFormat = useMemo(() => getFormat(format), [format])

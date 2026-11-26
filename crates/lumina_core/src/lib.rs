@@ -1,6 +1,7 @@
 #![deny(clippy::all)]
 
 pub mod graph;
+pub mod metadata_store;
 pub mod pdf;
 pub mod scanner;
 pub mod search;
@@ -11,6 +12,7 @@ pub mod web_search;
 pub mod zip_util;
 
 pub use graph::{build_graph_data_impl, GraphData, GraphLink, GraphNode, NoteInput};
+pub use metadata_store::{workspace_metadata_db_path, NoteMetadataEntry, NoteMetadataStore};
 pub use scanner::{scan_vault_impl, ScanResult, ScannedNote};
 pub use search::{search_notes_impl, SearchHit, SearchIndexItem};
 pub use security::{

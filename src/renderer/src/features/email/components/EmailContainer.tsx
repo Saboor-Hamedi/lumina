@@ -761,7 +761,7 @@ export const EmailContainer: React.FC<EmailContainerProps> = ({ isOpen, onClose,
 
       {/* Footer Bar (Relocated controls: Notifications, Refresh, Account, Close) */}
       <EmailFooter
-        userEmail={googleUser?.email || googleUser?.name}
+        userEmail={googleUser?.email || googleUser?.name || undefined}
         notificationsEnabled={notificationsEnabled}
         onToggleNotifications={toggleNotifications}
         isLoadingList={isLoadingList}

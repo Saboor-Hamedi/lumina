@@ -180,8 +180,14 @@ pub async fn save_snippet(snippet: Value) -> Result<Value, String> {
         let clean_title = safe_stem.trim_end_matches(ext).to_string();
         let code = obj.get("code").and_then(|v| v.as_str()).unwrap_or("");
 
+        let mut saved_created_at: Option<String> = None;
+
         if is_canvas {
             fs::write(&full_path, code).map_err(|e| e.to_string())?;
+            saved_created_at = fs::metadata(&full_path)
+                .ok()
+                .and_then(|m| m.created().ok())
+                .and_then(lumina_core::scanner::system_time_to_iso8601);
         } else {
             let language = obj
                 .get("language")
@@ -200,9 +206,99 @@ pub async fn save_snippet(snippet: Value) -> Result<Value, String> {
                 .and_then(|v| v.as_f64())
                 .unwrap_or(0.0);
 
+            let existing_disk_created_at = if full_path.exists() {
+                fs::read_to_string(&full_path)
+                    .ok()
+                    .and_then(|raw| lumina_core::scanner::extract_and_strip_frontmatter(&raw).0.created_at)
+                    .or_else(|| {
+                        fs::metadata(&full_path)
+                            .ok()
+                            .and_then(|m| m.created().ok())
+                            .and_then(lumina_core::scanner::system_time_to_iso8601)
+                    })
+            } else {
+                None
+            };
+            let incoming_created_at = obj
+                .get("createdAt")
+                .and_then(|v| {
+                    if let Some(s) = v.as_str() {
+                        let trimmed = s.trim();
+                        if !trimmed.is_empty() { Some(trimmed.to_string()) } else { None }
+                    } else if let Some(n) = v.as_u64() {
+                        Some(lumina_core::scanner::epoch_ms_to_iso8601(n))
+                    } else {
+                        None
+                    }
+                });
+            let resolved_created_at = existing_disk_created_at
+                .or(incoming_created_at)
+                .or_else(|| lumina_core::scanner::system_time_to_iso8601(std::time::SystemTime::now()))
+                .unwrap_or_default();
+
+            let mut extra_yaml_lines = String::new();
+            let mut merged_props: std::collections::BTreeMap<String, String> =
+                std::collections::BTreeMap::new();
+            if let Some(props_obj) = obj.get("properties").and_then(|v| v.as_object()) {
+                for (k, val) in props_obj {
+                    let clean_key = k.trim();
+                    if clean_key.is_empty()
+                        || !clean_key
+                            .chars()
+                            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == '.')
+                    {
+                        continue;
+                    }
+                    let lower = clean_key.to_lowercase();
+                    if matches!(
+                        lower.as_str(),
+                        "id" | "title"
+                            | "language"
+                            | "tags"
+                            | "selection"
+                            | "ispinned"
+                            | "pinned"
+                            | "islearned"
+                            | "learned"
+                            | "customicon"
+                            | "icon"
+                            | "createdat"
+                            | "created_at"
+                            | "timestamp"
+                            | "color"
+                            | "type"
+                            | "folderid"
+                            | "folder_id"
+                    ) {
+                        continue;
+                    }
+                    let str_val = match val {
+                        Value::String(s) => s.clone(),
+                        Value::Bool(b) => b.to_string(),
+                        Value::Number(n) => n.to_string(),
+                        Value::Null => continue,
+                        other => other.to_string(),
+                    };
+                    merged_props.insert(clean_key.to_string(), str_val);
+                }
+            } else if full_path.exists() {
+                if let Ok(raw_disk) = fs::read_to_string(&full_path) {
+                    let (disk_fm, _) = lumina_core::scanner::extract_and_strip_frontmatter(&raw_disk);
+                    merged_props = disk_fm.properties;
+                }
+            }
+            for (k, v) in &merged_props {
+                let escaped = v
+                    .replace('\\', "\\\\")
+                    .replace('"', "\\\"")
+                    .replace('\n', " ")
+                    .replace('\r', "");
+                extra_yaml_lines.push_str(&format!("\n{}: \"{}\"", k, escaped));
+            }
+
             let (_, stripped_body) = lumina_core::scanner::extract_and_strip_frontmatter(code);
             let file_content = format!(
-                "---\nid: \"{}\"\ntitle: \"{}\"\nlanguage: \"{}\"\ntags: \"{}\"\nisPinned: {}\nisLearned: {}\ncustomIcon: {}\ncolor: {}\ntimestamp: {}\n---\n\n{}",
+                "---\nid: \"{}\"\ntitle: \"{}\"\nlanguage: \"{}\"\ntags: \"{}\"\nisPinned: {}\nisLearned: {}\ncustomIcon: {}\ncolor: {}\ncreatedAt: \"{}\"\ntimestamp: {}{}\n---\n\n{}",
                 note_id.replace('"', "\\\""),
                 clean_title.replace('"', "\\\""),
                 language,
@@ -219,10 +315,15 @@ pub async fn save_snippet(snippet: Value) -> Result<Value, String> {
                 } else {
                     format!("\"{}\"", color)
                 },
+                resolved_created_at.replace('"', "\\\""),
                 timestamp as u64,
+                extra_yaml_lines,
                 stripped_body.trim_start_matches('\n')
             );
             fs::write(&full_path, file_content).map_err(|e| e.to_string())?;
+            if !resolved_created_at.is_empty() {
+                saved_created_at = Some(resolved_created_at);
+            }
         }
 
         let mut returned = snippet.clone();
@@ -232,6 +333,9 @@ pub async fn save_snippet(snippet: Value) -> Result<Value, String> {
             ret_obj.insert("folderId".to_string(), Value::String(folder_id));
             ret_obj.insert("relativePath".to_string(), Value::String(rel_path));
             ret_obj.insert("title".to_string(), Value::String(clean_title));
+            if let Some(created_at) = saved_created_at {
+                ret_obj.insert("createdAt".to_string(), Value::String(created_at));
+            }
         }
         mark_internal_workspace_write();
         Ok(returned)

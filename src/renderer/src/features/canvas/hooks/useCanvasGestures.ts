@@ -360,12 +360,12 @@ export function useCanvasGestures({
         }
         const newNode = addNode({
           type: 'text',
-          title: 'Text',
+          title: 'Label',
           text: '',
           x: Math.round(x),
           y: Math.round(y),
-          width: 200,
-          height: 44,
+          width: 180,
+          height: 36,
           color: 'default'
         })
         setEditingNodeId(newNode.id)

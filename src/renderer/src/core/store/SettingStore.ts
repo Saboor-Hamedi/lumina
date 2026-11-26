@@ -90,7 +90,7 @@ export interface Settings {
   noteAppearance?: Record<
     string,
     {
-      cover?: { type: 'gradient' | 'solid' | 'image'; value: string; positionY?: number } | null
+      cover?: { type: 'gradient' | 'image'; value: string; positionY?: number } | null
       emoji?: string | null
     }
   >

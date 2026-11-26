@@ -255,25 +255,25 @@
   padding: 0;
 }
 
-/* Sleek Frameless Text Box & Canvas Title (Figma / Excalidraw-style pure typography) */
+/* Canvas Label & Title (clean 1px bordered label, always visible whether focused or not) */
 .lumina-canvas-node.is-frameless-text {
   background: transparent !important;
-  border: 1px solid transparent !important;
-  border-top: 1px solid transparent !important;
+  border: 1px solid color-mix(in srgb, var(--node-accent, var(--text-muted, #94a3b8)) 32%, transparent) !important;
   box-shadow: none !important;
-  border-radius: 4px;
-  min-height: 32px;
+  border-radius: 6px;
+  min-height: 0;
+  overflow: visible;
   transition: border-color 0.12s ease;
 }
 
 .lumina-canvas-node.is-frameless-text:hover {
-  border-color: color-mix(in srgb, var(--text-accent, #38bdf8) 28%, transparent) !important;
+  border-color: color-mix(in srgb, var(--node-accent, var(--text-accent, #38bdf8)) 58%, transparent) !important;
   background: transparent !important;
 }
 
 .lumina-canvas-node.is-frameless-text.selected,
 .lumina-canvas-node.is-frameless-text.is-editing {
-  border: 1px solid color-mix(in srgb, var(--text-accent, #38bdf8) 55%, transparent) !important;
+  border: 1px solid var(--node-accent, var(--text-accent, #38bdf8)) !important;
   background: transparent !important;
   box-shadow: none !important;
 }
@@ -301,18 +301,53 @@
   display: none !important;
 }
 
-.lumina-canvas-frameless-text-body {
+.lumina-canvas-node.is-frameless-text .lumina-canvas-frameless-text-body {
   width: 100%;
-  height: 100%;
-  padding: 4px 6px;
+  flex: 1;
+  min-height: 100%;
+  height: auto;
+  padding: 2px 4px;
   box-sizing: border-box;
   font-size: 15px;
   font-weight: 500;
-  line-height: 1.45;
+  line-height: 1.4;
   color: var(--text-main, #f1f5f9);
   overflow: visible;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  transition: font-size 0.12s ease;
+}
+
+.lumina-canvas-label-text {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lumina-canvas-frameless-text-body .lumina-canvas-markdown {
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  width: 100%;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lumina-canvas-frameless-text-body .lumina-canvas-markdown h1 {
+  font-size: 1.35em;
+}
+.lumina-canvas-frameless-text-body .lumina-canvas-markdown h2 {
+  font-size: 1.2em;
+}
+.lumina-canvas-frameless-text-body .lumina-canvas-markdown h3 {
+  font-size: 1.1em;
 }
 
 .lumina-canvas-frameless-text-body p {
@@ -324,23 +359,28 @@
   color: var(--node-accent, var(--text-main, #f1f5f9));
 }
 
-.lumina-canvas-frameless-textarea {
+.lumina-canvas-node.is-frameless-text .lumina-canvas-frameless-textarea {
   width: 100%;
-  height: 100%;
-  min-height: 28px;
+  height: auto;
+  min-height: 1.4em;
   box-sizing: border-box;
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.45;
-  color: var(--text-main, #f1f5f9);
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  color: inherit;
   padding: 0;
+  margin: 0;
   background: transparent;
+  border: none;
+  outline: none;
   resize: none;
   overflow: hidden;
+  display: block;
 }
 
 .lumina-canvas-frameless-placeholder {
-  font-size: 13px;
+  font-size: inherit;
   font-weight: 400;
   color: var(--text-muted, #94a3b8);
   opacity: 0.65;

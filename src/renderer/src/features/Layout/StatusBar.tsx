@@ -32,7 +32,7 @@ import {
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import { useSettingsStore } from '../../core/store/SettingStore'
-import Version from '../../components/Version.jsx'
+import Version from '../../components/Version'
 import SettingDropdown from '../Navigation/components/SettingDropdown'
 import ToolTip from '../../components/atoms/ToolTip'
 import CapsLock from '../../components/capsLock'

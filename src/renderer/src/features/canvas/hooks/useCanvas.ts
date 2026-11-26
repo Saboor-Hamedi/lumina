@@ -29,6 +29,7 @@ import { normalizeNode, safeNumber } from '../utils/canvasUtils'
 export interface UseCanvasOptions {
   initialData?: CanvasData
   onChange?: (data: CanvasData) => void
+  snapToGrid?: boolean
 }
 
 interface CanvasHistorySnapshot {
@@ -150,8 +151,48 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
   const initialViewportRef = useRef<CanvasViewport>({ x: 0, y: 0, zoom: 1 })
   const isFirstRenderRef = useRef(true)
+  const skipNextEmitRef = useRef(false)
   const onChangeRef = useRef(options.onChange)
   onChangeRef.current = options.onChange
+
+  // Hydrate canvas if initialData arrives asynchronously after mount (e.g. workspace load on refresh)
+  const hasHydratedContentRef = useRef(
+    (options.initialData?.nodes?.length || 0) > 0 ||
+      (options.initialData?.edges?.length || 0) > 0 ||
+      (options.initialData?.strokes?.length || 0) > 0
+  )
+
+  useEffect(() => {
+    const incoming = options.initialData
+    if (!incoming) return
+    const incomingHasContent =
+      (incoming.nodes?.length || 0) > 0 ||
+      (incoming.edges?.length || 0) > 0 ||
+      (incoming.strokes?.length || 0) > 0
+    const localIsEmpty =
+      nodesRef.current.length === 0 &&
+      edgesRef.current.length === 0 &&
+      strokesRef.current.length === 0
+
+    if (incomingHasContent && localIsEmpty && !hasHydratedContentRef.current) {
+      hasHydratedContentRef.current = true
+      skipNextEmitRef.current = true
+      setNodes((incoming.nodes || []).map(normalizeNode))
+      setEdges((incoming.edges || []).filter((e) => e && e.id && e.fromNode && e.toNode))
+      setStrokes(
+        (incoming.strokes || []).filter(
+          (s) => s && s.id && Array.isArray(s.points) && s.points.length > 0
+        )
+      )
+      if (incoming.viewport) {
+        setViewport({
+          x: safeNumber(incoming.viewport.x, 0),
+          y: safeNumber(incoming.viewport.y, 0),
+          zoom: Math.min(Math.max(safeNumber(incoming.viewport.zoom, 1), 0.1), 2.5)
+        })
+      }
+    }
+  }, [options.initialData])
 
   // Notify parent component on state mutations (for auto-saving)
   useEffect(() => {
@@ -159,8 +200,19 @@ export function useCanvas(options: UseCanvasOptions = {}) {
       isFirstRenderRef.current = false
       return
     }
-    onChangeRef.current?.({ nodes, edges, strokes, viewport })
-  }, [nodes, edges, strokes, viewport])
+    if (skipNextEmitRef.current) {
+      skipNextEmitRef.current = false
+      return
+    }
+    hasHydratedContentRef.current = true
+    onChangeRef.current?.({
+      nodes,
+      edges,
+      strokes,
+      viewport,
+      ...(typeof options.snapToGrid === 'boolean' ? { snapToGrid: options.snapToGrid } : {})
+    })
+  }, [nodes, edges, strokes, viewport, options.snapToGrid])
 
   /**
    * Projects screen client coordinates (e.g. mouse event) into canvas coordinate space.
@@ -346,8 +398,14 @@ export function useCanvas(options: UseCanvasOptions = {}) {
       prev.map((n) => {
         if (n.id !== id) return n
         const isShape = n.type === 'shape'
-        const minW = isShape ? 36 : 120
-        const minH = isShape ? 36 : 60
+        const isFramelessText = n.type === 'text' && !n.file && !n.shape
+        const textFontSize = n.fontSize || 15
+        const minW = isShape ? 36 : isFramelessText ? 60 : 120
+        const minH = isShape
+          ? 36
+          : isFramelessText
+            ? Math.max(32, Math.ceil(textFontSize * (textFontSize >= 24 ? 1.25 : 1.45) + 12))
+            : 60
         const clampedW = Math.max(Math.round(width), minW)
         const clampedH = Math.max(Math.round(height), minH)
         if (n.width === clampedW && n.height === clampedH) return n

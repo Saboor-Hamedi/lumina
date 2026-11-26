@@ -1,0 +1,247 @@
+/**
+ * ============================================================================
+ * Curated Icon Library for Lumina
+ * ============================================================================
+ * Comprehensive, modern Lucide outline icons matching the 2px stroke,
+ * rounded-corner design system. Fully searchable with semantic synonym tags.
+ * ============================================================================
+ */
+
+export interface IconEntry {
+  char: string
+  name: string
+  tags: string[]
+}
+
+export interface IconIndexEntry extends IconEntry {
+  searchString: string
+  isLucide: boolean
+}
+
+export const EMOJI_LIST: IconEntry[] = [
+  // 📁 Documents & Writing
+  { char: 'FileText', name: 'File Text', tags: ['note', 'document', 'page', 'text', 'draft', 'article'] },
+  { char: 'FileCode', name: 'File Code', tags: ['code', 'script', 'programming', 'source', 'developer'] },
+  { char: 'Files', name: 'Files', tags: ['documents', 'stack', 'collection', 'pages'] },
+  { char: 'FilePlus', name: 'File Plus', tags: ['new', 'create', 'add', 'document'] },
+  { char: 'FileCheck', name: 'File Check', tags: ['completed', 'verified', 'done', 'approved'] },
+  { char: 'FileEdit', name: 'File Edit', tags: ['draft', 'modify', 'write', 'author', 'pen'] },
+  { char: 'FileSearch', name: 'File Search', tags: ['find', 'lookup', 'inspect', 'query'] },
+  { char: 'FileSpreadsheet', name: 'Spreadsheet', tags: ['excel', 'csv', 'data', 'table', 'sheet'] },
+  { char: 'FileArchive', name: 'File Archive', tags: ['zip', 'compressed', 'backup', 'tar'] },
+  { char: 'FileQuestion', name: 'File Question', tags: ['unknown', 'help', 'doubt', 'faq'] },
+  { char: 'BookOpen', name: 'Book Open', tags: ['read', 'documentation', 'docs', 'manual', 'journal'] },
+  { char: 'Book', name: 'Book', tags: ['knowledge', 'library', 'notebook', 'wiki'] },
+  { char: 'Bookmark', name: 'Bookmark', tags: ['favorite', 'save', 'mark', 'remember'] },
+  { char: 'Notebook', name: 'Notebook', tags: ['notes', 'journal', 'scratchpad', 'memo'] },
+  { char: 'NotebookPen', name: 'Notebook Pen', tags: ['write', 'diary', 'log', 'draft'] },
+  { char: 'Scroll', name: 'Scroll', tags: ['history', 'parchment', 'rules', 'story'] },
+  { char: 'Newspaper', name: 'Newspaper', tags: ['news', 'feed', 'articles', 'press', 'daily'] },
+  { char: 'StickyNote', name: 'Sticky Note', tags: ['quick', 'reminder', 'memo', 'postit'] },
+  { char: 'FileSignature', name: 'Signature', tags: ['contract', 'agreement', 'signed', 'legal'] },
+  { char: 'Paperclip', name: 'Paperclip', tags: ['attachment', 'link', 'asset', 'file'] },
+
+  // 📂 Folders & Structure
+  { char: 'Folder', name: 'Folder', tags: ['directory', 'project', 'category', 'organize', 'group'] },
+  { char: 'FolderOpen', name: 'Open Folder', tags: ['directory', 'active', 'files', 'browse'] },
+  { char: 'FolderPlus', name: 'Folder Plus', tags: ['new folder', 'create directory'] },
+  { char: 'FolderGit2', name: 'Git Folder', tags: ['repository', 'repo', 'version control', 'vcs'] },
+  { char: 'FolderCode', name: 'Code Folder', tags: ['src', 'source', 'components', 'package'] },
+  { char: 'FolderTree', name: 'Folder Tree', tags: ['hierarchy', 'nested', 'structure', 'tree', 'algorithm', 'nodes'] },
+  { char: 'FolderArchive', name: 'Archive Folder', tags: ['backup', 'vault', 'storage'] },
+  { char: 'FolderHeart', name: 'Favorite Folder', tags: ['starred', 'important', 'love'] },
+  { char: 'FolderKanban', name: 'Kanban Folder', tags: ['tasks', 'board', 'workflow'] },
+  { char: 'FolderSearch', name: 'Search Folder', tags: ['find', 'lookup', 'filter'] },
+
+  // 💻 Code, Terminal & Dev
+  { char: 'Code', name: 'Code', tags: ['syntax', 'developer', 'html', 'programming', 'tags'] },
+  { char: 'Code2', name: 'Code Angle', tags: ['xml', 'brackets', 'markup', 'frontend'] },
+  { char: 'Terminal', name: 'Terminal', tags: ['console', 'cli', 'bash', 'command', 'shell'] },
+  { char: 'SquareCode', name: 'Code Prompt', tags: ['command line', 'cursor', 'shell', 'input'] },
+  { char: 'Cpu', name: 'CPU', tags: ['processor', 'hardware', 'core', 'chip', 'system'] },
+  { char: 'Database', name: 'Database', tags: ['storage', 'sql', 'records', 'data', 'tables'] },
+  { char: 'HardDrive', name: 'Hard Drive', tags: ['disk', 'storage', 'ssd', 'nvme', 'memory'] },
+  { char: 'Server', name: 'Server', tags: ['backend', 'hosting', 'node', 'infrastructure'] },
+  { char: 'Globe', name: 'Globe', tags: ['web', 'internet', 'network', 'online', 'http', 'api'] },
+  { char: 'Cloud', name: 'Cloud', tags: ['hosting', 'aws', 'storage', 'sync', 'remote'] },
+  { char: 'CloudLightning', name: 'Cloud Compute', tags: ['serverless', 'lambda', 'compute', 'fast'] },
+  { char: 'GitBranch', name: 'Git Branch', tags: ['git', 'version', 'branch', 'vcs', 'merge'] },
+  { char: 'GitCommit', name: 'Git Commit', tags: ['git', 'save', 'checkpoint', 'vcs'] },
+  { char: 'GitPullRequest', name: 'Pull Request', tags: ['git', 'pr', 'review', 'github'] },
+  { char: 'GitFork', name: 'Git Fork', tags: ['git', 'fork', 'clone', 'split'] },
+  { char: 'GitMerge', name: 'Git Merge', tags: ['git', 'combine', 'squash', 'integrate'] },
+  { char: 'Binary', name: 'Binary', tags: ['data', 'bytes', 'hex', 'low-level', 'bits', 'encoding'] },
+  { char: 'Braces', name: 'Braces', tags: ['json', 'code', 'curly', 'brackets'] },
+  { char: 'Brackets', name: 'Brackets', tags: ['array', 'list', 'syntax', 'square'] },
+  { char: 'Bug', name: 'Bug', tags: ['issue', 'error', 'defect', 'problem', 'debug'] },
+  { char: 'Layers', name: 'Layers', tags: ['architecture', 'stack', 'tier', 'levels'] },
+  { char: 'Network', name: 'Network', tags: ['graph', 'connection', 'mesh', 'distributed'] },
+  { char: 'Boxes', name: 'Boxes', tags: ['modules', 'packages', 'docker', 'containers'] },
+  { char: 'Box', name: 'Box', tags: ['package', 'module', 'bundle', 'asset'] },
+  { char: 'Workflow', name: 'Workflow', tags: ['pipeline', 'ci/cd', 'automation', 'diagram'] },
+  { char: 'Regex', name: 'Regex', tags: ['pattern', 'match', 'parser', 'token'] },
+  { char: 'Blocks', name: 'Blocks', tags: ['components', 'lego', 'modular', 'widgets'] },
+
+  // ✨ AI, Magic & Tools
+  { char: 'Sparkles', name: 'Sparkles', tags: ['ai', 'magic', 'clean', 'lumina', 'assistant', 'prompt'] },
+  { char: 'Bot', name: 'Bot', tags: ['ai', 'robot', 'assistant', 'agent', 'automation'] },
+  { char: 'Brain', name: 'Brain', tags: ['intelligence', 'neural', 'thinking', 'cognition', 'smart'] },
+  { char: 'Wand2', name: 'Magic Wand', tags: ['generate', 'transform', 'create', 'ai'] },
+  { char: 'Zap', name: 'Zap', tags: ['fast', 'lightning', 'quick', 'energy', 'power', 'action'] },
+  { char: 'Flame', name: 'Flame', tags: ['hot', 'fire', 'trending', 'priority', 'urgent'] },
+  { char: 'Rocket', name: 'Rocket', tags: ['launch', 'ship', 'deploy', 'fast', 'startup'] },
+  { char: 'Lightbulb', name: 'Lightbulb', tags: ['idea', 'concept', 'insight', 'creativity'] },
+  { char: 'Wrench', name: 'Wrench', tags: ['fix', 'repair', 'config', 'tool', 'settings'] },
+  { char: 'Hammer', name: 'Hammer', tags: ['build', 'construct', 'craft', 'make'] },
+  { char: 'Settings', name: 'Settings', tags: ['config', 'options', 'preferences', 'gear'] },
+  { char: 'Sliders', name: 'Sliders', tags: ['adjust', 'params', 'controls', 'tuning'] },
+  { char: 'Filter', name: 'Filter', tags: ['query', 'refine', 'narrow', 'sort'] },
+  { char: 'Search', name: 'Search', tags: ['find', 'lookup', 'query', 'spotlight', 'explore'] },
+  { char: 'Compass', name: 'Compass', tags: ['guide', 'roadmap', 'explore', 'navigation'] },
+  { char: 'Navigation', name: 'Navigation', tags: ['route', 'direction', 'pointer', 'compass'] },
+
+  // 🔒 Security, Privacy & Keys
+  { char: 'Shield', name: 'Shield', tags: ['security', 'protect', 'safe', 'auth', 'privacy'] },
+  { char: 'ShieldCheck', name: 'Shield Verified', tags: ['secure', 'passed', 'audited', 'protected'] },
+  { char: 'Lock', name: 'Lock', tags: ['private', 'secure', 'password', 'protected'] },
+  { char: 'Unlock', name: 'Unlock', tags: ['public', 'open', 'accessible'] },
+  { char: 'Key', name: 'Key', tags: ['token', 'secret', 'auth', 'api key', 'access'] },
+  { char: 'KeyRound', name: 'Key Round', tags: ['credentials', 'access', 'login'] },
+  { char: 'Fingerprint', name: 'Fingerprint', tags: ['biometric', 'identity', 'auth', 'unique'] },
+  { char: 'Eye', name: 'Eye', tags: ['view', 'public', 'visible', 'inspect'] },
+  { char: 'EyeOff', name: 'Eye Off', tags: ['hidden', 'private', 'secret', 'invisible'] },
+
+  // 📊 Tasks, Projects & Productivity
+  { char: 'CheckCircle2', name: 'Check Circle', tags: ['done', 'completed', 'task', 'verified', 'todo'] },
+  { char: 'CheckSquare', name: 'Check Square', tags: ['checkbox', 'done', 'todo', 'task'] },
+  { char: 'ListTodo', name: 'List Todo', tags: ['tasks', 'checklist', 'items', 'plan'] },
+  { char: 'ListChecks', name: 'List Checks', tags: ['done list', 'audit', 'requirements'] },
+  { char: 'Calendar', name: 'Calendar', tags: ['date', 'schedule', 'event', 'meeting', 'plan'] },
+  { char: 'CalendarDays', name: 'Calendar Days', tags: ['events', 'timeline', 'agenda'] },
+  { char: 'Clock', name: 'Clock', tags: ['time', 'duration', 'history', 'deadline', 'timer'] },
+  { char: 'Timer', name: 'Timer', tags: ['stopwatch', 'pomodoro', 'speed', 'countdown'] },
+  { char: 'Hourglass', name: 'Hourglass', tags: ['pending', 'waiting', 'time', 'process'] },
+  { char: 'Target', name: 'Target', tags: ['goal', 'objective', 'focus', 'accuracy'] },
+  { char: 'Award', name: 'Award', tags: ['badge', 'medal', 'achievement', 'success', 'star'] },
+  { char: 'Trophy', name: 'Trophy', tags: ['winner', 'prize', 'milestone', 'champion'] },
+  { char: 'Star', name: 'Star', tags: ['favorite', 'starred', 'pinned', 'important'] },
+  { char: 'Heart', name: 'Heart', tags: ['favorite', 'love', 'like', 'health'] },
+  { char: 'Kanban', name: 'Kanban', tags: ['board', 'agile', 'sprint', 'workflow', 'columns'] },
+  { char: 'Milestone', name: 'Milestone', tags: ['signpost', 'marker', 'step', 'goal'] },
+  { char: 'Flag', name: 'Flag', tags: ['priority', 'mark', 'checkpoint', 'country'] },
+  { char: 'Pin', name: 'Pin', tags: ['pinned', 'attach', 'save', 'favorite'] },
+  { char: 'Tag', name: 'Tag', tags: ['label', 'badge', 'category', 'taxonomy'] },
+  { char: 'Tags', name: 'Tags', tags: ['labels', 'keywords', 'topics'] },
+
+  // 📈 Analytics, Business & Finance
+  { char: 'BarChart3', name: 'Bar Chart', tags: ['analytics', 'metrics', 'graph', 'data', 'stats'] },
+  { char: 'LineChart', name: 'Line Chart', tags: ['trends', 'stock', 'growth', 'history'] },
+  { char: 'PieChart', name: 'Pie Chart', tags: ['analytics', 'metrics', 'stats', 'report'] },
+  { char: 'TrendingUp', name: 'Trending Up', tags: ['growth', 'progress', 'increase', 'success'] },
+  { char: 'Activity', name: 'Activity', tags: ['pulse', 'monitor', 'health', 'telemetry', 'status'] },
+  { char: 'Gauge', name: 'Gauge', tags: ['speedometer', 'performance', 'meter', 'metric'] },
+  { char: 'DollarSign', name: 'Dollar', tags: ['money', 'finance', 'cost', 'revenue', 'price'] },
+  { char: 'CreditCard', name: 'Credit Card', tags: ['payment', 'billing', 'subscription'] },
+  { char: 'Wallet', name: 'Wallet', tags: ['finance', 'crypto', 'funds', 'money'] },
+  { char: 'Briefcase', name: 'Briefcase', tags: ['business', 'work', 'job', 'corporate', 'client'] },
+  { char: 'ShoppingBag', name: 'Shopping Bag', tags: ['store', 'ecommerce', 'cart', 'items'] },
+
+  // 🎨 Design, Media & UI
+  { char: 'Palette', name: 'Palette', tags: ['theme', 'design', 'color', 'art', 'styling'] },
+  { char: 'PenTool', name: 'Pen Tool', tags: ['vector', 'design', 'draw', 'illustrate'] },
+  { char: 'Paintbrush', name: 'Paintbrush', tags: ['color', 'styling', 'custom', 'art'] },
+  { char: 'Layout', name: 'Layout', tags: ['dashboard', 'interface', 'structure', 'template'] },
+  { char: 'LayoutDashboard', name: 'Dashboard', tags: ['overview', 'panels', 'hub', 'admin'] },
+  { char: 'LayoutTemplate', name: 'Template', tags: ['wireframe', 'scaffold', 'blueprint'] },
+  { char: 'Image', name: 'Image', tags: ['photo', 'picture', 'graphic', 'asset'] },
+  { char: 'Images', name: 'Gallery', tags: ['photos', 'album', 'portfolio', 'pictures'] },
+  { char: 'Film', name: 'Film', tags: ['movie', 'video', 'cinema', 'recording'] },
+  { char: 'Video', name: 'Video', tags: ['media', 'movie', 'recording', 'clip'] },
+  { char: 'Music', name: 'Music', tags: ['audio', 'sound', 'track', 'song', 'listen'] },
+  { char: 'Headphones', name: 'Headphones', tags: ['audio', 'listen', 'podcast', 'music'] },
+  { char: 'Mic', name: 'Microphone', tags: ['voice', 'audio', 'record', 'podcast'] },
+  { char: 'Volume2', name: 'Volume', tags: ['sound', 'audio', 'speaker', 'loud'] },
+  { char: 'Camera', name: 'Camera', tags: ['photo', 'snapshot', 'capture'] },
+
+  // 💬 Communication & People
+  { char: 'MessageSquare', name: 'Message', tags: ['chat', 'comment', 'discussion', 'feedback'] },
+  { char: 'MessagesSquare', name: 'Discussions', tags: ['chat', 'thread', 'talk', 'conversation'] },
+  { char: 'Mail', name: 'Mail', tags: ['email', 'letter', 'inbox', 'message'] },
+  { char: 'Send', name: 'Send', tags: ['outbox', 'share', 'forward', 'transmit'] },
+  { char: 'Share2', name: 'Share', tags: ['social', 'link', 'publish', 'collaborate'] },
+  { char: 'Bell', name: 'Bell', tags: ['notification', 'alert', 'alarm', 'reminder'] },
+  { char: 'User', name: 'User', tags: ['person', 'profile', 'account', 'author'] },
+  { char: 'Users', name: 'Users', tags: ['team', 'group', 'community', 'organization'] },
+  { char: 'UserCheck', name: 'Verified User', tags: ['member', 'approved', 'admin'] },
+  { char: 'HelpCircle', name: 'Help', tags: ['info', 'faq', 'support', 'question'] },
+  { char: 'Info', name: 'Info', tags: ['details', 'about', 'note', 'notice'] },
+  { char: 'AlertTriangle', name: 'Warning', tags: ['caution', 'alert', 'important', 'danger'] },
+  { char: 'AlertCircle', name: 'Alert Circle', tags: ['warning', 'error', 'notice'] },
+  { char: 'Coffee', name: 'Coffee', tags: ['break', 'relax', 'cafe', 'morning', 'scratch'] },
+  { char: 'Utensils', name: 'Food', tags: ['restaurant', 'cooking', 'dining', 'recipe'] },
+  { char: 'Smile', name: 'Smile', tags: ['happy', 'fun', 'emoji', 'personal'] },
+
+  // 🔬 Science, Math & Education
+  { char: 'Atom', name: 'Atom', tags: ['physics', 'science', 'quantum', 'chemistry', 'react'] },
+  { char: 'FlaskConical', name: 'Flask', tags: ['chemistry', 'experiment', 'lab', 'test', 'research'] },
+  { char: 'Dna', name: 'DNA', tags: ['biology', 'genetics', 'life', 'science', 'health'] },
+  { char: 'Microscope', name: 'Microscope', tags: ['science', 'research', 'lab', 'biology', 'inspect'] },
+  { char: 'Calculator', name: 'Calculator', tags: ['math', 'finance', 'accounting', 'calculate'] },
+  { char: 'Pi', name: 'Pi', tags: ['math', 'formula', 'constant', 'geometry'] },
+  { char: 'Sigma', name: 'Sigma', tags: ['sum', 'math', 'statistics', 'formula'] },
+  { char: 'GraduationCap', name: 'Graduation Cap', tags: ['education', 'study', 'university', 'degree', 'learn'] },
+  { char: 'School', name: 'School', tags: ['education', 'academic', 'college', 'learn'] },
+
+  // 🌿 Nature, Travel & Weather
+  { char: 'Sun', name: 'Sun', tags: ['light', 'day', 'warm', 'weather', 'morning'] },
+  { char: 'Moon', name: 'Moon', tags: ['dark', 'night', 'sleep', 'lunar', 'evening'] },
+  { char: 'CloudRain', name: 'Rain', tags: ['weather', 'water', 'storm', 'rainy'] },
+  { char: 'Wind', name: 'Wind', tags: ['weather', 'breeze', 'air', 'flow', 'fast'] },
+  { char: 'Snowflake', name: 'Snowflake', tags: ['cold', 'winter', 'ice', 'weather'] },
+  { char: 'TreePine', name: 'Pine Tree', tags: ['nature', 'forest', 'wood', 'outdoor', 'park'] },
+  { char: 'Leaf', name: 'Leaf', tags: ['nature', 'plant', 'green', 'eco', 'organic'] },
+  { char: 'Flower2', name: 'Flower', tags: ['nature', 'garden', 'bloom', 'beauty'] },
+  { char: 'Mountain', name: 'Mountain', tags: ['nature', 'peak', 'hike', 'climb', 'summit'] },
+  { char: 'MapPin', name: 'Map Pin', tags: ['location', 'place', 'geo', 'address', 'marker'] },
+  { char: 'Map', name: 'Map', tags: ['navigation', 'travel', 'world', 'guide', 'route'] },
+  { char: 'Plane', name: 'Plane', tags: ['flight', 'travel', 'vacation', 'trip', 'airline'] },
+  { char: 'Car', name: 'Car', tags: ['vehicle', 'transport', 'drive', 'road'] },
+  { char: 'Anchor', name: 'Anchor', tags: ['ship', 'nautical', 'sea', 'secure', 'harbor'] },
+
+  // ⚙️ Hardware, Electronics & Systems
+  { char: 'Monitor', name: 'Monitor', tags: ['screen', 'desktop', 'display', 'computer'] },
+  { char: 'Laptop', name: 'Laptop', tags: ['computer', 'portable', 'notebook', 'macbook'] },
+  { char: 'Smartphone', name: 'Smartphone', tags: ['mobile', 'phone', 'ios', 'android', 'device'] },
+  { char: 'Tablet', name: 'Tablet', tags: ['ipad', 'touch', 'screen', 'device'] },
+  { char: 'Watch', name: 'Watch', tags: ['time', 'smartwatch', 'clock', 'wrist'] },
+  { char: 'Tv', name: 'TV', tags: ['screen', 'television', 'display', 'media'] },
+  { char: 'Wifi', name: 'Wifi', tags: ['internet', 'wireless', 'network', 'connection', 'signal'] },
+  { char: 'Radio', name: 'Radio', tags: ['signal', 'broadcast', 'frequency', 'transmission'] },
+  { char: 'Bluetooth', name: 'Bluetooth', tags: ['wireless', 'connect', 'device', 'pair'] },
+  { char: 'BatteryCharging', name: 'Battery Charging', tags: ['power', 'energy', 'charge'] },
+  { char: 'Plug', name: 'Power Plug', tags: ['power', 'electricity', 'socket', 'connect'] },
+  { char: 'Usb', name: 'USB', tags: ['cable', 'port', 'hardware', 'drive'] },
+
+  // 🔣 Miscellaneous & Symbols
+  { char: 'BookmarkCheck', name: 'Bookmark Check', tags: ['saved', 'done', 'read later'] },
+  { char: 'Quote', name: 'Quote', tags: ['citation', 'mention', 'block', 'testimonial'] },
+  { char: 'Scissors', name: 'Scissors', tags: ['cut', 'trim', 'snip', 'edit'] },
+  { char: 'Glasses', name: 'Glasses', tags: ['read', 'vision', 'study', 'focus'] },
+  { char: 'Crown', name: 'Crown', tags: ['king', 'vip', 'premium', 'royal', 'leader'] },
+  { char: 'Gem', name: 'Gem', tags: ['diamond', 'valuable', 'rare', 'crypto', 'luxury'] },
+  { char: 'Package', name: 'Package', tags: ['box', 'delivery', 'bundle', 'shipment'] },
+  { char: 'ShieldAlert', name: 'Shield Alert', tags: ['security', 'warning', 'breach', 'vulnerability'] },
+  { char: 'RefreshCw', name: 'Refresh', tags: ['sync', 'reload', 'update', 'loop'] },
+  { char: 'History', name: 'History', tags: ['past', 'recent', 'backup', 'undo', 'timeline'] },
+  { char: 'ExternalLink', name: 'External Link', tags: ['open', 'link', 'new tab', 'url'] },
+  { char: 'LifeBuoy', name: 'Support', tags: ['help', 'lifesaver', 'assistance', 'rescue'] }
+]
+
+// Create a highly optimized searchable index
+export const EMOJI_INDEX: IconIndexEntry[] = EMOJI_LIST.map((item) => {
+  return {
+    ...item,
+    searchString: [item.name, item.char, ...item.tags].join(' ').toLowerCase(),
+    isLucide: true
+  }
+})

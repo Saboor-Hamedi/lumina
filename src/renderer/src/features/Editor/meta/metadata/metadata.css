@@ -1,0 +1,612 @@
+/* Notion / Linear-style Note Metadata Panel (SQLite-backed) */
+
+.meta-props-root {
+  width: 100%;
+  margin: 0 0 8px 0;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+
+.meta-props-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 0 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color, var(--border-dim)) 60%, transparent);
+}
+
+.meta-prop-row {
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 6px;
+  min-height: 26px;
+  padding: 1px 6px;
+  border-radius: 6px;
+  transition: background 110ms ease;
+}
+
+.meta-prop-row:hover {
+  background: color-mix(in srgb, var(--text-main) 3.5%, transparent);
+}
+
+.meta-prop-key-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  user-select: none;
+}
+
+.meta-prop-type-icon {
+  flex-shrink: 0;
+  color: var(--text-faint, var(--text-muted));
+  opacity: 0.85;
+}
+
+.meta-prop-key-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta-prop-value-cell {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+/* Smooth, borderless-until-focus inline input */
+.meta-prop-input {
+  width: 100%;
+  min-width: 0;
+  height: 23px;
+  padding: 0 7px;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 11.5px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+  transition: background 110ms ease, border-color 110ms ease;
+}
+
+.meta-prop-input:hover {
+  background: color-mix(in srgb, var(--text-main) 4.5%, transparent);
+}
+
+.meta-prop-input:focus {
+  background: var(--bg-panel, var(--bg-surface, var(--bg-card)));
+  border-color: color-mix(in srgb, var(--accent-color, var(--text-accent)) 65%, transparent);
+}
+
+.meta-prop-input::placeholder {
+  color: var(--text-faint, var(--text-muted));
+  opacity: 0.55;
+}
+
+/* Compact Checkbox pill */
+.meta-prop-check-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 8px 0 5px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, var(--border-dim));
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.meta-prop-check-pill:hover {
+  background: color-mix(in srgb, var(--text-main) 5%, transparent);
+  color: var(--text-main);
+}
+
+.meta-prop-check-pill.is-checked {
+  border-color: color-mix(in srgb, var(--accent-color, var(--text-accent)) 45%, transparent);
+  background: color-mix(in srgb, var(--accent-color, var(--text-accent)) 12%, transparent);
+  color: var(--text-main);
+}
+
+.meta-prop-check-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  border: 1px solid color-mix(in srgb, var(--text-muted) 55%, transparent);
+  background: transparent;
+  color: #ffffff;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.meta-prop-check-pill.is-checked .meta-prop-check-box {
+  background: var(--accent-color, var(--text-accent));
+  border-color: var(--accent-color, var(--text-accent));
+}
+
+/* Custom Select Pill & Popover */
+.meta-select-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.meta-select-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, var(--border-dim));
+  background: color-mix(in srgb, var(--bg-panel, var(--bg-surface)) 70%, transparent);
+  color: var(--text-main);
+  font-size: 10.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.meta-select-pill:hover {
+  border-color: color-mix(in srgb, var(--accent-color, var(--text-accent)) 50%, transparent);
+  background: color-mix(in srgb, var(--accent-color, var(--text-accent)) 8%, var(--bg-panel, var(--bg-surface)));
+}
+
+.meta-select-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.meta-select-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 1200;
+  min-width: 148px;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--bg-primary, var(--bg-panel, var(--bg-surface)));
+  border: 1px solid var(--border-color, var(--border-dim));
+  box-shadow: var(--elev-popover, 0 10px 28px rgba(0, 0, 0, 0.24));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meta-select-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: background 100ms ease;
+}
+
+.meta-select-option:hover,
+.meta-select-option.is-active {
+  background: color-mix(in srgb, var(--accent-color, var(--text-accent)) 12%, transparent);
+}
+
+.meta-select-check {
+  margin-left: auto;
+  color: var(--accent-color, var(--text-accent));
+}
+
+/* Lumina Calendar Date Picker */
+.meta-date-picker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta-date-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 21px;
+  padding: 0 8px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-faint, var(--text-muted));
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 110ms ease, border-color 110ms ease, color 110ms ease;
+}
+
+.meta-date-trigger.has-value {
+  color: var(--text-main);
+}
+
+.meta-date-trigger:hover {
+  background: color-mix(in srgb, var(--text-main) 5%, transparent);
+  border-color: var(--border-color, var(--border-dim));
+  color: var(--text-main);
+}
+
+.meta-date-trigger-icon {
+  color: var(--accent-color, var(--text-accent));
+  opacity: 0.85;
+}
+
+.meta-date-clear-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-faint, var(--text-muted));
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 110ms ease, color 110ms ease;
+}
+
+.meta-prop-row:hover .meta-date-clear-inline {
+  opacity: 1;
+}
+
+.meta-date-clear-inline:hover {
+  color: var(--text-main);
+}
+
+.meta-calendar-popover {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  z-index: 1250;
+  width: 244px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--bg-primary, var(--bg-panel, var(--bg-surface)));
+  border: 1px solid var(--border-color, var(--border-dim));
+  box-shadow: var(--elev-popover, 0 12px 32px rgba(0, 0, 0, 0.28));
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.meta-cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.meta-cal-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.meta-cal-nav {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.meta-cal-nav:hover {
+  background: color-mix(in srgb, var(--text-main) 8%, transparent);
+  color: var(--text-main);
+}
+
+.meta-cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  margin-bottom: 4px;
+}
+
+.meta-cal-weekday {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-faint, var(--text-muted));
+  padding: 2px 0;
+}
+
+.meta-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.meta-cal-cell {
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-main);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 100ms ease, border-color 100ms ease, color 100ms ease;
+}
+
+.meta-cal-cell.is-other {
+  color: var(--text-faint, var(--text-muted));
+  opacity: 0.45;
+}
+
+.meta-cal-cell:hover {
+  background: color-mix(in srgb, var(--text-main) 8%, transparent);
+}
+
+.meta-cal-cell.is-today {
+  border-color: var(--accent-color, var(--text-accent));
+  color: var(--accent-color, var(--text-accent));
+  font-weight: 600;
+}
+
+.meta-cal-cell.is-selected {
+  background: var(--accent-color, var(--text-accent));
+  border-color: var(--accent-color, var(--text-accent));
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.meta-cal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-color, var(--border-dim));
+}
+
+.meta-cal-action {
+  padding: 3px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent-color, var(--text-accent));
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.meta-cal-action:hover {
+  background: color-mix(in srgb, var(--accent-color, var(--text-accent)) 12%, transparent);
+}
+
+.meta-cal-action.is-muted {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* URL open & Row delete */
+.meta-prop-url-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.meta-prop-url-open:hover {
+  color: var(--accent-color, var(--text-accent));
+  background: color-mix(in srgb, var(--accent-color, var(--text-accent)) 12%, transparent);
+}
+
+.meta-prop-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-faint, var(--text-muted));
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 110ms ease, color 110ms ease, background 110ms ease;
+}
+
+.meta-prop-row:hover .meta-prop-delete,
+.meta-prop-delete:focus-visible {
+  opacity: 1;
+}
+
+.meta-prop-delete:hover {
+  color: #ef4444;
+  background: color-mix(in srgb, #ef4444 12%, transparent);
+}
+
+/* Add Property Trigger & Popover */
+.meta-props-footer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.meta-props-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-faint, var(--text-muted));
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: opacity 120ms ease, color 120ms ease, background 120ms ease;
+}
+
+.meta-props-root.is-empty .meta-props-add-btn {
+  opacity: 0.5;
+}
+
+.meta-props-root:hover .meta-props-add-btn,
+.meta-props-add-btn:focus-visible {
+  opacity: 1;
+}
+
+.meta-props-add-btn:hover {
+  color: var(--text-main);
+  background: color-mix(in srgb, var(--text-main) 6%, transparent);
+}
+
+.meta-props-add-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 1200;
+  width: 296px;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--bg-primary, var(--bg-panel, var(--bg-surface)));
+  border: 1px solid var(--border-color, var(--border-dim));
+  box-shadow: var(--elev-popover, 0 12px 30px rgba(0, 0, 0, 0.26));
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.meta-props-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.meta-props-preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 7px;
+  border: 1px solid var(--border-color, var(--border-dim));
+  background: var(--bg-secondary, var(--bg-panel));
+  color: var(--text-main);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 110ms ease, background 110ms ease;
+}
+
+.meta-props-preset-chip:hover {
+  border-color: var(--accent-color, var(--text-accent));
+  background: color-mix(in srgb, var(--accent-color, var(--text-accent)) 10%, var(--bg-secondary, var(--bg-panel)));
+}
+
+.meta-props-custom-form {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.meta-props-custom-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 9px;
+  border-radius: 7px;
+  border: 1px solid var(--border-color, var(--border-dim));
+  background: var(--bg-secondary, var(--bg-app));
+  color: var(--text-main);
+  font-size: 12px;
+  outline: none;
+}
+
+.meta-props-custom-input:focus {
+  border-color: var(--accent-color, var(--text-accent));
+}
+
+.meta-props-type-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.meta-props-type-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.meta-props-type-pill {
+  padding: 3px 7px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease, border-color 100ms ease;
+}
+
+.meta-props-type-pill:hover {
+  color: var(--text-main);
+  background: color-mix(in srgb, var(--text-main) 6%, transparent);
+}
+
+.meta-props-type-pill.is-active {
+  background: color-mix(in srgb, var(--accent-color, var(--text-accent)) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent-color, var(--text-accent)) 40%, transparent);
+  color: var(--accent-color, var(--text-accent));
+  font-weight: 600;
+}
+
+.meta-props-custom-submit {
+  padding: 5px 12px;
+  border-radius: 7px;
+  border: none;
+  background: var(--accent-color, var(--text-accent));
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.meta-props-custom-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

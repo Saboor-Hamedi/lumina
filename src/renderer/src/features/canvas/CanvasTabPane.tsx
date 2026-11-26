@@ -50,7 +50,8 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = React.memo(({
           nodes: Array.isArray(parsed.nodes) ? parsed.nodes : [],
           edges: Array.isArray(parsed.edges) ? parsed.edges : [],
           strokes: Array.isArray(parsed.strokes) ? parsed.strokes : [],
-          viewport: parsed.viewport || { x: 0, y: 0, zoom: 1 }
+          viewport: parsed.viewport || { x: 0, y: 0, zoom: 1 },
+          ...(typeof parsed.snapToGrid === 'boolean' ? { snapToGrid: parsed.snapToGrid } : {})
         }
       }
     } catch (e) {
@@ -59,6 +60,30 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = React.memo(({
 
     return { nodes: [], edges: [], strokes: [], viewport: { x: 0, y: 0, zoom: 1 } }
   }, [snippet.id, snippet.code])
+
+  const flushSave = useCallback(() => {
+    if (!onSave || !latestDataRef.current) return
+    const cur = snippetRef.current
+    const storeNotes = useWorkspaceStore.getState().notes || (useWorkspaceStore.getState() as any).snippets || []
+    const isStillInStore =
+      storeNotes.length === 0 ||
+      storeNotes.some(
+        (n) =>
+          n.id === cur.id ||
+          (cur.relativePath && n.relativePath === cur.relativePath) ||
+          (cur.fileName && n.fileName === cur.fileName)
+      )
+    if (!isStillInStore) return
+
+    const updated = {
+      ...cur,
+      code: JSON.stringify(latestDataRef.current, null, 2),
+      timestamp: Date.now()
+    }
+    onSave(updated).catch((err) => {
+      console.error('[CanvasTabPane] Error saving canvas:', err)
+    })
+  }, [onSave])
 
   // Debounced auto-save handler to minimize disk I/O during interactions
   const handleCanvasChange = useCallback(
@@ -70,42 +95,32 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = React.memo(({
       }
 
       saveTimeoutRef.current = setTimeout(() => {
-        if (!onSave || !latestDataRef.current) return
-        const storeNotes = useWorkspaceStore.getState().notes || (useWorkspaceStore.getState() as any).snippets || []
-        const isStillInStore = storeNotes.length === 0 || storeNotes.some((n) => n.id === snippetRef.current.id)
-        if (!isStillInStore) return
-
-        const updated = {
-          ...snippetRef.current,
-          code: JSON.stringify(latestDataRef.current, null, 2),
-          timestamp: Date.now()
-        }
-        onSave(updated).catch((err) => {
-          console.error('[CanvasTabPane] Error saving canvas:', err)
-        })
-      }, 500)
+        saveTimeoutRef.current = null
+        flushSave()
+      }, 300)
     },
-    [onSave]
+    [flushSave]
   )
 
-  // Flush any pending save on tab unmount ONLY if the note has not been deleted
+  // Flush any pending save on refresh (beforeunload) or tab unmount
   useEffect(() => {
-    return () => {
+    const handleBeforeUnload = () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current)
-        const storeNotes = useWorkspaceStore.getState().notes || (useWorkspaceStore.getState() as any).snippets || []
-        const isStillInStore = storeNotes.length === 0 || storeNotes.some((n) => n.id === snippetRef.current.id)
-        if (onSave && latestDataRef.current && isStillInStore) {
-          const updated = {
-            ...snippetRef.current,
-            code: JSON.stringify(latestDataRef.current, null, 2),
-            timestamp: Date.now()
-          }
-          onSave(updated).catch(() => {})
-        }
+        saveTimeoutRef.current = null
+        flushSave()
       }
     }
-  }, [onSave])
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+        saveTimeoutRef.current = null
+        flushSave()
+      }
+    }
+  }, [flushSave])
 
   return (
     <div
@@ -117,6 +132,7 @@ export const CanvasTabPane: React.FC<CanvasTabPaneProps> = React.memo(({
       }}
     >
       <CanvasView
+        key={snippet.id}
         initialData={parsedInitialData}
         onChange={handleCanvasChange}
         isSelected={isSelected}

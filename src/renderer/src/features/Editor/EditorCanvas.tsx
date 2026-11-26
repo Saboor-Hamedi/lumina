@@ -23,6 +23,7 @@ import { setupWikilinkHover } from './wikilink/hoverWikilink'
 import ContextMenu from '../modals/ContextMenu'
 import { getEditorContextMenuOptions } from './menu'
 import MetaHeader, { MetaBackground } from './meta'
+import { MetadataPanel } from './meta/metadata'
 import type { Snippet, EditorHandle } from '../../core/editor/types'
 import type { ToastType } from '../../core/notification'
 import { markExplorerPerf } from '../Explorer/utils/explorerPerf'
@@ -248,6 +249,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
           timestamp={snippet?.timestamp}
           menuSlot={inlineMetaMenu}
         />
+        <MetadataPanel snippet={snippet} onSave={onSave} />
         {snippet?.isPartial && (
           <div className="editor-large-note-warning" role="status">
             Showing the first part of this large note. Editing and saving are disabled to protect the workspace.
@@ -278,6 +280,7 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
       prev.snippet?.id === next.snippet?.id &&
       prev.editorKey === next.editorKey &&
       prev.snippet?.code === next.snippet?.code &&
+      prev.snippet?.properties === next.snippet?.properties &&
       prev.title === next.title &&
       prev.isDirty === next.isDirty &&
       prev.finalExtensions === next.finalExtensions
