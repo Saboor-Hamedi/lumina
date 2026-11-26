@@ -78,45 +78,83 @@ export const ChatMessageRow: React.FC<ChatMessageRowProps> = React.memo(
             }}
           >
             {msg.role === 'user' ? (
-              <div
-                className="user-message-inline"
-                style={{
-                  wordBreak: 'break-word',
-                  whiteSpace: 'pre-wrap',
-                  textAlign: 'left'
-                }}
-              >
-                {(() => {
-                  const content = msg.content || ''
-                  const parts = content.split(userMentionRegex)
-                  return parts.map((part, pIdx) => {
-                    if (part.startsWith('@') && part.length > 1) {
-                      let rawTarget = part.slice(1)
-                      if (rawTarget.startsWith('[') && rawTarget.endsWith(']')) {
-                        rawTarget = rawTarget.slice(1, -1)
-                      }
-                      const punctMatch = rawTarget.match(/[.,!?:;)]+$/)
-                      const trailingPunc = punctMatch ? punctMatch[0] : ''
-                      const cleanTarget = trailingPunc
-                        ? rawTarget.slice(0, -trailingPunc.length).trim()
-                        : rawTarget.trim()
-                      const displayName = cleanTarget.split(/[/\\]/).pop() || cleanTarget
+              (() => {
+                const rawContent = msg.content || ''
+                // Extract leading @[Title] attachments (from drag-and-drop / composer chips)
+                // so they render as sleek, compact, truncated file chips above the prompt text.
+                const leadingAttachments: string[] = []
+                let remainingText = rawContent
+                const leadingRegex = /^\s*@\[([^\]]+)\]\s*/
+                while (leadingRegex.test(remainingText)) {
+                  const m = remainingText.match(leadingRegex)
+                  if (!m) break
+                  const clean = m[1].trim()
+                  if (clean) leadingAttachments.push(clean)
+                  remainingText = remainingText.slice(m[0].length)
+                }
 
-                      return (
-                        <React.Fragment key={pIdx}>
-                          <LuminaEntityMention
-                            target={cleanTarget}
-                            label={displayName}
-                            prefixAt={true}
-                          />
-                          {trailingPunc}
-                        </React.Fragment>
-                      )
-                    }
-                    return part
-                  })
-                })()}
-              </div>
+                const parts = remainingText.split(userMentionRegex)
+
+                return (
+                  <div className="user-message-stack">
+                    {leadingAttachments.length > 0 && (
+                      <div className="user-message-attachments">
+                        {leadingAttachments.map((att, aIdx) => {
+                          const displayName = att.split(/[/\\]/).pop() || att
+                          return (
+                            <LuminaEntityMention
+                              key={`${att}-${aIdx}`}
+                              target={att}
+                              label={displayName}
+                              prefixAt={false}
+                              className="user-attachment-chip"
+                            />
+                          )
+                        })}
+                      </div>
+                    )}
+                    {remainingText.trim().length > 0 && (
+                      <div
+                        className="user-message-inline"
+                        style={{
+                          wordBreak: 'break-word',
+                          overflowWrap: 'anywhere',
+                          whiteSpace: 'pre-wrap',
+                          textAlign: 'left',
+                          maxWidth: '100%'
+                        }}
+                      >
+                        {parts.map((part, pIdx) => {
+                          if (part.startsWith('@') && part.length > 1) {
+                            let rawTarget = part.slice(1)
+                            if (rawTarget.startsWith('[') && rawTarget.endsWith(']')) {
+                              rawTarget = rawTarget.slice(1, -1)
+                            }
+                            const punctMatch = rawTarget.match(/[.,!?:;)]+$/)
+                            const trailingPunc = punctMatch ? punctMatch[0] : ''
+                            const cleanTarget = trailingPunc
+                              ? rawTarget.slice(0, -trailingPunc.length).trim()
+                              : rawTarget.trim()
+                            const displayName = cleanTarget.split(/[/\\]/).pop() || cleanTarget
+
+                            return (
+                              <React.Fragment key={pIdx}>
+                                <LuminaEntityMention
+                                  target={cleanTarget}
+                                  label={displayName}
+                                  prefixAt={true}
+                                />
+                                {trailingPunc}
+                              </React.Fragment>
+                            )
+                          }
+                          return part
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })()
             ) : msg.role === 'assistant' &&
               !msg.content?.trim() &&
               !msg.imageUrl &&

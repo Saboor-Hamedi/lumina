@@ -153,7 +153,6 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                     style={portStyle}
                     onPointerDown={(e) => onPortMouseDown(e, node.id, side)}
                     onMouseDown={(e) => onPortMouseDown(e, node.id, side)}
-                    onClick={(e) => onPortMouseDown(e, node.id, side)}
                   />
                 )
               })}

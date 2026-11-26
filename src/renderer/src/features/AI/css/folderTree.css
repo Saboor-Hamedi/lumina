@@ -196,7 +196,10 @@
   align-items: center;
   gap: 5px;
   padding: 1px 4px;
-  margin: -1px -4px;
+  margin: -1px 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   border-radius: 4px;
   cursor: pointer;
   transition:
@@ -246,7 +249,12 @@
 }
 
 .lumina-folder-tree-label {
-  white-space: pre;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 12px;
   transition: color 0.14s ease-out;
 }
@@ -285,10 +293,11 @@
 }
 
 .lumina-folder-tree-line-left {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  flex: 1;
   min-width: 0;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .lumina-folder-tree-label.is-clickable {
@@ -307,6 +316,8 @@
   gap: 6px;
   flex-shrink: 0;
   margin-left: auto;
+  padding-left: 8px;
+  white-space: nowrap;
   font-family: var(--font-editor, 'Inter', sans-serif);
   font-size: 10px;
 }

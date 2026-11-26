@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
-import { FolderOpen, ChevronDown, ChevronUp, Sun, Moon, BookOpen } from 'lucide-react'
+import { FolderOpen, ChevronDown, ChevronUp, Sun, Moon, BookOpen, Sparkles } from 'lucide-react'
 import { ChromePdfIcon } from '../Icons/FileIcon'
 import ToolTip from '../../components/atoms/ToolTip'
 import type { Snippet } from '../../core/editor/types'
+import type { PdfIndexingState } from './pdf'
 
 export type PDFThemeMode = 'original' | 'dark' | 'sepia' | 'invert'
 
@@ -11,6 +12,7 @@ export interface PDFToolbarProps {
   onOpenInFolder: () => void
   currentTheme?: PDFThemeMode
   onSetTheme?: (theme: PDFThemeMode) => void
+  indexStatus?: PdfIndexingState | null
 }
 
 function formatFileSize(bytes?: number): string {
@@ -24,10 +26,14 @@ export const PDFToolbar: React.FC<PDFToolbarProps> = ({
   snippet,
   onOpenInFolder,
   currentTheme = 'original',
-  onSetTheme
+  onSetTheme,
+  indexStatus
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(true)
   const formattedSize = formatFileSize(snippet?.size)
+  const pageCount = indexStatus?.pageCount ?? 0
+  const isIndexing = indexStatus?.phase === 'extracting' || indexStatus?.phase === 'embedding'
+  const isReady = indexStatus?.phase === 'ready' && pageCount > 0
 
   return (
     <div
@@ -44,6 +50,23 @@ export const PDFToolbar: React.FC<PDFToolbarProps> = ({
             <span className="pdf-viewer-badge is-format">PDF</span>
             {formattedSize && (
               <span className="pdf-viewer-badge is-size">{formattedSize}</span>
+            )}
+            {isIndexing && (
+              <ToolTip text="Preparing document for search & Lumina AI" position="top">
+                <span className="pdf-viewer-badge is-indexing">
+                  {indexStatus?.phase === 'embedding' && indexStatus.chunkCount > 0
+                    ? `Indexing ${Math.round((indexStatus.embeddedCount / indexStatus.chunkCount) * 100)}%`
+                    : 'Indexing…'}
+                </span>
+              </ToolTip>
+            )}
+            {isReady && (
+              <ToolTip text="Searchable & ready for @mention in Lumina AI" position="top">
+                <span className="pdf-viewer-badge is-ready">
+                  <Sparkles size={10} />
+                  <span>{pageCount === 1 ? '1 page' : `${pageCount} pages`}</span>
+                </span>
+              </ToolTip>
             )}
           </div>
 

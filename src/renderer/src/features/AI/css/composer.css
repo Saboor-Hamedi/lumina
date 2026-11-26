@@ -383,30 +383,60 @@
 
 
 
+.composer-attachments-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 .mention-pill {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-  height: 22px;
-  line-height: 20px;
+  height: 20px;
+  line-height: 1;
   box-sizing: border-box;
-  background: rgba(var(--text-accent-rgb, 167, 139, 250), 0.15);
-  border: 1px solid rgba(var(--text-accent-rgb, 167, 139, 250), 0.25);
-  border-radius: 4px;
-  padding: 0 6px;
-  font-size: 12px;
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-accent, #38bdf8) 26%, transparent);
+  border-radius: 5px;
+  padding: 0 5px 0 6px;
+  font-size: 11px;
   font-family: var(--font-editor, 'Inter'), sans-serif;
   font-weight: 500;
   color: var(--text-accent);
   vertical-align: middle;
+  max-width: min(168px, 100%);
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease;
+}
+
+.mention-pill:hover {
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 19%, transparent);
+  border-color: color-mix(in srgb, var(--text-accent, #38bdf8) 40%, transparent);
+}
+
+.mention-pill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 11px;
+  height: 11px;
 }
 
 .mention-pill-title {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 180px;
+  min-width: 0;
+  max-width: 126px;
+  font-size: 11px;
+  line-height: 1.2;
 }
 
 .mention-pill-close {

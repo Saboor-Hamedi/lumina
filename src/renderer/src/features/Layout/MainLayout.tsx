@@ -509,10 +509,18 @@ export const MainLayout: React.FC = () => {
   useEffect(() => {
     const winApi = (window as any).api
     if (winApi?.onVaultUpdated) {
+      let debounceTimer: ReturnType<typeof setTimeout> | null = null
       const cleanup = winApi.onVaultUpdated(() => {
-        loadWorkspace()
+        if (debounceTimer) clearTimeout(debounceTimer)
+        debounceTimer = setTimeout(() => {
+          debounceTimer = null
+          loadWorkspace()
+        }, 250)
       })
-      return cleanup
+      return () => {
+        if (debounceTimer) clearTimeout(debounceTimer)
+        cleanup?.()
+      }
     }
   }, [loadWorkspace])
 
@@ -881,7 +889,9 @@ export const MainLayout: React.FC = () => {
     onToggleCanvasDrawer: () => {
       handleOpenOrCreateCanvasTabRef.current?.()
     },
-    onNew: () => handleNew(),
+    onNew: () => {
+      void handleNew()
+    },
     onNewFolder: () => {
       window.dispatchEvent(new CustomEvent('trigger-new-folder'))
     },
@@ -987,6 +997,19 @@ export const MainLayout: React.FC = () => {
 
   const handleNewCanvas = useCallback(async () => {
     try {
+      const existingNotes: any[] = useWorkspaceStore.getState().notes || []
+      const takenPaths = new Set(
+        existingNotes.map((n: any) => String(n?.relativePath || n?.fileName || n?.id || '').toLowerCase())
+      )
+      let baseTitle = 'Untitled Canvas'
+      let fileName = `${baseTitle}.canvas`
+      let suffix = 2
+      while (takenPaths.has(fileName.toLowerCase())) {
+        baseTitle = `Untitled Canvas ${suffix}`
+        fileName = `${baseTitle}.canvas`
+        suffix += 1
+      }
+
       const defaultCanvasData = {
         nodes: [
           {
@@ -1002,12 +1025,15 @@ export const MainLayout: React.FC = () => {
           }
         ],
         edges: [],
+        strokes: [],
         viewport: { x: 0, y: 0, zoom: 1 }
       }
       const newSnippet = {
-        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
-        title: 'Untitled Canvas',
-        fileName: 'Untitled Canvas.canvas',
+        // Canonical relativePath ID matches the disk scanner 1:1 so workspace reloads never close the tab
+        id: fileName,
+        title: baseTitle,
+        fileName,
+        relativePath: fileName,
         code: JSON.stringify(defaultCanvasData, null, 2),
         language: 'canvas',
         type: 'canvas',
@@ -1074,21 +1100,7 @@ export const MainLayout: React.FC = () => {
         }
       }
 
-      // 3. Is there any canvas in workspace notes?
-      const existingCanvasNote = allNotes.find(
-        (n: any) =>
-          n.type === 'canvas' ||
-          n.language === 'canvas' ||
-          n.fileName?.endsWith('.canvas')
-      )
-
-      if (existingCanvasNote) {
-        state.setSelectedNote(existingCanvasNote)
-        setActiveTab('files')
-        return
-      }
-
-      // 4. Otherwise create a new canvas
+      // 3. No canvas tab is currently open — create a fresh new canvas
       await handleNewCanvas()
     } catch (err) {
       console.error('[MainLayout] Failed to open or create canvas tab:', err)

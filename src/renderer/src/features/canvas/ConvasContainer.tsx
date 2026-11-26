@@ -22,6 +22,7 @@ import { CanvasData, CanvasNode, CanvasEdgeSide, CanvasEdgeEnd, CanvasShapeType,
 import {
   COLOR_CYCLE,
   getNodePortCoord,
+  getOptimalPortPair,
   computeAlignedNodePositions,
   computeDistributedNodePositions,
   getSelectionBoundingBox,
@@ -367,6 +368,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
    * Central Keyboard Shortcuts Hook (encapsulated, protected, and clean)
    */
   useCanvasShortcuts({
+    isActive: isSelected ?? true,
     containerRef,
     nodes,
     edges,
@@ -538,30 +540,41 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   )
 
   /**
-   * Tracks connected ports to render sleek docking heads and fill socket gaps
+   * Tracks connected ports using the EXACT resolved sides rendered by `calculateEdgePath`,
+   * so port knobs are filled if and only if a visible wire is docked to that specific knob.
    */
   const connectedPortsMap = useMemo(() => {
     const map = new Map<string, Partial<Record<CanvasEdgeSide, { hasArrow: boolean; color?: CanvasNodeColor }>>>()
     for (const edge of edges) {
-      if (edge.fromNode && edge.fromSide) {
-        const ports = map.get(edge.fromNode) || {}
-        ports[edge.fromSide] = {
-          hasArrow: edge.fromEnd === 'arrow',
-          color: edge.color
-        }
-        map.set(edge.fromNode, ports)
+      const fromNode = nodeMap.get(edge.fromNode)
+      const toNode = nodeMap.get(edge.toNode)
+      if (!fromNode || !toNode) continue
+
+      const dynamicPortDirection = edge.routing !== 'manual'
+      const { fromSide, toSide } = getOptimalPortPair(
+        fromNode,
+        toNode,
+        dynamicPortDirection ? undefined : edge.fromSide,
+        dynamicPortDirection ? undefined : edge.toSide
+      )
+      const edgeColor = (edge.color || toNode.color || 'default') as CanvasNodeColor
+
+      const fromPorts = map.get(edge.fromNode) || {}
+      fromPorts[fromSide] = {
+        hasArrow: edge.fromEnd === 'arrow',
+        color: edgeColor
       }
-      if (edge.toNode && edge.toSide) {
-        const ports = map.get(edge.toNode) || {}
-        ports[edge.toSide] = {
-          hasArrow: edge.toEnd !== 'none',
-          color: edge.color
-        }
-        map.set(edge.toNode, ports)
+      map.set(edge.fromNode, fromPorts)
+
+      const toPorts = map.get(edge.toNode) || {}
+      toPorts[toSide] = {
+        hasArrow: edge.toEnd !== 'none',
+        color: edgeColor
       }
+      map.set(edge.toNode, toPorts)
     }
     return map
-  }, [edges])
+  }, [edges, nodeMap])
 
   /**
    * Multi-selection alignment & distribution handlers
@@ -1011,6 +1024,10 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     [deleteStrokes]
   )
 
+  const handleCreateNewCanvas = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('trigger-new-canvas'))
+  }, [])
+
   const handleCanvasContextMenu = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement | null
     if (target?.closest?.('input, textarea')) return
@@ -1030,7 +1047,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
   return (
     <div
       ref={containerRef}
-      className={`lumina-canvas-container tool-${toolMode} ${connecting ? 'is-connecting' : ''} ${snapToGrid ? 'is-grid-snapping' : ''} ${selectedNodeIds.length > 1 ? 'is-multi-selecting' : ''}`}
+      className={`lumina-canvas-container tool-${toolMode} ${isPanningState ? 'is-panning' : ''} ${connecting ? 'is-connecting' : ''} ${snapToGrid ? 'is-grid-snapping' : ''} ${selectedNodeIds.length > 1 ? 'is-multi-selecting' : ''}`}
       style={{
         backgroundPosition: `${viewport.x}px ${viewport.y}px`,
         backgroundSize: `${(snapToGrid ? 20 : 24) * viewport.zoom}px ${(snapToGrid ? 20 : 24) * viewport.zoom}px`,
@@ -1130,10 +1147,11 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
         )}
       </div>
 
-      {/* Layer 3: Center Toolbar (Select, Hand, Pencil, Eraser, Text, Sticky, Shapes, Undo/Redo, Clear) */}
+      {/* Layer 3: Center Toolbar (New Canvas, Select, Hand, Pencil, Eraser, Text, Sticky, Shapes, Undo/Redo, Clear) */}
       <ConvasToolBarCenter
         toolMode={toolMode}
         setToolMode={setToolMode}
+        onCreateNewCanvas={handleCreateNewCanvas}
         onAddSticky={handleAddSticky}
         onAddShape={handleAddShape}
         pencilColor={pencilColor}

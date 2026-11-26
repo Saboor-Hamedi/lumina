@@ -219,6 +219,39 @@ export function useEditorEvents({
       }
     }
 
+    const handleInsertDroppedImages = (e: Event) => {
+      if (!isActiveRef.current || !realViewRef.current) return
+      const view = realViewRef.current
+      const detail = (e as CustomEvent)?.detail || {}
+      const images: Array<{ alt?: string; url?: string }> = Array.isArray(detail.images)
+        ? detail.images
+        : []
+      if (images.length === 0) return
+
+      let insertPos = view.state.selection.main.head
+      if (typeof detail.clientX === 'number' && typeof detail.clientY === 'number') {
+        const coordPos = view.posAtCoords({ x: detail.clientX, y: detail.clientY })
+        if (typeof coordPos === 'number') {
+          insertPos = coordPos
+        }
+      }
+
+      const markdown = images
+        .filter((img) => img && img.url)
+        .map((img) => `![${img.alt || 'image'}](${img.url})`)
+        .join('\n')
+      if (!markdown) return
+
+      const needsLeadingNewline = insertPos > 0 && view.state.doc.sliceString(insertPos - 1, insertPos) !== '\n'
+      const insertText = `${needsLeadingNewline ? '\n' : ''}${markdown}\n`
+      const safePos = Math.max(0, Math.min(insertPos, view.state.doc.length))
+      view.dispatch({
+        changes: { from: safePos, insert: insertText },
+        selection: { anchor: safePos + insertText.length }
+      })
+      view.focus()
+    }
+
     window.addEventListener('search-update', handleSearchUpdate)
     window.addEventListener('search-clear', handleSearchClear)
     window.addEventListener('focus-editor-start', handleFocusEditorStart)
@@ -226,6 +259,7 @@ export function useEditorEvents({
     window.addEventListener('editor-scroll-to-line', handleScrollToLine)
     window.addEventListener('editor-scroll-to-cursor', handleScrollToCursor)
     window.addEventListener('show-toast', handleGlobalToast)
+    window.addEventListener('lumina:insert-dropped-images', handleInsertDroppedImages)
     return () => {
       window.removeEventListener('search-update', handleSearchUpdate)
       window.removeEventListener('search-clear', handleSearchClear)
@@ -234,6 +268,7 @@ export function useEditorEvents({
       window.removeEventListener('editor-scroll-to-line', handleScrollToLine)
       window.removeEventListener('editor-scroll-to-cursor', handleScrollToCursor)
       window.removeEventListener('show-toast', handleGlobalToast)
+      window.removeEventListener('lumina:insert-dropped-images', handleInsertDroppedImages)
     }
   }, [showToast, realViewRef, titleRef])
 

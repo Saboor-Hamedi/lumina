@@ -162,6 +162,18 @@
   border-color: color-mix(in srgb, var(--accent-color, var(--text-accent)) 28%, transparent);
 }
 
+.pdf-viewer-badge.is-ready {
+  gap: 4px;
+  color: var(--accent-color, var(--text-accent));
+  background: color-mix(in srgb, var(--accent-color, var(--text-accent)) 8%, var(--bg-shell, var(--bg-panel)));
+  border-color: color-mix(in srgb, var(--accent-color, var(--text-accent)) 22%, var(--border-color));
+}
+
+.pdf-viewer-badge.is-indexing {
+  color: var(--text-muted);
+  opacity: 0.9;
+}
+
 /* Segmented Appearance Switcher */
 .pdf-theme-switch-group {
   display: inline-flex;

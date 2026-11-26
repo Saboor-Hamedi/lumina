@@ -56,6 +56,7 @@ export interface UseCanvasShortcutsOptions {
   undo: () => void
   redo: () => void
   pushHistory: () => void
+  isActive?: boolean
 }
 
 export function useCanvasShortcuts({
@@ -90,11 +91,14 @@ export function useCanvasShortcuts({
   setEditingField,
   undo,
   redo,
-  pushHistory
+  pushHistory,
+  isActive = true
 }: UseCanvasShortcutsOptions) {
   const isNudgingRef = useRef(false)
 
   useEffect(() => {
+    if (!isActive) return
+
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check if user is typing in any input, textarea, or ProseMirror/contenteditable editor
       const activeEl = document.activeElement as HTMLElement | null
@@ -345,6 +349,7 @@ export function useCanvasShortcuts({
     setToolMode,
     setIsSpacePressed,
     undo,
-    redo
+    redo,
+    isActive
   ])
 }

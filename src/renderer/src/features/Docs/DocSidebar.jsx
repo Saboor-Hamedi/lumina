@@ -1,9 +1,11 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'
-import { Book, Search, FileText, ChevronDown, Folder, X, Keyboard, Code2 } from 'lucide-react'
+import { Book, Search, FileText, ChevronDown, Folder, X, Keyboard, Code2, Sparkles, Layers } from 'lucide-react'
 
 const formatDocTitle = (name) => {
   const customTitles = {
     introduction: 'Introduction to Lumina',
+    'how-to-ask-lumina': 'How to Ask Lumina',
+    'pdf-and-ai-canvas': 'Smart PDFs & AI Canvas',
     shortcuts: 'Keyboard Shortcuts',
     purpose: 'Purpose & Architecture',
     'quick-start': 'Quick Start Guide',
@@ -41,10 +43,17 @@ const formatFolderName = (folder) => {
 }
 
 const getDocIcon = (path, name) => {
-  if (name.toLowerCase().includes('shortcut')) {
+  const lower = name.toLowerCase()
+  if (lower.includes('how-to-ask-lumina')) {
+    return <Sparkles size={13} style={{ marginRight: '8px', opacity: 0.85, color: 'var(--text-accent)' }} />
+  }
+  if (lower.includes('pdf-and-ai-canvas')) {
+    return <Layers size={13} style={{ marginRight: '8px', opacity: 0.85, color: 'var(--text-accent)' }} />
+  }
+  if (lower.includes('shortcut')) {
     return <Keyboard size={13} style={{ marginRight: '8px', opacity: 0.7 }} />
   }
-  if (name.toLowerCase().includes('purpose') || path.includes('technical')) {
+  if (lower.includes('purpose') || path.includes('technical')) {
     return <Code2 size={13} style={{ marginRight: '8px', opacity: 0.75, color: 'var(--text-accent)' }} />
   }
   if (path.includes('references/') || path.includes('reference/')) {

@@ -19,6 +19,8 @@ import { auditWikilinksTool } from './auditWikilinks'
 import { luminaQueryIndexTool, queryIndexTool } from './luminaQueryIndex'
 import { undoChangesTool } from './undoChanges'
 import { luminWebSearchTool as webSearchTool } from './luminWebSearch'
+import { searchPdfTool } from './searchPdf'
+import { createCanvasDiagramTool } from './createCanvasDiagram'
 import { saveMemoryTool, updateMemoryTool, forgetMemoryTool } from '../../../core/ai/memory'
 
 export {
@@ -28,15 +30,19 @@ export {
   luminaQueryIndexTool,
   queryIndexTool,
   grepWorkspaceTool,
-  webSearchTool
+  webSearchTool,
+  searchPdfTool,
+  createCanvasDiagramTool
 }
 
 export const getAITools = (blockReadFile?: boolean, allowOpenFile: boolean = false): Record<string, any> => {
   const tools: Record<string, any> = {
     createFile: createFileTool,
+    createCanvasDiagram: createCanvasDiagramTool,
     readFile: getReadFileTool(blockReadFile),
     checkFile: checkFileTool,
     grepWorkspace: grepWorkspaceTool,
+    searchPdf: searchPdfTool,
     webSearch: webSearchTool,
     // Expose one public tool name: advertising both aliases makes some models
     // execute the same diagnostics twice. The legacy name remains understood

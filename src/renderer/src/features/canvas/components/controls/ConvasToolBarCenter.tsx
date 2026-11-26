@@ -16,6 +16,7 @@
 
 import React, { useState } from 'react'
 import {
+  Plus,
   MousePointer,
   Hand,
   Pencil,
@@ -36,6 +37,7 @@ import ConvasShapes, { SHAPE_COLOR_OPTIONS } from './ConvasShapes'
 export interface ConvasToolBarCenterProps {
   toolMode: CanvasToolMode
   setToolMode: (mode: CanvasToolMode) => void
+  onCreateNewCanvas?: () => void
   onAddSticky: () => void
   onAddShape?: (shapeType: CanvasShapeType, width: number, height: number, color?: CanvasNodeColor) => void
   pencilColor?: CanvasNodeColor
@@ -64,6 +66,7 @@ export const ConvasToolBarCenter: React.FC<ConvasToolBarCenterProps> = React.mem
   ({
     toolMode,
     setToolMode,
+    onCreateNewCanvas,
     onAddSticky,
     onAddShape,
     pencilColor = 'default',
@@ -168,6 +171,23 @@ export const ConvasToolBarCenter: React.FC<ConvasToolBarCenterProps> = React.mem
         )}
 
         <div className="lumina-canvas-toolbar lumina-canvas-toolbar-center">
+          {/* Create New Canvas Tab */}
+          {onCreateNewCanvas && (
+            <>
+              <ToolTip text="New Canvas" position="top">
+                <button
+                  type="button"
+                  className="lumina-canvas-tool-btn"
+                  onClick={onCreateNewCanvas}
+                  aria-label="New Canvas"
+                >
+                  <Plus size={14} />
+                </button>
+              </ToolTip>
+              <div className="lumina-canvas-divider" />
+            </>
+          )}
+
           {/* Tool Mode: Select (Mouse Cursor) */}
           <ToolTip text="Select Tool (V)" position="top">
             <button

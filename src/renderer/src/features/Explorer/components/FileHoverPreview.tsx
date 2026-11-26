@@ -28,6 +28,7 @@ import {
   AtSign
 } from 'lucide-react'
 import { useWorkspaceStore } from '../../../core/store/workspaceStore'
+import { assetResponseToUrl, decodeAssetPath } from '../../media/utils/assetUrl'
 
 export interface FileHoverPreviewProps {
   item: any
@@ -64,26 +65,40 @@ const ImagePreviewCard: React.FC<{ item: any }> = ({ item }) => {
   const [loadFailed, setLoadFailed] = useState(false)
 
   useEffect(() => {
-    setSrc(assetUrl)
+    let cancelled = false
+    let createdUrl: string | null = null
     setLoadFailed(false)
     setNaturalDim(null)
-  }, [assetUrl])
 
-  const handleError = () => {
-    // Fallback to window.api.readAsset IPC if protocol streaming is unavailable
-    if (!loadFailed && (window as any).api?.readAsset && relPath) {
-      setLoadFailed(true)
-      ;(window as any).api
-        .readAsset(relPath)
-        .then((res: any) => {
-          if (res?.dataUrl) {
-            setSrc(res.dataUrl)
-          } else if (res) {
-            setSrc(`data:image/png;base64,${res}`)
+    const readAsset = (window as any).api?.readAsset
+    if (readAsset && relPath) {
+      const decoded = decodeAssetPath(relPath)
+      readAsset(decoded)
+        .then((res: unknown) => {
+          if (cancelled) return
+          const resolved = assetResponseToUrl(res, decoded)
+          if (resolved) {
+            if (resolved.isObjectUrl) createdUrl = resolved.url
+            setSrc(resolved.url)
+          } else {
+            setSrc(assetUrl)
           }
         })
-        .catch(() => {})
+        .catch(() => {
+          if (!cancelled) setSrc(assetUrl)
+        })
+    } else {
+      setSrc(assetUrl)
     }
+
+    return () => {
+      cancelled = true
+      if (createdUrl) URL.revokeObjectURL(createdUrl)
+    }
+  }, [relPath, assetUrl])
+
+  const handleError = () => {
+    setLoadFailed(true)
   }
 
   return (

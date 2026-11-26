@@ -907,6 +907,32 @@ export function initTauriBridge(): void {
     webSearch: (query: string, maxResults?: number) =>
       invoke<any>('web_search', { query, maxResults }),
 
+    // Invisible SQLite FTS5 + Int8 Hybrid PDF Index
+    pdfIndexFile: (relativePath: string) => invoke<any>('pdf_index_file', { relativePath }),
+    pdfGetPendingChunks: (relativePath?: string | null, limit?: number) =>
+      invoke<any>('pdf_get_pending_chunks', {
+        relativePath: relativePath || null,
+        limit: limit ?? 12
+      }),
+    pdfSaveEmbeddings: (entries: Array<{ chunkId: number; embedding: number[] }>) =>
+      invoke<number>('pdf_save_embeddings', { entries }),
+    pdfSearch: (
+      query: string,
+      options?: { queryEmbedding?: number[] | null; relativePath?: string | null; limit?: number }
+    ) =>
+      invoke<any>('pdf_search', {
+        query,
+        queryEmbedding: options?.queryEmbedding ?? null,
+        relativePath: options?.relativePath ?? null,
+        limit: options?.limit ?? 8
+      }),
+    pdfGetStatus: (relativePath: string) => invoke<any>('pdf_get_status', { relativePath }),
+    pdfListDocuments: () => invoke<any>('pdf_list_documents'),
+    pdfGetStats: () => invoke<any>('pdf_get_stats'),
+    pdfRemoveDocument: (relativePath: string) =>
+      invoke<boolean>('pdf_remove_document', { relativePath }),
+    pdfPruneMissing: () => invoke<number>('pdf_prune_missing'),
+
     // Google OAuth & Gmail
     loginWithGoogle: (clientId: string) => invoke('login_with_google', { clientId }),
     getGoogleUser: () => invoke('get_google_user'),

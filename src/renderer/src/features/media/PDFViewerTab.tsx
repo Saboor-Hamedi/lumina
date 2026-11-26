@@ -3,6 +3,7 @@ import { PulseLoader } from '../../components/PulseLoader'
 import { ChromePdfIcon } from '../Icons/FileIcon'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { PDFToolbar, type PDFThemeMode } from './PDFToolbar'
+import { usePdfIndexStatus } from './pdf'
 import type { Snippet } from '../../core/editor/types'
 import './css/pdfViewerTab.css'
 
@@ -49,6 +50,8 @@ export const PDFViewerTab: React.FC<PDFViewerTabProps> = ({ snippet }) => {
   const relPath =
     snippet?.relativePath ||
     (snippet?.folderId ? `${snippet.folderId}/${snippet.fileName}` : snippet?.fileName)
+
+  const indexStatus = usePdfIndexStatus(relPath)
 
   // Direct asset:// URL for zero-copy binary streaming fallback
   const assetUrl = useMemo(() => {
@@ -216,6 +219,7 @@ export const PDFViewerTab: React.FC<PDFViewerTabProps> = ({ snippet }) => {
         onOpenInFolder={handleOpenInFolder}
         currentTheme={theme}
         onSetTheme={handleSetTheme}
+        indexStatus={indexStatus}
       />
     </div>
   )

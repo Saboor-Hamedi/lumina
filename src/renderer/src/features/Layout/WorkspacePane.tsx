@@ -20,14 +20,28 @@ import { useShallow } from 'zustand/react/shallow'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useTabDragStore } from './tabDragDrop'
 import { ExternalDropOverlay } from '../Explorer/drop'
+import { PulseLoader } from '../../components/PulseLoader'
 import { FolderDown, FileText } from 'lucide-react'
 import type { WorkspaceDropState } from '../Explorer/drop/hooks/useWorkspaceDrop'
 
-const Graph = React.lazy(() => import('../graph/Graph'))
-const LuminaChatContent = React.lazy(() =>
+const loadLuminaChatContent = () =>
   import('../AI/components/LuminaChatContent').then((m) => ({ default: m.LuminaChatContent }))
-)
+
+const Graph = React.lazy(() => import('../graph/Graph'))
+const LuminaChatContent = React.lazy(loadLuminaChatContent)
 const ReleaseNotesTab = React.lazy(() => import('../../components/update/ReleaseNotesTab'))
+
+// Warm the Lumina AI chunk quietly on idle so switching to the Lumina tab is instant (0ms blank screen)
+if (typeof window !== 'undefined') {
+  const warmLumina = () => {
+    void loadLuminaChatContent().catch(() => {})
+  }
+  if (typeof (window as any).requestIdleCallback === 'function') {
+    ;(window as any).requestIdleCallback(warmLumina, { timeout: 1500 })
+  } else {
+    window.setTimeout(warmLumina, 600)
+  }
+}
 
 interface PaneSpecialTabProps {
   paneId: WorkspacePaneId
@@ -85,7 +99,21 @@ const LuminaTabPane = React.memo<{ paneId: WorkspacePaneId }>(({ paneId }) => {
         flexDirection: 'column'
       }}
     >
-      <React.Suspense fallback={null}>
+      <React.Suspense
+        fallback={
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'var(--bg-app)'
+            }}
+          >
+            <PulseLoader message="Loading Lumina AI…" delayMs={0} />
+          </div>
+        }
+      >
         <LuminaChatContent isSidebar={false} isModal={false} />
       </React.Suspense>
     </div>

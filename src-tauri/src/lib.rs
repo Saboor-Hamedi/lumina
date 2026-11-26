@@ -153,7 +153,16 @@ pub fn run() {
             cancel_app_update,
             install_app_update,
             fetch_link_metadata,
-            web_search
+            web_search,
+            pdf_index_file,
+            pdf_get_pending_chunks,
+            pdf_save_embeddings,
+            pdf_search,
+            pdf_get_status,
+            pdf_list_documents,
+            pdf_get_stats,
+            pdf_remove_document,
+            pdf_prune_missing
         ])
         .run(tauri::generate_context!())
         .expect("error while building tauri application");

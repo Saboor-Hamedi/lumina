@@ -243,7 +243,15 @@
   filter: drop-shadow(0 0 5px color-mix(in srgb, var(--node-accent, #38bdf8) 45%, transparent));
 }
 
-/* Frame container stays clean, flat, and shadow-free */
+/* Frame container stays clean, flat, shadow-free, and ALWAYS behind inner shapes so it never blocks dragging */
+.lumina-canvas-node.is-shape.shape-frame {
+  z-index: 1 !important;
+}
+
+.lumina-canvas-node.is-shape.shape-frame.selected {
+  z-index: 1 !important;
+}
+
 .lumina-canvas-node.is-shape.shape-frame .lumina-canvas-shape-svg,
 .lumina-canvas-node.is-shape.shape-frame:hover .lumina-canvas-shape-svg,
 .lumina-canvas-node.is-shape.shape-frame.selected .lumina-canvas-shape-svg {
@@ -251,11 +259,11 @@
   transform: none !important;
 }
 
-/* Shape Inner Actions: Sits neatly inside the shape at the top-right corner */
+/* Shape Inner Actions: Floats cleanly above the top-right corner so it never blocks grabbing small shapes */
 .lumina-canvas-shape-actions {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: -30px;
+  right: 0;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -351,7 +359,7 @@
   max-height: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  cursor: text;
+  cursor: move;
 }
 
 .lumina-canvas-shape-text .placeholder {

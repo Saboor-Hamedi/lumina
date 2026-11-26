@@ -111,8 +111,18 @@
 }
 
 .lumina-canvas-container.tool-pencil .lumina-canvas-node,
-.lumina-canvas-container.tool-eraser .lumina-canvas-node {
+.lumina-canvas-container.tool-eraser .lumina-canvas-node,
+.lumina-canvas-container.tool-hand .lumina-canvas-node,
+.lumina-canvas-container.tool-hand .lumina-canvas-edge-group {
   pointer-events: none;
+}
+
+.lumina-canvas-container.tool-hand {
+  cursor: grab;
+}
+
+.lumina-canvas-container.tool-hand.is-panning {
+  cursor: grabbing;
 }
 
 .lumina-canvas-stroke-group.is-erasable:hover .lumina-canvas-stroke-path {

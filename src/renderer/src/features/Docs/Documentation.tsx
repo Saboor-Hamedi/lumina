@@ -42,6 +42,8 @@ const markdownFiles = import.meta.glob('../../../../../brain/**/*.md', {
 
 const CUSTOM_DOC_TITLES: Record<string, string> = {
   introduction: 'Introduction to Lumina',
+  'how-to-ask-lumina': 'How to Ask Lumina',
+  'pdf-and-ai-canvas': 'Smart PDFs & AI Canvas',
   shortcuts: 'Keyboard Shortcuts',
   purpose: 'Purpose & Architecture',
   'quick-start': 'Quick Start Guide',

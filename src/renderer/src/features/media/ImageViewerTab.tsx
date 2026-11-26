@@ -9,6 +9,7 @@ import {
   FolderOpen
 } from 'lucide-react'
 import { copyImageToClipboard } from './hooks/imageClipboard'
+import { assetResponseToUrl, decodeAssetPath } from './utils/assetUrl'
 import PulseLoader from '../../components/PulseLoader'
 import type { Snippet } from '../../core/editor/types'
 import './css/imageViewTab.css'
@@ -59,6 +60,16 @@ export const ImageViewerTab: React.FC<ImageViewerTabProps> = ({ snippet }) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const dragStartRef = useRef({ x: 0, y: 0 })
   const posStartRef = useRef({ x: 0, y: 0 })
+  const objectUrlRef = useRef<string | null>(null)
+
+  const revokeObjectUrl = useCallback(() => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current)
+      objectUrlRef.current = null
+    }
+  }, [])
+
+  useEffect(() => revokeObjectUrl, [revokeObjectUrl])
 
   useEffect(() => {
     if (!relPath) {
@@ -78,13 +89,15 @@ export const ImageViewerTab: React.FC<ImageViewerTabProps> = ({ snippet }) => {
     const readAsset = (window as any).api?.readAsset
     if (readAsset) {
       setImageSrc(null)
-      readAsset(relPath)
-        .then((res: any) => {
+      const decodedPath = decodeAssetPath(relPath)
+      readAsset(decodedPath)
+        .then((res: unknown) => {
           if (cancelled) return
-          if (res?.dataUrl) {
-            setImageSrc(res.dataUrl)
-          } else if (typeof res === 'string' && res.length > 0) {
-            setImageSrc(res.startsWith('data:') ? res : `data:image/png;base64,${res}`)
+          const resolved = assetResponseToUrl(res, decodedPath)
+          if (resolved) {
+            revokeObjectUrl()
+            if (resolved.isObjectUrl) objectUrlRef.current = resolved.url
+            setImageSrc(resolved.url)
           } else if (assetUrl && window.location.protocol !== 'http:' && window.location.protocol !== 'https:') {
             setFallbackAttempted(true)
             setImageSrc(assetUrl)
@@ -111,7 +124,7 @@ export const ImageViewerTab: React.FC<ImageViewerTabProps> = ({ snippet }) => {
     return () => {
       cancelled = true
     }
-  }, [relPath, assetUrl])
+  }, [relPath, assetUrl, revokeObjectUrl])
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     setLoading(false)
@@ -126,12 +139,14 @@ export const ImageViewerTab: React.FC<ImageViewerTabProps> = ({ snippet }) => {
     // If protocol stream fails, gracefully fallback once to IPC readAsset
     if (!fallbackAttempted && (window as any).api?.readAsset && relPath) {
       setFallbackAttempted(true)
-      ;(window as any).api.readAsset(relPath)
-        .then((res: any) => {
-          if (res?.dataUrl) {
-            setImageSrc(res.dataUrl)
-          } else if (res) {
-            setImageSrc(`data:image/png;base64,${res}`)
+      const decodedPath = decodeAssetPath(relPath)
+      ;(window as any).api.readAsset(decodedPath)
+        .then((res: unknown) => {
+          const resolved = assetResponseToUrl(res, decodedPath)
+          if (resolved) {
+            revokeObjectUrl()
+            if (resolved.isObjectUrl) objectUrlRef.current = resolved.url
+            setImageSrc(resolved.url)
           } else {
             setError('Failed to load image from workspace')
             setLoading(false)

@@ -1,6 +1,7 @@
 #![deny(clippy::all)]
 
 pub mod graph;
+pub mod pdf;
 pub mod scanner;
 pub mod search;
 pub mod secrets;

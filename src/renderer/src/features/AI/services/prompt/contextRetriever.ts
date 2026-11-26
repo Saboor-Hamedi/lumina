@@ -18,6 +18,8 @@
  *      forbidden keys from settings before injecting them into the system prompt.
  */
 
+import { searchPdfIndex } from '../../../media/pdf'
+
 export interface WorkspaceRAGResult {
   vaultContext: Array<{ file: string; text: string; score: number }>
   vaultAccessNote: string
@@ -77,6 +79,22 @@ export const retrieveWorkspaceRAG = async (message?: string): Promise<WorkspaceR
         if (vaultContext.length > 0) {
           vaultAccessNote = `Retrieved relevant context from workspace.`
         }
+      }
+    }
+
+    // Merge hybrid PDF page hits (SQLite FTS5 + local MiniLM Int8 vectors)
+    if (message && message.trim()) {
+      const cleanPdfQuery =
+        message.trim().length > 250 ? message.trim().slice(0, 250) : message.trim()
+      const pdfHits = await searchPdfIndex(cleanPdfQuery, { limit: 4 }).catch(() => [])
+      if (pdfHits.length > 0) {
+        const pdfChunks = pdfHits.map((hit) => ({
+          file: `${hit.title}.pdf (p. ${hit.pageNumber})`,
+          text: String(hit.content || '').trim().slice(0, 1000),
+          score: Math.max(0.5, Number(hit.score || 0) * 20)
+        }))
+        vaultContext = [...vaultContext, ...pdfChunks].slice(0, 8)
+        vaultAccessNote = `Retrieved relevant context from workspace notes and PDFs.`
       }
     }
   } catch (searchErr) {

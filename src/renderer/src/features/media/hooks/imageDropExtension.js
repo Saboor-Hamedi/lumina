@@ -3,6 +3,7 @@ import { useWorkspaceStore } from '../../../core/store/workspaceStore'
 import { useSettingsStore } from '../../../core/store/SettingStore'
 import { htmlToMarkdown, applyRichPasteToView, isTsvTable } from '../../Editor/utils/htmlToMarkdown'
 import { trySmartLinkPaste } from '../../Editor/utils/smartLinkPaste'
+import { encodeMarkdownImageUrl } from '../utils/assetUrl'
 
 export const imageDropExtension = () =>
   EditorView.domEventHandlers({
@@ -32,7 +33,8 @@ export const imageDropExtension = () =>
             const relativePath = await window.api.saveImage(uint8Array, file.name)
 
             if (relativePath) {
-              const markdownToInsert = `\n![${file.name}](${relativePath})\n`
+              const encodedPath = encodeMarkdownImageUrl(relativePath)
+              const markdownToInsert = `\n![${file.name}](${encodedPath})\n`
               const currentDocLen = view.state.doc.length
               const safePos = Math.max(0, Math.min(pos, currentDocLen))
               const safeAnchor = Math.min(safePos + markdownToInsert.length, currentDocLen + markdownToInsert.length)
@@ -155,7 +157,8 @@ export const imageDropExtension = () =>
             const relativePath = await window.api.saveImage(uint8Array, filename)
 
             if (relativePath) {
-              const markdownToInsert = `![${filename}](${relativePath})`
+              const encodedPath = encodeMarkdownImageUrl(relativePath)
+              const markdownToInsert = `![${filename}](${encodedPath})`
               const currentDocLen = view.state.doc.length
               const safePos = Math.max(0, Math.min(pos, currentDocLen))
               const safeAnchor = Math.min(safePos + markdownToInsert.length, currentDocLen + markdownToInsert.length)

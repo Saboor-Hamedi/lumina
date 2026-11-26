@@ -37,6 +37,16 @@ interface CanvasHistorySnapshot {
   strokes: CanvasStroke[]
 }
 
+/**
+ * Module-level shared clipboard so copying nodes/edges in one Canvas tab
+ * (Ctrl+C) pastes cleanly into any other open Canvas tab (Ctrl+V).
+ */
+let sharedCanvasClipboard: {
+  nodes: CanvasNode[]
+  edges: CanvasEdge[]
+  pasteCount: number
+} | null = null
+
 export function useCanvas(options: UseCanvasOptions = {}) {
   // Normalize initial nodes safely
   const [nodes, setNodes] = useState<CanvasNode[]>(() => {
@@ -84,7 +94,6 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   // Undo / Redo History Stacks (100-step deep snapshots including freehand strokes)
   const undoStackRef = useRef<CanvasHistorySnapshot[]>([])
   const redoStackRef = useRef<CanvasHistorySnapshot[]>([])
-  const clipboardRef = useRef<{ nodes: CanvasNode[]; edges: CanvasEdge[]; pasteCount: number } | null>(null)
   const [, setHistoryCount] = useState(0)
 
   const captureSnapshot = (): CanvasHistorySnapshot => ({
@@ -482,7 +491,7 @@ export function useCanvas(options: UseCanvasOptions = {}) {
       .filter((e) => copySet.has(e.fromNode) && copySet.has(e.toNode))
       .map((e) => ({ ...e }))
 
-    clipboardRef.current = { nodes: nodesToCopy, edges: edgesToCopy, pasteCount: 0 }
+    sharedCanvasClipboard = { nodes: nodesToCopy, edges: edgesToCopy, pasteCount: 0 }
     return nodesToCopy.length
   }, [])
 
@@ -490,15 +499,15 @@ export function useCanvas(options: UseCanvasOptions = {}) {
    * Pastes previously copied nodes and edges with incremental offset (+32px, +32px).
    */
   const pasteNodes = useCallback(() => {
-    if (!clipboardRef.current || clipboardRef.current.nodes.length === 0) return []
+    if (!sharedCanvasClipboard || sharedCanvasClipboard.nodes.length === 0) return []
 
     pushHistory()
 
-    clipboardRef.current.pasteCount += 1
-    const offset = 32 * clipboardRef.current.pasteCount
+    sharedCanvasClipboard.pasteCount += 1
+    const offset = 32 * sharedCanvasClipboard.pasteCount
     const idMap = new Map<string, string>()
 
-    const pastedNodes: CanvasNode[] = clipboardRef.current.nodes.map((n) => {
+    const pastedNodes: CanvasNode[] = sharedCanvasClipboard.nodes.map((n) => {
       const newId = `node-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
       idMap.set(n.id, newId)
       return {
@@ -509,7 +518,7 @@ export function useCanvas(options: UseCanvasOptions = {}) {
       }
     })
 
-    const pastedEdges: CanvasEdge[] = clipboardRef.current.edges.map((e) => ({
+    const pastedEdges: CanvasEdge[] = sharedCanvasClipboard.edges.map((e) => ({
       ...e,
       id: `edge-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       fromNode: idMap.get(e.fromNode) || e.fromNode,
@@ -527,10 +536,10 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   }, [pushHistory])
 
   /**
-   * Checks whether the canvas clipboard currently contains copied nodes.
+   * Checks whether the shared canvas clipboard currently contains copied nodes.
    */
   const hasCopiedNodes = useCallback(() => {
-    return Boolean(clipboardRef.current && clipboardRef.current.nodes.length > 0)
+    return Boolean(sharedCanvasClipboard && sharedCanvasClipboard.nodes.length > 0)
   }, [])
 
   /**

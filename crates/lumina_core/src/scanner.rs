@@ -463,7 +463,7 @@ pub fn scan_vault_impl(vault_path_str: &str, max_bytes: usize) -> ScanResult {
     }
 }
 
-fn md5_hash(data: &str) -> u128 {
+pub fn md5_hash(data: &str) -> u128 {
     let mut hash: u128 = 0xcbf29ce484222325;
     for byte in data.bytes() {
         hash ^= byte as u128;

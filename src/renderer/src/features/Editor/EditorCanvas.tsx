@@ -173,7 +173,10 @@ export const EditorCanvas: React.FC<EditorCanvasProps> = React.memo(
         markExplorerPerf('document-source-clean-end', { noteId: snippet?.id, durationMs: 0, sourceLength: 0 })
         return ''
       }
-      const cleaned = stripMarkdownFrontmatter(raw).content
+      const rawCleaned = stripMarkdownFrontmatter(raw).content
+      // Normalize whitespace-only bodies (e.g. blank newlines after YAML frontmatter on a brand-new note)
+      // to '' so CodeMirror displays the empty-document placeholder immediately.
+      const cleaned = rawCleaned.trim().length === 0 ? '' : rawCleaned
       markExplorerPerf('document-source-clean-end', {
         noteId: snippet?.id,
         durationMs: Number((performance.now() - sourceStartedAt).toFixed(2)),

@@ -19,6 +19,7 @@ import { attachLightbox } from '../../../core/mermaid'
 import { renderPulseLoaderHtml } from '../../../components/PulseLoader'
 import { copyImageToClipboard } from './imageClipboard'
 import { createCaptionElement } from './imageCaption'
+import { assetResponseToUrl, decodeAssetPath } from '../utils/assetUrl'
 
 const urlCache = new Map<string, Promise<string | null>>()
 
@@ -64,41 +65,34 @@ function resolveLocalAssetUrl(rawUrl: string): Promise<string | null> {
     return urlCache.get(rawUrl)!
   }
 
-  const cleanUrl = rawUrl.startsWith('/') ? rawUrl.slice(1) : rawUrl
-  const mimeType = inferImageMime(cleanUrl)
+  const cleanUrl = decodeAssetPath(rawUrl)
 
-  const fetchWithRetry = async (retries = 3, delay = 50): Promise<string | null> => {
+  const fetchWithRetry = async (retries = 3, delay = 60): Promise<string | null> => {
     const readAsset = (window as any).api?.readAsset
     if (!readAsset) return null
 
     for (let i = 0; i < retries; i++) {
       try {
         const res = await readAsset(cleanUrl)
-        if (!res) return null
-        if (res.dataUrl) return res.dataUrl
-        if (res.buffer && !(res instanceof Uint8Array)) {
-          return URL.createObjectURL(
-            new Blob([res.buffer], { type: res.mimeType || mimeType })
-          )
-        }
-        if (
-          res instanceof Uint8Array ||
-          res instanceof ArrayBuffer ||
-          (typeof Buffer !== 'undefined' && Buffer.isBuffer(res))
-        ) {
-          const buf = res instanceof Uint8Array ? new Uint8Array(res) : res
-          return URL.createObjectURL(new Blob([buf as BlobPart], { type: mimeType }))
-        }
-        return null
+        const resolved = assetResponseToUrl(res, cleanUrl)
+        if (resolved) return resolved.url
       } catch {
-        if (i === retries - 1) return null
+        // Retry transiently
+      }
+      if (i < retries - 1) {
         await new Promise((resolve) => setTimeout(resolve, delay))
       }
     }
     return null
   }
 
-  const promise = fetchWithRetry()
+  const promise = fetchWithRetry().then((url) => {
+    // Never cache failures so newly saved or synced images recover cleanly
+    if (!url) {
+      urlCache.delete(rawUrl)
+    }
+    return url
+  })
   urlCache.set(rawUrl, promise)
   return promise
 }

@@ -562,10 +562,16 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  background-color: var(--border-subtle, rgba(255, 255, 255, 0.08));
-  opacity: 0.45;
+  background-color: var(--border-subtle, rgba(255, 255, 255, 0.1));
+  opacity: 0.36;
+  transition: opacity 150ms ease;
 }
-/* Recommended List / Tree Items */
+
+.recommended-list:hover .tree-indent-guide {
+  opacity: 0.62;
+}
+
+/* Recommended List / Tree Items — IDE-Grade Hierarchical Alignment */
 .recommended-list {
   display: flex;
   flex-direction: column;
@@ -574,36 +580,37 @@
 
 .tree-item,
 .start-section .tree-item {
-  padding: 0 4px 0 16px;
-  height: 26px;
-  margin: 1px 2px;
-  border-radius: 4px;
+  padding: 3px 8px 3px 24px;
+  height: 28px;
+  margin: 1px 6px;
+  border-radius: 6px;
   border-left: none;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
   cursor: pointer;
-  transition: none;
+  transition: background-color 150ms ease, color 150ms ease;
   position: relative;
   overflow: hidden;
   user-select: none;
+  box-sizing: border-box;
 }
 
 .tree-item:hover,
 .start-section .tree-item:hover {
-  background-color: var(--bg-hover, color-mix(in srgb, var(--text-main) 7%, transparent));
+  background-color: var(--bg-hover, color-mix(in srgb, var(--text-main) 6%, transparent));
 }
 
 .tree-item.active,
 .start-section .tree-item.active {
-  background-color: color-mix(in srgb, var(--text-accent, #8b5cf6) 9%, transparent) !important;
+  background-color: color-mix(in srgb, var(--text-accent, #8b5cf6) 11%, transparent) !important;
   color: var(--text-main);
 }
 
 .tree-item.active:hover,
 .start-section .tree-item.active:hover {
-  background: color-mix(in srgb, var(--text-accent, #8b5cf6) 13%, transparent) !important;
+  background-color: color-mix(in srgb, var(--text-accent, #8b5cf6) 15%, transparent) !important;
 }
 
 .tree-item .item-icon-wrap,
@@ -611,12 +618,50 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
   flex-shrink: 0;
   color: var(--text-muted, #94a3b8);
   line-height: 1;
-  transition: color 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+/* Subtle, muted translucent icon surfaces for typed assets (PDF, Canvas, Image) */
+.tree-item .item-icon-wrap.is-pdf {
+  background: color-mix(in srgb, #ef4444 10%, transparent);
+}
+
+.tree-item .item-icon-wrap.is-canvas {
+  background: color-mix(in srgb, var(--text-accent, #a855f7) 10%, transparent);
+}
+
+.tree-item .item-icon-wrap.is-image {
+  background: color-mix(in srgb, #38bdf8 10%, transparent);
+}
+
+.tree-item .item-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.tree-item .item-ext-hint {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  opacity: 0.4;
+  flex-shrink: 0;
+  letter-spacing: 0.01em;
+  transition: opacity 150ms ease;
+}
+
+.tree-item:hover .item-ext-hint,
+.tree-item.active .item-ext-hint {
+  opacity: 0.65;
 }
 
 .tree-item:hover .item-icon-wrap,
@@ -717,35 +762,35 @@
   transform: translateZ(0);
 }
 
-/* Nested creation buttons (appear on hover) */
+/* Folder Row — Exact Column & Height Parity with File Rows */
 .folder-tree-main {
   display: flex;
   align-items: center;
   gap: 4px;
   flex: 1;
   overflow: hidden;
-  padding: 0 4px 0 0;
-  height: 26px;
-  margin: 1px 2px;
-  border-radius: 4px;
-  border-left: 2px solid transparent;
-  transition: background-color 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1), border-color 120ms ease;
+  padding: 3px 8px 3px 4px;
+  height: 28px;
+  margin: 1px 6px;
+  border-radius: 6px;
+  border-left: none;
+  transition: background-color 150ms ease, color 150ms ease;
   position: relative;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 .folder-tree-main:hover {
-  background: var(--bg-hover);
+  background-color: var(--bg-hover, color-mix(in srgb, var(--text-main) 6%, transparent));
 }
 
 .folder-tree-main.active {
-  background: var(--bg-active, rgba(255, 255, 255, 0.08)) !important;
+  background-color: color-mix(in srgb, var(--text-accent, #8b5cf6) 11%, transparent) !important;
   color: var(--text-main) !important;
-  border-left-color: var(--text-accent) !important;
 }
 
 .folder-tree-main.active:hover {
-  background: var(--bg-active, rgba(255, 255, 255, 0.12)) !important;
+  background-color: color-mix(in srgb, var(--text-accent, #8b5cf6) 15%, transparent) !important;
 }
 
 .folder-tree-main.active .folder-name {
@@ -870,28 +915,28 @@
 }
 
 .folder-item-count {
-  font-size: 8.5px;
-  line-height: 10px;
+  font-size: 9.5px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
   color: var(--text-muted);
   background: transparent;
   border: none;
-  padding: 0 4px;
-  border-radius: 6px;
-  margin-right: 4px;
+  padding: 0 3px;
+  margin-right: 2px;
   font-weight: 500;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 14px;
-  height: 13px;
-  opacity: 0.45;
-  transition: opacity 120ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  height: 14px;
+  opacity: 0.38;
+  transition: opacity 150ms ease, color 150ms ease;
 }
 
 .folder-tree-main:hover .folder-item-count,
 .folder-tree-main.active .folder-item-count {
-  opacity: 0.9;
-  color: var(--text-accent);
+  opacity: 0.82;
+  color: var(--text-muted);
 }
 
 .tree-item .item-favorite-icon:hover,
@@ -979,7 +1024,7 @@
 .folder-chevron-btn .folder-chevron {
   color: var(--text-muted, #94a3b8);
   transform-origin: center;
-  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1), color 120ms ease;
+  transition: transform 100ms ease, color 150ms ease;
 }
 
 .folder-chevron-btn .folder-chevron.expanded {

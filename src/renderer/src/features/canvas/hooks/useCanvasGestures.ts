@@ -181,6 +181,7 @@ export function useCanvasGestures({
   const stateRef = useRef({
     viewport,
     nodes,
+    nodeMap,
     strokes,
     selectedNodeIds,
     toolMode,
@@ -193,6 +194,7 @@ export function useCanvasGestures({
   stateRef.current = {
     viewport,
     nodes,
+    nodeMap,
     strokes,
     selectedNodeIds,
     toolMode,
@@ -328,6 +330,17 @@ export function useCanvasGestures({
         return
       }
 
+      // Hand tool (H), Space+Drag, or Middle-Mouse drag pans anywhere — even directly over zoomed-in nodes/shapes
+      if (toolMode === 'hand' || isSpacePressed || e.button === 1) {
+        if (e.button === 0 || e.button === 1 || isTouch) {
+          e.preventDefault()
+          isPanningRef.current = true
+          setIsPanningState(true)
+          panPrevRef.current = { x: e.clientX, y: e.clientY }
+          return
+        }
+      }
+
       const isInteractive = target?.closest?.(
         '.lumina-canvas-node, .lumina-canvas-port, .lumina-canvas-resize-handle, .lumina-canvas-edge-group'
       )
@@ -427,9 +440,12 @@ export function useCanvasGestures({
    */
   const handleNodeMouseDown = useCallback(
     (e: React.MouseEvent | React.PointerEvent, node: CanvasNode) => {
-      if (shouldIgnoreDuplicateMouseDown(e)) return
-      // Allow pencil / eraser to draw or erase right over nodes without grabbing them
-      if (toolMode === 'pencil' || toolMode === 'eraser') return
+      // Allow pencil / eraser / hand / Space-pan to operate right over nodes without grabbing them
+      if (toolMode === 'pencil' || toolMode === 'eraser' || toolMode === 'hand' || isSpacePressed) return
+      if (shouldIgnoreDuplicateMouseDown(e)) {
+        e.stopPropagation()
+        return
+      }
 
       // If in connecting mode, clicking node body cancels wire cleanly
       if (connectingRef.current) {
@@ -444,7 +460,6 @@ export function useCanvasGestures({
       const pointerEvt = e as React.PointerEvent
       const isTouch = pointerEvt.pointerType === 'touch'
       if (!isTouch && e.button !== 0) return
-      if (toolMode === 'hand' || isSpacePressed) return
 
       // Don't drag if clicking buttons, inputs, ports, or handles
       const target = e.target as HTMLElement | null
@@ -715,7 +730,7 @@ export function useCanvasGestures({
           const dy = (clientY - resizingNodeRef.current.startY) / currentZoom
           const initialW = resizingNodeRef.current.initialW
           const initialH = resizingNodeRef.current.initialH
-          const activeShape = nodeMap.get(resizingNodeRef.current.id)?.shape
+          const activeShape = stateRef.current.nodeMap.get(resizingNodeRef.current.id)?.shape
           const isFreeResizeShape =
             activeShape === 'frame' ||
             activeShape === 'rectangle' ||
@@ -783,7 +798,7 @@ export function useCanvasGestures({
               let targetX = initialPos.x + dx
               let targetY = initialPos.y + dy
 
-              const activeNode = nodeMap.get(draggingNodeRef.current.id)
+              const activeNode = stateRef.current.nodeMap.get(draggingNodeRef.current.id)
               const w = activeNode?.width || 240
               const h = activeNode?.height || 150
 
@@ -985,6 +1000,7 @@ export function useCanvasGestures({
     return () => {
       if (rafIdRef.current !== null) {
         cancelAnimationFrame(rafIdRef.current)
+        rafIdRef.current = null
       }
       window.removeEventListener('pointermove', handleGlobalPointerMove)
       window.removeEventListener('pointerup', handleGlobalPointerUp)
@@ -1007,8 +1023,7 @@ export function useCanvasGestures({
     deleteStrokes,
     pushHistory,
     setEditingNodeId,
-    setEditingField,
-    nodeMap
+    setEditingField
   ])
 
   return {

@@ -166,12 +166,17 @@ pub async fn save_snippet(snippet: Value) -> Result<Value, String> {
             let _ = fs::create_dir_all(parent);
         }
 
-        let note_id = obj
-            .get("id")
-            .and_then(|v| v.as_str())
-            .filter(|s| !s.trim().is_empty())
-            .unwrap_or(&rel_path)
-            .to_string();
+        let note_id = if is_canvas {
+            // `.canvas` files have no YAML frontmatter, so the workspace scanner
+            // always assigns `note-<md5_hash(rel_path)>`. Match it 1:1 on save.
+            format!("note-{:032x}", lumina_core::scanner::md5_hash(&rel_path))
+        } else {
+            obj.get("id")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.trim().is_empty())
+                .unwrap_or(&rel_path)
+                .to_string()
+        };
         let clean_title = safe_stem.trim_end_matches(ext).to_string();
         let code = obj.get("code").and_then(|v| v.as_str()).unwrap_or("");
 
