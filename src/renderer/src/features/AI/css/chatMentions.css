@@ -36,12 +36,12 @@
   font-size: inherit;
   font-family: inherit;
   font-weight: 500;
-  color: var(--text-main);
+  color: var(--text-accent, #38bdf8);
   cursor: pointer;
-  background: transparent !important;
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 14%, transparent) !important;
   border: none !important;
   border-radius: 4px;
-  padding: 1px 3px;
+  padding: 1px 4px;
   margin: 0;
   text-decoration: none !important;
   white-space: nowrap;
@@ -52,6 +52,15 @@
     background-color 0.14s ease-out,
     box-shadow 0.14s ease-out,
     color 0.14s ease-out;
+}
+
+.chat-wikilink-chip:hover,
+.chat-entity-mention:hover,
+.mention-chip:hover,
+.chat-user-mention-pill:hover {
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 24%, transparent) !important;
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
 }
 
 /* Folder Mentions: Sleek inline folder identity without bulky padding/font weight */

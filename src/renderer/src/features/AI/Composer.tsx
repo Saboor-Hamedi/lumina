@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useCallback, useEffect, useRef, KeyboardEvent, DragEvent } from 'react'
+import React, { Suspense, lazy, useState, useCallback, useEffect, useRef, useMemo, KeyboardEvent, DragEvent } from 'react'
 import { Send, Square, ChevronDown, Plus } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
@@ -36,9 +36,11 @@ export const Composer: React.FC<ComposerProps> = ({
   const [input, setInput] = useState<string>('')
   const [isDragOver, setIsDragOver] = useState<boolean>(false)
   const composerCardRef = useRef<HTMLDivElement | null>(null)
+  const backdropRef = useRef<HTMLDivElement | null>(null)
   const handleStop = onStop || onCancel
 
   const { settings, updateSetting } = useSettingsStore()
+  const workspaceNotes = useWorkspaceStore((s) => s.notes || [])
   const mode = getAIMode(settings.activeAIMode).name
   const setMode = (newMode: string) => updateSetting('activeAIMode', newMode)
 
@@ -49,6 +51,7 @@ export const Composer: React.FC<ComposerProps> = ({
     showSlashMenu,
     setShowSlashMenu,
     slashFilter,
+    setSlashFilter,
     showMentionMenu,
     setShowMentionMenu,
     mentionFilter,
@@ -65,6 +68,88 @@ export const Composer: React.FC<ComposerProps> = ({
     mode,
     onSend
   })
+
+  // Build ordered list of mentionable note titles (longest first so multi-word titles match cleanly)
+  const mentionLookup = useMemo(() => {
+    const byTitleLower = new Map<string, any>()
+    for (const m of attachedMentions) {
+      if (m?.title) byTitleLower.set(String(m.title).toLowerCase(), m)
+    }
+    for (const n of workspaceNotes) {
+      if (n?.title && !byTitleLower.has(String(n.title).toLowerCase())) {
+        byTitleLower.set(String(n.title).toLowerCase(), n)
+      }
+    }
+    const titles = Array.from(byTitleLower.keys()).sort((a, b) => b.length - a.length)
+    if (titles.length === 0) return { byTitleLower, regex: null as RegExp | null }
+    const escaped = titles.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    return {
+      byTitleLower,
+      regex: new RegExp(`(@(?:${escaped.join('|')}))(?=$|[\\s.,!?:;)])`, 'gi')
+    }
+  }, [attachedMentions, workspaceNotes])
+
+  // Tokenize composer text into plain segments and inline @mention link segments
+  const composerMentionSegments = useMemo(() => {
+    if (!input || !mentionLookup.regex) {
+      return [{ text: input, start: 0, end: input.length, note: null as any }]
+    }
+    const segments: Array<{ text: string; start: number; end: number; note: any | null }> = []
+    const regex = new RegExp(mentionLookup.regex.source, 'gi')
+    let lastIndex = 0
+    let match: RegExpExecArray | null
+    while ((match = regex.exec(input)) !== null) {
+      const mStart = match.index
+      const mText = match[1]
+      const mEnd = mStart + mText.length
+      if (mStart > lastIndex) {
+        segments.push({ text: input.slice(lastIndex, mStart), start: lastIndex, end: mStart, note: null })
+      }
+      const note = mentionLookup.byTitleLower.get(mText.slice(1).toLowerCase()) || null
+      segments.push({ text: mText, start: mStart, end: mEnd, note })
+      lastIndex = mEnd
+    }
+    if (lastIndex < input.length) {
+      segments.push({ text: input.slice(lastIndex), start: lastIndex, end: input.length, note: null })
+    }
+    return segments
+  }, [input, mentionLookup])
+
+  const hasInlineMentions = useMemo(
+    () => composerMentionSegments.some((seg) => Boolean(seg.note)),
+    [composerMentionSegments]
+  )
+
+  const handleTextareaClick = useCallback(
+    (e: React.MouseEvent<HTMLTextAreaElement>) => {
+      const ta = e.currentTarget
+      if (ta.selectionStart !== ta.selectionEnd) return
+      const pos = ta.selectionStart
+      // Only open when clicking strictly inside an @mention link (clicking at the end lets you keep typing)
+      const hit = composerMentionSegments.find(
+        (seg) => seg.note && pos > seg.start && pos < seg.end
+      )
+      if (hit?.note) {
+        const store = useWorkspaceStore.getState()
+        const resolved =
+          (store.notes || []).find(
+            (n: any) =>
+              n.id === hit.note.id ||
+              (n.title && hit.note.title && n.title.toLowerCase() === String(hit.note.title).toLowerCase())
+          ) || hit.note
+        if (resolved && resolved.id && !resolved.isFolder) {
+          store.setSelectedNote(resolved)
+        }
+      }
+    },
+    [composerMentionSegments]
+  )
+
+  const handleTextareaScroll = useCallback((e: React.UIEvent<HTMLTextAreaElement>) => {
+    if (backdropRef.current) {
+      backdropRef.current.scrollTop = e.currentTarget.scrollTop
+    }
+  }, [])
 
   const handleSend = useCallback(() => {
     if (!input.trim() || isLoading) return
@@ -261,13 +346,35 @@ export const Composer: React.FC<ComposerProps> = ({
         onDragLeave={handleComposerDragLeave}
         onDrop={handleComposerDrop}
       >
-        <div className="composer-input-area-wrapper">
+        <div className={`composer-input-area-wrapper ${hasInlineMentions ? 'has-inline-mentions' : ''}`}>
+          {hasInlineMentions && (
+            <div
+              ref={backdropRef}
+              className="composer-textarea-backdrop"
+              aria-hidden="true"
+            >
+              {composerMentionSegments.map((seg, idx) =>
+                seg.note ? (
+                  <mark key={idx} className="composer-inline-mention-link">
+                    {seg.text}
+                  </mark>
+                ) : (
+                  <span key={idx} className="composer-inline-plain-text">
+                    {seg.text}
+                  </span>
+                )
+              )}
+              {input.endsWith('\n') ? ' ' : ''}
+            </div>
+          )}
           <textarea
             ref={textareaRef}
             className="composer-textarea"
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
+            onClick={handleTextareaClick}
+            onScroll={handleTextareaScroll}
             placeholder={
               isSidebar
                 ? "Ask AI... ('@', '/')"
@@ -290,6 +397,7 @@ export const Composer: React.FC<ComposerProps> = ({
                 className="composer-plus-btn"
                 onClick={(e) => {
                   e.stopPropagation()
+                  setSlashFilter('')
                   setShowSlashMenu((prev) => !prev)
                   if (textareaRef.current) textareaRef.current.focus()
                 }}
@@ -305,6 +413,7 @@ export const Composer: React.FC<ComposerProps> = ({
                 className="model-pill model-pill-mode"
                 onClick={(e) => {
                   e.stopPropagation()
+                  setSlashFilter('')
                   setShowSlashMenu((prev) => !prev)
                   if (textareaRef.current) textareaRef.current.focus()
                 }}

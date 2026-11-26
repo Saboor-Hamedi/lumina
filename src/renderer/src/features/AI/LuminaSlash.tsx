@@ -133,8 +133,23 @@ export const LuminaSlash: React.FC<LuminaSlashProps> = ({
       }
     }
 
+    const handlePointerDownOutside = (e: PointerEvent) => {
+      const target = e.target as HTMLElement | null
+      if (
+        !target?.closest('.slash-menu-container') &&
+        !target?.closest('.model-pill-mode') &&
+        !target?.closest('.composer-plus-btn')
+      ) {
+        onClose()
+      }
+    }
+
     window.addEventListener('keydown', handleKeyDown, { capture: true })
-    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true })
+    window.addEventListener('pointerdown', handlePointerDownOutside, { capture: true })
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, { capture: true })
+      window.removeEventListener('pointerdown', handlePointerDownOutside, { capture: true })
+    }
   }, [isOpen, filteredCommands, selectedIndex, onSelect, onClose])
 
   if (!isOpen || filteredCommands.length === 0) return null

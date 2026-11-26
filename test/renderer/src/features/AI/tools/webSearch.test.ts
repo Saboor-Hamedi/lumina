@@ -3,7 +3,7 @@ import {
   searchOnline,
   formatWebSearchMarkdown,
   webSearchTool
-} from '../../../../../../src/renderer/src/features/AI/tools/webSearch'
+} from '../../../../../../src/renderer/src/features/AI/tools/luminWebSearch'
 import {
   detectUserIntent,
   IntentCategory

@@ -15,7 +15,9 @@ import {
   Copy,
   Palette,
   Trash2,
-  Shapes
+  Shapes,
+  Minus,
+  Plus
 } from 'lucide-react'
 import ToolTip from '../../../../components/atoms/ToolTip'
 import { CanvasAlignmentType, CanvasDistributionType } from '../../utils/canvasAlignment'
@@ -28,6 +30,9 @@ export interface CanvasSelectionToolbarProps {
   selectedShapeType?: CanvasShapeType | null
   canReplaceShape?: boolean
   selectedColorHex?: string
+  canAdjustFontSize?: boolean
+  selectedFontSize?: number
+  onAdjustFontSize?: (nextSize: number) => void
   onDuplicate: () => void
   onCycleColor: () => void
   onDelete: () => void
@@ -44,6 +49,9 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
     selectedShapeType,
     canReplaceShape,
     selectedColorHex,
+    canAdjustFontSize,
+    selectedFontSize = 15,
+    onAdjustFontSize,
     onDuplicate,
     onCycleColor,
     onDelete,
@@ -128,6 +136,48 @@ export const CanvasSelectionToolbar: React.FC<CanvasSelectionToolbarProps> = Rea
             <span className="lumina-canvas-selection-count">
               {selectedCount} selected
             </span>
+            <div className="lumina-canvas-divider vertical" />
+          </>
+        )}
+
+        {/* Font Size Stepper (for sleek Text Boxes / Titles) */}
+        {canAdjustFontSize && onAdjustFontSize && (
+          <>
+            <ToolTip text="Decrease Font Size" position="top">
+              <button
+                type="button"
+                className="lumina-canvas-tool-btn"
+                onClick={() => {
+                  const steps = [12, 15, 18, 22, 28, 36, 48]
+                  const prev = [...steps].reverse().find((s) => s < selectedFontSize) ?? 12
+                  onAdjustFontSize(prev)
+                }}
+                aria-label="Decrease Font Size"
+              >
+                <Minus size={11} />
+              </button>
+            </ToolTip>
+            <span
+              className="lumina-canvas-selection-count"
+              style={{ minWidth: '28px', textAlign: 'center', fontSize: '11px', fontVariantNumeric: 'tabular-nums' }}
+              title="Font size (22px+ automatically styles as bold Title)"
+            >
+              {selectedFontSize}
+            </span>
+            <ToolTip text="Increase Font Size (Title)" position="top">
+              <button
+                type="button"
+                className="lumina-canvas-tool-btn"
+                onClick={() => {
+                  const steps = [12, 15, 18, 22, 28, 36, 48]
+                  const next = steps.find((s) => s > selectedFontSize) ?? 48
+                  onAdjustFontSize(next)
+                }}
+                aria-label="Increase Font Size"
+              >
+                <Plus size={11} />
+              </button>
+            </ToolTip>
             <div className="lumina-canvas-divider vertical" />
           </>
         )}

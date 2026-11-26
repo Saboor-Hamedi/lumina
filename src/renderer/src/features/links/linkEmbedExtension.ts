@@ -272,8 +272,8 @@ function buildLinkEmbedDecorations(
       continue
     }
 
-    // Group consecutive bare links into a side-by-side grid when Columns > 1 in Settings
-    if (cfg.linkCardColumns > 1 && !isRangeInSource(sourceRange, line.from, line.to)) {
+    // Auto-group consecutive pasted bare links into a clean 2–3 column card grid (matching Lumina AI's ```links grids)
+    if (!isRangeInSource(sourceRange, line.from, line.to)) {
       const groupItems: LinkWrapperItem[] = [
         { ...parsed, youtubeId: extractYouTubeId(parsed.url) }
       ]
@@ -290,7 +290,8 @@ function buildLinkEmbedDecorations(
       }
 
       if (groupItems.length >= 2) {
-        const cols = Math.min(cfg.linkCardColumns, groupItems.length) as LinkCardColumns
+        const maxCols = cfg.linkCardColumns > 1 ? cfg.linkCardColumns : 3
+        const cols = Math.min(maxCols, groupItems.length) as LinkCardColumns
         const endLine = doc.line(endL)
         builder.add(
           line.from,

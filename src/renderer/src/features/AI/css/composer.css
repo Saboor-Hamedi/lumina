@@ -48,6 +48,60 @@
   min-height: 46px;
 }
 
+/* Synchronized inline @mention link highlight backdrop (exact same metrics as textarea) */
+.composer-textarea-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-editor, 'Inter', system-ui, -apple-system, sans-serif) !important;
+  font-size: 13.5px !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  line-height: 21px !important;
+  letter-spacing: 0px !important;
+  word-spacing: 0px !important;
+  text-rendering: optimizeLegibility !important;
+  font-variant-ligatures: normal !important;
+  font-feature-settings: "liga" 1, "calt" 1 !important;
+  padding: 12px 14px 4px !important;
+  margin: 0 !important;
+  border: none !important;
+  box-sizing: border-box !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  tab-size: 2 !important;
+  color: transparent !important;
+  background: transparent !important;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.composer-inline-plain-text {
+  color: transparent;
+}
+
+.composer-inline-mention-link {
+  background: color-mix(in srgb, var(--text-accent, #38bdf8) 18%, transparent);
+  color: transparent;
+  border-radius: 4px;
+  padding: 1px 0;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-accent, #38bdf8) 28%, transparent);
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.composer-input-area-wrapper.has-inline-mentions .composer-textarea {
+  z-index: 2;
+  color: var(--text-main) !important;
+  -webkit-text-fill-color: var(--text-main) !important;
+}
+
 .composer-container.is-sidebar-docked .composer-input-area-wrapper {
   min-height: 60px;
 }

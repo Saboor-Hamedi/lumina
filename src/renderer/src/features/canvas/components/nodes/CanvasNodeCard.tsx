@@ -350,6 +350,16 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
             {/* Sleek Frameless Text or Sticky Note Body */}
             <div
               className={`lumina-canvas-node-body ${isFramelessText ? 'lumina-canvas-frameless-text-body' : 'lumina-canvas-sticky-body'}`}
+              style={
+                isFramelessText && node.fontSize
+                  ? {
+                      fontSize: `${node.fontSize}px`,
+                      fontWeight: node.fontSize >= 22 ? 700 : 500,
+                      letterSpacing: node.fontSize >= 24 ? '-0.02em' : undefined,
+                      lineHeight: node.fontSize >= 24 ? 1.25 : 1.45
+                    }
+                  : undefined
+              }
               onWheel={(e) => e.stopPropagation()}
               onDoubleClick={(e) => {
                 e.stopPropagation()
@@ -364,6 +374,16 @@ export const CanvasNodeCard: React.FC<CanvasNodeCardProps> = React.memo(
                   dir="auto"
                   placeholder={isFramelessText ? 'Type text...' : 'Write a note...'}
                   className={`lumina-canvas-text-area ${isFramelessText ? 'lumina-canvas-frameless-textarea' : 'lumina-canvas-sticky-textarea'}`}
+                  style={
+                    isFramelessText && node.fontSize
+                      ? {
+                          fontSize: `${node.fontSize}px`,
+                          fontWeight: node.fontSize >= 22 ? 700 : 500,
+                          letterSpacing: node.fontSize >= 24 ? '-0.02em' : undefined,
+                          lineHeight: node.fontSize >= 24 ? 1.25 : 1.45
+                        }
+                      : undefined
+                  }
                   defaultValue={node.text || ''}
                   ref={(el) => {
                     if (el) {

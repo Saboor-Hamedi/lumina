@@ -138,6 +138,8 @@ export interface CanvasNode {
   imageUrl?: string
   /** Markdown text or plaintext content */
   text?: string
+  /** Optional custom font size in pixels (for frameless text boxes / titles / shapes) */
+  fontSize?: number
   /** External hyperlink URL (for 'link' type) */
   url?: string
   /** Header title displayed on cards */

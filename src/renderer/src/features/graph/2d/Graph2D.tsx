@@ -310,6 +310,7 @@ const Graph2D = forwardRef<any, Graph2DProps>(function Graph2DWrapper(props, ref
       }
     })
 
+    let hasFittedInitialTick = false
     workerRef.current.onmessage = (e) => {
       const { type, positions } = e.data
       if (type === 'TICK' && fgRef.current && props.graphData.nodes) {
@@ -318,6 +319,13 @@ const Graph2D = forwardRef<any, Graph2DProps>(function Graph2DWrapper(props, ref
           props.graphData.nodes[i].y = positions[i * 2 + 1]
         }
         fgRef.current.d3ReheatSimulation()
+        if (!hasFittedInitialTick && props.graphData.nodes.length > 0) {
+          hasFittedInitialTick = true
+          props.setIsEngineReady(true)
+          requestAnimationFrame(() => {
+            fgRef.current?.zoomToFit?.(300, 60)
+          })
+        }
 
         workerRef.current?.postMessage(
           { type: 'RELEASE_BUFFER', payload: { buffer: positions.buffer } },

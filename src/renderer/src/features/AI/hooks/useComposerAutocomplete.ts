@@ -42,6 +42,7 @@ export interface UseComposerAutocompleteReturn {
   showSlashMenu: boolean
   setShowSlashMenu: React.Dispatch<React.SetStateAction<boolean>>
   slashFilter: string
+  setSlashFilter: React.Dispatch<React.SetStateAction<string>>
   showMentionMenu: boolean
   setShowMentionMenu: React.Dispatch<React.SetStateAction<boolean>>
   mentionFilter: string
@@ -113,6 +114,7 @@ export const useComposerAutocomplete = ({
   const handleCommandSelect = useCallback(
     (cmd: SlashCommandItem) => {
       setShowSlashMenu(false)
+      setSlashFilter('')
 
       if (cmd?.isAction && onSend) {
         setInput('')
@@ -231,6 +233,7 @@ export const useComposerAutocomplete = ({
     showSlashMenu,
     setShowSlashMenu,
     slashFilter,
+    setSlashFilter,
     showMentionMenu,
     setShowMentionMenu,
     mentionFilter,

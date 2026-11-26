@@ -179,6 +179,7 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
     }
   }, [isOpen, handleZoomBy])
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const bodyRef = useRef<HTMLDivElement | null>(null)
   const [isEngineReady, setIsEngineReady] = useState(false)
   const [dimensions, setDimensions] = useState({
     width: typeof window !== 'undefined' ? window.innerWidth : 800,
@@ -194,14 +195,17 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
   }, [])
 
   useEffect(() => {
+    if (isOpen === false) return
     const updateDimensions = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
+      const targetEl = bodyRef.current || containerRef.current
+      if (targetEl) {
+        const rect = targetEl.getBoundingClientRect()
         if (rect.width > 0 && rect.height > 0) {
-          setDimensions({
-            width: rect.width,
-            height: rect.height
-          })
+          setDimensions((prev) =>
+            prev.width === Math.round(rect.width) && prev.height === Math.round(rect.height)
+              ? prev
+              : { width: Math.round(rect.width), height: Math.round(rect.height) }
+          )
           return
         }
       }
@@ -211,16 +215,20 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
       })
     }
     updateDimensions()
+    const rafId = requestAnimationFrame(updateDimensions)
     const resizeObserver = new ResizeObserver(updateDimensions)
-    if (containerRef.current) {
+    if (bodyRef.current) {
+      resizeObserver.observe(bodyRef.current)
+    } else if (containerRef.current) {
       resizeObserver.observe(containerRef.current)
     }
     window.addEventListener('resize', updateDimensions)
     return () => {
+      cancelAnimationFrame(rafId)
       resizeObserver.disconnect()
       window.removeEventListener('resize', updateDimensions)
     }
-  }, [])
+  }, [isOpen, isSidebarOpen])
 
   const [rawGraphData, setRawGraphData] = useState<{ nodes: any[]; links: any[] }>({ nodes: [], links: [] })
   const [isBuildingGraph, setIsBuildingGraph] = useState(true)
@@ -433,10 +441,10 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
   }, [selectedSnippet, isBuildingGraph, graphData.nodes, is3DMode])
 
   useEffect(() => {
-    setIsEngineReady(false)
-    const safetyTimer = setTimeout(() => setIsEngineReady(true), 1500)
-    return () => clearTimeout(safetyTimer)
-  }, [is3DMode])
+    if (!isBuildingGraph && graphData.nodes.length > 0) {
+      setIsEngineReady(true)
+    }
+  }, [isBuildingGraph, graphData.nodes.length])
 
   const defaultLineColor = useMemo(() => {
     return `rgba(${themeColors.rgb}, ${is3DMode ? 0.35 : 0.25})`
@@ -571,16 +579,29 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
       }}
     >
       <div
+        ref={bodyRef}
         className="nexus-body"
         style={{ position: 'relative', flex: 1, minWidth: 0, height: '100%', overflow: 'hidden' }}
       >
-        <div className={`graph-initializer ${isEngineReady ? 'ready' : ''}`}>
-          <PulseLoader message="Initializing Physics" size="md" delayMs={0} />
-        </div>
+        {isBuildingGraph && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+              zIndex: 20
+            }}
+          >
+            <PulseLoader size="md" delayMs={0} />
+          </div>
+        )}
 
         {is3DMode ? (
           <Graph3D
-            key="3d-graph-embedded"
+            key={`3d-graph-${graphData.nodes.length > 0 ? 'ready' : 'empty'}`}
             ref={graphRef}
             width={dimensions.width}
             height={dimensions.height}
@@ -689,7 +710,7 @@ const Graph: React.FC<GraphProps> = React.memo(({ isOpen = true, onClose, onNavi
           />
         ) : (
           <Graph2D
-            key="2d-graph-embedded"
+            key={`2d-graph-${graphData.nodes.length > 0 ? 'ready' : 'empty'}`}
             ref={graphRef}
             dimensions={dimensions}
             graphData={graphData}

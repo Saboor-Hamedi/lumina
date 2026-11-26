@@ -534,6 +534,22 @@ export function useCanvas(options: UseCanvasOptions = {}) {
   }, [])
 
   /**
+   * Updates font size on one or more nodes (for sleek text boxes, titles, and shapes).
+   */
+  const updateNodesFontSize = useCallback(
+    (nodeIds: string[], fontSize: number) => {
+      if (!nodeIds.length) return
+      const clamped = Math.max(11, Math.min(72, Math.round(fontSize)))
+      const idSet = new Set(nodeIds)
+      pushHistory()
+      setNodes((prev) =>
+        prev.map((n) => (idSet.has(n.id) ? { ...n, fontSize: clamped } : n))
+      )
+    },
+    [pushHistory]
+  )
+
+  /**
    * Snaps selected nodes (or all nodes) to the nearest 20px grid.
    */
   const snapNodesToGrid = useCallback((targetIds?: string[]) => {
@@ -757,6 +773,7 @@ export function useCanvas(options: UseCanvasOptions = {}) {
     pasteNodes,
     hasCopiedNodes,
     snapNodesToGrid,
+    updateNodesFontSize,
     updateEdgeLineStyle,
     updateEdgeStrokeDash,
     updateEdgeColor,

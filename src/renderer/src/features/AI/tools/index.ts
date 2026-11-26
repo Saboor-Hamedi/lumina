@@ -18,7 +18,7 @@ import { luminaDiagnoseSystemTool, diagnoseSystemTool } from './luminaDiagnoseSy
 import { auditWikilinksTool } from './auditWikilinks'
 import { luminaQueryIndexTool, queryIndexTool } from './luminaQueryIndex'
 import { undoChangesTool } from './undoChanges'
-import { webSearchTool } from './webSearch'
+import { luminWebSearchTool as webSearchTool } from './luminWebSearch'
 import { saveMemoryTool, updateMemoryTool, forgetMemoryTool } from '../../../core/ai/memory'
 
 export {

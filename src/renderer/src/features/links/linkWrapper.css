@@ -7,13 +7,13 @@
 .lumina-link-wrapper {
   position: relative;
   display: grid;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  margin: 6px 0;
+  margin: 8px 0;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
   user-select: none;
 }
 
@@ -52,12 +52,8 @@
   grid-column: 1 / -1;
 }
 
-.lumina-link-wrapper.cols-2 .lumina-link-card-media {
-  width: 108px;
-  min-width: 108px;
-}
-
-/* 3-column grid: crisp vertical bookmark cards with full-width 16:9 cover thumbnails */
+/* 2-column & 3-column grids: unified vertical bookmark cards with full-width 16:9 cover thumbnails (identical in Lumina AI & Editor) */
+.lumina-link-wrapper.cols-2 .lumina-link-card,
 .lumina-link-wrapper.cols-3 .lumina-link-card {
   flex-direction: column-reverse;
   height: auto;
@@ -65,6 +61,7 @@
   max-height: none;
 }
 
+.lumina-link-wrapper.cols-2 .lumina-link-card-media,
 .lumina-link-wrapper.cols-3 .lumina-link-card-media {
   width: 100%;
   min-width: 0;
@@ -75,11 +72,13 @@
   border-bottom: 1px solid var(--border-dim);
 }
 
+.lumina-link-wrapper.cols-2 .lumina-link-card-body,
 .lumina-link-wrapper.cols-3 .lumina-link-card-body {
-  padding: 9px 11px;
-  gap: 4px;
+  padding: 10px 12px;
+  gap: 5px;
 }
 
+.lumina-link-wrapper.cols-2 .lumina-link-card-desc,
 .lumina-link-wrapper.cols-3 .lumina-link-card-desc {
   -webkit-line-clamp: 2;
 }

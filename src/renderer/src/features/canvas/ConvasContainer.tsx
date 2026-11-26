@@ -106,6 +106,7 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     updateNodeColor,
     updateNodeShape,
     updateNodesShapes,
+    updateNodesFontSize,
     deleteNode,
     deleteSelected,
     duplicateNodes,
@@ -689,6 +690,23 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
     return found ? found.hex : undefined
   }, [selectedNodes])
 
+  const selectedTextNodes = useMemo(
+    () => selectedNodes.filter((n) => n.type === 'text' && !n.file && !n.shape && !(n as any).shapeType),
+    [selectedNodes]
+  )
+
+  const canAdjustFontSize = selectedTextNodes.length > 0
+  const selectedFontSize = selectedTextNodes[0]?.fontSize || 15
+
+  const handleAdjustFontSize = useCallback(
+    (nextSize: number) => {
+      const targetIds = selectedTextNodes.map((n) => n.id)
+      if (targetIds.length === 0) return
+      updateNodesFontSize(targetIds, nextSize)
+    },
+    [selectedTextNodes, updateNodesFontSize]
+  )
+
   const handleReplaceShape = useCallback(
     (newShape: CanvasShapeType) => {
       const targetIds = selectedNodes
@@ -1065,6 +1083,9 @@ export const ConvasContainer: React.FC<ConvasContainerProps> = ({
           selectedShapeType={selectedShapeType}
           canReplaceShape={canReplaceShape}
           selectedColorHex={selectedColorHex}
+          canAdjustFontSize={canAdjustFontSize}
+          selectedFontSize={selectedFontSize}
+          onAdjustFontSize={handleAdjustFontSize}
           onNodeMouseDown={handleNodeMouseDown}
           onPortMouseDown={handlePortMouseDown}
           onResizeMouseDown={handleResizeMouseDown}

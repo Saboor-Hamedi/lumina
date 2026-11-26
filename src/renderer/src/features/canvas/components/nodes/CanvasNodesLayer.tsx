@@ -25,6 +25,9 @@ export interface CanvasNodesLayerProps {
   selectedShapeType?: CanvasShapeType | null
   canReplaceShape?: boolean
   selectedColorHex?: string
+  canAdjustFontSize?: boolean
+  selectedFontSize?: number
+  onAdjustFontSize?: (nextSize: number) => void
   onNodeMouseDown: (e: React.MouseEvent | React.PointerEvent, node: CanvasNode) => void
   onPortMouseDown: (e: React.MouseEvent | React.PointerEvent, nodeId: string, side: any) => void
   onResizeMouseDown: (e: React.MouseEvent | React.PointerEvent, node: CanvasNode) => void
@@ -57,6 +60,9 @@ export const CanvasNodesLayer: React.FC<CanvasNodesLayerProps> = React.memo(
     selectedShapeType,
     canReplaceShape,
     selectedColorHex,
+    canAdjustFontSize,
+    selectedFontSize,
+    onAdjustFontSize,
     onNodeMouseDown,
     onPortMouseDown,
     onResizeMouseDown,
@@ -109,6 +115,9 @@ export const CanvasNodesLayer: React.FC<CanvasNodesLayerProps> = React.memo(
             selectedShapeType={selectedShapeType}
             canReplaceShape={canReplaceShape}
             selectedColorHex={selectedColorHex}
+            canAdjustFontSize={canAdjustFontSize}
+            selectedFontSize={selectedFontSize}
+            onAdjustFontSize={onAdjustFontSize}
             onReplaceShape={onReplaceShape}
             onDuplicate={onDuplicateSelection}
             onCycleColor={onCycleSelectionColor}
