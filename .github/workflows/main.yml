@@ -1,4 +1,4 @@
-name: Update Preview URL
+name: Update Deployment URLs
 on:
   push:
     branches: [ main, master ]
@@ -17,3 +17,12 @@ jobs:
     steps:
       - name: Point Preview to Lumina Tabula
         run: echo "Preview points to https://www.luminatabula.com/lumina"
+
+  set-production:
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://www.luminatabula.com/lumina
+    steps:
+      - name: Point Production to Lumina Tabula
+        run: echo "Production points to https://www.luminatabula.com/lumina"
