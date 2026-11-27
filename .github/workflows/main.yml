@@ -1,0 +1,19 @@
+name: Update Preview URL
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  deployments: write
+  contents: read
+
+jobs:
+  set-preview:
+    runs-on: ubuntu-latest
+    environment:
+      name: Preview
+      url: https://www.luminatabula.com/lumina
+    steps:
+      - name: Point Preview to Lumina Tabula
+        run: echo "Preview points to https://www.luminatabula.com/lumina"
