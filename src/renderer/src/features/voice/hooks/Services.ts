@@ -1,14 +1,14 @@
 /**
- * Services.ts - Enterprise-grade Voice Orchestrator
+ * Services.ts - DeepSeek Voice Orchestrator
  *
- * Coordinates live recording, progressive chunk streaming, Groq Whisper
+ * Coordinates live recording, progressive chunk streaming, DeepSeek ASR
  * transcription, focus tracking, and smooth text stitching.
  */
 
 import { AudioRecorder } from './Record'
-import { transcribeWithGroq } from './groqWhisper'
+import { transcribeWithDeepSeek } from './deepseekVoice'
 import { useSettingsStore } from '../../../core/store/SettingStore'
-import type { VoiceState, VoiceListener, GroqError } from '../types'
+import type { VoiceState, VoiceListener, VoiceApiError } from '../types'
 
 declare global {
   interface Window {
@@ -55,6 +55,7 @@ export class VoiceService {
   private isQuotaExhausted: boolean = false
   private lastToggleTime: number = 0
   private recordingStartTime: number = 0
+  private abortController: AbortController | null = null
 
   private lastSpeechTime: number = 0
   private segmentStartTime: number = 0
@@ -102,15 +103,7 @@ export class VoiceService {
         return
       }
 
-      this.stopRecordingAndTranscribe().then((text) => {
-        if (text && text.trim().length > 0) {
-          window.dispatchEvent(
-            new CustomEvent('voice-insert-text', {
-              detail: { text: text.trim(), instanceId: this.state.activeInstanceId || 'editor-voice' }
-            })
-          )
-        }
-      })
+      void this.stopRecordingAndTranscribe()
       return
     }
 
@@ -154,18 +147,10 @@ export class VoiceService {
     this.updateState({ activeInstanceId: id })
   }
 
-  private getStoredGroqKey(): string | null {
+  private getStoredDeepSeekKey(): string | null {
     try {
-      const fromStore = useSettingsStore.getState().settings?.groqKey
+      const fromStore = useSettingsStore.getState().settings?.deepSeekKey
       if (fromStore) return fromStore
-    } catch {
-      // ignore
-    }
-    try {
-      if (typeof localStorage !== 'undefined') {
-        const fromLocal = localStorage.getItem('lumina_groq_key')
-        if (fromLocal) return fromLocal
-      }
     } catch {
       // ignore
     }
@@ -175,17 +160,17 @@ export class VoiceService {
   async startRecording(): Promise<void> {
     if (this.state.isRecording || this.state.isTranscribing || this.isStarting) return
 
-    const groqKey = this.getStoredGroqKey()
-    if (!groqKey || !groqKey.trim()) {
+    const deepSeekKey = this.getStoredDeepSeekKey()
+    if (!deepSeekKey || !deepSeekKey.trim()) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
           new CustomEvent('show-toast', {
-            detail: { message: 'Voice Key not found', type: 'error' }
+            detail: { message: 'Add your DeepSeek API key in Settings > AI Assistant', type: 'error' }
           })
         )
       }
       this.updateState({
-        error: 'Voice Key not found'
+        error: 'DeepSeek API key not found'
       })
       return
     }
@@ -217,26 +202,13 @@ export class VoiceService {
         this.updateState({ audioLevel: level })
 
         const now = Date.now()
-        if (level > 0.04) {
+        if (level > 0.025) {
           this.hasSpokenInSegment = true
           this.lastSpeechTime = now
         }
-
-        const segmentDuration = now - this.segmentStartTime
-        const silenceDuration = now - this.lastSpeechTime
-
-        // Progressive typing conditions:
-        // Flush on natural speech pauses (silence >= 320ms after 1.2s speaking)
-        // or hard segment boundary (3.8s) for maximum fluidity
-        if (
-          this.hasSpokenInSegment &&
-          !this.isFlushingSegment &&
-          !this.isQuotaExhausted &&
-          this.state.isRecording &&
-          ((silenceDuration >= 320 && segmentDuration >= 1200) || segmentDuration >= 3800)
-        ) {
-          this.flushSegment()
-        }
+        // Keep full utterance intact for DeepSeek ASR (single-shot up to 120s)
+        // so English/multilingual speech has complete phonetic context and never
+        // hallucinates short-fragment Chinese characters.
       })
     } catch (err: unknown) {
       if (this.timerInterval) {
@@ -263,8 +235,8 @@ export class VoiceService {
     this.segmentStartTime = Date.now()
     this.hasSpokenInSegment = false
 
-    const groqKey = this.getStoredGroqKey()
-    if (!groqKey || !groqKey.trim()) {
+    const deepSeekKey = this.getStoredDeepSeekKey()
+    if (!deepSeekKey || !deepSeekKey.trim()) {
       this.isFlushingSegment = false
       return
     }
@@ -277,9 +249,8 @@ export class VoiceService {
       }
 
       const instanceId = this.state.activeInstanceId || 'editor-voice'
-      const promptContext = this.lastTranscribedText
 
-      transcribeWithGroq(segmentBlob, groqKey, promptContext)
+      transcribeWithDeepSeek(segmentBlob, deepSeekKey)
         .then((text) => {
           if (text && text.trim().length > 0) {
             const rawClean = text.trim()
@@ -294,13 +265,18 @@ export class VoiceService {
             }
           }
         })
-        .catch((err: GroqError) => {
+        .catch((err: VoiceApiError) => {
+          console.error('[VoiceService] Segment transcription error:', err)
           if (err?.isQuotaError || err?.isAuthError) {
             this.isQuotaExhausted = true
             this.cancelRecording()
-            this.updateState({
-              error: err.message || 'Groq API quota exceeded. Please check your account.'
-            })
+            const msg = err.message || 'DeepSeek Voice API error.'
+            this.updateState({ error: msg })
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent('show-toast', { detail: { message: msg, type: 'error' } })
+              )
+            }
           }
         })
         .finally(() => {
@@ -312,12 +288,16 @@ export class VoiceService {
   }
 
   async stopRecordingAndTranscribe(): Promise<string | null> {
-    if (!this.state.isRecording) return null
+    if (!this.state.isRecording && !this.isStarting) return null
 
     if (this.timerInterval) {
       clearInterval(this.timerInterval)
       this.timerInterval = null
     }
+
+    this.abortController?.abort()
+    this.abortController = new AbortController()
+    const signal = this.abortController.signal
 
     this.updateState({
       isRecording: false,
@@ -327,6 +307,10 @@ export class VoiceService {
 
     try {
       const audioData = await this.recorder.stop()
+      if (signal.aborted) {
+        this.updateState({ isTranscribing: false })
+        return null
+      }
       if (!audioData || audioData.size === 0) {
         this.updateState({ isTranscribing: false })
         return null
@@ -338,22 +322,20 @@ export class VoiceService {
         return null
       }
 
-      // If no speech occurred in the final segment, complete gracefully
-      if (!this.hasSpokenInSegment) {
-        this.updateState({ isTranscribing: false, interimText: '', error: null })
-        return null
-      }
-
-      const groqKey = this.getStoredGroqKey()
-      if (!groqKey || !groqKey.trim()) {
+      const deepSeekKey = this.getStoredDeepSeekKey()
+      if (!deepSeekKey || !deepSeekKey.trim()) {
         this.updateState({
           isTranscribing: false,
-          error: 'Please add your free Groq API key in Settings > Intelligence.'
+          error: 'Add your DeepSeek API key in Settings > AI Assistant.'
         })
         return null
       }
 
-      const text = await transcribeWithGroq(audioData, groqKey, this.lastTranscribedText)
+      const text = await transcribeWithDeepSeek(audioData, deepSeekKey, signal)
+      if (signal.aborted) {
+        this.updateState({ isTranscribing: false })
+        return null
+      }
       this.updateState({ isTranscribing: false, interimText: '', error: null })
       const smoothed = removePrefixOverlap(text || '', this.lastTranscribedText)
       if (smoothed && typeof window !== 'undefined') {
@@ -366,16 +348,37 @@ export class VoiceService {
       }
       return smoothed || null
     } catch (err: unknown) {
+      if (signal.aborted || (err instanceof Error && err.name === 'AbortError')) {
+        this.updateState({ isTranscribing: false, interimText: '', error: null })
+        return null
+      }
       const message = err instanceof Error ? err.message : 'Transcription failed'
+      console.error('[VoiceService] Transcription error:', err)
       this.updateState({
         isTranscribing: false,
         error: message
       })
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('show-toast', {
+            detail: { message, type: 'error' }
+          })
+        )
+      }
       return null
+    } finally {
+      if (this.abortController?.signal === signal) {
+        this.abortController = null
+      }
     }
   }
 
   cancelRecording(): void {
+    this.isStarting = false
+    if (this.abortController) {
+      this.abortController.abort()
+      this.abortController = null
+    }
     if (this.timerInterval) {
       clearInterval(this.timerInterval)
       this.timerInterval = null
@@ -387,13 +390,16 @@ export class VoiceService {
       isTranscribing: false,
       recordingDuration: 0,
       audioLevel: 0,
-      interimText: ''
+      interimText: '',
+      error: null
     })
-    window.dispatchEvent(
-      new CustomEvent('voice-live-cancel', {
-        detail: { instanceId: currentInstanceId }
-      })
-    )
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('voice-live-cancel', {
+          detail: { instanceId: currentInstanceId }
+        })
+      )
+    }
   }
 
   clearError(): void {

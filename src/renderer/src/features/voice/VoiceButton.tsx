@@ -14,7 +14,7 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
   tooltipPosition = 'bottom'
 }) => {
   const buttonRef = useRef<HTMLButtonElement | null>(null)
-  const groqKey = useSettingsStore((state: any) => state.settings?.groqKey)
+  const deepSeekKey = useSettingsStore((state: any) => state.settings?.deepSeekKey)
 
   const {
     isRecording,
@@ -37,28 +37,34 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
     e.preventDefault()
     e.stopPropagation()
 
-    // If API key does not exist, notify the user with Notification toast
-    const activeKey = groqKey
-    if (!activeKey || !activeKey.trim()) {
-      window.dispatchEvent(
-        new CustomEvent('show-toast', {
-          detail: { message: 'Voice Key not found', type: 'error' }
-        })
-      )
-      return
+    // Focus the composer textarea immediately when using composer voice
+    if (id === 'composer-voice' && typeof document !== 'undefined') {
+      const textarea = document.querySelector('.composer-textarea') as HTMLTextAreaElement | null
+      textarea?.focus()
     }
 
     if (error) clearError()
 
-    // If THIS microphone is currently recording, stop and transcribe
-    if (isThisRecording) {
+    // Always allow stopping or cancelling before any key validation
+    if (isRecording) {
       await handleStop()
       return
     }
 
-    // If another microphone was recording, cancel it first so they never conflict
-    if (isRecording) {
+    if (isTranscribing) {
       cancelRecording()
+      return
+    }
+
+    // Reuse existing DeepSeek API key — no separate voice key needed
+    const activeKey = deepSeekKey
+    if (!activeKey || !activeKey.trim()) {
+      window.dispatchEvent(
+        new CustomEvent('show-toast', {
+          detail: { message: 'Add your DeepSeek API key in Settings > AI Assistant', type: 'error' }
+        })
+      )
+      return
     }
 
     // Start recording for THIS instance
@@ -73,16 +79,8 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
   const handleStop = async (): Promise<void> => {
     try {
       const text = await stopRecording()
-      if (text && text.length > 0) {
-        if (onInsert) {
-          onInsert(text)
-        } else {
-          window.dispatchEvent(
-            new CustomEvent('voice-insert-text', {
-              detail: { text, instanceId: id }
-            })
-          )
-        }
+      if (text && text.length > 0 && onInsert) {
+        onInsert(text)
       }
     } catch (err) {
       console.error('[VoiceButton] Stop recording error:', err)
@@ -92,8 +90,8 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
   const tooltipText = isThisRecording
     ? 'Stop recording'
     : isThisTranscribing
-      ? 'Transcribing audio with Groq...'
-      : 'Voice Dictation (Shift+Alt+V)'
+      ? 'Transcribing with DeepSeek Voice...'
+      : 'DeepSeek Voice (Shift+Alt+V)'
 
   return (
     <div style={{ display: 'inline-flex', alignItems: 'center' }}>

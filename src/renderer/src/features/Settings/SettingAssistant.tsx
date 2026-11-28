@@ -28,7 +28,7 @@ function getOllamaBaseUrl(rawUrl: string): string {
 /**
  * SettingAssistant Component
  * Configures Lumina's active AI model provider (DeepSeek, OpenAI, Anthropic, or Ollama),
- * API keys, endpoint URLs, Groq speech dictation, and local AI index preferences.
+ * API keys, endpoint URLs, and local AI index preferences.
  */
 export const SettingAssistant: React.FC = () => {
   const { settings, updateSetting, updateSettings } = useSettingsStore()
@@ -271,7 +271,7 @@ export const SettingAssistant: React.FC = () => {
         <div className="settings-pane-header-info">
           <h2 className="settings-pane-title">AI Assistant</h2>
           <p className="settings-pane-subtitle">
-            Model providers, API credentials, and voice dictation.
+            Model providers and API credentials.
           </p>
         </div>
       </div>
@@ -602,34 +602,6 @@ export const SettingAssistant: React.FC = () => {
           </section>
         )
       })()}
-
-      {/* Groq Speech Dictation Configuration */}
-      <section style={{ marginTop: '24px' }}>
-        <h3>Voice Dictation (Groq Whisper Cloud)</h3>
-        <div className="settings-row">
-          <div className="row-info">
-            <div className="row-label">Groq API Key (Free)</div>
-            <div className="row-hint">
-              Enables instant ~300ms speech-to-text with Whisper Large v3.{' '}
-              <a
-                href="https://console.groq.com/keys"
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: 'var(--text-accent)' }}
-              >
-                Get free key from console.groq.com
-              </a>
-            </div>
-          </div>
-          <input
-            type="password"
-            className="settings-select"
-            value={settings.groqKey || ''}
-            onChange={(e) => updateSetting('groqKey', e.target.value.trim() || null)}
-            placeholder="gsk_..."
-          />
-        </div>
-      </section>
 
       {/* Local Features */}
       <section style={{ marginTop: '32px' }}>

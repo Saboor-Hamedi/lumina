@@ -1,9 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { voiceService } from '../../../../../src/renderer/src/features/voice/hooks/Services'
+import { useSettingsStore } from '../../../../../src/renderer/src/core/store/SettingStore'
 
 describe('voiceService', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    useSettingsStore.setState({
+      settings: {
+        ...useSettingsStore.getState().settings,
+        deepSeekKey: null
+      }
+    })
     voiceService.cancelRecording()
     voiceService.clearError()
     voiceService.updateState({
@@ -51,16 +58,20 @@ describe('voiceService', () => {
     expect(listener).toHaveBeenCalledTimes(2) // No call after unsubscribe
   })
 
-  it('sets friendly error message if Groq API key is missing when starting', async () => {
-    localStorage.removeItem('lumina_groq_key')
+  it('sets friendly error message if DeepSeek API key is missing when starting', async () => {
+    useSettingsStore.setState({
+      settings: { ...useSettingsStore.getState().settings, deepSeekKey: null }
+    })
     await voiceService.startRecording()
 
     expect(voiceService.state.isRecording).toBe(false)
-    expect(voiceService.state.error).toMatch(/Voice Key not found|Please add your free Groq API key/i)
+    expect(voiceService.state.error).toMatch(/DeepSeek API key/i)
   })
 
   it('debounces rapid toggle calls within 450ms', async () => {
-    localStorage.setItem('lumina_groq_key', 'gsk_test123')
+    useSettingsStore.setState({
+      settings: { ...useSettingsStore.getState().settings, deepSeekKey: 'sk-deepseek-test' }
+    })
     vi.spyOn(voiceService.recorder, 'start').mockResolvedValue(undefined)
 
     // Call 1
@@ -73,7 +84,9 @@ describe('voiceService', () => {
   })
 
   it('prevents stopping if recording started less than 500ms ago', async () => {
-    localStorage.setItem('lumina_groq_key', 'gsk_test123')
+    useSettingsStore.setState({
+      settings: { ...useSettingsStore.getState().settings, deepSeekKey: 'sk-deepseek-test' }
+    })
     voiceService.state.isRecording = true
     voiceService.recordingStartTime = Date.now() // Just started
 
@@ -105,7 +118,9 @@ describe('voiceService', () => {
   })
 
   it('stops recording and dispatches voice-insert-text on completion', async () => {
-    localStorage.setItem('lumina_groq_key', 'gsk_test123')
+    useSettingsStore.setState({
+      settings: { ...useSettingsStore.getState().settings, deepSeekKey: 'sk-deepseek-test' }
+    })
     voiceService.state.isRecording = true
     voiceService.recordingStartTime = Date.now() - 3000
     voiceService.hasSpokenInSegment = true
@@ -116,20 +131,20 @@ describe('voiceService', () => {
 
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ text: 'Transcribed sentence from Whisper' })
+      json: async () => ({ text: 'Transcribed sentence from DeepSeek' })
     })
-
-    const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
 
     const result = await voiceService.stopRecordingAndTranscribe()
 
-    expect(result).toBe('Transcribed sentence from Whisper')
+    expect(result).toBe('Transcribed sentence from DeepSeek')
     expect(voiceService.state.isRecording).toBe(false)
     expect(voiceService.state.isTranscribing).toBe(false)
   })
 
-  it('discards audio clips shorter than 400ms or under 2200 bytes without calling Groq', async () => {
-    localStorage.setItem('lumina_groq_key', 'gsk_test123')
+  it('discards audio clips shorter than 400ms or under 1800 bytes without calling DeepSeek', async () => {
+    useSettingsStore.setState({
+      settings: { ...useSettingsStore.getState().settings, deepSeekKey: 'sk-deepseek-test' }
+    })
     voiceService.state.isRecording = true
     voiceService.recordingStartTime = Date.now() - 200 // Only 200ms
 

@@ -20,6 +20,7 @@ export class AudioRecorder {
   private animFrameId: number | null = null
   private onVolumeChange: AudioVolumeCallback | null = null
   private optimalMimeType: string = ''
+  private cancelled: boolean = false
 
   constructor() {
     this.detectOptimalMimeType()
@@ -52,6 +53,7 @@ export class AudioRecorder {
    * Starts high-fidelity microphone capture with real-time volume analysis.
    */
   async start(onVolumeChange: AudioVolumeCallback | null = null): Promise<void> {
+    this.cancelled = false
     this.onVolumeChange = onVolumeChange
     this.audioChunks = []
 
@@ -69,13 +71,25 @@ export class AudioRecorder {
       this.stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     }
 
+    if (this.cancelled) {
+      this.cleanup()
+      return
+    }
+
     // Setup high-precision volume analyser
     try {
       const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
       if (AudioContextClass) {
         this.audioContext = new AudioContextClass()
         if (this.audioContext.state === 'suspended') {
-          await this.audioContext.resume().catch(() => {})
+          await Promise.race([
+            this.audioContext.resume().catch(() => {}),
+            new Promise<void>((r) => setTimeout(r, 300))
+          ])
+        }
+        if (this.cancelled || !this.stream) {
+          this.cleanup()
+          return
         }
         this.sourceNode = this.audioContext.createMediaStreamSource(this.stream)
         this.analyser = this.audioContext.createAnalyser()
@@ -167,23 +181,40 @@ export class AudioRecorder {
   async stop(): Promise<Blob | null> {
     return new Promise((resolve) => {
       if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
+        const fallbackBlob =
+          this.audioChunks.length > 0
+            ? new Blob(this.audioChunks, { type: this.optimalMimeType || 'audio/webm' })
+            : null
         this.cleanup()
-        resolve(null)
+        resolve(fallbackBlob)
         return
       }
+
+      let settled = false
+      const finish = (blob: Blob | null) => {
+        if (settled) return
+        settled = true
+        window.clearTimeout(safetyTimer)
+        this.cleanup()
+        resolve(blob)
+      }
+
+      const safetyTimer = window.setTimeout(() => {
+        const mimeType = this.mediaRecorder?.mimeType || this.optimalMimeType || 'audio/webm'
+        const blob = this.audioChunks.length > 0 ? new Blob(this.audioChunks, { type: mimeType }) : null
+        finish(blob)
+      }, 650)
 
       this.mediaRecorder.onstop = (): void => {
         const mimeType = this.mediaRecorder?.mimeType || this.optimalMimeType || 'audio/webm'
         const audioBlob = new Blob(this.audioChunks, { type: mimeType })
-        this.cleanup()
-        resolve(audioBlob)
+        finish(audioBlob)
       }
 
       try {
         this.mediaRecorder.stop()
       } catch {
-        this.cleanup()
-        resolve(null)
+        finish(null)
       }
     })
   }
@@ -192,6 +223,7 @@ export class AudioRecorder {
    * Cancels active recording discarding all buffered audio data.
    */
   cancel(): void {
+    this.cancelled = true
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       try {
         this.mediaRecorder.stop()

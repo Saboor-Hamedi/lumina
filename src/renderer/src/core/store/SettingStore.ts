@@ -113,7 +113,6 @@ export interface Settings {
   aiChatDisplayMode: string
   openaiKey: string | null
   anthropicKey: string | null
-  groqKey: string | null
   ollamaUrl: string
   ollamaModel: string | null
 
@@ -262,7 +261,6 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     aiChatDisplayMode: 'sidebar',
     openaiKey: null,
     anthropicKey: null,
-    groqKey: null,
     ollamaUrl: 'http://localhost:11434/api/chat',
     ollamaModel: null,
 
@@ -851,7 +849,6 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
       huggingFaceKey: current.huggingFaceKey,
       openaiKey: current.openaiKey,
       anthropicKey: current.anthropicKey,
-      groqKey: current.groqKey,
       ollamaUrl: current.ollamaUrl,
       ollamaModel: current.ollamaModel,
       activeProvider: current.activeProvider,

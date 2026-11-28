@@ -30,6 +30,8 @@ import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { renameNote } from '../../core/hooks/renameNote'
 import { openSidebarView } from '../Navigation/sidebarViewStore'
+import Settings from '../Settings/Settings'
+import { CommandPalette } from '../commandpalette/CommandPalette'
 
 
 // Helper to retry dynamic imports if Vite dev server is still starting/recompiling
@@ -47,25 +49,8 @@ const lazyWithRetry = <T extends React.ComponentType<any>>(
     }
   })
 
-// Lazy-load heavy modals and panels to optimize initial bundle evaluation time
+// Lazy-load secondary modals to keep initial bundle focused while core modals open instantly
 const LuminaChat = lazyWithRetry(() => import('../AI/Lumina'))
-const Settings = lazyWithRetry(() => import('../Settings/Settings'))
-const CommandPalette = lazyWithRetry(() =>
-  import('../commandpalette/CommandPalette').then((m) => ({ default: m.CommandPalette }))
-)
-
-// Pre-warm lightweight CommandPalette chunk during idle time so first Ctrl+P opens instantly
-if (typeof window !== 'undefined') {
-  const prewarm = () => {
-    void import('../commandpalette/CommandPalette').catch(() => {})
-  }
-  const win = window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }
-  if (typeof win.requestIdleCallback === 'function') {
-    win.requestIdleCallback(prewarm, { timeout: 1500 })
-  } else {
-    window.setTimeout(prewarm, 1200)
-  }
-}
 const IconPicker = lazyWithRetry(() => import('../Icons/IconPicker'))
 const Documentation = lazyWithRetry(() => import('../Docs/Documentation'))
 const Guide = lazyWithRetry(() => import('../modals/Guide'))
@@ -162,19 +147,17 @@ export const AppModals: React.FC<AppModalsProps> = ({
     <>
       {/* Settings Modal */}
       {showSettings && (
-        <React.Suspense fallback={null}>
-          <Settings
-            onClose={() => {
-              setShowSettings(false)
-              setSettingsInitialTab('workspace')
-            }}
-            onOpenTheme={() => {
-              setShowSettings(false)
-              openSidebarView('theme')
-            }}
-            initialTab={settingsInitialTab}
-          />
-        </React.Suspense>
+        <Settings
+          onClose={() => {
+            setShowSettings(false)
+            setSettingsInitialTab('workspace')
+          }}
+          onOpenTheme={() => {
+            setShowSettings(false)
+            openSidebarView('theme')
+          }}
+          initialTab={settingsInitialTab}
+        />
       )}
 
       {/* Theme Customizer Modal */}
@@ -197,31 +180,29 @@ export const AppModals: React.FC<AppModalsProps> = ({
 
       {/* Universal Command Palette / Quick Switcher */}
       {showPalette && (
-        <React.Suspense fallback={null}>
-          <CommandPalette
-            isOpen={showPalette}
-            initialQuery={paletteInitialQuery}
-            onClose={() => setShowPalette(false)}
-            items={snippets}
-            onSelect={(snippet) => {
-              setSelectedSnippet(snippet)
-              setActiveTab('files')
-            }}
-            onNew={handleNew}
-            onToggleSettings={(tab) => {
-              setSettingsInitialTab(tab || 'look-and-feel')
-              setShowSettings(true)
-            }}
-            onToggleGraph={() => useWorkspaceStore.getState().openGraphTab()}
-            onToggleChat={() => setShowAIChatModal(true)}
-            onToggleDocs={() => setShowDocsModal(true)}
-            onRename={() => {
-              if (selectedSnippet) {
-                setRenameModal({ isOpen: true, item: selectedSnippet, newName: selectedSnippet.title })
-              }
-            }}
-          />
-        </React.Suspense>
+        <CommandPalette
+          isOpen={showPalette}
+          initialQuery={paletteInitialQuery}
+          onClose={() => setShowPalette(false)}
+          items={snippets}
+          onSelect={(snippet) => {
+            setSelectedSnippet(snippet)
+            setActiveTab('files')
+          }}
+          onNew={handleNew}
+          onToggleSettings={(tab) => {
+            setSettingsInitialTab(tab || 'look-and-feel')
+            setShowSettings(true)
+          }}
+          onToggleGraph={() => useWorkspaceStore.getState().openGraphTab()}
+          onToggleChat={() => setShowAIChatModal(true)}
+          onToggleDocs={() => setShowDocsModal(true)}
+          onRename={() => {
+            if (selectedSnippet) {
+              setRenameModal({ isOpen: true, item: selectedSnippet, newName: selectedSnippet.title })
+            }
+          }}
+        />
       )}
 
       {/* Help & Documentation Modal */}

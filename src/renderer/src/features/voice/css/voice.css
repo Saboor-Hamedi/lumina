@@ -405,19 +405,19 @@
 
 .voice-capsule-container {
   position: fixed;
-  top: 36px; /* Floating at top center of window, well away from textarea */
-  bottom: auto;
+  top: auto;
+  bottom: 42px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 99999;
   pointer-events: none;
-  animation: voiceCapsuleSlideDown 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: voiceCapsuleSlideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes voiceCapsuleSlideDown {
+@keyframes voiceCapsuleSlideUp {
   from {
     opacity: 0;
-    transform: translate(-50%, -6px) scale(0.96);
+    transform: translate(-50%, 6px) scale(0.96);
   }
   to {
     opacity: 1;
@@ -520,5 +520,34 @@
   font-weight: 500;
   color: #bae6fd;
   letter-spacing: -0.01em;
+}
+
+.voice-capsule-timer {
+  font-size: 10px;
+  font-family: monospace;
+  color: var(--text-muted, #94a3b8);
+  letter-spacing: 0.03em;
+  min-width: 28px;
+}
+
+.voice-capsule-stop-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.18);
+  color: #ef4444;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.voice-capsule-stop-btn:hover {
+  background: rgba(239, 68, 68, 0.32);
+  transform: scale(1.06);
 }
 

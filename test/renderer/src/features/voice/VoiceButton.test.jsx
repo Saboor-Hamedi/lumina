@@ -11,7 +11,7 @@ describe('VoiceButton component', () => {
     useSettingsStore.setState({
       settings: {
         ...useSettingsStore.getState().settings,
-        groqKey: 'gsk_test_mock_key'
+        deepSeekKey: 'sk-deepseek-mock-key'
       }
     })
     voiceService.updateState({
@@ -66,11 +66,11 @@ describe('VoiceButton component', () => {
     expect(startSpy).toHaveBeenCalled()
   })
 
-  it('shows Voice Key not found toast if no Groq API key is configured when clicked', () => {
+  it('shows missing DeepSeek API key toast if no DeepSeek key is configured when clicked', () => {
     useSettingsStore.setState({
       settings: {
         ...useSettingsStore.getState().settings,
-        groqKey: null
+        deepSeekKey: null
       }
     })
     const dispatchSpy = vi.spyOn(window, 'dispatchEvent')
@@ -84,7 +84,7 @@ describe('VoiceButton component', () => {
     expect(dispatchSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'show-toast',
-        detail: { message: 'Voice Key not found', type: 'error' }
+        detail: { message: 'Add your DeepSeek API key in Settings > AI Assistant', type: 'error' }
       })
     )
   })

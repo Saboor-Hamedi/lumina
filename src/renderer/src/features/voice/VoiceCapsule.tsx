@@ -1,20 +1,89 @@
-import React, { useMemo, useEffect } from 'react'
+import React, { useMemo, useEffect, useState } from 'react'
+import { Square } from 'lucide-react'
 import { PulseLoader } from '../../components/PulseLoader'
 import { useVoice } from './hooks/Voice'
 import './css/voice.css'
+
+interface CapsulePositionStyle {
+  left: string
+  bottom: string
+  top: string
+  transform: string
+}
 
 export const VoiceCapsule: React.FC = () => {
   const {
     isRecording,
     isTranscribing,
     audioLevel = 0,
+    formattedDuration,
     activeInstanceId,
-    stopRecording
+    stopRecording,
+    cancelRecording
   } = useVoice()
 
   const isVisible = isRecording || isTranscribing
+  const [anchorStyle, setAnchorStyle] = useState<CapsulePositionStyle | null>(null)
 
-  // Stop recording transcript when user presses Escape key
+  // Anchor the capsule cleanly right above the Composer card (parallel & centered)
+  // when dictating into Composer, or bottom-center when dictating into the Editor.
+  useEffect(() => {
+    if (!isVisible || typeof window === 'undefined' || typeof document === 'undefined') {
+      setAnchorStyle(null)
+      return
+    }
+
+    const updatePosition = () => {
+      const composerEl =
+        activeInstanceId === 'composer-voice'
+          ? ((document.querySelector('.composer-card') ||
+              document.querySelector('.composer-textarea')) as HTMLElement | null)
+          : null
+
+      if (composerEl) {
+        const rect = composerEl.getBoundingClientRect()
+        if (rect.width > 0 && rect.height > 0) {
+          const centerX = Math.max(
+            70,
+            Math.min(window.innerWidth - 70, Math.round(rect.left + rect.width / 2))
+          )
+          const rawBottom = Math.round(window.innerHeight - rect.top + 10)
+          const bottomPx = Math.max(16, Math.min(window.innerHeight - 48, rawBottom))
+          setAnchorStyle({
+            left: `${centerX}px`,
+            bottom: `${bottomPx}px`,
+            top: 'auto',
+            transform: 'translateX(-50%)'
+          })
+          return
+        }
+      }
+
+      setAnchorStyle({
+        left: '50%',
+        bottom: '42px',
+        top: 'auto',
+        transform: 'translateX(-50%)'
+      })
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    const composerEl = (document.querySelector('.composer-card') ||
+      document.querySelector('.composer-textarea')) as HTMLElement | null
+    let observer: ResizeObserver | null = null
+    if (composerEl && typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(updatePosition)
+      observer.observe(composerEl)
+    }
+
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      observer?.disconnect()
+    }
+  }, [isVisible, activeInstanceId])
+
+  // Cancel recording or in-flight transcription immediately when user presses Escape
   useEffect(() => {
     if (!isVisible) return
 
@@ -22,42 +91,25 @@ export const VoiceCapsule: React.FC = () => {
       if (e.key === 'Escape') {
         e.preventDefault()
         e.stopPropagation()
-        if (isRecording) {
-          stopRecording()
-            .then((text) => {
-              if (text && text.length > 0) {
-                window.dispatchEvent(
-                  new CustomEvent('voice-insert-text', {
-                    detail: { text, instanceId: activeInstanceId || 'editor-voice' }
-                  })
-                )
-              }
-            })
-            .catch((err) => {
-              console.error('[VoiceCapsule] Escape stop error:', err)
-            })
-        }
+        cancelRecording()
       }
     }
 
     window.addEventListener('keydown', handleKeyDown, true)
     return () => window.removeEventListener('keydown', handleKeyDown, true)
-  }, [isVisible, isRecording, stopRecording, activeInstanceId])
+  }, [isVisible, cancelRecording])
 
-  const handleStop = async (e: React.MouseEvent<HTMLDivElement>): Promise<void> => {
+  const handleStop = async (e: React.MouseEvent<HTMLElement>): Promise<void> => {
     e?.preventDefault?.()
     e?.stopPropagation?.()
+    if (isTranscribing) {
+      cancelRecording()
+      return
+    }
     if (!isRecording) return
 
     try {
-      const text = await stopRecording()
-      if (text && text.length > 0) {
-        window.dispatchEvent(
-          new CustomEvent('voice-insert-text', {
-            detail: { text, instanceId: activeInstanceId || 'editor-voice' }
-          })
-        )
-      }
+      await stopRecording()
     } catch (err) {
       console.error('[VoiceCapsule] Stop error:', err)
     }
@@ -69,11 +121,13 @@ export const VoiceCapsule: React.FC = () => {
   if (!isVisible) return null
 
   return (
-    <div className="voice-capsule-container">
+    <div className="voice-capsule-container" style={anchorStyle || undefined}>
       <div
         className={`voice-capsule ${isTranscribing ? 'transcribing' : 'recording'}`}
         onClick={handleStop}
-        title={isRecording ? 'Click to finish and insert' : 'Transcribing...'}
+        role="button"
+        tabIndex={0}
+        title={isRecording ? 'Click to stop & transcribe' : 'Transcribing...'}
       >
         {isRecording ? (
           <>
@@ -89,12 +143,22 @@ export const VoiceCapsule: React.FC = () => {
                     className="voice-capsule-bar"
                     style={{
                       height: `${height}px`,
-                      opacity: audioLevel > 0.04 ? 1 : 0.6
+                      opacity: audioLevel > 0.03 ? 1 : 0.65
                     }}
                   />
                 )
               })}
             </div>
+            <span className="voice-capsule-timer">{formattedDuration}</span>
+            <button
+              type="button"
+              className="voice-capsule-stop-btn"
+              onClick={handleStop}
+              aria-label="Stop recording"
+              title="Stop & transcribe"
+            >
+              <Square size={9} fill="currentColor" />
+            </button>
           </>
         ) : (
           <div className="voice-capsule-loading">

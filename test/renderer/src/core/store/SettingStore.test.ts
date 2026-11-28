@@ -196,8 +196,7 @@ describe('SettingStore', () => {
           fontSize: 20,
           deepSeekKey: 'sk-deepseek-keep',
           openaiKey: 'sk-openai-keep',
-          anthropicKey: 'sk-anthropic-keep',
-          groqKey: 'gsk-groq-keep'
+          anthropicKey: 'sk-anthropic-keep'
         }
       }))
 
@@ -209,7 +208,6 @@ describe('SettingStore', () => {
       expect(s.deepSeekKey).toBe('sk-deepseek-keep')
       expect(s.openaiKey).toBe('sk-openai-keep')
       expect(s.anthropicKey).toBe('sk-anthropic-keep')
-      expect(s.groqKey).toBe('gsk-groq-keep')
     })
   })
 })

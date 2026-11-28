@@ -17,22 +17,7 @@ export interface VoiceButtonProps {
   tooltipPosition?: 'top' | 'bottom' | 'left' | 'right'
 }
 
-export interface VoiceModalProps {
-  isOpen: boolean
-  onClose: () => void
-  isRecording: boolean
-  isTranscribing: boolean
-  formattedDuration: string
-  audioLevel?: number
-  interimText?: string
-  error?: string | null
-  style?: React.CSSProperties
-  onStartRecording: () => void
-  onStopRecording: () => void
-  onClearError: () => void
-}
-
-export interface GroqError extends Error {
+export interface VoiceApiError extends Error {
   isNetworkError?: boolean
   isQuotaError?: boolean
   isAuthError?: boolean

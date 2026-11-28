@@ -26,6 +26,23 @@ export default defineConfig(({ mode }) => ({
   css: {
     postcss: resolve('postcss.config.js')
   },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'zustand',
+      'lucide-react',
+      'react-markdown',
+      'remark-gfm',
+      'fuse.js',
+      'dexie',
+      'zod',
+      'ai',
+      '@ai-sdk/deepseek',
+      'highlight.js',
+      'katex'
+    ]
+  },
   server: {
     port: 5173,
     strictPort: true,
