@@ -13,10 +13,10 @@ describe('Theme.tsx (Embedded Sidebar)', () => {
     Element.prototype.scrollIntoView = vi.fn()
   })
 
-  it('renders 50 curated themes with count badge and search input', () => {
+  it('renders 18 curated themes with count badge and search input', () => {
     render(<Theme isEmbedded={true} isOpen={true} onClose={onClose} />)
     expect(screen.getByPlaceholderText('Search themes...')).toBeInTheDocument()
-    expect(screen.getByText('50')).toBeInTheDocument()
+    expect(screen.getByText('18')).toBeInTheDocument()
     expect(screen.getByText('Parchment')).toBeInTheDocument()
   })
 

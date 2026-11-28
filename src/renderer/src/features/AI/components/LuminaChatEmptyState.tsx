@@ -1,5 +1,5 @@
 import React from 'react'
-import { Database, Network, FileEdit, Lightbulb, FileText } from 'lucide-react'
+import { Database, Network, FileEdit, Lightbulb, FileText, Plus, Search, FolderOpen, Mic } from 'lucide-react'
 
 export interface ChatEmptyStateProps {
   selectedNote?: any
@@ -44,6 +44,61 @@ export const ChatEmptyHero: React.FC = React.memo(() => (
   </div>
 ))
 ChatEmptyHero.displayName = 'ChatEmptyHero'
+
+/**
+ * Quiet, clickable keyboard-shortcut strip displayed directly beneath the centered Composer.
+ */
+export const ChatWelcomeShortcuts: React.FC = React.memo(() => {
+  const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.userAgent)
+  const mod = isMac ? '⌘' : 'Ctrl+'
+  const alt = isMac ? '⌥' : 'Alt+'
+
+  const shortcuts = [
+    {
+      icon: <Plus size={12} />,
+      label: 'New Note',
+      keys: `${mod}N`,
+      onClick: () => window.dispatchEvent(new CustomEvent('trigger-new-note'))
+    },
+    {
+      icon: <Search size={12} />,
+      label: 'Quick Open',
+      keys: `${mod}P`,
+      onClick: () => window.dispatchEvent(new CustomEvent('lumina-palette-shortcut', { detail: { mode: 'files' } }))
+    },
+    {
+      icon: <FolderOpen size={12} />,
+      label: 'Switch Workspace',
+      keys: `${mod}${alt}W`,
+      onClick: () => window.dispatchEvent(new CustomEvent('toggle-workspace-switcher'))
+    },
+    {
+      icon: <Mic size={12} />,
+      label: 'Voice',
+      keys: isMac ? '⇧⌥V' : 'Shift+Alt+V',
+      onClick: () =>
+        window.dispatchEvent(new CustomEvent('toggle-voice-dictation', { detail: { target: 'composer-voice' } }))
+    }
+  ]
+
+  return (
+    <div className="chat-welcome-shortcuts" role="navigation" aria-label="Quick shortcuts">
+      {shortcuts.map((item) => (
+        <button
+          key={item.label}
+          type="button"
+          className="chat-welcome-shortcut-pill"
+          onClick={item.onClick}
+        >
+          {item.icon}
+          <span>{item.label}</span>
+          <kbd>{item.keys}</kbd>
+        </button>
+      ))}
+    </div>
+  )
+})
+ChatWelcomeShortcuts.displayName = 'ChatWelcomeShortcuts'
 
 /**
  * Contextual active-note action and starter prompt cards displayed below the centered composer.

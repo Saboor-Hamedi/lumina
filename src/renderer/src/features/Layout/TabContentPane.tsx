@@ -24,33 +24,12 @@
 
 import React, { useLayoutEffect } from 'react'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
-import PulseLoader from '../../components/PulseLoader'
 import { useWorkspaceStore, type WorkspacePaneId } from '../../core/store/workspaceStore'
 import { countExplorerPerfRender, markExplorerPerf } from '../Explorer/utils/explorerPerf'
-
-// Helper to retry dynamic imports if Vite dev server is still starting or compiling modules
-const lazyWithRetry = <T extends React.ComponentType<any>>(
-  factory: () => Promise<{ default: T }>
-) =>
-  React.lazy(async () => {
-    let attempts = 0
-    while (attempts < 3) {
-      try {
-        return await factory()
-      } catch (err) {
-        attempts++
-        if (attempts >= 3) throw err
-        await new Promise((r) => setTimeout(r, 350 * attempts))
-      }
-    }
-    return factory()
-  })
-
-// Keep editor initialization off the explorer click's synchronous render path.
-const Editor = lazyWithRetry(() => import('../Editor/Editor'))
-const ImageViewerTab = lazyWithRetry(() => import('../media/ImageViewerTab'))
-const PDFViewerTab = lazyWithRetry(() => import('../media/PDFViewerTab'))
-const CanvasTabPane = lazyWithRetry(() => import('../canvas/CanvasTabPane'))
+import Editor from '../Editor/Editor'
+import ImageViewerTab from '../media/ImageViewerTab'
+import PDFViewerTab from '../media/PDFViewerTab'
+import CanvasTabPane from '../canvas/CanvasTabPane'
 
 export interface TabContentPaneProps {
   /** Which split pane this content belongs to */
@@ -131,30 +110,27 @@ export const TabContentPane: React.FC<TabContentPaneProps> = React.memo(
 
     if (!snippet) return null
 
-    const paneContent = (
-      <React.Suspense fallback={<PulseLoader message="Wait a second…" />}>
-        {snippet.type === 'image' ? (
-          <ImageViewerTab snippet={snippet} />
-        ) : snippet.type === 'pdf' ? (
-          <PDFViewerTab snippet={snippet} />
-        ) : snippet.type === 'canvas' ||
-          snippet.language === 'canvas' ||
-          snippet.fileName?.endsWith('.canvas') ? (
-          <CanvasTabPane {...({ snippet, onSave, isSelected } as any)} />
-        ) : (
-          <Editor
-            snippet={snippet as any}
-            onSave={onSave as any}
-            onToggleInspector={onToggleInspector}
-            isActive={isSelected}
-            onToggleExplorerModal={onToggleExplorerModal}
-            onSettingsClick={onSettingsClick}
-            onThemeClick={onThemeClick}
-            onGraphClick={onGraphClick}
-          />
-        )}
-      </React.Suspense>
-    )
+    const paneContent =
+      snippet.type === 'image' ? (
+        <ImageViewerTab snippet={snippet} />
+      ) : snippet.type === 'pdf' ? (
+        <PDFViewerTab snippet={snippet} />
+      ) : snippet.type === 'canvas' ||
+        snippet.language === 'canvas' ||
+        snippet.fileName?.endsWith('.canvas') ? (
+        <CanvasTabPane {...({ snippet, onSave, isSelected } as any)} />
+      ) : (
+        <Editor
+          snippet={snippet as any}
+          onSave={onSave as any}
+          onToggleInspector={onToggleInspector}
+          isActive={isSelected}
+          onToggleExplorerModal={onToggleExplorerModal}
+          onSettingsClick={onSettingsClick}
+          onThemeClick={onThemeClick}
+          onGraphClick={onGraphClick}
+        />
+      )
 
     return (
       <div

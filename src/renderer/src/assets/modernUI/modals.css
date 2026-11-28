@@ -75,3 +75,38 @@
 .inline-lumina-response-compact {
   background: var(--bg-surface) !important;
 }
+
+/* ============================================================
+ * Unified Control Density, Keyboard Focus Rings & Tactile Press
+ * ============================================================ */
+.btn,
+.btn-primary,
+.btn-secondary {
+  border-radius: 6px;
+  transition:
+    background-color 110ms ease,
+    border-color 110ms ease,
+    color 110ms ease,
+    transform 90ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn:not(:disabled):active,
+.btn-primary:not(:disabled):active,
+.btn-secondary:not(:disabled):active {
+  transform: scale(0.985);
+}
+
+.lumina-app button:focus-visible,
+.lumina-app [role='button']:focus-visible,
+.lumina-app [role='tab']:focus-visible,
+.lumina-app input:focus-visible,
+.lumina-app select:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent-color, var(--text-accent, #8b5cf6)) 52%, transparent);
+  outline-offset: 1px;
+}
+
+.lumina-app .composer-textarea:focus-visible,
+.lumina-app .cm-content:focus-visible,
+.lumina-app .cm-editor:focus-visible {
+  outline: none !important;
+}

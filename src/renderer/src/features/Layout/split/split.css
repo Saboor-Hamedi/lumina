@@ -53,6 +53,9 @@
   border-radius: var(--island-radius, 10px);
   overflow: hidden;
   box-sizing: border-box;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 color-mix(in srgb, var(--text-main) 4%, transparent);
 }
 
 .workspace-pane.is-split {
@@ -60,13 +63,25 @@
   transition: box-shadow 150ms ease, border-color 150ms ease;
 }
 
+.workspace-pane.is-split:not(.is-focused) .tabbar-outer-wrapper {
+  opacity: 0.78;
+  transition: opacity 150ms ease;
+}
+
+.workspace-pane.is-split.is-focused .tabbar-outer-wrapper {
+  opacity: 1;
+  transition: opacity 150ms ease;
+}
+
 .workspace-pane.is-split.is-focused {
   box-shadow: inset 0 2px 0 var(--accent-color);
 }
 
 [data-modern-ui='true'] .workspace-split-container .workspace-pane.is-split.is-focused {
-  border-color: var(--border-accent);
-  box-shadow: none;
+  border-color: color-mix(in srgb, var(--accent-color, var(--text-accent)) 36%, var(--border-color));
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 color-mix(in srgb, var(--accent-color, var(--text-accent)) 14%, transparent);
 }
 
 .workspace-pane-body {

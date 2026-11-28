@@ -40,3 +40,56 @@
   border-color: color-mix(in srgb, var(--text-accent) 30%, transparent);
   font-weight: 600;
 }
+
+/* Mini 3-tier Islands window preview on every theme row */
+.theme-mini-island-preview {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 2px;
+  width: 26px;
+  height: 17px;
+  padding: 2px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle, rgba(128, 128, 128, 0.28));
+  box-sizing: border-box;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: transform 110ms ease;
+}
+
+.lumina-drawer-item:hover .theme-mini-island-preview,
+.lumina-drawer-item.active .theme-mini-island-preview {
+  transform: scale(1.06);
+}
+
+.theme-mini-sidebar {
+  width: 6px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.theme-mini-editor {
+  flex: 1;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px;
+  box-sizing: border-box;
+}
+
+.theme-mini-accent {
+  display: block;
+  width: 70%;
+  height: 2px;
+  border-radius: 1px;
+}
+
+.theme-mini-line {
+  display: block;
+  width: 90%;
+  height: 1.5px;
+  border-radius: 1px;
+  opacity: 0.65;
+}

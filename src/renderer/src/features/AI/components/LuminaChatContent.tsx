@@ -6,7 +6,7 @@ import { Composer } from '../Composer'
 import { ChatMessageRow } from './LuminaChatMessageRow'
 import { LuminaSession } from './LuminaSession'
 import { ChatFooterStatus } from './LuminaChatFooterStatus'
-import { ChatEmptyState, ChatEmptyHero, ChatEmptySuggestions } from './LuminaChatEmptyState'
+import { ChatEmptyState, ChatEmptyHero, ChatEmptySuggestions, ChatWelcomeShortcuts } from './LuminaChatEmptyState'
 import { LuminaAnalyticsDropdown } from './LuminaAnalyticsDropdown'
 import { LuminaApprovalCard } from '../safety'
 import { useChatScroll } from '../hooks/useChatScroll'
@@ -467,6 +467,7 @@ export const LuminaChatContent: React.FC<LuminaChatContentProps> = React.memo(
                   onStop={cancelChat}
                   onCancel={cancelChat}
                 />
+                {isCenteredWelcome && <ChatWelcomeShortcuts />}
               </div>
             </div>
 

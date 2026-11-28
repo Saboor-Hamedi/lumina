@@ -23,10 +23,12 @@ interface ThemeRowProps {
 
 const ThemeRow: React.FC<ThemeRowProps> = memo(({ themeData, isActive, isSelected, onSelect }) => {
   const c = themeData.colors || ({} as Record<string, string>)
-  const bgApp = c['--bg-app'] || '#121218'
-  const bgSidebar = c['--bg-sidebar'] || '#16161e'
-  const accent = c['--text-accent'] || '#40bafa'
-  const text = c['--text-main'] || '#ffffff'
+  const bgShell = c['--bg-activitybar'] || c['--bg-sidebar'] || '#0b0c10'
+  const bgApp = c['--bg-editor'] || c['--bg-app'] || '#14151c'
+  const bgSidebar = c['--bg-sidebar'] || '#111218'
+  const accent = c['--text-accent'] || '#a78bfa'
+  const text = c['--text-main'] || '#eceef5'
+  const border = c['--border-subtle'] || c['--border-dim'] || 'rgba(128,128,128,0.28)'
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -42,26 +44,22 @@ const ThemeRow: React.FC<ThemeRowProps> = memo(({ themeData, isActive, isSelecte
       onClick={handleClick}
       role="button"
       tabIndex={0}
-      title={themeData.name}
+      title={themeData.description || themeData.name}
     >
-      <div className="lumina-drawer-item-icon">
-        <span
-          aria-hidden="true"
-          style={{
-            width: '12px',
-            height: '12px',
-            borderRadius: '50%',
-            background: `linear-gradient(135deg, ${bgApp} 50%, ${accent} 50%)`,
-            border: '1px solid rgba(128, 128, 128, 0.3)',
-            display: 'inline-block',
-            flexShrink: 0
-          }}
-        />
+      <div
+        className="theme-mini-island-preview"
+        aria-hidden="true"
+        style={{ background: bgShell, borderColor: border }}
+      >
+        <span className="theme-mini-sidebar" style={{ background: bgSidebar }} />
+        <span className="theme-mini-editor" style={{ background: bgApp }}>
+          <span className="theme-mini-accent" style={{ background: accent }} />
+          <span className="theme-mini-line" style={{ background: text }} />
+        </span>
       </div>
       <span className="lumina-drawer-item-label">{themeData.name}</span>
       <div className="lumina-drawer-item-meta">
         <div className="theme-drawer-swatches" aria-hidden="true">
-          <span className="theme-drawer-dot" style={{ background: bgSidebar }} />
           <span className="theme-drawer-dot" style={{ background: accent }} />
           <span className="theme-drawer-dot" style={{ background: text }} />
         </div>
