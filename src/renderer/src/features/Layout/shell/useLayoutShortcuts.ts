@@ -287,6 +287,12 @@ export function useLayoutShortcuts({
     },
     onFind: () => window.dispatchEvent(new CustomEvent('find-in-editor')),
     onTogglePalette: () => {
+      if (showPalette) {
+        window.dispatchEvent(
+          new CustomEvent('lumina-palette-shortcut', { detail: { mode: 'notes' } })
+        )
+        return
+      }
       setPaletteInitialQuery('')
       setShowPalette(true)
     },
@@ -294,10 +300,22 @@ export function useLayoutShortcuts({
       useSettingsStore.getState().toggleZenMode()
     },
     onTogglePaletteCommandMode: () => {
+      if (showPalette) {
+        window.dispatchEvent(
+          new CustomEvent('lumina-palette-shortcut', { detail: { mode: 'commands' } })
+        )
+        return
+      }
       setPaletteInitialQuery('> ')
       setShowPalette(true)
     },
     onToggleCommandPalette: () => {
+      if (showPalette) {
+        window.dispatchEvent(
+          new CustomEvent('lumina-palette-shortcut', { detail: { mode: 'commands' } })
+        )
+        return
+      }
       setPaletteInitialQuery('>')
       setShowPalette(true)
     },

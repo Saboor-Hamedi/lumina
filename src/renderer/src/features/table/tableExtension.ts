@@ -399,17 +399,48 @@ export class TableWidget extends WidgetType {
     const scrollContainer = document.createElement('div')
     scrollContainer.className = 'cm-table-scroll-container'
 
-    // Prevent wheel events from propagating to CodeMirror scroller so scrolling inside
-    // the table scrolls the table rows/columns, NOT the entire page/editor!
+    // Allow vertical wheel scrolling inside tall tables while chaining cleanly to
+    // the outer CodeMirror editor when at the table's scroll boundaries or when
+    // the table does not overflow vertically. Only map vertical wheel to horizontal
+    // scroll when Shift is held so plain mouse-wheel scrolling always moves up/down.
     scrollContainer.addEventListener(
       'wheel',
       (e) => {
-        const canScrollY = scrollContainer.scrollHeight > scrollContainer.clientHeight
-        const canScrollX = scrollContainer.scrollWidth > scrollContainer.clientWidth
-        if (canScrollY || canScrollX) {
-          e.stopPropagation()
-          if (!canScrollY && canScrollX && Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        const canScrollY = scrollContainer.scrollHeight > scrollContainer.clientHeight + 2
+        const canScrollX = scrollContainer.scrollWidth > scrollContainer.clientWidth + 2
+        const isVerticalGesture = Math.abs(e.deltaY) >= Math.abs(e.deltaX)
+
+        if (e.shiftKey && canScrollX && e.deltaY !== 0) {
+          const atLeft = scrollContainer.scrollLeft <= 0
+          const atRight =
+            scrollContainer.scrollLeft + scrollContainer.clientWidth >=
+            scrollContainer.scrollWidth - 1
+          if ((e.deltaY < 0 && !atLeft) || (e.deltaY > 0 && !atRight)) {
             scrollContainer.scrollLeft += e.deltaY
+            e.stopPropagation()
+          }
+          return
+        }
+
+        if (isVerticalGesture) {
+          if (!canScrollY) return
+          const atTop = scrollContainer.scrollTop <= 0
+          const atBottom =
+            scrollContainer.scrollTop + scrollContainer.clientHeight >=
+            scrollContainer.scrollHeight - 1
+          if ((e.deltaY < 0 && !atTop) || (e.deltaY > 0 && !atBottom)) {
+            e.stopPropagation()
+          }
+          return
+        }
+
+        if (canScrollX && e.deltaX !== 0) {
+          const atLeft = scrollContainer.scrollLeft <= 0
+          const atRight =
+            scrollContainer.scrollLeft + scrollContainer.clientWidth >=
+            scrollContainer.scrollWidth - 1
+          if ((e.deltaX < 0 && !atLeft) || (e.deltaX > 0 && !atRight)) {
+            e.stopPropagation()
           }
         }
       },

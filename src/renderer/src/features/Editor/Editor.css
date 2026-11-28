@@ -233,7 +233,8 @@
   max-height: 420px;
   overflow-x: auto !important;
   overflow-y: auto !important;
-  overscroll-behavior: contain !important;
+  overscroll-behavior-y: auto !important;
+  overscroll-behavior-x: contain !important;
   box-sizing: border-box !important;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;

@@ -64,13 +64,22 @@ pub fn run() {
             #[cfg(target_os = "windows")]
             {
                 use tauri::Manager;
-                use webview2_com::Microsoft::Web::WebView2::Win32::ICoreWebView2Settings5;
+                use webview2_com::Microsoft::Web::WebView2::Win32::{
+                    ICoreWebView2Settings3, ICoreWebView2Settings5,
+                };
                 use windows::core::Interface;
 
                 for window in app.webview_windows().values() {
                     let _ = window.with_webview(|webview| unsafe {
                         if let Ok(core) = webview.controller().CoreWebView2() {
                             if let Ok(settings) = core.Settings() {
+                                // Disable WebView2's built-in browser accelerators (Ctrl+P Print,
+                                // Ctrl+R/F5 Reload, Ctrl+F Find, Alt+Left/Right navigation, etc.)
+                                // so app shortcuts and Alt modifier combos reach the DOM on the
+                                // first keypress without being intercepted by WebView2 chrome.
+                                if let Ok(settings3) = settings.cast::<ICoreWebView2Settings3>() {
+                                    let _ = settings3.SetAreBrowserAcceleratorKeysEnabled(false);
+                                }
                                 // wry disables IsPinchZoomEnabled when zoom_hotkeys_enabled is false,
                                 // which blocks Windows Precision Touchpad pinch gestures from
                                 // synthesizing DOM wheel (ctrlKey: true) events. Re-enable pinch

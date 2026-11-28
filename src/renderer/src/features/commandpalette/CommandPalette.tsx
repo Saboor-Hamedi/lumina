@@ -513,6 +513,36 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
     })
 
     useEffect(() => {
+      if (!isOpen) return
+      const handlePaletteShortcut = (event: Event) => {
+        const mode = (event as CustomEvent<{ mode?: 'notes' | 'commands' }>).detail?.mode
+        if (mode === 'commands') {
+          if (paletteMode !== 'commands') {
+            setPaletteMode('commands')
+            setActivePromptSetting(null)
+            setQuery((prev) => (prev.trim().startsWith('>') ? prev.trim().slice(1).trim() : prev))
+            setSelectedIndex(0)
+            inputRef.current?.focus()
+          } else {
+            onClose()
+          }
+        } else if (mode === 'notes') {
+          if (paletteMode !== 'notes' || query.trim().startsWith('>')) {
+            setPaletteMode('notes')
+            setActivePromptSetting(null)
+            setQuery((prev) => (prev.trim().startsWith('>') ? prev.trim().slice(1).trim() : prev))
+            setSelectedIndex(0)
+            inputRef.current?.focus()
+          } else {
+            onClose()
+          }
+        }
+      }
+      window.addEventListener('lumina-palette-shortcut', handlePaletteShortcut)
+      return () => window.removeEventListener('lumina-palette-shortcut', handlePaletteShortcut)
+    }, [isOpen, paletteMode, query, onClose])
+
+    useEffect(() => {
       if (isOpen) {
         previousFocusRef.current = document.activeElement
         const trimmedInit = initialQuery.trim()

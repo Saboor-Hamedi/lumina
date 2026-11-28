@@ -1,6 +1,6 @@
-## Lumina v2.3.0 — Smart PDF Hybrid Index, AI-to-Canvas Visual Thinking, Note Properties & Visual Polish
+## Lumina v2.3.1 — Smart PDF Hybrid Index, AI-to-Canvas Visual Thinking, Note Properties & Visual Polish
 
-Lumina **v2.3.0** introduces a built-in **Smart PDF Knowledge Index**, **AI-to-Canvas Visual Thinking** for generating editable diagrams, **Notion-style Note Properties** with drag-and-drop layouts, refreshed **Note Covers & Export Previews**, built-in **How to Ask Lumina** guides, and a cleaner File Explorer and AI chat experience.
+Lumina **v2.3.1** introduces a built-in **Smart PDF Knowledge Index**, **AI-to-Canvas Visual Thinking** for generating editable diagrams, **Notion-style Note Properties** with drag-and-drop layouts, refreshed **Note Covers & Export Previews**, built-in **How to Ask Lumina** guides, and a cleaner File Explorer and AI chat experience.
 
 ---
 
@@ -25,6 +25,12 @@ Lumina **v2.3.0** introduces a built-in **Smart PDF Knowledge Index**, **AI-to-C
 - **Cleaner AI Composer & Chat Mentions**: Attached PDFs/files render as small, truncated chips in the composer and a compact strip above sent prompts, inline mentions flow seamlessly like paragraph wording without overflowing, and Activity Card file titles truncate cleanly beside green `+Nw` badges.
 - **Instant Lumina AI Tab**: Pre-warms the Lumina AI bundle on idle and shows a clean loader fallback instead of a blank screen.
 - **Built-in Guides**: Added **Smart PDFs & AI Canvas** and **How to Ask Lumina** (prompt engineering guide) to `brain/` and the in-app Documentation modal.
+
+### 🛠️ Input, Table & Editor Fixes
+- **Single-Press `Alt` Tab Close-Others & `Ctrl + P` Shortcuts**: Disabled Windows WebView2's native browser accelerator interception (`SetAreBrowserAcceleratorKeysEnabled(false)`), guarded bare `Alt` presses from activating hidden menu-bar focus, synced Tab Bar `Alt` state across pointer/keyboard events, and unified `Ctrl + P` / `Ctrl + Shift + P` Command Palette toggling so both respond on the very first press regardless of focus.
+- **Smooth Table Mouse-Wheel Scrolling**: Fixed vertical mouse-wheel scrolling when hovering over Markdown tables by allowing vertical scroll chaining (`overscroll-behavior-y: auto`) and updating the table wheel handler so plain vertical scrolling moves through tall tables and seamlessly into the note body (reserving `Shift + Wheel` for horizontal table scrolling).
+- **Preserved Note Creation Timestamps**: Fixed note saving and scanning so editing a note keeps its original `createdAt` timestamp intact instead of overwriting it.
+- **Spatial Canvas Label & Grid Persistence**: Fixed Canvas label font scaling, edge width/height resizing, always-visible `1px` borders, stationary selection toolbar positioning, and `snapToGrid` persistence across refreshes.
 
 ---
 

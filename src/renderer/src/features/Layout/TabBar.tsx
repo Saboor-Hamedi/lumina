@@ -164,7 +164,7 @@ const SortableTabItem = memo<SortableTabItemProps>(
                 {isDirty && <span className="tab-pin-dirty" />}
               </span>
             )}
-            {!isPinned && isDirty ? (
+            {!isPinned && isDirty && !showCloseOthersIcon ? (
               <div
                 onMouseDown={(e: React.MouseEvent) => {
                   e.stopPropagation()
@@ -309,6 +309,7 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
   const [iconPickerId, setIconPickerId] = useState<string | null>(null)
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const [isAltPressed, setIsAltPressed] = useState(false)
+  const isAltPressedRef = useRef(false)
   const [closingTabIds, setClosingTabIds] = useState<Set<string>>(() => new Set())
   const closingTimersRef = useRef<number[]>([])
   const isTabBarDropActive = useTabDragStore(
@@ -327,21 +328,39 @@ export const TabBar: React.FC<TabBarProps> = ({ paneId = 'primary' }) => {
   )
 
   useEffect(() => {
+    const syncAlt = (pressed: boolean) => {
+      if (isAltPressedRef.current !== pressed) {
+        isAltPressedRef.current = pressed
+        setIsAltPressed(pressed)
+      }
+    }
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Alt' || e.altKey) setIsAltPressed(true)
+      if (e.key === 'Alt' || e.altKey) syncAlt(true)
     }
     const onKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'Alt' || !e.altKey) setIsAltPressed(false)
+      if (e.key === 'Alt' || !e.altKey) syncAlt(false)
     }
-    const onBlur = () => setIsAltPressed(false)
+    const onPointerEvent = (e: PointerEvent | MouseEvent) => {
+      syncAlt(Boolean(e.altKey))
+    }
+    const onBlur = () => syncAlt(false)
+    const onVisibilityChange = () => {
+      if (document.hidden) syncAlt(false)
+    }
 
     window.addEventListener('keydown', onKeyDown, true)
     window.addEventListener('keyup', onKeyUp, true)
+    window.addEventListener('pointermove', onPointerEvent, true)
+    window.addEventListener('mousedown', onPointerEvent, true)
     window.addEventListener('blur', onBlur)
+    document.addEventListener('visibilitychange', onVisibilityChange)
     return () => {
       window.removeEventListener('keydown', onKeyDown, true)
       window.removeEventListener('keyup', onKeyUp, true)
+      window.removeEventListener('pointermove', onPointerEvent, true)
+      window.removeEventListener('mousedown', onPointerEvent, true)
       window.removeEventListener('blur', onBlur)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
     }
   }, [])
 

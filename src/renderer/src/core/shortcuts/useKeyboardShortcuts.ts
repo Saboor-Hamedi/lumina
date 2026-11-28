@@ -126,13 +126,26 @@ export function hasOpenEscapeConsumer(e?: KeyboardEvent): boolean {
   return false
 }
 
+const isRecordingShortcutActive = (): boolean =>
+  Boolean(
+    (window as any).__isRecordingShortcut ||
+      document.querySelector('.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay')
+  )
+
 const handleGlobalKeyDown = (e: KeyboardEvent): void => {
+  // On Windows/WebView2, an un-prevented bare Alt keydown/keyup activates the
+  // native menu-bar focus mode and steals focus from the document, causing the
+  // next Alt press or shortcut (e.g. Ctrl+P) to be swallowed on the first press.
+  // Calling preventDefault() on bare Alt keeps e.altKey working for all combos
+  // (Alt+Click, Alt+Drag, Alt+G, etc.) without triggering native menu focus.
+  if (e.key === 'Alt' && !e.ctrlKey && !e.metaKey && !isRecordingShortcutActive()) {
+    e.preventDefault()
+    return
+  }
+
   if (e.key === 'Escape' || e.key === 'Esc') {
     // Shortcut recorders own Escape while they are active.
-    if (
-      (window as any).__isRecordingShortcut ||
-      document.querySelector('.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay')
-    ) {
+    if (isRecordingShortcutActive()) {
       blockedZenEscapeEvents.add(e)
       return
     }
@@ -197,9 +210,16 @@ const handleZenModeEscapeBubble = (e: KeyboardEvent): void => {
   }
 }
 
-// Single singleton listeners for Escape stack (capture) and Zen Mode fallback exit (bubble)
+const handleGlobalKeyUp = (e: KeyboardEvent): void => {
+  if (e.key === 'Alt' && !e.ctrlKey && !e.metaKey && !isRecordingShortcutActive()) {
+    e.preventDefault()
+  }
+}
+
+// Single singleton listeners for Escape stack + bare Alt guard (capture) and Zen Mode fallback exit (bubble)
 if (typeof window !== 'undefined') {
   window.addEventListener('keydown', handleGlobalKeyDown, { capture: true })
+  window.addEventListener('keyup', handleGlobalKeyUp, { capture: true })
   window.addEventListener('keydown', handleZenModeEscapeBubble, false)
 }
 
@@ -445,6 +465,7 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcutHandlers): void 
       // Quick Search (Palette)
       if (matchesShortcut(e, getKey('quickSearch')) && shortcutsRef.current.onTogglePalette) {
         e.preventDefault()
+        e.stopPropagation()
         shortcutsRef.current.onTogglePalette()
         return
       }
