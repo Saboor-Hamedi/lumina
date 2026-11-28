@@ -28,7 +28,7 @@ import { htmlWidgetExtension } from '../Editor/extensions/htmlExtension'
 import { katexExtension } from '../Editor/extensions/katexExtension'
 import { tables } from '../table/tableExtension'
 import { mermaidWidgetExtension } from '../../core/mermaid'
-import { calloutExtension, highlightExtension } from '../../core/editor'
+import { calloutExtension, quoteExtension, highlightExtension } from '../../core/editor'
 import {
   codeBlockDecorations,
   luminaSyntaxHighlighting
@@ -117,6 +117,7 @@ export const PreviewCommandPalette: React.FC<PreviewCommandPaletteProps> = React
         katexExtension as Extension,
         mermaidWidgetExtension as Extension,
         calloutExtension as Extension,
+        quoteExtension as Extension,
         highlightExtension as Extension,
         codeBlockDecorations as Extension,
         luminaSyntaxHighlighting as Extension,

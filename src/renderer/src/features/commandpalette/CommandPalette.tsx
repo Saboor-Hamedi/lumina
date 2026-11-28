@@ -75,7 +75,9 @@ import { useShallow } from 'zustand/react/shallow'
 import { useKeyboardShortcuts } from '../../core/shortcuts'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { useSettingsStore, Settings as AppSettings } from '../../core/store/SettingStore'
-import { PreviewCommandPalette } from './PreviewCommandPalette'
+const PreviewCommandPalette = React.lazy(() =>
+  import('./PreviewCommandPalette').then((m) => ({ default: m.PreviewCommandPalette }))
+)
 import { COMMANDS_REGISTRY, LuminaCommand, CommandContext } from './utils/commandsRegistry'
 import { SETTINGS_REGISTRY, LuminaSettingDefinition, SettingOption } from './utils/settingsRegistry'
 import './css/commandPalette.css'
@@ -462,6 +464,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
     const [selectedIndex, setSelectedIndex] = useState<number>(0)
     const [splitRatio, setSplitRatio] = useState<number>(47)
     const [activePromptSetting, setActivePromptSetting] = useState<LuminaSettingDefinition | null>(null)
+    const [isPreviewReady, setIsPreviewReady] = useState<boolean>(false)
 
     const inputRef = useRef<HTMLInputElement>(null)
     const listRef = useRef<HTMLDivElement>(null)
@@ -551,13 +554,23 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
         setQuery(startsInCommands ? trimmedInit.slice(1).trim() : initialQuery)
         setSelectedIndex(0)
         setActivePromptSetting(null)
-        setTimeout(() => inputRef.current?.focus(), 20)
+        setIsPreviewReady(false)
+        // Focus immediately on next frame so typing starts with zero lag
+        const focusRaf = requestAnimationFrame(() => inputRef.current?.focus())
+        // Defer heavy CodeMirror preview hydration until after the palette paints
+        const previewTimer = window.setTimeout(() => setIsPreviewReady(true), 60)
+        return () => {
+          cancelAnimationFrame(focusRaf)
+          window.clearTimeout(previewTimer)
+        }
       } else {
         setActivePromptSetting(null)
+        setIsPreviewReady(false)
         if (previousFocusRef.current && typeof (previousFocusRef.current as HTMLElement).focus === 'function') {
           setTimeout(() => (previousFocusRef.current as HTMLElement)?.focus(), 10)
         }
       }
+      return undefined
     }, [isOpen, initialQuery])
 
     // Lightning-fast instant filtering logic (< 0.05ms)
@@ -688,7 +701,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
 
       // 2. Ctrl + P (Notes Search Mode ONLY — strictly notes, #tags, and @mentions; zero settings/commands)
       if (!cleanQ) {
-        return items.slice(0, 50)
+        return items.slice(0, 5)
       }
 
       const matches: PaletteItem[] = []
@@ -1186,7 +1199,41 @@ export const CommandPalette: React.FC<CommandPaletteProps> = React.memo(
                         <span className="palette-note-preview-folder">{deferredSelectedItem.folderId}</span>
                       )}
                     </div>
-                    <PreviewCommandPalette content={previewContent} onClose={onClose} />
+                    {isPreviewReady ? (
+                      <React.Suspense
+                        fallback={
+                          <div
+                            className="preview-body seamless-scrollbar"
+                            style={{
+                              padding: '12px 16px',
+                              fontSize: '12.5px',
+                              lineHeight: 1.6,
+                              color: 'var(--text-muted)',
+                              whiteSpace: 'pre-wrap',
+                              overflow: 'hidden'
+                            }}
+                          >
+                            {previewContent.slice(0, 800)}
+                          </div>
+                        }
+                      >
+                        <PreviewCommandPalette content={previewContent} onClose={onClose} />
+                      </React.Suspense>
+                    ) : (
+                      <div
+                        className="preview-body seamless-scrollbar"
+                        style={{
+                          padding: '12px 16px',
+                          fontSize: '12.5px',
+                          lineHeight: 1.6,
+                          color: 'var(--text-muted)',
+                          whiteSpace: 'pre-wrap',
+                          overflow: 'hidden'
+                        }}
+                      >
+                        {previewContent.slice(0, 800)}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="palette-empty-preview">

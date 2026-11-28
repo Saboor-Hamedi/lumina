@@ -57,6 +57,29 @@ let mermaidInstance: any = null
 let currentAccent = '#40bafa'
 let currentFont = 'monospace'
 
+function isDarkAppTheme(bgColor: string): boolean {
+  const attr = document.documentElement.getAttribute('data-theme')?.toLowerCase() || ''
+  if (attr.includes('light') || attr.includes('porcelain') || attr.includes('paper')) {
+    return false
+  }
+  const hex = bgColor.trim().match(/^#([0-9a-f]{6})$/i)
+  if (hex) {
+    const n = parseInt(hex[1], 16)
+    const r = (n >> 16) & 255
+    const g = (n >> 8) & 255
+    const b = n & 255
+    return 0.299 * r + 0.587 * g + 0.114 * b < 140
+  }
+  const rgb = bgColor.trim().match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i)
+  if (rgb) {
+    const r = parseInt(rgb[1], 10)
+    const g = parseInt(rgb[2], 10)
+    const b = parseInt(rgb[3], 10)
+    return 0.299 * r + 0.587 * g + 0.114 * b < 140
+  }
+  return true
+}
+
 function initializeMermaid(mermaid: any): void {
   if (typeof window === 'undefined' || !mermaid) return
   const computed = getComputedStyle(document.documentElement)
@@ -65,6 +88,58 @@ function initializeMermaid(mermaid: any): void {
     ? raw.startsWith('#') || raw.startsWith('rgb') ? raw : `#${raw}`
     : '#40bafa'
   currentFont = computed.getPropertyValue('--font-editor').trim() || 'monospace'
+  const uiFont =
+    computed.getPropertyValue('--font-ui').trim() ||
+    'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+  const bgSurface = computed.getPropertyValue('--bg-surface').trim() || '#1e1e1e'
+  const textMain = computed.getPropertyValue('--text-main').trim() || '#e4e4e7'
+  const isDark = isDarkAppTheme(bgSurface)
+
+  // Curated, cohesive section palette for mindmap & timeline diagrams
+  // (replaces Mermaid's clashing default rainbow pastels with crisp theme-aware surfaces)
+  const darkPalette = [
+    '#27273a', // root / section 0 (indigo-slate)
+    '#1e3246', // section 1 (ocean slate)
+    '#1f3a33', // section 2 (emerald slate)
+    '#3b2c44', // section 3 (plum slate)
+    '#3f3122', // section 4 (amber slate)
+    '#3d2430', // section 5 (rose slate)
+    '#1f3640', // section 6 (teal slate)
+    '#2f2d47'  // section 7 (violet slate)
+  ]
+  const lightPalette = [
+    '#eef2ff', // root / section 0
+    '#e0f2fe', // section 1
+    '#dcfce7', // section 2
+    '#f3e8ff', // section 3
+    '#fef3c7', // section 4
+    '#ffe4e6', // section 5
+    '#ccfbf1', // section 6
+    '#e0e7ff'  // section 7
+  ]
+  const darkBorders = [
+    '#6366f1',
+    '#38bdf8',
+    '#34d399',
+    '#c084fc',
+    '#fbbf24',
+    '#fb7185',
+    '#2dd4bf',
+    '#818cf8'
+  ]
+  const lightBorders = [
+    '#6366f1',
+    '#0284c7',
+    '#16a34a',
+    '#9333ea',
+    '#d97706',
+    '#e11d48',
+    '#0d9488',
+    '#4f46e5'
+  ]
+  const palette = isDark ? darkPalette : lightPalette
+  const borders = isDark ? darkBorders : lightBorders
+  const sectionLabelColor = isDark ? '#f4f4f5' : '#18181b'
 
   mermaid.initialize({
     startOnLoad: false,
@@ -86,7 +161,8 @@ function initializeMermaid(mermaid: any): void {
     },
     gantt: { useMaxWidth: false },
     journey: { useMaxWidth: false },
-    mindmap: { padding: 16, maxNodeWidth: 200, useMaxWidth: false },
+    mindmap: { padding: 18, maxNodeWidth: 220, useMaxWidth: false },
+    timeline: { useMaxWidth: false, padding: 18 },
     state: { useMaxWidth: false },
     class: { htmlLabels: false, useMaxWidth: false },
     er: { useMaxWidth: false },
@@ -101,8 +177,44 @@ function initializeMermaid(mermaid: any): void {
       loopTextColor: currentAccent,
       noteTextColor: currentAccent,
       taskTextColor: currentAccent,
-      titleColor: currentAccent,
-      gitBranchLabel0: currentAccent
+      titleColor: textMain,
+      gitBranchLabel0: currentAccent,
+      cScale0: palette[0],
+      cScale1: palette[1],
+      cScale2: palette[2],
+      cScale3: palette[3],
+      cScale4: palette[4],
+      cScale5: palette[5],
+      cScale6: palette[6],
+      cScale7: palette[7],
+      cScale8: palette[0],
+      cScale9: palette[1],
+      cScale10: palette[2],
+      cScale11: palette[3],
+      cScalePeer0: borders[0],
+      cScalePeer1: borders[1],
+      cScalePeer2: borders[2],
+      cScalePeer3: borders[3],
+      cScalePeer4: borders[4],
+      cScalePeer5: borders[5],
+      cScalePeer6: borders[6],
+      cScalePeer7: borders[7],
+      cScalePeer8: borders[0],
+      cScalePeer9: borders[1],
+      cScalePeer10: borders[2],
+      cScalePeer11: borders[3],
+      cScaleLabel0: sectionLabelColor,
+      cScaleLabel1: sectionLabelColor,
+      cScaleLabel2: sectionLabelColor,
+      cScaleLabel3: sectionLabelColor,
+      cScaleLabel4: sectionLabelColor,
+      cScaleLabel5: sectionLabelColor,
+      cScaleLabel6: sectionLabelColor,
+      cScaleLabel7: sectionLabelColor,
+      cScaleLabel8: sectionLabelColor,
+      cScaleLabel9: sectionLabelColor,
+      cScaleLabel10: sectionLabelColor,
+      cScaleLabel11: sectionLabelColor
     },
     themeCSS: `
       .node .label, .node .label text, .nodeLabel, .edgeLabel, .edgeLabel span, .edgeLabel p, .label, .label span, .label p, foreignObject span, foreignObject p, foreignObject div, text, tspan, p, span {
@@ -115,10 +227,6 @@ function initializeMermaid(mermaid: any): void {
         color: var(--text-accent, #40bafa) !important;
         font-family: ${currentFont} !important;
       }
-      .mindmap-node text, .mindmap-node tspan, .mindmap-node span {
-        fill: var(--text-accent, #40bafa) !important;
-        color: var(--text-accent, #40bafa) !important;
-      }
       text.messageText, .noteText, text.loopText, .taskText {
         fill: var(--text-accent, #40bafa) !important;
         color: var(--text-accent, #40bafa) !important;
@@ -127,6 +235,36 @@ function initializeMermaid(mermaid: any): void {
       .commit-label, .branch-label {
         fill: var(--text-accent, #40bafa) !important;
         color: var(--text-accent, #40bafa) !important;
+      }
+      /* Crisp high-contrast UI typography for mindmap & timeline */
+      [aria-roledescription="mindmap"] text,
+      [aria-roledescription="mindmap"] tspan,
+      [aria-roledescription="mindmap"] .mindmap-node text,
+      [aria-roledescription="mindmap"] .mindmap-node tspan,
+      [aria-roledescription="mindmap"] foreignObject,
+      [aria-roledescription="mindmap"] foreignObject div,
+      [aria-roledescription="mindmap"] foreignObject span,
+      [aria-roledescription="mindmap"] foreignObject p,
+      [aria-roledescription="timeline"] text,
+      [aria-roledescription="timeline"] tspan,
+      [aria-roledescription="timeline"] foreignObject,
+      [aria-roledescription="timeline"] foreignObject div,
+      [aria-roledescription="timeline"] foreignObject span,
+      [aria-roledescription="timeline"] foreignObject p {
+        font-family: ${uiFont} !important;
+        fill: ${sectionLabelColor} !important;
+        color: ${sectionLabelColor} !important;
+        font-weight: 500 !important;
+      }
+      [aria-roledescription="mindmap"] .section-root text,
+      [aria-roledescription="mindmap"] .section-root tspan,
+      [aria-roledescription="timeline"] .timeline-node text,
+      [aria-roledescription="timeline"] .timeline-node tspan {
+        font-weight: 600 !important;
+      }
+      [aria-roledescription="mindmap"] .edge {
+        stroke-width: 1.75px !important;
+        stroke-opacity: 0.7 !important;
       }
     `
   })
@@ -510,21 +648,39 @@ export function applyMermaidFit(container: HTMLElement): void {
 
   const style = getComputedStyle(wrap)
   const padX = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0)
-  const availWidth = Math.min(wrap.clientWidth - padX, 680)
-  const maxInlineHeight = 300
+  const roleDesc = (svg.getAttribute('aria-roledescription') || '').toLowerCase()
+  const isMindmapOrTimeline =
+    roleDesc === 'mindmap' ||
+    roleDesc === 'timeline' ||
+    Boolean(svg.querySelector('.mindmap-node, .section-root, .timeline-node, .taskWrapper'))
 
-  // Cap inline zoom at 1.0x so compact diagrams stay crisp and restrained rather than ballooning
-  const fit = computeMermaidFit(natural.width, natural.height, availWidth, maxInlineHeight, 1.0, 0.15)
+  const availWidth = Math.min(wrap.clientWidth - padX, isMindmapOrTimeline ? 920 : 720)
+  const maxInlineHeight = isMindmapOrTimeline ? 440 : 320
+  // Keep a readable minimum scale on mindmap/timeline so text never shrinks into blurry subpixels;
+  // wide diagrams scroll cleanly inside `.mermaid-scroll-wrap`.
+  const minReadableScale = isMindmapOrTimeline ? 0.8 : 0.15
+
+  const fit = computeMermaidFit(
+    natural.width,
+    natural.height,
+    availWidth,
+    maxInlineHeight,
+    1.0,
+    minReadableScale
+  )
   if (!fit) return
 
   const nextW = `${Math.round(fit.width)}px`
   const nextH = `${Math.round(fit.height)}px`
   if (svg.style.width === nextW && svg.style.height === nextH) return
 
-  svg.style.maxWidth = '100%'
+  svg.style.maxWidth = isMindmapOrTimeline ? 'none' : '100%'
   svg.style.maxHeight = `${maxInlineHeight}px`
   svg.style.width = nextW
   svg.style.height = nextH
+  if (isMindmapOrTimeline) {
+    wrap.classList.add('is-rich-diagram')
+  }
 }
 
 /**
@@ -580,12 +736,20 @@ export function renderMermaidToElement(
 
         let { svg } = (await mermaid.render(uniqueId, code)) as { svg: string }
 
-        // Force accent color variable on text elements so CSS variable changes apply live
+        const isMindmapOrTimelineSvg =
+          /aria-roledescription\s*=\s*["'](mindmap|timeline)["']/i.test(svg) ||
+          /^\s*(mindmap|timeline)\b/im.test(code)
+
+        // Force accent color variable on standard diagram text elements so CSS variable changes apply live,
+        // while keeping high-contrast `--text-main` on mindmap & timeline section nodes.
+        const textFillVar = isMindmapOrTimelineSvg
+          ? 'var(--text-main, #e4e4e7)'
+          : 'var(--text-accent, #40bafa)'
         svg = svg.replace(/<(text|tspan)(\s[^>]*)?>/g, (_match: string, tag: string, attrs = '') => {
           if (/fill\s*=/.test(attrs)) {
-            attrs = attrs.replace(/fill\s*=\s*["'][^"']*["']/, 'fill="var(--text-accent, #40bafa)"')
+            attrs = attrs.replace(/fill\s*=\s*["'][^"']*["']/, `fill="${textFillVar}"`)
           } else {
-            attrs = attrs + ' fill="var(--text-accent, #40bafa)"'
+            attrs = attrs + ` fill="${textFillVar}"`
           }
           return `<${tag}${attrs}>`
         })

@@ -25,6 +25,7 @@ import { tagMentionExtension } from '../../features/Editor/extensions/tagMention
 import { tables } from '../../features/table/tableExtension'
 import { mermaidWidgetExtension } from '../mermaid'
 import { calloutExtension } from './useCallout'
+import { quoteExtension } from './Quote'
 import { highlightExtension } from './useHighlight'
 import { useCollapsible } from '../../features/Editor/collapse/useCollapsible'
 import { emptyLineSelectionFix } from './useEmptyLine'
@@ -502,6 +503,7 @@ export function useEditorExtensions({
       Prec.highest(linkEmbedExtension),
       katexExtension,
       calloutExtension,
+      quoteExtension,
       highlightExtension,
       Prec.highest(
         tables({

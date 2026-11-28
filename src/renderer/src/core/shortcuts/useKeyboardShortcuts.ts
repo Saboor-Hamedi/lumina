@@ -132,13 +132,21 @@ const isRecordingShortcutActive = (): boolean =>
       document.querySelector('.shortcut-recording, .shortcut-inline-input, .shortcut-modal-overlay')
   )
 
+const isMacPlatform = (): boolean =>
+  typeof navigator !== 'undefined' && /mac/i.test(navigator.platform || navigator.userAgent)
+
 const handleGlobalKeyDown = (e: KeyboardEvent): void => {
-  // On Windows/WebView2, an un-prevented bare Alt keydown/keyup activates the
+  // On Windows/Linux, an un-prevented bare Alt keydown/keyup activates the
   // native menu-bar focus mode and steals focus from the document, causing the
   // next Alt press or shortcut (e.g. Ctrl+P) to be swallowed on the first press.
-  // Calling preventDefault() on bare Alt keeps e.altKey working for all combos
-  // (Alt+Click, Alt+Drag, Alt+G, etc.) without triggering native menu focus.
-  if (e.key === 'Alt' && !e.ctrlKey && !e.metaKey && !isRecordingShortcutActive()) {
+  // Skip on macOS so Option-key diacritic composition remains untouched.
+  if (
+    !isMacPlatform() &&
+    e.key === 'Alt' &&
+    !e.ctrlKey &&
+    !e.metaKey &&
+    !isRecordingShortcutActive()
+  ) {
     e.preventDefault()
     return
   }
@@ -211,7 +219,13 @@ const handleZenModeEscapeBubble = (e: KeyboardEvent): void => {
 }
 
 const handleGlobalKeyUp = (e: KeyboardEvent): void => {
-  if (e.key === 'Alt' && !e.ctrlKey && !e.metaKey && !isRecordingShortcutActive()) {
+  if (
+    !isMacPlatform() &&
+    e.key === 'Alt' &&
+    !e.ctrlKey &&
+    !e.metaKey &&
+    !isRecordingShortcutActive()
+  ) {
     e.preventDefault()
   }
 }

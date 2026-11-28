@@ -51,8 +51,21 @@ const lazyWithRetry = <T extends React.ComponentType<any>>(
 const LuminaChat = lazyWithRetry(() => import('../AI/Lumina'))
 const Settings = lazyWithRetry(() => import('../Settings/Settings'))
 const CommandPalette = lazyWithRetry(() =>
-  import('../commandpalette').then((m) => ({ default: m.CommandPalette }))
+  import('../commandpalette/CommandPalette').then((m) => ({ default: m.CommandPalette }))
 )
+
+// Pre-warm lightweight CommandPalette chunk during idle time so first Ctrl+P opens instantly
+if (typeof window !== 'undefined') {
+  const prewarm = () => {
+    void import('../commandpalette/CommandPalette').catch(() => {})
+  }
+  const win = window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }
+  if (typeof win.requestIdleCallback === 'function') {
+    win.requestIdleCallback(prewarm, { timeout: 1500 })
+  } else {
+    window.setTimeout(prewarm, 1200)
+  }
+}
 const IconPicker = lazyWithRetry(() => import('../Icons/IconPicker'))
 const Documentation = lazyWithRetry(() => import('../Docs/Documentation'))
 const Guide = lazyWithRetry(() => import('../modals/Guide'))

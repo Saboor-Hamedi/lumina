@@ -90,10 +90,16 @@
   text-align: center;
   padding: 14px 16px;
   min-height: 76px;
-  max-height: 332px;
+  max-height: 350px;
   box-sizing: border-box;
   scrollbar-width: thin;
   scrollbar-color: var(--scroll-thumb, var(--border-strong)) transparent;
+}
+
+.cm-mermaid-widget .mermaid-scroll-wrap.is-rich-diagram {
+  max-height: 472px;
+  justify-content: center;
+  justify-content: safe center;
 }
 
 .cm-mermaid-widget .mermaid-scroll-wrap::-webkit-scrollbar {
@@ -126,9 +132,22 @@
   display: block;
   margin: 0 auto;
   max-width: 100%;
-  max-height: 300px;
+  max-height: 320px;
   height: auto;
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   animation: mermaid-fade-in 0.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.cm-mermaid-widget .mermaid-scroll-wrap.is-rich-diagram .mermaid-content {
+  max-width: none;
+}
+
+.cm-mermaid-widget .mermaid-scroll-wrap.is-rich-diagram .mermaid-content svg {
+  max-width: none;
+  max-height: 440px;
 }
 
 @keyframes mermaid-fade-in {
@@ -171,9 +190,6 @@
 .cm-mermaid-widget svg .statediagram-state text,
 .cm-mermaid-widget svg .commit-label,
 .cm-mermaid-widget svg .branch-label,
-.cm-mermaid-widget svg .mindmap-node text,
-.cm-mermaid-widget svg .mindmap-node tspan,
-.cm-mermaid-widget svg .mindmap-node span,
 .mermaid-lightbox-canvas svg text,
 .mermaid-lightbox-canvas svg tspan,
 .mermaid-lightbox-canvas svg .label,
@@ -203,12 +219,79 @@
 .mermaid-lightbox-canvas svg .state-title,
 .mermaid-lightbox-canvas svg .statediagram-state text,
 .mermaid-lightbox-canvas svg .commit-label,
-.mermaid-lightbox-canvas svg .branch-label,
-.mermaid-lightbox-canvas svg .mindmap-node text,
-.mermaid-lightbox-canvas svg .mindmap-node tspan,
-.mermaid-lightbox-canvas svg .mindmap-node span {
+.mermaid-lightbox-canvas svg .branch-label {
   fill: var(--text-accent, #40bafa) !important;
   color: var(--text-accent, #40bafa) !important;
+}
+
+/* Mindmap & Timeline: crisp high-contrast UI text, clean borders & edges */
+.cm-mermaid-widget svg[aria-roledescription='mindmap'] text,
+.cm-mermaid-widget svg[aria-roledescription='mindmap'] tspan,
+.cm-mermaid-widget svg[aria-roledescription='mindmap'] foreignObject,
+.cm-mermaid-widget svg[aria-roledescription='mindmap'] foreignObject div,
+.cm-mermaid-widget svg[aria-roledescription='mindmap'] foreignObject span,
+.cm-mermaid-widget svg[aria-roledescription='mindmap'] foreignObject p,
+.cm-mermaid-widget svg[aria-roledescription='timeline'] text,
+.cm-mermaid-widget svg[aria-roledescription='timeline'] tspan,
+.cm-mermaid-widget svg[aria-roledescription='timeline'] foreignObject,
+.cm-mermaid-widget svg[aria-roledescription='timeline'] foreignObject div,
+.cm-mermaid-widget svg[aria-roledescription='timeline'] foreignObject span,
+.cm-mermaid-widget svg[aria-roledescription='timeline'] foreignObject p,
+.mermaid-lightbox-canvas svg[aria-roledescription='mindmap'] text,
+.mermaid-lightbox-canvas svg[aria-roledescription='mindmap'] tspan,
+.mermaid-lightbox-canvas svg[aria-roledescription='mindmap'] foreignObject,
+.mermaid-lightbox-canvas svg[aria-roledescription='mindmap'] foreignObject div,
+.mermaid-lightbox-canvas svg[aria-roledescription='mindmap'] foreignObject span,
+.mermaid-lightbox-canvas svg[aria-roledescription='mindmap'] foreignObject p,
+.mermaid-lightbox-canvas svg[aria-roledescription='timeline'] text,
+.mermaid-lightbox-canvas svg[aria-roledescription='timeline'] tspan,
+.mermaid-lightbox-canvas svg[aria-roledescription='timeline'] foreignObject,
+.mermaid-lightbox-canvas svg[aria-roledescription='timeline'] foreignObject div,
+.mermaid-lightbox-canvas svg[aria-roledescription='timeline'] foreignObject span,
+.mermaid-lightbox-canvas svg[aria-roledescription='timeline'] foreignObject p {
+  font-family: var(--font-ui, Inter, system-ui, -apple-system, sans-serif) !important;
+  fill: var(--text-main) !important;
+  color: var(--text-main) !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+.cm-mermaid-widget svg[aria-roledescription='mindmap'] .node-bkg,
+.cm-mermaid-widget svg[aria-roledescription='mindmap'] .node-circle,
+.cm-mermaid-widget svg[aria-roledescription='mindmap'] path.node-bkg,
+.mermaid-lightbox-canvas svg[aria-roledescription='mindmap'] .node-bkg,
+.mermaid-lightbox-canvas svg[aria-roledescription='mindmap'] .node-circle,
+.mermaid-lightbox-canvas svg[aria-roledescription='mindmap'] path.node-bkg {
+  stroke-width: 1.5px !important;
+  filter: none !important;
+}
+
+.cm-mermaid-widget svg[aria-roledescription='mindmap'] .edge,
+.mermaid-lightbox-canvas svg[aria-roledescription='mindmap'] .edge {
+  stroke-width: 1.75px !important;
+  stroke-opacity: 0.72 !important;
+}
+
+.cm-mermaid-widget svg[aria-roledescription='timeline'] .timeline-node rect,
+.cm-mermaid-widget svg[aria-roledescription='timeline'] .timeline-node path,
+.cm-mermaid-widget svg[aria-roledescription='timeline'] .taskWrapper rect,
+.cm-mermaid-widget svg[aria-roledescription='timeline'] .taskWrapper path,
+.cm-mermaid-widget svg[aria-roledescription='timeline'] .eventWrapper rect,
+.cm-mermaid-widget svg[aria-roledescription='timeline'] .eventWrapper path,
+.mermaid-lightbox-canvas svg[aria-roledescription='timeline'] .timeline-node rect,
+.mermaid-lightbox-canvas svg[aria-roledescription='timeline'] .timeline-node path,
+.mermaid-lightbox-canvas svg[aria-roledescription='timeline'] .taskWrapper rect,
+.mermaid-lightbox-canvas svg[aria-roledescription='timeline'] .taskWrapper path,
+.mermaid-lightbox-canvas svg[aria-roledescription='timeline'] .eventWrapper rect,
+.mermaid-lightbox-canvas svg[aria-roledescription='timeline'] .eventWrapper path {
+  stroke-width: 1.25px !important;
+  filter: none !important;
+}
+
+.cm-mermaid-widget svg[aria-roledescription='timeline'] .lineWrapper line,
+.mermaid-lightbox-canvas svg[aria-roledescription='timeline'] .lineWrapper line {
+  stroke: var(--border-strong, rgba(161, 161, 170, 0.45)) !important;
+  stroke-width: 1.5px !important;
 }
 
 .cm-mermaid-widget .mermaid-loading {

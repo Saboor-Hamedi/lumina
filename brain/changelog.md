@@ -1,3 +1,26 @@
+## Lumina v2.4.0 — Workspace Switcher, External Vault YAML Mapping, Collapsible Quotes & Callouts, Crisp Mermaid & Instant Command Palette
+
+Lumina **v2.4.0** introduces a dedicated **TitleBar Workspace Switcher** with recent projects and smooth skeleton-loader transitions, automatic **Obsidian/Notion/Agent YAML Frontmatter Stripping & Note Properties Mapping**, separated collapsible **Quotes & Callouts** with flat headers across the Editor and Lumina AI, razor-sharp **Mermaid `mindmap` & `timeline`** rendering, an **instant `Ctrl + P` Command Palette**, and full **Windows, macOS & Linux** parity.
+
+---
+
+### 📂 Workspace Switcher & External Vault Compatibility
+- **TitleBar Workspace Switcher (`WorkspaceSwitcher.tsx`)**: Added a compact Lumina-avatar dropdown in the TitleBar showing the active workspace, recent workspaces across different folders (with automatic `Lumina`, `Obsidian`, and `Notion` source badges), quick Explorer launch, and **Open Folder or Vault…** — sharing one DRY `useWorkspace` hook with **Settings → Storage Location**.
+- **Smooth Skeleton-Loader Transitions**: Switching workspaces now transitions seamlessly through Lumina's full-screen skeleton loader (`Opening <Workspace>…`) with zero stale state leaking between projects.
+- **Auto-Hide TitleBar Update Button**: The TitleBar update button now stays hidden when up to date and only appears when a new update is available, downloading, installing, or ready to restart.
+- **Automatic YAML/TOML Frontmatter Stripping & Property Mapping**: Opening notes from Obsidian, Notion exports, or external AI agents automatically strips leading `---` YAML (including multi-line lists and spaced keys) and `+++` TOML frontmatter from the editor body and maps properties with inferred types (`select`, `checkbox`, `date`, `url`, `number`, `text`) directly into Lumina's SQLite Note Properties.
+
+### 💬 Collapsible Quotes & Callouts (Editor & Lumina AI)
+- **Separated `Quote.tsx` + `quote.css` & Rebuilt `useCallout.ts` + `callout.css`**: Decoupled standalone `>` blockquotes from `> [!type]` callouts using an atomic CodeMirror `StateField` block-header architecture so adjacent Quotes and Callouts never bleed borders, headers never disappear on click, and the caret never jumps beside action buttons.
+- **Unified Flat Headers, Reliable Fold/Unfold & Ghost Copy**: Both Quotes and Callouts now share identical theme-matched flat headers (`2px` radius, `2px` left bar, zero harsh box borders) with a subtle flat Copy button and an always-visible Collapse/Expand dropdown chevron that folds immediately even when the caret is inside the body — mirrored in **Lumina AI Chat** (`LuminaChatBlockquote.tsx`).
+
+### 📊 Crisp Mermaid `mindmap` & `timeline` + Instant Command Palette
+- **High-Contrast Mermaid `mindmap` & `timeline`**: Replaced Mermaid's clashing default rainbow pastels with cohesive dark/light slate palettes, crisp UI sans-serif (`--font-ui`) labels in `--text-main`, `geometricPrecision` SVG rendering, and a `0.8×` minimum readable scale floor with horizontal scrolling so text is never crushed or blurry in either the Editor or Lumina AI Chat.
+- **Instant `Ctrl + P` Command Palette**: Lazy-loaded `PreviewCommandPalette` (`@codemirror/language-data` + 15 extensions), deferred preview hydration until after first paint, pre-warmed the lightweight palette chunk on idle, and capped the default empty-query view to **5 notes** for instant opening.
+- **Cross-Platform Parity (Windows, macOS & Linux)**: Added solid `var(--bg-panel)` fallbacks before `color-mix()` for older Linux WebKitGTK, `-webkit-appearance: none` / `-webkit-user-select: none` on WebKit controls, `ToolTip` left-edge arrow alignment fixes, and macOS `Option`-key diacritic preservation.
+
+---
+
 ## Lumina v2.3.1 — Smart PDF Hybrid Index, AI-to-Canvas Visual Thinking, Note Properties & Visual Polish
 
 Lumina **v2.3.1** introduces a built-in **Smart PDF Knowledge Index**, **AI-to-Canvas Visual Thinking** for generating editable diagrams, **Notion-style Note Properties** with drag-and-drop layouts, refreshed **Note Covers & Export Previews**, built-in **How to Ask Lumina** guides, and a cleaner File Explorer and AI chat experience.

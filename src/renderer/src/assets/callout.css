@@ -1,9 +1,155 @@
 /*
  * ============================================================
- * LUMINA CALLOUT STYLING — Robust Card Frame & Hover Copy
+ * LUMINA CALLOUT STYLING — Atomic Block Header + Clean Card
+ * Completely separated from Quotes (`quote.css`).
  * ============================================================
  */
 
+/* Atomic block-level Callout Header Bar (`> [!type] Title`) — matches Quote header identically */
+.lumina-callout-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 5px 8px 5px 12px;
+  margin: 6px 0 0 0;
+  background: var(--bg-panel, rgba(0, 0, 0, 0.18));
+  background: color-mix(in srgb, var(--bg-panel) 55%, var(--bg-surface));
+  border: none;
+  border-left: 2px solid var(--border-dim);
+  border-radius: 2px 2px 0 0;
+  font-style: normal;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.lumina-callout-block-header.is-standalone-card,
+.lumina-callout-block-header.is-collapsed {
+  margin-bottom: 6px;
+  border-radius: 2px;
+}
+
+.lumina-callout-header-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.lumina-callout-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.lumina-callout-icon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.lumina-callout-title {
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lumina-callout-count {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--text-faint, var(--text-muted));
+  padding: 0 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--border-dim) 45%, transparent);
+  flex-shrink: 0;
+}
+
+.lumina-callout-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* Flat ghost Copy & Dropdown Chevron buttons inside Callout header */
+.lumina-callout-copy-btn,
+.lumina-callout-fold-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted, #94a3b8);
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    opacity 120ms ease,
+    color 120ms ease,
+    background-color 120ms ease;
+}
+
+.lumina-callout-copy-btn {
+  opacity: 0.65;
+}
+
+.lumina-callout-fold-btn {
+  opacity: 0.85;
+}
+
+.lumina-callout-block-header:hover .lumina-callout-copy-btn,
+.lumina-callout-block-header:hover .lumina-callout-fold-btn,
+.lumina-callout-copy-btn:hover,
+.lumina-callout-fold-btn:hover {
+  opacity: 1;
+}
+
+.lumina-callout-copy-btn:hover,
+.lumina-callout-fold-btn:hover {
+  color: var(--text-main);
+  background: var(--bg-hover, rgba(148, 163, 184, 0.12));
+}
+
+.lumina-callout-copy-btn.copied {
+  opacity: 1;
+  color: #4ade80;
+}
+
+.lumina-callout-fold-btn svg {
+  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lumina-callout-fold-btn.is-collapsed svg {
+  transform: rotate(-90deg);
+}
+
+/* Inline icon preview when editing raw `> [!type]` line */
+.lumina-callout-icon-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: -2px;
+  margin-right: 5px;
+  line-height: 1;
+}
+
+/* Callout body lines (rendered directly beneath .lumina-callout-block-header) */
 .markdown-editor .cm-line.lumina-callout-line,
 .cm-line.lumina-callout-line {
   position: relative;
@@ -12,62 +158,42 @@
   max-width: 100% !important;
   margin: 0 !important;
   display: block !important;
-  padding: 3px 12px !important;
+  padding: 4px 12px !important;
   line-height: 1.6 !important;
   font-style: normal !important;
-  background: var(--bg-panel, rgba(0, 0, 0, 0.15)) !important;
-  border-left: 1px solid var(--border-dim) !important;
-  border-right: 1px solid var(--border-dim) !important;
+  background: var(--bg-panel, rgba(0, 0, 0, 0.14)) !important;
+  background: color-mix(in srgb, var(--bg-panel) 32%, var(--bg-surface)) !important;
+  border: none !important;
+  border-left: 2px solid var(--border-dim) !important;
   border-radius: 0 !important;
   box-shadow: none !important;
   outline: none !important;
   transition: none !important;
 }
 
-/* Override blockquote styling when on a callout line */
-.markdown-editor .cm-line.cm-atomic-blockquote.lumina-callout-line,
-.markdown-editor .cm-line:has(.cm-quote).lumina-callout-line {
-  border-left: 1px solid var(--border-dim) !important;
-  font-style: normal !important;
+.cm-line.lumina-callout-line.lumina-callout-line-first {
+  border-radius: 2px 2px 0 0 !important;
+  padding-top: 6px !important;
+  margin-top: 6px !important;
 }
 
-.cm-line.cm-atomic-fenced-code.lumina-callout-line {
-  border-right: 1px solid var(--border-dim) !important;
-  border-left: 1px solid var(--border-dim) !important;
+.cm-line.lumina-callout-line.lumina-callout-line-last {
+  border-radius: 0 0 2px 2px !important;
+  padding-bottom: 8px !important;
+  margin-bottom: 6px !important;
 }
 
-/* First line of callout: rounded top corners, top border, comfortable top padding */
-.cm-line.lumina-callout-line:not(.cm-line.lumina-callout-line + .cm-line.lumina-callout-line),
-.cm-line:not(.lumina-callout-line) + .cm-line.lumina-callout-line,
-.cm-line.lumina-callout-line:first-child {
-  border-top: 1px solid var(--border-dim) !important;
-  border-top-left-radius: 6px !important;
-  border-top-right-radius: 6px !important;
-  padding-top: 7px !important;
-}
-
-/* Last line of callout: rounded bottom corners, bottom border, comfortable bottom padding */
-.cm-line.lumina-callout-line:has(+ :not(.lumina-callout-line)),
-.cm-line.lumina-callout-line:last-child {
-  border-bottom: 1px solid var(--border-dim) !important;
-  border-bottom-left-radius: 6px !important;
-  border-bottom-right-radius: 6px !important;
-  padding-bottom: 7px !important;
-}
-
-/* Maintain clean borders on active line */
 .cm-line.lumina-callout-line.cm-activeLine {
-  margin: 0 !important;
   padding-left: 12px !important;
   padding-right: 12px !important;
-  border-left: 1px solid var(--border-dim) !important;
-  border-right: 1px solid var(--border-dim) !important;
+  border: none !important;
+  border-left: 2px solid var(--border-dim) !important;
   box-shadow: none !important;
   outline: none !important;
   transform: none !important;
 }
 
-/* Selection background */
+/* Preserve CodeMirror selection layer cleanly across multi-line callout selections */
 .cm-line.lumina-callout-line::selection,
 .cm-line.lumina-callout-line *::selection {
   background: transparent !important;
@@ -75,105 +201,39 @@
   text-shadow: none !important;
 }
 
-/* Subtle, elegant card tints by callout type */
-.cm-line.lumina-callout-line.lumina-callout-line-note,
-.cm-line.lumina-callout-line.lumina-callout-line-info,
-.cm-line.lumina-callout-line.lumina-callout-line-todo {
-  background-color: color-mix(in srgb, #38bdf8 6%, var(--bg-panel, rgba(0, 0, 0, 0.15))) !important;
+/* Theme-matched left accent bar by callout type (header keeps distinct theme header shade, body stays theme surface) */
+.lumina-callout-line-note,
+.lumina-callout-line-info,
+.lumina-callout-line-todo {
+  border-left-color: rgba(56, 189, 248, 0.65) !important;
 }
 
-.cm-line.lumina-callout-line.lumina-callout-line-tip,
-.cm-line.lumina-callout-line.lumina-callout-line-success {
-  background-color: color-mix(in srgb, #4ade80 6%, var(--bg-panel, rgba(0, 0, 0, 0.15))) !important;
+.lumina-callout-line-tip,
+.lumina-callout-line-success {
+  border-left-color: rgba(74, 222, 128, 0.65) !important;
 }
 
-.cm-line.lumina-callout-line.lumina-callout-line-warning,
-.cm-line.lumina-callout-line.lumina-callout-line-question {
-  background-color: color-mix(in srgb, #fbbf24 6%, var(--bg-panel, rgba(0, 0, 0, 0.15))) !important;
+.lumina-callout-line-warning,
+.lumina-callout-line-question {
+  border-left-color: rgba(251, 191, 36, 0.65) !important;
 }
 
-.cm-line.lumina-callout-line.lumina-callout-line-important,
-.cm-line.lumina-callout-line.lumina-callout-line-example {
-  background-color: color-mix(in srgb, #a855f7 6%, var(--bg-panel, rgba(0, 0, 0, 0.15))) !important;
+.lumina-callout-line-important,
+.lumina-callout-line-example {
+  border-left-color: rgba(168, 85, 247, 0.65) !important;
 }
 
-.cm-line.lumina-callout-line.lumina-callout-line-caution,
-.cm-line.lumina-callout-line.lumina-callout-line-danger,
-.cm-line.lumina-callout-line.lumina-callout-line-bug {
-  background-color: color-mix(in srgb, #f87171 6%, var(--bg-panel, rgba(0, 0, 0, 0.15))) !important;
+.lumina-callout-line-caution,
+.lumina-callout-line-danger,
+.lumina-callout-line-bug {
+  border-left-color: rgba(248, 113, 113, 0.65) !important;
 }
 
-.cm-line.lumina-callout-line.lumina-callout-line-quote {
-  font-style: italic !important;
-  color: var(--text-muted) !important;
-  background-color: var(--bg-panel) !important;
-  border-color: var(--border-dim) !important;
+.lumina-callout-line-quote {
+  border-left-color: var(--border-dim) !important;
 }
 
-/* Callout Header Widget Typography */
-.lumina-callout-header {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-weight: 600;
-  color: var(--text-accent);
-  margin-bottom: 2px;
-  font-size: 0.9em;
-  font-style: normal;
-  letter-spacing: 0.02em;
-}
-
-.lumina-callout-header.is-foldable {
-  cursor: pointer;
-  user-select: none;
-}
-
-.lumina-callout-header.is-collapsed {
-  margin-bottom: 0;
-}
-
-.lumina-callout-fold-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  margin-left: 2px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: currentColor;
-  opacity: 0.7;
-  cursor: pointer;
-  transition:
-    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 120ms ease,
-    background-color 120ms ease;
-}
-
-.lumina-callout-header.is-foldable:hover .lumina-callout-fold-btn,
-.lumina-callout-fold-btn:hover {
-  opacity: 1;
-  background-color: rgba(148, 163, 184, 0.14);
-}
-
-.lumina-callout-fold-btn.is-collapsed svg {
-  transform: rotate(-90deg);
-}
-
-.lumina-callout-fold-btn svg {
-  transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Ensure collapsed callout header always gets bottom border & rounded corners */
-.cm-line.lumina-callout-line.lumina-callout-is-collapsed {
-  border-bottom: 1px solid var(--border-dim) !important;
-  border-bottom-left-radius: 6px !important;
-  border-bottom-right-radius: 6px !important;
-  padding-bottom: 7px !important;
-}
-
+/* Header icon & title accent colors by type */
 .lumina-callout-note,
 .lumina-callout-info,
 .lumina-callout-todo { color: #38bdf8; }
@@ -187,74 +247,3 @@
 .lumina-callout-danger,
 .lumina-callout-bug { color: #f87171; }
 .lumina-callout-quote { color: var(--text-muted); }
-
-.lumina-callout-icon {
-  display: inline-flex;
-  align-items: center;
-}
-
-.lumina-callout-icon svg {
-  width: 15px;
-  height: 15px;
-}
-
-.lumina-callout-title {
-  text-transform: uppercase;
-  font-size: 0.82em;
-  letter-spacing: 0.05em;
-  font-weight: 700;
-}
-
-/* Robust Callout Copy Button (appears on hovering ANY line of the callout) */
-.lumina-callout-copy-btn {
-  position: absolute;
-  right: 8px;
-  top: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border-radius: var(--radius-xs, 4px);
-  border: 1px solid var(--border-hairline, var(--border-dim, rgba(255, 255, 255, 0.1)));
-  background: var(--surface-3, var(--bg-panel, #18181b));
-  color: var(--ink-2, var(--text-muted, #94a3b8));
-  cursor: pointer;
-  opacity: 0;
-  pointer-events: none;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-  transition:
-    opacity 140ms ease,
-    color 120ms ease,
-    background 120ms ease,
-    transform 140ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 140ms ease;
-  z-index: 5;
-}
-
-.lumina-callout-copy-btn.is-hovered,
-.cm-line.lumina-callout-line:hover .lumina-callout-copy-btn,
-.lumina-callout-copy-btn:hover,
-.lumina-callout-copy-btn:focus-visible {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-}
-
-.lumina-callout-copy-btn:hover {
-  color: var(--text-accent, #40bafa);
-  background: var(--bg-active, rgba(255, 255, 255, 0.08));
-  transform: scale(1.08);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-.lumina-callout-copy-btn:active {
-  transform: scale(0.96);
-}
-
-.lumina-callout-copy-btn.copied {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  color: #4ade80 !important;
-  border-color: rgba(74, 222, 128, 0.4) !important;
-}
