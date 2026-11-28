@@ -18,13 +18,17 @@ export const WorkspaceStat: React.FC<WorkspaceStatProps> = ({ isOpen, onClose, a
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
 
   const stats = useMemo(() => {
-    const noteItems = notes.filter((s) => s.type !== 'image' && s.type !== 'pdf')
+    const noteItems = notes.filter(
+      (s) => s.type !== 'image' && s.type !== 'pdf' && s.type !== 'canvas'
+    )
+    const canvasItems = notes.filter((s) => s.type === 'canvas')
     const imageItems = notes.filter((s) => s.type === 'image')
     const pdfItems = notes.filter((s) => s.type === 'pdf')
 
     const totalNotes = noteItems.length
     const totalImages = imageItems.length
     const totalPdfs = pdfItems.length
+    const totalMediaFiles = totalImages + totalPdfs
     const totalFolders = collectWorkspaceFolders(notes, folders).length
 
     let pinnedCount = 0
@@ -35,13 +39,15 @@ export const WorkspaceStat: React.FC<WorkspaceStatProps> = ({ isOpen, onClose, a
     let totalTextBytes = 0
     let totalMediaBytes = 0
 
+    const encoder = new TextEncoder()
+
     noteItems.forEach((s) => {
       if (s.isPinned) pinnedCount++
       if (s.isLearned) learnedCount++
 
       const text = s.code || ''
       totalChars += text.length
-      totalTextBytes += new TextEncoder().encode(text).length
+      totalTextBytes += encoder.encode(text).length
 
       if (text.trim()) {
         const words = text.trim().split(/\s+/).filter(Boolean).length
@@ -50,12 +56,17 @@ export const WorkspaceStat: React.FC<WorkspaceStatProps> = ({ isOpen, onClose, a
       }
     })
 
+    canvasItems.forEach((c) => {
+      if (c.isPinned) pinnedCount++
+    })
+
     imageItems.forEach((img) => {
       if (img.isPinned) pinnedCount++
       totalMediaBytes += img.size || 0
     })
 
     pdfItems.forEach((pdf) => {
+      if (pdf.isPinned) pinnedCount++
       totalMediaBytes += pdf.size || 0
     })
 
@@ -77,6 +88,7 @@ export const WorkspaceStat: React.FC<WorkspaceStatProps> = ({ isOpen, onClose, a
       totalNotes: formatNumber(totalNotes),
       totalImages: formatNumber(totalImages),
       totalPdfs: formatNumber(totalPdfs),
+      totalMediaFiles: formatNumber(totalMediaFiles),
       totalFolders: formatNumber(totalFolders),
       pinnedCount: formatNumber(pinnedCount),
       learnedCount: formatNumber(learnedCount),
@@ -248,7 +260,7 @@ export const WorkspaceStat: React.FC<WorkspaceStatProps> = ({ isOpen, onClose, a
             <Image size={12} /> Images & Media
           </span>
           <span className="vault-stats-row-value">
-            {stats.totalImages} files ({stats.mediaStorageSize})
+            {stats.totalMediaFiles} files ({stats.mediaStorageSize})
           </span>
         </div>
       </div>

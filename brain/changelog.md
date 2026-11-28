@@ -1,23 +1,35 @@
-## Lumina v2.4.0 — Workspace Switcher, External Vault YAML Mapping, Collapsible Quotes & Callouts, Crisp Mermaid & Instant Command Palette
+## Lumina v2.4.0 — DeepSeek Voice, Workspace Switcher & Profiles, Instant UI & Islands/Classic Polish
 
-Lumina **v2.4.0** introduces a dedicated **TitleBar Workspace Switcher** with recent projects and smooth skeleton-loader transitions, automatic **Obsidian/Notion/Agent YAML Frontmatter Stripping & Note Properties Mapping**, separated collapsible **Quotes & Callouts** with flat headers across the Editor and Lumina AI, razor-sharp **Mermaid `mindmap` & `timeline`** rendering, an **instant `Ctrl + P` Command Palette**, and full **Windows, macOS & Linux** parity.
+Lumina **v2.4.0** replaces Groq Whisper with native **DeepSeek Voice** (zero extra keys, `Enter`-to-transcribe, context-aware typo/grammar refinement & profanity filtering), introduces a **TitleBar Workspace Switcher** (`Ctrl + Alt + W`) with **per-workspace theme & AI profiles**, automatic **Obsidian/Notion/Agent YAML Frontmatter Stripping**, separated collapsible **Quotes & Callouts**, crisp **Mermaid `mindmap` & `timeline`**, **instant opening** for Lumina AI, Command Palette, Settings, Documentation, Daily Notes, Calendar & Mail, and refined **Islands & Classic UI** parity across **Windows, macOS & Linux**.
 
 ---
 
-### 📂 Workspace Switcher & External Vault Compatibility
-- **TitleBar Workspace Switcher (`WorkspaceSwitcher.tsx`)**: Added a compact Lumina-avatar dropdown in the TitleBar showing the active workspace, recent workspaces across different folders (with automatic `Lumina`, `Obsidian`, and `Notion` source badges), quick Explorer launch, and **Open Folder or Vault…** — sharing one DRY `useWorkspace` hook with **Settings → Storage Location**.
-- **Smooth Skeleton-Loader Transitions**: Switching workspaces now transitions seamlessly through Lumina's full-screen skeleton loader (`Opening <Workspace>…`) with zero stale state leaking between projects.
-- **Auto-Hide TitleBar Update Button**: The TitleBar update button now stays hidden when up to date and only appears when a new update is available, downloading, installing, or ready to restart.
-- **Automatic YAML/TOML Frontmatter Stripping & Property Mapping**: Opening notes from Obsidian, Notion exports, or external AI agents automatically strips leading `---` YAML (including multi-line lists and spaced keys) and `+++` TOML frontmatter from the editor body and maps properties with inferred types (`select`, `checkbox`, `date`, `url`, `number`, `text`) directly into Lumina's SQLite Note Properties.
+### 🎙️ DeepSeek Voice Dictation & Smart Voice Refinement
+- **Native DeepSeek Voice (`deepseekVoice.ts`, `Services.ts`, `Record.ts`)**: Completely removed Groq Whisper (`groqWhisper.ts`, `VoiceModal.tsx`, `groqKey` setting) and migrated to DeepSeek's native ASR/TTS endpoints, reusing your existing DeepSeek API key with automatic 16kHz 16-bit mono PCM WAV encoding.
+- **Effortless `Enter`-to-Transcribe & `Esc`-to-Cancel (`VoiceCapsule.tsx`, `VoiceButton.tsx`)**: Anchored the floating voice pulse capsule right above and parallel to the Composer with live waveform bars, timer, and dedicated **`↵` Transcribe** and **`×` Cancel** buttons. Press **`Enter`** to transcribe immediately, **`Esc`** to cancel/abort at any time, and watch words type smoothly word-by-word into the focused Composer (`useComposerVoice.ts`).
+- **Context-Aware Voice Refiner & Profanity Filter (`refineVoiceTranscript`, `sanitizeProfanity`)**: Voice transcripts (never typed text) are silently cleaned using lightweight workspace context hints (active note & workspace titles) to fix ASR typos, punctuation, and grammar without adding new words, while automatically stripping profanity cleanly.
 
-### 💬 Collapsible Quotes & Callouts (Editor & Lumina AI)
-- **Separated `Quote.tsx` + `quote.css` & Rebuilt `useCallout.ts` + `callout.css`**: Decoupled standalone `>` blockquotes from `> [!type]` callouts using an atomic CodeMirror `StateField` block-header architecture so adjacent Quotes and Callouts never bleed borders, headers never disappear on click, and the caret never jumps beside action buttons.
-- **Unified Flat Headers, Reliable Fold/Unfold & Ghost Copy**: Both Quotes and Callouts now share identical theme-matched flat headers (`2px` radius, `2px` left bar, zero harsh box borders) with a subtle flat Copy button and an always-visible Collapse/Expand dropdown chevron that folds immediately even when the caret is inside the body — mirrored in **Lumina AI Chat** (`LuminaChatBlockquote.tsx`).
+### 📂 Workspace Switcher, Per-Workspace Profiles & External Vaults
+- **TitleBar Workspace Switcher (`WorkspaceSwitcher.tsx`) & `Ctrl + Alt + W` Shortcut**: Added a compact Lumina-avatar dropdown in the TitleBar and a `Workspace: Switch Workspace` Command Palette action showing the active workspace, recent workspaces across folders (`Lumina`, `Obsidian`, `Notion` source badges), 4-item scroll threshold with automatic quick-filter search & keyboard navigation (`↑`/`↓`/`Enter`), and matching polish in **Settings → Workspace** (`SettingWorkspace.tsx`).
+- **Workspace-Specific Theme & AI Profiles (`workspaceProfile.ts`)**: Automatically saves and restores each workspace's preferred **theme**, **accent color**, and **AI mode** when switching between projects, transitioning cleanly through the full-screen skeleton loader.
+- **Auto-Hide TitleBar Update Button**: Stays hidden when up to date and appears only when an update is available, downloading, installing, or ready to restart.
+- **Automatic YAML/TOML Frontmatter Stripping & Property Mapping**: Opening notes from Obsidian, Notion exports, or external AI agents automatically strips leading `---` YAML and `+++` TOML frontmatter and maps properties with inferred types (`select`, `checkbox`, `date`, `url`, `number`, `text`) into Lumina's SQLite Note Properties.
 
-### 📊 Crisp Mermaid `mindmap` & `timeline` + Instant Command Palette
-- **High-Contrast Mermaid `mindmap` & `timeline`**: Replaced Mermaid's clashing default rainbow pastels with cohesive dark/light slate palettes, crisp UI sans-serif (`--font-ui`) labels in `--text-main`, `geometricPrecision` SVG rendering, and a `0.8×` minimum readable scale floor with horizontal scrolling so text is never crushed or blurry in either the Editor or Lumina AI Chat.
-- **Instant `Ctrl + P` Command Palette**: Lazy-loaded `PreviewCommandPalette` (`@codemirror/language-data` + 15 extensions), deferred preview hydration until after first paint, pre-warmed the lightweight palette chunk on idle, and capped the default empty-query view to **5 notes** for instant opening.
-- **Cross-Platform Parity (Windows, macOS & Linux)**: Added solid `var(--bg-panel)` fallbacks before `color-mix()` for older Linux WebKitGTK, `-webkit-appearance: none` / `-webkit-user-select: none` on WebKit controls, `ToolTip` left-edge arrow alignment fixes, and macOS `Option`-key diacritic preservation.
+### ⚡ Instant Startup, Modals & UI Refinements
+- **Zero-Delay First Open (`WorkspacePane.tsx`, `AppModals.tsx`, `Sidebar.tsx`, `ActivityBarMail.tsx`, `CalendarToggle.tsx`, `vite.config.mjs`)**: Converted core views and modals (**Lumina AI tab**, **Command Palette**, **Settings**, **Documentation**, **Daily Notes**, **Calendar**, and **Lumina Mail**) from lazy chunks to direct imports with pre-bundled Vite `optimizeDeps`, eliminating cold-start loading stalls while keeping `PreviewCommandPalette` lazy and capping empty-query Command Palette results to **5 notes**.
+- **Islands & Classic UI Polish (`shell.css`, `sidebar.css`, `inspector.css`, `statusbar.css`)**:
+  - Pixel-aligned all three top island headers (`33px` across Left Sidebar, TabBar, and Right Inspector), added subtle island elevation & inset top highlights, and polished Explorer active-note indicators.
+  - Eliminated border flash and vertical bottom shift when toggling between Modern (Islands) and Normal (Classic) UI, and redesigned Normal UI with crisp full-bleed `1px` hairline seams.
+- **UI & Stats Fixes**:
+  - Portaled the TitleBar **Accent Color** dropdown (`AccentColor.tsx`) to `document.body` so it always floats above the Composer.
+  - Fixed **Status Bar** Document toggle items (**Cursor Position**, **Selection**, **Word Count**, **Character Count**, **Encoding**) and styled the **Status Bar · Toggle items** right-click menu.
+  - Cleared the ActivityBar **Documentation** active indicator when closing the modal (`clearModalActivityItem`).
+  - Excluded `.canvas` JSON from text counts and aligned **Images & Media** file counts (images + PDFs) in **Workspace Details** (`WorkspaceStat.tsx`).
+
+### 💬 Collapsible Quotes & Callouts + Crisp Mermaid
+- **Separated `Quote.tsx` + `quote.css` & Rebuilt `useCallout.ts` + `callout.css`**: Decoupled standalone `>` blockquotes from `> [!type]` callouts using an atomic CodeMirror `StateField` block-header architecture with identical theme-matched flat headers (`2px` radius, `2px` left bar), reliable fold/unfold even with caret inside the body, and mirrored styling in **Lumina AI Chat** (`LuminaChatBlockquote.tsx`).
+- **High-Contrast Mermaid `mindmap` & `timeline`**: Cohesive dark/light slate palettes, `--font-ui` labels in `--text-main`, `geometricPrecision` SVG rendering, and a `0.8×` minimum readable scale floor with horizontal scrolling across Editor and Chat.
+- **Cross-Platform Parity (Windows, macOS & Linux)**: Solid `var(--bg-panel)` fallbacks before `color-mix()`, WebKit button/selection normalization, `ToolTip` left-edge arrow alignment, and macOS `Option`-key diacritic preservation.
 
 ---
 

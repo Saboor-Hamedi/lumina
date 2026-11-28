@@ -128,8 +128,8 @@ export class AudioRecorder {
       }
     }
 
-    // 100ms slices ensure low latency when segment flushes occur
-    this.mediaRecorder.start(100)
+    // 250ms slices balance clean container framing with immediate chunk availability
+    this.mediaRecorder.start(250)
   }
 
   /**
@@ -212,6 +212,11 @@ export class AudioRecorder {
       }
 
       try {
+        if (typeof this.mediaRecorder.requestData === 'function') {
+          try {
+            this.mediaRecorder.requestData()
+          } catch {}
+        }
         this.mediaRecorder.stop()
       } catch {
         finish(null)

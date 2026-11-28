@@ -59,3 +59,12 @@ export const toggleSidebarView = (view: SidebarActiveView): void => {
     openSidebarView(view)
   }
 }
+
+export const clearModalActivityItem = (item: ActivityBarItemId): void => {
+  const state = useSidebarViewStore.getState()
+  if (state.activeActivityItem !== item) return
+  const isLeftOpen = useSettingsStore.getState().settings?.sidebar?.isLeftOpen ?? true
+  useSidebarViewStore.setState({
+    activeActivityItem: isLeftOpen ? state.activeView : null
+  })
+}

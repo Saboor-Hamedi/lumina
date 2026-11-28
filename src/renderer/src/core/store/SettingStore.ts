@@ -10,6 +10,7 @@
 
 import { create } from 'zustand'
 import { applyTheme } from '../../features/theme/hooks/themeDefinitions'
+import { saveWorkspaceProfile } from '../../features/Settings/hook/workspaceProfile'
 import {
   applyLinkCardDomAttributes,
   DEFAULT_LINK_CARD_SETTINGS,
@@ -476,6 +477,15 @@ export const useSettingStore = create<SettingStoreState>((set, get) => ({
     set((state) => ({
       settings: { ...state.settings, [key]: value }
     }))
+
+    // Persist per-workspace theme, accent color, and AI mode profiles automatically
+    if (key === 'theme' || key === 'accentColor' || key === 'activeAIMode') {
+      const s = get().settings
+      const wsPath = s.workspacePath || s.vaultPath
+      if (wsPath) {
+        saveWorkspaceProfile(wsPath, { [key]: value })
+      }
+    }
 
     // Apply specific DOM side effects
     if (typeof document !== 'undefined') {

@@ -1,11 +1,14 @@
-import React from 'react'
-import { Folder, FolderOpen, Trash2, ArrowUpRight } from 'lucide-react'
+import React, { useMemo, useState } from 'react'
+import { Folder, FolderOpen, Trash2, ArrowUpRight, Search, X } from 'lucide-react'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import {
   useWorkspace,
   formatWorkspacePath,
   getWorkspaceSourceLabel
 } from './hook/useWorkspace'
+import '../Layout/WorkspaceSwitcher.css'
+
+const MAX_VISIBLE_RECENT = 4
 
 /**
  * SettingWorkspace Component
@@ -13,6 +16,7 @@ import {
  */
 export const SettingWorkspace: React.FC = () => {
   const { settings } = useSettingsStore()
+  const [filterQuery, setFilterQuery] = useState('')
   const {
     currentWorkspace,
     otherWorkspaces,
@@ -22,6 +26,17 @@ export const SettingWorkspace: React.FC = () => {
     handleRemoveRecentWorkspace,
     handleOpenFolder
   } = useWorkspace()
+
+  const filteredWorkspaces = useMemo(() => {
+    const q = filterQuery.trim().toLowerCase()
+    if (!q) return otherWorkspaces
+    return otherWorkspaces.filter(
+      (ws) =>
+        ws.name.toLowerCase().includes(q) ||
+        ws.path.toLowerCase().includes(q) ||
+        (ws.source && ws.source.toLowerCase().includes(q))
+    )
+  }, [otherWorkspaces, filterQuery])
 
   const currentWorkspacePath =
     currentWorkspace?.path ||
@@ -45,20 +60,10 @@ export const SettingWorkspace: React.FC = () => {
         <h3>Storage Location</h3>
         <div className="setting-block workspace-storage-card">
           <div className="row-info" style={{ marginBottom: '12px' }}>
-            <div className="row-label">
-              Active Workspace
+            <div className="row-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              <span>Active Workspace</span>
               {currentSourceLabel && (
-                <span
-                  style={{
-                    marginLeft: '8px',
-                    fontSize: '11px',
-                    fontWeight: 500,
-                    padding: '1px 6px',
-                    borderRadius: '4px',
-                    background: 'var(--bg-hover)',
-                    color: 'var(--text-muted)'
-                  }}
-                >
+                <span className={`ws-switcher-badge is-${currentWorkspace?.source || 'lumina'}`}>
                   {currentSourceLabel}
                 </span>
               )}
@@ -99,98 +104,95 @@ export const SettingWorkspace: React.FC = () => {
 
       {otherWorkspaces.length > 0 && (
         <section style={{ marginTop: '20px' }}>
-          <h3>Recent Workspaces</h3>
+          <div className="ws-settings-section-head">
+            <h3>
+              <span>Recent Workspaces</span>
+              {otherWorkspaces.length > MAX_VISIBLE_RECENT && (
+                <span className="ws-switcher-count-pill">{otherWorkspaces.length}</span>
+              )}
+            </h3>
+            {otherWorkspaces.length > MAX_VISIBLE_RECENT && (
+              <div className="ws-settings-search-wrap">
+                <Search size={11} className="ws-switcher-search-icon" aria-hidden="true" />
+                <input
+                  type="text"
+                  className="ws-switcher-search-input"
+                  value={filterQuery}
+                  onChange={(e) => setFilterQuery(e.target.value)}
+                  placeholder="Filter workspaces…"
+                  aria-label="Filter recent workspaces"
+                />
+                {filterQuery && (
+                  <button
+                    type="button"
+                    className="ws-switcher-search-clear"
+                    aria-label="Clear filter"
+                    onClick={() => setFilterQuery('')}
+                  >
+                    <X size={10} />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           <div className="setting-block" style={{ padding: '6px' }}>
-            {otherWorkspaces.map((ws) => {
-              const sourceLabel = getWorkspaceSourceLabel(ws.source)
-              return (
-                <div
-                  key={ws.path}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '10px',
-                    padding: '8px 10px',
-                    borderRadius: '6px',
-                    opacity: ws.exists ? 1 : 0.55
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
-                    <FolderOpen size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          fontSize: '13px',
-                          fontWeight: 500,
-                          color: 'var(--text-main)'
-                        }}
-                      >
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {ws.name}
+            <div
+              className={`ws-settings-recent-list${filteredWorkspaces.length > MAX_VISIBLE_RECENT ? ' is-scrollable' : ''}`}
+            >
+              {filteredWorkspaces.length === 0 ? (
+                <div className="ws-switcher-empty">No matching workspaces</div>
+              ) : (
+                filteredWorkspaces.map((ws) => {
+                  const sourceLabel = getWorkspaceSourceLabel(ws.source)
+                  return (
+                    <div
+                      key={ws.path}
+                      className={`ws-settings-recent-row${!ws.exists ? ' is-missing' : ''}`}
+                    >
+                      <div className="ws-settings-recent-main">
+                        <span className="ws-settings-recent-icon" aria-hidden="true">
+                          <FolderOpen size={14} />
                         </span>
-                        {sourceLabel && (
-                          <span
-                            style={{
-                              fontSize: '10px',
-                              padding: '1px 5px',
-                              borderRadius: '4px',
-                              background: 'var(--bg-hover)',
-                              color: 'var(--text-muted)',
-                              flexShrink: 0
-                            }}
-                          >
-                            {sourceLabel}
-                          </span>
-                        )}
-                        {!ws.exists && (
-                          <span style={{ fontSize: '10px', color: 'var(--text-faint)' }}>
-                            (Missing)
-                          </span>
-                        )}
+                        <div className="ws-settings-recent-info">
+                          <div className="ws-settings-recent-title">
+                            <span className="ws-settings-recent-name">{ws.name}</span>
+                            {sourceLabel && (
+                              <span className={`ws-switcher-badge is-${ws.source}`}>
+                                {sourceLabel}
+                              </span>
+                            )}
+                            {!ws.exists && <span className="ws-switcher-missing-tag">Missing</span>}
+                          </div>
+                          <div className="ws-settings-recent-path" title={ws.path}>
+                            {formatWorkspacePath(ws.path, 58)}
+                          </div>
+                        </div>
                       </div>
-                      <div
-                        style={{
-                          fontSize: '11px',
-                          color: 'var(--text-muted)',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}
-                        title={ws.path}
-                      >
-                        {formatWorkspacePath(ws.path, 58)}
+                      <div className="ws-settings-recent-actions">
+                        <button
+                          type="button"
+                          className="btn btn-secondary ws-settings-open-btn"
+                          disabled={!ws.exists || isSwitching}
+                          onClick={() => void handleOpenWorkspaceByPath(ws.path, ws.name)}
+                        >
+                          <span>Open</span>
+                          <ArrowUpRight size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary ws-settings-remove-btn"
+                          title="Remove from recent workspaces"
+                          aria-label={`Remove ${ws.name} from recent workspaces`}
+                          onClick={() => void handleRemoveRecentWorkspace(ws.path)}
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      style={{ padding: '4px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                      disabled={!ws.exists || isSwitching}
-                      onClick={() => void handleOpenWorkspaceByPath(ws.path, ws.name)}
-                    >
-                      <span>Open</span>
-                      <ArrowUpRight size={12} />
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      style={{ padding: '4px 6px' }}
-                      title="Remove from recent workspaces"
-                      aria-label={`Remove ${ws.name} from recent workspaces`}
-                      onClick={() => void handleRemoveRecentWorkspace(ws.path)}
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
+                  )
+                })
+              )}
+            </div>
           </div>
         </section>
       )}

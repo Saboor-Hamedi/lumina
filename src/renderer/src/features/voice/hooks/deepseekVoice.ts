@@ -1,12 +1,89 @@
 import type { VoiceApiError } from '../types'
 
 const DEEPSEEK_ASR_URL = 'https://api.deepseek.com/v1/tools/asr'
+const DEEPSEEK_CHAT_URL = 'https://api.deepseek.com/chat/completions'
 const DEEPSEEK_TTS_URL = 'https://api.deepseek.com/v1/tools/tts'
 
 export type DeepSeekVoiceId = 'stella' | 'tide'
 
+export interface RefineVoiceOptions {
+  contextHints?: string[]
+  signal?: AbortSignal
+}
+
 let activeAudio: HTMLAudioElement | null = null
 let activeAudioUrl: string | null = null
+
+const PROFANITY_PATTERNS: RegExp[] = [
+  /\b(?:fuck\s+you|fuck\s+off|go\s+fuck\s+yourself|motherfuck(?:er|ing|ers)?|fuck(?:ing|ed|er|ers|s)?)\b/gi,
+  /\b(?:bullshit|horseshit|shit(?:ty|ting|head|s)?)\b/gi,
+  /\b(?:bitch(?:es|ing|y)?|asshole(?:s)?|bastard(?:s)?|dickhead(?:s)?|cunt(?:s)?|slut(?:s)?|whore(?:s)?)\b/gi,
+  /\b(?:stfu|gtfo|wtf)\b/gi
+]
+
+/**
+ * Deterministic profanity scrubber used as a safety net alongside AI cleanup.
+ * Uses strict word boundaries so legitimate words are never altered.
+ */
+export function sanitizeProfanity(rawText: string): string {
+  if (!rawText) return ''
+  let cleaned = rawText
+  for (const pattern of PROFANITY_PATTERNS) {
+    cleaned = cleaned.replace(pattern, '')
+  }
+  return cleaned
+    .replace(/\s+([,.;:!?])/g, '$1')
+    .replace(/([,.;:!?]){2,}/g, '$1')
+    .replace(/^[\s,.;:]+/, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
+function createAbortError(): Error {
+  const err = new Error('Transcription cancelled')
+  err.name = 'AbortError'
+  return err
+}
+
+/**
+ * Shared fetch wrapper with timeout + caller AbortSignal propagation (DRY).
+ */
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+  callerSignal?: AbortSignal
+): Promise<Response> {
+  if (callerSignal?.aborted) {
+    throw createAbortError()
+  }
+
+  const controller = new AbortController()
+  const onCallerAbort = () => controller.abort()
+  callerSignal?.addEventListener('abort', onCallerAbort, { once: true })
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } catch (err: unknown) {
+    if (callerSignal?.aborted) {
+      throw createAbortError()
+    }
+    if (controller.signal.aborted) {
+      const timeoutErr: VoiceApiError = new Error('DeepSeek Voice timed out. Please try again.')
+      timeoutErr.isNetworkError = true
+      throw timeoutErr
+    }
+    const netErr: VoiceApiError = new Error(
+      'Network error connecting to DeepSeek Voice. Please check your internet connection.'
+    )
+    netErr.isNetworkError = true
+    throw netErr
+  } finally {
+    clearTimeout(timeoutId)
+    callerSignal?.removeEventListener('abort', onCallerAbort)
+  }
+}
 
 function isSilenceHallucination(rawText: string): boolean {
   if (!rawText) return true
@@ -166,61 +243,26 @@ export async function transcribeWithDeepSeek(
   }
 
   if (signal?.aborted) {
-    const abortErr = new Error('Transcription cancelled')
-    abortErr.name = 'AbortError'
-    throw abortErr
+    throw createAbortError()
   }
 
   const { blob: readyBlob, filename } = await ensureDeepSeekAudioBlob(audioBlob)
 
-  if (signal?.aborted) {
-    const abortErr = new Error('Transcription cancelled')
-    abortErr.name = 'AbortError'
-    throw abortErr
-  }
-
   const formData = new FormData()
   formData.append('file', readyBlob, filename)
 
-  const timeoutController = new AbortController()
-  const onCallerAbort = () => timeoutController.abort()
-  signal?.addEventListener('abort', onCallerAbort, { once: true })
-  const timeoutId = setTimeout(() => timeoutController.abort(), 15000)
-
-  let response: Response
-  try {
-    response = await fetch(DEEPSEEK_ASR_URL, {
+  const response = await fetchWithTimeout(
+    DEEPSEEK_ASR_URL,
+    {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey.trim()}`
       },
-      body: formData,
-      signal: timeoutController.signal
-    })
-  } catch (err: unknown) {
-    if (signal?.aborted) {
-      const abortErr = new Error('Transcription cancelled')
-      abortErr.name = 'AbortError'
-      throw abortErr
-    }
-    if (timeoutController.signal.aborted) {
-      const timeoutErr: VoiceApiError = new Error(
-        'DeepSeek Voice timed out. Please try again.'
-      )
-      timeoutErr.isNetworkError = true
-      throw timeoutErr
-    }
-    const netErr: VoiceApiError = new Error(
-      err instanceof Error && err.message
-        ? 'Network error connecting to DeepSeek Voice. Please check your internet connection.'
-        : 'Network error connecting to DeepSeek Voice. Please check your internet connection.'
-    )
-    netErr.isNetworkError = true
-    throw netErr
-  } finally {
-    clearTimeout(timeoutId)
-    signal?.removeEventListener('abort', onCallerAbort)
-  }
+      body: formData
+    },
+    15000,
+    signal
+  )
 
   if (!response.ok) {
     let errMsg = 'DeepSeek voice transcription failed'
@@ -267,6 +309,93 @@ export async function transcribeWithDeepSeek(
     return ''
   }
   return rawText
+}
+
+const VOICE_REFINER_SYSTEM_PROMPT = [
+  'You are a silent voice-transcript editor for Lumina.',
+  'Fix ONLY speech-to-text typos, grammar, punctuation, and misheard technical or workspace terms.',
+  'Use the optional context hints ONLY to recognize misheard names or technical terms — NEVER inject unrelated terms.',
+  'Preserve the user\'s exact meaning, language, and intent.',
+  'NEVER answer the user, NEVER add your own ideas, explanations, or filler words, and NEVER wrap the result in quotes.',
+  'Cleanly remove any profanity, slurs, or abusive words while keeping the rest of the message natural.',
+  'Return ONLY the cleaned text.'
+].join(' ')
+
+/**
+ * Context-aware post-processor for voice transcripts ONLY (never applied to typed text).
+ * Fixes ASR typos/grammar using lightweight workspace context and strips profanity
+ * without adding new content. Falls back safely to deterministic cleanup on error.
+ */
+export async function refineVoiceTranscript(
+  rawText: string,
+  apiKey: string,
+  options: RefineVoiceOptions = {}
+): Promise<string> {
+  const preCleaned = sanitizeProfanity(rawText)
+  if (!preCleaned) return ''
+  if (!apiKey || !apiKey.trim()) return preCleaned
+
+  const { contextHints = [], signal } = options
+  const uniqueHints = Array.from(
+    new Set(
+      ['Lumina', 'Markdown', 'DeepSeek', ...contextHints]
+        .map((h) => h.trim())
+        .filter((h) => h.length > 0 && h.length <= 60)
+    )
+  ).slice(0, 16)
+
+  const userContent =
+    uniqueHints.length > 0
+      ? `Context hints: ${uniqueHints.join(', ')}\n\nTranscript:\n${preCleaned}`
+      : preCleaned
+
+  try {
+    const response = await fetchWithTimeout(
+      DEEPSEEK_CHAT_URL,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey.trim()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          temperature: 0.1,
+          max_tokens: 512,
+          messages: [
+            { role: 'system', content: VOICE_REFINER_SYSTEM_PROMPT },
+            { role: 'user', content: userContent }
+          ]
+        })
+      },
+      8000,
+      signal
+    )
+
+    if (!response.ok) {
+      return preCleaned
+    }
+
+    const data = (await response.json().catch(() => null)) as {
+      choices?: Array<{ message?: { content?: string } }>
+    } | null
+
+    const refined = data?.choices?.[0]?.message?.content?.trim() || ''
+    if (!refined) return preCleaned
+
+    // Guard against accidental model verbosity/hallucination
+    const stripped = sanitizeProfanity(refined.replace(/^["']|["']$/g, '').trim())
+    if (!stripped || stripped.length > preCleaned.length * 2.5 + 80) {
+      return preCleaned
+    }
+
+    return stripped
+  } catch (err: unknown) {
+    if (signal?.aborted || (err instanceof Error && err.name === 'AbortError')) {
+      throw createAbortError()
+    }
+    return preCleaned
+  }
 }
 
 /**

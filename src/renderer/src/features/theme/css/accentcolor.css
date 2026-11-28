@@ -250,16 +250,19 @@
 }
 
 .accent-dropdown-menu {
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  width: 256px;
-  background: var(--bg-surface, var(--bg-panel));
+  position: fixed;
+  top: 38px;
+  right: 10px;
+  width: 260px;
+  background: var(--bg-editor, var(--bg-surface, var(--bg-panel)));
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  border: 1px solid var(--border-strong, var(--border-subtle));
-  border-radius: 10px;
-  box-shadow: var(--elev-popover);
+  border: 1px solid var(--border-color, var(--border-strong, var(--border-subtle)));
+  border-radius: var(--island-radius, 10px);
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.38),
+    0 2px 8px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 color-mix(in srgb, var(--text-main) 5%, transparent);
   z-index: 100000;
   display: flex;
   flex-direction: column;

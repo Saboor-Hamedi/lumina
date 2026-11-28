@@ -146,7 +146,13 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   onThemeClick,
   isZenHidden = false
 }) => {
-  const selectedSnippet = useWorkspaceStore((s) => s.selectedNote || (s as any).selectedSnippet)
+  const selectedSnippet = useWorkspaceStore((s) => {
+    const direct = s.selectedNote || (s as any).selectedSnippet
+    if (direct) return direct
+    const activeId = s.activeTabId
+    if (!activeId) return null
+    return (s.notes || []).find((n: any) => n.id === activeId) || null
+  })
   const openReleaseNotesTab = useWorkspaceStore((s) => s.openReleaseNotesTab)
   const [cursorPos, setCursorPos] = useState<CursorPosition>({ line: 1, col: 1, selectedChars: 0 })
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false)
@@ -345,12 +351,13 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           </ToolTip>
         )
       case 'selection':
-        if (cursorPos.selectedChars <= 0) return null
         return (
           <ToolTip text="Selected characters" position="top">
             <span className={`status-bar-item${responsive}`}>
               <TextSelect size={11} />
-              <span>{cursorPos.selectedChars} selected</span>
+              <span>
+                {cursorPos.selectedChars > 0 ? `${cursorPos.selectedChars} selected` : '0 sel'}
+              </span>
             </span>
           </ToolTip>
         )
@@ -413,20 +420,23 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
         {/* Right document & editor metrics */}
         <div className="status-bar-right">
-          {selectedSnippet &&
-            rightItems.map((item, index) => {
-              const rendered = renderRightItem(item)
-              if (!rendered) return null
+          {(() => {
+            const visibleRendered = rightItems
+              .map((item) => ({ item, node: renderRightItem(item) }))
+              .filter((entry) => entry.node !== null)
+
+            return visibleRendered.map(({ item, node }, index) => {
               const dividerClass = item.responsiveClass
                 ? `status-bar-divider ${item.responsiveClass}`
                 : 'status-bar-divider'
               return (
                 <React.Fragment key={item.id}>
                   {index > 0 && <span className={dividerClass} />}
-                  {rendered}
+                  {node}
                 </React.Fragment>
               )
-            })}
+            })
+          })()}
         </div>
       </div>
 

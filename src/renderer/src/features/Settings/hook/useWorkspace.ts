@@ -2,6 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useToast } from '../../../core/notification'
 import { useSettingsStore } from '../../../core/store/SettingStore'
 import { screenLoader } from '../../../components/screenLoader'
+import { applyTheme } from '../../theme/hooks/themeDefinitions'
+import {
+  getWorkspaceProfile,
+  saveWorkspaceProfile,
+  removeWorkspaceProfile
+} from './workspaceProfile'
 
 export type WorkspaceSource = 'lumina' | 'obsidian' | 'notion' | 'folder'
 
@@ -135,6 +141,37 @@ export function useWorkspace() {
 
   const transitionToWorkspace = useCallback((workspacePath: string, displayName?: string) => {
     const label = displayName || getWorkspaceBasename(workspacePath)
+    // Snapshot current workspace profile before leaving, then restore target workspace profile
+    const storeState = useSettingsStore.getState()
+    const prevPath = currentWorkspace?.path || storeState.settings?.workspacePath || storeState.settings?.vaultPath
+    if (prevPath) {
+      saveWorkspaceProfile(prevPath, {
+        theme: storeState.settings?.theme,
+        accentColor: storeState.settings?.accentColor,
+        activeAIMode: storeState.settings?.activeAIMode
+      })
+    }
+    const targetProfile = getWorkspaceProfile(workspacePath)
+    if (targetProfile) {
+      const updates: Record<string, any> = {}
+      if (targetProfile.theme) {
+        updates.theme = targetProfile.theme
+        applyTheme(targetProfile.theme)
+        try {
+          localStorage.setItem('theme-id', targetProfile.theme)
+        } catch {}
+      }
+      if (targetProfile.accentColor !== undefined) {
+        updates.accentColor = targetProfile.accentColor
+      }
+      if (targetProfile.activeAIMode) {
+        updates.activeAIMode = targetProfile.activeAIMode
+      }
+      if (Object.keys(updates).length > 0 && storeState.updateSettings) {
+        void storeState.updateSettings(updates)
+      }
+    }
+
     try {
       sessionStorage.setItem('lumina_switching_workspace', label)
     } catch {
@@ -219,6 +256,7 @@ export function useWorkspace() {
       if (!api?.removeRecentWorkspace) return
       try {
         const res = await api.removeRecentWorkspace(targetPath)
+        removeWorkspaceProfile(targetPath)
         if (Array.isArray(res?.recentWorkspaces)) {
           setRecentWorkspaces(res.recentWorkspaces)
         }

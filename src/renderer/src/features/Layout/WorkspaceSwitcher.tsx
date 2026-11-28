@@ -9,8 +9,8 @@
  * export directories with a smooth skeleton-loader transition.
  */
 
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react'
-import { ChevronDown, Check, FolderOpen, FolderPlus, X, ExternalLink } from 'lucide-react'
+import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
+import { ChevronDown, Check, FolderOpen, FolderPlus, X, ExternalLink, Search } from 'lucide-react'
 import {
   useWorkspace,
   formatWorkspacePath,
@@ -18,6 +18,8 @@ import {
 } from '../Settings/hook/useWorkspace'
 import ToolTip from '../../components/atoms/ToolTip'
 import './WorkspaceSwitcher.css'
+
+const MAX_VISIBLE_RECENT = 4
 
 export interface WorkspaceSwitcherProps {
   isHidden?: boolean
@@ -39,7 +41,10 @@ const LuminaAvatarEmblem: React.FC = () => (
 
 export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = memo(({ isHidden = false }) => {
   const [isOpen, setIsOpen] = useState(false)
+  const [filterQuery, setFilterQuery] = useState('')
+  const [highlightedIdx, setHighlightedIdx] = useState<number>(-1)
   const containerRef = useRef<HTMLDivElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
 
   const {
     currentWorkspace,
@@ -52,12 +57,52 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = memo(({ isHid
     handleOpenFolder
   } = useWorkspace()
 
+  const showFilter = otherWorkspaces.length > MAX_VISIBLE_RECENT
+
+  const filteredWorkspaces = useMemo(() => {
+    const q = filterQuery.trim().toLowerCase()
+    if (!q) return otherWorkspaces
+    return otherWorkspaces.filter(
+      (ws) =>
+        ws.name.toLowerCase().includes(q) ||
+        ws.path.toLowerCase().includes(q) ||
+        (ws.source && ws.source.toLowerCase().includes(q))
+    )
+  }, [otherWorkspaces, filterQuery])
+
   useEffect(() => {
     if (isHidden) setIsOpen(false)
   }, [isHidden])
 
+  // Global keyboard shortcut (Ctrl/Cmd + Alt + W) and Command Palette event
   useEffect(() => {
-    if (!isOpen) return
+    const handleToggleEvent = () => {
+      if (isHidden || isSwitching) return
+      setIsOpen((prev) => !prev)
+    }
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (isHidden || isSwitching) return
+      const isMod = e.ctrlKey || e.metaKey
+      if (isMod && e.altKey && !e.shiftKey && e.key.toLowerCase() === 'w') {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener('toggle-workspace-switcher', handleToggleEvent)
+    window.addEventListener('keydown', handleGlobalKeyDown, true)
+    return () => {
+      window.removeEventListener('toggle-workspace-switcher', handleToggleEvent)
+      window.removeEventListener('keydown', handleGlobalKeyDown, true)
+    }
+  }, [isHidden, isSwitching])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setFilterQuery('')
+      setHighlightedIdx(-1)
+      return
+    }
     void refreshWorkspaces()
 
     const handleClickOutside = (e: MouseEvent) => {
@@ -80,6 +125,10 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = memo(({ isHid
     }
   }, [isOpen, refreshWorkspaces])
 
+  useEffect(() => {
+    setHighlightedIdx(-1)
+  }, [filterQuery])
+
   const handleToggle = useCallback(() => {
     if (isSwitching) return
     setIsOpen((prev) => !prev)
@@ -96,6 +145,36 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = memo(({ isHid
       await handleOpenWorkspaceByPath(path, name)
     },
     [handleOpenWorkspaceByPath]
+  )
+
+  const handleDropdownKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (filteredWorkspaces.length === 0) return
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setHighlightedIdx((prev) => {
+          const next = prev < filteredWorkspaces.length - 1 ? prev + 1 : 0
+          const row = listRef.current?.children[next] as HTMLElement | undefined
+          row?.scrollIntoView({ block: 'nearest' })
+          return next
+        })
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setHighlightedIdx((prev) => {
+          const next = prev > 0 ? prev - 1 : filteredWorkspaces.length - 1
+          const row = listRef.current?.children[next] as HTMLElement | undefined
+          row?.scrollIntoView({ block: 'nearest' })
+          return next
+        })
+      } else if (e.key === 'Enter' && highlightedIdx >= 0) {
+        const target = filteredWorkspaces[highlightedIdx]
+        if (target && target.exists && !isSwitching) {
+          e.preventDefault()
+          void handleSelectRecent(target.path, target.name)
+        }
+      }
+    },
+    [filteredWorkspaces, highlightedIdx, isSwitching, handleSelectRecent]
   )
 
   const displayName = currentWorkspace?.name || 'Lumina'
@@ -133,7 +212,12 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = memo(({ isHid
       </ToolTip>
 
       {isOpen && (
-        <div className="ws-switcher-dropdown" role="menu" aria-label="Workspaces">
+        <div
+          className="ws-switcher-dropdown"
+          role="menu"
+          aria-label="Workspaces"
+          onKeyDown={handleDropdownKeyDown}
+        >
           <div className="ws-switcher-section-label">Current Workspace</div>
           <div className="ws-switcher-current-card">
             <div className="ws-switcher-current-main">
@@ -177,55 +261,91 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = memo(({ isHid
           {otherWorkspaces.length > 0 && (
             <>
               <div className="ws-switcher-divider" />
-              <div className="ws-switcher-section-label">Recent Workspaces</div>
-              <div className="ws-switcher-list">
-                {otherWorkspaces.map((ws) => {
-                  const sourceLabel = getWorkspaceSourceLabel(ws.source)
-                  return (
-                    <div
-                      key={ws.path}
-                      className={`ws-switcher-row${!ws.exists ? ' is-missing' : ''}`}
+              <div className="ws-switcher-section-header">
+                <span className="ws-switcher-section-label">Recent Workspaces</span>
+                {otherWorkspaces.length > MAX_VISIBLE_RECENT && (
+                  <span className="ws-switcher-count-pill">{otherWorkspaces.length}</span>
+                )}
+              </div>
+              {showFilter && (
+                <div className="ws-switcher-search-wrap">
+                  <Search size={11} className="ws-switcher-search-icon" aria-hidden="true" />
+                  <input
+                    type="text"
+                    className="ws-switcher-search-input"
+                    value={filterQuery}
+                    onChange={(e) => setFilterQuery(e.target.value)}
+                    placeholder="Filter projects…"
+                    aria-label="Filter recent workspaces"
+                  />
+                  {filterQuery && (
+                    <button
+                      type="button"
+                      className="ws-switcher-search-clear"
+                      aria-label="Clear filter"
+                      onClick={() => setFilterQuery('')}
                     >
-                      <button
-                        type="button"
-                        role="menuitem"
-                        className="ws-switcher-item-btn"
-                        disabled={!ws.exists || isSwitching}
-                        onClick={() => void handleSelectRecent(ws.path, ws.name)}
+                      <X size={10} />
+                    </button>
+                  )}
+                </div>
+              )}
+              <div
+                ref={listRef}
+                className={`ws-switcher-list${filteredWorkspaces.length > MAX_VISIBLE_RECENT ? ' is-scrollable' : ''}`}
+              >
+                {filteredWorkspaces.length === 0 ? (
+                  <div className="ws-switcher-empty">No matching workspaces</div>
+                ) : (
+                  filteredWorkspaces.map((ws, idx) => {
+                    const sourceLabel = getWorkspaceSourceLabel(ws.source)
+                    return (
+                      <div
+                        key={ws.path}
+                        className={`ws-switcher-row${!ws.exists ? ' is-missing' : ''}${idx === highlightedIdx ? ' is-highlighted' : ''}`}
+                        onMouseEnter={() => setHighlightedIdx(idx)}
                       >
-                        <span className="ws-switcher-row-icon" aria-hidden="true">
-                          <FolderOpen size={13} />
-                        </span>
-                        <span className="ws-switcher-item-text">
-                          <span className="ws-switcher-item-title-row">
-                            <span className="ws-switcher-item-name">{ws.name}</span>
-                            {sourceLabel && (
-                              <span className={`ws-switcher-badge is-${ws.source}`}>
-                                {sourceLabel}
-                              </span>
-                            )}
-                            {!ws.exists && <span className="ws-switcher-missing-tag">Missing</span>}
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="ws-switcher-item-btn"
+                          disabled={!ws.exists || isSwitching}
+                          onClick={() => void handleSelectRecent(ws.path, ws.name)}
+                        >
+                          <span className="ws-switcher-row-icon" aria-hidden="true">
+                            <FolderOpen size={13} />
                           </span>
-                          <span className="ws-switcher-item-path" title={ws.path}>
-                            {formatWorkspacePath(ws.path, 38)}
+                          <span className="ws-switcher-item-text">
+                            <span className="ws-switcher-item-title-row">
+                              <span className="ws-switcher-item-name">{ws.name}</span>
+                              {sourceLabel && (
+                                <span className={`ws-switcher-badge is-${ws.source}`}>
+                                  {sourceLabel}
+                                </span>
+                              )}
+                              {!ws.exists && <span className="ws-switcher-missing-tag">Missing</span>}
+                            </span>
+                            <span className="ws-switcher-item-path" title={ws.path}>
+                              {formatWorkspacePath(ws.path, 38)}
+                            </span>
                           </span>
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        className="ws-switcher-remove-btn"
-                        title="Remove from recent list"
-                        aria-label={`Remove ${ws.name} from recent workspaces`}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          void handleRemoveRecentWorkspace(ws.path)
-                        }}
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  )
-                })}
+                        </button>
+                        <button
+                          type="button"
+                          className="ws-switcher-remove-btn"
+                          title="Remove from recent list"
+                          aria-label={`Remove ${ws.name} from recent workspaces`}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            void handleRemoveRecentWorkspace(ws.path)
+                          }}
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    )
+                  })
+                )}
               </div>
             </>
           )}

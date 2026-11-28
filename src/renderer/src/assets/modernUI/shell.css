@@ -67,13 +67,32 @@ html:not([data-native-opacity='true']) .lumina-app {
   padding-bottom: var(--island-gap, 6px) !important;
 }
 
-/* Classic UI (when Modern UI toggle is OFF): unified 10px rounded frame with crisp 1px inner seams */
+/* Classic UI (when Modern UI toggle is OFF): clean full-bleed architectural IDE frame */
 .shell-workbench-row {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-color) !important;
-  border-radius: var(--island-radius, 10px) !important;
+  background: var(--bg-editor, var(--bg-surface));
+  border: none !important;
+  border-top: 1px solid var(--border-dim, var(--border-color)) !important;
+  border-bottom: 1px solid var(--border-dim, var(--border-color)) !important;
+  border-left: 1px solid var(--border-dim, var(--border-color)) !important;
+  border-right: 1px solid var(--border-dim, var(--border-color)) !important;
+  border-radius: 0 !important;
   overflow: hidden !important;
   box-sizing: border-box;
+}
+
+.shell-center-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  border: none !important;
+  border-radius: 0 !important;
+  background: var(--bg-editor, var(--bg-surface)) !important;
+  overflow: hidden;
+  box-sizing: border-box;
+  box-shadow: none !important;
+  transition: none !important;
 }
 
 /* Modern UI ON (Islands Architecture): recessed --bg-shell canvas behind floating 10px cards */
@@ -164,7 +183,7 @@ html:not([data-native-opacity='true']) .lumina-app {
   box-sizing: border-box;
 }
 
-/* Single-Pane Center Editor Floating Card (10px radius, 1px theme border) */
+/* Single-Pane Center Editor Floating Card (10px radius, 1px theme border + subtle island elevation) */
 [data-modern-ui='true'] .shell-center-workspace {
   flex: 1;
   display: flex;
@@ -176,10 +195,10 @@ html:not([data-native-opacity='true']) .lumina-app {
   background: var(--bg-surface) !important;
   overflow: hidden;
   box-sizing: border-box;
-  box-shadow: none !important;
-  transition:
-    border-radius 200ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 180ms ease;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 color-mix(in srgb, var(--text-main) 4%, transparent) !important;
+  transition: none !important;
 }
 
 /* Multi-Pane Split Mode: Each split leaf becomes its own 10px floating island separated by 6px --bg-shell gaps */

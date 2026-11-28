@@ -1,39 +1,21 @@
 /**
  * Services.ts - DeepSeek Voice Orchestrator
  *
- * Coordinates live recording, progressive chunk streaming, DeepSeek ASR
- * transcription, focus tracking, and smooth text stitching.
+ * Coordinates clean full-utterance recording, DeepSeek ASR transcription,
+ * context-aware voice refinement (typos, grammar, profanity filtering),
+ * and focus tracking.
  */
 
 import { AudioRecorder } from './Record'
-import { transcribeWithDeepSeek } from './deepseekVoice'
+import { transcribeWithDeepSeek, refineVoiceTranscript } from './deepseekVoice'
 import { useSettingsStore } from '../../../core/store/SettingStore'
-import type { VoiceState, VoiceListener, VoiceApiError } from '../types'
+import { useWorkspaceStore } from '../../../core/store/workspaceStore'
+import type { VoiceState, VoiceListener } from '../types'
 
 declare global {
   interface Window {
     __luminaLastVoiceTarget?: string
   }
-}
-
-/**
- * Intelligent suffix/prefix word alignment algorithm.
- * Removes repeated boundary words between progressive audio chunk transcriptions.
- */
-function removePrefixOverlap(newText: string, prevText: string): string {
-  if (!prevText || !newText) return newText ? newText.trim() : ''
-  const pWords = prevText.trim().toLowerCase().split(/\s+/)
-  const nWords = newText.trim().split(/\s+/)
-
-  const maxOverlap = Math.min(6, pWords.length, nWords.length)
-  for (let len = maxOverlap; len > 0; len--) {
-    const prevSlice = pWords.slice(-len).join(' ')
-    const nextSlice = nWords.slice(0, len).map((w) => w.toLowerCase()).join(' ')
-    if (prevSlice === nextSlice) {
-      return nWords.slice(len).join(' ')
-    }
-  }
-  return newText.trim()
 }
 
 export class VoiceService {
@@ -52,16 +34,9 @@ export class VoiceService {
   }
 
   private isStarting: boolean = false
-  private isQuotaExhausted: boolean = false
   private lastToggleTime: number = 0
   private recordingStartTime: number = 0
   private abortController: AbortController | null = null
-
-  private lastSpeechTime: number = 0
-  private segmentStartTime: number = 0
-  private hasSpokenInSegment: boolean = false
-  private isFlushingSegment: boolean = false
-  private lastTranscribedText: string = ''
 
   constructor() {
     this.recorder = new AudioRecorder()
@@ -157,6 +132,23 @@ export class VoiceService {
     return null
   }
 
+  private getVoiceContextHints(): string[] {
+    try {
+      const ws = useWorkspaceStore.getState()
+      const hints: string[] = []
+      if (ws.selectedNote?.title) {
+        hints.push(String(ws.selectedNote.title))
+      }
+      const notes = Array.isArray(ws.notes) ? ws.notes : []
+      for (const note of notes.slice(0, 12)) {
+        if (note?.title) hints.push(String(note.title))
+      }
+      return hints
+    } catch {
+      return []
+    }
+  }
+
   async startRecording(): Promise<void> {
     if (this.state.isRecording || this.state.isTranscribing || this.isStarting) return
 
@@ -176,7 +168,6 @@ export class VoiceService {
     }
 
     this.isStarting = true
-    this.isQuotaExhausted = false
     try {
       this.recordingStartTime = Date.now()
       this.updateState({
@@ -187,28 +178,18 @@ export class VoiceService {
         error: null
       })
 
-      this.lastSpeechTime = Date.now()
-      this.segmentStartTime = Date.now()
-      this.hasSpokenInSegment = false
-      this.isFlushingSegment = false
-      this.lastTranscribedText = ''
-
       if (this.timerInterval) clearInterval(this.timerInterval)
       this.timerInterval = setInterval(() => {
-        this.updateState({ recordingDuration: this.state.recordingDuration + 1 })
+        const nextDuration = this.state.recordingDuration + 1
+        this.updateState({ recordingDuration: nextDuration })
+        // Auto-finish safely under DeepSeek ASR's 120s limit
+        if (nextDuration >= 115 && this.state.isRecording) {
+          void this.stopRecordingAndTranscribe()
+        }
       }, 1000)
 
       await this.recorder.start((level) => {
         this.updateState({ audioLevel: level })
-
-        const now = Date.now()
-        if (level > 0.025) {
-          this.hasSpokenInSegment = true
-          this.lastSpeechTime = now
-        }
-        // Keep full utterance intact for DeepSeek ASR (single-shot up to 120s)
-        // so English/multilingual speech has complete phonetic context and never
-        // hallucinates short-fragment Chinese characters.
       })
     } catch (err: unknown) {
       if (this.timerInterval) {
@@ -226,64 +207,6 @@ export class VoiceService {
       throw err
     } finally {
       this.isStarting = false
-    }
-  }
-
-  async flushSegment(): Promise<void> {
-    if (this.isFlushingSegment || !this.state.isRecording || this.isQuotaExhausted) return
-    this.isFlushingSegment = true
-    this.segmentStartTime = Date.now()
-    this.hasSpokenInSegment = false
-
-    const deepSeekKey = this.getStoredDeepSeekKey()
-    if (!deepSeekKey || !deepSeekKey.trim()) {
-      this.isFlushingSegment = false
-      return
-    }
-
-    try {
-      const segmentBlob = await this.recorder.flushSegment()
-      if (!segmentBlob || segmentBlob.size < 1800) {
-        this.isFlushingSegment = false
-        return
-      }
-
-      const instanceId = this.state.activeInstanceId || 'editor-voice'
-
-      transcribeWithDeepSeek(segmentBlob, deepSeekKey)
-        .then((text) => {
-          if (text && text.trim().length > 0) {
-            const rawClean = text.trim()
-            const smoothedText = removePrefixOverlap(rawClean, this.lastTranscribedText)
-            if (smoothedText && smoothedText.length > 0) {
-              this.lastTranscribedText = rawClean
-              window.dispatchEvent(
-                new CustomEvent('voice-insert-text', {
-                  detail: { text: smoothedText, instanceId, isSegment: true }
-                })
-              )
-            }
-          }
-        })
-        .catch((err: VoiceApiError) => {
-          console.error('[VoiceService] Segment transcription error:', err)
-          if (err?.isQuotaError || err?.isAuthError) {
-            this.isQuotaExhausted = true
-            this.cancelRecording()
-            const msg = err.message || 'DeepSeek Voice API error.'
-            this.updateState({ error: msg })
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(
-                new CustomEvent('show-toast', { detail: { message: msg, type: 'error' } })
-              )
-            }
-          }
-        })
-        .finally(() => {
-          this.isFlushingSegment = false
-        })
-    } catch {
-      this.isFlushingSegment = false
     }
   }
 
@@ -313,6 +236,13 @@ export class VoiceService {
       }
       if (!audioData || audioData.size === 0) {
         this.updateState({ isTranscribing: false })
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('show-toast', {
+              detail: { message: 'No microphone audio captured. Check your mic input.', type: 'warning' }
+            })
+          )
+        }
         return null
       }
 
@@ -331,22 +261,34 @@ export class VoiceService {
         return null
       }
 
-      const text = await transcribeWithDeepSeek(audioData, deepSeekKey, signal)
+      const rawText = await transcribeWithDeepSeek(audioData, deepSeekKey, signal)
       if (signal.aborted) {
         this.updateState({ isTranscribing: false })
         return null
       }
+
+      const cleanedText = rawText
+        ? await refineVoiceTranscript(rawText, deepSeekKey, {
+            contextHints: this.getVoiceContextHints(),
+            signal
+          })
+        : ''
+
+      if (signal.aborted) {
+        this.updateState({ isTranscribing: false })
+        return null
+      }
+
       this.updateState({ isTranscribing: false, interimText: '', error: null })
-      const smoothed = removePrefixOverlap(text || '', this.lastTranscribedText)
-      if (smoothed && typeof window !== 'undefined') {
+      if (cleanedText && typeof window !== 'undefined') {
         const instanceId = this.state.activeInstanceId || 'editor-voice'
         window.dispatchEvent(
           new CustomEvent('voice-insert-text', {
-            detail: { text: smoothed, instanceId, isSegment: false }
+            detail: { text: cleanedText, instanceId, isSegment: false }
           })
         )
       }
-      return smoothed || null
+      return cleanedText || null
     } catch (err: unknown) {
       if (signal.aborted || (err instanceof Error && err.name === 'AbortError')) {
         this.updateState({ isTranscribing: false, interimText: '', error: null })
@@ -407,4 +349,6 @@ export class VoiceService {
   }
 }
 
-export const voiceService = new VoiceService()
+const globalVoiceHost = globalThis as unknown as { __luminaVoiceService?: VoiceService }
+export const voiceService =
+  globalVoiceHost.__luminaVoiceService ?? (globalVoiceHost.__luminaVoiceService = new VoiceService())

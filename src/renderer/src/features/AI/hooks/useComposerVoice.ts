@@ -22,6 +22,7 @@ export const useComposerVoice = ({
 }: UseComposerVoiceProps): void => {
   const baselineInputRef = useRef<string | null>(null)
   const latestInputRef = useRef<string>(input)
+  const pendingWordsRef = useRef<string[]>([])
   const typingTimerRef = useRef<number | null>(null)
 
   latestInputRef.current = input
@@ -43,6 +44,38 @@ export const useComposerVoice = ({
       el.scrollTop = el.scrollHeight
     }
 
+    const drainNextWord = () => {
+      const nextWord = pendingWordsRef.current.shift()
+      if (!nextWord) {
+        clearTypingTimer()
+        window.setTimeout(focusComposerEnd, 10)
+        return
+      }
+
+      setInput((prev) => {
+        const needsSpace = Boolean(prev && !prev.endsWith(' ') && !prev.endsWith('\n'))
+        return prev ? `${prev}${needsSpace ? ' ' : ''}${nextWord}` : nextWord
+      })
+
+      const el = textareaRef.current
+      if (el) {
+        el.scrollTop = el.scrollHeight
+      }
+
+      if (pendingWordsRef.current.length === 0) {
+        clearTypingTimer()
+        window.setTimeout(focusComposerEnd, 10)
+      }
+    }
+
+    const startDraining = () => {
+      if (typingTimerRef.current !== null) return
+      drainNextWord()
+      if (pendingWordsRef.current.length > 0) {
+        typingTimerRef.current = window.setInterval(drainNextWord, 26)
+      }
+    }
+
     const handleLiveText = (e: Event) => {
       const customEvent = e as CustomEvent<VoiceCustomEventDetail>
       if (customEvent.detail?.instanceId !== 'composer-voice') return
@@ -59,6 +92,7 @@ export const useComposerVoice = ({
     const handleLiveCancel = (e: Event) => {
       const customEvent = e as CustomEvent<VoiceCustomEventDetail>
       if (customEvent.detail?.instanceId !== 'composer-voice') return
+      pendingWordsRef.current = []
       clearTypingTimer()
       if (baselineInputRef.current !== null) {
         setInput(baselineInputRef.current)
@@ -72,37 +106,12 @@ export const useComposerVoice = ({
       const text = customEvent.detail?.text?.trim()
       if (!text) return
 
-      clearTypingTimer()
-      const base = baselineInputRef.current !== null ? baselineInputRef.current : latestInputRef.current
       baselineInputRef.current = null
-
       const words = text.split(/\s+/).filter(Boolean)
-      if (words.length <= 1) {
-        const needsSpace = Boolean(base && !base.endsWith(' ') && !base.endsWith('\n'))
-        setInput(base ? `${base}${needsSpace ? ' ' : ''}${text}` : text)
-        window.setTimeout(focusComposerEnd, 10)
-        return
-      }
+      if (words.length === 0) return
 
-      // Smooth word-by-word typing animation (~28ms per word)
-      const prefix = base ? `${base}${!base.endsWith(' ') && !base.endsWith('\n') ? ' ' : ''}` : ''
-      let wordIdx = 0
-
-      const step = () => {
-        wordIdx++
-        const partial = words.slice(0, wordIdx).join(' ')
-        setInput(`${prefix}${partial}`)
-        if (wordIdx >= words.length) {
-          clearTypingTimer()
-          window.setTimeout(focusComposerEnd, 10)
-        } else {
-          const el = textareaRef.current
-          if (el) el.scrollTop = el.scrollHeight
-        }
-      }
-
-      step()
-      typingTimerRef.current = window.setInterval(step, 28)
+      pendingWordsRef.current.push(...words)
+      startDraining()
     }
 
     window.addEventListener('voice-live-text', handleLiveText)
@@ -110,6 +119,7 @@ export const useComposerVoice = ({
     window.addEventListener('voice-insert-text', handleVoiceInsert)
 
     return () => {
+      pendingWordsRef.current = []
       clearTypingTimer()
       window.removeEventListener('voice-live-text', handleLiveText)
       window.removeEventListener('voice-live-cancel', handleLiveCancel)

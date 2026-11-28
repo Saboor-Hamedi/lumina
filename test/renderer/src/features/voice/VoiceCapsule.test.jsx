@@ -72,4 +72,36 @@ describe('VoiceCapsule component', () => {
 
     expect(stopSpy).toHaveBeenCalled()
   })
+
+  it('calls stopRecordingAndTranscribe when Enter is pressed while recording', () => {
+    voiceService.updateState({
+      isRecording: true,
+      isTranscribing: false,
+      audioLevel: 0.3,
+      activeInstanceId: 'composer-voice'
+    })
+
+    const stopSpy = vi.spyOn(voiceService, 'stopRecordingAndTranscribe').mockResolvedValue('Done')
+    render(<VoiceCapsule />)
+
+    fireEvent.keyDown(window, { key: 'Enter' })
+
+    expect(stopSpy).toHaveBeenCalled()
+  })
+
+  it('calls cancelRecording when Escape is pressed while recording or transcribing', () => {
+    voiceService.updateState({
+      isRecording: false,
+      isTranscribing: true,
+      audioLevel: 0,
+      activeInstanceId: 'composer-voice'
+    })
+
+    const cancelSpy = vi.spyOn(voiceService, 'cancelRecording').mockImplementation(() => {})
+    render(<VoiceCapsule />)
+
+    fireEvent.keyDown(window, { key: 'Escape' })
+
+    expect(cancelSpy).toHaveBeenCalled()
+  })
 })

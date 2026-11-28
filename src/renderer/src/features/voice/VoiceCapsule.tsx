@@ -1,7 +1,8 @@
 import React, { useMemo, useEffect, useState } from 'react'
-import { Square } from 'lucide-react'
+import { CornerDownLeft, X } from 'lucide-react'
 import { PulseLoader } from '../../components/PulseLoader'
 import { useVoice } from './hooks/Voice'
+import { voiceService } from './hooks/Services'
 import './css/voice.css'
 
 interface CapsulePositionStyle {
@@ -83,7 +84,9 @@ export const VoiceCapsule: React.FC = () => {
     }
   }, [isVisible, activeInstanceId])
 
-  // Cancel recording or in-flight transcription immediately when user presses Escape
+  // Keyboard shortcuts while VoiceCapsule is visible:
+  // - Enter (without Shift/Ctrl/Alt/Meta): stop & transcribe immediately
+  // - Escape: cancel recording or in-flight transcription immediately
   useEffect(() => {
     if (!isVisible) return
 
@@ -92,27 +95,47 @@ export const VoiceCapsule: React.FC = () => {
         e.preventDefault()
         e.stopPropagation()
         cancelRecording()
+        return
+      }
+      const isEnter = e.key === 'Enter' || e.code === 'Enter' || e.code === 'NumpadEnter'
+      if (
+        isEnter &&
+        !e.shiftKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.metaKey &&
+        (isRecording || voiceService.state.isRecording)
+      ) {
+        e.preventDefault()
+        e.stopPropagation()
+        void stopRecording()
       }
     }
 
     window.addEventListener('keydown', handleKeyDown, true)
     return () => window.removeEventListener('keydown', handleKeyDown, true)
-  }, [isVisible, cancelRecording])
+  }, [isVisible, isRecording, stopRecording, cancelRecording])
 
   const handleStop = async (e: React.MouseEvent<HTMLElement>): Promise<void> => {
     e?.preventDefault?.()
     e?.stopPropagation?.()
-    if (isTranscribing) {
+    if (isTranscribing || voiceService.state.isTranscribing) {
       cancelRecording()
       return
     }
-    if (!isRecording) return
+    if (!isRecording && !voiceService.state.isRecording) return
 
     try {
       await stopRecording()
     } catch (err) {
       console.error('[VoiceCapsule] Stop error:', err)
     }
+  }
+
+  const handleCancel = (e: React.MouseEvent<HTMLElement>): void => {
+    e?.preventDefault?.()
+    e?.stopPropagation?.()
+    cancelRecording()
   }
 
   // 5 sleek visualizer bars that dance to voice
@@ -127,7 +150,7 @@ export const VoiceCapsule: React.FC = () => {
         onClick={handleStop}
         role="button"
         tabIndex={0}
-        title={isRecording ? 'Click to stop & transcribe' : 'Transcribing...'}
+        title={isRecording ? 'Press Enter or click to transcribe • Esc to cancel' : 'Click or press Esc to cancel'}
       >
         {isRecording ? (
           <>
@@ -152,18 +175,36 @@ export const VoiceCapsule: React.FC = () => {
             <span className="voice-capsule-timer">{formattedDuration}</span>
             <button
               type="button"
-              className="voice-capsule-stop-btn"
+              className="voice-capsule-done-btn"
               onClick={handleStop}
-              aria-label="Stop recording"
-              title="Stop & transcribe"
+              aria-label="Transcribe recording"
+              title="Transcribe (Enter)"
             >
-              <Square size={9} fill="currentColor" />
+              <CornerDownLeft size={10} />
+            </button>
+            <button
+              type="button"
+              className="voice-capsule-cancel-btn"
+              onClick={handleCancel}
+              aria-label="Cancel recording"
+              title="Cancel (Esc)"
+            >
+              <X size={10} />
             </button>
           </>
         ) : (
           <div className="voice-capsule-loading">
             <PulseLoader size="xs" inline delayMs={0} message="" />
             <span className="voice-capsule-loading-text">Transcribing...</span>
+            <button
+              type="button"
+              className="voice-capsule-cancel-btn"
+              onClick={handleCancel}
+              aria-label="Cancel transcription"
+              title="Cancel (Esc)"
+            >
+              <X size={10} />
+            </button>
           </div>
         )}
       </div>

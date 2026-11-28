@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { transcribeWithDeepSeek } from '../../../../../src/renderer/src/features/voice/hooks/deepseekVoice'
+import {
+  transcribeWithDeepSeek,
+  refineVoiceTranscript,
+  sanitizeProfanity
+} from '../../../../../src/renderer/src/features/voice/hooks/deepseekVoice'
 
 describe('deepseekVoice service', () => {
   beforeEach(() => {
@@ -52,5 +56,42 @@ describe('deepseekVoice service', () => {
       isAuthError: true,
       status: 401
     })
+  })
+
+  it('strips profanity cleanly without damaging legitimate words', () => {
+    expect(sanitizeProfanity('fuck you fix my markdown note')).toBe('fix my markdown note')
+    expect(sanitizeProfanity('this fucking class assignment needs assessment')).toBe(
+      'this class assignment needs assessment'
+    )
+  })
+
+  it('refines voice transcripts with workspace context and removes profanity', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: 'Open my Project Roadmap note in Lumina.' } }]
+      })
+    })
+    globalThis.fetch = fetchMock
+
+    const result = await refineVoiceTranscript(
+      'fuck you open my project road map note in luminaa',
+      'sk-deepseek-valid',
+      { contextHints: ['Project Roadmap'] }
+    )
+
+    expect(result).toBe('Open my Project Roadmap note in Lumina.')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('https://api.deepseek.com/chat/completions')
+    expect(init.method).toBe('POST')
+    expect(String(init.body)).toContain('Project Roadmap')
+  })
+
+  it('falls back safely to sanitized raw transcript when refiner request fails', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('offline'))
+
+    const result = await refineVoiceTranscript('shit summarize my notes', 'sk-deepseek-valid')
+    expect(result).toBe('summarize my notes')
   })
 })

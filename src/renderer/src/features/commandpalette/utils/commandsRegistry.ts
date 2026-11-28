@@ -22,6 +22,18 @@ export interface LuminaCommand {
 }
 
 export const COMMANDS_REGISTRY: LuminaCommand[] = [
+  // --- Workspace Switching ---
+  {
+    id: 'workspace.switch',
+    title: 'Workspace: Switch Workspace',
+    category: 'File',
+    shortcut: 'Ctrl + Alt + W',
+    keywords: ['workspace', 'switch', 'vault', 'project', 'folder', 'obsidian', 'notion', 'recent'],
+    iconName: 'FolderOpen',
+    execute: () => {
+      window.dispatchEvent(new CustomEvent('toggle-workspace-switcher'))
+    }
+  },
   // --- View: Zen Mode & Component Visibility ---
   {
     id: 'view.toggleZenMode',

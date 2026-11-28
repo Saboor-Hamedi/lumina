@@ -15,7 +15,7 @@
   align-items: center;
   gap: 6px;
   height: 24px;
-  max-width: 170px;
+  max-width: 176px;
   padding: 0 7px 0 4px;
   border-radius: 6px;
   border: 1px solid transparent;
@@ -26,15 +26,15 @@
   letter-spacing: -0.01em;
   cursor: pointer;
   transition:
-    background 120ms ease,
-    border-color 120ms ease,
-    color 120ms ease;
+    background 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 120ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 120ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .ws-switcher-trigger:hover,
 .ws-switcher-trigger.is-open {
-  background: var(--bg-hover, rgba(255, 255, 255, 0.06));
-  border-color: color-mix(in srgb, var(--border-color) 70%, transparent);
+  background: var(--bg-hover, color-mix(in srgb, var(--text-main) 6%, transparent));
+  border-color: var(--border-dim, var(--border-color));
 }
 
 .ws-switcher-avatar {
@@ -44,7 +44,8 @@
   width: 18px;
   height: 18px;
   border-radius: 5px;
-  background: color-mix(in srgb, var(--text-accent, #8b5cf6) 14%, var(--bg-surface));
+  background: color-mix(in srgb, var(--accent-color, var(--text-accent, #8b5cf6)) 14%, var(--bg-surface));
+  border: 1px solid color-mix(in srgb, var(--accent-color, var(--text-accent, #8b5cf6)) 24%, transparent);
   color: var(--text-main);
   flex-shrink: 0;
 }
@@ -79,14 +80,15 @@
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  width: 296px;
+  width: 300px;
   padding: 6px;
-  border-radius: 10px;
-  background: var(--bg-panel, var(--bg-surface));
+  border-radius: var(--island-radius, 10px);
+  background: var(--bg-editor, var(--bg-panel, var(--bg-surface)));
   border: 1px solid var(--border-color);
   box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.34),
-    0 2px 8px rgba(0, 0, 0, 0.16);
+    0 14px 36px rgba(0, 0, 0, 0.36),
+    0 2px 8px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 color-mix(in srgb, var(--text-main) 5%, transparent);
   z-index: 10002;
   user-select: none;
   animation: wsSwitcherIn 120ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -119,8 +121,8 @@
   gap: 8px;
   padding: 7px 8px;
   border-radius: 7px;
-  background: color-mix(in srgb, var(--text-accent, #8b5cf6) 8%, var(--bg-surface));
-  border: 1px solid color-mix(in srgb, var(--text-accent, #8b5cf6) 22%, var(--border-color));
+  background: color-mix(in srgb, var(--accent-color, var(--text-accent, #8b5cf6)) 9%, var(--bg-surface));
+  border: 1px solid color-mix(in srgb, var(--accent-color, var(--text-accent, #8b5cf6)) 24%, var(--border-dim, var(--border-color)));
 }
 
 .ws-switcher-current-main {
@@ -171,12 +173,112 @@
   opacity: 0.7;
 }
 
+.ws-switcher-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 4px 0;
+}
+
+.ws-switcher-count-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.ws-switcher-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin: 0 4px 6px;
+}
+
+.ws-switcher-search-icon {
+  position: absolute;
+  left: 8px;
+  color: var(--text-faint, var(--text-muted));
+  pointer-events: none;
+}
+
+.ws-switcher-search-input {
+  width: 100%;
+  height: 26px;
+  padding: 0 24px 0 25px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  font-size: 11.5px;
+  outline: none;
+  transition: border-color 120ms ease;
+}
+
+.ws-switcher-search-input:focus {
+  border-color: var(--text-accent, #8b5cf6);
+}
+
+.ws-switcher-search-clear {
+  position: absolute;
+  right: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.ws-switcher-search-clear:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  color: var(--text-main);
+}
+
+/* Exactly 4 visible recent projects (~44px each), scrolling smoothly for 5+ */
 .ws-switcher-list {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 220px;
+  max-height: 184px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text-muted) 32%, transparent) transparent;
+}
+
+.ws-switcher-list.is-scrollable {
+  padding-right: 3px;
+}
+
+.ws-switcher-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.ws-switcher-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ws-switcher-list::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-muted) 28%, transparent);
+  border-radius: 999px;
+}
+
+.ws-switcher-list::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--text-muted) 48%, transparent);
+}
+
+.ws-switcher-empty {
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--text-faint, var(--text-muted));
 }
 
 .ws-switcher-row {
@@ -184,9 +286,11 @@
   display: flex;
   align-items: center;
   border-radius: 6px;
+  flex-shrink: 0;
 }
 
-.ws-switcher-row:hover {
+.ws-switcher-row:hover,
+.ws-switcher-row.is-highlighted {
   background: var(--bg-hover, rgba(255, 255, 255, 0.06));
 }
 
@@ -358,4 +462,154 @@
 .ws-switcher-action-sub {
   font-size: 10.5px;
   color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Settings -> Workspace Recent List (Shared 4-item Scroll & Cohesive Badges)
+   ========================================================================== */
+
+.ws-settings-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ws-settings-section-head h3 {
+  margin: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ws-settings-search-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 210px;
+}
+
+.ws-settings-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-height: 228px; /* 4 workspace rows (~54px each) before smooth scroll */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text-muted) 32%, transparent) transparent;
+}
+
+.ws-settings-recent-list.is-scrollable {
+  padding-right: 4px;
+}
+
+.ws-settings-recent-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.ws-settings-recent-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ws-settings-recent-list::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--text-muted) 28%, transparent);
+  border-radius: 999px;
+}
+
+.ws-settings-recent-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  flex-shrink: 0;
+  transition: background 120ms ease;
+}
+
+.ws-settings-recent-row:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.05));
+}
+
+.ws-settings-recent-row.is-missing {
+  opacity: 0.55;
+}
+
+.ws-settings-recent-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ws-settings-recent-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.ws-settings-recent-info {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ws-settings-recent-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-main);
+  min-width: 0;
+}
+
+.ws-settings-recent-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ws-settings-recent-path {
+  font-size: 11px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ws-settings-recent-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.ws-settings-open-btn {
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ws-settings-remove-btn {
+  padding: 4px 7px !important;
+  color: var(--text-muted);
+}
+
+.ws-settings-remove-btn:hover {
+  color: #ef4444;
 }

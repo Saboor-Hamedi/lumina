@@ -530,7 +530,8 @@
   min-width: 28px;
 }
 
-.voice-capsule-stop-btn {
+.voice-capsule-done-btn,
+.voice-capsule-cancel-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -539,15 +540,29 @@
   padding: 0;
   border: none;
   border-radius: 50%;
-  background: rgba(239, 68, 68, 0.18);
-  color: #ef4444;
   cursor: pointer;
   flex-shrink: 0;
-  transition: background 120ms ease, transform 120ms ease;
+  transition: background 120ms ease, color 120ms ease, transform 120ms ease;
 }
 
-.voice-capsule-stop-btn:hover {
-  background: rgba(239, 68, 68, 0.32);
+.voice-capsule-done-btn {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+}
+
+.voice-capsule-done-btn:hover {
+  background: rgba(56, 189, 248, 0.35);
+  transform: scale(1.06);
+}
+
+.voice-capsule-cancel-btn {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-muted, #94a3b8);
+}
+
+.voice-capsule-cancel-btn:hover {
+  background: rgba(239, 68, 68, 0.22);
+  color: #ef4444;
   transform: scale(1.06);
 }
 

@@ -15,6 +15,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
   { id: 'aiChat', label: 'AI Chat', defaultKey: 'Ctrl + Shift + \\', category: 'General' },
   { id: 'canvasDrawer', label: 'Spatial Canvas', defaultKey: 'Ctrl + Shift + ;', category: 'General' },
   { id: 'voiceDictation', label: 'Voice Dictation', defaultKey: 'Shift + Alt + V', category: 'General' },
+  { id: 'switchWorkspace', label: 'Switch Workspace', defaultKey: 'Ctrl + Alt + W', category: 'General' },
 
   // File
   { id: 'newNote', label: 'New Note', defaultKey: 'Ctrl + N', category: 'File' },

@@ -1,8 +1,9 @@
 import React, { useRef } from 'react'
-import { Mic } from 'lucide-react'
+import { Mic, Square } from 'lucide-react'
 import ToolTip from '../../components/atoms/ToolTip'
 import { PulseLoader } from '../../components/PulseLoader'
 import { useVoice } from './hooks/Voice'
+import { voiceService } from './hooks/Services'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import type { VoiceButtonProps } from './types'
 import './css/voice.css'
@@ -45,13 +46,16 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
 
     if (error) clearError()
 
-    // Always allow stopping or cancelling before any key validation
-    if (isRecording) {
+    // Always check live singleton state so stopping/cancelling can never stall on stale closures
+    const liveRecording = isRecording || voiceService.state.isRecording
+    const liveTranscribing = isTranscribing || voiceService.state.isTranscribing
+
+    if (liveRecording) {
       await handleStop()
       return
     }
 
-    if (isTranscribing) {
+    if (liveTranscribing) {
       cancelRecording()
       return
     }
@@ -106,8 +110,10 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
         >
           {isThisTranscribing ? (
             <PulseLoader size="xs" inline delayMs={0} message="" tone="current" />
+          ) : isThisRecording ? (
+            <Square size={10} fill="currentColor" className="voice-mic-icon" />
           ) : (
-            <Mic size={12} className={isThisRecording ? 'voice-mic-icon' : ''} />
+            <Mic size={12} />
           )}
         </button>
       </ToolTip>

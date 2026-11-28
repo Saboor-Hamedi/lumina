@@ -229,6 +229,7 @@ export const AccentColor: React.FC<AccentColorProps> = ({
   const [localColor, setLocalColor] = useState<string>(() => {
     return startColor.startsWith('#') ? startColor : `#${startColor}`
   })
+  const [dropdownCoords, setDropdownCoords] = useState<{ top: number; right: number } | null>(null)
   const [focusedIndex, setFocusedIndex] = useState<number>(() => {
     const col = startColor
     const idx = PRESET_PALETTE.findIndex((p) => p.toLowerCase() === col.toLowerCase())
@@ -303,7 +304,25 @@ export const AccentColor: React.FC<AccentColorProps> = ({
   }, [isOpen, initialColor, activeThemeAccent])
 
   useEffect(() => {
-    if (!isOpen || variant !== 'dropdown') return
+    if (!isOpen || variant !== 'dropdown') {
+      setDropdownCoords(null)
+      return
+    }
+    const updateDropdownCoords = () => {
+      const trigger = document.querySelector('.accent-titlebar-btn') as HTMLElement | null
+      if (trigger) {
+        const rect = trigger.getBoundingClientRect()
+        setDropdownCoords({
+          top: Math.round(rect.bottom + 6),
+          right: Math.max(8, Math.round(window.innerWidth - rect.right))
+        })
+      } else {
+        setDropdownCoords({ top: 38, right: 10 })
+      }
+    }
+    updateDropdownCoords()
+    window.addEventListener('resize', updateDropdownCoords)
+
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement
       if (dropdownRef.current && !dropdownRef.current.contains(target)) {
@@ -315,6 +334,7 @@ export const AccentColor: React.FC<AccentColorProps> = ({
     }
     document.addEventListener('pointerdown', handleClickOutside, { capture: true })
     return () => {
+      window.removeEventListener('resize', updateDropdownCoords)
       document.removeEventListener('pointerdown', handleClickOutside, { capture: true })
     }
   }, [isOpen, variant, onClose])
@@ -438,8 +458,21 @@ export const AccentColor: React.FC<AccentColorProps> = ({
   }
 
   if (variant === 'dropdown') {
-    return (
-      <div className="accent-dropdown-menu" ref={dropdownRef} onClick={(e) => e.stopPropagation()}>
+    const dropdownEl = (
+      <div
+        className="accent-dropdown-menu"
+        ref={dropdownRef}
+        onClick={(e) => e.stopPropagation()}
+        style={
+          dropdownCoords
+            ? {
+                position: 'fixed',
+                top: `${dropdownCoords.top}px`,
+                right: `${dropdownCoords.right}px`
+              }
+            : undefined
+        }
+      >
         <Profile
           accentColor={localColor || defaultColor}
           onActionComplete={onClose}
@@ -499,6 +532,7 @@ export const AccentColor: React.FC<AccentColorProps> = ({
         <QuickControls />
       </div>
     )
+    return typeof document !== 'undefined' ? createPortal(dropdownEl, document.body) : dropdownEl
   }
 
   return createPortal(

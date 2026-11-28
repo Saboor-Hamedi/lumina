@@ -29,9 +29,10 @@ import { VoiceCapsule } from '../voice'
 import GlobalErrorHandler from '../../components/GlobalErrorHandler'
 import { useWorkspaceStore } from '../../core/store/workspaceStore'
 import { renameNote } from '../../core/hooks/renameNote'
-import { openSidebarView } from '../Navigation/sidebarViewStore'
+import { openSidebarView, clearModalActivityItem } from '../Navigation/sidebarViewStore'
 import Settings from '../Settings/Settings'
 import { CommandPalette } from '../commandpalette/CommandPalette'
+import Documentation from '../Docs/Documentation'
 
 
 // Helper to retry dynamic imports if Vite dev server is still starting/recompiling
@@ -52,7 +53,6 @@ const lazyWithRetry = <T extends React.ComponentType<any>>(
 // Lazy-load secondary modals to keep initial bundle focused while core modals open instantly
 const LuminaChat = lazyWithRetry(() => import('../AI/Lumina'))
 const IconPicker = lazyWithRetry(() => import('../Icons/IconPicker'))
-const Documentation = lazyWithRetry(() => import('../Docs/Documentation'))
 const Guide = lazyWithRetry(() => import('../modals/Guide'))
 
 export interface RenameModalState {
@@ -207,9 +207,13 @@ export const AppModals: React.FC<AppModalsProps> = ({
 
       {/* Help & Documentation Modal */}
       {showDocsModal && (
-        <React.Suspense fallback={null}>
-          <Documentation isOpen={showDocsModal} onClose={() => setShowDocsModal(false)} />
-        </React.Suspense>
+        <Documentation
+          isOpen={showDocsModal}
+          onClose={() => {
+            setShowDocsModal(false)
+            clearModalActivityItem('docs')
+          }}
+        />
       )}
 
       {/* Onboarding Starter Guide */}

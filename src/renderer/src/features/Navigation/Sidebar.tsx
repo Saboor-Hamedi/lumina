@@ -10,6 +10,7 @@
 import React, { memo, useEffect, useState } from 'react'
 import FileExplorer from '../Explorer/FileExplorer'
 import Theme from '../theme/Theme'
+import Template from '../template/Template'
 import { useSettingsStore } from '../../core/store/SettingStore'
 import {
   useSidebarViewStore,
@@ -17,8 +18,6 @@ import {
   closeLeftSidebar
 } from './sidebarViewStore'
 import './css/sidebar.css'
-
-const Template = React.lazy(() => import('../template/Template'))
 
 export interface SidebarProps {
   className?: string
@@ -98,13 +97,11 @@ const Sidebar: React.FC<SidebarProps> = memo(() => {
           }}
         >
           {hasMountedTemplates && (
-            <React.Suspense fallback={null}>
-              <Template
-                isEmbedded={true}
-                isOpen={isLeftOpen && activeView === 'templates'}
-                onClose={closeLeftSidebar}
-              />
-            </React.Suspense>
+            <Template
+              isEmbedded={true}
+              isOpen={isLeftOpen && activeView === 'templates'}
+              onClose={closeLeftSidebar}
+            />
           )}
         </div>
       </div>

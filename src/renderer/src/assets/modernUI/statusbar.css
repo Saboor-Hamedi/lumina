@@ -11,16 +11,16 @@
   border: none !important;
   border-top: none !important;
   background: var(--bg-shell) !important;
-  height: 26px !important;
-  min-height: 26px !important;
-  max-height: 26px !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  max-height: 28px !important;
   width: 100% !important;
   box-sizing: border-box;
   box-shadow: none !important;
   flex-shrink: 0 !important;
   display: flex !important;
-  align-items: flex-start !important;
-  padding: 0 !important;
+  align-items: center !important;
+  padding: 2px 0 0 0 !important;
   font-family: var(--font-mono, 'JetBrains Mono', 'Fira Code', monospace) !important;
   font-size: 11px !important;
   line-height: 1 !important;
@@ -29,16 +29,15 @@
   overflow: hidden !important;
   position: relative !important;
   transform: none !important;
-  will-change: height, margin;
+  will-change: height;
   transition:
     height 200ms cubic-bezier(0.22, 1, 0.36, 1),
     min-height 200ms cubic-bezier(0.22, 1, 0.36, 1),
-    max-height 200ms cubic-bezier(0.22, 1, 0.36, 1),
-    margin 200ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+    max-height 200ms cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 
 [data-modern-ui='true'] .status-bar {
-  margin: 3px 0 1px 0 !important;
+  margin: 0 !important;
 }
 
 .status-bar.zen-hidden,
@@ -90,7 +89,7 @@
 [data-modern-ui='true'] .status-bar-btn {
   height: 22px !important;
   line-height: 1 !important;
-  border-radius: 4px !important;
+  border-radius: 5px !important;
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
@@ -263,4 +262,43 @@
 .status-bar:hover .status-bar-item,
 [data-modern-ui='true'] .status-bar:hover .status-bar-item {
   opacity: 0.9 !important;
+}
+
+/* Status Bar Right-Click Toggle Menu Header & Section Labels */
+.status-bar-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 10px 6px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--border-dim, var(--border-color));
+  user-select: none;
+}
+
+.status-bar-menu-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+
+.status-bar-menu-hint {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-faint, var(--text-muted));
+}
+
+.context-menu .menu-section {
+  padding: 5px 10px 3px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint, var(--text-muted));
+  user-select: none;
+}
+
+.context-menu .menu-check {
+  color: var(--accent-color, var(--text-accent));
 }
