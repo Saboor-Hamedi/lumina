@@ -431,6 +431,13 @@ export function initTauriBridge(): void {
       if (res) notifyWorkspaceUpdated()
       return res
     },
+    getRecentWorkspaces: () => invoke('get_recent_workspaces'),
+    switchWorkspace: async (path: string) => {
+      const res = await invoke('switch_workspace', { path })
+      if (res) notifyWorkspaceUpdated()
+      return res
+    },
+    removeRecentWorkspace: (path: string) => invoke('remove_recent_workspace', { path }),
 
     createFolder: (path: string) => invoke('create_folder', { path }),
     renameFolder: (oldPath: string, newPath: string) =>

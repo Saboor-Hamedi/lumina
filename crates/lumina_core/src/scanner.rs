@@ -92,10 +92,220 @@ pub struct ParsedFrontmatter {
 fn is_known_metadata_key(key: &str) -> bool {
     matches!(
         key.to_lowercase().as_str(),
-        "id" | "title" | "language" | "tags" | "selection" | "ispinned" | "pinned"
-            | "islearned" | "learned" | "customicon" | "icon" | "createdat"
-            | "created_at" | "timestamp" | "color" | "type" | "folderid" | "folder_id"
+        "id" | "title" | "language" | "tags" | "tag" | "selection" | "ispinned" | "pinned"
+            | "islearned" | "learned" | "customicon" | "icon" | "emoji" | "createdat"
+            | "created_at" | "created" | "date" | "timestamp" | "color" | "type"
+            | "folderid" | "folder_id"
     )
+}
+
+/// Infer Lumina Note Property type (`text` | `select` | `date` | `checkbox` | `url` | `number`)
+/// from an external YAML/TOML property key and string value.
+pub fn infer_metadata_prop_type(key: &str, value: &str) -> &'static str {
+    let lower_key = key.trim().to_lowercase();
+    let trimmed = value.trim();
+
+    if matches!(lower_key.as_str(), "status" | "priority" | "stage") {
+        return "select";
+    }
+    if trimmed.eq_ignore_ascii_case("true") || trimmed.eq_ignore_ascii_case("false") {
+        return "checkbox";
+    }
+    if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
+        return "url";
+    }
+    // ISO date (YYYY-MM-DD or YYYY-MM-DDTHH:MM...)
+    if trimmed.len() >= 10 {
+        let b = trimmed.as_bytes();
+        if b[0..4].iter().all(|c| c.is_ascii_digit())
+            && b[4] == b'-'
+            && b[5..7].iter().all(|c| c.is_ascii_digit())
+            && b[7] == b'-'
+            && b[8..10].iter().all(|c| c.is_ascii_digit())
+        {
+            return "date";
+        }
+    }
+    if !trimmed.is_empty()
+        && !trimmed.contains(' ')
+        && trimmed.parse::<f64>().is_ok()
+        && !lower_key.contains("id")
+        && !lower_key.contains("phone")
+    {
+        return "number";
+    }
+    "text"
+}
+
+fn clean_yaml_scalar(raw: &str) -> String {
+    let trimmed = raw.trim();
+    if trimmed.len() >= 2
+        && ((trimmed.starts_with('"') && trimmed.ends_with('"'))
+            || (trimmed.starts_with('\'') && trimmed.ends_with('\'')))
+    {
+        return trimmed[1..trimmed.len() - 1].trim().to_string();
+    }
+    trimmed.to_string()
+}
+
+fn normalize_external_prop_key(raw_key: &str) -> Option<String> {
+    let trimmed = raw_key.trim().trim_matches('"').trim_matches('\'').trim();
+    if trimmed.is_empty() || trimmed.len() > 64 {
+        return None;
+    }
+    // Allow letters, digits, _, -, ., and spaces (Notion / Obsidian keys like "Due Date")
+    if !trimmed
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '_' || c == '-' || c == '.' || c == ' ')
+    {
+        return None;
+    }
+    Some(trimmed.to_string())
+}
+
+fn apply_frontmatter_kv(orig_key: &str, raw_val: &str, fm: &mut ParsedFrontmatter) -> bool {
+    let key = orig_key.trim().to_lowercase();
+    let val = clean_yaml_scalar(raw_val);
+
+    match key.as_str() {
+        "id" => {
+            if !val.is_empty() && val != "null" {
+                fm.id = Some(val);
+            }
+        }
+        "title" => {
+            if !val.is_empty() && val != "null" {
+                fm.title = Some(val);
+            }
+        }
+        "language" => {
+            if !val.is_empty() && val != "null" {
+                fm.language = Some(val);
+            }
+        }
+        "pinned" | "ispinned" => {
+            fm.is_pinned = val.eq_ignore_ascii_case("true") || val == "1";
+        }
+        "learned" | "islearned" => {
+            fm.is_learned = val.eq_ignore_ascii_case("true") || val == "1";
+        }
+        "color" => {
+            if !val.is_empty() && val != "null" {
+                fm.color = Some(val);
+            }
+        }
+        "icon" | "customicon" | "emoji" => {
+            if !val.is_empty() && val != "null" && val != "undefined" {
+                fm.custom_icon = Some(val);
+            }
+        }
+        "createdat" | "created_at" | "created" | "date" => {
+            if !val.is_empty() && val != "null" && fm.created_at.is_none() {
+                fm.created_at = Some(val);
+            }
+        }
+        "timestamp" => {
+            if let Ok(ts) = val.parse::<f64>() {
+                fm.timestamp = Some(ts);
+            }
+        }
+        "tags" | "tag" => {
+            let clean = val.trim_start_matches('[').trim_end_matches(']');
+            for t in clean.split(',') {
+                let t = clean_yaml_scalar(t).trim_start_matches('#').to_string();
+                if !t.is_empty() && !fm.tags.contains(&t) {
+                    fm.tags.push(t);
+                }
+            }
+        }
+        _ => {
+            if let Some(clean_key) = normalize_external_prop_key(orig_key) {
+                if !is_known_metadata_key(&key) && val != "null" && val != "~" {
+                    // Normalize inline YAML arrays like `[a, b]` to `a, b`
+                    let display_val = if val.starts_with('[') && val.ends_with(']') {
+                        val[1..val.len() - 1]
+                            .split(',')
+                            .map(clean_yaml_scalar)
+                            .filter(|s| !s.is_empty())
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    } else {
+                        val
+                    };
+                    if !display_val.is_empty() {
+                        fm.properties.insert(clean_key, display_val);
+                    }
+                }
+            }
+        }
+    }
+    is_known_metadata_key(&key)
+}
+
+fn parse_yaml_block(yaml_block: &str, fm: &mut ParsedFrontmatter) {
+    let mut active_list_key: Option<String> = None;
+    let mut active_list_items: Vec<String> = Vec::new();
+
+    let flush_list = |key_opt: &mut Option<String>,
+                      items: &mut Vec<String>,
+                      fm: &mut ParsedFrontmatter| {
+        if let Some(list_key) = key_opt.take() {
+            if !items.is_empty() {
+                let joined = items.join(", ");
+                apply_frontmatter_kv(&list_key, &joined, fm);
+            }
+            items.clear();
+        }
+    };
+
+    for line in yaml_block.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+
+        // Indented list item (e.g. `  - tag1` or `- item`)
+        if let Some(rest) = trimmed.strip_prefix("- ") {
+            if active_list_key.is_some() {
+                let item = clean_yaml_scalar(rest);
+                if !item.is_empty() {
+                    active_list_items.push(item);
+                }
+                continue;
+            }
+        }
+
+        // Skip deeply indented nested YAML continuation lines
+        if (line.starts_with("  ") || line.starts_with('\t')) && active_list_key.is_some() {
+            continue;
+        }
+
+        flush_list(&mut active_list_key, &mut active_list_items, fm);
+
+        if let Some((k, v)) = trimmed.split_once(':') {
+            let v_trimmed = v.trim();
+            if v_trimmed.is_empty() || v_trimmed == "|" || v_trimmed == ">" {
+                // Start of a multi-line YAML list or block scalar
+                active_list_key = Some(k.trim().to_string());
+            } else {
+                apply_frontmatter_kv(k, v_trimmed, fm);
+            }
+        }
+    }
+
+    flush_list(&mut active_list_key, &mut active_list_items, fm);
+}
+
+fn parse_toml_block(toml_block: &str, fm: &mut ParsedFrontmatter) {
+    for line in toml_block.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        if let Some((k, v)) = trimmed.split_once('=') {
+            apply_frontmatter_kv(k, v.trim(), fm);
+        }
+    }
 }
 
 fn parse_yaml_line(line: &str, fm: &mut ParsedFrontmatter) -> bool {
@@ -103,75 +313,8 @@ fn parse_yaml_line(line: &str, fm: &mut ParsedFrontmatter) -> bool {
     if trimmed.is_empty() || trimmed.starts_with('#') {
         return false;
     }
-
     if let Some((k, v)) = trimmed.split_once(':') {
-        let key = k.trim().to_lowercase();
-        let raw_val = v.trim().trim_matches('"').trim_matches('\'').to_string();
-
-        match key.as_str() {
-            "id" => {
-                if !raw_val.is_empty() && raw_val != "null" {
-                    fm.id = Some(raw_val);
-                }
-            }
-            "title" => {
-                if !raw_val.is_empty() && raw_val != "null" {
-                    fm.title = Some(raw_val);
-                }
-            }
-            "language" => {
-                if !raw_val.is_empty() && raw_val != "null" {
-                    fm.language = Some(raw_val);
-                }
-            }
-            "pinned" | "ispinned" => {
-                fm.is_pinned = raw_val == "true" || raw_val == "1";
-            }
-            "learned" | "islearned" => {
-                fm.is_learned = raw_val == "true" || raw_val == "1";
-            }
-            "color" => {
-                if !raw_val.is_empty() && raw_val != "null" {
-                    fm.color = Some(raw_val);
-                }
-            }
-            "icon" | "customicon" => {
-                if !raw_val.is_empty() && raw_val != "null" && raw_val != "undefined" {
-                    fm.custom_icon = Some(raw_val);
-                }
-            }
-            "createdat" | "created_at" => {
-                if !raw_val.is_empty() && raw_val != "null" {
-                    fm.created_at = Some(raw_val);
-                }
-            }
-            "timestamp" => {
-                if let Ok(ts) = raw_val.parse::<f64>() {
-                    fm.timestamp = Some(ts);
-                }
-            }
-            "tags" => {
-                let clean = raw_val.trim_start_matches('[').trim_end_matches(']');
-                for t in clean.split(',') {
-                    let t = t.trim().trim_matches('"').trim_matches('\'');
-                    if !t.is_empty() {
-                        fm.tags.push(t.to_string());
-                    }
-                }
-            }
-            _ => {
-                let orig_key = k.trim();
-                if !orig_key.is_empty()
-                    && !is_known_metadata_key(&key)
-                    && orig_key
-                        .chars()
-                        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-' || c == '.')
-                {
-                    fm.properties.insert(orig_key.to_string(), raw_val);
-                }
-            }
-        }
-        return is_known_metadata_key(&key);
+        return apply_frontmatter_kv(k, v, fm);
     }
     false
 }
@@ -185,32 +328,37 @@ pub fn extract_and_strip_frontmatter(raw: &str) -> (ParsedFrontmatter, &str) {
     let mut content = raw.strip_prefix('\u{feff}').unwrap_or(raw);
     let mut has_yaml_frontmatter = false;
 
-    // 1. Strip any standard `---...---` blocks
+    // 1. Strip any standard `---...---` (YAML) or `+++...+++` (TOML) frontmatter blocks
     loop {
         let trimmed_leading = content.trim_start_matches(|c| c == '\r' || c == '\n' || c == ' ' || c == '\t');
-        if !trimmed_leading.starts_with("---") {
+        let (delim, is_toml) = if trimmed_leading.starts_with("---") {
+            ("---", false)
+        } else if trimmed_leading.starts_with("+++") {
+            ("+++", true)
+        } else {
             break;
-        }
+        };
 
-        let after_first_dashes = &trimmed_leading[3..];
-        let newline_pos = match after_first_dashes.find('\n') {
+        let after_first_delim = &trimmed_leading[3..];
+        let newline_pos = match after_first_delim.find('\n') {
             Some(pos) => pos,
             None => break,
         };
-        let first_line_tail = after_first_dashes[..newline_pos].trim();
+        let first_line_tail = after_first_delim[..newline_pos].trim();
         if !first_line_tail.is_empty() {
             break;
         }
 
-        let inner_and_rest = &after_first_dashes[newline_pos + 1..];
+        let inner_and_rest = &after_first_delim[newline_pos + 1..];
+        let closing_needle = if is_toml { "\n+++" } else { "\n---" };
         let mut closing_found = None;
         let mut search_idx = 0;
 
-        while let Some(pos) = inner_and_rest[search_idx..].find("\n---") {
+        while let Some(pos) = inner_and_rest[search_idx..].find(closing_needle) {
             let abs_pos = search_idx + pos;
-            let after_closing_dash = &inner_and_rest[abs_pos + 4..];
-            let line_end = after_closing_dash.find('\n').unwrap_or(after_closing_dash.len());
-            let line_tail = after_closing_dash[..line_end].trim();
+            let after_closing_delim = &inner_and_rest[abs_pos + 4..];
+            let line_end = after_closing_delim.find('\n').unwrap_or(after_closing_delim.len());
+            let line_tail = after_closing_delim[..line_end].trim();
             if line_tail.is_empty() {
                 closing_found = Some((abs_pos, abs_pos + 4 + line_end));
                 break;
@@ -218,11 +366,14 @@ pub fn extract_and_strip_frontmatter(raw: &str) -> (ParsedFrontmatter, &str) {
             search_idx = abs_pos + 4;
         }
 
-        if let Some((yaml_end, next_content_start)) = closing_found {
+        if let Some((block_end, next_content_start)) = closing_found {
+            let _ = delim;
             has_yaml_frontmatter = true;
-            let yaml_block = &inner_and_rest[..yaml_end];
-            for line in yaml_block.lines() {
-                parse_yaml_line(line, &mut fm);
+            let fm_block = &inner_and_rest[..block_end];
+            if is_toml {
+                parse_toml_block(fm_block, &mut fm);
+            } else {
+                parse_yaml_block(fm_block, &mut fm);
             }
             let mut next = &inner_and_rest[next_content_start..];
             if next.starts_with("\r\n") {

@@ -232,6 +232,99 @@ pub fn resolve_workspace_path() -> PathBuf {
     get_default_workspace_dir()
 }
 
+fn normalize_ws_compare_key(p: &str) -> String {
+    let trimmed = p.trim().trim_end_matches(|c| c == '/' || c == '\\');
+    #[cfg(target_os = "windows")]
+    {
+        trimmed.replace('/', "\\").to_lowercase()
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        trimmed.to_string()
+    }
+}
+
+pub(super) fn detect_workspace_source(path: &Path) -> &'static str {
+    if path.join(".obsidian").is_dir() {
+        return "obsidian";
+    }
+    if let Ok(entries) = fs::read_dir(path) {
+        let mut checked = 0usize;
+        for entry in entries.filter_map(|e| e.ok()) {
+            let name = entry.file_name().to_string_lossy().to_string();
+            // Notion exports append a 32-char hex UUID before `.md` or `.csv`
+            if let Some(stem) = name.strip_suffix(".md").or_else(|| name.strip_suffix(".csv")) {
+                if let Some((_, suffix)) = stem.rsplit_once(' ') {
+                    if suffix.len() == 32 && suffix.chars().all(|c| c.is_ascii_hexdigit()) {
+                        return "notion";
+                    }
+                }
+            }
+            checked += 1;
+            if checked >= 40 {
+                break;
+            }
+        }
+    }
+    if path.join(".lumina").is_dir() {
+        return "lumina";
+    }
+    "folder"
+}
+
+pub(super) fn workspace_display_name(path: &Path) -> String {
+    path.file_name()
+        .and_then(|s| s.to_str())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "Lumina".to_string())
+}
+
+fn record_recent_workspace_in_cfg(cfg: &mut Value, new_path: &str) {
+    let clean_path = new_path.trim();
+    if clean_path.is_empty() {
+        return;
+    }
+    let pb = Path::new(clean_path);
+    let new_key = normalize_ws_compare_key(clean_path);
+    let now = now_epoch_ms();
+    let entry = json!({
+        "path": clean_path,
+        "name": workspace_display_name(pb),
+        "lastOpened": now,
+        "source": detect_workspace_source(pb)
+    });
+
+    let mut next_list: Vec<Value> = vec![entry];
+    if let Some(existing) = cfg.get("recentWorkspaces").and_then(|v| v.as_array()) {
+        for item in existing {
+            let item_path = item
+                .get("path")
+                .and_then(|v| v.as_str())
+                .or_else(|| item.as_str())
+                .unwrap_or("")
+                .trim();
+            if item_path.is_empty() || normalize_ws_compare_key(item_path) == new_key {
+                continue;
+            }
+            let item_pb = Path::new(item_path);
+            let last_opened = item.get("lastOpened").and_then(|v| v.as_u64()).unwrap_or(0);
+            next_list.push(json!({
+                "path": item_path,
+                "name": workspace_display_name(item_pb),
+                "lastOpened": last_opened,
+                "source": detect_workspace_source(item_pb)
+            }));
+            if next_list.len() >= 10 {
+                break;
+            }
+        }
+    }
+    if let Some(obj) = cfg.as_object_mut() {
+        obj.insert("recentWorkspaces".to_string(), Value::Array(next_list));
+    }
+}
+
 pub(super) fn set_active_workspace_path_unlocked(new_path: &str) {
     let cfg_path = get_app_config_path();
     let mut cfg = read_json_file(&cfg_path);
@@ -252,6 +345,7 @@ pub(super) fn set_active_workspace_path_unlocked(new_path: &str) {
         );
         ws_obj.insert("vaultPath".to_string(), Value::String(new_path.to_string()));
     }
+    record_recent_workspace_in_cfg(&mut cfg, new_path);
     if let Ok(serialized) = serde_json::to_string_pretty(&cfg) {
         let _ = write_string_atomic(&cfg_path, &serialized);
     }
@@ -260,6 +354,93 @@ pub(super) fn set_active_workspace_path_unlocked(new_path: &str) {
 pub(super) fn set_active_workspace_path(new_path: &str) {
     let _guard = settings_io_lock().lock().unwrap_or_else(|e| e.into_inner());
     set_active_workspace_path_unlocked(new_path);
+}
+
+pub(super) fn get_recent_workspaces_list() -> Value {
+    let _guard = settings_io_lock().lock().unwrap_or_else(|e| e.into_inner());
+    let active = resolve_workspace_path();
+    let active_str = active.to_string_lossy().to_string();
+    let active_key = normalize_ws_compare_key(&active_str);
+    let cfg = read_json_file(&get_app_config_path());
+
+    let current_entry = json!({
+        "path": active_str,
+        "name": workspace_display_name(&active),
+        "lastOpened": now_epoch_ms(),
+        "source": detect_workspace_source(&active),
+        "exists": active.is_dir(),
+        "isCurrent": true
+    });
+
+    let mut recent: Vec<Value> = vec![current_entry.clone()];
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    seen.insert(active_key);
+
+    if let Some(arr) = cfg.get("recentWorkspaces").and_then(|v| v.as_array()) {
+        for item in arr {
+            let p = item
+                .get("path")
+                .and_then(|v| v.as_str())
+                .or_else(|| item.as_str())
+                .unwrap_or("")
+                .trim();
+            if p.is_empty() {
+                continue;
+            }
+            let key = normalize_ws_compare_key(p);
+            if seen.contains(&key) {
+                continue;
+            }
+            seen.insert(key);
+            let pb = Path::new(p);
+            recent.push(json!({
+                "path": p,
+                "name": workspace_display_name(pb),
+                "lastOpened": item.get("lastOpened").and_then(|v| v.as_u64()).unwrap_or(0),
+                "source": detect_workspace_source(pb),
+                "exists": pb.is_dir(),
+                "isCurrent": false
+            }));
+            if recent.len() >= 10 {
+                break;
+            }
+        }
+    }
+
+    json!({
+        "currentWorkspace": current_entry,
+        "recentWorkspaces": recent
+    })
+}
+
+pub(super) fn remove_recent_workspace_path(target_path: &str) -> Value {
+    {
+        let _guard = settings_io_lock().lock().unwrap_or_else(|e| e.into_inner());
+        let target_key = normalize_ws_compare_key(target_path);
+        let cfg_path = get_app_config_path();
+        let mut cfg = read_json_file(&cfg_path);
+        if let Some(arr) = cfg.get("recentWorkspaces").and_then(|v| v.as_array()) {
+            let filtered: Vec<Value> = arr
+                .iter()
+                .filter(|item| {
+                    let p = item
+                        .get("path")
+                        .and_then(|v| v.as_str())
+                        .or_else(|| item.as_str())
+                        .unwrap_or("");
+                    normalize_ws_compare_key(p) != target_key
+                })
+                .cloned()
+                .collect();
+            if let Some(obj) = cfg.as_object_mut() {
+                obj.insert("recentWorkspaces".to_string(), Value::Array(filtered));
+            }
+            if let Ok(serialized) = serde_json::to_string_pretty(&cfg) {
+                let _ = write_string_atomic(&cfg_path, &serialized);
+            }
+        }
+    }
+    get_recent_workspaces_list()
 }
 
 pub(super) fn scanned_note_to_json(n: ScannedNote) -> Value {

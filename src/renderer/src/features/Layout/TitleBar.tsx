@@ -18,6 +18,7 @@ import { Square, X, Minus, Search, PanelLeftOpen, PanelLeftClose, User } from 'l
 import { useCurrentUser } from '../../core/hooks/useCurrentUser'
 import ToolTip from '../../components/atoms/ToolTip'
 import UpdateButton from '../../components/update/UpdateButton'
+import WorkspaceSwitcher from './WorkspaceSwitcher'
 import AccentColor from '../theme/AccentColor'
 import { useFontSettings } from '../../core/hooks/useFontSettings'
 import { useSettingStore } from '../../core/store/SettingStore'
@@ -111,7 +112,8 @@ export const TitleBar: React.FC<TitleBarProps> = memo(({ isHidden = false }) => 
             {isLeftSidebarOpen ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
           </button>
         </ToolTip>
-        <div className="app-logo-wrapper" style={{ display: 'flex', alignItems: 'center', position: 'relative', flexShrink: 0 }}>
+        <div className="app-logo-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '4px', position: 'relative', flexShrink: 0 }}>
+          <WorkspaceSwitcher isHidden={isHidden} />
           <UpdateButton />
         </div>
       </div>

@@ -114,7 +114,7 @@ describe('ReleaseNotesTab & UnifiedUpdateButton', () => {
     expect(screen.getByText('Lumina_2.1.1_x64-setup.exe')).toBeInTheDocument()
   })
 
-  it('UpdateButton handles check (with up-to-date/available toast notifications), download, and restart directly', () => {
+  it('UpdateButton stays hidden when idle/up-to-date and handles download & restart when an update exists', () => {
     const check = vi.fn()
     const download = vi.fn()
     const install = vi.fn()
@@ -123,19 +123,16 @@ describe('ReleaseNotesTab & UnifiedUpdateButton', () => {
 
     useUpdateStore.setState({ status: 'idle', check, download, install })
     const { rerender } = render(<UpdateButton />)
+    expect(screen.queryByTestId('unified-update-btn')).not.toBeInTheDocument()
 
-    const btn = screen.getByTestId('unified-update-btn')
-    fireEvent.click(btn)
-    expect(check).toHaveBeenCalledTimes(1)
-
-    // When no update is available after clicking check, dispatches up-to-date toast
+    // Still hidden when up to date
     act(() => {
       useUpdateStore.setState({ status: 'not-available', check, download, install })
     })
     rerender(<UpdateButton />)
-    expect(toastSpy).toHaveBeenCalled()
+    expect(screen.queryByTestId('unified-update-btn')).not.toBeInTheDocument()
 
-    // When update is available, dispatches update available toast and downloads on click
+    // When update is available, shows button, dispatches toast, and downloads on click
     act(() => {
       useUpdateStore.setState({
         status: 'available',
@@ -146,6 +143,7 @@ describe('ReleaseNotesTab & UnifiedUpdateButton', () => {
       })
     })
     rerender(<UpdateButton />)
+    expect(toastSpy).toHaveBeenCalled()
     expect(screen.getByText('v2.2.0')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('unified-update-btn'))
     expect(download).toHaveBeenCalledTimes(1)

@@ -272,43 +272,46 @@ export const ToolTip: React.FC<ToolTipProps> = ({
     if (!isVisible || !tooltipRef.current || !childRef.current || !coords) return
 
     const tooltipEl = tooltipRef.current
-    const tooltipRect = tooltipEl.getBoundingClientRect()
+    const tooltipWidth = tooltipEl.offsetWidth || tooltipEl.getBoundingClientRect().width
+    const tooltipHeight = tooltipEl.offsetHeight || tooltipEl.getBoundingClientRect().height
     const targetRect = childRef.current.getBoundingClientRect()
     const arrowEl = tooltipEl.querySelector<HTMLElement>('.tooltip-arrow')
-    const margin = 8
+    const margin = 10
 
     if (coords.isTop || coords.isBottom) {
       const elemCenterX = targetRect.left + targetRect.width / 2
-      const halfWidth = tooltipRect.width / 2
+      const halfWidth = tooltipWidth / 2
       const minCenter = margin + halfWidth
       const maxCenter = window.innerWidth - margin - halfWidth
 
       if (elemCenterX < minCenter) {
-        tooltipEl.style.left = `${Math.round(minCenter)}px`
+        tooltipEl.style.left = `${Math.round(margin)}px`
+        tooltipEl.style.transform = 'none'
         if (arrowEl) {
-          const arrowX = Math.max(6, Math.min(tooltipRect.width - 6, elemCenterX - margin))
+          const arrowX = Math.max(10, Math.min(tooltipWidth - 10, elemCenterX - margin))
           arrowEl.style.left = `${Math.round(arrowX)}px`
           arrowEl.style.marginLeft = '-3px'
         }
       } else if (elemCenterX > maxCenter) {
-        tooltipEl.style.left = `${Math.round(maxCenter)}px`
-        const tooltipLeft = maxCenter - halfWidth
+        const clampedLeft = Math.max(margin, window.innerWidth - margin - tooltipWidth)
+        tooltipEl.style.left = `${Math.round(clampedLeft)}px`
+        tooltipEl.style.transform = 'none'
         if (arrowEl) {
-          const arrowX = Math.max(6, Math.min(tooltipRect.width - 6, elemCenterX - tooltipLeft))
+          const arrowX = Math.max(10, Math.min(tooltipWidth - 10, elemCenterX - clampedLeft))
           arrowEl.style.left = `${Math.round(arrowX)}px`
           arrowEl.style.marginLeft = '-3px'
         }
       }
     } else if (coords.isRight || coords.isLeft) {
       const elemCenterY = targetRect.top + targetRect.height / 2
-      const halfHeight = tooltipRect.height / 2
+      const halfHeight = tooltipHeight / 2
       const minCenter = margin + halfHeight
       const maxCenter = window.innerHeight - margin - halfHeight
 
       if (elemCenterY < minCenter) {
         tooltipEl.style.top = `${Math.round(minCenter)}px`
         if (arrowEl) {
-          const arrowY = Math.max(6, Math.min(tooltipRect.height - 6, elemCenterY - margin))
+          const arrowY = Math.max(10, Math.min(tooltipHeight - 10, elemCenterY - margin))
           arrowEl.style.top = `${Math.round(arrowY)}px`
           arrowEl.style.marginTop = '-3px'
         }
@@ -316,7 +319,7 @@ export const ToolTip: React.FC<ToolTipProps> = ({
         tooltipEl.style.top = `${Math.round(maxCenter)}px`
         const tooltipTop = maxCenter - halfHeight
         if (arrowEl) {
-          const arrowY = Math.max(6, Math.min(tooltipRect.height - 6, elemCenterY - tooltipTop))
+          const arrowY = Math.max(10, Math.min(tooltipHeight - 10, elemCenterY - tooltipTop))
           arrowEl.style.top = `${Math.round(arrowY)}px`
           arrowEl.style.marginTop = '-3px'
         }

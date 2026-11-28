@@ -164,8 +164,21 @@ export const initScreenLoader = (options?: ScreenLoaderOptions): HTMLElement | n
   startTime = Date.now()
   stopGlobalInlineTimer()
 
+  let switchingName = ''
+  try {
+    switchingName = sessionStorage.getItem('lumina_switching_workspace') || ''
+    if (switchingName) {
+      sessionStorage.removeItem('lumina_switching_workspace')
+    }
+  } catch {
+    // Ignore storage access errors
+  }
+
+  const resolvedStatus =
+    options?.status || (switchingName ? `Opening ${switchingName}…` : undefined)
+
   if (ensureElements() && loaderElement) {
-    if (options?.status) setScreenLoaderStatus(options.status, options.subStatus)
+    if (resolvedStatus) setScreenLoaderStatus(resolvedStatus, options?.subStatus)
     if (options?.progress !== undefined) {
       stopLoaderSimulation()
       setScreenLoaderProgress(options.progress, undefined, true)

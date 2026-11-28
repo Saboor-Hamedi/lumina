@@ -1,17 +1,51 @@
 //! Workspace, note/snippet CRUD, folder management, and OS integration commands.
 
 use super::common::{
-    mark_internal_workspace_write, resolve_workspace_path, run_blocking, sanitize_filename,
-    scanned_note_to_json, set_active_workspace_path,
+    get_recent_workspaces_list, mark_internal_workspace_write, remove_recent_workspace_path,
+    resolve_workspace_path, run_blocking, sanitize_filename, scanned_note_to_json,
+    set_active_workspace_path,
 };
 use lumina_core::{
     canonicalize_or_normalize, ensure_not_workspace_root, is_safe_external_url,
-    safe_join_workspace, scan_vault_impl, ScanResult,
+    safe_join_workspace, scan_vault_impl, workspace_metadata_db_path, NoteMetadataStore,
+    ScanResult,
 };
 use serde_json::{json, Value};
+use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+
+/// Syncs external YAML/TOML frontmatter properties into the workspace SQLite
+/// NoteMetadataStore without overwriting properties the user already edited in Lumina.
+fn sync_frontmatter_properties_to_store(
+    ws_path: &Path,
+    items: &[(&str, &BTreeMap<String, String>)],
+) {
+    let non_empty: Vec<_> = items.iter().filter(|(_, p)| !p.is_empty()).collect();
+    if non_empty.is_empty() {
+        return;
+    }
+    let db_path = workspace_metadata_db_path(ws_path);
+    let Ok(store) = NoteMetadataStore::open(&db_path) else {
+        return;
+    };
+    for (note_id, props) in non_empty {
+        let existing_keys: HashSet<String> = store
+            .get_note_metadata(note_id)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|e| e.key.to_lowercase())
+            .collect();
+        for (k, v) in *props {
+            if v.trim().is_empty() || existing_keys.contains(&k.to_lowercase()) {
+                continue;
+            }
+            let prop_type = lumina_core::scanner::infer_metadata_prop_type(k, v);
+            let _ = store.upsert_note_metadata(note_id, k, prop_type, v, None);
+        }
+    }
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Core & Workspace Tauri Commands
@@ -42,6 +76,13 @@ pub async fn get_snippets() -> Result<Value, String> {
         let ws_path = resolve_workspace_path();
         let ws_str = ws_path.to_string_lossy().to_string();
         let scan = scan_vault_impl(&ws_str, 5 * 1024 * 1024);
+        let prop_pairs: Vec<(&str, &BTreeMap<String, String>)> = scan
+            .notes
+            .iter()
+            .filter(|n| !n.properties.is_empty())
+            .map(|n| (n.id.as_str(), &n.properties))
+            .collect();
+        sync_frontmatter_properties_to_store(&ws_path, &prop_pairs);
         let snippets: Vec<Value> = scan.notes.into_iter().map(scanned_note_to_json).collect();
         Ok(json!({
             "snippets": snippets,
@@ -68,12 +109,12 @@ pub async fn read_snippet(id: String) -> Result<Value, String> {
             .strip_prefix(&ws_canon)
             .map(|p| p.to_string_lossy().replace('\\', "/"))
             .unwrap_or_else(|_| id.replace('\\', "/").trim_start_matches('/').to_string());
-        let code = fs::read_to_string(&full_path).unwrap_or_default();
+        let raw_code = fs::read_to_string(&full_path).unwrap_or_default();
         let file_name = full_path
             .file_name()
             .map(|s| s.to_string_lossy().to_string())
             .unwrap_or_else(|| rel.clone());
-        let title = full_path
+        let default_title = full_path
             .file_stem()
             .map(|s| s.to_string_lossy().to_string())
             .unwrap_or_else(|| file_name.clone());
@@ -82,15 +123,44 @@ pub async fn read_snippet(id: String) -> Result<Value, String> {
             .map(|p| p.to_string_lossy().replace('\\', "/"))
             .unwrap_or_default();
         let is_canvas = file_name.ends_with(".canvas");
+
+        if is_canvas {
+            return Ok(json!({
+                "id": rel,
+                "title": default_title,
+                "code": raw_code,
+                "fileName": file_name,
+                "folderId": folder_id,
+                "relativePath": rel,
+                "language": "canvas",
+                "type": "canvas"
+            }));
+        }
+
+        let (fm, stripped_body) = lumina_core::scanner::extract_and_strip_frontmatter(&raw_code);
+        let note_id = fm
+            .id
+            .clone()
+            .unwrap_or_else(|| format!("note-{:032x}", lumina_core::scanner::md5_hash(&rel)));
+        if !fm.properties.is_empty() {
+            sync_frontmatter_properties_to_store(&ws_path, &[(&note_id, &fm.properties)]);
+        }
+        let title = fm.title.unwrap_or(default_title);
+
         Ok(json!({
-            "id": rel,
+            "id": note_id,
             "title": title,
-            "code": code,
+            "code": stripped_body,
+            "tags": fm.tags.join(", "),
+            "createdAt": fm.created_at,
+            "customIcon": fm.custom_icon,
+            "color": fm.color,
+            "properties": fm.properties,
             "fileName": file_name,
             "folderId": folder_id,
             "relativePath": rel,
-            "language": if is_canvas { "canvas" } else { "markdown" },
-            "type": if is_canvas { "canvas" } else { "snippet" }
+            "language": fm.language.unwrap_or_else(|| "markdown".to_string()),
+            "type": "snippet"
         }))
     })
     .await
@@ -540,15 +610,69 @@ pub async fn select_workspace(window: tauri::WebviewWindow) -> Result<Value, Str
         set_active_workspace_path(&chosen);
         mark_internal_workspace_write();
         let scan = scan_vault_impl(&chosen, 5 * 1024 * 1024);
+        let prop_pairs: Vec<(&str, &BTreeMap<String, String>)> = scan
+            .notes
+            .iter()
+            .filter(|n| !n.properties.is_empty())
+            .map(|n| (n.id.as_str(), &n.properties))
+            .collect();
+        sync_frontmatter_properties_to_store(Path::new(&chosen), &prop_pairs);
         let snippets: Vec<Value> = scan.notes.into_iter().map(scanned_note_to_json).collect();
+        let recent = get_recent_workspaces_list();
         Ok(json!({
             "path": chosen,
             "workspacePath": chosen,
             "snippets": snippets,
-            "folders": scan.folders
+            "folders": scan.folders,
+            "recentWorkspaces": recent.get("recentWorkspaces").cloned().unwrap_or_else(|| json!([]))
         }))
     })
     .await
+}
+
+#[tauri::command]
+pub async fn get_recent_workspaces() -> Result<Value, String> {
+    run_blocking(move || Ok(get_recent_workspaces_list())).await
+}
+
+#[tauri::command]
+pub async fn switch_workspace(path: String) -> Result<Value, String> {
+    run_blocking(move || {
+        let trimmed = path.trim();
+        if trimmed.is_empty() {
+            return Err("Workspace path cannot be empty".to_string());
+        }
+        let target = PathBuf::from(trimmed);
+        if !target.exists() || !target.is_dir() {
+            return Err(format!("Workspace directory does not exist: {}", trimmed));
+        }
+        let canonical_str = target.to_string_lossy().to_string();
+        set_active_workspace_path(&canonical_str);
+        mark_internal_workspace_write();
+        let scan = scan_vault_impl(&canonical_str, 5 * 1024 * 1024);
+        let prop_pairs: Vec<(&str, &BTreeMap<String, String>)> = scan
+            .notes
+            .iter()
+            .filter(|n| !n.properties.is_empty())
+            .map(|n| (n.id.as_str(), &n.properties))
+            .collect();
+        sync_frontmatter_properties_to_store(&target, &prop_pairs);
+        let snippets: Vec<Value> = scan.notes.into_iter().map(scanned_note_to_json).collect();
+        let recent = get_recent_workspaces_list();
+        Ok(json!({
+            "path": canonical_str,
+            "workspacePath": canonical_str,
+            "snippets": snippets,
+            "folders": scan.folders,
+            "recentWorkspaces": recent.get("recentWorkspaces").cloned().unwrap_or_else(|| json!([]))
+        }))
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn remove_recent_workspace(path: String) -> Result<Value, String> {
+    run_blocking(move || Ok(remove_recent_workspace_path(&path))).await
 }
 
 fn resolve_allowed_open_target(path: &str) -> Result<PathBuf, String> {

@@ -157,6 +157,18 @@ export const UpdateButton: React.FC = React.memo(() => {
     }
   }, [status, safePercent, newVersion])
 
+  // Only show the TitleBar update button when an update is actually available,
+  // downloading, installing, or ready to restart.
+  const hasVisibleUpdate =
+    status === 'available' ||
+    status === 'downloading' ||
+    status === 'installing' ||
+    status === 'ready'
+
+  if (!hasVisibleUpdate) {
+    return null
+  }
+
   return (
     <div className="update-details-container">
       <ToolTip text={tooltip} position="bottom">
